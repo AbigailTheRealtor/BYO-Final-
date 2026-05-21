@@ -40,7 +40,7 @@
             <input type="text"
                    wire:model="compatibility_preferences.landlord_specific.primary_leasing_goal_other"
                    class="form-control has-icon" data-icon="fa-solid fa-pen"
-                   placeholder="Enter Primary Leasing Goal (e.g., Minimize Vacancy Before Summer)">
+                   placeholder="Enter primary leasing goal (e.g., minimize vacancy before summer)">
         </div>
     </div>
     @error('compatibility_preferences.landlord_specific.primary_leasing_goal')
@@ -81,7 +81,7 @@
             <input type="text"
                    wire:model="compatibility_preferences.landlord_specific.tenant_type_preference_other"
                    class="form-control has-icon" data-icon="fa-solid fa-pen"
-                   placeholder="Enter Preferred Tenant Type (e.g., Long-Term Professional Tenant)">
+                   placeholder="Enter preferred tenant type (e.g., long-term professional tenant)">
         </div>
     </div>
 </div>
@@ -276,8 +276,8 @@
             ];
         @endphp
         <select id="compat_representation_priorities_landlord" name="compat_representation_priorities_landlord" multiple
-                data-select2="true"
-                class="form-control has-icon" data-icon="fa-solid fa-list-check">
+                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-list-check"
+                data-placeholder="Select">
             @foreach ($rpOptions as $rpOpt)
                 <option value="{{ $rpOpt }}" {{ in_array($rpOpt, $rpSelected) ? 'selected' : '' }}>
                     {{ $rpOpt }}
@@ -360,7 +360,11 @@
     </label>
     <div class="input-cover mt-2">
         <textarea wire:model="compatibility_preferences.landlord_specific.additional_representation_notes"
-                  class="form-control" rows="3"
-                  placeholder="Enter Additional Representation Notes (e.g., Prefer Weekly Leasing Updates and Strong Tenant Screening)"></textarea>
+                  class="form-control has-icon"
+                  data-icon="fa-solid fa-note-sticky"
+                  rows="1"
+                  style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
+                  maxlength="2000"
+                  placeholder="Enter additional representation notes (e.g., prefer weekly leasing updates and strong tenant screening)"></textarea>
     </div>
 </div>

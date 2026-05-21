@@ -66,8 +66,9 @@
         </span>
     </label>
     <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-representation-priorities-s2">
-        <select id="compat_representation_priorities" class="form-control has-icon" multiple
+        <select id="compat_representation_priorities" class="form-control has-icon select2-multiple" multiple
             data-icon="fa-solid fa-list-check"
+            data-placeholder="Select"
             data-selected="{{ json_encode($compatibility_preferences['tenant_specific']['representation_priorities'] ?? []) }}"
             required>
             <option value="Neighborhood / location">Neighborhood / location</option>

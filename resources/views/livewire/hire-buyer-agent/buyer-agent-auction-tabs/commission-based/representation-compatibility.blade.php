@@ -23,6 +23,7 @@
     <div wire:ignore wire:key="compat-ptg-select" class="input-cover mt-2 has-select-icon">
         <select id="compat_primary_transaction_goal"
                 data-compat-field="primary_transaction_goal"
+                data-placeholder="Select"
                 class="form-control has-icon" data-icon="fa-solid fa-bullseye"
                 required>
             <option value="">Select</option>
@@ -61,8 +62,8 @@
     </label>
     <div wire:ignore wire:key="compat-rep-priorities-select" class="input-cover mt-2 has-select-icon">
         <select id="compat_representation_priorities" name="compat_representation_priorities[]"
-                multiple class="form-control has-icon" data-icon="fa-solid fa-list-check"
-                required>
+                multiple class="form-control has-icon select2-multiple" data-icon="fa-solid fa-list-check"
+                data-placeholder="Select" required>
             <option value="Price Negotiation">Price Negotiation</option>
             <option value="Speed of Transaction">Speed of Transaction</option>
             <option value="Finding Off-Market Properties">Finding Off-Market Properties</option>
@@ -82,7 +83,7 @@
             <input type="text"
                    wire:model.defer="compatibility_preferences.buyer_specific.representation_priorities_other"
                    class="form-control has-icon" data-icon="fa-solid fa-pen"
-                   placeholder="Enter Representation Priorities (e.g., Investment Analysis and Off-Market Opportunities)">
+                   placeholder="Enter representation priorities (e.g., investment analysis and off-market opportunities)">
         </div>
     </div>
 </div>
@@ -99,6 +100,7 @@
     <div wire:ignore wire:key="compat-risk-select" class="input-cover mt-2 has-select-icon">
         <select id="compat_risk_tolerance"
                 data-compat-field="risk_tolerance"
+                data-placeholder="Select"
                 class="form-control has-icon" data-icon="fa-solid fa-shield-halved">
             <option value="">Select</option>
             <option value="Very Conservative">Very Conservative – I want maximum protections</option>
@@ -122,6 +124,7 @@
     <div wire:ignore wire:key="compat-decision-select" class="input-cover mt-2 has-select-icon">
         <select id="compat_decision_making_style"
                 data-compat-field="decision_making_style"
+                data-placeholder="Select"
                 class="form-control has-icon" data-icon="fa-solid fa-brain">
             <option value="">Select</option>
             <option value="Quick Decisions">Quick Decisions – I act fast when I see the right property</option>
@@ -145,6 +148,7 @@
     <div wire:ignore wire:key="compat-timeline-select" class="input-cover mt-2 has-select-icon">
         <select id="compat_timeline_flexibility"
                 data-compat-field="timeline_flexibility"
+                data-placeholder="Select"
                 class="form-control has-icon" data-icon="fa-solid fa-calendar-days">
             <option value="">Select</option>
             <option value="Very Flexible">Very Flexible – No rush, I can take my time</option>
@@ -170,6 +174,7 @@
     <div wire:ignore wire:key="compat-comm-style-select" class="input-cover mt-2 has-select-icon">
         <select id="compat_communication_style"
                 data-compat-field="communication_style"
+                data-placeholder="Select"
                 class="form-control has-icon" data-icon="fa-solid fa-comments"
                 required>
             <option value="">Select</option>
@@ -186,17 +191,18 @@
 <!-- 7. Preferred Contact Method -->
 <div class="form-group">
     <label class="fw-bold">
-        Preferred Contact Method:
+        Preferred contact method(s):
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="What is your preferred way for your agent to reach you?">
+            title="Select all contact methods that work best for you.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div wire:ignore wire:key="compat-contact-method-select" class="input-cover mt-2 has-select-icon">
         <select id="compat_preferred_contact_method"
-                data-compat-field="preferred_contact_method"
-                class="form-control has-icon" data-icon="fa-solid fa-mobile-screen">
-            <option value="">Select</option>
+                name="compat_preferred_contact_method[]"
+                multiple
+                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-mobile-screen"
+                data-placeholder="Select">
             <option value="Phone Call">Phone Call</option>
             <option value="Text Message">Text Message</option>
             <option value="Email">Email</option>
@@ -220,7 +226,7 @@
         <input type="text"
                wire:model.defer="compatibility_preferences.buyer_specific.availability_windows"
                class="form-control has-icon" data-icon="fa-solid fa-clock"
-               placeholder="Enter Availability / Best Times (e.g., Weekday Evenings After 6pm, Weekend Mornings)">
+               placeholder="Enter availability / best times (e.g., weekday evenings after 6pm, weekend mornings)">
     </div>
 </div>
 
@@ -236,6 +242,7 @@
     <div wire:ignore wire:key="compat-comm-freq-select" class="input-cover mt-2 has-select-icon">
         <select id="compat_communication_frequency"
                 data-compat-field="communication_frequency"
+                data-placeholder="Select"
                 class="form-control has-icon" data-icon="fa-solid fa-house-magnifying-glass">
             <option value="">Select</option>
             <option value="In-Person Only">In-Person Only – I need to walk through every property</option>
@@ -261,6 +268,7 @@
     <div wire:ignore wire:key="compat-negotiation-select" class="input-cover mt-2 has-select-icon">
         <select id="compat_negotiation_style"
                 data-compat-field="negotiation_style"
+                data-placeholder="Select"
                 class="form-control has-icon" data-icon="fa-solid fa-scale-balanced"
                 required>
             <option value="">Select</option>
@@ -288,6 +296,7 @@
     <div wire:ignore wire:key="compat-paws-select" class="input-cover mt-2 has-select-icon">
         <select id="compat_preferred_agent_working_style"
                 data-compat-field="preferred_agent_working_style"
+                data-placeholder="Select"
                 class="form-control has-icon" data-icon="fa-solid fa-user-tie"
                 required>
             <option value="">Select</option>
@@ -306,7 +315,7 @@
             <input type="text"
                    wire:model.defer="compatibility_preferences.buyer_specific.preferred_agent_working_style_other"
                    class="form-control has-icon" data-icon="fa-solid fa-pen"
-                   placeholder="Enter Preferred Agent Working Style (e.g., Proactive Communicator With Strong Negotiation Skills)">
+                   placeholder="Enter preferred agent working style (e.g., proactive communicator with strong negotiation skills)">
         </div>
     </div>
 </div>
@@ -323,6 +332,7 @@
     <div wire:ignore wire:key="compat-support-select" class="input-cover mt-2 has-select-icon">
         <select id="compat_support_level"
                 data-compat-field="support_level"
+                data-placeholder="Select"
                 class="form-control has-icon" data-icon="fa-solid fa-life-ring">
             <option value="">Select</option>
             <option value="Minimal – Self-Sufficient">Minimal – I'm experienced and mostly self-sufficient</option>
@@ -346,14 +356,14 @@
         <input type="text"
                wire:model.defer="compatibility_preferences.buyer_specific.deal_breakers"
                class="form-control has-icon" data-icon="fa-solid fa-ban"
-               placeholder="Enter Non-Negotiable Requirements (e.g., Must Have 3+ Bedrooms, No HOA, Available on Weekends)">
+               placeholder="Enter non-negotiable requirements (e.g., must have 3+ bedrooms, no HOA, available on weekends)">
     </div>
 </div>
 
 <!-- 14. Additional Notes -->
 <div class="form-group">
     <label class="fw-bold">
-        Additional Notes for Agent:
+        Additional notes for agent:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Share anything else that would help agents understand how to work best with you.">
             <i class="fa-solid fa-circle-info"></i>
@@ -361,7 +371,11 @@
     </label>
     <div class="input-cover mt-2">
         <textarea wire:model.defer="compatibility_preferences.buyer_specific.additional_compatibility_notes"
-                  class="form-control" rows="3"
-                  placeholder="Enter Additional Notes for Agent (e.g., Prefer Weekend Showings and Fast Responses)"></textarea>
+                  class="form-control has-icon"
+                  data-icon="fa-solid fa-note-sticky"
+                  rows="1"
+                  style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
+                  maxlength="2000"
+                  placeholder="Enter additional notes for agent (e.g., prefer weekend showings and fast responses)"></textarea>
     </div>
 </div>

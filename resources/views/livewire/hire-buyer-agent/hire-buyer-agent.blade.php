@@ -1138,6 +1138,18 @@
                         }
                     }
                 } catch(eRpDl) { console.log('[DraftLoaded] rp error', eRpDl); }
+                // Rehydrate compat_preferred_contact_method (multi-select)
+                try {
+                    var $pcmDl = $('#compat_preferred_contact_method');
+                    if ($pcmDl.length && $pcmDl.hasClass('select2-hidden-accessible')) {
+                        var _cpDlPcm = @this.get('compatibility_preferences');
+                        var _pcmDlSaved = (_cpDlPcm && _cpDlPcm.buyer_specific && _cpDlPcm.buyer_specific.preferred_contact_method) ? _cpDlPcm.buyer_specific.preferred_contact_method : [];
+                        if (_pcmDlSaved.length > 0) {
+                            $pcmDl.val(_pcmDlSaved).trigger('change.select2');
+                            console.log('[DraftLoaded] Rehydrated preferred_contact_method:', _pcmDlSaved);
+                        }
+                    }
+                } catch(ePcmDl) { console.log('[DraftLoaded] pcm error', ePcmDl); }
                 // Rehydrate compatibility single-select fields from Livewire state
                 try {
                     var _cpDlSingle = @this.get('compatibility_preferences');
@@ -1285,6 +1297,8 @@
                     });
                     var _rpSave = $('#compat_representation_priorities').hasClass('select2-hidden-accessible') ? ($('#compat_representation_priorities').val() || []) : [];
                     _compatSave.buyer_specific.representation_priorities = [...new Set(_rpSave)];
+                    var _pcmSave = $('#compat_preferred_contact_method').hasClass('select2-hidden-accessible') ? ($('#compat_preferred_contact_method').val() || []) : [];
+                    _compatSave.buyer_specific.preferred_contact_method = [...new Set(_pcmSave)];
                     @this.set('compatibility_preferences', _compatSave);
                 } catch(_eCs) { console.log('[syncBSS] compat sync error', _eCs); }
             }
@@ -1543,6 +1557,14 @@
                         window.dispatchEvent(new CustomEvent('update-rp-other', { detail: { hasOther: selectedValues.includes('Other') } }));
                     });
                 }
+                if ($('#compat_preferred_contact_method').length && !$('#compat_preferred_contact_method').hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($('#compat_preferred_contact_method'));
+                    $('#compat_preferred_contact_method').off('change.pcmSync').on('change.pcmSync', function() {
+                        var selectedValues = $(this).val() || [];
+                        selectedValues = [...new Set(selectedValues)];
+                        debouncedSet('compatibility_preferences.buyer_specific.preferred_contact_method', selectedValues);
+                    });
+                }
             });
 
             // Add event listeners
@@ -1629,6 +1651,17 @@
                     selectedValues = [...new Set(selectedValues)];
                     debouncedSet('compatibility_preferences.buyer_specific.representation_priorities', selectedValues);
                     window.dispatchEvent(new CustomEvent('update-rp-other', { detail: { hasOther: selectedValues.includes('Other') } }));
+                });
+            }
+
+            // Initialize Select2 for compat_preferred_contact_method (multi-select)
+            if ($('#compat_preferred_contact_method').length && !$('#compat_preferred_contact_method').hasClass('select2-hidden-accessible')) {
+                window.initFullServiceSelect2Multiple($('#compat_preferred_contact_method'));
+
+                $('#compat_preferred_contact_method').off('change.pcmSync').on('change.pcmSync', function() {
+                    var selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    debouncedSet('compatibility_preferences.buyer_specific.preferred_contact_method', selectedValues);
                 });
             }
 

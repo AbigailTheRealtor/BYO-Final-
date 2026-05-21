@@ -56,7 +56,7 @@
         </span>
     </label>
     <div wire:key="compat-pcm-s2" wire:ignore class="input-cover mt-2 has-select-icon">
-        <select id="compat_preferred_contact_method" multiple class="form-control has-icon" data-icon="fa-solid fa-phone">
+        <select id="compat_preferred_contact_method" multiple class="form-control has-icon select2-multiple" data-icon="fa-solid fa-phone" data-placeholder="Select">
             <option value="Phone Call">Phone Call</option>
             <option value="Text/SMS">Text / SMS</option>
             <option value="Email">Email</option>
@@ -126,7 +126,7 @@
         </span>
     </label>
     <div wire:key="compat-wtn-s2" wire:ignore class="input-cover mt-2 has-select-icon">
-        <select id="compat_willing_to_negotiate_on" multiple class="form-control has-icon" data-icon="fa-solid fa-handshake">
+        <select id="compat_willing_to_negotiate_on" multiple class="form-control has-icon select2-multiple" data-icon="fa-solid fa-handshake" data-placeholder="Select">
             <option value="Price Reductions">Price Reductions</option>
             <option value="Closing Costs">Closing Costs</option>
             <option value="Repairs / Credits">Repairs / Credits</option>
@@ -204,7 +204,7 @@
             wire:model="compatibility_preferences.seller_specific.primary_transaction_goal_other"
             id="compat_primary_transaction_goal_other"
             class="form-control has-icon" data-icon="fa-solid fa-bullseye"
-            placeholder="Enter Primary Transaction Goal (e.g., sell quickly to relocate, maximize equity)">
+            placeholder="Enter primary goal (e.g., sell quickly to relocate)">
     </div>
 </div>
 
@@ -222,7 +222,7 @@
         <input type="text"
             wire:model="compatibility_preferences.seller_specific.target_sale_timeline"
             class="form-control has-icon" data-icon="fa-solid fa-calendar-days"
-            placeholder="Enter Target Sale Timeline (e.g., 30–60 days, 3 months)">
+            placeholder="Enter target sale timeline (e.g., 30–60 days, 3 months)">
     </div>
 </div>
 
@@ -274,7 +274,7 @@
 {{-- Representation Priorities (required, multi-select) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        What matters most in an agent? (Select all that apply)
+        What matters most in an agent?
         <span class="text-danger ms-1">*</span>
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the qualities that are most important to you when choosing an agent to represent you."
@@ -283,7 +283,7 @@
         </span>
     </label>
     <div wire:key="compat-rp-s2" wire:ignore class="input-cover mt-2 has-select-icon">
-        <select id="compat_representation_priorities" multiple class="form-control has-icon" data-icon="fa-solid fa-list-check" required>
+        <select id="compat_representation_priorities" multiple class="form-control has-icon select2-multiple" data-icon="fa-solid fa-list-check" data-placeholder="Select" required>
             <option value="Market Expertise">Market Expertise</option>
             <option value="Strong Negotiator">Strong Negotiator</option>
             <option value="High Communication">High Communication &amp; Responsiveness</option>
@@ -310,7 +310,7 @@
         </span>
     </label>
     <div wire:key="compat-qmi-s2" wire:ignore class="input-cover mt-2 has-select-icon">
-        <select id="compat_qualities_most_important" multiple class="form-control has-icon" data-icon="fa-solid fa-star">
+        <select id="compat_qualities_most_important" multiple class="form-control has-icon select2-multiple" data-icon="fa-solid fa-star" data-placeholder="Select">
             <option value="Honesty & Transparency">Honesty &amp; Transparency</option>
             <option value="Patience">Patience</option>
             <option value="Assertiveness">Assertiveness</option>
@@ -346,7 +346,7 @@
 {{-- What Did Not Work Before --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        What Did Not Work Well with Past Agents? (Optional)
+        What did not work well with past agents?
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Briefly describe what went wrong so future agents can avoid it."
             class="ms-2 cursor-pointer">
@@ -355,8 +355,12 @@
     </label>
     <div class="input-cover mt-2">
         <textarea wire:model="compatibility_preferences.seller_specific.what_did_not_work_before"
-            class="form-control" rows="3"
-            placeholder="Enter What Did Not Work Well with Past Agents (e.g., poor communication, overpriced listing)"></textarea>
+            class="form-control has-icon"
+            data-icon="fa-solid fa-comment-dots"
+            rows="1"
+            style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
+            maxlength="2000"
+            placeholder="Enter what did not work well with past agents (e.g., poor communication, overpriced listing)"></textarea>
     </div>
 </div>
 
@@ -407,7 +411,7 @@
 {{-- Additional Decision Makers --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Other Decision Makers Involved (Optional)
+        Other Decision Makers Involved:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="List anyone else involved in the final selling decision (e.g., co-owner, spouse, financial advisor)."
             class="ms-2 cursor-pointer">
@@ -418,7 +422,7 @@
         <input type="text"
             wire:model="compatibility_preferences.seller_specific.additional_decision_makers"
             class="form-control has-icon" data-icon="fa-solid fa-users"
-            placeholder="Enter Other Decision Makers Involved (e.g., Spouse, Co-owner, Financial Advisor)">
+            placeholder="Enter decision makers involved (e.g., spouse, co-owner, financial advisor)">
     </div>
 </div>
 
@@ -461,7 +465,7 @@
         </span>
     </label>
     <div wire:key="compat-sa-s2" wire:ignore class="input-cover mt-2 has-select-icon">
-        <select id="compat_showing_availability" multiple class="form-control has-icon" data-icon="fa-solid fa-calendar-days">
+        <select id="compat_showing_availability" multiple class="form-control has-icon select2-multiple" data-icon="fa-solid fa-calendar-days" data-placeholder="Select">
             <option value="Weekday Mornings">Weekday Mornings</option>
             <option value="Weekday Afternoons">Weekday Afternoons</option>
             <option value="Weekday Evenings">Weekday Evenings</option>
@@ -497,7 +501,7 @@
 {{-- Additional Compatibility Notes --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Additional Compatibility Notes (Optional)
+        Additional compatibility notes:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Anything else you would like agents to know about how you prefer to work?"
             class="ms-2 cursor-pointer">
@@ -506,7 +510,11 @@
     </label>
     <div class="input-cover mt-2">
         <textarea wire:model="compatibility_preferences.seller_specific.additional_compatibility_notes"
-            class="form-control" rows="3"
-            placeholder="Enter Additional Compatibility Notes (e.g., prefer a bilingual agent, need flexible scheduling)"></textarea>
+            class="form-control has-icon"
+            data-icon="fa-solid fa-note-sticky"
+            rows="1"
+            style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
+            maxlength="2000"
+            placeholder="Enter additional compatibility notes (e.g., prefer a bilingual agent, need flexible scheduling)"></textarea>
     </div>
 </div>
