@@ -2783,6 +2783,14 @@
             addIconsToInputs(); // synchronous — runs immediately after morphdom, like Buyer
             setTimeout(function() { addIconsToInputs(); }, 0); // deferred safety net
 
+            // Re-evaluate garage/parking "Other" companion visibility after every Livewire
+            // re-render. Select2 preserves its selected state across morphdom but the companion
+            // div visibility must be explicitly re-synced here (Select2 won't fire "change").
+            (function() {
+                var _garageVals = $('#garage_parking_spaces_option_landlord').val() || [];
+                $('#other_garage_parking_spaces_option_landlord').toggle(_garageVals.includes('Other'));
+            })();
+
             // Re-init #property_style_select Select2 when property_type changes so that
             // the correct option list and "Select" placeholder are shown (e.g. Business type)
             (function() {
@@ -2794,7 +2802,7 @@
                     $pss.select2('destroy');
                 }
                 $pss.data('last-prop-type', _pssType);
-                $pss.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
+                $pss.select2({ placeholder: 'Select', allowClear: true, width: '100%', minimumResultsForSearch: Infinity });
                 var _savedItems = @this.get('property_items') || [];
                 if (_savedItems.length > 0) {
                     $pss.val(_savedItems).trigger('change.select2');
@@ -3198,7 +3206,6 @@
                 if (!nextBtn || !finishBtn) return;
                 var onLast = !!lastPane && lastPane.classList.contains('show') && lastPane.classList.contains('active');
                 nextBtn.style.display = onLast ? 'none' : '';
-                finishBtn.style.display = onLast ? '' : 'none';
             }
             document.addEventListener('shown.bs.tab', syncWizardButtons);
             document.addEventListener('DOMContentLoaded', syncWizardButtons);

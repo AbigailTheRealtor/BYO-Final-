@@ -2218,7 +2218,9 @@ class SellerOfferListingEdit extends Component
             $this->garage_needed = $auction->get->garage_needed;
             $this->other_garage_needed = $auction->get->other_garage_needed;
             $this->garage_parking_spaces = $auction->get->garage_parking_spaces;
-            $this->garage_parking_spaces_option = $auction->get->garage_parking_spaces_option;
+            $this->garage_parking_spaces_option = is_string($auction->get->garage_parking_spaces_option)
+                ? json_decode($auction->get->garage_parking_spaces_option, true) ?? []
+                : (array)($auction->get->garage_parking_spaces_option ?? []);
             $this->other_parking_space_wrapper = $auction->get->other_parking_space_wrapper;
             $this->pool_needed = $auction->get->pool_needed ?? '';
 

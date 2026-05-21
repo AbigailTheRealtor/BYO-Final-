@@ -556,7 +556,7 @@ $safeKey = function(...$parts) {
                     wire:key="lease-value-input-{{ $lease_type }}"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
-                        : 'Enter flat fee amount (e.g., 1,500)' }}"
+                        : 'Enter flat fee amount (e.g., 1500)' }}"
                     data-error-id="lease_value_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)"
                     onpaste="handlePaste(event)">
@@ -593,7 +593,7 @@ $safeKey = function(...$parts) {
                     wire:key="purchase-value-input-{{ $purchase_type }}"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5,000)' }}"
+                        : 'Enter flat fee amount (e.g., 5000)' }}"
                     data-error-id="purchase_value_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)"
                     onpaste="handlePaste(event)">

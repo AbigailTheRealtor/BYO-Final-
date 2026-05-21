@@ -291,7 +291,7 @@
             <input type="text" wire:model.defer="annual_revenue" class="form-control"
                 placeholder="Enter annual revenue (e.g., 500000)"
                 data-error-id="annual_revenue_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                oninput="validateInput(this); formatWithCommas(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="annual_revenue_error"></span>
     </div>
@@ -308,7 +308,7 @@
             <input type="text" wire:model.defer="gross_profit" class="form-control"
                 placeholder="Enter gross profit (e.g., 200000)"
                 data-error-id="gross_profit_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                oninput="validateInput(this); formatWithCommas(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="gross_profit_error"></span>
     </div>
@@ -325,7 +325,7 @@
             <input type="text" wire:model.defer="sde_ebitda" class="form-control"
                 placeholder="Enter SDE / EBITDA (e.g., 150000)"
                 data-error-id="sde_ebitda_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                oninput="validateInput(this); formatWithCommas(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="sde_ebitda_error"></span>
     </div>
@@ -342,7 +342,7 @@
             <input type="text" wire:model.defer="inventory_value" class="form-control"
                 placeholder="Enter inventory value (e.g., 50000)"
                 data-error-id="inventory_value_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                oninput="validateInput(this); formatWithCommas(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="inventory_value_error"></span>
     </div>
@@ -359,7 +359,7 @@
             <input type="text" wire:model.defer="ffe_value" class="form-control"
                 placeholder="Enter FF&E value (e.g., 75000)"
                 data-error-id="ffe_value_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                oninput="validateInput(this); formatWithCommas(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="ffe_value_error"></span>
     </div>
@@ -548,10 +548,9 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
             <div class="input-cover">
-                <textarea wire:model.defer="business_lease_additional_terms" class="form-control has-icon"
-                    data-icon="fa-solid fa-note-sticky" rows="3"
-                    style="min-height: 90px; padding: 10px; font-size: 16px; resize: vertical;"
-                    placeholder="Enter additional lease terms (e.g., Renewal options, assignment requirements, landlord approval details)"></textarea>
+                <input type="text" wire:model.defer="business_lease_additional_terms" class="form-control has-icon"
+                    data-icon="fa-solid fa-note-sticky"
+                    placeholder="Enter additional lease terms (e.g., Renewal options, assignment requirements, landlord approval details)">
             </div>
         </div>
     @endif
