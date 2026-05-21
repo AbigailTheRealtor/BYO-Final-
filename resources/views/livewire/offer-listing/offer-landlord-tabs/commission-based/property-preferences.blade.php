@@ -538,7 +538,7 @@
         <select id="appliances" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-utensils" data-placeholder="Select" multiple>
             @foreach ($appliances as $row_pt)
-                <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->appliances ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
         </select>
     </div>
@@ -781,13 +781,13 @@
             @if ($property_type === 'Residential Property')
                 @foreach ($non_negotialble_terms_landlord as $item)
                     @if (str_contains($item['class'], 'residential-length'))
-                        <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                        <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->non_negotiable_amenities ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                     @endif
                 @endforeach
             @elseif ($property_type === 'Commercial Property')
                 @foreach ($non_negotialble_terms_landlord as $item)
                     @if (str_contains($item['class'], 'commercial-length'))
-                        <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                        <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->non_negotiable_amenities ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                     @endif
                 @endforeach
             @endif

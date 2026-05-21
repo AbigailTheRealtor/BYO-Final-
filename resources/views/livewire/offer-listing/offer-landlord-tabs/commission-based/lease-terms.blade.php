@@ -886,7 +886,7 @@
             <select id="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-user" data-placeholder="Select" multiple>
                 @foreach ($tenantPays as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->tenant_pays ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>
@@ -923,7 +923,7 @@
             <select id="owner_pays" class="owner_pays form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-user-tie" data-placeholder="Select" multiple>
                 @foreach ($ownerPays as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->owner_pays ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>
@@ -969,7 +969,7 @@
             data-icon="fa-solid fa-file-signature" data-placeholder="Select" multiple>
             <option value=""></option>
             @foreach ($lease_types as $type)
-            <option value="{{ $type['name'] }}">{{ $type['name'] }}</option>
+            <option value="{{ $type['name'] }}" {{ in_array($type['name'], $this->terms_of_lease ?? []) ? 'selected' : '' }}>{{ $type['name'] }}</option>
 
             @endforeach
         </select>
@@ -1111,15 +1111,15 @@
             data-icon="fa-solid fa-calendar-days" data-placeholder="Select" multiple required>
             @if ($property_type === 'Residential Property')
                 @foreach ($residential_lease_term_options as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->desired_lease_length ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
             @elseif ($property_type === 'Commercial Property')
                 @foreach ($Commercial_lease_term_options as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->desired_lease_length ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
             @endif
 
-            <option value="Other">Other</option>
+            <option value="Other" {{ in_array('Other', $this->desired_lease_length ?? []) ? 'selected' : '' }}>Other</option>
         </select>
     </div>
 
@@ -1519,7 +1519,7 @@
             <select id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
                 data-icon="fa-solid fa-receipt" data-placeholder="Select">
                 @foreach ($rent_includes as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->rent_includes ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>

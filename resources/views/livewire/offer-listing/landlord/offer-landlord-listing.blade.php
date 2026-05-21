@@ -1401,10 +1401,15 @@
                 Object.keys(select2Fields).forEach(function(fieldName) {
                     var values = select2Fields[fieldName];
                     if (values && values.length > 0) {
-                        var selectEl = document.querySelector('select[wire\\:model="' + fieldName + '"]');
-                        if (selectEl && $(selectEl).hasClass('select2-multiple')) {
+                        var $el;
+                        if (fieldName === 'desired_lease_length') {
+                            $el = $('.lease_term_options');
+                        } else {
+                            $el = $('#' + fieldName);
+                        }
+                        if ($el.length && $el.hasClass('select2-hidden-accessible')) {
                             console.log('[DraftLoaded] Hydrating Select2: ' + fieldName + ' with ' + values.length + ' values');
-                            $(selectEl).val(values).trigger('change');
+                            $el.val(values).trigger('change');
                         }
                     }
                 });
@@ -1558,6 +1563,10 @@
                     width: '100%',
                     closeOnSelect: false,
                 });
+                var _preNNA = @json($this->non_negotiable_amenities ?? []);
+                if (_preNNA.length > 0) {
+                    $('#non_negotiable_amenities').val(_preNNA).trigger('change');
+                }
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val() || [];
                     @this.set('non_negotiable_amenities', selectedValues, true);
@@ -1734,6 +1743,10 @@
                         width: '100%',
                         closeOnSelect: false,
                     });
+                    var _preVP = @json($this->view_preference ?? []);
+                    if (_preVP.length > 0) {
+                        $('#view_preference').val(_preVP).trigger('change');
+                    }
                     $('#view_preference').on('change', function() {
                         let selectedValues = $(this).val() || [];
                         @this.set('view_preference', selectedValues, true);
@@ -2049,6 +2062,10 @@
                         width: '100%',
                         closeOnSelect: false,
                     });
+                    var _preAppliances = @json($this->appliances ?? []);
+                    if (_preAppliances.length > 0) {
+                        $('#appliances').val(_preAppliances).trigger('change');
+                    }
                     $('#appliances').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
                         @this.set('appliances', selectedValues, true);
@@ -2073,6 +2090,10 @@
                         width: '100%',
                         closeOnSelect: false,
                     });
+                    var _preRI = @json($this->rent_includes ?? []);
+                    if (_preRI.length > 0) {
+                        $('#rent_includes').val(_preRI).trigger('change');
+                    }
                     $('#rent_includes').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
                         @this.set('rent_includes', selectedValues, true);
@@ -2094,6 +2115,10 @@
                         width: '100%',
                         closeOnSelect: false,
                     });
+                    var _preTOL = @json($this->terms_of_lease ?? []);
+                    if (_preTOL.length > 0) {
+                        $('#terms_of_lease').val(_preTOL).trigger('change');
+                    }
                     $('#terms_of_lease').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
                         @this.set('terms_of_lease', selectedValues, true);
@@ -2126,6 +2151,10 @@
                         width: '100%',
                         closeOnSelect: false,
                     });
+                    var _preTP = @json($this->tenant_pays ?? []);
+                    if (_preTP.length > 0) {
+                        $('#tenant_pays').val(_preTP).trigger('change');
+                    }
                     $('#tenant_pays').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
                         @this.set('tenant_pays', selectedValues, true);
@@ -2147,6 +2176,10 @@
                         width: '100%',
                         closeOnSelect: false,
                     });
+                    var _preOP = @json($this->owner_pays ?? []);
+                    if (_preOP.length > 0) {
+                        $('#owner_pays').val(_preOP).trigger('change');
+                    }
                     $('#owner_pays').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
                         @this.set('owner_pays', selectedValues, true);

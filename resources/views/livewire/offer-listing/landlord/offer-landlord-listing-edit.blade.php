@@ -1526,6 +1526,9 @@ $tenantPays = [
                     closeOnSelect: false,
                     width: '100%',
                 });
+                var _preVPEdit = @json($this->view_preference ?? []);
+                if (!Array.isArray(_preVPEdit)) _preVPEdit = [];
+                if (_preVPEdit.length) { $('#view_preference').val(_preVPEdit).trigger('change'); }
                 $('#view_preference').on('change', function() {
                     let selectedValues = $(this).val();
                     Livewire.emit('updatePreference', selectedValues);
@@ -1589,6 +1592,9 @@ $tenantPays = [
                         width: '100%',
                         closeOnSelect: false,
                     });
+                    var _preAppEdit = @json($this->appliances ?? []);
+                    if (!Array.isArray(_preAppEdit)) _preAppEdit = [];
+                    if (_preAppEdit.length) { $('#appliances').val(_preAppEdit).trigger('change'); }
                     $('#appliances').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
                         @this.set('appliances', selectedValues, true);
