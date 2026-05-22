@@ -1596,8 +1596,8 @@
 
                                 if ($user_type === 'tenant') {
                                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
-                                        'AI Questions',
                                         $infoTabs[$user_type] ?? null,
+                                        'AI Questions',
                                     ]);
                                 } else {
                                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [

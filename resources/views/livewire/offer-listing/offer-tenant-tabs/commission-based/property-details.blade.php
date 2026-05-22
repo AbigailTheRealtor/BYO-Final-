@@ -522,7 +522,7 @@
 <div class="form-group" id="other_appliances" style="display: none;">
     <div class="input-cover">
         <input type="text" wire:model="other_appliances" class="form-control has-icon"
-            data-icon="fa-solid fa-plug" placeholder="Enter other appliances (e.g., warming drawer) ">
+            data-icon="fa-solid fa-plug" placeholder="Enter other appliances (e.g., Warming drawer) ">
     </div>
     <span class="error mt-2" id="other_appliances_error"></span>
 </div> --}}

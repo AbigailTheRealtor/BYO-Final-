@@ -354,23 +354,15 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        @if (!empty($isEditMode))
-            <div class="input-cover locked-field-wrapper position-relative" data-lock-msg="Listing Type cannot be edited once the listing is created.">
-                <i class="input-icon fa-solid fa-lock data-icon-rendered"></i>
-                <input type="text" class="form-control has-icon" value="{{ $auction_type }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
-                <div class="locked-field-overlay" style="position:absolute;inset:0;cursor:not-allowed;z-index:2;"></div>
-            </div>
-        @else
-            <div class="input-cover">
-                <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
-                    data-icon="fa-solid fa-file-lines" required>
-                    <option value="">Select</option>
-                    <option value="Bidding Period" title="Agents may submit bids until the bidding deadline expires. The timer creates a structured window to encourage competitive offers. You may review, accept, counter, or reject bids at any time.">Bidding Period</option>
-                    <option value="Traditional">Traditional</option>
-                </select>
-            </div>
-            <span class="error mt-2" id="auction_type_error"></span>
-        @endif
+        <div class="input-cover">
+            <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
+                data-icon="fa-solid fa-file-lines" required>
+                <option value="">Select</option>
+                <option value="Bidding Period" title="Agents may submit bids until the bidding deadline expires. The timer creates a structured window to encourage competitive offers. You may review, accept, counter, or reject bids at any time.">Bidding Period</option>
+                <option value="Traditional">Traditional</option>
+            </select>
+        </div>
+        <span class="error mt-2" id="auction_type_error"></span>
     </div>
 
 
