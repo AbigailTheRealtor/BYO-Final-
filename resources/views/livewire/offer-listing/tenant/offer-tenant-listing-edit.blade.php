@@ -3863,7 +3863,7 @@
             var nextBtn = document.querySelector('.wizard-step-next');
             var submitBtn = document.querySelector('.wizard-step-finish');
             if (nextBtn) nextBtn.style.display = isLastTab ? 'none' : '';
-            if (submitBtn) submitBtn.style.display = isLastTab ? '' : 'none';
+            if (submitBtn) submitBtn.style.display = '';
         };
         setTimeout(window._updateNextSubmitButtons, 300);
 
