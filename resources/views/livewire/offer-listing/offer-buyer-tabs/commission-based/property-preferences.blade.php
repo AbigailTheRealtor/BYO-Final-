@@ -1391,7 +1391,11 @@
         // An epoch counter ensures only the most-recent sync event's chain survives;
         // any retry chain started by an earlier event self-cancels when it finds its
         // epoch no longer matches the current one.
+        // Use trigger('change.select2') instead of trigger('change') to avoid firing
+        // the user-defined change handler (which calls Livewire.emit) during hydration,
+        // preventing unintended AJAX calls from being queued while restoring values.
         var myEpoch = ++window._buyerVpSyncEpoch;
+        var _vpPayloadValues = data.view_preference;
         function syncViewPreference(values, attemptsLeft) {
             if (window._buyerVpSyncEpoch !== myEpoch) return; // stale chain — cancel
             if (attemptsLeft === undefined) attemptsLeft = 30;
@@ -1402,13 +1406,28 @@
                 return;
             }
             if (values && Array.isArray(values) && values.length > 0) {
-                $vp.val(values).trigger('change');
+                $vp.val(values).trigger('change.select2');
             }
             if (values && values.includes('Other')) {
                 $('#other_preferences').show();
             }
         }
         syncViewPreference(data.view_preference);
+
+        // Safety-net: re-apply after any Livewire DOM morph caused by debouncedSet
+        // AJAX calls from other synced fields has settled and message.processed has
+        // potentially re-initialized Select2. Only fires if Select2 is ready but shows
+        // no selections, ensuring we never overwrite a legitimate user selection.
+        setTimeout(function() {
+            if (window._buyerVpSyncEpoch !== myEpoch) return;
+            var $vp = $('#view_preference');
+            if ($vp.length && $vp.hasClass('select2-hidden-accessible')
+                    && _vpPayloadValues && Array.isArray(_vpPayloadValues) && _vpPayloadValues.length > 0
+                    && (!$vp.val() || $vp.val().length === 0)) {
+                $vp.val(_vpPayloadValues).trigger('change.select2');
+                if (_vpPayloadValues.includes('Other')) { $('#other_preferences').show(); }
+            }
+        }, 700);
         
         // Update visibility of "Other" text fields based on synced values
         if (data.non_negotiable_amenities && data.non_negotiable_amenities.includes('Other')) {

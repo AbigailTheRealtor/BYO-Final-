@@ -1191,7 +1191,11 @@
         // When auction data is loaded into the edit form, dispatch financing visibility events
         // so Alpine sub-sections in purchasing-terms reflect the saved values.
         // Uses window.addEventListener because the component calls dispatchBrowserEvent (not emit).
-        window.addEventListener('buyer-agent-select2-sync', function() {
+        window.addEventListener('buyer-agent-select2-sync', function(event) {
+            // Capture event payload now so the setTimeout closure can use it
+            // as a reliable fallback when @this.get() returns empty for any field.
+            var _syncDetail = (event && event.detail) ? event.detail : {};
+
             setTimeout(function() {
                 // Rehydrate all Select2 multi-select fields from Livewire state
                 var multiFields = {
@@ -1208,6 +1212,15 @@
                     var $el = $(selector);
                     if ($el.length && $el.hasClass('select2-hidden-accessible')) {
                         var saved = @this.get(prop) || [];
+                        // For #view_preference, fall back to the event payload when
+                        // @this.get() returns empty (can happen if Livewire state
+                        // has not yet propagated to the client-side snapshot).
+                        if (selector === '#view_preference'
+                                && (!saved || !Array.isArray(saved) || !saved.length)
+                                && Array.isArray(_syncDetail.view_preference)
+                                && _syncDetail.view_preference.length > 0) {
+                            saved = _syncDetail.view_preference;
+                        }
                         if (saved.length > 0) {
                             $el.val(saved).trigger('change.select2');
                             console.log('[BuyerEdit S2 Sync] Rehydrated ' + prop + ':', saved);
@@ -1278,6 +1291,28 @@
                 }));
                 console.log('[BuyerEdit S2 Sync] Assignment section visible:', assignmentVisible);
             }, 150);
+
+            // Secondary safety-net at 700 ms: restores #view_preference from the
+            // original event payload if Select2 is present but still shows no
+            // selections. This covers the race where a Livewire DOM morph triggered
+            // by debouncedSet AJAX calls from other synced fields re-initialised
+            // Select2 after the 150 ms block ran but before values were retained.
+            if (Array.isArray(_syncDetail.view_preference) && _syncDetail.view_preference.length > 0) {
+                var _vpRestore = _syncDetail.view_preference;
+                setTimeout(function() {
+                    var $vp = $('#view_preference');
+                    if ($vp.length && $vp.hasClass('select2-hidden-accessible')
+                            && (!$vp.val() || $vp.val().length === 0)) {
+                        $vp.val(_vpRestore).trigger('change.select2');
+                        if (_vpRestore.includes('Other')) {
+                            $('#other_preferences').show();
+                        } else {
+                            $('#other_preferences').hide();
+                        }
+                        console.log('[BuyerEdit VP 700ms] Restored view_preference:', _vpRestore);
+                    }
+                }, 700);
+            }
         });
 
         function selectService(serviceType) {
