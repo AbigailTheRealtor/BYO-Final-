@@ -222,3 +222,17 @@
     color: #6c757d;
 }
 
+/* ----------------------------------------------------------------
+ * 8. FontAwesome Pro icon shim — fa-house-magnifying-glass
+ *    This icon is FA Pro only and not shipped in the CDN free 6.3.0
+ *    stylesheet loaded by the app. The shim maps it to the free-tier
+ *    glyph \f689 (fa-magnifying-glass-location) which is semantically
+ *    appropriate for a "Meeting / Showing Preference" field.
+ *    The FA Solid web-font (loaded via the same CDN stylesheet) already
+ *    contains this codepoint, so no additional font asset is needed.
+ * ---------------------------------------------------------------- */
+.fa-solid.fa-house-magnifying-glass::before,
+.fas.fa-house-magnifying-glass::before {
+    content: "\f689";
+}
+

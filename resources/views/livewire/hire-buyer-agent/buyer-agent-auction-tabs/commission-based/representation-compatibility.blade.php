@@ -42,7 +42,7 @@
             <input type="text"
                    wire:model.defer="compatibility_preferences.buyer_specific.primary_transaction_goal_other"
                    class="form-control has-icon" data-icon="fa-solid fa-pen"
-                   placeholder="Enter Primary Transaction Goal (e.g., Relocating for Work)">
+                   placeholder="Enter primary transaction goal (e.g., Relocating for work)">
         </div>
     </div>
 </div>

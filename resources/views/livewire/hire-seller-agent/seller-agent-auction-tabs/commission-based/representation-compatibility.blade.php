@@ -48,7 +48,7 @@
 {{-- Preferred Contact Method (multi-select) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Preferred Contact Method(s)
+        Preferred Contact Method(s):
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Select all contact methods that work best for you."
             class="ms-2 cursor-pointer">
@@ -69,7 +69,7 @@
 {{-- Response Time Expectation (Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Expected Agent Response Time
+        Expected Agent Response Time:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="How quickly do you expect your agent to respond to messages?"
             class="ms-2 cursor-pointer">
@@ -118,7 +118,7 @@
 {{-- Willing to Negotiate On (multi-select) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Areas You Are Willing to Negotiate On
+        Areas You Are Willing to Negotiate On:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the transaction elements where you are open to negotiation."
             class="ms-2 cursor-pointer">
@@ -202,7 +202,7 @@
 {{-- Target Sale Timeline --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Target Sale Timeline
+        Target Sale Timeline:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Approximate timeframe within which you hope to complete the sale."
             class="ms-2 cursor-pointer">
@@ -240,7 +240,7 @@
 {{-- Post-Sale Plan (Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Post-Sale Plans
+        Post-Sale Plans:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Understanding your plans after the sale can help the agent coordinate the closing timeline."
             class="ms-2 cursor-pointer">
@@ -293,7 +293,7 @@
 {{-- Qualities Most Important (multi-select) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Agent Qualities Most Important to You
+        Agent Qualities Most Important to You:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Beyond skills, what personal qualities do you value most in an agent?"
             class="ms-2 cursor-pointer">
@@ -316,7 +316,7 @@
 {{-- Past Agent Experience (Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Past Experience Working with a Real Estate Agent
+        Past Experience Working with a Real Estate Agent:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Have you worked with an agent before, and how did it go?"
             class="ms-2 cursor-pointer">
@@ -448,7 +448,7 @@
 {{-- Showing Availability (multi-select) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Showing Availability
+        Showing Availability:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="When are you generally available to allow property showings?"
             class="ms-2 cursor-pointer">
@@ -471,7 +471,7 @@
 {{-- Open House Preference (Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Open House Preference
+        Open House Preference:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Let the agent know your preference around hosting open houses."
             class="ms-2 cursor-pointer">

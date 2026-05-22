@@ -2011,3 +2011,9 @@ select {
 }
 
 
+
+/* FontAwesome Pro icon shim — fa-house-magnifying-glass is Pro-only; map to \f689 (fa-magnifying-glass-location) free glyph */
+.fa-solid.fa-house-magnifying-glass::before,
+.fas.fa-house-magnifying-glass::before {
+    content: "\f689";
+}
