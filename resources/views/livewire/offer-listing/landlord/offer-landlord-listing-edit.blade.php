@@ -1059,7 +1059,7 @@ $tenantPays = [
                             <!-- Listing Details Tab -->
                             <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
                                 role="tabpanel" aria-labelledby="listing-details-tab">
-                                @include('livewire.offer-listing.offer-landlord-tabs.commission-based.listing-details')
+                                @include('livewire.offer-listing.offer-landlord-tabs.commission-based.listing-details', ['isEditMode' => true])
 
                             </div>
                             @if ($service_type === 'full_service')
@@ -2931,6 +2931,28 @@ $tenantPays = [
         document.addEventListener('DOMContentLoaded', function() {
             reformatAllMoneyFields();
             initLandlordEditOtherCompanions();
+
+            // Initialize view_preference Select2 and sync saved value on initial page load.
+            // initializeFullService() covers re-syncs after Livewire round-trips, but it is
+            // only called via message.processed (not on first render), so we must prime it here.
+            if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
+                $('#view_preference').select2({
+                    placeholder: "Select Preference",
+                    allowClear: true,
+                    closeOnSelect: false,
+                    width: '100%',
+                });
+                $('#view_preference').on('change', function() {
+                    var selectedValues = $(this).val() || [];
+                    @this.set('view_preference', selectedValues, true);
+                    selectedValues.includes('Other') ? $('#other_preferences').show() : $('#other_preferences').hide();
+                });
+            }
+            var _vpDomReady = @json($this->view_preference ?? []);
+            if (!Array.isArray(_vpDomReady)) _vpDomReady = [];
+            if (_vpDomReady.length && $('#view_preference').hasClass('select2-hidden-accessible')) {
+                $('#view_preference').val(_vpDomReady).trigger('change');
+            }
         });
     </script>
     <script>

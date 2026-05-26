@@ -58,39 +58,3 @@
     </div>
 
 @endif
-
-@if ($property_type === 'Commercial Property')
-    <!-- Payment Timing for Broker Fees (Commercial) -->
-    <div class="form-group mb-4">
-        <label class="fw-bold d-flex align-items-center">
-            Payment Timing for Broker Fees:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select when the Broker's fee will be paid. Options include: full payment upon execution of the lease, sales contract, or other transfer agreement; 50% upon execution with the remaining 50% due at commencement of the agreement; 50% upon execution with the remaining 50% due upon occupancy of the premises; or &quot;Other&quot; to define a custom arrangement.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-
-        <div class="input-cover mt-2">
-            <select wire:model.lazy="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
-                <option value="">Select</option>
-                <option value="full_execution">Full amount upon execution of lease, sales contract, or other transfer
-                    agreement</option>
-                <option value="50% due upon execution, 50% due upon commencement of agreement"> 50% due upon execution,
-                    50% due upon commencement of agreement</option>
-                <option value="50% due upon execution, 50% due upon occupancy of premises"> 50% due upon execution, 50%
-                    due upon occupancy of premises</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-
-        <div class="mt-3">
-            @if ($broker_fee_timing === 'Other')
-                <div class="input-group">
-                    <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
-                        placeholder="Enter payment arrangement (e.g., Broker to Be Paid 25% Upon Lease Execution, 25% Upon Tenant Move-In, and 50% Upon First Month's Rent Payment)">
-                </div>
-            @endif
-        </div>
-
-    </div>
-@endif
