@@ -1926,17 +1926,21 @@ $lease_types = [
                                 </div>
                                 <div class="d-flex justify-content-between set-button">
 
+                                    @if(!$listingId || $isDraft)
                                     <button type="button" class="btn btn-outline-primary" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
                                         <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
                                         <span wire:loading wire:target="saveDraft">Saving...</span>
                                     </button>
+                                    @endif
 
                                     <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
+                                    @if(!$listingId || !$isDraft)
                                     <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled" wire:target="store">
-                                        <span wire:loading.remove wire:target="store">{{ $listingId ? 'Save Edit' : 'Submit' }}</span>
-                                        <span wire:loading wire:target="store">{{ $listingId ? 'Saving...' : 'Submitting...' }}</span>
+                                        <span wire:loading.remove wire:target="store">{{ ($listingId && !$isDraft) ? 'Save Edit' : 'Submit' }}</span>
+                                        <span wire:loading wire:target="store">{{ ($listingId && !$isDraft) ? 'Saving...' : 'Submitting...' }}</span>
                                     </button>
+                                    @endif
                                 </div>
 
                             </div>
@@ -6271,6 +6275,36 @@ $lease_types = [
         input.value = decPart ? `${intPart}.${decPart}` : intPart;
 
         errorEl && (errorEl.innerText = "");
+    }
+
+    function formatAllMoneyInputsOnLoad() {
+        // Format flat-fee wire:key-prefixed inputs (lease_value, purchase_value, etc.)
+        ['lease-value-input-flat', 'purchase-value-input-flat'].forEach(function(prefix) {
+            document.querySelectorAll('[wire\\:key^="' + prefix + '"]').forEach(function(input) {
+                if (input.value && typeof formatWithCommas === 'function') {
+                    formatWithCommas(input);
+                }
+            });
+        });
+        // Format all remaining money inputs that use reformatNumber on blur
+        document.querySelectorAll('input[onblur*="reformatNumber"]').forEach(function(input) {
+            if (input.value && input.value.trim() !== '') {
+                reformatNumber(input);
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() { formatAllMoneyInputsOnLoad(); }, 100);
+    });
+
+    if (typeof Livewire !== 'undefined') {
+        document.addEventListener('livewire:load', function() {
+            formatAllMoneyInputsOnLoad();
+            Livewire.hook('message.processed', function() {
+                formatAllMoneyInputsOnLoad();
+            });
+        });
     }
 </script>
 
