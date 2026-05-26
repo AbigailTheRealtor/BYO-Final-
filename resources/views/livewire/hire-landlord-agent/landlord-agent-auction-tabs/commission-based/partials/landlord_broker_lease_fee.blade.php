@@ -30,7 +30,7 @@
 
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="purchase_fee_flat" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 5,000)" data-error-id="purchase_fee_flat_error"
+                            placeholder="Enter flat fee amount (e.g., 5000)" data-error-id="purchase_fee_flat_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
                         <!--
@@ -194,7 +194,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="purchase_fee_flat_commercial" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 3,000)"
+                            placeholder="Enter flat fee amount (e.g., 3000)"
                             data-error-id="purchase_fee_flat_commercial_error" oninput="validateInput(this)"
                             onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>

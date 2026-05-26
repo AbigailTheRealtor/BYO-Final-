@@ -1195,7 +1195,7 @@
     </div>
 @endif
 
-@if ($pool_needed === 'Yes')
+@if ($pool_needed === 'Yes' && ($property_type === 'Residential' || $property_type === 'Income'))
     <!-- Pool Type Selection (Shows only if "Yes" is selected) -->
     <div class="form-group" id="pool_type_wrapper">
         <label class="fw-bold">Select Pool Type:</label>

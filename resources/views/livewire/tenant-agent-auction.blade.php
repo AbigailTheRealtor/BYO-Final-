@@ -1850,7 +1850,7 @@ $lease_types = [
                                                    id="referral_percentage_create"
                                                    wire:model.defer="referral_percentage"
                                                    min="0" max="100" step="0.01"
-                                                   placeholder="e.g. 25">
+                                                   placeholder="e.g., 25">
                                             <div class="form-text text-muted mt-1" style="font-size:.85rem;">
                                                 This is the referral fee offered to or requested from the hired Agent or their brokerage. This term is negotiated between agents and is not paid by the client.
                                             </div>
@@ -1934,8 +1934,8 @@ $lease_types = [
                                     <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
                                     <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled" wire:target="store">
-                                        <span wire:loading.remove wire:target="store">Submit</span>
-                                        <span wire:loading wire:target="store">Submitting...</span>
+                                        <span wire:loading.remove wire:target="store">{{ $listingId ? 'Save Edit' : 'Submit' }}</span>
+                                        <span wire:loading wire:target="store">{{ $listingId ? 'Saving...' : 'Submitting...' }}</span>
                                     </button>
                                 </div>
 
@@ -4065,6 +4065,7 @@ $lease_types = [
         return TAB_ORDER;
     }
 
+    var _isEditOrDraftMode = {{ $listingId ? 'true' : 'false' }};
     window._updateNextSubmitButtons = function() {
         var tabOrder = getTabOrder();
         var activeTab = document.querySelector('.nav-link.active');
@@ -4075,7 +4076,7 @@ $lease_types = [
         var nextBtn = document.querySelector('.wizard-step-next');
         var submitBtn = document.querySelector('.wizard-step-finish');
         if (nextBtn) nextBtn.style.display = isLastTab ? 'none' : '';
-        if (submitBtn) submitBtn.style.display = isLastTab ? '' : 'none';
+        if (submitBtn) submitBtn.style.display = (_isEditOrDraftMode || isLastTab) ? '' : 'none';
     };
     setTimeout(window._updateNextSubmitButtons, 300);
     
@@ -6167,41 +6168,6 @@ $lease_types = [
             requestAnimationFrame(() => input.setSelectionRange(pos, pos));
         }
     </script> --}}
-
-<script>
-    // Validate input (allow only numbers, one decimal point, and commas for thousands separators)
-    function validateInput(input) {
-        let value = input.value;
-
-        // Remove all non-numeric characters, except for one decimal point and commas
-        value = value.replace(/[^0-9.,]/g, '');
-
-        // Allow only one decimal point
-        if ((value.match(/\./g) || []).length > 1) {
-            value = value.replace(/\.(?=.*\.)/, ''); // Remove extra decimal points
-        }
-        // Remove commas for internal value
-        input.value = value.replace(/,/g, ''); // Clean up commas
-    }
-    // Reformat input on blur (add commas for thousands)
-    function formatInput(input) {
-        let value = input.value;
-
-        // Remove any non-numeric characters except the decimal point
-        let cleanValue = value.replace(/[^0-9.]/g, '');
-
-        // Parse the number and format with commas for thousands
-        let numValue = parseFloat(cleanValue.replace(/,/g, ''));
-
-        // Only format if it's a valid number
-        if (!isNaN(numValue)) {
-            // Format number with commas for readability
-            input.value = numValue.toLocaleString();
-        } else {
-            input.value = ''; // If it's not a valid number, clear the input
-        }
-    }
-</script>
 
 <script>
     function getErrorEl(input) {

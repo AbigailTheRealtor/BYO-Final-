@@ -1025,10 +1025,10 @@
 
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
-                                <button type="submit" class="btn btn-success wizard-step-finish disabled"
+                                <button type="submit" class="btn btn-success wizard-step-finish{{ $listingId ? '' : ' disabled' }}"
                                     id="save-button" wire:loading.attr="disabled" wire:target="store">
-                                    <span wire:loading.remove wire:target="store">Submit</span>
-                                    <span wire:loading wire:target="store">Submitting...</span>
+                                    <span wire:loading.remove wire:target="store">{{ $listingId ? 'Save Edit' : 'Submit' }}</span>
+                                    <span wire:loading wire:target="store">{{ $listingId ? 'Saving...' : 'Submitting...' }}</span>
                                 </button>
                             </div>
 
@@ -3211,6 +3211,12 @@
             if (purchaseInput && purchaseInput.value) {
                 formatWithCommas(purchaseInput);
             }
+            // Format all remaining flat-fee money inputs that use reformatNumber on blur
+            document.querySelectorAll('input[onblur="reformatNumber(this)"]').forEach(function(input) {
+                if (input.value && input.value.trim() !== '') {
+                    reformatNumber(input);
+                }
+            });
         }
 
         // Initialize on page load

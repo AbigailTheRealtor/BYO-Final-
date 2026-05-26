@@ -69,7 +69,7 @@
                     <span class="input-group-text">$</span>
 
                     <input type="text" wire:model.lazy="interested_in_property_management_fee_flate_free"
-                        class="form-control" placeholder="Enter flat fee amount (e.g., 1,000)"
+                        class="form-control" placeholder="Enter flat fee amount (e.g., 1000)"
                         data-error-id="interested_in_property_management_fee_flate_free_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 </div>
