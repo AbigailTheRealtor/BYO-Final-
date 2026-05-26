@@ -2192,6 +2192,7 @@ class BuyerOfferListingEdit extends Component
             // clarity and to ensure the event fires with the correct data snapshot.
             $this->dispatchBrowserEvent('buyer-agent-select2-sync', [
                 'view_preference'           => $this->view_preference,
+                'other_preferences'         => $this->other_preferences,
                 'non_negotiable_amenities'  => $this->non_negotiable_amenities,
                 'offered_financing'         => $this->offered_financing,
                 'sale_provision'            => $this->sale_provision,

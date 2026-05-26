@@ -1235,11 +1235,7 @@
 
                 // Show/hide Other view preference input based on loaded state
                 var vpVal = @this.get('view_preference') || [];
-                if (vpVal.includes('Other')) {
-                    $('#other_preferences').show();
-                } else {
-                    $('#other_preferences').hide();
-                }
+                restoreBuyerViewPreferenceOther(vpVal, @this.get('other_preferences'));
 
                 // Restore JSON-bridge-backed Select2 fields
                 if (typeof jsonRestoreSelect2 === 'function') {
@@ -1304,11 +1300,7 @@
                     if ($vp.length && $vp.hasClass('select2-hidden-accessible')
                             && (!$vp.val() || $vp.val().length === 0)) {
                         $vp.val(_vpRestore).trigger('change.select2');
-                        if (_vpRestore.includes('Other')) {
-                            $('#other_preferences').show();
-                        } else {
-                            $('#other_preferences').hide();
-                        }
+                        restoreBuyerViewPreferenceOther(_vpRestore, _syncDetail.other_preferences);
                         console.log('[BuyerEdit VP 700ms] Restored view_preference:', _vpRestore);
                     }
                 }, 700);
@@ -1416,6 +1408,18 @@
             setJsonModel('number_of_unit_type_json', nut);
             setJsonModel('property_items_json', pi);
             setJsonModel('business_type_selected_json', bts);
+        }
+
+        function restoreBuyerViewPreferenceOther(vpValues, otherText) {
+            if (Array.isArray(vpValues) && vpValues.includes('Other')) {
+                $('#other_preferences').show();
+                var _opInput = document.querySelector('#other_preferences input[wire\\:model\\.defer="other_preferences"]');
+                if (_opInput && !_opInput.value && otherText) {
+                    _opInput.value = otherText;
+                }
+            } else {
+                $('#other_preferences').hide();
+            }
         }
 
         function syncAllSelect2BeforeSave() {

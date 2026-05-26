@@ -1408,8 +1408,8 @@
             if (values && Array.isArray(values) && values.length > 0) {
                 $vp.val(values).trigger('change.select2');
             }
-            if (values && values.includes('Other')) {
-                $('#other_preferences').show();
+            if (typeof restoreBuyerViewPreferenceOther === 'function') {
+                restoreBuyerViewPreferenceOther(values, data.other_preferences);
             }
         }
         syncViewPreference(data.view_preference);
@@ -1425,7 +1425,9 @@
                     && _vpPayloadValues && Array.isArray(_vpPayloadValues) && _vpPayloadValues.length > 0
                     && (!$vp.val() || $vp.val().length === 0)) {
                 $vp.val(_vpPayloadValues).trigger('change.select2');
-                if (_vpPayloadValues.includes('Other')) { $('#other_preferences').show(); }
+                if (typeof restoreBuyerViewPreferenceOther === 'function') {
+                    restoreBuyerViewPreferenceOther(_vpPayloadValues, data.other_preferences);
+                }
             }
         }, 700);
         
