@@ -948,7 +948,7 @@ $safeKey = function(...$parts) {
                         <div class="input-group">
                             <span class="input-group-text"> $</span>
                             <input type="text" wire:model.lazy="landlord_broker_dollar_price" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 2,000) "
+                                placeholder="Enter flat fee amount (e.g., 2000)"
                                 data-error-id="landlord_broker_dollar_price_error" oninput="validateInput(this)"
                                 onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
@@ -960,7 +960,7 @@ $safeKey = function(...$parts) {
 
                     <span class="input-group-text">$</span>
                     <input type="text" wire:model.lazy="landlord_broker_flate_fee" class="form-control"
-                        placeholder="Enter flat fee amount (e.g., 5,000)"
+                        placeholder="Enter flat fee amount (e.g., 5000)"
                         data-error-id="landlord_broker_flate_fee_error" oninput="validateInput(this)"
                         onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 

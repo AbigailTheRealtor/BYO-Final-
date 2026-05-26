@@ -1213,17 +1213,28 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
+                                @if (!$listingId || $isDraft)
                                 <button type="button" class="btn btn-outline-primary me-2" onclick="syncLandlordSelect2BeforeSave()" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
                                     <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
                                     <span wire:loading wire:target="saveDraft">Saving...</span>
                                 </button>
+                                @endif
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
-                                <button type="submit" class="btn btn-success wizard-step-finish{{ $listingId ? '' : ' disabled' }}"
+                                @if (!$listingId)
+                                <button type="submit" class="btn btn-success wizard-step-finish disabled"
                                     id="save-button" wire:loading.attr="disabled" wire:target="store"
                                     onclick="syncLandlordSelect2BeforeSave()">
-                                    <span wire:loading.remove wire:target="store">{{ $listingId ? 'Save Edit' : 'Submit' }}</span>
-                                    <span wire:loading wire:target="store">{{ $listingId ? 'Saving...' : 'Submitting...' }}</span>
+                                    <span wire:loading.remove wire:target="store">Submit</span>
+                                    <span wire:loading wire:target="store">Submitting...</span>
                                 </button>
+                                @elseif (!$isDraft)
+                                <button type="submit" class="btn btn-success wizard-step-finish"
+                                    id="save-button" wire:loading.attr="disabled" wire:target="store"
+                                    onclick="syncLandlordSelect2BeforeSave()">
+                                    <span wire:loading.remove wire:target="store">Save Edit</span>
+                                    <span wire:loading wire:target="store">Saving...</span>
+                                </button>
+                                @endif
                             </div>
 
                         </div>

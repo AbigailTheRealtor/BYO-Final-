@@ -1,38 +1,3 @@
-<script>
-    (function () {
-        function bindRenewalFeeCapture() {
-            document.querySelectorAll('select[wire\\:model\\.lazy="renewal_fee_type"]').forEach(function (sel) {
-                if (sel._renewalCaptureBound) return;
-                sel._renewalCaptureBound = true;
-                sel.addEventListener('mousedown', function () {
-                    var subFieldMap = {
-                        'renewal_fee_percentage':  'input[wire\\:model\\.lazy="renewal_fee_percentage"]',
-                        'renewal_fee_lease_value': 'input[wire\\:model\\.lazy="renewal_fee_lease_value"]',
-                        'renewal_fee_first_month': 'input[wire\\:model\\.lazy="renewal_fee_first_month"]',
-                        'renewal_fee_flat_free':   'input[wire\\:model\\.lazy="renewal_fee_flat_free"]',
-                        'renewal_fee_custom':      'input[wire\\:model\\.lazy="renewal_fee_custom"]',
-                        'renewal_fee_no_of_months':'input[wire\\:model\\.lazy="renewal_fee_no_of_months"]',
-                    };
-                    Object.entries(subFieldMap).forEach(function (entry) {
-                        var fieldName = entry[0];
-                        var input = document.querySelector(entry[1]);
-                        if (input && input.value !== '') {
-                            @this.set(fieldName, input.value);
-                        }
-                    });
-                });
-            });
-        }
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', bindRenewalFeeCapture);
-        } else {
-            bindRenewalFeeCapture();
-        }
-        if (typeof Livewire !== 'undefined') {
-            Livewire.hook('message.processed', bindRenewalFeeCapture);
-        }
-    })();
-</script>
 
 <!--. Lease Renewal/Extension Fee -->
 @if ($property_type === 'Residential Property')

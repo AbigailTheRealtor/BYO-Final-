@@ -2173,6 +2173,9 @@ class LandLordAgentAuction extends Component
             //     }
             // }
             
+            $this->listingId = $auction->id;
+            $this->isDraft = (bool)$auction->is_draft;
+
             $this->dispatchBrowserEvent('draftLoaded', [
                 'appliances' => $this->ensureArray($this->appliances),
                 'offered_financing' => $this->ensureArray($this->offered_financing),
