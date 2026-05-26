@@ -49,7 +49,7 @@ $safeKey = function(...$parts) {
 
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="purchase_fee_flat" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 5,000)" data-error-id="purchase_fee_flat_error"
+                            placeholder="Enter flat fee amount (e.g., 5000)" data-error-id="purchase_fee_flat_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
                         <!--
@@ -213,7 +213,7 @@ $safeKey = function(...$parts) {
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="purchase_fee_flat_commercial" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 3,000)"
+                            placeholder="Enter flat fee amount (e.g., 3000)"
                             data-error-id="purchase_fee_flat_commercial_error" oninput="validateInput(this)"
                             onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -339,7 +339,7 @@ $safeKey = function(...$parts) {
                         <div class="input-group">
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model.lazy="tenant_broker_flat_fee" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 1,000)"
+                                placeholder="Enter flat fee amount (e.g., 1000)"
                                 data-error-id="tenant_broker_flat_fee_error" oninput="validateInput(this)"
                                 onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
@@ -522,7 +522,7 @@ $safeKey = function(...$parts) {
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 2,000)"
+                            placeholder="Enter flat fee amount (e.g., 2000)"
                             data-error-id="renewal_fee_percentage_error" oninput="validateInput(this)"
                             onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -637,7 +637,7 @@ $safeKey = function(...$parts) {
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 5,000)" data-error-id="flat_fee_error"
+                            placeholder="Enter flat fee amount (e.g., 5000)" data-error-id="flat_fee_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
                     <span class="error mt-2" id="flat_fee_error"></span>
@@ -761,7 +761,7 @@ $safeKey = function(...$parts) {
                     <span class="input-group-text">$</span>
 
                     <input type="text" wire:model.lazy="interested_in_property_management_fee_flate_free"
-                        class="form-control" placeholder="Enter flat fee amount (e.g., 1,000)"
+                        class="form-control" placeholder="Enter flat fee amount (e.g., 1000)"
                         data-error-id="interested_in_property_management_fee_flate_free_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 </div>
@@ -832,7 +832,7 @@ $safeKey = function(...$parts) {
                 <input type="text" step="any" wire:model.defer="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
-                        : 'Enter flat fee amount (e.g., 1,500)' }}"
+                        : 'Enter flat fee amount (e.g., 1500)' }}"
                     data-error-id="lease_value_error"
                     oninput="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}"
                     onblur="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
@@ -870,7 +870,7 @@ $safeKey = function(...$parts) {
                 <input type="text" step="any" wire:model.defer="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5,000)' }}"
+                        : 'Enter flat fee amount (e.g., 5000)' }}"
                     data-error-id="purchase_value_error"
                     oninput="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}"
                     onblur="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
