@@ -1,6 +1,11 @@
 @extends('layouts.main')
 {{-- Combined Fee Display Helper Functions (display-only, no storage changes) --}}
 @php
+  $toStr = function($v) {
+    if (is_array($v)) return implode(', ', $v);
+    return (string)($v ?? '');
+  };
+
   $fmtMoney = function($v) {
     if ($v === null || $v === '') return null;
     $raw = preg_replace('/[^0-9.]/', '', (string)$v);
@@ -882,7 +887,7 @@
                             @if (in_array('Assignment Contract', $saleProvisionArray))
                                 @if (@$auction->get->sale_provision_assignment)
                                     @php
-                                        $displayAssignment = str_replace('"', '', @$auction->get->sale_provision_assignment);
+                                        $displayAssignment = str_replace('"', '', $toStr(@$auction->get->sale_provision_assignment));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Buyer Open to Purchasing an Assignment Contract:
@@ -913,7 +918,7 @@
                             <!-- Target Closing Date -->
                             @if (@$auction->get->target_closing_date != null)
                                 @php
-                                    $displayClosingDate = str_replace('"', '', @$auction->get->target_closing_date);
+                                    $displayClosingDate = str_replace('"', '', $toStr(@$auction->get->target_closing_date));
                                 @endphp
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Target Closing Date:
@@ -1024,7 +1029,7 @@
                                 </div>
                                 @if (@$auction->get->assumable_terms)
                                     @php
-                                        $displayAssumableTerms = str_replace('"', '', @$auction->get->assumable_terms);
+                                        $displayAssumableTerms = str_replace('"', '', $toStr(@$auction->get->assumable_terms));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Offered Assumable Terms:
@@ -1035,7 +1040,7 @@
                                 @if (@$auction->get->assumable_loan_type)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Type of Loan:
-                                        <span class="removeBold">{{ str_replace('"', '', @$auction->get->assumable_loan_type) }}</span>
+                                        <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->assumable_loan_type)) }}</span>
                                     </div>
                                 @endif
 
@@ -1095,7 +1100,7 @@
                                 </div>
                                 @if (@$auction->get->cryptocurrency_type)
                                     @php
-                                        $displayCryptoType = str_replace('"', '', @$auction->get->cryptocurrency_type);
+                                        $displayCryptoType = str_replace('"', '', $toStr(@$auction->get->cryptocurrency_type));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Offered Cryptocurrency:
@@ -1119,7 +1124,7 @@
 
                                 @if (@$auction->get->crypto_exchange_method)
                                     @php
-                                        $displayCryptoExchange = str_replace('"', '', @$auction->get->crypto_exchange_method);
+                                        $displayCryptoExchange = str_replace('"', '', $toStr(@$auction->get->crypto_exchange_method));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Exchange / Conversion Method:
@@ -1129,7 +1134,7 @@
 
                                 @if (@$auction->get->crypto_custodian_wallet)
                                     @php
-                                        $displayCryptoCustodian = str_replace('"', '', @$auction->get->crypto_custodian_wallet);
+                                        $displayCryptoCustodian = str_replace('"', '', $toStr(@$auction->get->crypto_custodian_wallet));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Custodian / Wallet for Transfer:
@@ -1139,7 +1144,7 @@
 
                                 @if (@$auction->get->crypto_transaction_fees)
                                     @php
-                                        $displayCryptoFees = str_replace('"', '', @$auction->get->crypto_transaction_fees);
+                                        $displayCryptoFees = str_replace('"', '', $toStr(@$auction->get->crypto_transaction_fees));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Transaction Fees Responsibility:
@@ -1149,8 +1154,8 @@
 
                                 @if (@$auction->get->crypto_transfer_timing)
                                     @php
-                                        $displayCryptoTiming = str_replace('"', '', @$auction->get->crypto_transfer_timing);
-                                        $displayCryptoTimingOther = str_replace('"', '', @$auction->get->crypto_transfer_timing_other ?? '');
+                                        $displayCryptoTiming = str_replace('"', '', $toStr(@$auction->get->crypto_transfer_timing));
+                                        $displayCryptoTimingOther = str_replace('"', '', $toStr(@$auction->get->crypto_transfer_timing_other ?? ''));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Timing of Transfer:
@@ -1170,9 +1175,8 @@
                                 </div>
                                 @if (@$auction->get->exchange_item)
                                     @php
-                                        $rawExchangeItem = str_replace('"', '', @$auction->get->exchange_item);
-                                        $displayExchangeItem = is_array($rawExchangeItem) ? implode(', ', $rawExchangeItem) : ($rawExchangeItem ?? '');
-                                        $displayOtherExchange = str_replace('"', '', @$auction->get->other_exchange_item ?? '');
+                                        $displayExchangeItem = str_replace('"', '', $toStr(@$auction->get->exchange_item));
+                                        $displayOtherExchange = str_replace('"', '', $toStr(@$auction->get->other_exchange_item ?? ''));
                                         $exchangeItemIsOther = is_array(@$auction->get->exchange_item)
                                             ? in_array('Other', @$auction->get->exchange_item)
                                             : (@$auction->get->exchange_item === 'Other');
@@ -1196,7 +1200,7 @@
 
                                 @if (@$auction->get->exchange_item_condition)
                                     @php
-                                        $displayExchangeCondition = str_replace('"', '', @$auction->get->exchange_item_condition);
+                                        $displayExchangeCondition = str_replace('"', '', $toStr(@$auction->get->exchange_item_condition));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Condition of Exchange/Trade Item:
@@ -1213,7 +1217,7 @@
 
                                 @if (@$auction->get->value_determination)
                                     @php
-                                        $displayValueDetermination = str_replace('"', '', @$auction->get->value_determination);
+                                        $displayValueDetermination = str_replace('"', '', $toStr(@$auction->get->value_determination));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Value of Exchange/Trade Item Determined By:
@@ -1286,7 +1290,7 @@
                                 {{-- 5. Option Fee Credit --}}
                                 @if (@$auction->get->lease_option_fee_credit)
                                     @php
-                                        $displayFeeCredit = str_replace('"', '', @$auction->get->lease_option_fee_credit);
+                                        $displayFeeCredit = str_replace('"', '', $toStr(@$auction->get->lease_option_fee_credit));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Option Fee Credit Toward Purchase Price:
@@ -1305,7 +1309,7 @@
                                 {{-- 6. Conditions or Requirements --}}
                                 @if (@$auction->get->lease_option_conditions)
                                     @php
-                                        $displayLeaseConditions = str_replace('"', '', @$auction->get->lease_option_conditions);
+                                        $displayLeaseConditions = str_replace('"', '', $toStr(@$auction->get->lease_option_conditions));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Conditions or Requirements for Lease Option:
@@ -1316,7 +1320,7 @@
                                 {{-- 7. Specific Terms Proposed --}}
                                 @if (@$auction->get->lease_option_terms)
                                     @php
-                                        $displayLeaseTerms = str_replace('"', '', @$auction->get->lease_option_terms);
+                                        $displayLeaseTerms = str_replace('"', '', $toStr(@$auction->get->lease_option_terms));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Specific Terms Proposed for Lease Option:
@@ -1327,7 +1331,7 @@
                                 {{-- 8. Maintenance / Repair Responsibility --}}
                                 @if (@$auction->get->lease_option_maintenance)
                                     @php
-                                        $displayMaintenance = str_replace('"', '', @$auction->get->lease_option_maintenance);
+                                        $displayMaintenance = str_replace('"', '', $toStr(@$auction->get->lease_option_maintenance));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Maintenance / Repair Responsibility:
@@ -1338,7 +1342,7 @@
                                 {{-- 9. Extension Terms --}}
                                 @if (@$auction->get->lease_option_extension_terms)
                                     @php
-                                        $displayExtension = str_replace('"', '', @$auction->get->lease_option_extension_terms);
+                                        $displayExtension = str_replace('"', '', $toStr(@$auction->get->lease_option_extension_terms));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Extension Terms:
@@ -1395,7 +1399,7 @@
                                 {{-- 6. Conditions or Requirements --}}
                                 @if (@$auction->get->lease_purchase_conditions)
                                     @php
-                                        $displayLeasePurchaseConditions = str_replace('"', '', @$auction->get->lease_purchase_conditions);
+                                        $displayLeasePurchaseConditions = str_replace('"', '', $toStr(@$auction->get->lease_purchase_conditions));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Conditions or Requirements for Lease Purchase:
@@ -1406,7 +1410,7 @@
                                 {{-- 7. Specific Terms Proposed --}}
                                 @if (@$auction->get->lease_purchase_terms)
                                     @php
-                                        $displayLeasePurchaseTerms = str_replace('"', '', @$auction->get->lease_purchase_terms);
+                                        $displayLeasePurchaseTerms = str_replace('"', '', $toStr(@$auction->get->lease_purchase_terms));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Specific Terms Proposed for Lease Purchase:
@@ -1417,7 +1421,7 @@
                                 {{-- 8. Maintenance / Repair Responsibility --}}
                                 @if (@$auction->get->lease_purchase_maintenance)
                                     @php
-                                        $displayLPMaintenance = str_replace('"', '', @$auction->get->lease_purchase_maintenance);
+                                        $displayLPMaintenance = str_replace('"', '', $toStr(@$auction->get->lease_purchase_maintenance));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Maintenance / Repair Responsibility:
@@ -1428,7 +1432,7 @@
                                 {{-- 9. Extension Terms --}}
                                 @if (@$auction->get->lease_purchase_extension_terms)
                                     @php
-                                        $displayLPExtension = str_replace('"', '', @$auction->get->lease_purchase_extension_terms);
+                                        $displayLPExtension = str_replace('"', '', $toStr(@$auction->get->lease_purchase_extension_terms));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Extension Terms:
@@ -1444,7 +1448,7 @@
                                 </div>
                                 @if (@$auction->get->nft_description)
                                     @php
-                                        $displayNFTDescription = str_replace('"', '', @$auction->get->nft_description);
+                                        $displayNFTDescription = str_replace('"', '', $toStr(@$auction->get->nft_description));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Offered Non-Fungible Token (NFT):
@@ -1468,7 +1472,7 @@
 
                                 @if (@$auction->get->nft_valuation_method)
                                     @php
-                                        $displayNFTValuation = str_replace('"', '', @$auction->get->nft_valuation_method);
+                                        $displayNFTValuation = str_replace('"', '', $toStr(@$auction->get->nft_valuation_method));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         NFT Valuation Method:
@@ -1478,7 +1482,7 @@
 
                                 @if (@$auction->get->nft_transfer_method)
                                     @php
-                                        $displayNFTTransfer = str_replace('"', '', @$auction->get->nft_transfer_method);
+                                        $displayNFTTransfer = str_replace('"', '', $toStr(@$auction->get->nft_transfer_method));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         NFT Transfer Method:
@@ -1488,7 +1492,7 @@
 
                                 @if (@$auction->get->nft_gas_fees)
                                     @php
-                                        $displayNFTGasFees = str_replace('"', '', @$auction->get->nft_gas_fees);
+                                        $displayNFTGasFees = str_replace('"', '', $toStr(@$auction->get->nft_gas_fees));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Transaction Fees Responsibility (Gas Fees):
@@ -1532,7 +1536,7 @@
 
                                 @if (@$auction->get->loan_duration)
                                     @php
-                                        $displayLoanDuration = str_replace('"', '', @$auction->get->loan_duration);
+                                        $displayLoanDuration = str_replace('"', '', $toStr(@$auction->get->loan_duration));
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Desired Loan Duration:
@@ -1558,7 +1562,7 @@
                                 @if (@$auction->get->balloon_payment === 'Yes')
                                     @if (@$auction->get->balloon_payment_date)
                                         @php
-                                            $displayBalloonDate = str_replace('"', '', @$auction->get->balloon_payment_date);
+                                            $displayBalloonDate = str_replace('"', '', $toStr(@$auction->get->balloon_payment_date));
                                         @endphp
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Balloon Payment Due Date:
@@ -1744,7 +1748,7 @@
                         @if (@$auction->get->commission_structure != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Buyer's Broker Commission Structure:
-                            <span class="removeBold">{{ str_replace('"', '', @$auction->get->commission_structure) }}</span>
+                            <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->commission_structure)) }}</span>
                         </div>
                         @endif
 
@@ -1785,7 +1789,7 @@
                         @if (@$auction->get->interested_lease_option != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Interested in a Lease Agreement:
-                            <span class="removeBold">{{ str_replace('"', '', @$auction->get->interested_lease_option) }}</span>
+                            <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->interested_lease_option)) }}</span>
                         </div>
                         @endif
 
@@ -1840,7 +1844,7 @@
                         @if (@$auction->get->interested_lease_option_agreement != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Interested in a Lease-Option Agreement:
-                            <span class="removeBold">{{ str_replace('"', '', @$auction->get->interested_lease_option_agreement) }}</span>
+                            <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->interested_lease_option_agreement)) }}</span>
                         </div>
                         @endif
 
@@ -1914,7 +1918,7 @@
                         @if (@$auction->get->agency_agreement_timeframe != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Buyer Agency Agreement Timeframe:
-                            <span class="removeBold">{{ @$auction->get->agency_agreement_timeframe === 'custom' ? @$auction->get->agency_agreement_custom : str_replace('"', '', @$auction->get->agency_agreement_timeframe) }}</span>
+                            <span class="removeBold">{{ @$auction->get->agency_agreement_timeframe === 'custom' ? @$auction->get->agency_agreement_custom : str_replace('"', '', $toStr(@$auction->get->agency_agreement_timeframe)) }}</span>
                         </div>
                         @endif
 
@@ -1930,7 +1934,7 @@
                         @if (@$auction->get->brokerage_relationship != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Acceptable Brokerage Relationship:
-                            <span class="removeBold">{{ str_replace('"', '', @$auction->get->brokerage_relationship) }}</span>
+                            <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->brokerage_relationship)) }}</span>
                         </div>
                         @endif
 
