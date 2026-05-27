@@ -185,6 +185,15 @@ class BuyerOfferListingEdit extends Component
     public $unit_size_other = '';
     public $preferance_details = '';
 
+    // Property DNA Phase C — Buyer Tier 1 EAV fields
+    public $purchase_purpose = '';
+    public $commute_destination_zip = '';
+    public $max_commute_minutes = '';
+    public $commute_mode = '';
+    public $hoa_acceptance = '';
+    public $hoa_max_monthly_fee = '';
+    public $flood_zone_tolerance = '';
+
     public $leasing_55_plus = '';
     public $non_negotiable_amenities = [];
     public $other_non_negotiable_amenities = '';
@@ -1826,6 +1835,15 @@ class BuyerOfferListingEdit extends Component
             $this->unit_size_other = $auction->get->unit_size_other ?? '';
             $this->preferance_details = $auction->get->preferance_details ?? '';
 
+            // Property DNA Phase C — Buyer Tier 1 EAV fields
+            $this->purchase_purpose = $auction->get->purchase_purpose ?? '';
+            $this->commute_destination_zip = $auction->get->commute_destination_zip ?? '';
+            $this->max_commute_minutes = $auction->get->max_commute_minutes ?? '';
+            $this->commute_mode = $auction->get->commute_mode ?? '';
+            $this->hoa_acceptance = $auction->get->hoa_acceptance ?? '';
+            $this->hoa_max_monthly_fee = $auction->get->hoa_max_monthly_fee ?? '';
+            $this->flood_zone_tolerance = $auction->get->flood_zone_tolerance ?? '';
+
 
             // Sale Provision
             $saleProvisionRaw = $auction->get->sale_provision ?? null;
@@ -2311,6 +2329,15 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('unit_size', $this->unit_size);
         $auction->saveMeta('unit_size_other', $this->unit_size_other);
         $auction->saveMeta('preferance_details', $this->preferance_details);
+
+        // Property DNA Phase C — Buyer Tier 1 EAV fields
+        $auction->saveMeta('purchase_purpose', $this->purchase_purpose);
+        $auction->saveMeta('commute_destination_zip', $this->commute_destination_zip);
+        $auction->saveMeta('max_commute_minutes', $this->max_commute_minutes);
+        $auction->saveMeta('commute_mode', $this->commute_mode);
+        $auction->saveMeta('hoa_acceptance', $this->hoa_acceptance);
+        $auction->saveMeta('hoa_max_monthly_fee', $this->hoa_max_monthly_fee);
+        $auction->saveMeta('flood_zone_tolerance', $this->flood_zone_tolerance);
 
         // Sale Provisions
         $auction->saveMeta('sale_provision', json_encode($this->sale_provision ?? []));

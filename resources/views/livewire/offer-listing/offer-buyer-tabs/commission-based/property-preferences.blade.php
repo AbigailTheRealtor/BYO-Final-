@@ -1333,6 +1333,120 @@
 @endif
 </div>
 
+{{-- Property DNA Phase C — Buyer Tier 1 fields --}}
+
+{{-- Purchase Purpose --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Purchase Purpose:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the primary reason the Buyer is purchasing this property.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="purchase_purpose" class="form-control has-icon" data-icon="fa-solid fa-bullseye">
+            <option value="">Select</option>
+            <option value="Primary Residence">Primary Residence</option>
+            <option value="Vacation">Vacation</option>
+            <option value="Second Home">Second Home</option>
+            <option value="Investment">Investment</option>
+            <option value="Business Use">Business Use</option>
+            <option value="Development">Development</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+</div>
+
+{{-- Commute Fields --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Commute Preferences:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Optionally specify the Buyer's commute destination and maximum acceptable commute time.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="row g-2">
+        <div class="col-md-4">
+            <div class="input-cover">
+                <input type="text" wire:model.defer="commute_destination_zip"
+                    class="form-control has-icon" data-icon="fa-solid fa-map-pin"
+                    placeholder="Enter commute destination ZIP (e.g., 33602)">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="input-cover">
+                <input type="number" wire:model.defer="max_commute_minutes"
+                    class="form-control has-icon" data-icon="fa-solid fa-clock"
+                    placeholder="Enter max commute time in minutes (e.g., 30)" min="0">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="input-cover">
+                <select wire:model="commute_mode" class="form-control has-icon" data-icon="fa-solid fa-route">
+                    <option value="">Commute mode</option>
+                    <option value="Drive">Drive</option>
+                    <option value="Transit">Transit</option>
+                    <option value="Walk">Walk</option>
+                    <option value="Bike">Bike</option>
+                    <option value="Remote - no commute">Remote - no commute</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- HOA Acceptance --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">HOA Acceptance:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Buyer is willing to purchase a property with a Homeowners Association.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="hoa_acceptance" class="form-control has-icon" data-icon="fa-solid fa-building-columns">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Flexible">Flexible</option>
+        </select>
+    </div>
+</div>
+
+{{-- HOA Max Monthly Fee — shown only when HOA acceptance is Yes or Flexible --}}
+<div class="form-group mt-3" x-data x-show="['Yes', 'Flexible'].includes($wire.hoa_acceptance)" x-cloak>
+    <label class="fw-bold">Maximum HOA Monthly Fee ($):
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the maximum monthly HOA fee the Buyer is willing to pay.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="number" wire:model.defer="hoa_max_monthly_fee"
+            class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
+            placeholder="e.g., 350" min="0" step="0.01">
+    </div>
+</div>
+
+{{-- Flood Zone Tolerance --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Flood Zone Tolerance:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the Buyer's tolerance for flood zone designations.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="flood_zone_tolerance" class="form-control has-icon" data-icon="fa-solid fa-water">
+            <option value="">Select</option>
+            <option value="No flood zone">No flood zone</option>
+            <option value="Zone X only">Zone X only</option>
+            <option value="Moderate risk">Moderate risk</option>
+            <option value="Any">Any</option>
+        </select>
+    </div>
+</div>
+
 <script>
     document.addEventListener('livewire:load', function() {
         const select = document.getElementById('property_type');
