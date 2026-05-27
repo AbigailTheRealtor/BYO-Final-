@@ -1173,12 +1173,12 @@
     <div class="form-group mt-2">
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
-            <input type="text" wire:model="lease_purchase_rent_credit_amount" class="form-control has-icon"
+            <input type="text" wire:model="seller_lease_purchase_rent_credit_amount" class="form-control has-icon"
                 placeholder="Enter rent credit dollar amount (e.g., 500)"
-                data-error-id="lease_purchase_rent_credit_amount_error"
+                data-error-id="seller_lease_purchase_rent_credit_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
-        <span class="error mt-2" id="lease_purchase_rent_credit_amount_error"></span>
+        <span class="error mt-2" id="seller_lease_purchase_rent_credit_amount_error"></span>
     </div>
     @endif
 
@@ -1192,12 +1192,12 @@
         </label>
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
-            <input type="text" wire:model="lease_purchase_deposit" class="form-control has-icon"
+            <input type="text" wire:model="seller_lease_purchase_deposit" class="form-control has-icon"
                 placeholder="Enter deposit amount (e.g., 10000)"
-                data-error-id="lease_purchase_deposit_error"
+                data-error-id="seller_lease_purchase_deposit_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
-        <span class="error mt-2" id="lease_purchase_deposit_error"></span>
+        <span class="error mt-2" id="seller_lease_purchase_deposit_error"></span>
     </div>
 
     <!-- 6. Conditions or Requirements for Lease Purchase -->

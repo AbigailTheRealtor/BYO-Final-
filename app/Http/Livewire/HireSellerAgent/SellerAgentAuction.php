@@ -2645,7 +2645,7 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('additional_details_broker', $this->additional_details_broker);
 
         // Seller-specific broker compensation (leasing agreement & commission structure)
-        $auction->saveMeta('nominal', $this->nominal);
+        $auction->saveMeta('nominal', $this->stripCommas($this->nominal));
         $auction->saveMeta('interested_purchase_fee_type', $this->interested_purchase_fee_type);
         $auction->saveMeta('seller_leasing_fee_type', $this->seller_leasing_fee_type);
         $auction->saveMeta('seller_leasing_gross', $this->seller_leasing_gross);

@@ -979,17 +979,23 @@
                     </div>
                     <div>
 
+                        @php $isTrueEdit = !$isDraft && !empty($listingId); @endphp
+
+                        @if (!$isTrueEdit)
                         <button type="button" class="btn btn-outline-primary me-2" onclick="syncAllSelect2BeforeSave(); @this.call('saveDraft');" wire:loading.attr="disabled" wire:target="saveDraft">
                             <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
                             <span wire:loading wire:target="saveDraft">Saving...</span>
                         </button>
+                        @endif
 
                         <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
+                        @if (!$isDraft)
                         <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled" wire:target="store">
-                            <span wire:loading.remove wire:target="store">{{ $listingId ? 'Save Edit' : 'Submit' }}</span>
-                            <span wire:loading wire:target="store">{{ $listingId ? 'Saving...' : 'Submitting...' }}</span>
+                            <span wire:loading.remove wire:target="store">{{ $isTrueEdit ? 'Save Edit' : 'Submit' }}</span>
+                            <span wire:loading wire:target="store">{{ $isTrueEdit ? 'Saving...' : 'Submitting...' }}</span>
                         </button>
+                        @endif
                     </div>
 
                 </div>
@@ -1388,9 +1394,12 @@
             }, 100);
         });
 
-        // Re-apply icons when a Bootstrap tab is shown (handles tab-switch icon visibility)
+        // Re-apply icons and re-format money inputs when a Bootstrap tab is shown
         $(document).on('shown.bs.tab', function() {
             addIconsToInputs();
+            if (typeof initializeMoneyInputs === 'function') {
+                initializeMoneyInputs();
+            }
         });
 
         function rehydrateSelect2MultiFields() {
@@ -2929,8 +2938,8 @@
                 'lease_purchase_price',
                 'lease_purchase_payment',
                 'lease_purchase_option_fee_amount',
-                'lease_purchase_rent_credit_amount',
-                'lease_purchase_deposit',
+                'seller_lease_purchase_rent_credit_amount',
+                'seller_lease_purchase_deposit',
                 // Seller Purchase Terms deposits
                 'initial_deposit_requested',
                 'additional_deposit_requested',
@@ -3022,8 +3031,15 @@
             if (purchaseInput && purchaseInput.value) formatWithCommas(purchaseInput);
         }
 
-        // Initialize on page load
+        // Initialize on page load (covers fresh create pages where values are in the HTML)
         document.addEventListener('DOMContentLoaded', function() {
+            initializeMoneyInputs();
+        });
+
+        // Initialize after Livewire has finished its initial JS hydration.
+        // This covers draft/edit pages where Livewire may update input values
+        // during component boot, after DOMContentLoaded has already fired.
+        window.addEventListener('livewire:load', function() {
             initializeMoneyInputs();
         });
 
