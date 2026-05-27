@@ -1218,24 +1218,17 @@
     </div>
 </div>
 
-{{-- Pet Policy (hidden — duplicate of Pets Allowed in property-preferences; backend property/save/load untouched) --}}
-<div style="display: none;">
+{{-- Phase B L-02: Available Date --}}
 <div class="form-group">
-    <label class="fw-bold">Pet Policy:</label>
+    <label class="fw-bold">Available Date:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Select the Landlord's policy regarding pets on the property.">
+        title="Enter the date the property will be available for move-in. This is used to match Tenant move-in timelines.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <select wire:model="pet_policy" class="form-control has-icon" data-icon="fa-solid fa-paw">
-            <option value="">Select</option>
-            <option value="No Pets Allowed">No Pets Allowed</option>
-            <option value="Pets Considered">Pets Considered</option>
-            <option value="Pets Allowed With Restrictions">Pets Allowed With Restrictions</option>
-            <option value="Pets Allowed">Pets Allowed</option>
-        </select>
+        <input type="date" wire:model="available_date" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar" placeholder="Select available date">
     </div>
-</div>
 </div>
 
 {{-- Pet Deposit / Fee / Rent (shown when Pets = Yes) --}}
@@ -1250,6 +1243,67 @@
             <input type="text" wire:model="pet_deposit_fee_rent" class="form-control has-icon"
                 data-icon="fa-solid fa-paw"
                 placeholder="Enter pet deposit/fee/rent (e.g., $300 deposit, $50/month)">
+        </div>
+    </div>
+@endif
+
+{{-- Phase B L-03: Pet sub-fields (shown when Pets = Yes, same guard as pet_deposit_fee_rent) --}}
+@if ($pets === 'Yes')
+    <div class="form-group">
+        <label class="fw-bold">Maximum Pet Weight (lbs):</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the maximum allowable pet weight in pounds (e.g., 25).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="number" wire:model="pet_max_weight_lbs" class="form-control has-icon"
+                data-icon="fa-solid fa-weight-scale" min="0"
+                placeholder="Enter max weight in lbs (e.g., 25)">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="fw-bold">Pet Species Allowed:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the species of pets permitted on the property.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="pet_species_allowed" class="form-control has-icon"
+                data-icon="fa-solid fa-paw" multiple>
+                <option value="Dog">Dog</option>
+                <option value="Cat">Cat</option>
+                <option value="Bird">Bird</option>
+                <option value="Small caged animal">Small Caged Animal</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="fw-bold">Pet Deposit Amount:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the one-time pet deposit amount required (e.g., 300).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <span class="input-group-text-seller">$</span>
+            <input type="text" wire:model="pet_deposit_amount" class="form-control"
+                placeholder="Enter pet deposit amount (e.g., 300)"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="fw-bold">Pet Monthly Fee:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the monthly recurring pet fee amount (e.g., 50).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <span class="input-group-text-seller">$</span>
+            <input type="text" wire:model="pet_monthly_fee" class="form-control"
+                placeholder="Enter monthly pet fee (e.g., 50)"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
     </div>
 @endif

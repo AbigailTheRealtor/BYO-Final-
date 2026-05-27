@@ -318,6 +318,12 @@ class LandlordOfferListing extends Component
     public $total_move_in_funds_required = '';
     public $pet_policy = '';
     public $pet_deposit_fee_rent = '';
+    // Phase B Landlord Tier 1 EAV keys
+    public $available_date = '';
+    public $pet_max_weight_lbs = '';
+    public $pet_species_allowed = [];
+    public $pet_deposit_amount = '';
+    public $pet_monthly_fee = '';
     public $number_of_occupants_allowed = '';
     public $parking_terms = '';
     public $ll_maintenance_responsibility = '';
@@ -2739,6 +2745,12 @@ class LandlordOfferListing extends Component
             $this->total_move_in_funds_required = $auction->get->total_move_in_funds_required ?? '';
             $this->pet_policy = $auction->get->pet_policy ?? '';
             $this->pet_deposit_fee_rent = $auction->get->pet_deposit_fee_rent ?? '';
+            // Phase B Landlord Tier 1 EAV keys
+            $this->available_date = $auction->get->available_date ?? '';
+            $this->pet_max_weight_lbs = $auction->get->pet_max_weight_lbs ?? '';
+            $this->pet_species_allowed = json_decode($auction->get->pet_species_allowed ?? '[]', true) ?? [];
+            $this->pet_deposit_amount = $auction->get->pet_deposit_amount ?? '';
+            $this->pet_monthly_fee = $auction->get->pet_monthly_fee ?? '';
             $this->number_of_occupants_allowed = $auction->get->number_of_occupants_allowed ?? '';
             $this->parking_terms = $auction->get->parking_terms ?? '';
             $this->ll_maintenance_responsibility = $auction->get->ll_maintenance_responsibility ?? '';
@@ -3381,6 +3393,12 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('total_move_in_funds_required', $this->stripCommas($this->total_move_in_funds_required));
         $auction->saveMeta('pet_policy', $this->pet_policy);
         $auction->saveMeta('pet_deposit_fee_rent', $this->pet_deposit_fee_rent);
+        // Phase B Landlord Tier 1 EAV keys
+        $auction->saveMeta('available_date', $this->available_date);
+        $auction->saveMeta('pet_max_weight_lbs', $this->pet_max_weight_lbs);
+        $auction->saveMeta('pet_species_allowed', json_encode($this->ensureArray($this->pet_species_allowed)));
+        $auction->saveMeta('pet_deposit_amount', $this->pet_deposit_amount);
+        $auction->saveMeta('pet_monthly_fee', $this->pet_monthly_fee);
         $auction->saveMeta('number_of_occupants_allowed', $this->number_of_occupants_allowed);
         $auction->saveMeta('parking_terms', $this->parking_terms);
         $auction->saveMeta('ll_maintenance_responsibility', $this->ll_maintenance_responsibility);

@@ -269,6 +269,11 @@ class TenantOfferListingEdit extends Component
     public $support_animal = '';
     public $screening_concerns;
     public $screening_concerns_explanation;
+    // Phase B Tenant Tier 1 EAV keys
+    public $commute_destination_zip = '';
+    public $max_commute_minutes = '';
+    public $commute_mode = '';
+    public $credit_score_range = '';
 
     public $flat_fee_services = [];
 
@@ -2667,6 +2672,11 @@ class TenantOfferListingEdit extends Component
         $this->emotional_support_animal = $auction->info('emotional_support_animal');
         $this->screening_concerns = $auction->info('screening_concerns');
         $this->screening_concerns_explanation = $auction->info('screening_concerns_explanation');
+        // Phase B Tenant Tier 1 EAV keys
+        $this->commute_destination_zip = $auction->info('commute_destination_zip') ?? '';
+        $this->max_commute_minutes = $auction->info('max_commute_minutes') ?? '';
+        $this->commute_mode = $auction->info('commute_mode') ?? '';
+        $this->credit_score_range = $auction->info('credit_score_range') ?? '';
         $this->monthly_income = $auction->info('monthly_income');
         $this->number_occupant = $auction->info('number_occupant');
         $this->occupant_status = $auction->info('occupant_status');
@@ -3408,6 +3418,11 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('screening_concerns', $this->screening_concerns);
             $auction->saveMeta('screening_concerns_explanation', $this->screening_concerns_explanation);
             $auction->saveMeta('preferance_details', $this->preferance_details);
+            // Phase B Tenant Tier 1 EAV keys
+            $auction->saveMeta('commute_destination_zip', $this->commute_destination_zip);
+            $auction->saveMeta('max_commute_minutes', $this->max_commute_minutes);
+            $auction->saveMeta('commute_mode', $this->commute_mode);
+            $auction->saveMeta('credit_score_range', $this->credit_score_range);
 
             /// Buyer purchasing terms
             $auction->saveMeta('sale_provision', json_encode($this->sale_provision));

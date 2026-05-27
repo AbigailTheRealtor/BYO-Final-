@@ -824,3 +824,48 @@
         <span class="error mt-2" id="other_non_negotiable_amenities_error"></span>
     </div>
 </div>
+
+{{-- Phase B T-01: Commute Preference Fields --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Commute Destination ZIP:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the ZIP code of the Tenant's primary commute destination (e.g., workplace or school). Used to estimate commute time from prospective properties.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="text" wire:model="commute_destination_zip" class="form-control has-icon"
+            data-icon="fa-solid fa-location-dot" maxlength="10"
+            placeholder="Enter commute destination ZIP (e.g., 32801)">
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="fw-bold">Maximum Commute Time (minutes):</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the maximum acceptable commute time in minutes from the rental property to the destination.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="number" wire:model="max_commute_minutes" class="form-control has-icon"
+            data-icon="fa-solid fa-clock" min="0"
+            placeholder="Enter max commute time in minutes (e.g., 30)">
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="fw-bold">Preferred Commute Mode:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Select the Tenant's preferred mode of commuting.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <select wire:model="commute_mode" class="form-control has-icon" data-icon="fa-solid fa-car">
+            <option value="">Select</option>
+            <option value="Drive">Drive</option>
+            <option value="Transit">Transit</option>
+            <option value="Walk">Walk</option>
+            <option value="Bike">Bike</option>
+            <option value="Remote">Remote — no commute</option>
+        </select>
+    </div>
+</div>

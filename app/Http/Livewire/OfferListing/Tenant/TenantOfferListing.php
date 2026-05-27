@@ -264,6 +264,11 @@ class TenantOfferListing extends Component
     public $support_animal = '';
     public $screening_concerns;
     public $screening_concerns_explanation;
+    // Phase B Tenant Tier 1 EAV keys
+    public $commute_destination_zip = '';
+    public $max_commute_minutes = '';
+    public $commute_mode = '';
+    public $credit_score_range = '';
 
     public $flat_fee_services = [];
 
@@ -3472,6 +3477,11 @@ class TenantOfferListing extends Component
 
             $this->screening_concerns = $auction->get->screening_concerns ?? '';
             $this->screening_concerns_explanation = $auction->get->screening_concerns_explanation ?? '';
+            // Phase B Tenant Tier 1 EAV keys
+            $this->commute_destination_zip = $auction->get->commute_destination_zip ?? '';
+            $this->max_commute_minutes = $auction->get->max_commute_minutes ?? '';
+            $this->commute_mode = $auction->get->commute_mode ?? '';
+            $this->credit_score_range = $auction->get->credit_score_range ?? '';
 
             $creditRaw = $auction->get->credit_scroe_rating ?? null;
             $this->credit_scroe_rating = $creditRaw ? (is_string($creditRaw) ? json_decode($creditRaw, true) ?? [] : (array)$creditRaw) : [];
@@ -4425,6 +4435,11 @@ class TenantOfferListing extends Component
         $auction->saveMeta('screening_concerns', $this->screening_concerns);
         $auction->saveMeta('screening_concerns_explanation', $this->screening_concerns_explanation);
         $auction->saveMeta('preferance_details', $this->preferance_details);
+        // Phase B Tenant Tier 1 EAV keys
+        $auction->saveMeta('commute_destination_zip', $this->commute_destination_zip);
+        $auction->saveMeta('max_commute_minutes', $this->max_commute_minutes);
+        $auction->saveMeta('commute_mode', $this->commute_mode);
+        $auction->saveMeta('credit_score_range', $this->credit_score_range);
 
 
         /// Buyer purchasing terms

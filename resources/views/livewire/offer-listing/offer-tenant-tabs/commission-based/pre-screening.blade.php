@@ -219,6 +219,26 @@
     </div>
 @endif
 
+{{-- Phase B T-06: Credit Score Range --}}
+<div class="form-group mt-4">
+    <label class="fw-bold">Credit Score Range:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Optionally indicate the Tenant's approximate credit score range. This is voluntary and used only to help Agents find appropriate matches. It does not affect listing access.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <select wire:model="credit_score_range" class="form-control has-icon"
+            data-icon="fa-solid fa-credit-card">
+            <option value="">Select</option>
+            <option value="Excellent 750+">Excellent 750+</option>
+            <option value="Good 700-749">Good 700–749</option>
+            <option value="Fair 650-699">Fair 650–699</option>
+            <option value="Below 650">Below 650</option>
+            <option value="Prefer not to disclose">Prefer not to disclose</option>
+        </select>
+    </div>
+</div>
+
 {{--
 <!-- Tenant(s) Credit Score Rating -->
 <div class="form-group">
