@@ -1331,7 +1331,7 @@
 
     <div class="input-cover">
         <textarea wire:model.defer="preferance_details" class="form-control" rows="4"
-            style="padding: 10px; font-size: 16px;" placeholder="Enter any additional preferences "></textarea>
+            style="padding: 10px; font-size: 16px;" placeholder="Enter additional preferences (e.g., Prefer updated kitchens, No HOA, Near good schools)"></textarea>
     </div>
 </div>
 @endif

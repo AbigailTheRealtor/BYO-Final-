@@ -13,6 +13,6 @@
                                         share:</label>
                                     <div class="input-cover">
                                         <textarea wire:model="additional_details" class="form-control" rows="4" style="padding: 10px; font-size: 16px;"
-                                            placeholder="Enter additional details"></textarea>
+                                            placeholder="Enter additional details (e.g., Flexible move-in date, Need pet-friendly property, Open to short-term lease)"></textarea>
                                     </div>
                                 </div>
