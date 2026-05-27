@@ -2104,12 +2104,18 @@ class LandlordOfferListingEdit extends Component
             ->first();
         if ($auction) {
 
+            $this->isDraft = (bool)($auction->is_draft);
+
             // Load all metadata fields
-            $this->listing_title = $auction->get->title ?? '';
+            $this->listing_title = $auction->title ?? '';
             $this->service_type = $auction->get->service_type ?? 'full_service';
             $this->user_type = $auction->get->user_type ?? 'landlord';
             $this->listing_status = $auction->get->listing_status ?? null;
             $this->auction_type = $auction->get->auction_type ?? $auction->auction_type ?? null;
+            // Normalize legacy 'Auction' value to current 'Bidding Period' option
+            if ($this->auction_type === 'Auction') {
+                $this->auction_type = 'Bidding Period';
+            }
             $this->working_with_agent = $auction->get->working_with_agent ?? null;
             $this->listing_date = $auction->get->listing_date ?? null;
             $this->desired_agent_hire_date = $auction->get->desired_agent_hire_date ?? null;
@@ -2823,8 +2829,7 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
-        // LOCKED: auction_type cannot be changed after listing creation — read-only in edit flow
-        // $auction->saveMeta('auction_type', $this->auction_type);
+        $auction->saveMeta('auction_type', $this->auction_type);
         $auction->saveMeta('working_with_agent', $this->working_with_agent);
         $auction->saveMeta('listing_date', $this->listing_date);
         $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);

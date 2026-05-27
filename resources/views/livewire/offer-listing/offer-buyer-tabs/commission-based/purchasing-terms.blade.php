@@ -239,7 +239,7 @@
         <div class="input-cover">
             <input type="text" wire:model="assumable_terms" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter assumable terms (e.g., $250,0000 remaining at 4.25% for 20 years) ">
+                placeholder="Enter assumable terms (e.g., $250,0000 remaining at 4.25% for 20 years)">
         </div>
     </div>
 

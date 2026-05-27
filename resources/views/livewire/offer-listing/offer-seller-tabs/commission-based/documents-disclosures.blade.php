@@ -158,7 +158,7 @@
                             <input
                                 type="text"
                                 class="form-control"
-                                placeholder="Enter document type (e.g., Inspection Report, Survey, Appraisal)"
+                                placeholder="Enter document type (e.g., Inspection report, Survey, Appraisal)"
                                 x-model="row.custom_type"
                                 @input="sync()"
                             >

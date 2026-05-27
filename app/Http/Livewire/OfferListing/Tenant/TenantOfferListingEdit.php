@@ -2459,6 +2459,8 @@ class TenantOfferListingEdit extends Component
             ? $auctionClass::findOrFail($auctionId)
             : new $auctionClass();
 
+        $this->isDraft = (bool)($auction->is_draft ?? false);
+
         // $auction = HireTenantAgentAuction::findOrFail($auctionId);
         // Populate Livewire properties with the fetched data
         $this->listing_title = $auction->title ?? $auction->info('title') ?? '';
@@ -2470,6 +2472,9 @@ class TenantOfferListingEdit extends Component
         $this->desired_agent_hire_date = $auction->info('desired_agent_hire_date');
         $this->expiration_date = $auction->info('expiration_date');
         $this->auction_type = $auction->info('auction_type');
+        if ($this->auction_type === 'Auction') {
+            $this->auction_type = 'Bidding Period';
+        }
         $this->workflow_type = $auction->info('workflow_type') ?? 'hire_agent';
         $this->referral_percentage = $auction->info('referral_percentage') ?? '';
         $this->auction_time = $auction->info('auction_time');
@@ -3193,9 +3198,12 @@ class TenantOfferListingEdit extends Component
                 ? $auctionClass::find($this->auctionId)
                 : new $auctionClass();
 
-
             // Update the auction properties
             $auction->title = $this->listing_title;
+            if (!$this->_isDraftSave) {
+                $auction->is_draft = 0;
+                $this->isDraft = false;
+            }
             $auction->save();
             $auction->saveMeta('workflow_type', 'offer_listing');
             $auction->saveMeta('service_type', $this->service_type);
@@ -3204,8 +3212,7 @@ class TenantOfferListingEdit extends Component
             if (auth()->user() && auth()->user()->user_type === 'agent') {
                 $auction->saveMeta('referral_percentage', $this->referral_percentage);
             }
-            // LOCKED: auction_type cannot be changed after listing creation
-            // $auction->saveMeta('auction_type', $this->auction_type);
+            $auction->saveMeta('auction_type', $this->auction_type);
             // LOCKED: working_with_agent cannot be changed after listing creation
             // Re-read the original value from DB and re-save it, ignoring any client-submitted change.
             $_lockedWwa = $auction->info('working_with_agent');

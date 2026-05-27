@@ -79,7 +79,7 @@
         <div class="input-cover">
             <input type="text" wire:model="sale_provision_other" class="form-control has-icon"
                 data-icon="fa-solid fa-screwdriver-wrench"
-                placeholder="Enter special sale provision (e.g., Divorce Sale, Third-party approval)">
+                placeholder="Enter special sale provision (e.g., Divorce sale, Third-party approval)">
         </div>
     </div>
 </div>
@@ -372,7 +372,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="other_financing" class="form-control has-icon"
                     data-icon="fa-solid fa-money-bill-wave"
-                    placeholder="Enter type of financing or currency offered (e.g., Gold Bullion, Stock transfer, Private investment agreement)">
+                    placeholder="Enter type of financing or currency offered (e.g., Gold bullion, Stock transfer, Private investment agreement)">
             </div>
         </div>
     </div>
@@ -820,7 +820,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="other_exchange_item" class="form-control has-icon"
                     data-icon="fa-solid fa-right-left"
-                    placeholder="Enter exchange item (e.g., Private Jet, yacht, luxury RV)">
+                    placeholder="Enter exchange item (e.g., Private jet, Yacht, Luxury RV)">
             </div>
         </div>
     </div>
@@ -899,7 +899,7 @@
         <div class="input-cover">
             <input type="text" wire:model="value_determination" class="form-control has-icon"
                 data-icon="fa-solid fa-right-left"
-                placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed Appraisal, online valuation, mutual agreement)">
+                placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed appraisal, Online valuation, Mutual agreement)">
         </div>
     </div>
 
@@ -1337,7 +1337,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_description" class="form-control has-icon"
                 data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter the type of NFT the Seller is willing to accept (e.g., Tokenized Real Estate, digital artwork)">
+                placeholder="Enter the type of NFT the Seller is willing to accept (e.g., Tokenized real estate, Digital artwork)">
         </div>
     </div>
 
@@ -1677,7 +1677,7 @@
         <div class="input-cover">
             <input type="text" wire:model="seller_payment_frequency_other" class="form-control has-icon"
                 data-icon="fa-solid fa-calendar-check"
-                placeholder="Enter custom payment schedule (e.g., Semi-Annual, lump sum at harvest)">
+                placeholder="Enter custom payment schedule (e.g., Semi-annual, Lump sum at harvest)">
         </div>
     </div>
     @endif
@@ -1834,7 +1834,7 @@
     <div class="input-cover">
         <input type="text" wire:model="escrow_agent_preference" class="form-control has-icon"
             data-icon="fa-solid fa-building-columns"
-            placeholder="Enter preferred escrow agent or company name (e.g., First American Title, local attorney)">
+            placeholder="Enter preferred escrow agent or company name (e.g., First American Title, Local Attorney)">
     </div>
 </div>
 
@@ -2003,7 +2003,7 @@
     <div class="input-cover">
         <input type="text" wire:model="excluded_items" class="form-control has-icon"
             data-icon="fa-solid fa-ban"
-            placeholder="Enter excluded items (e.g., Antique Light Fixture in Dining Room, Detached Storage Shed)">
+            placeholder="Enter excluded items (e.g., Antique light fixture in dining room, Detached storage shed)">
     </div>
 </div>
 

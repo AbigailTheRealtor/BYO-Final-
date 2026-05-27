@@ -1743,6 +1743,8 @@ class BuyerOfferListingEdit extends Component
             // Set flag to prevent updatedOfferedFinancing() from resetting loaded data
             $this->isLoadingData = true;
 
+            $this->isDraft = (bool)($auction->is_draft);
+
             // Load all metadata fields
             $this->listing_title = $auction->title ?? '';
             $this->service_type = $auction->get->service_type ?? 'full_service';

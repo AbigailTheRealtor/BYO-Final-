@@ -1158,15 +1158,23 @@ $tenantPays = [
                                 <button type="button" class="btn btn-secondary wizard-step-back" wire:loading.attr="disabled" wire:target="saveDraft,update">Back</button>
                             </div>
                             <div>
+                                @if($isDraft)
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="syncSelectValues()" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
+                                    <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
+                                    <span wire:loading wire:target="saveDraft">Saving...</span>
+                                </button>
+                                @else
                                 <button type="button" class="btn btn-outline-primary me-2" onclick="syncSelectValues()" wire:click="update" wire:loading.attr="disabled" wire:target="update">
                                     <span wire:loading.remove wire:target="update"><i class="fa-solid fa-save me-1"></i> Save Edit</span>
                                     <span wire:loading wire:target="update">Saving...</span>
                                 </button>
+                                @endif
 
                                 <button type="button" class="btn btn-primary wizard-step-next" wire:loading.attr="disabled" wire:target="saveDraft,update">Next</button>
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
-                                    id="save-button" wire:loading.attr="disabled" wire:target="update">
+                                    id="save-button" wire:loading.attr="disabled" wire:target="update"
+                                    @if(!$isDraft) style="display:none;" @endif>
                                     <span wire:loading.remove wire:target="update">Submit</span>
                                     <span wire:loading wire:target="update">Submitting...</span>
                                 </button>
@@ -1300,20 +1308,7 @@ $tenantPays = [
                 }
                 syncSelectValues();
                 addIconsToInputs();
-
-                // Re-sync view_preference Select2 from Livewire state (wire:ignore blocks DOM morph)
-                var _wireEl = document.querySelector('[wire\\:id]');
-                if (_wireEl && typeof Livewire !== 'undefined') {
-                    var _comp = Livewire.find(_wireEl.getAttribute('wire:id'));
-                    if (_comp) {
-                        try {
-                            var _vpVals = _comp.get('view_preference');
-                            if (Array.isArray(_vpVals) && _vpVals.length && $('#view_preference').hasClass('select2-hidden-accessible')) {
-                                $('#view_preference').val(_vpVals).trigger('change');
-                            }
-                        } catch (e) {}
-                    }
-                }
+                // view_preference re-sync is handled by initializeFullService() above
 
                 if (typeof window._landlordUpdateSaveBtn === 'function') {
                     window._landlordUpdateSaveBtn();
@@ -1359,6 +1354,32 @@ $tenantPays = [
             });
         });
 
+        // ── view_preference Select2 helpers ─────────────────────────────────────
+        // ONE init path, ONE change handler, ONE restore helper — called from
+        // DOMContentLoaded (initial load), initializeFullService (Livewire round-trips),
+        // and the draftLoaded listener. Do not add Select2 init/restore for this
+        // field anywhere else.
+        window.initViewPreferenceSelect2 = function() {
+            if (!$('#view_preference').length || $('#view_preference').hasClass('select2-hidden-accessible')) return;
+            $('#view_preference').select2({
+                placeholder: "Select Preference",
+                allowClear: true,
+                closeOnSelect: false,
+                width: '100%',
+            });
+            $('#view_preference').on('change', function() {
+                var selectedValues = $(this).val() || [];
+                @this.set('view_preference', selectedValues, true);
+                selectedValues.includes('Other') ? $('#other_preferences').show() : $('#other_preferences').hide();
+            });
+        };
+        window.restoreViewPreferenceState = function(vals) {
+            if (!$('#view_preference').hasClass('select2-hidden-accessible')) return;
+            if (!Array.isArray(vals)) vals = [];
+            if (vals.length) { $('#view_preference').val(vals).trigger('change'); }
+        };
+        // ────────────────────────────────────────────────────────────────────────
+
         function initializeFullService() {
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
@@ -1402,7 +1423,7 @@ $tenantPays = [
                     return;
                 }
 
-                if (selectElement.value === 'Auction') {
+                if (selectElement.value === 'Bidding Period') {
                     auctionTimeDiv.classList.remove('d-none'); // Show the auction time field
                 } else {
                     auctionTimeDiv.classList.add('d-none'); // Hide the auction time field
@@ -1535,29 +1556,14 @@ $tenantPays = [
             toggleSpaceInput('carport-needed', 'other-carport-needed');
             toggleSpaceInput('garage-needed', 'other-garage-needed');
 
-            if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
-                $('#view_preference').select2({
-                    placeholder: "Select Preference",
-                    allowClear: true,
-                    closeOnSelect: false,
-                    width: '100%',
-                });
-                $('#view_preference').on('change', function() {
-                    let selectedValues = $(this).val();
-                    Livewire.emit('updatePreference', selectedValues);
-                    if (selectedValues.includes('Other')) {
-                        $('#other_preferences').show();
-                    } else {
-                        $('#other_preferences').hide();
-                    }
-                });
-            }
-            // Always re-sync value after Select2 is initialized (covers initial load and Livewire re-renders)
-            if ($('#view_preference').length && $('#view_preference').hasClass('select2-hidden-accessible')) {
-                var _preVPEdit = @json($this->view_preference ?? []);
-                if (!Array.isArray(_preVPEdit)) _preVPEdit = [];
-                if (_preVPEdit.length) { $('#view_preference').val(_preVPEdit).trigger('change'); }
-            }
+            // Re-sync view_preference value from live Livewire state after Livewire round-trips.
+            var _vpRsVals = @json($this->view_preference ?? []);
+            try {
+                var _vpRsEl = document.querySelector('[wire\\:id]');
+                var _vpRsComp = _vpRsEl ? Livewire.find(_vpRsEl.getAttribute('wire:id')) : null;
+                if (_vpRsComp) _vpRsVals = _vpRsComp.get('view_preference') || [];
+            } catch(e) {}
+            window.restoreViewPreferenceState(_vpRsVals);
 
             var _mlsEditCfgs = [
                 { id: 'heating_fuel',      field: 'heating_fuel',      placeholder: 'Select', otherId: 'other_heating_fuel_wrapper' },
@@ -2932,31 +2938,14 @@ $tenantPays = [
             reformatAllMoneyFields();
             initLandlordEditOtherCompanions();
 
-            // Initialize view_preference Select2 and sync saved value on initial page load.
-            // initializeFullService() covers re-syncs after Livewire round-trips, but it is
-            // only called via message.processed (not on first render), so we must prime it here.
-            if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
-                $('#view_preference').select2({
-                    placeholder: "Select Preference",
-                    allowClear: true,
-                    closeOnSelect: false,
-                    width: '100%',
-                });
-                $('#view_preference').on('change', function() {
-                    var selectedValues = $(this).val() || [];
-                    @this.set('view_preference', selectedValues, true);
-                    selectedValues.includes('Other') ? $('#other_preferences').show() : $('#other_preferences').hide();
-                });
-            }
-            var _vpDomReady = @json($this->view_preference ?? []);
-            if (!Array.isArray(_vpDomReady)) _vpDomReady = [];
-            if (_vpDomReady.length && $('#view_preference').hasClass('select2-hidden-accessible')) {
-                $('#view_preference').val(_vpDomReady).trigger('change');
-            }
+            // Initialize view_preference Select2 (no-op if already initialized) and restore saved value.
+            window.initViewPreferenceSelect2();
+            window.restoreViewPreferenceState(@json($this->view_preference ?? []));
         });
     </script>
     <script>
         (function () {
+            var _isDraftMode = @json($isDraft);
             function syncWizardButtons() {
                 var aiPane = document.getElementById('ai-questions');
                 var nextBtn = document.querySelector('.wizard-step-next');
@@ -2964,7 +2953,8 @@ $tenantPays = [
                 if (!nextBtn || !finishBtn) return;
                 var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
                 nextBtn.style.display = onAI ? 'none' : '';
-                // Submit button is always visible in edit mode
+                // Submit only visible on AI (last) tab and only for draft listings
+                finishBtn.style.display = (onAI && _isDraftMode) ? '' : 'none';
             }
             window._landlordSyncWizardButtons = syncWizardButtons;
             document.addEventListener('shown.bs.tab', syncWizardButtons);

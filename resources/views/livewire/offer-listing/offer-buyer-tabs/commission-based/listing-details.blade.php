@@ -238,7 +238,7 @@
         <div class="input-cover">
             <input type="text" wire:model="listing_title" id="listing_title" class="form-control has-icon"
                 data-icon="fa-solid fa-tag"
-                placeholder="Enter listing title (e.g., Buyer Seeking 3-Bedroom Home in Pinellas County, FL)"
+                placeholder="Enter listing title (e.g., Buyer seeking 3-bedroom home in Pinellas County, FL)"
                 required>
         </div>
         <span class="error mt-2" id="listing_title_error"></span>

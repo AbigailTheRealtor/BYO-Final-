@@ -24,7 +24,7 @@
             <div class="input-group">
                 <span class="input-group-text">#</span>
                 <input type="text" wire:model.lazy="agency_agreement_custom" class="form-control"
-                    placeholder="Enter Landlord agency agreement timeframe (e.g., 8 Months)">
+                    placeholder="Enter Landlord agency agreement timeframe (e.g., 8 months)">
 
             </div>
         </div>

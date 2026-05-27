@@ -110,11 +110,11 @@
                 </span>
                 <div class="input-cover">
                     <input type="text" wire:model="restrictions" class="form-control has-icon" data-icon="fa-solid fa-ban"
-                        @if ($property_type === 'Residential Property') placeholder="Enter details (e.g., Visiting Hours, Overnight Stay Rules)"
+                        @if ($property_type === 'Residential Property') placeholder="Enter details (e.g., Visiting hours, Overnight stay rules)"
                 @elseif($property_type === 'Commercial Property')
-                placeholder="Enter details (e.g., Visiting Hours, Overnight Use, Guest Limitations)"
+                placeholder="Enter details (e.g., Visiting hours, Overnight use, Guest limitations)"
                 @else
-                placeholder="Enter details (e.g., Visiting Hours, Overnight Use, Guest Limitations)" @endif>
+                placeholder="Enter details (e.g., Visiting hours, Overnight use, Guest limitations)" @endif>
                 </div>
             </div>
 
@@ -215,7 +215,7 @@
                 <div class="input-cover">
                     <input type="text" wire:model="restrictions" class="form-control has-icon"
                         data-icon="fa-solid fa-ban"
-                        placeholder="Enter details (e.g., Visiting Hours, Overnight Stay Rules)" />
+                        placeholder="Enter details (e.g., Visiting hours, Overnight stay rules)" />
                 </div>
             </div>
 
@@ -386,7 +386,7 @@
                 <div class="input-cover">
                     <input type="text" wire:model="restrictions" class="form-control has-icon"
                         data-icon="fa-solid fa-ban"
-                        placeholder="Enter details (e.g., Visiting Hours, Overnight Use, Guest Limitations)">
+                        placeholder="Enter details (e.g., Visiting hours, Overnight use, Guest limitations)">
 
                 </div>
             </div>
@@ -467,7 +467,7 @@
                 <div class="input-cover">
                     <input type="text" wire:model="shared_amenities" class="form-control has-icon"
                         data-icon="fa-solid fa-people-roof"
-                        placeholder="Enter shared amenities (e.g., Conference Rooms, Parking Facilities)">
+                        placeholder="Enter shared amenities (e.g., Conference rooms, Parking facilities)">
                 </div>
             </div>
 
@@ -531,7 +531,7 @@
                 <div class="input-cover">
                     <input type="text" wire:model="space_features" class="form-control has-icon"
                         data-icon="fa-solid fa-table-cells-large"
-                        placeholder="Enter layout (e.g., Open Floor Plan, Private Offices)">
+                        placeholder="Enter layout (e.g., Open floor plan, Private offices)">
                 </div>
             </div>
 
@@ -579,7 +579,7 @@
                 <div class="input-cover">
                     <input type="text" wire:model="restrictions" class="form-control has-icon"
                         data-icon="fa-solid fa-ban"
-                        placeholder="Enter details (e.g., Shared Hours, Overnight Use, Guest Limitations)">
+                        placeholder="Enter details (e.g., Shared hours, Overnight use, Guest limitations)">
                 </div>
             </div>
             <div class="form-group">
@@ -748,7 +748,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="shared_amenities" class="form-control has-icon"
                     data-icon="fa-solid fa-people-roof"
-                    placeholder="Enter shared amenities (e.g., Conference Rooms, Parking Facilities)">
+                    placeholder="Enter shared amenities (e.g., Conference rooms, Parking facilities)">
             </div>
         </div>
 
@@ -821,7 +821,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="space_features" class="form-control has-icon"
                     data-icon="fa-solid fa-table-cells-large"
-                    placeholder="Enter layout (e.g., Open Floor Plan, Private Offices)">
+                    placeholder="Enter layout (e.g., Open floor plan, Private offices)">
             </div>
         </div>
 
@@ -1128,7 +1128,7 @@
         {{-- <label class="fw-bold">Other Lease Term:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_lease_term" class="form-control has-icon"
-                data-icon="fa-solid fa-calendar-days" placeholder="Enter lease term (e.g., 6-Month, Week-to-Week)">
+                data-icon="fa-solid fa-calendar-days" placeholder="Enter lease term (e.g., 6-month, Week-to-week)">
         </div>
     </div>
 
@@ -1277,7 +1277,7 @@
     <div class="input-cover">
         <textarea wire:model="parking_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-car"
-            placeholder="Enter parking terms (e.g., 1 Assigned Covered Space Included, 2 Guest Spaces Available)"></textarea>
+            placeholder="Enter parking terms (e.g., 1 assigned covered space included, 2 guest spaces available)"></textarea>
     </div>
 </div>
 
@@ -1291,7 +1291,7 @@
     <div class="input-cover">
         <textarea wire:model="ll_maintenance_responsibility" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-screwdriver-wrench"
-            placeholder="Enter maintenance responsibilities (e.g., Landlord Responsible for Major Repairs, Tenant Responsible for Lawn Care)"></textarea>
+            placeholder="Enter maintenance responsibilities (e.g., Landlord responsible for major repairs, Tenant responsible for lawn care)"></textarea>
     </div>
 </div>
 
@@ -1324,7 +1324,7 @@
         <div class="input-cover">
             <textarea wire:model="renewal_option_details" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-file-signature"
-                placeholder="Enter renewal option terms (e.g., 1-Year Renewal at Market Rate, 60-Day Notice Required)"></textarea>
+                placeholder="Enter renewal option terms (e.g., 1-year renewal at market rate, 60-day notice required)"></textarea>
         </div>
     </div>
 @endif
@@ -1383,7 +1383,7 @@
         <div class="input-cover">
             <input type="text" wire:model="commercial_lease_type_other" class="form-control has-icon"
                 data-icon="fa-solid fa-building"
-                placeholder="Enter commercial lease type (e.g., Ground Lease, Build-to-Suit)">
+                placeholder="Enter commercial lease type (e.g., Ground lease, Build-to-suit)">
         </div>
     </div>
 
@@ -1397,7 +1397,7 @@
         <div class="input-cover">
             <textarea wire:model="cam_nnn_additional_rent_charges" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-receipt"
-                placeholder="Enter CAM/NNN charges (e.g., Estimated $3/SqFt Annually for Taxes, Insurance, and Maintenance)"></textarea>
+                placeholder="Enter CAM/NNN charges (e.g., Estimated $3/SqFt annually for taxes, insurance, and maintenance)"></textarea>
         </div>
     </div>
 
@@ -1411,7 +1411,7 @@
         <div class="input-cover">
             <textarea wire:model="rent_escalation_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-arrow-trend-up"
-                placeholder="Enter rent escalation (e.g., 3% Annual Increase Beginning Year 2)"></textarea>
+                placeholder="Enter rent escalation (e.g., 3% annual increase beginning year 2)"></textarea>
         </div>
     </div>
 
@@ -1425,7 +1425,7 @@
         <div class="input-cover">
             <textarea wire:model="tenant_improvement_buildout_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-hammer"
-                placeholder="Enter TI/buildout terms (e.g., $20/SqFt TI Allowance, Delivered in Shell Condition)"></textarea>
+                placeholder="Enter TI/buildout terms (e.g., $20/SqFt TI allowance, Delivered in Shell Condition)"></textarea>
         </div>
     </div>
 
@@ -1453,7 +1453,7 @@
         <div class="input-cover">
             <textarea wire:model="signage_rights" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-sign-hanging"
-                placeholder="Enter signage rights (e.g., Tenant May Install One Suite Sign and One Directory Listing)"></textarea>
+                placeholder="Enter signage rights (e.g., Tenant may install one suite sign and one directory listing)"></textarea>
         </div>
     </div>
 
@@ -1467,7 +1467,7 @@
         <div class="input-cover">
             <textarea wire:model="commercial_parking_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-square-parking"
-                placeholder="Enter commercial parking terms (e.g., 4 Spaces per 1,000 SqFt, 2 Reserved Spaces Included)"></textarea>
+                placeholder="Enter commercial parking terms (e.g., 4 spaces per 1,000 SqFt, 2 reserved spaces included)"></textarea>
         </div>
     </div>
 

@@ -1033,16 +1033,24 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
+                                @if($isDraft)
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="syncAllSelect2BeforeSave(); @this.call('saveDraft');" wire:loading.attr="disabled" wire:target="saveDraft">
+                                    <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
+                                    <span wire:loading wire:target="saveDraft">Saving...</span>
+                                </button>
+                                @else
                                 <button type="button" class="btn btn-outline-primary me-2" onclick="syncAllSelect2BeforeSave(); @this.call('update');" wire:loading.attr="disabled" wire:target="update">
                                     <span wire:loading.remove wire:target="update"><i class="fa-solid fa-save me-1"></i> Save Edit</span>
                                     <span wire:loading wire:target="update">Saving...</span>
                                 </button>
+                                @endif
 
                                 <button wire:ignore type="button" class="btn btn-primary wizard-step-next"
                                     onclick="if(typeof window._wizardNextHandler==='function'){window._wizardNextHandler();}">Next</button>
 
                                 <button wire:ignore type="submit" class="btn btn-success wizard-step-finish disabled"
-                                    id="save-button" wire:loading.attr="disabled" wire:target="update">
+                                    id="save-button" wire:loading.attr="disabled" wire:target="update"
+                                    @if(!$isDraft) style="display:none;" @endif>
                                     <span wire:loading.remove wire:target="update">Submit</span>
                                     <span wire:loading wire:target="update">Submitting...</span>
                                 </button>

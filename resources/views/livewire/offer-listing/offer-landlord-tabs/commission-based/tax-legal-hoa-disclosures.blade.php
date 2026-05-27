@@ -41,7 +41,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="tax_year" class="form-control has-icon"
                     data-icon="fa-solid fa-calendar-days"
-                    placeholder="Enter Tax Year (e.g., 2025)">
+                    placeholder="Enter tax year (e.g., 2025)">
             </div>
         </div>
 
@@ -93,7 +93,7 @@
                 <div class="input-cover">
                     <input type="number" wire:model="total_parcel_count" class="form-control has-icon"
                         data-icon="fa-solid fa-hashtag"
-                        placeholder="Enter Total Number of Parcels (e.g., 3)" min="2">
+                        placeholder="Enter total number of parcels (e.g., 3)" min="2">
                 </div>
             </div>
 
@@ -251,7 +251,7 @@
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
                     <input type="text" wire:model="annual_cdd_fee" class="form-control"
-                        placeholder="Enter Annual CDD Fee (e.g., 1800)"
+                        placeholder="Enter annual CDD fee (e.g., 1800)"
                         data-error-id="annual_cdd_fee_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 </div>
@@ -289,7 +289,7 @@
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
                     <input type="text" wire:model="special_assessment_amount" class="form-control"
-                        placeholder="Enter Special Assessment Amount (e.g., 4500)"
+                        placeholder="Enter special assessment amount (e.g., 4500)"
                         data-error-id="special_assessment_amount_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 </div>
@@ -306,7 +306,7 @@
                 <div class="input-cover">
                     <textarea wire:model="special_assessment_description" class="form-control has-icon landlord-compact-textarea" rows="1"
                         data-icon="fa-solid fa-file-invoice"
-                        placeholder="Enter special assessment description (e.g., Road Resurfacing Assessment Through 2028 at $900/Year)"></textarea>
+                        placeholder="Enter special assessment description (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
                 </div>
             </div>
         @endif
@@ -371,7 +371,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_type_other" class="form-control has-icon"
                             data-icon="fa-solid fa-sitemap"
-                            placeholder="Enter association type (e.g., Homeowners Association)">
+                            placeholder="Enter association type (e.g., Homeowners association)">
                     </div>
                 </div>
             </div>
@@ -387,7 +387,7 @@
                 <div class="input-cover">
                     <input type="text" wire:model="association_name" class="form-control has-icon"
                         data-icon="fa-solid fa-building"
-                        placeholder="Enter Association Name (e.g., Sunset Hills Homeowners Association, Inc.)">
+                        placeholder="Enter association name (e.g., Sunset Hills Homeowners Association, Inc.)">
                 </div>
             </div>
 
@@ -404,7 +404,7 @@
                         <div class="input-cover">
                             <span class="input-group-text-seller">$</span>
                             <input type="text" wire:model="association_fee_amount" class="form-control"
-                                placeholder="Enter Association Fee Amount (e.g., 350)"
+                                placeholder="Enter association fee amount (e.g., 350)"
                                 data-error-id="association_fee_amount_error"
                                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
@@ -478,7 +478,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_approval_process" class="form-control has-icon"
                             data-icon="fa-solid fa-clipboard-check"
-                            placeholder="Enter approval process details (e.g., Application Required, Background Check, 30-Day Review Period)">
+                            placeholder="Enter approval process details (e.g., Application required, Background check, 30-day review period)">
                     </div>
                 </div>
 
@@ -492,7 +492,7 @@
                     <div class="input-cover">
                         <span class="input-group-text-seller">$</span>
                         <input type="text" wire:model="association_application_fee" class="form-control"
-                            placeholder="Enter Association Application Fee (e.g., 150)"
+                            placeholder="Enter association application fee (e.g., 150)"
                             data-error-id="association_application_fee_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -533,7 +533,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_fee_includes_other" class="form-control has-icon"
                             data-icon="fa-solid fa-list-check"
-                            placeholder="Enter what else is included (e.g., Roof Maintenance, Building Reserves)">
+                            placeholder="Enter what else is included (e.g., Roof maintenance, Building reserves)">
                     </div>
                 </div>
             </div>
@@ -569,7 +569,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_amenities_other" class="form-control has-icon"
                             data-icon="fa-solid fa-star"
-                            placeholder="Enter association amenity (e.g., Community Garden)">
+                            placeholder="Enter association amenity (e.g., Community garden)">
                     </div>
                 </div>
             </div>
@@ -638,7 +638,7 @@
                             <div class="input-cover">
                                 <input type="number" wire:model="max_leases_per_year" class="form-control has-icon"
                                     data-icon="fa-solid fa-hashtag"
-                                    placeholder="Enter Max Leases Per Year (e.g., 2)" min="1">
+                                    placeholder="Enter max leases per year (e.g., 2)" min="1">
                             </div>
                         </div>
                     </div>
@@ -648,7 +648,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="min_lease_period_other" class="form-control has-icon"
                             data-icon="fa-regular fa-clock"
-                            placeholder="Enter minimum lease period (e.g., 30 Days)">
+                            placeholder="Enter minimum lease period (e.g., 30 days)">
                     </div>
                 </div>
 
@@ -662,7 +662,7 @@
                     <div class="input-cover">
                         <textarea wire:model="additional_lease_restrictions" class="form-control has-icon landlord-compact-textarea" rows="1"
                             data-icon="fa-solid fa-ban"
-                            placeholder="Enter additional restrictions (e.g., No Airbnb/VRBO, Owner Must Occupy 1 Year Before Renting, Tenant Must Be HOA-Approved)"></textarea>
+                            placeholder="Enter additional restrictions (e.g., No Airbnb/VRBO, Owner must occupy 1 year before renting, Tenant must be HOA-approved)"></textarea>
                     </div>
                 </div>
             @endif

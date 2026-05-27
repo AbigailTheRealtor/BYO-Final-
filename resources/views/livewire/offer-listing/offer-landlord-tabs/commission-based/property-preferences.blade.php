@@ -550,7 +550,7 @@
     <div class="input-cover">
         <input type="text" wire:model="other_appliances" class="form-control has-icon"
             data-icon="fa-solid fa-plug"
-            placeholder="Enter appliances (e.g., Air Fryer Oven, Induction Cooktop, Double Oven)"
+            placeholder="Enter appliances (e.g., Air fryer oven, Induction cooktop, Double oven)"
             @if (is_array($this->appliances) && in_array('Other', $this->appliances)) required @endif>
     </div>
     <span class="error mt-2" id="other_appliances_error"></span>
@@ -669,7 +669,7 @@
         <div class="input-cover">
             <input type="text" wire:model="other_parking_space_wrapper" class="form-control has-icon"
                 data-icon="fa-solid fa-warehouse"
-                placeholder="Enter garage/parking features (e.g., Tandem Parking, Gated Entry, Shared Driveway)">
+                placeholder="Enter garage/parking features (e.g., Tandem parking, Gated entry, Shared driveway)">
         </div>
     </div>
 
@@ -804,9 +804,9 @@
     <div class="input-cover">
         <input type="text" wire:model="other_non_negotiable_amenities" class="form-control has-icon"
             data-icon="fa-solid fa-lock"
-            @if ($property_type === 'Residential Property') placeholder="Enter amenities or property features (e.g., Sauna, EV Charger, Outdoor Kitchen)"
+            @if ($property_type === 'Residential Property') placeholder="Enter amenities or property features (e.g., Sauna, EV charger, Outdoor kitchen)"
         @elseif($property_type === 'Commercial Property')
-            placeholder="Enter amenities or property features (e.g., Rooftop Access, Backup Generator, Freight Elevator)" @endif>
+            placeholder="Enter amenities or property features (e.g., Rooftop access, Backup generator, Freight elevator)" @endif>
 
     </div>
     <span class="error mt-2" id="other_non_negotiable_amenities_error"></span>
@@ -850,7 +850,7 @@
         {{-- <label class="fw-bold">Other Heating / Fuel:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_heating_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-fire" placeholder="Enter heating/fuel type (e.g., Wood Pellet, Geothermal)">
+                data-icon="fa-solid fa-fire" placeholder="Enter heating/fuel type (e.g., Wood pellet, Geothermal)">
         </div>
     </div>
 
@@ -875,7 +875,7 @@
         {{-- <label class="fw-bold">Other Air Conditioning:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Evaporative Cooler, Geo-Thermal)">
+                data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Evaporative cooler, Geo-thermal)">
         </div>
     </div>
 
@@ -899,7 +899,7 @@
     <div class="form-group" style="display: {{ (is_array($water ?? []) && in_array('Other', $water ?? [])) ? 'block' : 'none' }};" id="other_water_wrapper">
         <div class="input-cover">
             <input type="text" wire:model="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater Collection, Shared Well)">
+                data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater collection, Shared well)">
         </div>
     </div>
 
@@ -949,7 +949,7 @@
         {{-- <label class="fw-bold">Other Utilities:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_property_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-bolt" placeholder="Enter utilities (e.g., Fiber Internet, Solar Power, Generator Hookup)">
+                data-icon="fa-solid fa-bolt" placeholder="Enter utilities (e.g., Fiber internet, Solar power, Generator hookup)">
         </div>
     </div>
 
@@ -974,7 +974,7 @@
         {{-- <label class="fw-bold">Other Laundry Features:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_laundry_features" class="form-control has-icon"
-                data-icon="fa-solid fa-shirt" placeholder="Enter laundry features (e.g., In-Unit, Coin Laundry, Laundry Room)">
+                data-icon="fa-solid fa-shirt" placeholder="Enter laundry features (e.g., In-unit, Coin laundry, Laundry room)">
         </div>
     </div>
 
@@ -999,7 +999,7 @@
         {{-- <label class="fw-bold">Other Floor Covering:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_floor_covering" class="form-control has-icon"
-                data-icon="fa-solid fa-layer-group" placeholder="Enter floor covering (e.g., Hardwood, Tile, Vinyl Plank)">
+                data-icon="fa-solid fa-layer-group" placeholder="Enter floor covering (e.g., Hardwood, Tile, Vinyl plank)">
         </div>
     </div>
 
@@ -1023,7 +1023,7 @@
     <div class="form-group" style="display: {{ (is_array($security_features ?? []) && in_array('Other', $security_features ?? [])) ? 'block' : 'none' }};" id="other_security_features_wrapper">
         <div class="input-cover">
             <input type="text" wire:model="other_security_features" class="form-control has-icon"
-                data-icon="fa-solid fa-shield-halved" placeholder="Enter security features (e.g., Deadbolt, Security Camera, Intercom)">
+                data-icon="fa-solid fa-shield-halved" placeholder="Enter security features (e.g., Deadbolt, Security camera, Intercom)">
         </div>
     </div>
 
@@ -1162,7 +1162,7 @@
         {{-- <label class="fw-bold">Other Utilities:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_property_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-bolt" placeholder="Enter utilities (e.g., Fiber Internet, Solar Power, Generator Hookup)">
+                data-icon="fa-solid fa-bolt" placeholder="Enter utilities (e.g., Fiber internet, Solar power, Generator hookup)">
         </div>
     </div>
 
@@ -1186,7 +1186,7 @@
     <div class="form-group" style="display: {{ (is_array($water ?? []) && in_array('Other', $water ?? [])) ? 'block' : 'none' }};" id="other_water_wrapper">
         <div class="input-cover">
             <input type="text" wire:model="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater Collection, Shared Well)">
+                data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater collection, Shared well)">
         </div>
     </div>
 
@@ -1236,7 +1236,7 @@
         {{-- <label class="fw-bold">Other Heating / Fuel:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_heating_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-fire" placeholder="Enter heating/fuel type (e.g., Wood Pellet, Geothermal)">
+                data-icon="fa-solid fa-fire" placeholder="Enter heating/fuel type (e.g., Wood pellet, Geothermal)">
         </div>
     </div>
 
@@ -1261,7 +1261,7 @@
         {{-- <label class="fw-bold">Other Air Conditioning:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Evaporative Cooler, Geo-Thermal)">
+                data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Evaporative cooler, Geo-thermal)">
         </div>
     </div>
 
@@ -1286,7 +1286,7 @@
         {{-- <label class="fw-bold">Other Electrical Service:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_electrical_service" class="form-control has-icon"
-                data-icon="fa-solid fa-plug" placeholder="Enter electrical service (e.g., 600 Volts, DC Power)">
+                data-icon="fa-solid fa-plug" placeholder="Enter electrical service (e.g., 600 volts, DC power)">
         </div>
     </div>
 
@@ -1329,7 +1329,7 @@
         {{-- <label class="fw-bold">Other Building Features:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_building_features" class="form-control has-icon"
-                data-icon="fa-solid fa-building" placeholder="Enter building features (e.g., Skylight, Automated Gate)">
+                data-icon="fa-solid fa-building" placeholder="Enter building features (e.g., Skylight, Automated gate)">
         </div>
     </div>
 
@@ -1533,7 +1533,7 @@
                 <div class="input-cover">
                     <input type="text" wire:model="breed_restrictions" class="form-control has-icon"
                         data-icon="fa-solid fa-shield-dog"
-                        placeholder="Enter breed restrictions (e.g., no Pit Bulls)">
+                        placeholder="Enter breed restrictions (e.g., No pit bulls)">
                 </div>
                 <span class="error mt-2" id="breed_restrictions_error"></span>
             </div>
@@ -1560,7 +1560,7 @@
                 </span>
                 <div class="input-cover">
                     <input type="text" wire:model="breed_restrictions" class="form-control has-icon"
-                        data-icon="fa-solid fa-shield-dog" placeholder="Enter pet restrictions (e.g., No Pit Bulls)">
+                        data-icon="fa-solid fa-shield-dog" placeholder="Enter pet restrictions (e.g., No pit bulls)">
                 </div>
                 <span class="error mt-2" id="breed_restrictions_error"></span>
             </div>

@@ -669,7 +669,7 @@
     <div class="input-cover">
 
         <input type="text" wire:model="other_parking_space_wrapper" id="other_parking_space"
-            class="form-control has-icon" data-icon="fa-solid fa-warehouse" placeholder="Enter garage/parking features needed (e.g., Tandem Parking, Gated Entry, Shared Driveway)">
+            class="form-control has-icon" data-icon="fa-solid fa-warehouse" placeholder="Enter garage/parking features needed (e.g., Tandem parking, Gated entry, Shared driveway)">
     </div>
 </div>
 
@@ -814,11 +814,11 @@
             @if (in_array($property_type, ['Residential Property']))
                 <input type="text" wire:model="other_non_negotiable_amenities" class="form-control has-icon"
                     data-icon="fa-solid fa-lock"
-                    placeholder="Enter non-negotiable amenities or features (e.g., Sauna, EV Charger, Outdoor Kitchen)">
+                    placeholder="Enter non-negotiable amenities or features (e.g., Sauna, EV charger, Outdoor kitchen)">
             @elseif(in_array($property_type, ['Commercial Property']))
                 <input type="text" wire:model="other_non_negotiable_amenities" class="form-control has-icon"
                     data-icon="fa-solid fa-lock"
-                    placeholder="Enter non-negotiable amenities or features (e.g., Rooftop Access, Backup Generator, Freight Elevator)">
+                    placeholder="Enter non-negotiable amenities or features (e.g., Rooftop access, Backup generator, Freight elevator)">
             @endif
         </div>
         <span class="error mt-2" id="other_non_negotiable_amenities_error"></span>

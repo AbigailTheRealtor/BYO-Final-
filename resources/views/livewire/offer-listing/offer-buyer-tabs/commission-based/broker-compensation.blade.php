@@ -496,7 +496,7 @@ $safeKey = function(...$parts) {
     @if ($agency_agreement_timeframe === 'Other')
         <div class="mt-3" wire:key="{{ $safeKey('agency-agreement-custom', $agency_agreement_timeframe) }}">
             <input type="text" wire:model="agency_agreement_custom" class="form-control"
-                placeholder="Enter Buyer agency agreement timeframe (e.g., 8 Months)">
+                placeholder="Enter Buyer agency agreement timeframe (e.g., 8 months)">
             @error('agency_agreement_custom')
                 <span class="text-danger small">{{ $message }}</span>
             @enderror

@@ -1927,15 +1927,22 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
+                                @if($isDraft)
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="syncAllSelect2BeforeSave(); @this.call('saveDraftOnly');" wire:loading.attr="disabled" wire:target="saveDraftOnly">
+                                    <span wire:loading.remove wire:target="saveDraftOnly"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
+                                    <span wire:loading wire:target="saveDraftOnly">Saving...</span>
+                                </button>
+                                @else
                                 <button type="button" onclick="doSaveEditWithSync()" class="btn btn-outline-primary me-2" wire:loading.attr="disabled" wire:target="update">
                                     <span wire:loading.remove wire:target="update"><i class="fa-solid fa-save me-1"></i> Save Edit</span>
                                     <span wire:loading wire:target="update">Saving...</span>
                                 </button>
+                                @endif
 
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
                                 <button type="button" onclick="doSaveEditWithSync()" class="btn btn-success wizard-step-finish"
-                                    id="save-button">
+                                    id="save-button" @if(!$isDraft) style="display:none;" @endif>
                                     Submit
                                 </button>
                             </div>
@@ -2963,7 +2970,7 @@
                     return;
                 }
 
-                if (selectElement.value === 'Auction') {
+                if (selectElement.value === 'Bidding Period') {
                     auctionTimeDiv.classList.remove('d-none'); // Show the auction time field
                 } else {
                     auctionTimeDiv.classList.add('d-none'); // Hide the auction time field
@@ -3843,6 +3850,7 @@
             return EDIT_TAB_ORDER;
         }
 
+        var _isDraftEdit = @json($isDraft);
         window._updateNextSubmitButtons = function() {
             var tabOrder = getEditTabOrder();
             var activeTab = document.querySelector('.nav-link.active');
@@ -3853,7 +3861,8 @@
             var nextBtn = document.querySelector('.wizard-step-next');
             var submitBtn = document.querySelector('.wizard-step-finish');
             if (nextBtn) nextBtn.style.display = isLastTab ? 'none' : '';
-            if (submitBtn) submitBtn.style.display = '';
+            // Submit only visible for draft listings; published edits use Save Edit only
+            if (submitBtn) submitBtn.style.display = _isDraftEdit ? '' : 'none';
         };
         setTimeout(window._updateNextSubmitButtons, 300);
 
@@ -4873,7 +4882,7 @@
 
             newServiceEntry.innerHTML = `
             <label for="other-services-input" class="form-label">Specify any additional services requested</label>
-            <input type="text" class="form-control mb-2" placeholder="Enter additional services not listed above (e.g., School District Research, Commute Area Research, Furnished Rental Assistance)">
+            <input type="text" class="form-control mb-2" placeholder="Enter additional services not listed above (e.g., School district research, Commute area research, Furnished rental assistance)">
             <button type="button" class="btn btn-danger btn-sm remove-service" onclick="removeService(this)">❌ Remove</button>
         `;
 

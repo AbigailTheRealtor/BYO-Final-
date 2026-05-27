@@ -150,7 +150,7 @@
                             <input
                                 type="text"
                                 class="form-control"
-                                placeholder="Enter custom document name (e.g., Lead-Based Paint Disclosure, Flood Zone Notice)"
+                                placeholder="Enter custom document name (e.g., Lead-based paint disclosure, Flood zone notice)"
                                 x-model="row.custom_type"
                                 @input="sync()"
                             >

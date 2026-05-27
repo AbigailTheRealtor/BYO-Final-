@@ -350,7 +350,7 @@
             <div class="mb-3">
 
                 <textarea class="form-control" id="other-services-input" wire:model="other_services" rows="3"
-                    placeholder="Enter additional services not listed above (e.g., School District Research, Commute Area Research, Furnished Rental Assistance)"></textarea>
+                    placeholder="Enter additional services not listed above (e.g., School district research, Commute area research, Furnished rental assistance)"></textarea>
             </div>
         @endif
     </div>
@@ -388,7 +388,7 @@
                             id="other-services-input-{{ $i }}"
                             type="text"
                             class="form-control mb-2 @error("other_services.$i") is-invalid @enderror"
-                            placeholder="Enter additional services not listed above (e.g., School District Research, Commute Area Research, Furnished Rental Assistance)"
+                            placeholder="Enter additional services not listed above (e.g., School district research, Commute area research, Furnished rental assistance)"
                             wire:model="other_services.{{ $i }}"
                         >
 

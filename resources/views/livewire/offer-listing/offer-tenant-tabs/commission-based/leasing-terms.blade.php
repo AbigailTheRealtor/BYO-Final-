@@ -93,7 +93,7 @@
 <div class="form-group other_lease_for @if(!in_array('Other', $leaseForArr)) d-none @endif">
     <div class="input-cover">
         <input type="text" wire:model="other_lease_for"  class="form-control has-icon"
-            data-icon="fa-solid fa-file-pen" placeholder="Enter offered lease term (e.g., 8 Months)">
+            data-icon="fa-solid fa-file-pen" placeholder="Enter offered lease term (e.g., 8 months)">
     </div>
 </div>
 

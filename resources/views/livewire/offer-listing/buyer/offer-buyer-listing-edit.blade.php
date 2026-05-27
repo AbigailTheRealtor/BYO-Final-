@@ -903,15 +903,23 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back" data-wizard-back>Back</button>
                             </div>
                             <div>
+                                @if($isDraft)
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="if(typeof syncBuyerSelect2BeforeSave==='function')syncBuyerSelect2BeforeSave()" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
+                                    <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
+                                    <span wire:loading wire:target="saveDraft">Saving...</span>
+                                </button>
+                                @else
                                 <button type="button" class="btn btn-outline-primary me-2" onclick="if(typeof syncBuyerSelect2BeforeSave==='function')syncBuyerSelect2BeforeSave()" wire:click="update" wire:loading.attr="disabled" wire:target="update">
                                     <span wire:loading.remove wire:target="update"><i class="fa-solid fa-save me-1"></i> Save Edit</span>
                                     <span wire:loading wire:target="update">Saving...</span>
                                 </button>
+                                @endif
 
                                 <button type="button" class="btn btn-primary wizard-step-next" data-wizard-next>Next</button>
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
-                                    id="save-button" wire:loading.attr="disabled" wire:target="update">
+                                    id="save-button" wire:loading.attr="disabled" wire:target="update"
+                                    @if(!$isDraft) style="display:none;" @endif>
                                     <span wire:loading.remove wire:target="update">Submit</span>
                                     <span wire:loading wire:target="update">Submitting...</span>
                                 </button>
@@ -2760,6 +2768,7 @@
     </script>
     <script>
         (function () {
+            var _isDraftMode = @json($isDraft);
             function syncWizardButtons() {
                 var aiPane = document.getElementById('ai-questions');
                 var nextBtn = document.querySelector('.wizard-step-next');
@@ -2767,7 +2776,8 @@
                 if (!nextBtn || !finishBtn) return;
                 var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
                 nextBtn.style.display = onAI ? 'none' : '';
-                finishBtn.style.display = onAI ? '' : 'none';
+                // Submit only visible on AI (last) tab and only for draft listings
+                finishBtn.style.display = (onAI && _isDraftMode) ? '' : 'none';
             }
             document.addEventListener('shown.bs.tab', syncWizardButtons);
             document.addEventListener('DOMContentLoaded', syncWizardButtons);

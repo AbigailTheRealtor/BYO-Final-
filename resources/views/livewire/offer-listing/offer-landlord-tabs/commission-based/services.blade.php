@@ -417,7 +417,7 @@
                     Specify additional services requested:
                 </label>
                 <textarea class="form-control" id="other-services-input" wire:model="other_services" rows="3"
-                    placeholder="Enter additional services not listed above (e.g., Rental License Coordination, Employer Housing Outreach, Lease Compliance Assistance)"></textarea>
+                    placeholder="Enter additional services not listed above (e.g., Rental license coordination, Employer housing outreach, Lease compliance assistance)"></textarea>
             </div>
         @endif
 
@@ -448,7 +448,7 @@
 
                         <input id="other-services-input-{{ $i }}" type="text"
                             class="form-control mb-2 @error("other_services.$i") is-invalid @enderror"
-                            placeholder="Enter additional services not listed above (e.g., Rental License Coordination, Employer Housing Outreach, Lease Compliance Assistance)"
+                            placeholder="Enter additional services not listed above (e.g., Rental license coordination, Employer housing outreach, Lease compliance assistance)"
                             wire:model="other_services.{{ $i }}">
 
                         @error("other_services.$i")

@@ -5734,7 +5734,7 @@ $lease_types = [
 
         newServiceEntry.innerHTML = `
             <label for="other-services-input" class="form-label">Specify any additional services requested</label>
-            <input type="text" class="form-control mb-2" placeholder="Enter additional services not listed above (e.g., School District Research, Commute Area Research, Furnished Rental Assistance)">
+            <input type="text" class="form-control mb-2" placeholder="Enter additional services not listed above (e.g., School district research, Commute area research, Furnished rental assistance)">
             <button type="button" class="btn btn-danger btn-sm remove-service" onclick="removeService(this)">❌ Remove</button>
         `;
 

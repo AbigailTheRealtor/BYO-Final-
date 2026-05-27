@@ -14,7 +14,7 @@
                                     <label class="fw-bold">Property Description</label>
                                     <div class="input-cover">
                                         <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
-                                            placeholder="{{ $property_type === 'Commercial Property' ? 'Enter property description (e.g., Modern Open Floor Plan, High-Traffic Location, ADA-Compliant, 2,500 SqFt of Leasable Space)' : 'Enter property description (e.g., Recently Renovated Kitchen, Waterfront Views, Flexible Lease Terms, In-Unit Washer/Dryer)' }}"></textarea>
+                                            placeholder="{{ $property_type === 'Commercial Property' ? 'Enter property description (e.g., Modern open floor plan, High-traffic location, ADA-compliant, 2,500 SqFt of leasable space)' : 'Enter property description (e.g., Recently renovated kitchen, Waterfront views, Flexible lease terms, In-unit washer/dryer)' }}"></textarea>
                                     </div>
                                 </div>
 

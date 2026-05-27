@@ -245,7 +245,7 @@ $auction_lengths_seller = [
         <div class="input-cover">
             <input type="text" wire:model="listing_title" id="listing_title" class="form-control has-icon"
                 data-icon="fa-solid fa-tag"
-                placeholder="Enter listing title (e.g., Updated 3-Bedroom Home in Tampa, FL)"
+                placeholder="Enter listing title (e.g., Updated 3-bedroom home in Tampa, FL)"
                 required>
         </div>
 

@@ -202,7 +202,7 @@
             <div class="input-cover">
                 <input type="text" wire:model.defer="other_lease_type" class="form-control has-icon"
                     data-icon="fa-solid fa-file-contract"
-                    placeholder="Enter Existing Lease Type (e.g., Month-to-Month)">
+                    placeholder="Enter existing lease type (e.g., Month-to-Month)">
             </div>
         </div>
     @endif
