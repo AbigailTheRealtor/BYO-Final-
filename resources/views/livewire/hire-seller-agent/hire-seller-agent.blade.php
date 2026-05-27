@@ -990,12 +990,10 @@
 
                         <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
-                        @if (!$isDraft)
                         <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled" wire:target="store">
                             <span wire:loading.remove wire:target="store">{{ $isTrueEdit ? 'Save Edit' : 'Submit' }}</span>
                             <span wire:loading wire:target="store">{{ $isTrueEdit ? 'Saving...' : 'Submitting...' }}</span>
                         </button>
-                        @endif
                     </div>
 
                 </div>

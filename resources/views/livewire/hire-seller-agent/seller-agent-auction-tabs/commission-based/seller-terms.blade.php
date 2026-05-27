@@ -240,7 +240,7 @@
         <label class="fw-bold">Occupied Until:</label>
         <div class="input-cover">
             <input type="date" wire:model="occupant_tenant" class="form-control has-icon"
-                data-icon="fa-regular fa-clock" placeholder="Enter other Occupied until">
+                data-icon="fa-regular fa-clock" placeholder="Enter occupied-until date (e.g., December 2025)">
         </div>
     </div>
 @endif
@@ -722,7 +722,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
                 data-icon="fa-solid fa-clock"
-                placeholder="Enter timing of transfer (e.g., within 48 hours of contract acceptance, partial transfer at inspection period)">
+                placeholder="Enter timing of transfer (e.g., Within 48 hours of contract acceptance, Partial transfer at inspection period)">
         </div>
     </div>
     @endif

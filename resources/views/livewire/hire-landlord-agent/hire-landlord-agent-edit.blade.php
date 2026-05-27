@@ -1073,11 +1073,6 @@ $tenantPays = [
                                 </button>
 
                                 <button type="button" class="btn btn-primary wizard-step-next" wire:loading.attr="disabled">Next</button>
-
-                                <button type="submit" class="btn btn-success wizard-step-finish disabled"
-                                    id="save-button">
-                                    Submit
-                                </button>
                             </div>
 
                         </div>
@@ -1212,8 +1207,9 @@ $tenantPays = [
                 $('#property_items').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    closeOnSelect: false,
                 });
-                $('#property_items').on('change', function(e) {
+                $('#property_items').off('change.s2sync').on('change.s2sync', function(e) {
                     let selectedValues = $(this).val();
                     @this.set('property_items', selectedValues);
                 });
@@ -1223,8 +1219,9 @@ $tenantPays = [
                 $('#non_negotiable_amenities').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    closeOnSelect: false,
                 });
-                $('#non_negotiable_amenities').on('change', function(e) {
+                $('#non_negotiable_amenities').off('change.s2sync').on('change.s2sync', function(e) {
                     let selectedValues = $(this).val();
                     @this.set('non_negotiable_amenities', selectedValues);
                 });
@@ -1368,9 +1365,10 @@ $tenantPays = [
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    closeOnSelect: false,
                 });
-                $('#view_preference').on('change', function() {
+                $('#view_preference').off('change.s2sync').on('change.s2sync', function() {
                     let selectedValues = $(this).val();
                     Livewire.emit('updatePreference', selectedValues);
                     if (selectedValues.includes('Other')) {
@@ -1575,8 +1573,9 @@ $tenantPays = [
                     placeholder: "Select",
                     allowClear: true,
                     width: "100%",
+                    closeOnSelect: false,
                 });
-                $('#appliances').on('change', function(e) {
+                $('#appliances').off('change.s2sync').on('change.s2sync', function(e) {
                     let selectedValues = $(this).val() || [];
                     @this.set('appliances', selectedValues);
                 });
@@ -1587,8 +1586,9 @@ $tenantPays = [
                     placeholder: "Select",
                     allowClear: true,
                     width: "100%",
+                    closeOnSelect: false,
                 });
-                $('#garage_parking_spaces_option_landlord').on('change', function() {
+                $('#garage_parking_spaces_option_landlord').off('change.s2sync').on('change.s2sync', function() {
                     let selectedValues = $(this).val() || [];
                     @this.set('garage_parking_spaces_option', selectedValues);
                     const otherDiv = document.getElementById('other_garage_parking_spaces_option_landlord');
@@ -1602,8 +1602,9 @@ $tenantPays = [
                 $('#rent_includes').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    closeOnSelect: false,
                 });
-                $('#rent_includes').on('change', function(e) {
+                $('#rent_includes').off('change.s2sync').on('change.s2sync', function(e) {
                     let selectedValues = $(this).val();
                     @this.set('rent_includes', selectedValues);
                 });
@@ -1613,8 +1614,9 @@ $tenantPays = [
                 $('#terms_of_lease').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    closeOnSelect: false,
                 });
-                $('#terms_of_lease').on('change', function(e) {
+                $('#terms_of_lease').off('change.s2sync').on('change.s2sync', function(e) {
                     let selectedValues = $(this).val();
                     @this.set('terms_of_lease', selectedValues);
                 });
@@ -1624,8 +1626,9 @@ $tenantPays = [
                 $('#tenant_pays').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    closeOnSelect: false,
                 });
-                $('#tenant_pays').on('change', function(e) {
+                $('#tenant_pays').off('change.s2sync').on('change.s2sync', function(e) {
                     let selectedValues = $(this).val();
                     @this.set('tenant_pays', selectedValues);
                 });
@@ -1635,8 +1638,9 @@ $tenantPays = [
                 $('#owner_pays').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    closeOnSelect: false,
                 });
-                $('#owner_pays').on('change', function(e) {
+                $('#owner_pays').off('change.s2sync').on('change.s2sync', function(e) {
                     let selectedValues = $(this).val();
                     @this.set('owner_pays', selectedValues);
                 });
@@ -1650,6 +1654,7 @@ $tenantPays = [
                     $dlt.select2({
                         placeholder: "Select",
                         allowClear: true,
+                        closeOnSelect: false,
                     });
                 }
                 var savedValues = @json($desired_lease_length ?? []);
@@ -2481,6 +2486,67 @@ $tenantPays = [
             draftModal.show();
 
         });
+    </script>
+    <script>
+        function getErrorEl(input) {
+            const errorId = input.getAttribute('data-error-id');
+            return errorId ? document.getElementById(errorId) : null;
+        }
+        function validateInput(input) {
+            var el = input;
+            var start  = el.selectionStart;
+            var oldLen = el.value.length;
+            var raw    = el.value.replace(/[^\d.]/g, '');
+            var parts  = raw.split('.');
+            var intPart = parts[0] || '';
+            var decPart = parts.length > 1 ? parts[1] : null;
+            if (intPart === '' && decPart === null) { el.value = ''; return; }
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            var formatted = (decPart !== null) ? intPart + '.' + decPart.substring(0, 2) : intPart;
+            el.value = formatted;
+            var newLen = el.value.length;
+            var newPos = Math.max(0, start + (newLen - oldLen));
+            try { el.setSelectionRange(newPos, newPos); } catch(e) {}
+        }
+        function reformatNumber(input) {
+            const errorEl = getErrorEl(input);
+            let v = input.value.replace(/,/g, '');
+            const parts = v.split('.');
+            let intPart = parts[0] || '';
+            let decPart = parts[1] || '';
+            if (decPart) decPart = decPart.slice(0, 2);
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            input.value = decPart ? `${intPart}.${decPart}` : intPart;
+            errorEl && (errorEl.innerText = "");
+        }
+        function handlePaste(event) {
+            event.preventDefault();
+            const paste = (event.clipboardData || window.clipboardData).getData('text');
+            let clean = paste.replace(/[^0-9.]/g, '');
+            const parts = clean.split('.');
+            if (parts.length > 2) { clean = parts[0] + '.' + parts.slice(1).join(''); }
+            let intPart = parts[0] || '';
+            let decPart = parts[1] || '';
+            if (decPart) decPart = decPart.slice(0, 2);
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            event.target.value = decPart ? `${intPart}.${decPart}` : intPart;
+            event.target.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        function formatAllNumericInputsLandlordEdit() {
+            document.querySelectorAll('input[onblur*="reformatNumber"]').forEach(function(input) {
+                if (input.value && input.value.trim() !== '' && !input.value.includes(',')) {
+                    reformatNumber(input);
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(formatAllNumericInputsLandlordEdit, 200);
+        });
+        if (typeof Livewire !== 'undefined') {
+            Livewire.hook('message.processed', function() {
+                setTimeout(formatAllNumericInputsLandlordEdit, 200);
+            });
+        }
     </script>
 @endpush
 

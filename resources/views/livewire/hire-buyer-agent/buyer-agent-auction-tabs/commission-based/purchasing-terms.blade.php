@@ -77,7 +77,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Buyer Open to Purchasing an Assignment Contract:</label>
         <div class="input-cover">
-            <select wire:model="sale_provision_assignment" class="form-control has-icon"
+            <select wire:model.live="sale_provision_assignment" class="form-control has-icon"
                 data-icon="fa-solid fa-file-contract">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
@@ -110,7 +110,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model="assignment_fee_amount" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 2,500)"
+                            placeholder="Enter flat fee amount (e.g., 2500)"
                             data-error-id="assignment_fee_amount_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -222,7 +222,7 @@
         <div class="input-cover">
             <input type="text" wire:model="other_financing" class="form-control has-icon"
                 data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter type of financing or currency offered">
+                placeholder="Enter type of financing or currency offered (e.g., Gold Bullion, Stock Transfer, Private Investment Agreement)">
         </div>
     </div>
 </div>
@@ -247,7 +247,7 @@
         <div class="input-cover">
             <input type="text" wire:model="assumable_terms" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter assumable terms (e.g., $250,0000 remaining at 4.25% for 20 years) ">
+                placeholder="Enter assumable terms (e.g., 250000 remaining at 4.25% for 20 years)">
         </div>
     </div>
 
@@ -596,7 +596,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter timing of transfer (e.g., within 48 hours of contract acceptance, partial transfer at inspection period)">
+                placeholder="Enter timing of transfer (e.g., Within 48 hours of contract acceptance, Partial transfer at inspection period)">
         </div>
     </div>
     @endif
@@ -756,7 +756,7 @@
         <div class="input-cover">
             <input type="text" wire:model="exchange_liens_details" class="form-control has-icon"
                 data-icon="fa-solid fa-file-contract"
-                placeholder="Enter lien/encumbrance details (e.g., auto loan balance, UCC filing)">
+                placeholder="Enter lien/encumbrance details (e.g., Auto loan balance, UCC filing)">
         </div>
     </div>
     @endif

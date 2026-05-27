@@ -412,7 +412,7 @@ $safeKey = function(...$parts) {
             @elseif ($broker_fee_timing === 'other')
                 <div class="input-group">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
-                        placeholder="Describe payment arrangement (e.g., Broker to be paid 50% of commission upon lease execution and 50% upon tenant move-in)">
+                        placeholder="Enter payment arrangement details (e.g., Broker to be paid 50% of commission upon lease execution and 50% upon tenant move-in)">
                 </div>
             {{-- [2026-04 audit] 'split_payment dumy' dead @elseif removed: that value was never persisted to the database --}}
             @endif
@@ -450,7 +450,7 @@ $safeKey = function(...$parts) {
             @if ($broker_fee_timing === 'Other')
                 <div class="input-group">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
-                        placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
+                        placeholder="Enter payment arrangement details (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
                 </div>
             {{-- [2026-04 audit] 'split_payment dumy' dead @elseif removed: that value was never persisted to the database --}}
             @endif
@@ -656,7 +656,7 @@ $safeKey = function(...$parts) {
                 <div class="mb-3">
                     <div class="input-group">
                         <input type="text" wire:model.lazy="renewal_fee_custom" class="form-control"
-                            placeholder=" Describe commission fee (e.g., 50% of first month’s rent plus 3% of the net aggregate rent)">
+                            placeholder="Enter commission fee description (e.g., 50% of first month’s rent plus 3% of the net aggregate rent)">
                     </div>
                 </div>
             @endif
@@ -981,7 +981,7 @@ $safeKey = function(...$parts) {
                 <input type="text" step="any" wire:model.lazy="landlord_broker_flate_fee" class="form-control"
                     placeholder="{{ $lease_fee_flat_type === '%'
                         ? 'Enter percentage of the total flat fee (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5,000)' }}"
+                        : 'Enter flat fee amount (e.g., 5000)' }}"
                          data-error-id="purchase_value_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 

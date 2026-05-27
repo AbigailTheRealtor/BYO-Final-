@@ -66,7 +66,7 @@
 
         <div class="input-cover">
             <input type="date" wire:model="occupant_tenant" class="form-control has-icon"
-                data-icon="fa-regular fa-clock" placeholder="Enter Occupied until" required>
+                data-icon="fa-regular fa-clock" placeholder="Enter occupied-until date (e.g., December 2025)" required>
         </div>
     </div>
 @endif
@@ -993,7 +993,7 @@
     <label class="fw-bold">Please specify other expense paid by Owner:</label>
     <div class="input-cover">
         <input type="text" wire:model="owner_pays_other" class="form-control has-icon"
-            data-icon="fa-solid fa-pencil" placeholder="Enter expense paid by Owner (e.g., elevator maintenance)">
+            data-icon="fa-solid fa-pencil" placeholder="Enter expense paid by Owner (e.g., Elevator maintenance)">
     </div>
 </div>
 

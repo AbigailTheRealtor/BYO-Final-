@@ -1220,21 +1220,12 @@
                                 </button>
                                 @endif
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
-                                @if (!$listingId)
-                                <button type="submit" class="btn btn-success wizard-step-finish disabled"
+                                <button type="submit" class="btn btn-success wizard-step-finish{{ $listingId ? '' : ' disabled' }}"
                                     id="save-button" wire:loading.attr="disabled" wire:target="store"
                                     onclick="syncLandlordSelect2BeforeSave()">
-                                    <span wire:loading.remove wire:target="store">Submit</span>
-                                    <span wire:loading wire:target="store">Submitting...</span>
+                                    <span wire:loading.remove wire:target="store">{{ ($listingId && !$isDraft) ? 'Save Edit' : 'Submit' }}</span>
+                                    <span wire:loading wire:target="store">{{ ($listingId && !$isDraft) ? 'Saving...' : 'Submitting...' }}</span>
                                 </button>
-                                @elseif (!$isDraft)
-                                <button type="submit" class="btn btn-success wizard-step-finish"
-                                    id="save-button" wire:loading.attr="disabled" wire:target="store"
-                                    onclick="syncLandlordSelect2BeforeSave()">
-                                    <span wire:loading.remove wire:target="store">Save Edit</span>
-                                    <span wire:loading wire:target="store">Saving...</span>
-                                </button>
-                                @endif
                             </div>
 
                         </div>

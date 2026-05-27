@@ -137,7 +137,7 @@
             <label>Restrictions include:</label>
             <div class="input-cover">
                 <input type="text" wire:model="restrictions" class="form-control has-icon" data-icon="fa-solid fa-ban"
-                    placeholder="Enter details (e.g., visiting hours, overnight stay rules)">
+                    placeholder="Enter details (e.g., Visiting hours, Overnight stay rules)">
             </div>
         </div>
 
@@ -166,7 +166,7 @@
             <label>Storage space available include:</label>
             <div class="input-cover">
                 <input type="text" wire:model="storage_space" class="form-control has-icon"
-                    data-icon="fa-solid fa-warehouse" placeholder="Enter size or type, (e.g., closet, basement section, garage shelf)">
+                    data-icon="fa-solid fa-warehouse" placeholder="Enter size or type, (e.g., Closet, Basement section, Garage shelf)">
             </div>
         </div>
     @endif
@@ -187,7 +187,7 @@
             <label>Restrictions include:</label>
             <div class="input-cover">
                 <input type="text" wire:model="restrictions" class="form-control has-icon" data-icon="fa-solid fa-ban"
-                    placeholder="Enter details (e.g., visiting hours, overnight stay rules)">
+                    placeholder="Enter details (e.g., Visiting hours, Overnight stay rules)">
             </div>
         </div>
 
@@ -195,7 +195,7 @@
             <label>Tenants have access to common areas such as:</label>
             <div class="input-cover">
                 <input type="text" wire:model="common_areas_access" class="form-control has-icon"
-                    data-icon="fa-solid fa-door-open" placeholder="Enter common areas (e.g., kitchen, living room,backyard)">
+                    data-icon="fa-solid fa-door-open" placeholder="Enter common areas (e.g., Kitchen, Living room, Backyard)">
             </div>
         </div>
 
@@ -236,7 +236,7 @@
             <label>Common areas are cleaned and maintained:</label>
             <div class="input-cover">
                 <input type="text" wire:model="common_areas_cleaning" class="form-control has-icon"
-                    data-icon="fa-solid fa-broom" placeholder="Enter frequency and by whom (e.g., weekly by landlord)">
+                    data-icon="fa-solid fa-broom" placeholder="Enter frequency and by whom (e.g., Weekly by landlord)">
             </div>
         </div>
 
@@ -244,7 +244,7 @@
             <label>Storage space available include:</label>
             <div class="input-cover">
                 <input type="text" wire:model="storage_space" class="form-control has-icon"
-                    data-icon="fa-solid fa-warehouse" placeholder="Enter size or type, (e.g., closet, basement section, garage shelf)">
+                    data-icon="fa-solid fa-warehouse" placeholder="Enter size or type, (e.g., Closet, Basement section, Garage shelf)">
             </div>
         </div>
 

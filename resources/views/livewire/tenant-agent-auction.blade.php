@@ -1935,12 +1935,10 @@ $lease_types = [
 
                                     <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
-                                    @if(!$listingId || !$isDraft)
                                     <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled" wire:target="store">
                                         <span wire:loading.remove wire:target="store">{{ ($listingId && !$isDraft) ? 'Save Edit' : 'Submit' }}</span>
                                         <span wire:loading wire:target="store">{{ ($listingId && !$isDraft) ? 'Saving...' : 'Submitting...' }}</span>
                                     </button>
-                                    @endif
                                 </div>
 
                             </div>
@@ -4080,7 +4078,7 @@ $lease_types = [
         var nextBtn = document.querySelector('.wizard-step-next');
         var submitBtn = document.querySelector('.wizard-step-finish');
         if (nextBtn) nextBtn.style.display = isLastTab ? 'none' : '';
-        if (submitBtn) submitBtn.style.display = (_isEditOrDraftMode || isLastTab) ? '' : 'none';
+        if (submitBtn) submitBtn.style.display = '';
     };
     setTimeout(window._updateNextSubmitButtons, 300);
     

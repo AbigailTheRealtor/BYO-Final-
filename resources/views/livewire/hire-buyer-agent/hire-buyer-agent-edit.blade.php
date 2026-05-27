@@ -822,13 +822,12 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back" data-wizard-back>Back</button>
                             </div>
                             <div>
-                                <button type="button" class="btn btn-primary wizard-step-next" data-wizard-next>Next</button>
-
-                                <button type="submit" class="btn btn-success wizard-step-finish disabled"
-                                    id="save-button" wire:loading.attr="disabled" wire:target="store">
-                                    <span wire:loading.remove wire:target="store">Submit</span>
-                                    <span wire:loading wire:target="store">Submitting...</span>
+                                <button type="button" onclick="doSaveEditWithSync()" class="btn btn-outline-primary me-2 wizard-save-edit" wire:loading.attr="disabled" wire:target="update">
+                                    <span wire:loading.remove wire:target="update"><i class="fa-solid fa-save me-1"></i> Save Edit</span>
+                                    <span wire:loading wire:target="update">Saving...</span>
                                 </button>
+
+                                <button type="button" class="btn btn-primary wizard-step-next" data-wizard-next>Next</button>
                             </div>
 
                         </div>
@@ -1213,6 +1212,12 @@
             setJsonModel('property_items_json', pi);
         }
 
+        function doSaveEditWithSync() {
+            syncAllSelect2BeforeSave();
+            syncBuyerSelect2BeforeSave();
+            @this.call('update');
+        }
+
         document.addEventListener('submit', function(e) {
             if (e.target && e.target.tagName === 'FORM') {
                 syncAllSelect2BeforeSave();
@@ -1227,6 +1232,7 @@
                 $('#property_items').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    closeOnSelect: false,
                 });
 
                 $('#property_items').off('change.piSync').on('change.piSync', function(e) {
@@ -1248,6 +1254,7 @@
                 $('#non_negotiable_amenities').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    closeOnSelect: false,
                 });
 
                 $('#non_negotiable_amenities').off('change.nnaSync').on('change.nnaSync', function(e) {
@@ -1268,6 +1275,7 @@
                 $('#condition_prop_buyer').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    closeOnSelect: false,
                 });
 
                 $('#condition_prop_buyer').off('change.cpbSync').on('change.cpbSync', function(e) {
@@ -1285,6 +1293,7 @@
                     $el.select2({
                         placeholder: "Select",
                         allowClear: true,
+                        closeOnSelect: false,
                     });
 
                     $el.off('change.nutSync').on('change.nutSync', function(e) {
@@ -1301,6 +1310,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: "100%",
+                    closeOnSelect: false,
                 });
                 $('#assets').off('change.assetsSync').on('change.assetsSync', function(e) {
                     let selectedValues = $(this).val() || [];
@@ -1313,6 +1323,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: "100%",
+                    closeOnSelect: false,
                 });
                 $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
                     let selectedValues = $(this).val() || [];
@@ -1494,10 +1505,11 @@
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    closeOnSelect: false
                 });
 
-                $('#view_preference').on('change', function() {
+                $('#view_preference').off('change.s2sync').on('change.s2sync', function() {
                     let selectedValues = $(this).val() || []; // Get selected values as an array
                     
                     // Handle "All" selection - if "All" is selected, clear other selections
@@ -1525,7 +1537,8 @@
                 $('#sale_provision').select2({
                     placeholder: "Select",
                     allowClear: true,
-                }).on('change', function() {
+                    closeOnSelect: false,
+                }).off('change.s2sync').on('change.s2sync', function() {
                     let selectedValues = $(this).val() || [];
                     debouncedSet('sale_provision', selectedValues);
                 });
@@ -1539,7 +1552,8 @@
                 $('#offered_financing').select2({
                     placeholder: "Select",
                     allowClear: true,
-                }).on('change', function() {
+                    closeOnSelect: false,
+                }).off('change.s2sync').on('change.s2sync', function() {
                     // Skip Livewire sync if we're loading draft data (prevents updatedOfferedFinancing reset)
                     if (window.financingSyncInProgress) {
                         return;
@@ -2372,13 +2386,20 @@
         }
 
         function validateInput(input) {
-            let v = input.value;
-            v = v.replace(/[^0-9.,]/g, '');
-            const firstDot = v.indexOf('.');
-            if (firstDot !== -1) {
-                v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
-            }
-            input.value = v;
+            var el = input;
+            var start  = el.selectionStart;
+            var oldLen = el.value.length;
+            var raw    = el.value.replace(/[^\d.]/g, '');
+            var parts  = raw.split('.');
+            var intPart = parts[0] || '';
+            var decPart = parts.length > 1 ? parts[1] : null;
+            if (intPart === '' && decPart === null) { el.value = ''; return; }
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            var formatted = (decPart !== null) ? intPart + '.' + decPart.substring(0, 2) : intPart;
+            el.value = formatted;
+            var newLen = el.value.length;
+            var newPos = Math.max(0, start + (newLen - oldLen));
+            try { el.setSelectionRange(newPos, newPos); } catch(e) {}
         }
 
         function reformatNumber(input) {

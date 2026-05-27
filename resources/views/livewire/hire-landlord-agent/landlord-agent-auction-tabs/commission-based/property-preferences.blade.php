@@ -946,7 +946,7 @@
                 <div class="input-cover">
                     <input type="text" wire:model="breed_restrictions" class="form-control has-icon"
                         data-icon="fa-solid fa-shield-dog"
-                        placeholder="Enter breed restrictions (e.g., no Pit Bulls)">
+                        placeholder="Enter breed restrictions (e.g., No Pit Bulls)">
                 </div>
                 <span class="error mt-2" id="breed_restrictions_error"></span>
             </div>

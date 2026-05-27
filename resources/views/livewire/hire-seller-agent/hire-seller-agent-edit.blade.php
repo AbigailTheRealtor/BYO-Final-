@@ -796,12 +796,12 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
-                                <button type="button" class="btn btn-primary wizard-step-next">Next</button>
-
-                                <button type="submit" class="btn btn-success wizard-step-finish disabled"
-                                    id="save-button">
-                                    Submit
+                                <button type="button" onclick="doSaveEditWithSync()" class="btn btn-outline-primary me-2 wizard-save-edit" wire:loading.attr="disabled" wire:target="update">
+                                    <span wire:loading.remove wire:target="update"><i class="fa-solid fa-save me-1"></i> Save Edit</span>
+                                    <span wire:loading wire:target="update">Saving...</span>
                                 </button>
+
+                                <button type="button" class="btn btn-primary wizard-step-next">Next</button>
                             </div>
 
                         </div>
@@ -841,6 +841,11 @@
                     @this.set(field, el.val() || []);
                 }
             });
+        }
+
+        function doSaveEditWithSync() {
+            syncAllSelect2BeforeSave();
+            @this.call('update');
         }
 
         document.addEventListener('submit', function(e) {
@@ -905,8 +910,9 @@
                 $('#property_items').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    closeOnSelect: false,
                 });
-                $('#property_items').on('change', function(e) {
+                $('#property_items').off('change.s2sync').on('change.s2sync', function(e) {
                     let selectedValues = $(this).val();
                     debouncedSet('property_items', selectedValues);
                 });
@@ -915,7 +921,7 @@
             if ($('#non_negotiable_amenities').length) {
                 window.initFullServiceSelect2Multiple($('#non_negotiable_amenities'));
                 if (!$('#non_negotiable_amenities').data('nna-change-bound')) {
-                    $('#non_negotiable_amenities').on('change', function(e) {
+                    $('#non_negotiable_amenities').off('change.s2sync').on('change.s2sync', function(e) {
                         let selectedValues = $(this).val() || [];
                         debouncedSet('non_negotiable_amenities', selectedValues);
                     });
@@ -934,7 +940,7 @@
                 if (savedExchangeItems.length > 0) {
                     $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
                 }
-                $('#exchange_item').on('change', function(e) {
+                $('#exchange_item').off('change.s2sync').on('change.s2sync', function(e) {
                     var selectedValues = $(this).val() || [];
                     @this.set('exchange_item', selectedValues);
                 });
@@ -957,7 +963,7 @@
                 if (savedBusinessAssets.length > 0) {
                     $('#included_assets').val(savedBusinessAssets).trigger('change.select2');
                 }
-                $('#included_assets').on('change', function(e) {
+                $('#included_assets').off('change.s2sync').on('change.s2sync', function(e) {
                     var selectedValues = $(this).val() || [];
                     @this.set('business_assets', selectedValues, false);
                 });
@@ -1140,7 +1146,7 @@
                     width: "100%",
                     closeOnSelect: false,
                 });
-                $('#view_preference').on('change', function() {
+                $('#view_preference').off('change.s2sync').on('change.s2sync', function() {
                     let selectedValues = $(this).val();
                     Livewire.emit('updatePreference', selectedValues);
                     if (selectedValues.includes('Other')) {
@@ -1158,7 +1164,7 @@
                     width: "100%",
                     closeOnSelect: false,
                 });
-                $('#appliances').on('change', function(e) {
+                $('#appliances').off('change.s2sync').on('change.s2sync', function(e) {
                     let selectedValues = $(this).val() || [];
                     @this.set('appliances', selectedValues, false);
                     if (selectedValues.includes('Other')) {
@@ -1176,7 +1182,7 @@
                     width: "100%",
                     closeOnSelect: false,
                 });
-                $('#garage_parking_spaces_option_landlord').on('change', function() {
+                $('#garage_parking_spaces_option_landlord').off('change.s2sync').on('change.s2sync', function() {
                     let selectedValues = $(this).val() || [];
                     @this.set('garage_parking_spaces_option', selectedValues, false);
                     const otherDiv = document.getElementById('other_garage_parking_spaces_option_landlord');
@@ -1200,8 +1206,8 @@
                     otherAmenitiesDiv.classList.add('d-none'); // Hide the "Other" input field
                 }
             }
-            // Delegate "Other" toggle for amenities — survives element replacement, no listener accumulation
-            $(document).on('change', '#non_negotiable_amenities', function() {
+            // Delegate "Other" toggle for amenities — survives element replacement; namespaced to prevent accumulation
+            $(document).off('change.nnaToggle', '#non_negotiable_amenities').on('change.nnaToggle', '#non_negotiable_amenities', function() {
                 toggleOtherAmenities(this);
             });
             var _initNnaElEdit = document.getElementById('non_negotiable_amenities');
@@ -2013,6 +2019,67 @@
                 });
             }
         });
+    </script>
+    <script>
+        function getErrorEl(input) {
+            const errorId = input.getAttribute('data-error-id');
+            return errorId ? document.getElementById(errorId) : null;
+        }
+        function validateInput(input) {
+            var el = input;
+            var start  = el.selectionStart;
+            var oldLen = el.value.length;
+            var raw    = el.value.replace(/[^\d.]/g, '');
+            var parts  = raw.split('.');
+            var intPart = parts[0] || '';
+            var decPart = parts.length > 1 ? parts[1] : null;
+            if (intPart === '' && decPart === null) { el.value = ''; return; }
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            var formatted = (decPart !== null) ? intPart + '.' + decPart.substring(0, 2) : intPart;
+            el.value = formatted;
+            var newLen = el.value.length;
+            var newPos = Math.max(0, start + (newLen - oldLen));
+            try { el.setSelectionRange(newPos, newPos); } catch(e) {}
+        }
+        function reformatNumber(input) {
+            const errorEl = getErrorEl(input);
+            let v = input.value.replace(/,/g, '');
+            const parts = v.split('.');
+            let intPart = parts[0] || '';
+            let decPart = parts[1] || '';
+            if (decPart) decPart = decPart.slice(0, 2);
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            input.value = decPart ? `${intPart}.${decPart}` : intPart;
+            errorEl && (errorEl.innerText = "");
+        }
+        function handlePaste(event) {
+            event.preventDefault();
+            const paste = (event.clipboardData || window.clipboardData).getData('text');
+            let clean = paste.replace(/[^0-9.]/g, '');
+            const parts = clean.split('.');
+            if (parts.length > 2) { clean = parts[0] + '.' + parts.slice(1).join(''); }
+            let intPart = parts[0] || '';
+            let decPart = parts[1] || '';
+            if (decPart) decPart = decPart.slice(0, 2);
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            event.target.value = decPart ? `${intPart}.${decPart}` : intPart;
+            event.target.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        function formatAllNumericInputsSellerEdit() {
+            document.querySelectorAll('input[onblur*="reformatNumber"]').forEach(function(input) {
+                if (input.value && input.value.trim() !== '' && !input.value.includes(',')) {
+                    reformatNumber(input);
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(formatAllNumericInputsSellerEdit, 200);
+        });
+        if (typeof Livewire !== 'undefined') {
+            Livewire.hook('message.processed', function() {
+                setTimeout(formatAllNumericInputsSellerEdit, 200);
+            });
+        }
     </script>
   
 @endpush
