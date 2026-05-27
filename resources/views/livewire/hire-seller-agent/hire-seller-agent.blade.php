@@ -1408,7 +1408,6 @@
                 '#offered_financing': 'offered_financing',
                 '#view_preference': 'view_preference',
                 '#appliances': 'appliances',
-                '#included_assets': 'business_assets',
             };
             Object.keys(multiFields).forEach(function(selector) {
                 var $el = $(selector);
@@ -1421,6 +1420,29 @@
                     }
                 }
             });
+            // Rehydrate #included_assets — conditionally rendered (Business/Commercial/Income only),
+            // so Select2 may not be initialized when draftLoaded fires; initialize first if needed.
+            try {
+                var $ia = $('#included_assets');
+                if ($ia.length) {
+                    if (!$ia.hasClass('select2-hidden-accessible')) {
+                        $ia.select2({
+                            placeholder: "Select",
+                            allowClear: true,
+                            width: "100%",
+                            closeOnSelect: false,
+                        });
+                        $ia.off('change.s2sync').on('change.s2sync', function() {
+                            @this.set('business_assets', $(this).val() || [], false);
+                        });
+                    }
+                    var savedBusinessAssets = @this.get('business_assets') || [];
+                    if (savedBusinessAssets.length > 0) {
+                        $ia.val(savedBusinessAssets).trigger('change.select2');
+                        console.log('[DraftLoaded] Rehydrated business_assets:', savedBusinessAssets);
+                    }
+                }
+            } catch(eIa) { console.log('[DraftLoaded] included_assets error', eIa); }
             // Compatibility Select2 fields — seller full service only
             var _rhCompatContainer = document.getElementById('wizard-form-container');
             if (_rhCompatContainer && _rhCompatContainer.getAttribute('data-service-type') === 'full_service') {

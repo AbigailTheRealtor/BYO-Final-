@@ -1141,7 +1141,10 @@
                 // Rehydrate compat_preferred_contact_method (multi-select)
                 try {
                     var $pcmDl = $('#compat_preferred_contact_method');
-                    if ($pcmDl.length && $pcmDl.hasClass('select2-hidden-accessible')) {
+                    if ($pcmDl.length) {
+                        if (!$pcmDl.hasClass('select2-hidden-accessible') && typeof window.initFullServiceSelect2Multiple === 'function') {
+                            window.initFullServiceSelect2Multiple($pcmDl);
+                        }
                         var _cpDlPcm = @this.get('compatibility_preferences');
                         var _pcmDlSaved = (_cpDlPcm && _cpDlPcm.buyer_specific && _cpDlPcm.buyer_specific.preferred_contact_method) ? _cpDlPcm.buyer_specific.preferred_contact_method : [];
                         if (_pcmDlSaved.length > 0) {

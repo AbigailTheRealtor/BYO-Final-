@@ -1628,6 +1628,10 @@ class BuyerAgentAuction extends Component
                 !is_array($this->compatibility_preferences['buyer_specific']['representation_priorities'])) {
                 $this->compatibility_preferences['buyer_specific']['representation_priorities'] = [];
             }
+            if (isset($this->compatibility_preferences['buyer_specific']['preferred_contact_method']) &&
+                !is_array($this->compatibility_preferences['buyer_specific']['preferred_contact_method'])) {
+                $this->compatibility_preferences['buyer_specific']['preferred_contact_method'] = [];
+            }
 
             // Broker compensation
             $this->commission_structure = $auction->get->commission_structure ?? '';
