@@ -1597,17 +1597,17 @@
                                 if ($user_type === 'tenant') {
                                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
                                         $infoTabs[$user_type] ?? null,
-                                        'AI Questions',
+                                        'AI Knowledge Base',
                                     ]);
                                 } else {
                                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
                                         $infoTabs[$user_type] ?? null,
-                                        'AI Questions',
+                                        'AI Knowledge Base',
                                     ]);
                                 }
 
                                 $infoTabIndex         = array_search($infoTabs[$user_type] ?? null, $allTabs);
-                                $aiQuestionsTabIndex  = array_search('AI Questions', $allTabs);
+                                $aiQuestionsTabIndex  = array_search('AI Knowledge Base', $allTabs);
                                 $brokerCompTabIndex   = array_search('Broker Compensation & Agency Agreement Terms', $allTabs);
                                 $descriptionTabIndex  = array_search('Description', $allTabs);
                                 $servicesTabIndex     = array_search('Services', $allTabs);
@@ -1691,7 +1691,7 @@
                                         type="button" role="tab"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        AI Questions
+                                        AI Knowledge Base
                                     </button>
                                 </li>
                             </ul>
@@ -1873,7 +1873,7 @@
                             @endif
                         </div>
 
-                        <!-- AI Questions Tab (full_service) -->
+                        <!-- AI Knowledge Base Tab (full_service) -->
                         <div class="tab-pane fade {{ $activeTab === $aiQuestionsTabIndex ? 'show active' : '' }}" id="ai-questions"
                             role="tabpanel" aria-labelledby="ai-questions-tab">
                             @include('livewire.offer-listing.shared.ai-questions-input')
@@ -1908,7 +1908,7 @@
                             @endif
                         </div>
 
-                        <!-- AI Questions Tab (limited_service: index 5) -->
+                        <!-- AI Knowledge Base Tab (limited_service: index 5) -->
                         <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}" id="ai-questions"
                             role="tabpanel" aria-labelledby="ai-questions-tab">
                             @include('livewire.offer-listing.shared.ai-questions-input')

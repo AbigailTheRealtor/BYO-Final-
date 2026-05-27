@@ -861,7 +861,7 @@
                                         wire:click="setActiveTab({{ $aiIdx }})"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === $aiIdx ? 'true' : 'false' }}">
-                                        AI Questions
+                                        AI Knowledge Base
                                     </button>
                                 </li>
                             </ul>
@@ -912,7 +912,7 @@
                                         wire:click="setActiveTab(6)"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        AI Questions
+                                        AI Knowledge Base
                                     </button>
                                 </li>
                             </ul>
@@ -997,7 +997,7 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab -->
+                                <!-- AI Knowledge Base Tab -->
                                 <div class="tab-pane fade {{ $activeTab === $aiIdx ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
@@ -1020,7 +1020,7 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (limited_service: index 6) -->
+                                <!-- AI Knowledge Base Tab (limited_service: index 6) -->
                                 <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')

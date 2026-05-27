@@ -994,7 +994,7 @@ $tenantPays = [
                                         wire:click="setActiveTab(9)"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 9 ? 'true' : 'false' }}">
-                                        AI Questions
+                                        AI Knowledge Base
                                     </button>
                                 </li>
                             </ul>
@@ -1046,7 +1046,7 @@ $tenantPays = [
                                         wire:click="setActiveTab(6)"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        AI Questions
+                                        AI Knowledge Base
                                     </button>
                                 </li>
                             </ul>
@@ -1123,7 +1123,7 @@ $tenantPays = [
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (full_service: index 9) -->
+                                <!-- AI Knowledge Base Tab (full_service: index 9) -->
                                 <div class="tab-pane fade {{ $activeTab === 9 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
@@ -1145,7 +1145,7 @@ $tenantPays = [
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (limited_service: index 6) -->
+                                <!-- AI Knowledge Base Tab (limited_service: index 6) -->
                                 <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')

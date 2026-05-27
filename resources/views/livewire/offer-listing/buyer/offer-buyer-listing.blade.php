@@ -837,7 +837,7 @@
                                         type="button" role="tab"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === $aiQuestionsIndex ? 'true' : 'false' }}">
-                                        AI Questions
+                                        AI Knowledge Base
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -886,7 +886,7 @@
                                         type="button" role="tab"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        AI Questions
+                                        AI Knowledge Base
                                     </button>
                                 </li>
                             </ul>
@@ -969,7 +969,7 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (full_service: index 5) -->
+                                <!-- AI Knowledge Base Tab (full_service: index 5) -->
                                 @php $aiQuestionsTabIndex = 5; @endphp
                                 <div class="tab-pane fade {{ $activeTab === $aiQuestionsTabIndex ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
@@ -993,7 +993,7 @@
                                     @endif
                                 </div>
                             @elseif($service_type === 'limited_service')
-                                <!-- AI Questions Tab (limited_service: index 5) -->
+                                <!-- AI Knowledge Base Tab (limited_service: index 5) -->
                                 <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')

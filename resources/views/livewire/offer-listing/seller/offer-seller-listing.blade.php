@@ -923,7 +923,7 @@
                                         </button>
                                     </li>
 
-                                    {{-- AI Questions --}}
+                                    {{-- AI Knowledge Base --}}
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $aiIdx ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $aiIdx }})"
@@ -932,7 +932,7 @@
                                             type="button" role="tab"
                                             aria-controls="ai-questions"
                                             aria-selected="{{ $activeTab === $aiIdx ? 'true' : 'false' }}">
-                                            AI Questions
+                                            AI Knowledge Base
                                         </button>
                                     </li>
 
@@ -1032,7 +1032,7 @@
                                             type="button" role="tab"
                                             aria-controls="ai-questions"
                                             aria-selected="{{ $activeTab === 8 ? 'true' : 'false' }}">
-                                            AI Questions
+                                            AI Knowledge Base
                                         </button>
                                     </li>
                                 @endif
@@ -1084,7 +1084,7 @@
                                         type="button" role="tab"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        AI Questions
+                                        AI Knowledge Base
                                     </button>
                                 </li>
                             </ul>
@@ -1211,7 +1211,7 @@
                                     @include('livewire.offer-listing.offer-seller-tabs.commission-based.photos-tours-documents')
                                 </div>
 
-                                <!-- AI Questions Tab (seller full_service) -->
+                                <!-- AI Knowledge Base Tab (seller full_service) -->
                                 <div class="tab-pane fade {{ $activeTab === $aiIdx ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
@@ -1249,7 +1249,7 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (non-seller full_service: index 8) -->
+                                <!-- AI Knowledge Base Tab (non-seller full_service: index 8) -->
                                 <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
@@ -1276,7 +1276,7 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (limited_service: index 6) -->
+                                <!-- AI Knowledge Base Tab (limited_service: index 6) -->
                                 <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
