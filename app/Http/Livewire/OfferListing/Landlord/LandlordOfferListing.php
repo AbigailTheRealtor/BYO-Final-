@@ -2748,7 +2748,8 @@ class LandlordOfferListing extends Component
             // Phase B Landlord Tier 1 EAV keys
             $this->available_date = $auction->get->available_date ?? '';
             $this->pet_max_weight_lbs = $auction->get->pet_max_weight_lbs ?? '';
-            $this->pet_species_allowed = json_decode($auction->get->pet_species_allowed ?? '[]', true) ?? [];
+            $rawPetSpecies = $auction->get->pet_species_allowed ?? '[]';
+            $this->pet_species_allowed = is_array($rawPetSpecies) ? $rawPetSpecies : (json_decode($rawPetSpecies, true) ?? []);
             $this->pet_deposit_amount = $auction->get->pet_deposit_amount ?? '';
             $this->pet_monthly_fee = $auction->get->pet_monthly_fee ?? '';
             $this->number_of_occupants_allowed = $auction->get->number_of_occupants_allowed ?? '';
