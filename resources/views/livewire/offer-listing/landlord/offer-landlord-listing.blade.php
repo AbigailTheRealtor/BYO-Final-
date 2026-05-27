@@ -929,12 +929,12 @@
                                                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                                                 @if ($isCurrentDraft)
                                                     <span class="btn btn-link text-start flex-grow-1 text-muted pe-none">
-                                                        {{ $draft->info('title') ?: 'Saved Draft — ' }}@if($draftVersion) <span class="badge bg-secondary">v{{ $draftVersion }}</span>@endif <span class="badge bg-success">Current</span> ({{ $draft->updated_at->format('m/d/Y H:i') }})
+                                                        {{ $draft->info('title') ?: 'Saved Draft' }}@if($draftVersion) <span class="badge bg-secondary">v{{ $draftVersion }}</span>@endif <span class="badge bg-success">Current</span> ({{ $draft->updated_at->format('m/d/Y H:i') }})
                                                     </span>
                                                 @else
                                                 <a class="btn btn-link text-start flex-grow-1"
                                                     href="{{ route('offer.listing.landlord.edit', ['auctionId' => $draft->id]) }}">
-                                                    {{ $draft->info('title') ?: 'Saved Draft — ' }}@if($draftVersion) <span class="badge bg-secondary">v{{ $draftVersion }}</span>@endif ({{ $draft->updated_at->format('m/d/Y H:i') }})
+                                                    {{ $draft->info('title') ?: 'Saved Draft' }}@if($draftVersion) <span class="badge bg-secondary">v{{ $draftVersion }}</span>@endif ({{ $draft->updated_at->format('m/d/Y H:i') }})
                                                 </a>
                                                 @endif
                                                 <button type="button" class="btn btn-sm btn-outline-danger" style="border-color: #dc3545; color: #dc3545;"

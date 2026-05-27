@@ -1038,10 +1038,6 @@
                                     <span wire:loading.remove wire:target="saveDraftOnly"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
                                     <span wire:loading wire:target="saveDraftOnly">Saving...</span>
                                 </button>
-                                <button type="button" class="btn btn-success me-2" onclick="syncAllSelect2BeforeSave(); @this.call('update');" wire:loading.attr="disabled" wire:target="update">
-                                    <span wire:loading.remove wire:target="update"><i class="fa-solid fa-check me-1"></i> Submit Listing</span>
-                                    <span wire:loading wire:target="update">Submitting...</span>
-                                </button>
                                 @else
                                 <button type="button" class="btn btn-outline-primary me-2" onclick="syncAllSelect2BeforeSave(); @this.call('update');" wire:loading.attr="disabled" wire:target="update">
                                     <span wire:loading.remove wire:target="update"><i class="fa-solid fa-save me-1"></i> Save Edit</span>
