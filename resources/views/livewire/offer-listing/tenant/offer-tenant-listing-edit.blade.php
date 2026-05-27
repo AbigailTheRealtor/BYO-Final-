@@ -1927,10 +1927,14 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
-                                @if($isDraft)
+                                @if($isListingDraft)
                                 <button type="button" class="btn btn-outline-primary me-2" onclick="syncAllSelect2BeforeSave(); @this.call('saveDraftOnly');" wire:loading.attr="disabled" wire:target="saveDraftOnly">
                                     <span wire:loading.remove wire:target="saveDraftOnly"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
                                     <span wire:loading wire:target="saveDraftOnly">Saving...</span>
+                                </button>
+                                <button type="button" class="btn btn-success me-2" onclick="doSaveEditWithSync()" wire:loading.attr="disabled" wire:target="update">
+                                    <span wire:loading.remove wire:target="update"><i class="fa-solid fa-check me-1"></i> Submit Listing</span>
+                                    <span wire:loading wire:target="update">Submitting...</span>
                                 </button>
                                 @else
                                 <button type="button" onclick="doSaveEditWithSync()" class="btn btn-outline-primary me-2" wire:loading.attr="disabled" wire:target="update">
@@ -1942,7 +1946,7 @@
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
                                 <button type="button" onclick="doSaveEditWithSync()" class="btn btn-success wizard-step-finish"
-                                    id="save-button" @if(!$isDraft) style="display:none;" @endif>
+                                    id="save-button" @if(!$isListingDraft) style="display:none;" @endif>
                                     Submit
                                 </button>
                             </div>
@@ -3850,7 +3854,7 @@
             return EDIT_TAB_ORDER;
         }
 
-        var _isDraftEdit = @json($isDraft);
+        var _isDraftEdit = @json($isListingDraft);
         window._updateNextSubmitButtons = function() {
             var tabOrder = getEditTabOrder();
             var activeTab = document.querySelector('.nav-link.active');

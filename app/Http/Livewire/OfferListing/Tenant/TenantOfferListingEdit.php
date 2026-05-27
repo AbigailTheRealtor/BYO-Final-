@@ -33,6 +33,7 @@ class TenantOfferListingEdit extends Component
 
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
+    public bool $isListingDraft = false; // Source of truth for button mode (read from DB in mount)
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
@@ -2427,6 +2428,7 @@ class TenantOfferListingEdit extends Component
             $this->user_type = $user_type;
 
             $this->loadAuctionData($auctionId, $user_type); // Load auction data if auctionId is provided
+            $this->isListingDraft = (bool) $this->isDraft;
             
             // Enforce Residential-only field cleanup for Commercial properties after load
             if ($this->property_type === 'Commercial Property') {
@@ -3199,11 +3201,10 @@ class TenantOfferListingEdit extends Component
                 : new $auctionClass();
 
             // Update the auction properties
-            $auction->title = $this->listing_title;
-            if (!$this->_isDraftSave) {
-                $auction->is_draft = 0;
-                $this->isDraft = false;
-            }
+            $auction->title       = $this->listing_title;
+            $auction->is_draft    = $this->_isDraftSave ? 1 : 0;
+            $this->isDraft        = (bool) $this->_isDraftSave;
+            $this->isListingDraft = (bool) $this->_isDraftSave;
             $auction->save();
             $auction->saveMeta('workflow_type', 'offer_listing');
             $auction->saveMeta('service_type', $this->service_type);

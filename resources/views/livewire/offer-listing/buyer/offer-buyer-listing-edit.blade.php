@@ -903,10 +903,14 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back" data-wizard-back>Back</button>
                             </div>
                             <div>
-                                @if($isDraft)
-                                <button type="button" class="btn btn-outline-primary me-2" onclick="if(typeof syncBuyerSelect2BeforeSave==='function')syncBuyerSelect2BeforeSave()" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
-                                    <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
-                                    <span wire:loading wire:target="saveDraft">Saving...</span>
+                                @if($isListingDraft)
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="if(typeof syncBuyerSelect2BeforeSave==='function')syncBuyerSelect2BeforeSave()" wire:click="saveDraftOnly" wire:loading.attr="disabled" wire:target="saveDraftOnly">
+                                    <span wire:loading.remove wire:target="saveDraftOnly"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
+                                    <span wire:loading wire:target="saveDraftOnly">Saving...</span>
+                                </button>
+                                <button type="button" class="btn btn-success me-2" onclick="if(typeof syncBuyerSelect2BeforeSave==='function')syncBuyerSelect2BeforeSave()" wire:click="update" wire:loading.attr="disabled" wire:target="update">
+                                    <span wire:loading.remove wire:target="update"><i class="fa-solid fa-check me-1"></i> Submit Listing</span>
+                                    <span wire:loading wire:target="update">Submitting...</span>
                                 </button>
                                 @else
                                 <button type="button" class="btn btn-outline-primary me-2" onclick="if(typeof syncBuyerSelect2BeforeSave==='function')syncBuyerSelect2BeforeSave()" wire:click="update" wire:loading.attr="disabled" wire:target="update">
@@ -919,7 +923,7 @@
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
                                     id="save-button" wire:loading.attr="disabled" wire:target="update"
-                                    @if(!$isDraft) style="display:none;" @endif>
+                                    @if(!$isListingDraft) style="display:none;" @endif>
                                     <span wire:loading.remove wire:target="update">Submit</span>
                                     <span wire:loading wire:target="update">Submitting...</span>
                                 </button>
@@ -2768,7 +2772,7 @@
     </script>
     <script>
         (function () {
-            var _isDraftMode = @json($isDraft);
+            var _isDraftMode = @json($isListingDraft);
             function syncWizardButtons() {
                 var aiPane = document.getElementById('ai-questions');
                 var nextBtn = document.querySelector('.wizard-step-next');

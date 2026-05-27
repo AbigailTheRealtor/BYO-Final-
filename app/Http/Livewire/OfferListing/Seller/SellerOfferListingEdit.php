@@ -25,6 +25,7 @@ class SellerOfferListingEdit extends Component
 
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
+    public bool $isListingDraft = false; // Source of truth for button mode (read from DB in mount)
     public $isLoadingData = false;
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
@@ -1545,6 +1546,7 @@ class SellerOfferListingEdit extends Component
             $this->auctionId = $auctionId;
             $this->listingId = $auctionId;
             $this->loadAuctionData($auctionId); // Load auction data if auctionId is provided
+            $this->isListingDraft = (bool) $this->isDraft;
         }
     }
     public function render()
@@ -2026,6 +2028,36 @@ class SellerOfferListingEdit extends Component
         $data = $this->buildDraftPayload();
         ksort($data);
         return hash('sha256', json_encode($data));
+    }
+
+    public function saveDraftOnly(): void
+    {
+        try {
+            if (!$this->auctionId) {
+                session()->flash('error', 'No listing found to save.');
+                return;
+            }
+
+            $auction = SellerAgentAuctionModel::find($this->auctionId);
+            if (!$auction) {
+                session()->flash('error', 'Listing not found.');
+                return;
+            }
+
+            $auction->title    = $this->listing_title;
+            $auction->is_draft = 1;
+            $auction->save();
+
+            $this->listingId = $auction->id;
+            $this->saveAllMetadata($auction);
+
+            $this->isDraft        = true;
+            $this->isListingDraft = true;
+
+            session()->flash('success', 'Draft saved successfully.');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error saving draft: ' . $e->getMessage());
+        }
     }
 
     public function saveDraft()
