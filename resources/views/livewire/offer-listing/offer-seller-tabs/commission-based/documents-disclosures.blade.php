@@ -158,7 +158,7 @@
                             <input
                                 type="text"
                                 class="form-control"
-                                placeholder="Describe this document type"
+                                placeholder="Enter document type (e.g., Inspection Report, Survey, Appraisal)"
                                 x-model="row.custom_type"
                                 @input="sync()"
                             >
@@ -170,7 +170,7 @@
                             <textarea
                                 class="form-control"
                                 rows="2"
-                                placeholder="Brief description of this document"
+                                placeholder="Enter a brief description of this document"
                                 x-model="row.description"
                                 @input="sync()"
                             ></textarea>

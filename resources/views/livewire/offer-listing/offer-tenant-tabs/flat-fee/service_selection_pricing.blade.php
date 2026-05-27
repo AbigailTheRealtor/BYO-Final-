@@ -42,7 +42,7 @@
                 @if($enable['list_criteria'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.list_criteria" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.list_criteria') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -58,7 +58,7 @@
                 @if($enable['social_media'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.social_media" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.social_media') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -74,7 +74,7 @@
                 @if($enable['paid_ads'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.paid_ads" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.paid_ads') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -90,7 +90,7 @@
                 @if($enable['email_marketing'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.email_marketing" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.email_marketing') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -106,7 +106,7 @@
                 @if($enable['local_mailers'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.local_mailers" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.local_mailers') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -122,7 +122,7 @@
                 @if($enable['hyperlocal_ads'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.hyperlocal_ads" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.hyperlocal_ads') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -146,7 +146,7 @@
                 @if($enable['email_alerts'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.email_alerts" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.email_alerts') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -161,7 +161,7 @@
                 @if($enable['off_market'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.off_market" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.off_market') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -176,7 +176,7 @@
                 @if($enable['filter_listings'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.filter_listings" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.filter_listings') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -199,12 +199,12 @@
                 @if($enable['schedule_showings'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="showings_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-hashtag" placeholder="Number of showings to schedule">
+                        data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings to schedule (e.g., 5)">
                     @error('showings_count') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.schedule_showings" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.schedule_showings') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -219,12 +219,12 @@
                 @if($enable['attend_showings'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="attend_showings_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-hashtag" placeholder="Number of showings to attend">
+                        data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings to attend (e.g., 5)">
                     @error('attend_showings_count') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.attend_showings" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.attend_showings') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -239,12 +239,12 @@
                 @if($enable['virtual_tours'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="virtual_tours_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-hashtag" placeholder="Number of virtual tours">
+                        data-icon="fa-solid fa-hashtag" placeholder="Enter number of virtual tours (e.g., 3)">
                     @error('virtual_tours_count') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.virtual_tours" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.virtual_tours') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -267,7 +267,7 @@
                 @if($enable['prepare_application'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.prepare_application" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.prepare_application') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -283,7 +283,7 @@
                 @if($enable['submit_documents'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.submit_documents" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.submit_documents') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -299,7 +299,7 @@
                 @if($enable['follow_up'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.follow_up" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.follow_up') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -322,7 +322,7 @@
                 @if($enable['state_lease'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.state_lease" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.state_lease') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -337,7 +337,7 @@
                 @if($enable['lease_overview'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.lease_overview" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.lease_overview') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -353,7 +353,7 @@
                 @if($enable['lease_disclosures'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.lease_disclosures" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.lease_disclosures') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -369,7 +369,7 @@
                 @if($enable['lease_signing'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.lease_signing" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.lease_signing') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -392,7 +392,7 @@
                 @if($enable['key_handover'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.key_handover" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.key_handover') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -407,7 +407,7 @@
                 @if($enable['utility_setup'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.utility_setup" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.utility_setup') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -431,7 +431,7 @@
                 @if($enable['rental_analysis'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.rental_analysis" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.rental_analysis') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -446,7 +446,7 @@
                 @if($enable['rental_laws'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.rental_laws" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.rental_laws') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -461,7 +461,7 @@
                 @if($enable['lease_options'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.lease_options" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.lease_options') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -477,7 +477,7 @@
                 @if($enable['short_term_housing'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.short_term_housing" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.short_term_housing') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -492,7 +492,7 @@
                 @if($enable['general_guidance'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.general_guidance" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.general_guidance') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -508,7 +508,7 @@
                 @if($enable['move_in_costs'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.move_in_costs" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.move_in_costs') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -528,7 +528,7 @@
                     <div class="input-cover mt-2">
                         <input type="text" wire:model="custom_services.{{ $index }}.description" 
                             class="form-control has-icon" data-icon="fa-solid fa-pen-to-square"
-                            placeholder="Describe the service">
+                            placeholder="Enter a description of the service (e.g., Prepare and file a purchase contract)">
                         @error("custom_services.{$index}.description") 
                             <span class="text-danger">{{ $message }}</span> 
                         @enderror
@@ -538,7 +538,7 @@
                     <div class="input-cover mt-2">
                         <input type="number" wire:model="custom_services.{{ $index }}.fee" 
                             class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
-                            placeholder="Flat Fee for this service">
+                            placeholder="Enter flat fee for this service (e.g., 500)">
                         @error("custom_services.{$index}.fee") 
                             <span class="text-danger">{{ $message }}</span> 
                         @enderror
@@ -611,7 +611,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['list_criteria'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.list_criteria" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.list_criteria') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -626,7 +626,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['social_media'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.social_media" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.social_media') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -641,7 +641,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['paid_ads'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.paid_ads" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.paid_ads') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -656,7 +656,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['email_marketing'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.email_marketing" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.email_marketing') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -671,7 +671,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['local_mailers'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.local_mailers" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.local_mailers') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -686,7 +686,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['hyperlocal_ads'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.hyperlocal_ads" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.hyperlocal_ads') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -709,7 +709,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['email_alerts'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.email_alerts" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.email_alerts') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -724,7 +724,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['off_market'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.off_market" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.off_market') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -739,7 +739,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['filter_listings'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.filter_listings" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.filter_listings') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -762,12 +762,12 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['schedule_showings'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="showings_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-hashtag" placeholder="Number of showings to schedule">
+                        data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings to schedule (e.g., 5)">
                     @error('showings_count') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.schedule_showings" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.schedule_showings') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -782,12 +782,12 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['attend_showings'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="attend_showings_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-hashtag" placeholder="Number of showings to attend">
+                        data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings to attend (e.g., 5)">
                     @error('attend_showings_count') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.attend_showings" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.attend_showings') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -802,12 +802,12 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['virtual_tours'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="virtual_tours_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-hashtag" placeholder="Number of virtual tours">
+                        data-icon="fa-solid fa-hashtag" placeholder="Enter number of virtual tours (e.g., 3)">
                     @error('virtual_tours_count') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.virtual_tours" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.virtual_tours') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -830,7 +830,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['prepare_offer'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.prepare_offer" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.prepare_offer') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -845,7 +845,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['complete_disclosures'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.complete_disclosures" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.complete_disclosures') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -860,7 +860,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['follow_up_offer'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.follow_up_offer" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.follow_up_offer') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -875,7 +875,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['overview_agreement'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.overview_agreement" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.overview_agreement') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -890,7 +890,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['coordinate_counteroffer'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.coordinate_counteroffer" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.coordinate_counteroffer') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -905,7 +905,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['esignature_setup'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.esignature_setup" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.esignature_setup') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -920,7 +920,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['track_deadlines'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.track_deadlines" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.track_deadlines') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -943,7 +943,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['contract_to_close'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.contract_to_close" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.contract_to_close') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -958,7 +958,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['vendor_referrals'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.vendor_referrals" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.vendor_referrals') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -973,7 +973,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['escrow_coordination'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.escrow_coordination" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.escrow_coordination') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -988,7 +988,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['final_walkthrough'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.final_walkthrough" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.final_walkthrough') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1003,7 +1003,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['closing_appointment'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.closing_appointment" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.closing_appointment') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1018,7 +1018,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['key_handover'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.key_handover" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.key_handover') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1033,7 +1033,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['move_in_checklist'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.move_in_checklist" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.move_in_checklist') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1056,7 +1056,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['cma'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.cma" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.cma') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1071,7 +1071,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['homebuying_process'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.homebuying_process" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.homebuying_process') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1086,7 +1086,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['buyer_preparation'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.buyer_preparation" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.buyer_preparation') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1101,7 +1101,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['general_questions'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.general_questions" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.general_questions') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1116,7 +1116,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['closing_costs'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.closing_costs" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.closing_costs') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1136,7 +1136,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                     <div class="input-cover mt-2">
                         <input type="text" wire:model="custom_services.{{ $index }}.description" 
                             class="form-control has-icon" data-icon="fa-solid fa-pen-to-square"
-                            placeholder="Describe the service">
+                            placeholder="Enter a description of the service (e.g., Prepare and file a purchase contract)">
                         @error("custom_services.{$index}.description") 
                             <span class="text-danger">{{ $message }}</span> 
                         @enderror
@@ -1146,7 +1146,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                     <div class="input-cover mt-2">
                         <input type="number" wire:model="custom_services.{{ $index }}.fee" 
                             class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
-                            placeholder="Flat Fee for this service">
+                            placeholder="Enter flat fee for this service (e.g., 500)">
                         @error("custom_services.{$index}.fee") 
                             <span class="text-danger">{{ $message }}</span> 
                         @enderror
@@ -1219,7 +1219,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['list_bidyouroffer'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.list_bidyouroffer" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.list_bidyouroffer') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1234,7 +1234,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['list_mls'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.list_mls" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.list_mls') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1249,7 +1249,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['syndicate_listing'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.syndicate_listing" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.syndicate_listing') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1264,7 +1264,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['list_crexi'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.list_crexi" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.list_crexi') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1279,7 +1279,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['list_loopnet'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.list_loopnet" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.list_loopnet') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1294,7 +1294,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['social_media'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.social_media" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.social_media') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1309,7 +1309,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['paid_ads'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.paid_ads" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.paid_ads') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1324,7 +1324,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['email_marketing'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.email_marketing" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.email_marketing') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1339,7 +1339,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['local_mailers'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.local_mailers" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.local_mailers') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1354,7 +1354,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['hyperlocal_ads'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.hyperlocal_ads" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.hyperlocal_ads') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1377,7 +1377,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['cma'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.cma" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.cma') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1392,7 +1392,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['staging_consultation'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.staging_consultation" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.staging_consultation') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1407,12 +1407,12 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['coordinate_staging'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.coordinate_staging" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.coordinate_staging') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="staging_duration" class="form-control has-icon"
-                        data-icon="fa-solid fa-calendar" placeholder="Staging Duration (months)">
+                        data-icon="fa-solid fa-calendar" placeholder="Enter staging duration in months (e.g., 3)">
                     @error('staging_duration') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1427,7 +1427,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['curb_appeal_consultation'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.curb_appeal_consultation" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.curb_appeal_consultation') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1442,7 +1442,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['coordinate_curb_appeal'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.coordinate_curb_appeal" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.coordinate_curb_appeal') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1469,7 +1469,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['professional_photography'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.professional_photography" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.professional_photography') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1484,7 +1484,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['drone_photos'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.drone_photos" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.drone_photos') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1499,7 +1499,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['video_walkthrough'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.video_walkthrough" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.video_walkthrough') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1514,7 +1514,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['virtual_tour'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.virtual_tour" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.virtual_tour') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1529,7 +1529,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['virtual_staging'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.virtual_staging" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.virtual_staging') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1544,7 +1544,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['digital_enhancement'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.digital_enhancement" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.digital_enhancement') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1567,12 +1567,12 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['schedule_showings'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="showings_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-hashtag" placeholder="Number of showings to schedule">
+                        data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings to schedule (e.g., 5)">
                     @error('showings_count') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.schedule_showings" class="form-control has-icon"
-                        placeholder="Flat Fee for this service">
+                        placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.schedule_showings') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1587,12 +1587,12 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['attend_showings'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="attend_showings_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-hashtag" placeholder="Number of showings to attend">
+                        data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings to attend (e.g., 5)">
                     @error('attend_showings_count') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.attend_showings" class="form-control has-icon"
-                        placeholder="Flat Fee for this service">
+                        placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.attend_showings') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1607,12 +1607,12 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['virtual_showings'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="virtual_showings_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-hashtag" placeholder="Number of virtual showings">
+                        data-icon="fa-solid fa-hashtag" placeholder="Enter number of virtual showings (e.g., 5)">
                     @error('virtual_showings_count') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.virtual_showings" class="form-control has-icon"
-                         placeholder="Flat Fee for this service">
+                         placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.virtual_showings') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1627,12 +1627,12 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['open_house'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="open_house_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-hashtag" placeholder="Number of in-person open houses to host">
+                        data-icon="fa-solid fa-hashtag" placeholder="Enter number of in-person open houses to host (e.g., 3)">
                     @error('open_house_count') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.open_house" class="form-control has-icon"
-                        placeholder="Flat Fee for this service">
+                        placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.open_house') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1647,7 +1647,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['lockbox'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.lockbox" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.lockbox') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1662,7 +1662,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['yard_sign'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.yard_sign" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.yard_sign') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1685,7 +1685,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['organize_offers'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.organize_offers" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.organize_offers') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1700,7 +1700,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['complete_disclosures'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.complete_disclosures" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.complete_disclosures') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1715,7 +1715,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['follow_up_offers'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.follow_up_offers" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.follow_up_offers') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1730,7 +1730,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['overview_agreement'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.overview_agreement" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.overview_agreement') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1745,7 +1745,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['coordinate_counteroffer'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.coordinate_counteroffer" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.coordinate_counteroffer') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1760,7 +1760,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['esignature_setup'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.esignature_setup" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.esignature_setup') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1775,7 +1775,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['track_deadlines'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.track_deadlines" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.track_deadlines') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1798,7 +1798,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['contract_to_close'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.contract_to_close" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.contract_to_close') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1813,7 +1813,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['vendor_referrals'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.vendor_referrals" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.vendor_referrals') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1828,7 +1828,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['escrow_coordination'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.escrow_coordination" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.escrow_coordination') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1843,7 +1843,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['final_walkthrough'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.final_walkthrough" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.final_walkthrough') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1858,7 +1858,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['closing_appointment'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.closing_appointment" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.closing_appointment') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1873,7 +1873,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['key_handover'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.key_handover" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.key_handover') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1888,7 +1888,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['move_out_checklist'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.move_out_checklist" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.move_out_checklist') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1911,7 +1911,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['selling_process'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.selling_process" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.selling_process') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1926,7 +1926,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['property_improvements'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.property_improvements" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.property_improvements') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1941,7 +1941,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['general_questions'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.general_questions" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.general_questions') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1956,7 +1956,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['closing_costs'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.closing_costs" class="form-control has-icon"
-                        data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                        data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.closing_costs') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -1976,7 +1976,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                     <div class="input-cover mt-2">
                         <input type="text" wire:model="custom_services.{{ $index }}.description" 
                             class="form-control has-icon" data-icon="fa-solid fa-pen-to-square"
-                            placeholder="Describe the service">
+                            placeholder="Enter a description of the service (e.g., Prepare and file a purchase contract)">
                         @error("custom_services.{$index}.description") 
                             <span class="text-danger">{{ $message }}</span> 
                         @enderror
@@ -1986,7 +1986,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                     <div class="input-cover mt-2">
                         <input type="number" wire:model="custom_services.{{ $index }}.fee" 
                             class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
-                            placeholder="Flat Fee for this service">
+                            placeholder="Enter flat fee for this service (e.g., 500)">
                         @error("custom_services.{$index}.fee") 
                             <span class="text-danger">{{ $message }}</span> 
                         @enderror
@@ -2064,7 +2064,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['list_bidyouroffer'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.list_bidyouroffer" class="form-control has-icon"
-                           data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                           data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.list_bidyouroffer') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -2079,7 +2079,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['list_mls'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.list_mls" class="form-control has-icon"
-                           data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                           data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.list_mls') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -2094,7 +2094,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['syndicate_listing'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.syndicate_listing" class="form-control has-icon"
-                           data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                           data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.syndicate_listing') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -2109,7 +2109,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['list_crexi'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.list_crexi" class="form-control has-icon"
-                           data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                           data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.list_crexi') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -2124,7 +2124,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['list_loopnet'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.list_loopnet" class="form-control has-icon"
-                           data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                           data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.list_loopnet') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -2139,7 +2139,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['social_media'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.social_media" class="form-control has-icon"
-                           data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                           data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.social_media') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -2154,7 +2154,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['paid_ads'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.paid_ads" class="form-control has-icon"
-                           data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                           data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.paid_ads') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -2169,7 +2169,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['email_marketing'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.email_marketing" class="form-control has-icon"
-                           data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                           data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.email_marketing') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -2184,7 +2184,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['local_mailers'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.local_mailers" class="form-control has-icon"
-                           data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                           data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.local_mailers') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -2199,7 +2199,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 @if($enable['hyperlocal_ads'])
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="fees.hyperlocal_ads" class="form-control has-icon"
-                           data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                           data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                     @error('fees.hyperlocal_ads') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -2222,7 +2222,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['rma'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.rma" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.rma') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2237,7 +2237,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['curb_appeal_consultation'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.curb_appeal_consultation" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.curb_appeal_consultation') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2252,7 +2252,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['coordinate_curb_appeal'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.coordinate_curb_appeal" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.coordinate_curb_appeal') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2280,7 +2280,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['professional_photography'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.professional_photography" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.professional_photography') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2295,7 +2295,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['drone_photos'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.drone_photos" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.drone_photos') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2310,7 +2310,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['video_walkthrough'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.video_walkthrough" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.video_walkthrough') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2325,7 +2325,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['virtual_tour'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.virtual_tour" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.virtual_tour') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2340,7 +2340,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['virtual_staging'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.virtual_staging" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.virtual_staging') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2355,7 +2355,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['digital_enhancement'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.digital_enhancement" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.digital_enhancement') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2378,12 +2378,12 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['schedule_showings'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="showings_count" class="form-control has-icon"
-                       data-icon="fa-solid fa-hashtag" placeholder="Number of showings to schedule">
+                       data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings to schedule (e.g., 5)">
                 @error('showings_count') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.schedule_showings" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.schedule_showings') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2398,12 +2398,12 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['attend_showings'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="attend_showings_count" class="form-control has-icon"
-                       data-icon="fa-solid fa-hashtag" placeholder="Number of showings to attend">
+                       data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings to attend (e.g., 5)">
                 @error('attend_showings_count') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.attend_showings" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.attend_showings') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2418,12 +2418,12 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['virtual_showings'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="virtual_showings_count" class="form-control has-icon"
-                       data-icon="fa-solid fa-hashtag" placeholder="Number of virtual showings">
+                       data-icon="fa-solid fa-hashtag" placeholder="Enter number of virtual showings (e.g., 5)">
                 @error('virtual_showings_count') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.virtual_showings" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.virtual_showings') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2438,12 +2438,12 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['open_house'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="open_house_count" class="form-control has-icon"
-                       data-icon="fa-solid fa-hashtag" placeholder="Number of in-person open houses to host">
+                       data-icon="fa-solid fa-hashtag" placeholder="Enter number of in-person open houses to host (e.g., 3)">
                 @error('open_house_count') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.open_house" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.open_house') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2458,7 +2458,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['lockbox'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.lockbox" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.lockbox') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2473,7 +2473,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['yard_sign'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.yard_sign" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.yard_sign') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2496,7 +2496,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['standard_application'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.standard_application" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.standard_application') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2511,7 +2511,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['submit_documents'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.submit_documents" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.submit_documents') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2526,7 +2526,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['follow_up_application'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.follow_up_application" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.follow_up_application') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2549,12 +2549,12 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['schedule_showings'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="showings_count" class="form-control has-icon"
-                       data-icon="fa-solid fa-hashtag" placeholder="Number of showings to schedule">
+                       data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings to schedule (e.g., 5)">
                 @error('showings_count') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.schedule_showings" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.schedule_showings') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2569,12 +2569,12 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['attend_showings'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="attend_showings_count" class="form-control has-icon"
-                       data-icon="fa-solid fa-hashtag" placeholder="Number of showings to attend">
+                       data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings to attend (e.g., 5)">
                 @error('attend_showings_count') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.attend_showings" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.attend_showings') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2589,12 +2589,12 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['virtual_showings'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="virtual_showings_count" class="form-control has-icon"
-                       data-icon="fa-solid fa-hashtag" placeholder="Number of virtual showings">
+                       data-icon="fa-solid fa-hashtag" placeholder="Enter number of virtual showings (e.g., 5)">
                 @error('virtual_showings_count') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.virtual_showings" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.virtual_showings') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2609,12 +2609,12 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['open_house'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="open_house_count" class="form-control has-icon"
-                       data-icon="fa-solid fa-hashtag" placeholder="Number of in-person open houses to host">
+                       data-icon="fa-solid fa-hashtag" placeholder="Enter number of in-person open houses to host (e.g., 3)">
                 @error('open_house_count') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.open_house" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.open_house') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2629,7 +2629,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['lockbox'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.lockbox" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.lockbox') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2644,7 +2644,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['yard_sign'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.yard_sign" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.yard_sign') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2667,7 +2667,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['standard_application'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.standard_application" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.standard_application') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2682,7 +2682,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['submit_documents'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.submit_documents" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.submit_documents') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2697,7 +2697,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['follow_up_application'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.follow_up_application" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.follow_up_application') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2721,7 +2721,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['rental_laws'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.rental_laws" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.rental_laws') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2736,7 +2736,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['property_improvements'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.property_improvements" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.property_improvements') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2751,7 +2751,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['lease_options'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.lease_options" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.lease_options') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2766,7 +2766,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['general_questions'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.general_questions" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.general_questions') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2781,7 +2781,7 @@ also manually enter one total flat fee to cover all selected services instead.">
             @if($enable['move_in_costs'])
             <div class="input-cover mt-2">
                 <input type="number" wire:model="fees.move_in_costs" class="form-control has-icon"
-                       data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee for this service">
+                       data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee for this service (e.g., 500)">
                 @error('fees.move_in_costs') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             @endif
@@ -2803,12 +2803,12 @@ also manually enter one total flat fee to cover all selected services instead.">
                     <div class="input-cover mt-2">
                         <input type="text" wire:model="custom_services.{{ $index }}.description"
                             class="form-control has-icon" data-icon="fa-solid fa-pen-to-square"
-                            placeholder="Describe the service">
+                            placeholder="Enter a description of the service (e.g., Prepare and file a purchase contract)">
                     </div>
                     <div class="input-cover mt-2">
                         <input type="number" wire:model="custom_services.{{ $index }}.fee"
                             class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
-                            placeholder="Flat Fee for this service">
+                            placeholder="Enter flat fee for this service (e.g., 500)">
                     </div>
                     @if ($index > 0)
                         <button type="button" class="btn btn-sm btn-danger mt-2"

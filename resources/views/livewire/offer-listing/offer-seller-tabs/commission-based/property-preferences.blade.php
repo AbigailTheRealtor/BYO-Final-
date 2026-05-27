@@ -1444,7 +1444,7 @@
         <div class="input-cover">
             <input type="text" wire:model.defer="assets_other" class="form-control has-icon"
                 data-icon="fa-solid fa-building"
-                placeholder=" Enter any included assets (e.g., Inventory, Customer lists, Trademarks, Software rights)">
+                placeholder="Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
         </div>
     </div>
 @endif

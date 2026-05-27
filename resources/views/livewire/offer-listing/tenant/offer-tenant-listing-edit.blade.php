@@ -1837,7 +1837,7 @@
                                            id="referral_percentage_edit2"
                                            wire:model.defer="referral_percentage"
                                            min="0" max="100" step="0.01"
-                                           placeholder="e.g. 25">
+                                           placeholder="Enter referral percentage (e.g., 25)">
                                     <div class="form-text text-muted mt-1" style="font-size:.85rem;">
                                         This is the referral fee offered to or requested from the hired Agent or their brokerage. This term is negotiated between agents and is not paid by the client.
                                     </div>
@@ -1927,9 +1927,9 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
-                                <button type="button" onclick="doSaveDraftWithSync()" class="btn btn-outline-primary me-2" wire:loading.attr="disabled" wire:target="saveDraftOnly">
-                                    <span wire:loading.remove wire:target="saveDraftOnly"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
-                                    <span wire:loading wire:target="saveDraftOnly">Saving...</span>
+                                <button type="button" onclick="doSaveEditWithSync()" class="btn btn-outline-primary me-2" wire:loading.attr="disabled" wire:target="update">
+                                    <span wire:loading.remove wire:target="update"><i class="fa-solid fa-save me-1"></i> Save Edit</span>
+                                    <span wire:loading wire:target="update">Saving...</span>
                                 </button>
 
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
@@ -2295,16 +2295,6 @@
             // All @this.set() calls above used defer=true, so their values
             // are batched into this single request atomically.
             @this.call('update');
-        }
-
-        // Save Draft — syncs Select2 but bypasses JS validation so partial saves are allowed.
-        // The PHP saveDraftOnly() method also skips server-side required validation.
-        function doSaveDraftWithSync() {
-            syncAllSelect2BeforeSave();
-            // Clear any existing error banner so it does not confuse the user.
-            var _banner = document.getElementById('submit-error-banner');
-            if (_banner) _banner.classList.add('d-none');
-            @this.call('saveDraftOnly');
         }
 
         // message.processed auto-advance removed — it caused repeated scroll/focus
@@ -5222,5 +5212,21 @@
 
         errorEl && (errorEl.innerText = "");
     }
+
+    function formatAllTenantNumericInputs() {
+        var scope = document.querySelector('form') || document;
+        scope.querySelectorAll('input[onblur*="reformatNumber"]').forEach(function(inp) {
+            if (!inp.value || inp.value.includes(',')) return;
+            reformatNumber(inp);
+        });
+        scope.querySelectorAll('input[onblur*="formatWithCommas"]').forEach(function(inp) {
+            if (!inp.value || inp.value.includes(',')) return;
+            if (typeof formatWithCommas === 'function') formatWithCommas(inp);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(formatAllTenantNumericInputs, 100);
+    });
 </script>
 @endpush

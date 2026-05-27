@@ -63,7 +63,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 2,000)"
+                            placeholder="Enter flat fee amount (e.g., 2000)"
                             data-error-id="renewal_fee_percentage_error" oninput="validateInput(this)"
                             onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>

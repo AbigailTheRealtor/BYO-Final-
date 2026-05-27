@@ -85,7 +85,7 @@ $safeKey = function(...$parts) {
             <div class="input-group" wire:key="{{ $safeKey('lease-fee-flat') }}">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="lease_fee_flat" class="form-control"
-                    placeholder="Enter flat fee amount (e.g., 5,000)"
+                    placeholder="Enter flat fee amount (e.g., 5000)"
                     data-error-id="lease_fee_flat_error" oninput="formatWithCommas(this)" onblur="formatWithCommas(this)"
                     onpaste="handlePaste(event)">
                 <span class="error mt-2" id="lease_fee_flat_error"></span>
@@ -118,7 +118,7 @@ $safeKey = function(...$parts) {
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="lease_fee_flat_combo" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 1,000)"
+                            placeholder="Enter flat fee amount (e.g., 1000)"
                             oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                     </div>
                 </div>
@@ -143,7 +143,7 @@ $safeKey = function(...$parts) {
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="lease_fee_flat_combo_net" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 1,500)"
+                            placeholder="Enter flat fee amount (e.g., 1500)"
                             oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                     </div>
                 </div>
@@ -210,7 +210,7 @@ $safeKey = function(...$parts) {
             @elseif ($broker_fee_timing === 'other')
                 <div class="input-group">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
-                        placeholder="Describe payment arrangement (e.g., Broker to be paid 50% of commission upon lease execution and 50% upon tenant move-in)">
+                        placeholder="Enter payment arrangement (e.g., Broker to be paid 50% of commission upon lease execution and 50% upon tenant move-in)">
                 </div>
             @endif
         </div>
@@ -242,7 +242,7 @@ $safeKey = function(...$parts) {
             <div class="mt-3" wire:key="{{ $safeKey('broker-fee-timing-other-input', $broker_fee_timing) }}">
                 <div class="input-group">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
-                        placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
+                        placeholder="Enter payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
                 </div>
             </div>
         @endif
@@ -298,7 +298,7 @@ $safeKey = function(...$parts) {
                 <div class="input-group">
                     <span class="input-group-text">$</span>
                     <input type="text" wire:model.lazy="purchase_fee_flat" class="form-control"
-                        placeholder="Enter flat fee amount (e.g., 5,000)"
+                        placeholder="Enter flat fee amount (e.g., 5000)"
                         data-error-id="purchase_fee_flat_error" oninput="formatWithCommas(this)"
                         onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                     <span class="error mt-2" id="purchase_fee_flat_error"></span>
@@ -325,7 +325,7 @@ $safeKey = function(...$parts) {
                         <div class="input-group">
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model.lazy="purchase_fee_flat_combo" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 3,000)"
+                                placeholder="Enter flat fee amount (e.g., 3000)"
                                 oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                         </div>
                     </div>
@@ -389,7 +389,7 @@ $safeKey = function(...$parts) {
                     wire:key="lease-value-input-{{ $lease_type }}"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
-                        : 'Enter flat fee amount (e.g., 1,500)' }}"
+                        : 'Enter flat fee amount (e.g., 1500)' }}"
                     data-error-id="lease_value_error" 
                     oninput="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}" 
                     onblur="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
@@ -430,7 +430,7 @@ $safeKey = function(...$parts) {
                     wire:key="purchase-value-input-{{ $purchase_type }}"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5,000)' }}"
+                        : 'Enter flat fee amount (e.g., 5000)' }}"
                     data-error-id="purchase_value_error" 
                     oninput="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}" 
                     onblur="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
@@ -491,7 +491,7 @@ $safeKey = function(...$parts) {
             <div class="input-group">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="early_termination_fee_amount" class="form-control"
-                    placeholder="Enter early termination fee amount (e.g., 1,000)"
+                    placeholder="Enter early termination fee amount (e.g., 1000)"
                     oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
             </div>
             @error('early_termination_fee_amount')

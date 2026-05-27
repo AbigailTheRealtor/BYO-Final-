@@ -127,7 +127,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model="assignment_fee_amount" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 2,500)"
+                            placeholder="Enter flat fee amount (e.g., 2500)"
                             data-error-id="assignment_fee_amount_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -1988,7 +1988,7 @@
     <div class="input-cover">
         <input type="text" wire:model="included_personal_property" class="form-control has-icon seller-icon-deep-pad"
             data-icon="fa-solid fa-couch"
-            placeholder="List items included in the sale (e.g., Refrigerator, washer/dryer, dining room chandelier)">
+            placeholder="Enter included personal property (e.g., Refrigerator, Washer/Dryer, Dining Room Chandelier)">
     </div>
 </div>
 
@@ -2003,7 +2003,7 @@
     <div class="input-cover">
         <input type="text" wire:model="excluded_items" class="form-control has-icon"
             data-icon="fa-solid fa-ban"
-            placeholder="List items excluded from the sale (e.g., Antique light fixture in dining room, detached storage shed)">
+            placeholder="Enter excluded items (e.g., Antique Light Fixture in Dining Room, Detached Storage Shed)">
     </div>
 </div>
 

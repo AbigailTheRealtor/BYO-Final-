@@ -162,7 +162,7 @@
                             <textarea
                                 class="form-control"
                                 rows="2"
-                                placeholder="Brief description of this document"
+                                placeholder="Enter a brief description of this document"
                                 x-model="row.description"
                                 @input="sync()"
                             ></textarea>

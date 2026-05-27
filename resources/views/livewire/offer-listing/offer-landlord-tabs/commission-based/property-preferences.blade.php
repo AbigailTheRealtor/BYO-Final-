@@ -1370,7 +1370,7 @@
         </span>
         <div class="input-cover">
             <input type="number" wire:model="number_gas_meters" class="form-control has-icon"
-                data-icon="fa-solid fa-fire" placeholder="e.g. 1" min="0">
+                data-icon="fa-solid fa-fire" placeholder="Enter number of gas meters (e.g., 1)" min="0">
         </div>
         <span class="error mt-2" id="number_gas_meters_error"></span>
     </div>

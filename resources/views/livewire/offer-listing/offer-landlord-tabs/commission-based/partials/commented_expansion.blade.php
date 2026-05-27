@@ -46,7 +46,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="number" wire:model.lazy="expansion_flat_fee" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 1,000)">
+                            placeholder="Enter flat fee amount (e.g., 1000)">
                     </div>
                 </div>
             @elseif ($expansion_commission_type === 'other')

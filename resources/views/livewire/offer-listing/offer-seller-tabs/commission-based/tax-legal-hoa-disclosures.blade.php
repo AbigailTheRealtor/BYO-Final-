@@ -302,7 +302,7 @@
                 <div class="input-cover">
                     <textarea wire:model="special_assessment_description" class="form-control has-icon seller-compact-textarea" rows="1"
                         data-icon="fa-solid fa-file-invoice"
-                        placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
+                        placeholder="Enter special assessment details (e.g., Road Resurfacing Assessment Through 2028 at $900/Year)"></textarea>
                 </div>
             </div>
         @endif
@@ -368,7 +368,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_type_other" class="form-control has-icon"
                             data-icon="fa-solid fa-sitemap"
-                            placeholder="Specify association type (e.g., Master Community Association)">
+                            placeholder="Enter association type (e.g., Master Community Association)">
                     </div>
                 </div>
             </div>
@@ -440,7 +440,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
                             data-icon="fa-regular fa-calendar-days"
-                            placeholder="Specify fee frequency (e.g., Weekly, Bi-weekly)">
+                            placeholder="Enter fee frequency (e.g., Weekly, Bi-Weekly)">
                     </div>
                 </div>
             </div>
@@ -475,7 +475,7 @@
                     <div class="input-cover">
                         <textarea wire:model="association_approval_process" class="form-control has-icon seller-compact-textarea" rows="1"
                             data-icon="fa-solid fa-stamp"
-                            placeholder="Describe the approval process (e.g., Application required, Background check, 30-day review period)"></textarea>
+                            placeholder="Enter approval process details (e.g., Application Required, Background Check, 30-Day Review Period)"></textarea>
                     </div>
                 </div>
 
@@ -661,7 +661,7 @@
                     <div class="input-cover">
                         <textarea wire:model="additional_lease_restrictions" class="form-control has-icon seller-compact-textarea" rows="1"
                             data-icon="fa-solid fa-ban"
-                            placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
+                            placeholder="Enter additional leasing restrictions (e.g., No Airbnb/VRBO, Owner Must Occupy 1 Year Before Renting, Tenant Must Be HOA-Approved)"></textarea>
                     </div>
                 </div>
             @endif

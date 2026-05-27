@@ -1855,7 +1855,7 @@ $lease_types = [
                                                    id="referral_percentage_create"
                                                    wire:model.defer="referral_percentage"
                                                    min="0" max="100" step="0.01"
-                                                   placeholder="e.g. 25">
+                                                   placeholder="Enter referral percentage (e.g., 25)">
                                             <div class="form-text text-muted mt-1" style="font-size:.85rem;">
                                                 This is the referral fee offered to or requested from the hired Agent or their brokerage. This term is negotiated between agents and is not paid by the client.
                                             </div>
