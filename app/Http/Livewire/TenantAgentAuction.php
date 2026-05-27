@@ -412,7 +412,15 @@ class TenantAgentAuction extends Component
     public $lease_purchase_deposit = '';
     public $lease_purchase_maintenance = '';
     public $lease_purchase_extension_terms = '';
-    
+
+    // Seller-specific Lease Purchase fields (seller user_type on shared TenantAgentAuction component)
+    public $seller_lease_purchase_rent_credit = '';
+    public $seller_lease_purchase_rent_credit_type = '$';
+    public $seller_lease_purchase_rent_credit_amount = '';
+    public $seller_lease_purchase_deposit = '';
+    public $seller_lease_purchase_maintenance = '';
+    public $seller_lease_purchase_extension_terms = '';
+
     // Seller Financing additional fields
     public $seller_amortization_type = '';
     public $seller_amortization_other = '';
@@ -3349,6 +3357,14 @@ class TenantAgentAuction extends Component
             $this->lease_purchase_rent_credit_amount = $auction->get->lease_purchase_rent_credit_amount ?? '';
             $this->lease_purchase_deposit = $auction->get->lease_purchase_deposit ?? '';
 
+            // Seller-specific Lease Purchase follow-up fields (seller user_type on shared component)
+            $this->seller_lease_purchase_rent_credit = $auction->get->seller_lease_purchase_rent_credit ?? '';
+            $this->seller_lease_purchase_rent_credit_type = $auction->get->seller_lease_purchase_rent_credit_type ?? '$';
+            $this->seller_lease_purchase_rent_credit_amount = $auction->get->seller_lease_purchase_rent_credit_amount ?? '';
+            $this->seller_lease_purchase_deposit = $auction->get->seller_lease_purchase_deposit ?? '';
+            $this->seller_lease_purchase_maintenance = $auction->get->seller_lease_purchase_maintenance ?? '';
+            $this->seller_lease_purchase_extension_terms = $auction->get->seller_lease_purchase_extension_terms ?? '';
+
             // Cryptocurrency follow-up fields
             $this->crypto_exchange_method = $auction->get->crypto_exchange_method ?? '';
             $this->crypto_custodian_wallet = $auction->get->crypto_custodian_wallet ?? '';
@@ -4530,6 +4546,14 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('lease_purchase_rent_credit', $this->lease_purchase_rent_credit);
         $auction->saveMeta('lease_purchase_rent_credit_amount', $this->stripCommas($this->lease_purchase_rent_credit_amount));
         $auction->saveMeta('lease_purchase_deposit', $this->lease_purchase_deposit);
+
+        // Seller-specific Lease Purchase follow-up fields (seller user_type on shared component)
+        $auction->saveMeta('seller_lease_purchase_rent_credit', $this->seller_lease_purchase_rent_credit);
+        $auction->saveMeta('seller_lease_purchase_rent_credit_type', $this->seller_lease_purchase_rent_credit_type);
+        $auction->saveMeta('seller_lease_purchase_rent_credit_amount', $this->stripCommas($this->seller_lease_purchase_rent_credit_amount));
+        $auction->saveMeta('seller_lease_purchase_deposit', $this->stripCommas($this->seller_lease_purchase_deposit));
+        $auction->saveMeta('seller_lease_purchase_maintenance', $this->seller_lease_purchase_maintenance);
+        $auction->saveMeta('seller_lease_purchase_extension_terms', $this->seller_lease_purchase_extension_terms);
 
         // Cryptocurrency follow-up fields
         $auction->saveMeta('crypto_exchange_method', $this->crypto_exchange_method);
