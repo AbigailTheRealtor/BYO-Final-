@@ -2237,6 +2237,7 @@ class BuyerOfferListingEdit extends Component
 
     protected function saveAllMetadata($auction)
     {
+        $auction->saveMeta('workflow_type', 'offer_listing');
         $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);

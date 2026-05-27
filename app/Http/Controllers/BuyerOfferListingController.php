@@ -1,0 +1,123 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\BuyerAgentAuction;
+use Illuminate\Http\Request;
+
+class BuyerOfferListingController extends Controller
+{
+    /**
+     * Meta keys that appear exclusively in Buyer Offer Listings and never in
+     * Hire Buyer's Agent records. Used as a legacy fallback to identify
+     * older offer-listing records that pre-date the workflow_type stamp.
+     *
+     * These keys are written by BuyerOfferListing/BuyerOfferListingEdit but are
+     * absent from HireBuyerAgent/BuyerAgentAuction and BuyerAgentAuctionController.
+     *
+     * NOTE: brokerage_relationship is intentionally omitted — it is written by
+     * both flows (HireLandLordAgent and TenantAgentAuction hire Livewires also
+     * write it), so it is not a safe discriminator.
+     */
+    public const OFFER_LISTING_META_KEYS = [
+        'pre_approval_amount',
+        'down_payment_type',
+    ];
+
+    public function searchOfferListings(Request $request)
+    {
+        $page_data['title'] = 'Buyer Criteria Listings';
+
+        $auctions = BuyerAgentAuction::query()
+            ->selectRaw("*, (SELECT meta_value FROM buyer_agent_auction_metas WHERE buyer_agent_auction_metas.buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'ideal_price') as price")
+            ->where(function ($q) {
+                $q->where('is_approved', 'true')
+                  ->orWhere('is_approved', '1')
+                  ->orWhere('is_approved', 1);
+            })
+            ->where('is_draft', false)
+            // Safety guard: never surface a record explicitly stamped hire_agent
+            ->whereDoesntHave('meta', function ($m) {
+                $m->where('meta_key', 'workflow_type')->where('meta_value', 'hire_agent');
+            })
+            ->where(function ($q) {
+                // Primary: workflow_type = offer_listing (all records created after workflow_type was introduced)
+                $q->whereHas('meta', function ($m) {
+                    $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing');
+                })
+                // Fallback: presence of any Buyer Offer Listing-specific meta key.
+                // Catches legacy records created before the workflow_type stamp existed.
+                ->orWhereHas('meta', function ($m) {
+                    $m->whereIn('meta_key', self::OFFER_LISTING_META_KEYS);
+                });
+            });
+
+        if ($request->title != '') {
+            $auctions->where(function ($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->title . '%')
+                  ->orWhereHas('meta', function ($m) use ($request) {
+                      $m->where('meta_key', 'address')
+                        ->where('meta_value', 'like', '%' . $request->title . '%');
+                  });
+            });
+        }
+
+        if ($request->bedrooms != '') {
+            $auctions->whereHas('meta', function ($meta) use ($request) {
+                $meta->where('meta_key', 'bedrooms')->where('meta_value', $request->bedrooms);
+            });
+        }
+
+        if ($request->bathrooms != '') {
+            $auctions->whereHas('meta', function ($meta) use ($request) {
+                $meta->where('meta_key', 'bathrooms')->where('meta_value', $request->bathrooms);
+            });
+        }
+
+        if ($request->property_type != '') {
+            $auctions->whereHas('meta', function ($meta) use ($request) {
+                $meta->where('meta_key', 'property_type')->where('meta_value', $request->property_type);
+            });
+        }
+
+        $sort = $request->sort ?? 'newest';
+        if ($sort === 'most_viewed') {
+            $auctions->orderByRaw('(SELECT COUNT(*) FROM buyer_agent_auction_bids WHERE buyer_agent_auction_bids.buyer_agent_auction_id = buyer_agent_auctions.id) DESC');
+        } elseif ($sort === 'ending_soon') {
+            $auctions->orderByRaw("
+                CASE
+                    WHEN NULLIF(REGEXP_REPLACE(COALESCE(
+                            (SELECT meta_value FROM buyer_agent_auction_metas
+                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
+                        , ''), '[^0-9]', '', 'g'), '') IS NOT NULL
+                        AND NULLIF(REGEXP_REPLACE(COALESCE(
+                            (SELECT meta_value FROM buyer_agent_auction_metas
+                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
+                        , ''), '[^0-9]', '', 'g'), '')::int > 0
+                        AND (buyer_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
+                            (SELECT meta_value FROM buyer_agent_auction_metas
+                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
+                        , ''), '[^0-9]', '', 'g'), '')::int) > NOW()
+                    THEN EXTRACT(EPOCH FROM (buyer_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
+                            (SELECT meta_value FROM buyer_agent_auction_metas
+                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
+                        , ''), '[^0-9]', '', 'g'), '')::int))
+                    WHEN COALESCE((SELECT meta_value FROM buyer_agent_auction_metas
+                        WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1), '') <> ''
+                        AND (SELECT meta_value FROM buyer_agent_auction_metas
+                            WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1)::date >= CURRENT_DATE
+                    THEN EXTRACT(EPOCH FROM (SELECT meta_value FROM buyer_agent_auction_metas
+                        WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1)::date::timestamp)
+                    ELSE 9999999999
+                END ASC, buyer_agent_auctions.created_at DESC
+            ");
+        } else {
+            $auctions->orderBy('created_at', 'DESC');
+        }
+
+        $page_data['count'] = (clone $auctions)->count();
+        $page_data['pAuctions'] = $auctions->paginate(12);
+
+        return view('offer-listing.buyer.search', $page_data);
+    }
+}

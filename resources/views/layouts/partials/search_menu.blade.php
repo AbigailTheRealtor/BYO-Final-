@@ -42,6 +42,15 @@
       <a href="{{ route('offer.listing.seller.searchListing') }}">Seller Listings</a>
     </li>
     <li class="nav-item search-menu-item" role="presentation">
+      <a href="{{ route('offer.listing.buyer.searchListing') }}">Buyer Criteria Listings</a>
+    </li>
+    <li class="nav-item search-menu-item" role="presentation">
+      <a href="{{ route('offer.listing.landlord.searchListing') }}">Rental Properties</a>
+    </li>
+    <li class="nav-item search-menu-item" role="presentation">
+      <a href="{{ route('offer.listing.tenant.searchListing') }}">Tenant Criteria Listings</a>
+    </li>
+    <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('seller.agent.searchListing') }}">Hiring Seller's Agent</a>
     </li>
     <li class="nav-item search-menu-item" role="presentation">

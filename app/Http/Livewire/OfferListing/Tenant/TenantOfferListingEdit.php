@@ -3197,7 +3197,7 @@ class TenantOfferListingEdit extends Component
             // Update the auction properties
             $auction->title = $this->listing_title;
             $auction->save();
-            $auction->saveMeta('workflow_type', $this->workflow_type ?: 'hire_agent');
+            $auction->saveMeta('workflow_type', 'offer_listing');
             $auction->saveMeta('service_type', $this->service_type);
             $auction->saveMeta('user_type', $this->user_type);
             $auction->saveMeta('listing_status', $this->listing_status);

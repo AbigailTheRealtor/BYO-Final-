@@ -488,7 +488,25 @@ class BuyerAgentAuctionController extends Controller
                   ->orWhere('is_approved', '1')
                   ->orWhere('is_approved', 1);
             })
-            ->where('is_draft', false);
+            ->where('is_draft', false)
+            // Primary: exclude records explicitly stamped as offer_listing
+            ->whereDoesntHave('meta', function ($m) {
+                $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing');
+            })
+            ->where(function ($q) {
+                // Legacy fallback for records that pre-date the workflow_type stamp.
+                // Include if EITHER explicitly stamped hire_agent OR doesn't carry any
+                // BuyerOfferListing-specific meta key (pre_approval_amount / down_payment_type).
+                // These two keys are written only by BuyerOfferListing/BuyerOfferListingEdit
+                // and are absent from HireBuyerAgent/BuyerAgentAuction and
+                // BuyerAgentAuctionController — making their presence a safe offer-listing signal.
+                $q->whereHas('meta', function ($m) {
+                    $m->where('meta_key', 'workflow_type')->where('meta_value', 'hire_agent');
+                })
+                ->orWhereDoesntHave('meta', function ($m) {
+                    $m->whereIn('meta_key', BuyerOfferListingController::OFFER_LISTING_META_KEYS);
+                });
+            });
 
         if ($request->title != "") {
             $auctions->where('title', 'like', '%' . $request->title . '%');

@@ -303,7 +303,19 @@ class TenantAgentAuctionController extends Controller
 
         $auctions = TenantAgentAuction::query();
 
-        $auctions->selectRaw("*, (SELECT meta_value FROM tenant_agent_auction_metas WHERE tenant_agent_auction_metas.tenant_agent_auction_id = tenant_agent_auctions.id AND meta_key = 'ideal_price') as price")->where('is_sold', false)->where('is_approved', true)->where('is_draft', false);
+        $auctions->selectRaw("*, (SELECT meta_value FROM tenant_agent_auction_metas WHERE tenant_agent_auction_metas.tenant_agent_auction_id = tenant_agent_auctions.id AND meta_key = 'ideal_price') as price")
+            ->where('is_sold', false)
+            ->where('is_approved', true)
+            ->where('is_draft', false)
+            // Primary: exclude records explicitly stamped as offer_listing.
+            // No meta-key fallback is applied here: TenantAgentAuction hire Livewire writes
+            // the same meta keys as TenantOfferListing (security_deposit_budget, pet_information,
+            // move_in_funds_available, brokerage_relationship, etc.), so key-presence alone
+            // cannot safely identify legacy offer-listing records. A data migration to promote
+            // workflow_type to a native column is the correct long-term fix.
+            ->whereDoesntHave('meta', function ($m) {
+                $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing');
+            });
 
         if ($request->title != "") {
             $auctions->where('title', 'like', '%' . $request->title . '%');
