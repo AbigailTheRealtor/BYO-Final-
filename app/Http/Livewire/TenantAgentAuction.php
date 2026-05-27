@@ -2986,6 +2986,8 @@ class TenantAgentAuction extends Component
             // FIX-01: Only accept the EAV user_type if it is one of the four valid values;
             // otherwise keep the route-derived value so user_type is never null.
             $this->user_type = (in_array($eavUserType, $validUserTypes)) ? $eavUserType : ($originalUserType ?? $this->user_type);
+            // Hydrate isDraft from the DB record so the blade can correctly show/hide buttons.
+            $this->isDraft = (bool) $auction->is_draft;
             $this->listing_status = $auction->get->listing_status;
             $this->auction_type = $auction->get->auction_type;
             $this->referral_percentage = $auction->get->referral_percentage ?? '';
@@ -4055,30 +4057,33 @@ class TenantAgentAuction extends Component
         }
 
         if ($this->isDraft) {
-            if ($this->user_type === 'landlord') {
-                // Landlord draft: use a minimal, explicit ruleset — only common/format fields.
+            if ($this->user_type === 'landlord' || $this->user_type === 'tenant') {
+                // Tenant/Landlord draft: use a minimal, explicit ruleset — only common/format fields.
                 // All submit-level required rules (address, leasing terms, desired_lease_length,
                 // contact info completeness, etc.) are intentionally excluded so that drafts
                 // always succeed when submit-only fields are still incomplete.
                 // Full submit (isDraft=false) still enforces the complete $rules set above.
-                $landlordDraftRules = [];
+                $draftRules = [];
+                // Format-only rules — no `required` in the draft path. Each field is only
+                // added when already non-empty, so `required` would be redundant AND could
+                // reject a legitimately partial draft. Full submit enforces required above.
                 $commonFields = [
-                    'service_type'       => 'required',
-                    'user_type'          => 'required',
-                    'listing_title'      => 'required|string|max:255',
-                    'working_with_agent' => 'required',
-                    'auction_type'       => 'required',
+                    'service_type'       => 'string',
+                    'user_type'          => 'string',
+                    'listing_title'      => 'string|max:255',
+                    'working_with_agent' => 'string',
+                    'auction_type'       => 'string',
                 ];
                 foreach ($commonFields as $field => $rule) {
                     if (!empty($this->$field)) {
-                        $landlordDraftRules[$field] = $rule;
+                        $draftRules[$field] = $rule;
                     }
                 }
                 // Format-only validation for contact fields (if filled; not required for draft)
-                if (!empty($this->email))      { $landlordDraftRules['email']      = 'email'; }
-                if (!empty($this->first_name)) { $landlordDraftRules['first_name'] = 'string|max:255'; }
-                if (!empty($this->last_name))  { $landlordDraftRules['last_name']  = 'string|max:255'; }
-                $this->validate($landlordDraftRules);
+                if (!empty($this->email))      { $draftRules['email']      = 'email'; }
+                if (!empty($this->first_name)) { $draftRules['first_name'] = 'string|max:255'; }
+                if (!empty($this->last_name))  { $draftRules['last_name']  = 'string|max:255'; }
+                $this->validate($draftRules);
             } else {
                 // Non-landlord roles: validate only fields that are already filled.
                 // FIX-05: date fields excluded — partial date strings (e.g. "2026-05") are
