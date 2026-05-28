@@ -9,6 +9,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ComputePropertyDnaProfile implements ShouldQueue
 {
@@ -28,14 +29,17 @@ class ComputePropertyDnaProfile implements ShouldQueue
 
     public function handle(PropertyDnaGenerator $generator): void
     {
-        try {
-            $generator->generate($this->listingType, $this->listingId);
-        } catch (\Throwable $e) {
-            Log::error('ComputePropertyDnaProfile job failed', [
-                'listing_type' => $this->listingType,
-                'listing_id'   => $this->listingId,
-                'error'        => $e->getMessage(),
-            ]);
-        }
+        $generator->generate($this->listingType, $this->listingId);
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        Log::error('ComputePropertyDnaProfile job permanently failed', [
+            'job'          => self::class,
+            'listing_type' => $this->listingType,
+            'listing_id'   => $this->listingId,
+            'error'        => $exception->getMessage(),
+            'exception'    => get_class($exception),
+        ]);
     }
 }

@@ -13,6 +13,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * ComputeCompatibilityScore — Phase F Compatibility Persistence Job
@@ -25,7 +26,8 @@ use Illuminate\Support\Facades\Log;
  * - Never dispatches additional compatibility jobs from within handle() (no recursive enqueuing).
  * - Runs its own isolated DB transaction for `listing_compatibility_scores` only —
  *   never nested inside or sharing a transaction with listing or DNA profile saves.
- * - All errors are caught, logged with identifiers only (no raw dimension data), and discarded.
+ * - Errors that escape handle() are caught by Laravel's queue worker, which invokes failed()
+ *   for final logging before the job is discarded. No raw dimension data is logged.
  * - Explicit $tries and $timeout prevent retry storms.
  * - Does NOT acquire locks on any listing workflow table beyond reading active DNA profiles.
  * - score_explanation is internal storage only — never surfaced publicly, cached, broadcast,
@@ -78,51 +80,54 @@ class ComputeCompatibilityScore implements ShouldQueue
 
     public function handle(CompatibilityEngine $engine): void
     {
-        // Top-level try/catch: all errors are logged with job identifiers only
-        // (no raw dimension arrays) and silently discarded — never surfaced to users.
-        try {
-            $supplyProfile = PropertyDnaProfile::where('listing_type', $this->supplyListingType)
-                ->where('listing_id', $this->supplyListingId)
-                ->whereNull('archived_at')
-                ->first();
+        $supplyProfile = PropertyDnaProfile::where('listing_type', $this->supplyListingType)
+            ->where('listing_id', $this->supplyListingId)
+            ->whereNull('archived_at')
+            ->first();
 
-            if (!$supplyProfile) {
-                Log::info('ComputeCompatibilityScore: no active supply profile found', [
-                    'supply_listing_type' => $this->supplyListingType,
-                    'supply_listing_id'   => $this->supplyListingId,
-                ]);
-                return;
-            }
-
-            $demandProfile = BuyerTenantDnaProfile::where('listing_type', $this->demandListingType)
-                ->where('listing_id', $this->demandListingId)
-                ->whereNull('archived_at')
-                ->first();
-
-            if (!$demandProfile) {
-                Log::info('ComputeCompatibilityScore: no active demand profile found', [
-                    'demand_listing_type' => $this->demandListingType,
-                    'demand_listing_id'   => $this->demandListingId,
-                ]);
-                return;
-            }
-
-            $result = $engine->compute($supplyProfile, $demandProfile);
-
-            $this->persist($result, $supplyProfile, $demandProfile);
-
-        } catch (\Throwable $e) {
-            // Log job identifiers and error message only — never raw dimension arrays or
-            // score_explanation payloads (governance constraint: no debug tooling exposure).
-            Log::error('ComputeCompatibilityScore job failed', [
-                'demand_listing_type' => $this->demandListingType,
-                'demand_listing_id'   => $this->demandListingId,
+        if (!$supplyProfile) {
+            Log::info('ComputeCompatibilityScore: no active supply profile found', [
                 'supply_listing_type' => $this->supplyListingType,
                 'supply_listing_id'   => $this->supplyListingId,
-                'framework_version'   => self::SCORING_FRAMEWORK_VERSION,
-                'error'               => $e->getMessage(),
             ]);
+            return;
         }
+
+        $demandProfile = BuyerTenantDnaProfile::where('listing_type', $this->demandListingType)
+            ->where('listing_id', $this->demandListingId)
+            ->whereNull('archived_at')
+            ->first();
+
+        if (!$demandProfile) {
+            Log::info('ComputeCompatibilityScore: no active demand profile found', [
+                'demand_listing_type' => $this->demandListingType,
+                'demand_listing_id'   => $this->demandListingId,
+            ]);
+            return;
+        }
+
+        $result = $engine->compute($supplyProfile, $demandProfile);
+
+        $this->persist($result, $supplyProfile, $demandProfile);
+    }
+
+    /**
+     * Called by Laravel when all retry attempts have been exhausted.
+     * Logs job identifiers and error class only — never raw dimension arrays or
+     * score_explanation payloads (governance constraint: no debug tooling exposure).
+     */
+    public function failed(Throwable $exception): void
+    {
+        Log::error('ComputeCompatibilityScore job permanently failed', [
+            'job'                 => self::class,
+            'demand_listing_type' => $this->demandListingType,
+            'demand_listing_id'   => $this->demandListingId,
+            'supply_listing_type' => $this->supplyListingType,
+            'supply_listing_id'   => $this->supplyListingId,
+            'framework_version'   => self::SCORING_FRAMEWORK_VERSION,
+            'error'               => $exception->getMessage(),
+            'exception'           => get_class($exception),
+        ]);
     }
 
     /**
@@ -159,6 +164,13 @@ class ComputeCompatibilityScore implements ShouldQueue
                 $newVersion = $prior->version + 1;
             }
 
+            // Guard conflicting_dimensions against null or unexpected non-array shape.
+            // An absent or malformed key must never cause a type error — default to empty array.
+            $conflictingDimensions = $result['conflicting_dimensions'] ?? [];
+            if (!is_array($conflictingDimensions)) {
+                $conflictingDimensions = [];
+            }
+
             ListingCompatibilityScore::create([
                 'demand_listing_type'              => $this->demandListingType,
                 'demand_listing_id'                => $this->demandListingId,
@@ -180,7 +192,7 @@ class ComputeCompatibilityScore implements ShouldQueue
                 // True means one or more deterministic field conflicts were detected.
                 // It must NOT be interpreted as rejection, disapproval, tenant disqualification,
                 // buyer unworthiness, suitability assessment, or decision-making signal of any kind.
-                'deal_breaker_triggered' => count($result['conflicting_dimensions']) > 0,
+                'deal_breaker_triggered' => count($conflictingDimensions) > 0,
 
                 // deal_breaker_flags stores the raw array of conflicting dimension identifier strings
                 // (e.g. ["pet_policy_alignment", "parking_alignment"]) for internal audit use only.
@@ -188,7 +200,7 @@ class ComputeCompatibilityScore implements ShouldQueue
                 // interpreted as rejection, disqualification, suitability assessment, qualification
                 // scoring, recommendation output, or decision-making signal of any kind.
                 // An empty array means no conflicts were detected; null is never persisted.
-                'deal_breaker_flags' => $result['conflicting_dimensions'],
+                'deal_breaker_flags' => $conflictingDimensions,
 
                 // score_explanation stores the structured dimension map for internal audit use only.
                 // This field must NEVER be surfaced publicly, cached, broadcast, serialized into
@@ -200,7 +212,7 @@ class ComputeCompatibilityScore implements ShouldQueue
                 // even after future phases expand the eligible set and bump SCORING_FRAMEWORK_VERSION.
                 'score_explanation' => [
                     'aligned_dimensions'       => $result['aligned_dimensions'],
-                    'conflicting_dimensions'   => $result['conflicting_dimensions'],
+                    'conflicting_dimensions'   => $conflictingDimensions,
                     'unresolved_dimensions'    => $result['unresolved_dimensions'],
                     'dimension_match_map'      => $result['dimension_match_map'],
                     'eligible_dimension_count' => $result['eligible_dimension_count'],
@@ -219,8 +231,8 @@ class ComputeCompatibilityScore implements ShouldQueue
      *
      * The lock key is derived from the four identifier components using crc32.
      * On non-PostgreSQL drivers, no lock is acquired; the wrapping DB::transaction()
-     * provides best-effort ordering, and any duplicate-version violations are caught
-     * by the job's top-level try/catch.
+     * provides best-effort ordering, and any duplicate-version violations will escape
+     * handle() and be handled by Laravel's queue retry and failed() mechanism.
      *
      * Lock scope: `listing_compatibility_scores` only — never acquires locks on any
      * listing workflow table or DNA profile table.
