@@ -7,6 +7,14 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use App\Models\User;
+use App\Models\PropertyAuction;
+use App\Models\LandlordAuction;
+use App\Models\BuyerCriteriaAuction;
+use App\Models\TenantCriteriaAuction;
+use App\Observers\Dna\PropertyAuctionDnaObserver;
+use App\Observers\Dna\LandlordAuctionDnaObserver;
+use App\Observers\Dna\BuyerCriteriaAuctionDnaObserver;
+use App\Observers\Dna\TenantCriteriaAuctionDnaObserver;
 
 
 
@@ -58,5 +66,10 @@ class AppServiceProvider extends ServiceProvider
             'users' => User::class,
 
         ]);
+
+        PropertyAuction::observe(PropertyAuctionDnaObserver::class);
+        LandlordAuction::observe(LandlordAuctionDnaObserver::class);
+        BuyerCriteriaAuction::observe(BuyerCriteriaAuctionDnaObserver::class);
+        TenantCriteriaAuction::observe(TenantCriteriaAuctionDnaObserver::class);
     }
 }
