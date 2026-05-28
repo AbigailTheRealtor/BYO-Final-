@@ -3919,15 +3919,7 @@ class TenantOfferListingEdit extends Component
                 // Final submit — flash success and redirect to listing view.
                 session()->flash('success', 'Listing updated successfully!');
 
-                $routeName = match ($this->user_type) {
-                    'tenant'   => 'tenant.agent.auction.view',
-                    'landlord' => 'landlord.agent.auction.view',
-                    'buyer'    => 'buyer.view-auction',
-                    'seller'   => 'seller.agent.auction.detail',
-                    default    => 'tenant.agent.auction.view',
-                };
-
-                $url = route($routeName, ['id' => $this->auctionId]);
+                $url = route('offer.listing.tenant.view', ['id' => $this->auctionId]);
 
                 $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
 

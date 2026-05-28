@@ -7,6 +7,88 @@ use Illuminate\Http\Request;
 
 class TenantOfferListingController extends Controller
 {
+    /**
+     * Meta keys written exclusively by Tenant Criteria Offer Listings and never
+     * by Hire Tenant's Agent records. Used as a controlled legacy fallback to
+     * identify older records that pre-date the workflow_type stamp.
+     *
+     * These keys are set by TenantOfferListing/TenantOfferListingEdit but are
+     * absent from TenantAgentAuction (hire flow) and TenantAgentAuctionEdit.
+     */
+    public const OFFER_LISTING_META_KEYS = [
+        'security_deposit_budget',
+        'tenant_desired_lease_length',
+    ];
+
+    /**
+     * Resolve a TenantAgentAuction by ID and confirm it is a Tenant Criteria Offer Listing.
+     *
+     * Guard logic (mirrors BuyerOfferListingController for consistency):
+     *   1. Explicit offer_listing stamp → allowed.
+     *   2. Missing/null workflow_type with an offer-listing-specific meta key present
+     *      → allowed as a legacy record that pre-dates the workflow_type stamp.
+     *   3. Anything else (wrong stamp, no recognised keys) → 404.
+     *   4. hire_agent stamp → always 404, even if it somehow passed step 1/2.
+     *
+     * Dynamically loads ALL meta keys into a flat array — no hardcoded whitelist.
+     */
+    protected function resolveOfferListing(int $id): array
+    {
+        $auction = TenantAgentAuction::with('meta')->findOrFail($id);
+
+        $workflowType = $auction->info('workflow_type');
+
+        if ($workflowType === 'offer_listing') {
+            // Primary: record is explicitly stamped as an Offer Listing.
+        } elseif (
+            // Controlled legacy fallback: presence of meta keys that only the
+            // TenantOfferListing Livewire writes (not the Hire Tenant Agent flow).
+            $auction->info('security_deposit_budget')    !== false ||
+            $auction->info('tenant_desired_lease_length') !== false
+        ) {
+            // Legacy Tenant Criteria Listing without a workflow_type stamp — allow it.
+        } else {
+            // No recognised stamp and no offer-listing-specific keys found.
+            abort(404, 'Listing not found');
+        }
+
+        // Explicitly reject any record stamped as hire_agent, regardless of the
+        // outcome above (belt-and-suspenders guard against data anomalies).
+        if ($workflowType === 'hire_agent') {
+            abort(404, 'Listing not found');
+        }
+
+        // Dynamically build a flat meta array from every stored key.
+        $meta = [];
+        foreach ($auction->meta as $row) {
+            $val = $row->meta_value;
+            if ($val === null) {
+                $meta[$row->meta_key] = null;
+                continue;
+            }
+            $decoded = json_decode($val, true);
+            $meta[$row->meta_key] = (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded)))
+                ? $decoded
+                : $val;
+        }
+
+        return [$auction, $meta];
+    }
+
+    /**
+     * Public detail view for a Tenant Criteria Listing.
+     */
+    public function view(int $id)
+    {
+        [$auction, $meta] = $this->resolveOfferListing($id);
+
+        return view('offer-listing.tenant.view', [
+            'auction' => $auction,
+            'meta'    => $meta,
+            'ownerId' => $auction->user_id,
+        ]);
+    }
+
     public function searchOfferListings(Request $request)
     {
         $page_data['title'] = 'Tenant Criteria Listings';
@@ -20,11 +102,25 @@ class TenantOfferListingController extends Controller
             ->whereDoesntHave('meta', function ($m) {
                 $m->where('meta_key', 'workflow_type')->where('meta_value', 'hire_agent');
             })
-            // Primary: workflow_type = offer_listing (strict — no meta-key fallback available
-            // because TenantAgentAuction hire Livewire writes identical meta keys to
-            // TenantOfferListing, making any key-presence check ambiguous for legacy records)
-            ->whereHas('meta', function ($m) {
-                $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing');
+            // Primary: workflow_type = offer_listing (all records created after workflow_type was introduced)
+            ->where(function ($q) {
+                $q->whereHas('meta', function ($m) {
+                    $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing');
+                })
+                // Legacy fallback: records created before the workflow_type stamp existed.
+                // Identified by presence of meta keys exclusive to the Offer Listing flow.
+                ->orWhere(function ($q2) {
+                    $q2->whereDoesntHave('meta', function ($m) {
+                        $m->where('meta_key', 'workflow_type');
+                    })
+                    ->where(function ($q3) {
+                        $q3->whereHas('meta', function ($m) {
+                            $m->where('meta_key', 'security_deposit_budget');
+                        })->orWhereHas('meta', function ($m) {
+                            $m->where('meta_key', 'tenant_desired_lease_length');
+                        });
+                    });
+                });
             });
 
         if (!empty($request->title)) {

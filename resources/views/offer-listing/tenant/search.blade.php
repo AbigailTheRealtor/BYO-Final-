@@ -229,12 +229,11 @@
                         $listingTitle = @$auction->get->listing_title ?: (@$auction->title ?: null);
                     @endphp
                     <div class="col-sm-6 col-md-12 col-lg-4 mb-3">
-                        <div class="card" style="overflow: hidden;">
+                        <div class="card position-relative" style="overflow: hidden;">
                             <div class="card-body pb-2 pt-2">
                                 <div style="min-height: 56px;">
                                     <h5 class="card-title w-75">
-                                        {{-- Tenant offer listing view route does not yet exist; links to be wired when view page is added --}}
-                                        <span>{{ $listingTitle ?: 'Tenant Criteria Listing #' . $auction->id }}</span>
+                                        <a href="{{ route('offer.listing.tenant.view', $auction->id) }}" class="stretched-link text-decoration-none text-dark">{{ $listingTitle ?: 'Tenant Criteria Listing #' . $auction->id }}</a>
                                     </h5>
                                 </div>
 
