@@ -346,7 +346,6 @@
             <li><a href="#section-criteria">Purchase Criteria</a></li>
             <li><a href="#section-financing">Financing</a></li>
             <li><a href="#section-features">Property Features</a></li>
-            <li><a href="#section-compensation">Compensation</a></li>
             <li><a href="#section-contact">Contact</a></li>
         </ul>
     </div>
@@ -687,48 +686,6 @@
                 @foreach($unitFields as $f)
                 <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
                 @endforeach
-            </div>
-            @endif
-        </div>
-    </div>
-
-    {{-- Broker Compensation --}}
-    <div class="card section-card" id="section-compensation">
-        <div class="card-header"><i class="fa-solid fa-file-contract me-2"></i>Broker Compensation &amp; Agency Agreement</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    {!! $row('Commission Structure', $str('commission_structure')) !!}
-                    {!! $row('Brokerage Relationship', $str('brokerage_relationship')) !!}
-                    {!! $row('Agency Agreement Timeframe', $orOther($str('agency_agreement_timeframe'), $str('agency_agreement_custom'))) !!}
-                    {!! $row('Protection Period (Days)', $str('protection_period')) !!}
-                </div>
-                <div class="col-md-6">
-                    {!! $row('Retainer Fee', $yesNo($str('retainer_fee_option'))) !!}
-                    {!! $row('Retainer Fee Amount', $fmtMoney($str('retainer_fee_amount'))) !!}
-                    {!! $row('Retainer Fee Application', $str('retainer_fee_application')) !!}
-                    {!! $row('Early Termination Fee', $yesNo($str('early_termination_fee_option'))) !!}
-                    {!! $row('Early Termination Fee Amount', $fmtMoney($str('early_termination_fee_amount'))) !!}
-                    {!! $row('Additional Broker Details', $str('additional_details_broker')) !!}
-                </div>
-            </div>
-
-            @php
-                $purchaseFeeType = $str('purchase_fee_type');
-                $purchaseFeeDisplay = null;
-                if ($purchaseFeeType === 'percentage') $purchaseFeeDisplay = $fmtPercent($str('purchase_fee_percentage'));
-                elseif ($purchaseFeeType === 'flat') $purchaseFeeDisplay = $fmtMoney($str('purchase_fee_flat'));
-                elseif ($purchaseFeeType === 'combo') {
-                    $_pct = $fmtPercent($str('purchase_fee_percentage_combo'));
-                    $_flt = $fmtMoney($str('purchase_fee_flat_combo'));
-                    $purchaseFeeDisplay = ($_pct && $_flt) ? $_pct . ' + ' . $_flt : ($_pct ?: $_flt);
-                } elseif ($purchaseFeeType === 'other') $purchaseFeeDisplay = $str('purchase_fee_other');
-            @endphp
-            @if($purchaseFeeType || $purchaseFeeDisplay)
-            <hr>
-            <div class="row">
-                <div class="col-md-6">{!! $row("Buyer's Broker Purchase Fee Type", $purchaseFeeType) !!}</div>
-                <div class="col-md-6">{!! $row("Buyer's Broker Purchase Fee", $purchaseFeeDisplay) !!}</div>
             </div>
             @endif
         </div>

@@ -760,33 +760,22 @@
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
                                         wire:click="setActiveTab(4)"
-                                        id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
-                                        data-bs-target="#broker-compensation-agency-agreement-terms"
+                                        id="ai-questions-tab" data-bs-toggle="tab"
+                                        data-bs-target="#ai-questions"
                                         type="button" role="tab"
-                                        aria-controls="broker-compensation-agency-agreement-terms"
+                                        aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        Broker Compensation &amp; Agency Agreement Terms
+                                        AI Knowledge Base
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
                                         wire:click="setActiveTab(5)"
-                                        id="ai-questions-tab" data-bs-toggle="tab"
-                                        data-bs-target="#ai-questions"
-                                        type="button" role="tab"
-                                        aria-controls="ai-questions"
-                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        AI Knowledge Base
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(6)"
                                         id="buyer-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#buyer-information"
                                         type="button" role="tab"
                                         aria-controls="buyer-information"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
                                         Agent Credentials & Contact Info
                                     </button>
                                 </li>
@@ -866,21 +855,14 @@
 
                                 </div>
 
-                                <!-- Broker Compensation & Agency Agreement Terms Tab (index 4) -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
-                                    id="broker-compensation-agency-agreement-terms" role="tabpanel"
-                                    aria-labelledby="broker-compensation-agency-agreement-terms-tab">
-                                    @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
-                                </div>
-
-                                <!-- AI Knowledge Base Tab (full_service: index 5) -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}" id="ai-questions"
+                                <!-- AI Knowledge Base Tab (full_service: index 4) -->
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
 
-                                <!-- Buyer Info Tab (index 6) -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                <!-- Buyer Info Tab (index 5) -->
+                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
                                     id="buyer-information" role="tabpanel" aria-labelledby="buyer-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -2578,7 +2560,6 @@
                     '#property-preferences',
                     '#purchasing-terms',
                     '#additional-details',
-                    '#broker-compensation-agency-agreement-terms',
                     '#ai-questions',
                     '#buyer-information'
                 ] : [
