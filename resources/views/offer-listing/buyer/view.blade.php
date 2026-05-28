@@ -179,6 +179,50 @@
     .bol-mobile-bar { display: flex; }
     .bol-main-content-wrap { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 }
+
+/* Hero CTA row */
+.bol-view-page .bol-hero-ctas {
+    display: flex; flex-wrap: wrap; gap: 0.4rem;
+    margin-top: 0.9rem; padding-top: 0.9rem;
+    border-top: 1px solid #f1f5f9;
+}
+.bol-view-page .bol-hero-ctas .btn {
+    font-size: 0.8rem; font-weight: 600;
+    padding: 0.42rem 0.75rem; border-radius: 8px;
+    white-space: nowrap; flex-shrink: 0;
+}
+.bol-view-page .bol-hero-ctas .btn-primary {
+    background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important;
+}
+.bol-view-page .bol-hero-ctas .btn-primary:hover,
+.bol-view-page .bol-hero-ctas .btn-primary:focus {
+    background-color: #0b5ed7 !important; border-color: #0a58ca !important; color: #fff !important;
+}
+
+/* Contact CTA row */
+.bol-view-page .bol-contact-cta-row {
+    display: flex; flex-wrap: wrap; gap: 0.5rem;
+    margin-top: 1rem; padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Modal header */
+.bol-view-page .bol-modal-header {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: #fff; border-radius: 0.75rem 0.75rem 0 0;
+    padding: 1.25rem 1.5rem; border-bottom: none;
+}
+.bol-view-page .bol-modal-header .btn-close { filter: invert(1); }
+
+/* Mobile bar: highlight the Respond button */
+.bol-mobile-bar-btn.bol-mobile-bar-respond {
+    background: #2563eb !important; color: #fff !important; border-radius: 10px;
+}
+.bol-mobile-bar-btn.bol-mobile-bar-respond i { color: #fff !important; }
+.bol-mobile-bar-btn.bol-mobile-bar-respond:hover,
+.bol-mobile-bar-btn.bol-mobile-bar-respond:active {
+    background: #1d4ed8 !important; color: #fff !important;
+}
 </style>
 @endpush
 
@@ -205,7 +249,7 @@
                 @if($propType) &bull; {{ $propType }} @endif
             </p>
         </div>
-        @if(auth()->id() == $auction->user_id)
+        @if(auth()->check() && auth()->id() === $auction->user_id)
         <div class="d-flex gap-2 flex-wrap">
             <a href="{{ route('offer.listing.buyer.edit', ['auctionId' => $auction->id]) }}"
                class="btn btn-outline-primary">
@@ -328,6 +372,15 @@
                             <span class="bol-badge bol-badge-{{ $b['color'] }}"><i class="{{ $b['icon'] }}"></i> {{ $b['label'] }}</span>
                         @endforeach
                     </div>
+
+                    <div class="bol-hero-ctas">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bolRespondModal" aria-label="Respond to this Buyer Criteria listing">
+                            <i class="fa-solid fa-reply me-1"></i>Respond to Buyer Criteria
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#bolQuestionModal" aria-label="Ask a question about this listing">
+                            <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -339,14 +392,42 @@
         {{-- Main content column --}}
         <div class="col-lg-9 bol-main-content-wrap">
 
+    {{-- Section visibility flags — computed once, reused by nav tabs AND section guards --}}
+    @php
+        $hasCriteriaContent = $str('property_type') || $str('bedrooms') || $str('bathrooms')
+            || $str('minimum_heated_square') || $str('minimum_heated_sqft') || $str('minimum_leaseable')
+            || $str('min_acreage') || $str('total_acreage') || $str('maximum_budget') || $str('buyer_budget')
+            || $str('max_purchase_price') || $str('purchase_price') || $str('target_closing_date')
+            || $str('desired_agent_hire_date') || $str('working_with_agent') || $str('sale_provision')
+            || $str('buyer_sell_contract') || $str('number_occupant') || $str('purchase_purpose')
+            || count($arr('cities')) || count($arr('counties')) || $str('property_state') || $str('state')
+            || count($arr('condition_prop_buyer')) || count($arr('property_items'));
+
+        $hasFinancingContent = count($arr('offered_financing')) || $str('pre_approved')
+            || $str('pre_approval_amount') || $str('cash_budget') || $str('down_payment_amount')
+            || $str('interest_rate') || $str('assumable_terms') || $str('lease_option_price')
+            || $str('lease_purchase_price') || $str('cryptocurrency_type') || $str('exchange_item_value')
+            || $str('nft_description') || $str('sale_provision_assignment');
+
+        $hasFeaturesContent = $str('garage_needed') || $str('carport_needed') || $str('pool_needed')
+            || count($arr('view_preference')) || count($arr('non_negotiable_amenities'))
+            || $str('leasing_space') || $str('leasing_55_plus') || $str('real_estate_purchase')
+            || $str('minimum_annual_net_income') || $str('minimum_cap_rate')
+            || count($arr('number_of_unit_type')) || $str('number_of_unit') || $str('property_criteria');
+
+        $contactName = trim(($str('first_name') . ' ' . $str('last_name')));
+        $hasContact  = $contactName || $str('email') || $str('phone_number')
+            || $str('agent_brokerage') || $str('agent_license_number') || $str('agent_nar_member_id');
+    @endphp
+
     {{-- SMOOTH-SCROLL NAV TABS --}}
     <div class="bol-nav-tabs-wrap">
         <ul class="bol-nav-tabs">
             <li><a href="#section-overview">Overview</a></li>
-            <li><a href="#section-criteria">Purchase Criteria</a></li>
-            <li><a href="#section-financing">Financing</a></li>
-            <li><a href="#section-features">Property Features</a></li>
-            <li><a href="#section-contact">Contact</a></li>
+            @if($hasCriteriaContent)<li><a href="#section-criteria">Purchase Criteria</a></li>@endif
+            @if($hasFinancingContent)<li><a href="#section-financing">Financing</a></li>@endif
+            @if($hasFeaturesContent)<li><a href="#section-features">Property Features</a></li>@endif
+            @if($hasContact)<li><a href="#section-contact">Contact</a></li>@endif
         </ul>
     </div>
 
@@ -385,6 +466,7 @@
     </div>
 
     {{-- Purchase Criteria --}}
+    @if($hasCriteriaContent)
     <div class="card section-card" id="section-criteria">
         <div class="card-header"><i class="fa-solid fa-magnifying-glass-dollar me-2"></i>Purchase Criteria</div>
         <div class="card-body">
@@ -467,7 +549,10 @@
         </div>
     </div>
 
+    @endif {{-- /hasCriteriaContent --}}
+
     {{-- Financing Details --}}
+    @if($hasFinancingContent)
     <div class="card section-card" id="section-financing">
         <div class="card-header"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Financing Details</div>
         <div class="card-body">
@@ -634,7 +719,10 @@
         </div>
     </div>
 
+    @endif {{-- /hasFinancingContent --}}
+
     {{-- Desired Property Features --}}
+    @if($hasFeaturesContent)
     <div class="card section-card" id="section-features">
         <div class="card-header"><i class="fa-solid fa-house me-2"></i>Desired Property Features</div>
         <div class="card-body">
@@ -691,15 +779,15 @@
         </div>
     </div>
 
+    @endif {{-- /hasFeaturesContent --}}
+
     {{-- Contact --}}
+    @if($hasContact)
     <div class="card section-card" id="section-contact">
         <div class="card-header"><i class="fa-solid fa-address-card me-2"></i>Contact Information</div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    @php
-                        $contactName = trim(($str('first_name') . ' ' . $str('last_name')));
-                    @endphp
                     {!! $row('Name', $contactName ?: null) !!}
                     {!! $row('Email', $str('email')) !!}
                     {!! $row('Phone', $str('phone_number')) !!}
@@ -710,15 +798,48 @@
                     {!! $row('NAR Member ID', $str('agent_nar_member_id')) !!}
                 </div>
             </div>
+            <div class="bol-contact-cta-row">
+                @if($str('email'))
+                    <a href="mailto:{{ $str('email') }}" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-envelope me-1"></i>Contact Listing Owner
+                    </a>
+                @endif
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#bolQuestionModal">
+                    <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
+                </button>
+            </div>
         </div>
     </div>
+    @endif
+
+    {{-- Edit Button (bottom, owner only) --}}
+    @if(auth()->check() && auth()->id() === $auction->user_id)
+    <div class="text-end mt-2 mb-4">
+        <a href="{{ route('offer.listing.buyer.edit', ['auctionId' => $auction->id]) }}"
+           class="btn btn-primary">
+            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
+        </a>
+    </div>
+    @endif
 
         </div>{{-- /col-lg-9 --}}
 
         {{-- Sticky sidebar --}}
         <div class="col-lg-3 d-none d-lg-block">
             <div class="bol-sticky-card">
-                <div class="bol-sticky-title"><i class="fa-solid fa-bolt me-1"></i>Quick Info</div>
+                <div class="bol-sticky-title"><i class="fa-solid fa-bolt me-1"></i>Quick Actions</div>
+
+                <button class="bol-action-btn bol-action-primary" data-bs-toggle="modal" data-bs-target="#bolRespondModal">
+                    <i class="fa-solid fa-reply"></i>Respond to Buyer Criteria
+                </button>
+                <button class="bol-action-btn bol-action-outline" data-bs-toggle="modal" data-bs-target="#bolQuestionModal">
+                    <i class="fa-solid fa-circle-question"></i>Ask a Question
+                </button>
+                <button type="button" class="bol-action-btn bol-action-outline" id="bolShareBtn">
+                    <i class="fa-solid fa-share-nodes"></i>Share Listing
+                </button>
+
+                <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f1f5f9;">
 
                 @if($heroPrice)
                 <div class="mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
@@ -751,12 +872,8 @@
 
                 <a href="{{ route('offer.listing.buyer.searchListing') }}"
                    class="bol-action-btn bol-action-outline" style="justify-content:center;text-align:center;">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Search
+                    <i class="fa-solid fa-arrow-left"></i>Back to Search
                 </a>
-
-                <button type="button" class="bol-action-btn bol-action-outline" id="bolShareBtn">
-                    <i class="fa-solid fa-share-nodes"></i> Share Listing
-                </button>
 
                 <div style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid #f1f5f9;">
                     <div style="font-size:0.74rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem;">Activity</div>
@@ -772,10 +889,86 @@
                     </div>
                     @endif
                 </div>
+
+                </div>{{-- /data summary panel --}}
             </div>
         </div>{{-- /col-lg-3 --}}
 
     </div>{{-- /row --}}
+
+    {{-- ===== MODALS ===== --}}
+
+    {{-- Modal: Respond to Buyer Criteria (placeholder) --}}
+    <div class="modal fade" id="bolRespondModal" tabindex="-1" aria-labelledby="bolRespondModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+                <div class="modal-header bol-modal-header">
+                    <h5 class="modal-title fw-bold" id="bolRespondModalLabel"><i class="fa-solid fa-reply me-2"></i>Respond to Buyer Criteria</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div style="font-size:3rem;margin-bottom:1rem;">🏡</div>
+                    <h6 class="fw-bold mb-2">Online Response Submission</h6>
+                    <p class="text-muted mb-3" style="font-size:.9rem;">Online response submission for Buyer Criteria listings is coming soon. In the meantime, please use the contact details in the listing to reach the listing owner directly.</p>
+                    <span class="badge bg-secondary px-3 py-2" style="font-size:.85rem;">Coming Soon</span>
+                </div>
+                <div class="modal-footer border-0 justify-content-center pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal: Ask a Question --}}
+    <div class="modal fade" id="bolQuestionModal" tabindex="-1" aria-labelledby="bolQuestionModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+                <div class="modal-header bol-modal-header">
+                    <h5 class="modal-title fw-bold" id="bolQuestionModalLabel"><i class="fa-solid fa-circle-question me-2"></i>Ask a Question</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+                </div>
+                <form method="POST" action="{{ route('offer.listing.buyer.question', ['auction' => $auction->id]) }}">
+                @csrf
+                <input type="text" name="website" value="" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1" autocomplete="off" aria-hidden="true">
+                <div class="modal-body p-4">
+                    @if(session('success') && str_contains((string)session('success'), 'question'))
+                        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('name', 'bolQuestionInquiry') is-invalid @enderror" name="name" placeholder="Jane Smith" value="{{ old('name') }}" required>
+                            @error('name', 'bolQuestionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control @error('email', 'bolQuestionInquiry') is-invalid @enderror" name="email" placeholder="jane@example.com" value="{{ old('email') }}" required>
+                            @error('email', 'bolQuestionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Phone Number</label>
+                            <input type="tel" class="form-control" name="phone" placeholder="(555) 000-0000" value="{{ old('phone') }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Question <span class="text-danger">*</span></label>
+                            <textarea class="form-control @error('question', 'bolQuestionInquiry') is-invalid @enderror" name="question" rows="4" placeholder="What would you like to know about this Buyer Criteria listing?" required>{{ old('question') }}</textarea>
+                            @error('question', 'bolQuestionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-paper-plane me-1"></i>Send Question
+                    </button>
+                </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
 </div>{{-- /container --}}
 
@@ -785,11 +978,15 @@
         <i class="fa-solid fa-arrow-left"></i>
         <span>Back</span>
     </a>
-    <button class="bol-mobile-bar-btn" id="bolMobileShareBtn">
-        <i class="fa-solid fa-share-nodes"></i>
-        <span>Share</span>
+    <button class="bol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#bolQuestionModal">
+        <i class="fa-solid fa-circle-question"></i>
+        <span>Ask</span>
     </button>
-    @if(auth()->id() == $auction->user_id)
+    <button class="bol-mobile-bar-btn bol-mobile-bar-respond" data-bs-toggle="modal" data-bs-target="#bolRespondModal">
+        <i class="fa-solid fa-reply"></i>
+        <span>Respond</span>
+    </button>
+    @if(auth()->check() && auth()->id() === $auction->user_id)
     <a href="{{ route('offer.listing.buyer.edit', ['auctionId' => $auction->id]) }}" class="bol-mobile-bar-btn">
         <i class="fa-solid fa-pen-to-square"></i>
         <span>Edit</span>
@@ -832,8 +1029,16 @@
     }
     var shareBtn = document.getElementById('bolShareBtn');
     if (shareBtn) shareBtn.addEventListener('click', shareHandler);
-    var mobileShareBtn = document.getElementById('bolMobileShareBtn');
-    if (mobileShareBtn) mobileShareBtn.addEventListener('click', shareHandler);
+
+    /* Auto-reopen question modal after validation failure */
+    @if(session('open_modal') === 'question')
+    (function () {
+        var el = document.getElementById('bolQuestionModal');
+        if (el && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+        }
+    }());
+    @endif
 
 })();
 </script>

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\BuyerAgentAuction;
+use App\Models\SellerListingInquiry; // TODO: replace with a neutral OfferListingInquiry model/table when buyer-specific inquiry tracking is needed
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class BuyerOfferListingController extends Controller
 {
@@ -86,6 +88,44 @@ class BuyerOfferListingController extends Controller
         ];
 
         return view('offer-listing.buyer.view', compact('auction', 'meta') + $page_data);
+    }
+
+    public function submitQuestion(Request $request, $auction)
+    {
+        if ($request->input('website') !== null && $request->input('website') !== '') {
+            return redirect()->back()->with('success', 'Your question has been sent.');
+        }
+
+        $listing = $this->resolveOfferListing($auction);
+
+        $validator = Validator::make($request->all(), [
+            'name'     => 'required|string|max:191',
+            'email'    => 'required|email|max:191',
+            'phone'    => 'nullable|string|max:64',
+            'question' => 'required|string|max:5000',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator, 'bolQuestionInquiry')
+                ->withInput()
+                ->with('open_modal', 'question');
+        }
+
+        SellerListingInquiry::create([
+            'auction_id' => $listing->id,
+            'type'       => 'question',
+            'name'       => $request->input('name'),
+            'email'      => $request->input('email'),
+            'phone'      => $request->input('phone'),
+            'question'   => $request->input('question'),
+            'status'     => 'new',
+            'source'     => 'buyer_listing',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return redirect()->back()->with('success', 'Your question has been sent. We\'ll be in touch shortly.');
     }
 
     public function searchOfferListings(Request $request)

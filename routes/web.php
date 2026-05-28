@@ -287,6 +287,7 @@ Route::get('/search/tenant-listings', [TenantOfferListingController::class, 'sea
 Route::get('/offer-listing/tenant/view/{id}', [TenantOfferListingController::class, 'view'])->name('offer.listing.tenant.view');
 Route::post('/offer-listing/seller/{auction}/question', [SellerOfferListingController::class, 'submitQuestion'])->name('offer.listing.seller.question');
 Route::post('/offer-listing/seller/{auction}/showing', [SellerOfferListingController::class, 'submitShowing'])->name('offer.listing.seller.showing');
+Route::post('/offer-listing/buyer/{auction}/question', [BuyerOfferListingController::class, 'submitQuestion'])->name('offer.listing.buyer.question');
 Route::get('/search/buyer-agent-needed', [BuyerAgentAuctionController::class, 'searchListing'])->name('buyer.agent.searchListing');
 Route::get('/search/buyer-criteria-auctions', [BuyerCriteriaAuctionController::class, 'searchListing'])->name('buyer.criteria.searchListing');
 Route::get('/search/agents', [SearchAgentController::class, 'search'])->name('search.agents');
