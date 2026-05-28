@@ -2061,7 +2061,7 @@ class LandlordOfferListingEdit extends Component
         return hash('sha256', json_encode($data));
     }
 
-    public function saveDraftOnly(): void
+    public function saveDraftOnly()
     {
         try {
             if (!$this->auctionId) {
@@ -2073,6 +2073,15 @@ class LandlordOfferListingEdit extends Component
             if (!$auction) {
                 session()->flash('error', 'Listing not found.');
                 return;
+            }
+
+            // Draft records must go through the versioning path to avoid
+            // overwriting an existing draft in place.
+            if ($auction->is_draft) {
+                if (!$this->listingId) {
+                    $this->listingId = $this->auctionId;
+                }
+                return $this->saveDraft();
             }
 
             $auction->is_draft = 1;
