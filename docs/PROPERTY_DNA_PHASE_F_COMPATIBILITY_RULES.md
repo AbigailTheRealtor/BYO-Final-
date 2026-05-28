@@ -137,6 +137,25 @@ The schema column name is frozen from Phase A and must not be renamed. Documenta
 
 ---
 
+## 6a. `deal_breaker_flags` — Conflicting Dimension Identifiers
+
+The `deal_breaker_flags` column stores the **raw array of conflicting dimension identifier strings** detected during a compatibility computation — for example `["pet_policy_alignment", "parking_alignment"]`. When no conflicts are detected the column stores an empty array (`[]`). This column is **never persisted as `null`**.
+
+`deal_breaker_flags` is **deterministic conflict-presence metadata only**. It records which named dimensions produced a `conflicting` result so that the specific sources of conflict are auditable without requiring a full parse of `score_explanation`. It must **not** be interpreted as:
+
+- Rejection of a listing, buyer, tenant, seller, or landlord
+- Disapproval or disqualification of any user or listing
+- Suitability assessment or qualification scoring
+- Recommendation or anti-recommendation logic
+- Ranking input or prioritization signal
+- Decision-making input of any kind
+- Grounds for narrative explanation, persuasion copy, or human-readable compatibility descriptions
+- Input to any AI system, language model, or inference engine
+
+`deal_breaker_flags` is a sibling of `deal_breaker_triggered`: the boolean indicates whether any conflict exists; this array records which specific dimension identifiers produced those conflicts. Both are internal audit columns only.
+
+---
+
 ## 7. Append-Only Persistence Mechanics
 
 Compatibility score records in `listing_compatibility_scores` are **never overwritten or deleted**. The persistence contract for `ComputeCompatibilityScore` is:
@@ -152,7 +171,7 @@ This transaction must **never** be nested inside, chained to, or share a transac
 
 ## 8. No Public Exposure
 
-Compatibility dimensions, `score_explanation` payloads, `overall_score`, `deal_breaker_triggered`, and any content of `listing_compatibility_scores` must **never** appear in:
+Compatibility dimensions, `score_explanation` payloads, `overall_score`, `deal_breaker_triggered`, `deal_breaker_flags`, and any content of `listing_compatibility_scores` must **never** appear in:
 - Public listing pages or search results
 - API resources or JSON responses
 - PDF listing packets or email templates

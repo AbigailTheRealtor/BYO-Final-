@@ -182,7 +182,13 @@ class ComputeCompatibilityScore implements ShouldQueue
                 // buyer unworthiness, suitability assessment, or decision-making signal of any kind.
                 'deal_breaker_triggered' => count($result['conflicting_dimensions']) > 0,
 
-                'deal_breaker_flags' => null,
+                // deal_breaker_flags stores the raw array of conflicting dimension identifier strings
+                // (e.g. ["pet_policy_alignment", "parking_alignment"]) for internal audit use only.
+                // This column is deterministic conflict-presence metadata ONLY and must NEVER be
+                // interpreted as rejection, disqualification, suitability assessment, qualification
+                // scoring, recommendation output, or decision-making signal of any kind.
+                // An empty array means no conflicts were detected; null is never persisted.
+                'deal_breaker_flags' => $result['conflicting_dimensions'],
 
                 // score_explanation stores the structured dimension map for internal audit use only.
                 // This field must NEVER be surfaced publicly, cached, broadcast, serialized into
