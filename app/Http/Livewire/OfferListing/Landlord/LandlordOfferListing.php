@@ -3822,10 +3822,10 @@ class LandlordOfferListing extends Component
 
             session()->flash('success', 'Listing submitted successfully!');
 
-            $url = route('landlord.agent.auction.view', ['id' => $auction->id]);
+            $url = route('offer.listing.landlord.view', ['id' => $auction->id]);
 
             \Log::info('[LANDLORD FORM REDIRECT]', [
-                'route_name' => 'landlord.agent.auction.view',
+                'route_name' => 'offer.listing.landlord.view',
                 'listing_id' => $auction->id,
                 'url' => $url,
             ]);

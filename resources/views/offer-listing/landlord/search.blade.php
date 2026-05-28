@@ -222,11 +222,11 @@
                         $listingTitle = @$auction->get->titleListing ?: (@$auction->title ?: @$auction->get->address);
                     @endphp
                     <div class="col-sm-6 col-md-12 col-lg-4 mb-3">
-                        <div class="card" style="overflow: hidden;">
+                        <a href="{{ route('offer.listing.landlord.view', $auction->id) }}" style="text-decoration:none;color:inherit;display:block;">
+                        <div class="card" style="overflow: hidden; cursor: pointer; transition: box-shadow .15s;">
                             <div class="card-body pb-2 pt-2">
                                 <div style="min-height: 56px;">
                                     <h5 class="card-title w-75">
-                                        {{-- Landlord offer listing view route does not yet exist; links to be wired when view page is added --}}
                                         <span>{{ $listingTitle ?: 'Rental Property #' . $auction->id }}</span>
                                     </h5>
                                 </div>
@@ -320,6 +320,7 @@
                                 </div>
                             </div>
                         </div>
+                        </a>
                     </div>
                 @empty
                     <div class="card p-4 text-center">

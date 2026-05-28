@@ -926,6 +926,10 @@ Route::get('/offer-listing/buyer/view/{id}',
     [BuyerOfferListingController::class, 'view']
 )->name('offer.listing.buyer.view');
 
+Route::get('/offer-listing/landlord/view/{id}',
+    [LandlordOfferListingController::class, 'view']
+)->name('offer.listing.landlord.view');
+
 // ===========================================================================
 // Regular Listing (Offer) — production routes
 // These route to the isolated OfferListing Livewire components (Layer 2 copies).

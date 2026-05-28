@@ -3563,7 +3563,7 @@ class LandlordOfferListingEdit extends Component
 
             session()->flash('success', 'Listing updated successfully!');
 
-            $url = route('landlord.agent.auction.view', ['id' => $auction->id]);
+            $url = route('offer.listing.landlord.view', ['id' => $auction->id]);
 
             $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
 
