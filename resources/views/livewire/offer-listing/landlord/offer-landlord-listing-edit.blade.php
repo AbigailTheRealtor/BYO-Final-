@@ -1367,7 +1367,14 @@ $tenantPays = [
                 closeOnSelect: false,
                 width: '100%',
             });
-            $('#view_preference').on('change', function() {
+            // Restore saved value BEFORE binding the change handler so that
+            // trigger('change') updates the Select2 UI without calling @this.set.
+            // This matches the non_negotiable_amenities restore pattern.
+            var _vpSaved = @json($this->view_preference ?? []);
+            if (!Array.isArray(_vpSaved)) _vpSaved = [];
+            if (_vpSaved.length) { $('#view_preference').val(_vpSaved).trigger('change'); }
+            _vpSaved.includes('Other') ? $('#other_preferences').show() : $('#other_preferences').hide();
+            $('#view_preference').off('change.viewPref').on('change.viewPref', function() {
                 var selectedValues = $(this).val() || [];
                 @this.set('view_preference', selectedValues, true);
                 selectedValues.includes('Other') ? $('#other_preferences').show() : $('#other_preferences').hide();
@@ -1559,6 +1566,9 @@ $tenantPays = [
             toggleSpaceInput('garage-needed', 'other-garage-needed');
 
             // Re-sync view_preference value from live Livewire state after Livewire round-trips.
+            // initViewPreferenceSelect2() is a no-op if Select2 is already initialized (guard on
+            // select2-hidden-accessible), but re-inits and restores if the element was recreated.
+            window.initViewPreferenceSelect2();
             var _vpRsVals = @json($this->view_preference ?? []);
             try {
                 var _vpRsEl = document.querySelector('[wire\\:id]');
