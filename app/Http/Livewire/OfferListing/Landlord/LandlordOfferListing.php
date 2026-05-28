@@ -2128,23 +2128,15 @@ class LandlordOfferListing extends Component
         try {
             $this->isDraft = true;
 
-            if (!self::SAVE_AS_NEW_DRAFT && $this->isResumingDraft && $this->listingId) {
-                $auction = HirelandLordAgentAuction::find($this->listingId) ?? new HirelandLordAgentAuction();
-                $auction->user_id  = Auth::id();
-                $auction->is_draft = true;
-                $auction->save();
-                $auction->saveMeta('title', $this->listing_title);
-                $this->listingId = $auction->id;
-                $this->saveAllMetadata($auction);
-                $this->hasDrafts = true;
-                session()->flash('success', 'Draft updated successfully.');
-                return redirect()->route('offer.listing.landlord.edit', ['auctionId' => $this->listingId]);
-            }
+            // Capture previous-draft context as read-only. $this->listingId must never
+            // be used as the persistence target here — saveDraft() always creates a new
+            // record via `new HirelandLordAgentAuction()`.
+            $previousDraftId = $this->listingId;
 
             $newPayloadHash = $this->buildDraftPayloadHash();
 
-            $previousDraft = $this->listingId
-                ? HirelandLordAgentAuction::find($this->listingId)
+            $previousDraft = $previousDraftId
+                ? HirelandLordAgentAuction::find($previousDraftId)
                 : null;
 
             $previousVersion = 0;
@@ -2153,7 +2145,7 @@ class LandlordOfferListing extends Component
                 $oldHash = $previousDraft->info('draft_payload_hash') ?? '';
                 if ($oldHash === $newPayloadHash) {
                     session()->flash('success', 'No changes detected — draft is already up to date.');
-                    return redirect()->route('offer.listing.landlord.edit', ['auctionId' => $this->listingId]);
+                    return redirect()->route('offer.listing.landlord.edit', ['auctionId' => $previousDraftId]);
                 }
                 $previousVersion = (int) ($previousDraft->info('draft_version') ?? 1);
                 $parentDraftId   = $previousDraft->id;
