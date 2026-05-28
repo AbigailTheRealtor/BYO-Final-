@@ -73,7 +73,10 @@ class CompatibilityEngine
      *   timeline_alignment     — demand side: no timeline_flexibility lifestyle tag
      *   budget_alignment       — supply side: no price/asking-value dimension in PropertyDnaGenerator
      *   lease_term_alignment   — demand side: no desired_lease_length deal_breaker_flag
-     *   hoa_alignment          — demand side: no dedicated HOA preference field in BuyerTenantDnaGenerator
+     *   hoa_alignment          — demand side: no dedicated HOA preference field in BuyerTenantDnaGenerator.
+     *                            Temporarily excluded until a dedicated HOA preference field is added to
+     *                            buyer/tenant listing forms. Phase J / R-03 audited and confirmed resolved
+     *                            (hoa_alignment is ineligible; coverage denominator is accurate at 8).
      */
     private const STRUCTURALLY_INELIGIBLE_DIMENSIONS = [
         'occupancy_alignment',
