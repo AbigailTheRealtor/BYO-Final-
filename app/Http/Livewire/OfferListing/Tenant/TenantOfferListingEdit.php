@@ -3937,6 +3937,7 @@ class TenantOfferListingEdit extends Component
     /**
      * Save the edit form as a draft — no required-field validation, no redirect.
      * Allows the user to preserve partial progress without meeting all validation rules.
+     * Used for published-listing edits (Save Edit path) and is kept for internal use.
      */
     public function saveDraftOnly(): void
     {
@@ -3946,5 +3947,95 @@ class TenantOfferListingEdit extends Component
         } finally {
             $this->_isDraftSave = false;
         }
+    }
+
+    /**
+     * Create a new versioned draft record from the current edit form state.
+     *
+     * Strategy — no duplication of saveAllMetadata / buildDraftPayload needed:
+     *   1. Re-use update() (via _isDraftSave flag) to flush current form state
+     *      into the existing draft record in-place — zero field-by-field duplication.
+     *   2. Clone all meta rows from the freshly-saved record to a new record via
+     *      the existing metas() relation — no persistence stack copy required.
+     *   3. Stamp draft_version / parent_draft_id on the new record and redirect.
+     *
+     * saveDraftOnly() remains for the published-listing "Save Edit" flow and is
+     * intentionally kept separate from this versioning path.
+     */
+    public function saveDraft()
+    {
+        // Pre-check — resolve class and verify is_draft BEFORE calling update().
+        // update() sets is_draft = 1 when _isDraftSave is true, which would cause
+        // a guard placed after update() to always pass, even for published listings.
+        $auctionClass = match ($this->user_type) {
+            'tenant'   => HireTenantAgentAuction::class,
+            'landlord' => HirelandLordAgentAuction::class,
+            'buyer'    => HireBuyerAgentAuction::class,
+            'seller'   => HireSellerAgentAuction::class,
+            default    => null,
+        };
+
+        if (!$auctionClass) {
+            session()->flash('error', 'Cannot version draft: unknown listing type.');
+            return;
+        }
+
+        $preCheck = $auctionClass::find($this->auctionId);
+        if (!$preCheck || !$preCheck->is_draft) {
+            session()->flash('error', 'Cannot create a new draft version of a published listing.');
+            return;
+        }
+
+        // Step 1 — flush current form state into the existing record in-place,
+        // reusing all of update()'s persistence logic without any duplication.
+        $this->_isDraftSave = true;
+        try {
+            $this->update();
+        } finally {
+            $this->_isDraftSave = false;
+        }
+
+        // Step 2 — reload the source record after update() has flushed form state.
+        $source = $auctionClass::find($this->auctionId);
+
+        if (!$source) {
+            session()->flash('error', 'Draft record not found after save.');
+            return;
+        }
+
+        $previousVersion = (int) ($source->info('draft_version') ?? 1);
+
+        // Step 3 — create a new shell record, copying only the base columns.
+        $newDraft           = new $auctionClass();
+        $newDraft->user_id  = Auth::id();
+        $newDraft->title    = $source->title;
+        $newDraft->is_draft = true;
+
+        if (in_array($this->user_type, ['buyer', 'seller'])) {
+            $newDraft->address = $source->address;
+            $newDraft->is_sold = $source->is_sold;
+            $newDraft->is_paid = $source->is_paid;
+        }
+
+        $newDraft->save();
+
+        // Step 4 — clone all meta rows from source; then stamp the versioning keys.
+        // Note: all four underlying models expose this relation as meta() not metas().
+        foreach ($source->meta()->get() as $meta) {
+            $newDraft->saveMeta($meta->meta_key, $meta->meta_value);
+        }
+
+        $newDraft->saveMeta('draft_version',   $previousVersion + 1);
+        $newDraft->saveMeta('parent_draft_id', $source->id);
+        $newDraft->deleteMeta('draft_payload_hash'); // stale on new record; recomputed on next edit
+
+        $this->auctionId = $newDraft->id;
+        $this->listingId = $newDraft->id;
+
+        session()->flash('success', 'Draft saved as new version (Version ' . ($previousVersion + 1) . ').');
+        return redirect()->route('offer.listing.tenant.edit', [
+            'auctionId' => $this->auctionId,
+            'user_type' => $this->user_type,
+        ]);
     }
 }
