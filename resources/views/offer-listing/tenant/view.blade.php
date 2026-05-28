@@ -2,20 +2,20 @@
 
 @php
     $fmtMoney = function($v) {
-        if ($v === null || $v === '') return null;
+        if ($v === null || $v === '' || is_array($v)) return null;
         $raw = preg_replace('/[^0-9.]/', '', (string)$v);
         if ($raw === '' || !is_numeric($raw)) return null;
         return '$' . number_format((float)$raw, 0);
     };
     $fmtPercent = function($v) {
-        if ($v === null || $v === '') return null;
+        if ($v === null || $v === '' || is_array($v)) return null;
         $raw = preg_replace('/[^0-9.]/', '', (string)$v);
         if ($raw === '' || !is_numeric($raw)) return null;
         $num = (float)$raw;
         return (floor($num) == $num ? (string)(int)$num : (string)$num) . '%';
     };
     $fmtDate = function($v) {
-        if ($v === null || $v === '') return null;
+        if ($v === null || $v === '' || is_array($v)) return null;
         try {
             return \Carbon\Carbon::parse((string)$v)->format('F j, Y');
         } catch (\Exception $e) {
@@ -257,7 +257,7 @@
         /* Rent budget / price for hero */
         $heroPrice = null;
         foreach (['budget','desired_rental_amount','maximum_budget','purchase_price'] as $_pk) {
-            $_pv = $meta[$_pk] ?? '';
+            $_pv = $str($_pk);
             if ($_pv !== '' && $_pv !== null) { $heroPrice = $fmtMoney($_pv); break; }
         }
 
