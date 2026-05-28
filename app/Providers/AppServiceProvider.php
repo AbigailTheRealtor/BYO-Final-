@@ -11,9 +11,13 @@ use App\Models\PropertyAuction;
 use App\Models\LandlordAuction;
 use App\Models\BuyerCriteriaAuction;
 use App\Models\TenantCriteriaAuction;
-use App\Observers\Dna\PropertyAuctionDnaObserver;
-use App\Observers\Dna\LandlordAuctionDnaObserver;
+use App\Models\BuyerTenantDnaProfile;
+use App\Models\PropertyDnaProfile;
 use App\Observers\Dna\BuyerCriteriaAuctionDnaObserver;
+use App\Observers\Dna\BuyerTenantDnaProfileCompatibilityObserver;
+use App\Observers\Dna\LandlordAuctionDnaObserver;
+use App\Observers\Dna\PropertyAuctionDnaObserver;
+use App\Observers\Dna\PropertyDnaProfileCompatibilityObserver;
 use App\Observers\Dna\TenantCriteriaAuctionDnaObserver;
 
 
@@ -71,5 +75,13 @@ class AppServiceProvider extends ServiceProvider
         LandlordAuction::observe(LandlordAuctionDnaObserver::class);
         BuyerCriteriaAuction::observe(BuyerCriteriaAuctionDnaObserver::class);
         TenantCriteriaAuction::observe(TenantCriteriaAuctionDnaObserver::class);
+
+        // Phase F — Compatibility observers.
+        // These observers hook PropertyDnaProfile and BuyerTenantDnaProfile saves to dispatch
+        // ComputeCompatibilityScore jobs for active counterpart profiles (seller ↔ buyer,
+        // landlord ↔ tenant). They never dispatch DNA generation jobs and never trigger
+        // additional DNA generation. Dispatch is capped at FANOUT_CAP per invocation.
+        PropertyDnaProfile::observe(PropertyDnaProfileCompatibilityObserver::class);
+        BuyerTenantDnaProfile::observe(BuyerTenantDnaProfileCompatibilityObserver::class);
     }
 }
