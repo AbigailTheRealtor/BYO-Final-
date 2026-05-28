@@ -51,7 +51,7 @@ class ComputeCompatibilityScore implements ShouldQueue
      * Scoring framework version identifier for this Phase F implementation.
      * Must be updated when the computation logic changes in a future phase.
      */
-    private const SCORING_FRAMEWORK_VERSION = 'phase-f-v1';
+    private const SCORING_FRAMEWORK_VERSION = 'phase-h-v1';
 
     public string $demandListingType;
     public int    $demandListingId;

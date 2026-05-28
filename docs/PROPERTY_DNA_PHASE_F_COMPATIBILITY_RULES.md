@@ -73,11 +73,11 @@ The `overall_score` column in `listing_compatibility_scores` stores the `compati
 
 where:
 - **resolved eligible dimensions** = count of aligned + conflicting results among structurally eligible dimensions only
-- **eligible_dimension_count** = count of dimensions in `STRUCTURALLY_ELIGIBLE_DIMENSIONS` (currently 9 of 14)
+- **eligible_dimension_count** = count of dimensions in `STRUCTURALLY_ELIGIBLE_DIMENSIONS` (currently 8 of 14)
 
 ### Why the denominator is not 14
 
-Of the 14 approved Phase F dimensions, 5 are structurally ineligible in the current Phase E DNA encoding — their `unresolved` result is caused by missing generator architecture on one or both sides, not by absent listing data. Counting them in the denominator would systematically deflate the metric for every listing pair regardless of how complete that pair's actual data is. The eligible denominator ensures the metric accurately reflects data coverage for dimensions that can actually be computed.
+Of the 14 approved Phase F dimensions, 6 are structurally ineligible in the current Phase H DNA encoding — their `unresolved` result is caused by missing generator architecture on one or both sides, not by absent listing data. Counting them in the denominator would systematically deflate the metric for every listing pair regardless of how complete that pair's actual data is. The eligible denominator ensures the metric accurately reflects data coverage for dimensions that can actually be computed.
 
 ### Structurally ineligible dimensions (excluded from denominator)
 
@@ -88,6 +88,7 @@ Of the 14 approved Phase F dimensions, 5 are structurally ineligible in the curr
 | `timeline_alignment` | Demand side: no timeline_flexibility lifestyle tag in BuyerTenantDnaGenerator |
 | `budget_alignment` | Supply side: no price/asking-value dimension in PropertyDnaGenerator |
 | `lease_term_alignment` | Demand side: no desired_lease_length deal_breaker_flag in BuyerTenantDnaGenerator |
+| `hoa_alignment` | Demand side: no dedicated buyer/tenant HOA preference field in BuyerTenantDnaGenerator |
 
 These dimensions are still computed and stored in `score_explanation.dimension_match_map` and `unresolved_dimensions` for audit completeness. They are excluded only from the metric denominator.
 

@@ -47,7 +47,7 @@ class CompatibilityEngine
      * When a future phase adds the missing generator signals for an ineligible dimension,
      * move it into this list and update SCORING_FRAMEWORK_VERSION in the job.
      *
-     * Current Phase E eligible dimensions (9 of 14):
+     * Current Phase H eligible dimensions (8 of 14):
      */
     private const STRUCTURALLY_ELIGIBLE_DIMENSIONS = [
         'property_type_alignment',   // supply: type:* tag; demand: prefers-type:* tag
@@ -56,13 +56,12 @@ class CompatibilityEngine
         'pet_policy_alignment',      // supply: policy:pets-allowed tag; demand: has-pets tag
         'smoking_policy_alignment',  // supply: policy:restrictions-specified; demand: preference:restrictions-specified
         'parking_alignment',         // supply: parking:* tags; demand: requires:* / deal_breaker_flags
-        'hoa_alignment',             // supply: governance:hoa tag; demand: preference:hoa-community-aware tag
         'commercial_alignment',      // supply: use:commercial tag; demand: prefers-type:* tag (indirect)
         'amenity_alignment',         // supply: amenity:pool tag; demand: requires:pool / deal_breaker_flags
     ];
 
     /**
-     * Dimensions that are structurally ineligible in Phase E because one or both generators
+     * Dimensions that are structurally ineligible in Phase H because one or both generators
      * do not yet emit the required source signals for that dimension class.
      *
      * These are computed and included in dimension_match_map / unresolved_dimensions for
@@ -74,6 +73,7 @@ class CompatibilityEngine
      *   timeline_alignment     — demand side: no timeline_flexibility lifestyle tag
      *   budget_alignment       — supply side: no price/asking-value dimension in PropertyDnaGenerator
      *   lease_term_alignment   — demand side: no desired_lease_length deal_breaker_flag
+     *   hoa_alignment          — demand side: no dedicated HOA preference field in BuyerTenantDnaGenerator
      */
     private const STRUCTURALLY_INELIGIBLE_DIMENSIONS = [
         'occupancy_alignment',
@@ -81,6 +81,7 @@ class CompatibilityEngine
         'timeline_alignment',
         'budget_alignment',
         'lease_term_alignment',
+        'hoa_alignment',
     ];
 
     /**
