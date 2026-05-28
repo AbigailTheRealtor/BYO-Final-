@@ -2781,10 +2781,7 @@ class BuyerOfferListingEdit extends Component
 
             session()->flash('success', 'Listing updated successfully!');
 
-            // Dispatch browser event to force redirect (Livewire v2 compatible)
-            $this->dispatchBrowserEvent('force-redirect', ['url' => route('buyer.view-auction', ['id' => $auction->id])]);
-
-            return redirect()->route('buyer.view-auction', ['id' => $auction->id]);
+            return redirect()->route('offer.listing.buyer.view', ['id' => $auction->id]);
 
         } catch (\Exception $e) {
             \Log::error('[BUYER UPDATE ERROR]', ['error' => $e->getMessage()]);

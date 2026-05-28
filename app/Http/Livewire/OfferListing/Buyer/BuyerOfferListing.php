@@ -2860,15 +2860,7 @@ class BuyerOfferListing extends Component
 
             session()->flash('success', 'Listing submitted successfully!');
 
-            $url = route('buyer.view-auction', ['id' => $auction->id]);
-
-            \Log::info('[BUYER STORE BEFORE REDIRECT EVENT]', ['url' => $url]);
-
-            // Dispatch browser event to force redirect (Livewire v2 compatible)
-            $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
-
-            // Keep redirect as fallback
-            return redirect()->to($url);
+            return redirect()->route('offer.listing.buyer.view', ['id' => $auction->id]);
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());

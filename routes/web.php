@@ -919,6 +919,13 @@ if (app()->environment('local', 'development')) {
 
 }
 
+// Public (no auth required) Offer Listing detail view routes
+// These must sit outside the auth group so unauthenticated visitors can open
+// a listing card from the public search pages (/search/buyer-listings, etc.).
+Route::get('/offer-listing/buyer/view/{id}',
+    [BuyerOfferListingController::class, 'view']
+)->name('offer.listing.buyer.view');
+
 // ===========================================================================
 // Regular Listing (Offer) — production routes
 // These route to the isolated OfferListing Livewire components (Layer 2 copies).

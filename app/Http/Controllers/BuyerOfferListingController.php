@@ -24,6 +24,70 @@ class BuyerOfferListingController extends Controller
         'down_payment_type',
     ];
 
+    /**
+     * Resolve a BuyerAgentAuction by ID and confirm it is a Buyer Offer Listing.
+     * Returns the auction on success or calls abort(404) when the record is absent
+     * or belongs to a different workflow (e.g. Hire Agent).
+     *
+     * @param  int|string  $id
+     * @param  bool        $withRelations  Load meta + bids.user when true (view page only).
+     */
+    private function resolveOfferListing($id, bool $withRelations = false): BuyerAgentAuction
+    {
+        $query = $withRelations
+            ? BuyerAgentAuction::with(['meta', 'bids.user'])
+            : BuyerAgentAuction::query();
+
+        $auction = $query->find($id);
+
+        if (!$auction) {
+            abort(404, 'Listing not found');
+        }
+
+        $workflowType = $auction->info('workflow_type');
+
+        if ($workflowType === 'offer_listing') {
+            // Primary check: workflow_type stamp
+        } elseif (
+            // Fallback for older Offer Listing records that pre-date the workflow_type stamp.
+            // These meta keys only appear in Buyer Offer Listings, not in Hire Buyer's Agent records.
+            $auction->info('pre_approval_amount') !== false ||
+            $auction->info('down_payment_type')   !== false
+        ) {
+            // Fallback: presence of Offer Listing-specific meta keys
+        } else {
+            abort(404, 'Listing not found');
+        }
+
+        // Reject records explicitly stamped as hire_agent
+        if ($workflowType === 'hire_agent') {
+            abort(404, 'Listing not found');
+        }
+
+        return $auction;
+    }
+
+    public function view($id)
+    {
+        $auction = $this->resolveOfferListing($id, withRelations: true);
+
+        $meta = [];
+        foreach ($auction->meta as $row) {
+            $decoded = json_decode($row->meta_value, true);
+            $meta[$row->meta_key] = (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded)))
+                ? $decoded
+                : $row->meta_value;
+        }
+
+        $page_data = [
+            'title'   => $meta['listing_title'] ?? ($auction->title ?? 'Buyer Criteria Listing'),
+            'id'      => $id,
+            'auth_id' => auth()->id(),
+        ];
+
+        return view('offer-listing.buyer.view', compact('auction', 'meta') + $page_data);
+    }
+
     public function searchOfferListings(Request $request)
     {
         $page_data['title'] = 'Buyer Criteria Listings';

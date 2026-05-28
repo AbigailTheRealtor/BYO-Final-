@@ -238,8 +238,9 @@
                             <div class="card-body pb-2 pt-2">
                                 <div style="min-height: 56px;">
                                     <h5 class="card-title w-75">
-                                        {{-- Buyer offer listing view route does not yet exist; links to be wired when view page is added --}}
-                                        <span>{{ $listingTitle ?: 'Buyer Criteria Listing #' . $auction->id }}</span>
+                                        <a href="{{ route('offer.listing.buyer.view', $auction->id) }}" style="text-decoration:none;color:inherit;">
+                                            {{ $listingTitle ?: 'Buyer Criteria Listing #' . $auction->id }}
+                                        </a>
                                     </h5>
                                 </div>
 
