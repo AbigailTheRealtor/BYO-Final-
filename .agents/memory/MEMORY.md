@@ -1,0 +1,1 @@
+- [Phase D year_built collision resolution](phase-d-year-built-collision.md) — year_built was pre-existing in both Landlord components before Phase D; skipped per stop-and-report rule.

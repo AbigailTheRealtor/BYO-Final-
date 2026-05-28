@@ -269,6 +269,13 @@ class TenantOfferListing extends Component
     public $max_commute_minutes = '';
     public $commute_mode = '';
     public $credit_score_range = '';
+    // Phase D Tenant Tier 2 & Tier 3 EAV keys
+    public $rental_purpose = '';
+    public $move_in_budget_upfront = '';
+    public $move_in_date_earliest = '';
+    public $move_in_date_latest = '';
+    public $accessibility_requirements = '';
+    public $smoking_preference = '';
 
     public $flat_fee_services = [];
 
@@ -3482,6 +3489,13 @@ class TenantOfferListing extends Component
             $this->max_commute_minutes = $auction->get->max_commute_minutes ?? '';
             $this->commute_mode = $auction->get->commute_mode ?? '';
             $this->credit_score_range = $auction->get->credit_score_range ?? '';
+            // Phase D Tenant Tier 2 & Tier 3 EAV keys
+            $this->rental_purpose = $auction->get->rental_purpose ?? '';
+            $this->move_in_budget_upfront = $auction->get->move_in_budget_upfront ?? '';
+            $this->move_in_date_earliest = $auction->get->move_in_date_earliest ?? '';
+            $this->move_in_date_latest = $auction->get->move_in_date_latest ?? '';
+            $this->accessibility_requirements = $auction->get->accessibility_requirements ?? '';
+            $this->smoking_preference = $auction->get->smoking_preference ?? '';
 
             $creditRaw = $auction->get->credit_scroe_rating ?? null;
             $this->credit_scroe_rating = $creditRaw ? (is_string($creditRaw) ? json_decode($creditRaw, true) ?? [] : (array)$creditRaw) : [];
@@ -4440,7 +4454,13 @@ class TenantOfferListing extends Component
         $auction->saveMeta('max_commute_minutes', $this->max_commute_minutes);
         $auction->saveMeta('commute_mode', $this->commute_mode);
         $auction->saveMeta('credit_score_range', $this->credit_score_range);
-
+        // Phase D Tenant Tier 2 & Tier 3 EAV keys
+        $auction->saveMeta('rental_purpose', $this->rental_purpose);
+        $auction->saveMeta('move_in_budget_upfront', $this->move_in_budget_upfront);
+        $auction->saveMeta('move_in_date_earliest', $this->move_in_date_earliest);
+        $auction->saveMeta('move_in_date_latest', $this->move_in_date_latest);
+        $auction->saveMeta('accessibility_requirements', $this->accessibility_requirements);
+        $auction->saveMeta('smoking_preference', $this->smoking_preference);
 
         /// Buyer purchasing terms
         $auction->saveMeta('sale_provision', json_encode($this->sale_provision));

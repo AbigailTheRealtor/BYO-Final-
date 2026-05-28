@@ -585,3 +585,44 @@
 
 @endif
 <!-- End Commercial-Only Fields -->
+
+{{-- Phase D Tenant Tier 2 & Tier 3 Fields --}}
+<div class="form-group">
+    <label class="fw-bold">Total Move-In Budget (Upfront):</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the total upfront budget available for move-in costs including first month, last month, and deposit (e.g., 6000).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="move_in_budget_upfront" class="form-control"
+            placeholder="Enter total upfront move-in budget (e.g., 6000)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="fw-bold">Earliest Acceptable Move-In Date:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the earliest date the Tenant is available to move in.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="date" wire:model="move_in_date_earliest" class="form-control has-icon"
+            data-icon="fa-solid fa-calendar-check"
+            placeholder="Enter earliest acceptable move-in date (e.g., 2026-06-01)">
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="fw-bold">Latest Acceptable Move-In Date:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the latest date by which the Tenant needs to move in.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="date" wire:model="move_in_date_latest" class="form-control has-icon"
+            data-icon="fa-solid fa-calendar-xmark"
+            placeholder="Enter latest acceptable move-in date (e.g., 2026-07-01)">
+    </div>
+</div>

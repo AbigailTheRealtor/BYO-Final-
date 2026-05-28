@@ -239,6 +239,23 @@
     </div>
 </div>
 
+{{-- Phase D Tenant T-07: Smoking Preference --}}
+<div class="form-group mt-4">
+    <label class="fw-bold">Smoking Preference:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Select the Tenant's smoking preference for the rental property (e.g., Non-Smoking, Smoking Allowed, No Preference).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <select wire:model="smoking_preference" class="form-control has-icon" data-icon="fa-solid fa-ban">
+            <option value="">Select</option>
+            <option value="Non-Smoking">Non-Smoking</option>
+            <option value="Smoking Allowed">Smoking Allowed</option>
+            <option value="No Preference">No Preference</option>
+        </select>
+    </div>
+</div>
+
 {{--
 <!-- Tenant(s) Credit Score Rating -->
 <div class="form-group">

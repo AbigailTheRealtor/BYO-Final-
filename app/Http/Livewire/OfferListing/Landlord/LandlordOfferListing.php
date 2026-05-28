@@ -341,6 +341,11 @@ class LandlordOfferListing extends Component
     public $commercial_parking_terms = '';
     public $personal_guarantee_requirement = '';
     public $commercial_approval_conditions = '';
+    // Phase D Landlord Tier 2 & Tier 3 EAV keys
+    public $smoking_policy = '';
+    public $security_deposit_amount = '';
+    public $min_income_requirement = '';
+    public $subletting_policy = '';
 
     // Property Showings
     public $schedule_showings = false;
@@ -2769,6 +2774,11 @@ class LandlordOfferListing extends Component
             $this->commercial_parking_terms = $auction->get->commercial_parking_terms ?? '';
             $this->personal_guarantee_requirement = $auction->get->personal_guarantee_requirement ?? '';
             $this->commercial_approval_conditions = $auction->get->commercial_approval_conditions ?? '';
+            // Phase D Landlord Tier 2 & Tier 3 EAV keys
+            $this->smoking_policy = $auction->get->smoking_policy ?? '';
+            $this->security_deposit_amount = $auction->get->security_deposit_amount ?? '';
+            $this->min_income_requirement = $auction->get->min_income_requirement ?? '';
+            $this->subletting_policy = $auction->get->subletting_policy ?? '';
 
             // Tax, Legal, HOA & Disclosures tab
             $this->parcel_id = $auction->get->parcel_id ?? '';
@@ -3417,6 +3427,11 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('commercial_parking_terms', $this->commercial_parking_terms);
         $auction->saveMeta('personal_guarantee_requirement', $this->personal_guarantee_requirement);
         $auction->saveMeta('commercial_approval_conditions', $this->commercial_approval_conditions);
+        // Phase D Landlord Tier 2 & Tier 3 EAV keys
+        $auction->saveMeta('smoking_policy', $this->smoking_policy);
+        $auction->saveMeta('security_deposit_amount', $this->security_deposit_amount);
+        $auction->saveMeta('min_income_requirement', $this->min_income_requirement);
+        $auction->saveMeta('subletting_policy', $this->subletting_policy);
 
         // Tax, Legal, HOA & Disclosures tab
         $auction->saveMeta('parcel_id', $this->parcel_id);

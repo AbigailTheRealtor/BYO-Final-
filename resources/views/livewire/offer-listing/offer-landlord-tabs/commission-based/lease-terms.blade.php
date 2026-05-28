@@ -1560,6 +1560,67 @@
 
 {{-- ===== END NEW LANDLORD LEASING TERMS FIELDS ===== --}}
 
+{{-- Phase D Landlord Tier 2 & Tier 3 Fields --}}
+<div class="form-group">
+    <label class="fw-bold">Smoking Policy:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Select the property's smoking policy (e.g., Allowed, Not Allowed, Designated Areas Only).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <select wire:model="smoking_policy" class="form-control has-icon" data-icon="fa-solid fa-ban">
+            <option value="">Select</option>
+            <option value="Allowed">Allowed</option>
+            <option value="Not Allowed">Not Allowed</option>
+            <option value="Designated Areas Only">Designated Areas Only</option>
+        </select>
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="fw-bold">Security Deposit Amount:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the required security deposit amount (e.g., 2000).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="security_deposit_amount" class="form-control"
+            placeholder="Enter security deposit amount (e.g., 2000)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="fw-bold">Minimum Income Requirement:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the minimum monthly income required for tenant qualification (e.g., 6000). This field is for internal agent use only.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="min_income_requirement" class="form-control"
+            placeholder="Enter minimum monthly income requirement (e.g., 6000)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="fw-bold">Subletting Policy:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Select whether subletting is permitted (e.g., Not Allowed, Allowed with Approval, Allowed).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <select wire:model="subletting_policy" class="form-control has-icon" data-icon="fa-solid fa-door-open">
+            <option value="">Select</option>
+            <option value="Not Allowed">Not Allowed</option>
+            <option value="Allowed with Approval">Allowed with Approval</option>
+            <option value="Allowed">Allowed</option>
+        </select>
+    </div>
+</div>
+
 @if ($property_type === 'Residential Property')
     <div class="form-group" wire:ignore wire:key="landlord-rent-includes-group">
         <label class="fw-bold">Rent Includes:</label>
