@@ -2150,7 +2150,7 @@ class LandlordOfferListingEdit extends Component
             $this->isDraft = (bool)($auction->is_draft);
 
             // Load all metadata fields
-            $this->listing_title = $auction->title ?? '';
+            $this->listing_title = $auction->get->title ?? $auction->title ?? '';
             $this->service_type = $auction->get->service_type ?? 'full_service';
             $this->user_type = $auction->get->user_type ?? 'landlord';
             $this->listing_status = $auction->get->listing_status ?? null;

@@ -1262,19 +1262,19 @@
         </div>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" wire:ignore wire:key="landlord-pet-species-group">
         <label class="fw-bold">Pet Species Allowed:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the species of pets permitted on the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover">
-            <select wire:model="pet_species_allowed" class="form-control has-icon"
-                data-icon="fa-solid fa-paw" multiple>
-                <option value="Dog">Dog</option>
-                <option value="Cat">Cat</option>
-                <option value="Bird">Bird</option>
-                <option value="Small caged animal">Small Caged Animal</option>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="pet_species_allowed" class="form-control has-icon select2-multiple"
+                data-icon="fa-solid fa-paw" data-placeholder="Select" multiple>
+                <option value="Dog" {{ in_array('Dog', $this->pet_species_allowed ?? []) ? 'selected' : '' }}>Dog</option>
+                <option value="Cat" {{ in_array('Cat', $this->pet_species_allowed ?? []) ? 'selected' : '' }}>Cat</option>
+                <option value="Bird" {{ in_array('Bird', $this->pet_species_allowed ?? []) ? 'selected' : '' }}>Bird</option>
+                <option value="Small caged animal" {{ in_array('Small caged animal', $this->pet_species_allowed ?? []) ? 'selected' : '' }}>Small Caged Animal</option>
             </select>
         </div>
     </div>

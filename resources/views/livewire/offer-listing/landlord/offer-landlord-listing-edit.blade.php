@@ -1377,6 +1377,8 @@ $tenantPays = [
             if (!$('#view_preference').hasClass('select2-hidden-accessible')) return;
             if (!Array.isArray(vals)) vals = [];
             if (vals.length) { $('#view_preference').val(vals).trigger('change'); }
+            // Always explicitly sync #other_preferences visibility (handles empty-vals case too)
+            vals.includes('Other') ? $('#other_preferences').show() : $('#other_preferences').hide();
         };
         // ────────────────────────────────────────────────────────────────────────
 
@@ -1884,6 +1886,22 @@ $tenantPays = [
                 var _riSaved = @json($this->rent_includes ?? []);
                 if (!Array.isArray(_riSaved)) _riSaved = [];
                 if (_riSaved.length) { $('#rent_includes').val(_riSaved).trigger('change'); }
+            }
+
+            if ($('#pet_species_allowed').length && !$('#pet_species_allowed').hasClass('select2-hidden-accessible')) {
+                $('#pet_species_allowed').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    closeOnSelect: false,
+                    width: '100%',
+                });
+                $('#pet_species_allowed').on('change', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('pet_species_allowed', selectedValues, true);
+                });
+                var _psaSaved = @json($this->pet_species_allowed ?? []);
+                if (!Array.isArray(_psaSaved)) _psaSaved = [];
+                if (_psaSaved.length) { $('#pet_species_allowed').val(_psaSaved).trigger('change'); }
             }
 
             if ($('#terms_of_lease').length && !$('#terms_of_lease').hasClass('select2-hidden-accessible')) {
@@ -2953,8 +2971,8 @@ $tenantPays = [
                 if (!nextBtn || !finishBtn) return;
                 var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
                 nextBtn.style.display = onAI ? 'none' : '';
-                // Submit only visible on AI (last) tab and only for draft listings
-                finishBtn.style.display = (onAI && _isDraftMode) ? '' : 'none';
+                // In draft mode: Submit visible on all tabs; in non-draft mode: always hidden
+                finishBtn.style.display = _isDraftMode ? '' : 'none';
             }
             window._landlordSyncWizardButtons = syncWizardButtons;
             document.addEventListener('shown.bs.tab', syncWizardButtons);
