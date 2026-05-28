@@ -54,6 +54,13 @@
                 <li><a class="nav-link" href="{{ route('admin.heatingFuels.index') }}"><i class="fa-solid fa-fire"></i> <span>Manage Heating Fuels</span></a></li>
                 <li><a class="nav-link" href="{{ route('admin.feeIncludes.index') }}"><i class="fa-solid fa-tachograph-digital"></i> <span>Manage Fee Includes</span></a></li>
                 <li><a class="nav-link" href="{{ route('admin.airConditioningTypes.index') }}"><i class="fa-solid fa-fan"></i> <span>Air Conditioning Types</span></a></li> --}}
+                <li class="dropdown"><a class="nav-link menu-title" href="javascript:void(0)"><i class="fa-solid fa-dna me-2"></i> <span>DNA Inspector</span></a>
+                    <ul class="nav-submenu menu-content">
+                        <li><a href="{{ route('admin.dna.property.index') }}" class="fw-bold"><i class="fa-solid fa-circle"></i> Property DNA</a></li>
+                        <li><a href="{{ route('admin.dna.demand.index') }}" class="fw-bold"><i class="fa-solid fa-circle"></i> Demand DNA</a></li>
+                        <li><a href="{{ route('admin.dna.scores.index') }}" class="fw-bold"><i class="fa-solid fa-circle"></i> Coverage Scores</a></li>
+                    </ul>
+                </li>
                 <li><a class="nav-link" href="{{ route('admin.settings') }}"><i class="icofont icofont-wheel me-2"></i> <span>Settings</span></a></li>
             </ul>
         </div>

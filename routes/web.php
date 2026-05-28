@@ -43,6 +43,7 @@ use App\Http\Controllers\LandlordAuctionController;
 use App\Http\Controllers\PropertyAuctionController;
 use App\Http\Controllers\ReferralAuctionController;
 use App\Http\Controllers\Admin\AdminAgentController;
+use App\Http\Controllers\Admin\DnaInspectorController;
 use App\Http\Controllers\Admin\FeeIncludeController;
 use App\Http\Controllers\Admin\WaterExtraController;
 use App\Http\Controllers\Admin\HeatingFuelController;
@@ -824,6 +825,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Phase 9 — Referral tracking
         Route::get('referrals', [AdminController::class, 'referrals'])->name('referrals.index');
         Route::post('referrals/{summary}/status', [AdminController::class, 'updateReferralStatus'])->name('referrals.status');
+
+        // Phase H — DNA Inspector (read-only, admin-only)
+        Route::prefix('dna')->name('dna.')->group(function () {
+            Route::get('property', [DnaInspectorController::class, 'propertyIndex'])->name('property.index');
+            Route::get('property/{id}', [DnaInspectorController::class, 'propertyShow'])->name('property.show');
+            Route::get('demand', [DnaInspectorController::class, 'demandIndex'])->name('demand.index');
+            Route::get('demand/{id}', [DnaInspectorController::class, 'demandShow'])->name('demand.show');
+            Route::get('scores', [DnaInspectorController::class, 'scoresIndex'])->name('scores.index');
+            Route::get('scores/{id}', [DnaInspectorController::class, 'scoresShow'])->name('scores.show');
+        });
     });
 });
 
