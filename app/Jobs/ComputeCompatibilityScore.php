@@ -80,6 +80,13 @@ class ComputeCompatibilityScore implements ShouldQueue
 
     public function handle(CompatibilityEngine $engine): void
     {
+        // NON-RECURSIVE GUARANTEE: This method does not dispatch any further queue jobs.
+        // It does not dispatch ComputeCompatibilityScore, ComputePropertyDnaProfile,
+        // ComputeBuyerTenantDnaProfile, or any other job. Fanout is one-directional only:
+        // the compatibility observers trigger this job; this job persists a score row and
+        // terminates. ListingCompatibilityScore has no registered observer, so no further
+        // jobs are ever enqueued as a downstream consequence of the persist() call below.
+
         $supplyProfile = PropertyDnaProfile::where('listing_type', $this->supplyListingType)
             ->where('listing_id', $this->supplyListingId)
             ->whereNull('archived_at')
