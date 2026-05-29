@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PropertyDnaProfile;
 use App\Models\BuyerTenantDnaProfile;
 use App\Models\ListingCompatibilityScore;
+use App\Services\Dna\PropertyMarketingBriefService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -341,6 +342,15 @@ class DnaInspectorController extends Controller
 
         return response()
             ->view('admin.dna.scores.index', compact('rows', 'versionCounts', 'filters'))
+            ->header('Cache-Control', 'no-store');
+    }
+
+    public function marketingBriefPreview(PropertyDnaProfile $profile, PropertyMarketingBriefService $briefService)
+    {
+        $brief = $briefService->build($profile);
+
+        return response()
+            ->view('admin.dna.marketing-brief-preview', compact('profile', 'brief'))
             ->header('Cache-Control', 'no-store');
     }
 

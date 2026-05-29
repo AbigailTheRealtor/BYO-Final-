@@ -835,6 +835,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('scores', [DnaInspectorController::class, 'scoresIndex'])->name('scores.index');
             Route::get('scores/{id}', [DnaInspectorController::class, 'scoresShow'])->name('scores.show');
         });
+
+        // Phase S — Marketing Brief Preview (admin-only, read-only)
+        Route::get('property-dna/{profile}/marketing-brief-preview', [DnaInspectorController::class, 'marketingBriefPreview'])->name('property-dna.marketing-brief-preview');
     });
 });
 
