@@ -77,6 +77,7 @@ use App\Http\Controllers\CounterBidController;
 use App\Http\Controllers\CounteredTerms;
 use App\Http\Controllers\LandlordAgentAuctionBidController;
 use App\Http\Controllers\LandlordCounteredTermsController;
+use App\Http\Controllers\Agent\PropertyMarketingBriefReviewController;
 use App\Http\Controllers\SellerCounterBidController;
 use App\Http\Controllers\SellerCounteredTermsController;
 use App\Http\Controllers\SellerServiceAuctionBidController;
@@ -638,6 +639,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Only Agents can access these routes
     Route::middleware('agentAuth')->group(function () {
         Route::name('agent.')->group(function () {
+            Route::get('/agent/property-dna/{profile}/marketing-brief-review', PropertyMarketingBriefReviewController::class)->name('property-dna.marketing-brief-review');
+
             Route::get('/service/auction/add', [AgentServiceAuctionController::class, 'index'])->name('service.auction.add');
             Route::post('/service/auction/save', [AgentServiceAuctionController::class, 'store'])->name('service.auction.save');
             Route::get('/agent/service/auctions', [AgentServiceAuctionController::class, 'list'])->name('service.auctions');
