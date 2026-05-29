@@ -781,6 +781,62 @@
 
     @endif {{-- /hasFeaturesContent --}}
 
+    {{-- Broker Compensation & Agency Agreement Terms --}}
+    @php
+        $hasBrokerComp = !empty($val('commission_structure')) || !empty($val('purchase_fee_type'));
+    @endphp
+    @if($hasBrokerComp)
+    <div class="card section-card" id="section-broker-compensation">
+        <div class="card-header"><i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms</div>
+        <div class="card-body">
+
+            @if(!empty($val('commission_structure')))
+            <h6 class="fw-semibold mb-2">Buyer's Broker Compensation</h6>
+            <div class="row">
+                <div class="col-md-12">
+                    {!! $row("Buyer's Broker Commission Structure", $str('commission_structure')) !!}
+                </div>
+            </div>
+            @endif
+
+            @if(!empty($val('purchase_fee_type')))
+            @php
+                $bPurchaseFeeType = $str('purchase_fee_type');
+                $bPurchaseFeeCombined = null;
+                if ($bPurchaseFeeType === 'Flat Fee') {
+                    $bPurchaseFeeCombined = $fmtMoney($str('purchase_fee_flat'));
+                } elseif ($bPurchaseFeeType === 'Percentage of the Total Purchase Price') {
+                    $pct = $str('purchase_fee_percentage');
+                    $bPurchaseFeeCombined = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : null;
+                } elseif ($bPurchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                    $parts = array_filter([
+                        $fmtMoney($str('purchase_fee_flat_combo')),
+                        $str('purchase_fee_percentage_combo') ? ($fmtPercent($str('purchase_fee_percentage_combo')) . ' of Total Purchase Price') : null,
+                    ]);
+                    $bPurchaseFeeCombined = $parts ? implode(' + ', $parts) : null;
+                } elseif ($bPurchaseFeeType === 'other') {
+                    $bPurchaseFeeCombined = $str('purchase_fee_other') ?: null;
+                }
+            @endphp
+            @if(!empty($val('commission_structure')))
+            <hr>
+            @endif
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row("Purchase Fee Type", $bPurchaseFeeType) !!}
+                </div>
+                @if($bPurchaseFeeCombined)
+                <div class="col-md-6">
+                    {!! $row("Purchase Fee Amount", $bPurchaseFeeCombined) !!}
+                </div>
+                @endif
+            </div>
+            @endif
+
+        </div>
+    </div>
+    @endif
+
     {{-- Contact --}}
     @if($hasContact)
     <div class="card section-card" id="section-contact">

@@ -801,18 +801,24 @@
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @php
-                                    $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Description'];
-                                    $agentCredentialsIndex = 5;
-                                    $aiQuestionsIndex = 4;
+                                    $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Purchasing Terms'];
+                                    if ($user_type === 'buyer') {
+                                        $fullServiceTabs[] = 'Broker Compensation & Agency Agreement Terms';
+                                    }
+                                    $fullServiceTabs[] = 'Description';
+                                    $additionalDetailsIndex = count($fullServiceTabs) - 1;
+                                    $aiQuestionsIndex      = count($fullServiceTabs);
+                                    $agentCredentialsIndex = count($fullServiceTabs) + 1;
                                 @endphp
                                 @foreach ($fullServiceTabs as $index => $tab)
+                                    @php $tabId = preg_replace('/-+/', '-', rtrim(str_replace(['&', ' '], ['', '-'], strtolower($tab)), '-')); @endphp
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
-                                            id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
-                                            data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
+                                            id="{{ $tabId }}-tab" data-bs-toggle="tab"
+                                            data-bs-target="#{{ $tabId }}"
                                             type="button" role="tab"
-                                            aria-controls="{{ str_replace(' ', '-', strtolower($tab)) }}"
+                                            aria-controls="{{ $tabId }}"
                                             aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
                                             {{ $tab }}
                                         </button>
@@ -928,8 +934,16 @@
                                     @endif
                                 </div>
 
+                                <!-- Broker Compensation & Agency Agreement Terms Tab (index 3) -->
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
+                                    id="broker-compensation-agency-agreement-terms" role="tabpanel"
+                                    aria-labelledby="broker-compensation-&-agency-agreement-terms-tab">
+                                    @if ($user_type === 'buyer')
+                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
+                                    @endif
+                                </div>
+
                                 <!-- Description Tab -->
-                                @php $additionalDetailsIndex = 3; @endphp
                                 <div class="tab-pane fade {{ $activeTab === $additionalDetailsIndex ? 'show active' : '' }}"
                                     id="description" role="tabpanel" aria-labelledby="description-tab">
 
@@ -944,16 +958,14 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Knowledge Base Tab (full_service: index 4) -->
-                                @php $aiQuestionsTabIndex = 4; @endphp
-                                <div class="tab-pane fade {{ $activeTab === $aiQuestionsTabIndex ? 'show active' : '' }}" id="ai-questions"
+                                <!-- AI Knowledge Base Tab -->
+                                <div class="tab-pane fade {{ $activeTab === $aiQuestionsIndex ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
 
-                                <!-- Buyer Info Tab -->
-                                @php $buyerInfoIndex = 5; @endphp
-                                <div class="tab-pane fade {{ $activeTab === $buyerInfoIndex ? 'show active' : '' }}"
+                                <!-- Agent Credentials / Buyer Info Tab -->
+                                <div class="tab-pane fade {{ $activeTab === $agentCredentialsIndex ? 'show active' : '' }}"
                                     id="buyer-information" role="tabpanel" aria-labelledby="buyer-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
