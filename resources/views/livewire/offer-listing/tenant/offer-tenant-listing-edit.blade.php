@@ -1630,8 +1630,7 @@
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @foreach ($allTabs as $index => $tab)
-                                    {{-- Broker Compensation tab intentionally excluded from Tenant Criteria Offer Listings --}}
-                                    @if ($tab && !($tab === 'Broker Compensation & Agency Agreement Terms' && $user_type === 'tenant'))
+                                    @if ($tab)
                                         @php $tabSlug = $tabPaneIdOverrides[$tab] ?? $safeSlug($tab); @endphp
                                         <li class="nav-item" role="presentation">
                                             <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
@@ -1809,7 +1808,7 @@
                             @endif
                         </div>
 
-                        <!-- Broker Compensation Tab — intentionally excluded from Tenant Criteria Offer Listings -->
+                        <!-- Broker Compensation Tab -->
                         @if($user_type !== 'tenant')
                         <div class="tab-pane fade {{ $activeTab === $brokerCompTabIndex ? 'show active' : '' }}"
                             id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
@@ -1822,7 +1821,13 @@
                                 @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
                             @endif
                         </div>
-                        @endif {{-- broker-compensation: excluded for Tenant Criteria Offer Listings --}}
+                        @elseif($user_type === 'tenant')
+                        <div class="tab-pane fade {{ $activeTab === $brokerCompTabIndex ? 'show active' : '' }}"
+                            id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
+                            @php $isTenantOfferListing = true; @endphp
+                            @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
+                        </div>
+                        @endif
 
                         <!-- Referral & Cooperation Terms Tab - Agent only, not shown for tenant -->
                         @if ($isAgentUser && $user_type !== 'tenant')

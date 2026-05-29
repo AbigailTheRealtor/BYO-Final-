@@ -158,7 +158,7 @@ $safeKey = function(...$parts) {
             </div>
         @elseif($lease_fee_type === 'other')
             <input type="text" wire:model="lease_fee_other" class="form-control mt-2"
-                placeholder="Enter the total lease fee amount and payment structure for the Tenant’s Broker (e.g., $1,500 upfront, $2,000 at lease execution)">
+                placeholder="Enter the total lease fee amount and payment structure for the Tenant’s Broker (e.g., $1500 upfront, $2000 at lease execution)">
         @endif
     </div>
     @error('lease_fee_*')

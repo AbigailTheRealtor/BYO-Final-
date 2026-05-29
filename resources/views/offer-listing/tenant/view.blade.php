@@ -463,6 +463,8 @@
         $navHasContact = $ifFilled($str('first_name')) || $ifFilled($str('last_name'))
             || $ifFilled($str('email')) || $ifFilled($str('phone_number'))
             || $ifFilled($str('video_link')) || $ifFilled($str('video'));
+
+        $hasBrokerComp = $ifFilled($str('commission_structure')) || $ifFilled($str('lease_fee_type'));
     @endphp
 
     {{-- ===== SMOOTH-SCROLL NAV TABS ===== --}}
@@ -476,6 +478,7 @@
             @if($navHasParking)<li><a href="#section-parking">Parking</a></li>@endif
             @if($navHasPrescreening)<li><a href="#section-prescreening">Pre-Screening</a></li>@endif
             @if($navHasLeasePrefs)<li><a href="#section-lease-prefs">Lease Preferences</a></li>@endif
+            @if($hasBrokerComp)<li><a href="#section-broker-compensation">Broker Compensation</a></li>@endif
             @if($navHasContact)<li><a href="#section-contact">Contact</a></li>@endif
         </ul>
     </div>
@@ -873,9 +876,16 @@
     </div>
     @endif
 
-    {{-- Broker Compensation / Terms section removed: these are Hire-Agent negotiation
-         fields (commission_structure, lease_fee_type, purchase_fee_type, referral_percentage, etc.)
-         and must not appear on the public Tenant Criteria Offer Listing view. --}}
+    {{-- ===== BROKER COMPENSATION & AGENCY AGREEMENT TERMS ===== --}}
+    @if($hasBrokerComp)
+    <div class="card section-card" id="section-broker-compensation">
+        <div class="card-header"><i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms</div>
+        <div class="card-body">
+            {!! $row("Tenant's Broker Commission Structure", $str('commission_structure')) !!}
+            {!! $row("Tenant's Broker Lease Fee", $orOther($str('lease_fee_type'), $str('lease_fee_other'))) !!}
+        </div>
+    </div>
+    @endif
 
     {{-- ===== CONTACT INFORMATION ===== --}}
     @php
