@@ -198,25 +198,28 @@
                             $countyDisplay .= ' County';
                         }
 
-                        $rawDays = strtolower(trim($auction->get->auction_type ?? '')) === 'bidding period'
-                            ? trim((string) ($auction->get->auction_time ?? ''))
-                            : '';
-                        $lengthDays = 0;
+                        // Bidding Period countdown — primary: expiration_date; fallback: created_at + auction_time days
                         $remainingSeconds = 0;
                         $pretty = null;
-                        if ($rawDays !== '') {
-                            preg_match('/\d+/', $rawDays, $m);
-                            $lengthDays = isset($m[0]) ? (int) $m[0] : 0;
-                            $now = \Carbon\Carbon::now();
-                            $end = \Carbon\Carbon::parse($auction->created_at)->addDays($lengthDays);
-                            $remainingSeconds = $now->diffInSeconds($end, false);
-                            $pretty = function (int $sec) {
-                                if ($sec <= 0) { return 'Expired'; }
-                                $d = intdiv($sec, 86400); $sec %= 86400;
-                                $h = intdiv($sec, 3600); $sec %= 3600;
-                                $i = intdiv($sec, 60); $s = $sec % 60;
-                                return sprintf('%dd %02d:%02d:%02d', $d, $h, $i, $s);
-                            };
+                        if (strtolower(trim($auction->get->auction_type ?? '')) === 'bidding period') {
+                            $_expDate = trim((string)($auction->get->expiration_date ?? ''));
+                            if ($_expDate !== '') {
+                                $_end = \Carbon\Carbon::parse($_expDate)->endOfDay();
+                            } else {
+                                preg_match('/\d+/', trim((string)($auction->get->auction_time ?? '')), $_m);
+                                $_days = isset($_m[0]) ? (int)$_m[0] : 0;
+                                $_end = $_days > 0 ? \Carbon\Carbon::parse($auction->created_at)->addDays($_days) : null;
+                            }
+                            if (!empty($_end)) {
+                                $remainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_end, false);
+                                $pretty = function (int $sec) {
+                                    if ($sec <= 0) { return 'Expired'; }
+                                    $d = intdiv($sec, 86400); $sec %= 86400;
+                                    $h = intdiv($sec, 3600); $sec %= 3600;
+                                    $i = intdiv($sec, 60); $s = $sec % 60;
+                                    return sprintf('%dd %02d:%02d:%02d', $d, $h, $i, $s);
+                                };
+                            }
                         }
 
                         $listingTitle = @$auction->get->titleListing ?: (@$auction->title ?: @$auction->get->address);
@@ -279,15 +282,11 @@
 
                                 </div>
 
-                                @if ($rawDays !== '')
+                                @if ($pretty !== null)
                                     <p class="m-0">
                                         <b class="badge bg-info timer-{{ $auction->id }}"
-                                            @if ($lengthDays > 0 && $remainingSeconds > 0) data-seconds="{{ $remainingSeconds }}" @endif>
-                                            @if ($lengthDays <= 0)
-                                                No Time Limit
-                                            @else
-                                                {{ $pretty($remainingSeconds) }}
-                                            @endif
+                                            @if ($remainingSeconds > 0) data-seconds="{{ $remainingSeconds }}" @endif>
+                                            {{ $pretty($remainingSeconds) }}
                                         </b>
                                     </p>
                                 @endif

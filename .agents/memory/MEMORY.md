@@ -1,1 +1,2 @@
 - [Phase D year_built collision resolution](phase-d-year-built-collision.md) — year_built was pre-existing in both Landlord components before Phase D; skipped per stop-and-report rule.
+- [Bidding Period countdown source](bidding-period-countdown.md) — expiration_date is platform source of truth; fallback to created_at+auction_time for legacy records.

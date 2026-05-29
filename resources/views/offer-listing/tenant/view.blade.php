@@ -460,24 +460,13 @@
             || $ifFilled($str('signage_request')) || $ifFilled($str('commercial_parking_access_needs'))
             || $ifFilled($str('personal_guarantee_preference')) || $ifFilled($str('commercial_approval_conditions'));
 
-        $navHasServices = $ifFilled($str('total_flat_fee')) || $ifFilled($str('total_marketing_fee'));
-        if (!$navHasServices) {
-            foreach (['list_criteria','market_groups','promote_social','launch_ads',
-                      'schedule_showings','attend_showings','provide_virtual_tours',
-                      'assist_application','collect_documents','submit_application',
-                      'review_lease','provide_lease_form','coordinate_signing'] as $_sk) {
-                $v = $str($_sk);
-                if ($v !== '' && strtolower($v) !== 'no' && $v !== '0' && $v !== 'false') {
-                    $navHasServices = true; break;
-                }
-            }
-        }
-
-        $navHasCompensation = $ifFilled($str('commission_structure')) || $ifFilled($str('lease_fee_type'))
-            || $ifFilled($str('lease_fee_flat')) || $ifFilled($str('lease_fee_percentage'))
-            || $ifFilled($str('purchase_fee_type')) || $ifFilled($str('purchase_fee_flat'))
-            || $ifFilled($str('purchase_fee_percentage')) || $ifFilled($str('renewal_fee_type'))
-            || $ifFilled($str('referral_percentage'));
+        // Services nav: check the new JSON `services` array (not the stale flat boolean keys).
+        // Filter empty values before counting — same logic as the section renderer — so the
+        // nav tab only appears when at least one non-blank service will actually be displayed.
+        $navServicesArr = $arr('services');
+        $navOtherServicesArr = array_filter($arr('other_services'), fn($v) => trim((string)$v) !== '');
+        $navHasServices = count(array_filter($navServicesArr, fn($v) => trim((string)$v) !== '')) > 0
+                          || count($navOtherServicesArr) > 0;
 
         $navHasContact = $ifFilled($str('first_name')) || $ifFilled($str('last_name'))
             || $ifFilled($str('email')) || $ifFilled($str('phone_number'))
@@ -496,28 +485,70 @@
             @if($navHasPrescreening)<li><a href="#section-prescreening">Pre-Screening</a></li>@endif
             @if($navHasLeasePrefs)<li><a href="#section-lease-prefs">Lease Preferences</a></li>@endif
             @if($navHasServices)<li><a href="#section-services">Services</a></li>@endif
-            @if($navHasCompensation)<li><a href="#section-compensation">Compensation</a></li>@endif
             @if($navHasContact)<li><a href="#section-contact">Contact</a></li>@endif
         </ul>
     </div>
 
     {{-- ===== LISTING OVERVIEW ===== --}}
+    @php
+        // Bidding Period countdown — primary: expiration_date (end of day); fallback: created_at + auction_time days
+        $hasBPTimer = false;
+        $timerRemainingSeconds = 0;
+        if (strtolower(trim($str('auction_type'))) === 'bidding period') {
+            $_expDate = trim($str('expiration_date'));
+            if ($_expDate !== '') {
+                $_timerEnd = \Carbon\Carbon::parse($_expDate)->endOfDay();
+            } else {
+                preg_match('/\d+/', trim($str('auction_time')), $_tm);
+                $_days = isset($_tm[0]) ? (int)$_tm[0] : 0;
+                $_timerEnd = $_days > 0 ? \Carbon\Carbon::parse($auction->created_at)->addDays($_days) : null;
+            }
+            if (!empty($_timerEnd)) {
+                $timerRemainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_timerEnd, false);
+                $hasBPTimer = true;
+            }
+        }
+    @endphp
     <div class="card section-card" id="section-overview">
         <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Listing Overview</div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Listing Title', $listingTitle) !!}
-                    {!! $row('Auction Type', $str('auction_type')) !!}
-                    {!! $row('Service Type', $str('service_type') === 'full_service' ? 'Full Service' : ($str('service_type') === 'limited_service' ? 'Limited Service' : $str('service_type'))) !!}
+                    {!! $row('Listing Type', $str('auction_type')) !!}
                     {!! $row('Listing Status', $heroStatus) !!}
                 </div>
                 <div class="col-md-6">
                     {!! $row('Listing Date', $fmtDate($str('listing_date'))) !!}
                     {!! $row('Expiration Date', $fmtDate($str('expiration_date'))) !!}
-                    {!! $row('Auction Time', $str('auction_time')) !!}
                 </div>
             </div>
+            {{-- Bidding Period countdown timer (source: expiration_date; fallback: created_at + auction_time) --}}
+            @if($hasBPTimer)
+            <div class="mt-3 pt-3" style="border-top:1px solid #e2e8f0;">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="text-muted fw-semibold" style="font-size:.85rem;">
+                        <i class="fa-regular fa-clock me-1"></i>Bidding Period Time Remaining:
+                    </span>
+                    @if($timerRemainingSeconds <= 0)
+                        <span class="badge bg-secondary" style="font-size:.85rem;">Expired</span>
+                    @else
+                        <span class="badge bg-info text-dark tcl-bp-timer"
+                              data-seconds="{{ $timerRemainingSeconds }}"
+                              style="font-size:.85rem;font-variant-numeric:tabular-nums;">
+                            {{-- Initial PHP render — replaced by JS immediately --}}
+                            @php
+                                $_s = $timerRemainingSeconds;
+                                $_d = intdiv($_s, 86400); $_s %= 86400;
+                                $_h = intdiv($_s, 3600);  $_s %= 3600;
+                                $_i = intdiv($_s, 60);    $_s %= 60;
+                                echo sprintf('%dd %02d:%02d:%02d', $_d, $_h, $_i, $_s);
+                            @endphp
+                        </span>
+                    @endif
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -838,104 +869,30 @@
 
     {{-- ===== REQUESTED AGENT SERVICES ===== --}}
     @php
-        // Build a readable list of services the tenant has requested from an agent
-        $serviceMap = [
-            'list_criteria'           => ['List Criteria', 'list_criteria_fee'],
-            'market_groups'           => ['Market to Groups', 'market_groups_fee'],
-            'promote_social'          => ['Promote on Social Media', 'promote_social_fee'],
-            'launch_ads'              => ['Launch Ads', 'launch_ads_fee'],
-            'schedule_showings'       => ['Schedule Showings', 'schedule_showings_fee'],
-            'attend_showings'         => ['Attend Showings', 'attend_showings_fee'],
-            'provide_virtual_tours'   => ['Provide Virtual Tours', 'virtual_tours_fee'],
-            'assist_application'      => ['Assist with Application', 'assist_application_fee'],
-            'collect_documents'       => ['Collect Documents', 'collect_documents_fee'],
-            'submit_application'      => ['Submit Application', 'submit_application_fee'],
-            'review_lease'            => ['Review Lease', 'review_lease_fee'],
-            'provide_lease_form'      => ['Provide Lease Form', 'provide_lease_form_fee'],
-            'coordinate_signing'      => ['Coordinate Signing', 'coordinate_signing_fee'],
-        ];
-        $activeServices = [];
-        foreach ($serviceMap as $key => [$label, $feeKey]) {
-            $val = $str($key);
-            if ($val !== '' && strtolower($val) !== 'no' && $val !== '0' && $val !== 'false') {
-                $fee = $str($feeKey);
-                $activeServices[] = [$label, $fee !== '' ? $fmtMoney($fee) : null];
-            }
-        }
-        $totalFlat = $str('total_flat_fee') ?: $str('total_marketing_fee') ?: null;
-        $hasServices = count($activeServices) > 0 || $totalFlat;
+        // Read from the new JSON `services` + `other_services` arrays
+        $svcItems = array_filter($arr('services'), fn($v) => trim((string)$v) !== '');
+        $svcOther = array_filter($arr('other_services'), fn($v) => trim((string)$v) !== '');
+        $hasServices = count($svcItems) > 0 || count($svcOther) > 0;
     @endphp
     @if($hasServices)
     <div class="card section-card" id="section-services">
         <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Requested Agent Services</div>
         <div class="card-body">
-            @if(count($activeServices))
-            <div class="row">
-                @foreach($activeServices as [$svcLabel, $svcFee])
-                <div class="col-md-6">
-                    <div class="row mb-2">
-                        <div class="col-md-6 text-muted fw-semibold">{{ $svcLabel }}</div>
-                        <div class="col-md-6">{{ $svcFee ?: 'Requested' }}</div>
-                    </div>
-                </div>
+            <ul class="mb-0 ps-3">
+                @foreach($svcItems as $svcText)
+                    <li class="mb-1">{{ $svcText }}</li>
                 @endforeach
-            </div>
-            @endif
-            @if($totalFlat)
-            <hr>
-            <div class="row mb-2">
-                <div class="col-md-5 text-muted fw-semibold fw-bold">Total Service Fee</div>
-                <div class="col-md-7 fw-bold">{{ $fmtMoney($totalFlat) }}</div>
-            </div>
-            @endif
+                @foreach($svcOther as $svcText)
+                    <li class="mb-1">{{ $svcText }}</li>
+                @endforeach
+            </ul>
         </div>
     </div>
     @endif
 
-    {{-- ===== BROKER COMPENSATION / TERMS (conditional) ===== --}}
-    @php
-        $hasCompensation = $ifFilled($str('commission_structure')) || $ifFilled($str('lease_fee_type'))
-            || $ifFilled($str('lease_fee_flat')) || $ifFilled($str('lease_fee_percentage'))
-            || $ifFilled($str('purchase_fee_type')) || $ifFilled($str('purchase_fee_flat'))
-            || $ifFilled($str('purchase_fee_percentage')) || $ifFilled($str('renewal_fee_type'))
-            || $ifFilled($str('referral_percentage'));
-    @endphp
-    @if($hasCompensation)
-    <div class="card section-card" id="section-compensation">
-        <div class="card-header"><i class="fa-solid fa-file-contract me-2"></i>Broker Compensation / Terms</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    {!! $row('Commission Structure', $str('commission_structure')) !!}
-                    {!! $row('Lease Fee Type', $str('lease_fee_type')) !!}
-                    @if($str('lease_fee_type') === 'flat')
-                        {!! $row('Lease Fee', $fmtMoney($str('lease_fee_flat'))) !!}
-                    @elseif($str('lease_fee_type') === 'percentage')
-                        {!! $row('Lease Fee', $fmtPercent($str('lease_fee_percentage'))) !!}
-                    @elseif($str('lease_fee_type') === 'combo')
-                        {!! $row('Lease Fee', trim(($fmtPercent($str('lease_fee_percentage_combo')) ?: '') . ' + ' . ($fmtMoney($str('lease_fee_flat_combo')) ?: ''), ' +')) !!}
-                    @elseif($str('lease_fee_type') === 'other')
-                        {!! $row('Lease Fee', $str('lease_fee_other')) !!}
-                    @endif
-                    {!! $row('Purchase Fee Type', $str('purchase_fee_type')) !!}
-                    @if($str('purchase_fee_type') === 'flat')
-                        {!! $row('Purchase Fee', $fmtMoney($str('purchase_fee_flat'))) !!}
-                    @elseif($str('purchase_fee_type') === 'percentage')
-                        {!! $row('Purchase Fee', $fmtPercent($str('purchase_fee_percentage'))) !!}
-                    @elseif($str('purchase_fee_type') === 'combo')
-                        {!! $row('Purchase Fee', trim(($fmtPercent($str('purchase_fee_percentage_combo')) ?: '') . ' + ' . ($fmtMoney($str('purchase_fee_flat_combo')) ?: ''), ' +')) !!}
-                    @elseif($str('purchase_fee_type') === 'other')
-                        {!! $row('Purchase Fee', $str('purchase_fee_other')) !!}
-                    @endif
-                </div>
-                <div class="col-md-6">
-                    {!! $row('Renewal Fee Type', $str('renewal_fee_type')) !!}
-                    {!! $row('Referral Percentage', $str('referral_percentage') ? $fmtPercent($str('referral_percentage')) : null) !!}
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
+    {{-- Broker Compensation / Terms section removed: these are Hire-Agent negotiation
+         fields (commission_structure, lease_fee_type, purchase_fee_type, referral_percentage, etc.)
+         and must not appear on the public Tenant Criteria Offer Listing view. --}}
 
     {{-- ===== CONTACT INFORMATION ===== --}}
     @php
@@ -1032,6 +989,37 @@
             'listing_ai_faq','enable','fees','user_type','photo_enhancements',
             // --- overview section ---
             'auction_type','service_type','listing_status','status','listing_date','expiration_date','auction_time',
+            // --- hire-agent workflow fields (never shown on public Tenant Criteria view) ---
+            'working_with_agent','desired_agent_hire_date','meeting_Preference',
+            'broker_fee_timing','broker_fee_days_from_rent',
+            'interested_purchase_fee_type','interested_lease_option_agreement',
+            'landlord_broker_flate_fee_type',
+            'lease_type','lease_value','purchase_type','purchase_value',
+            'protection_period',
+            'early_termination_fee_option','early_termination_fee_amount',
+            'retainer_fee_option','retainer_fee_amount','retainer_fee_application',
+            'agency_agreement_timeframe','agency_agreement_custom',
+            'brokerage_relationship','additional_details_broker',
+            // --- broker compensation fields (section removed from public view) ---
+            'commission_structure','lease_fee_type','lease_fee_flat','lease_fee_percentage','lease_fee_other',
+            'lease_fee_percentage_combo','lease_fee_flat_combo',
+            'lease_fee_flat_combo_net','lease_fee_percentage_combo_net',
+            'purchase_fee_type','purchase_fee_flat','purchase_fee_percentage','purchase_fee_other',
+            'purchase_fee_percentage_combo','purchase_fee_flat_combo',
+            'renewal_fee_type','referral_percentage',
+            // --- private / sensitive (never public) ---
+            'screening_concerns_explanation',
+            // --- internal service/snapshot blobs ---
+            'services','services_snapshot','other_services','flat_fee_services','other_services_enabled',
+            // --- stale / internal-only fields ---
+            'lease_date','compatibility_preferences',
+            'assets','business_assets','sale_provision','down_payment_type','seller_financing_type',
+            'assumable_fee_type','gap_payment_type','exchange_item','seller_lease_purchase_rent_credit_type',
+            'lease_purchase_rent_credit_amount_type','assignment_fee_type','seller_late_fee_type',
+            'number_of_unit_type','unit_type_configurations',
+            'custom_services','include_marketing_fee',
+            'number_of_showings_to_schedule','number_of_showings_to_attend','number_of_virtual_tours',
+            'zipCodes',
             // --- rental criteria section ---
             'budget','desired_rental_amount','maximum_budget',
             'rent_includes','other_rent_include',
@@ -1093,12 +1081,6 @@
             'provide_lease_form','provide_lease_form_fee',
             'coordinate_signing','coordinate_signing_fee',
             'total_flat_fee','total_marketing_fee',
-            // --- broker compensation section ---
-            'commission_structure','lease_fee_type','lease_fee_flat','lease_fee_percentage','lease_fee_other',
-            'lease_fee_percentage_combo','lease_fee_flat_combo',
-            'purchase_fee_type','purchase_fee_flat','purchase_fee_percentage','purchase_fee_other',
-            'purchase_fee_percentage_combo','purchase_fee_flat_combo',
-            'renewal_fee_type','referral_percentage',
             // --- contact / media section ---
             'first_name','last_name','email','phone_number',
             'agent_brokerage','agent_license_number','agent_nar_member_id',
@@ -1212,8 +1194,36 @@
 </div>
 
 @push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/timer.jquery/0.9.0/timer.jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 (function () {
+    /* ---- Bidding period countdown timer ---- */
+    function tclSecondsToStr(total) {
+        if (!total || total <= 0) return '0s';
+        var d = Math.floor(total / 86400); total %= 86400;
+        var h = Math.floor(total / 3600);  total %= 3600;
+        var m = Math.floor(total / 60);
+        var s = total % 60;
+        var out = '';
+        if (d) out += d + 'd ';
+        out += (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        return out.trim();
+    }
+    document.querySelectorAll('.tcl-bp-timer[data-seconds]').forEach(function (el) {
+        var secs = parseInt(el.getAttribute('data-seconds'), 10) || 0;
+        if (secs <= 0) { el.textContent = 'Expired'; el.classList.replace('bg-info','bg-secondary'); return; }
+        $(el).timer({
+            countdown: true,
+            duration: tclSecondsToStr(secs),
+            format: '%dd %H:%M:%S',
+            callback: function () {
+                el.textContent = 'Expired';
+                el.classList.remove('bg-info','text-dark');
+                el.classList.add('bg-secondary');
+            }
+        });
+    });
+
     /* ---- Smooth-scroll sticky nav with active-section highlighting ---- */
     var HEADER_OFFSET = 80;
     var navLinks = Array.from(document.querySelectorAll('#tclNavTabs a[href^="#"]'));
