@@ -5,7 +5,7 @@
     "keywords": ["framework", "laravel"],
     "license": "MIT",
     "require": {
-        "php": "^7.3|^8.0",
+        "php": "^8.2",
         "barryvdh/laravel-dompdf": "^2.2",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.9",
@@ -16,6 +16,7 @@
         "laravel/tinker": "^2.5",
         "livewire/livewire": "^2.12",
         "merujan99/laravel-video-embed": "dev-master",
+        "openai-php/client": "^0.19.2",
         "pion/laravel-chunk-upload": "^1.5",
         "pusher/pusher-php-server": "^7.2",
         "simplesoftwareio/simple-qrcode": "^4.2",
