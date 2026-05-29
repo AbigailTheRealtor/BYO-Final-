@@ -69,6 +69,10 @@
         return '<div class="row mb-2"><div class="col-md-5 text-muted fw-semibold">' . e($label) . '</div><div class="col-md-7" style="overflow-wrap:break-word;word-break:break-word;">' . e($value) . '</div></div>';
     };
     $ifFilled = fn($v) => ($v !== null && $v !== '' && $v !== false && !(is_array($v) && count($v) === 0));
+    $joinParts = function($parts) {
+        $parts = array_values(array_filter($parts, fn($p) => $p !== null && $p !== ''));
+        return count($parts) ? implode(' + ', $parts) : null;
+    };
     // "Other" companion: if primary is 'Other' and companion is filled, show companion; if primary is 'Other' and companion is empty, suppress entirely
     $resolveOtherField = function($primary, $companion) {
         $p = trim((string)$primary);
@@ -488,8 +492,17 @@
         // Bidding Period countdown — calculated exclusively from created_at + auction_time
         $hasBPTimer = false;
         $timerRemainingSeconds = 0;
-        if (strtolower(trim($str('auction_type'))) === 'bidding period') {
+        // auction_type: read from EAV meta first; fall back to native column on the model
+        $_auctionType = trim($str('auction_type'));
+        if ($_auctionType === '') {
+            $_auctionType = trim((string)($auction->auction_type ?? ''));
+        }
+        if (strtolower($_auctionType) === 'bidding period') {
+            // auction_time: read from EAV meta first; fall back to native column / auction_length
             $_aTime = trim($str('auction_time'));
+            if ($_aTime === '') {
+                $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
+            }
             $_timerEnd = null;
             if ($_aTime !== '') {
                 $_parts = explode(' ', $_aTime);
@@ -882,7 +895,39 @@
         <div class="card-header"><i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms</div>
         <div class="card-body">
             {!! $row("Tenant's Broker Commission Structure", $str('commission_structure')) !!}
-            {!! $row("Tenant's Broker Lease Fee", $orOther($str('lease_fee_type'), $str('lease_fee_other'))) !!}
+            @php
+                $listingLeaseFeeType     = $str('lease_fee_type');
+                $listingLeaseFeeCombined = null;
+
+                if ($listingLeaseFeeType === 'Flat Fee' && $str('lease_fee_flat') !== '') {
+                    $listingLeaseFeeCombined = $fmtMoney($str('lease_fee_flat'));
+                } elseif ($listingLeaseFeeType === 'Percentage of the Gross Lease Value' && $str('lease_fee_percentage') !== '') {
+                    $listingLeaseFeeCombined = $fmtPercent($str('lease_fee_percentage')) . ' of Gross Lease Value';
+                } elseif ($listingLeaseFeeType === 'Percentage of Monthly Rent' && $str('lease_fee_percentage_monthly_rent') !== '') {
+                    $_mDisplay = $fmtPercent($str('lease_fee_percentage_monthly_rent')) . ' of Monthly Rent';
+                    if ($str('lease_fee_percentage_monthly_number') !== '') {
+                        $_mDisplay .= ' x ' . $str('lease_fee_percentage_monthly_number') . ' Months';
+                    }
+                    $listingLeaseFeeCombined = $_mDisplay;
+                } elseif ($listingLeaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                    $listingLeaseFeeCombined = $joinParts([
+                        $fmtMoney($str('lease_fee_flat_combo')),
+                        $str('lease_fee_percentage_combo') !== '' ? ($fmtPercent($str('lease_fee_percentage_combo')) . ' of Gross Lease Value') : null,
+                    ]);
+                } elseif ($listingLeaseFeeType === 'Percentage of the Net Aggregate Rent' && $str('lease_fee_percentage_net') !== '') {
+                    $listingLeaseFeeCombined = $fmtPercent($str('lease_fee_percentage_net')) . ' of Net Aggregate Rent';
+                } elseif ($listingLeaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
+                    $listingLeaseFeeCombined = $joinParts([
+                        $fmtMoney($str('lease_fee_flat_combo_net')),
+                        $str('lease_fee_percentage_combo_net') !== '' ? ($fmtPercent($str('lease_fee_percentage_combo_net')) . ' of Net Aggregate Rent') : null,
+                    ]);
+                } elseif (strtolower($listingLeaseFeeType) === 'other' && $str('lease_fee_other') !== '') {
+                    $listingLeaseFeeCombined = $str('lease_fee_other');
+                } elseif ($listingLeaseFeeType !== '') {
+                    $listingLeaseFeeCombined = $listingLeaseFeeType;
+                }
+            @endphp
+            {!! $row("Tenant's Broker Lease Fee", $listingLeaseFeeCombined) !!}
         </div>
     </div>
     @endif
