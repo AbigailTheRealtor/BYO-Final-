@@ -210,26 +210,39 @@
                             $countyDisplay .= ' County';
                         }
 
-                        // Bidding Period countdown — primary: expiration_date; fallback: created_at + auction_time days
+                        // Bidding Period countdown — calculated exclusively from created_at + auction_time
                         $remainingSeconds = 0;
                         $pretty = null;
                         if (strtolower(trim($auction->get->auction_type ?? '')) === 'bidding period') {
-                            $_expDate = trim((string)($auction->get->expiration_date ?? ''));
-                            if ($_expDate !== '') {
-                                $_end = \Carbon\Carbon::parse($_expDate)->endOfDay();
-                            } else {
-                                preg_match('/\d+/', trim((string)($auction->get->auction_time ?? '')), $_m);
-                                $_days = isset($_m[0]) ? (int)$_m[0] : 0;
-                                $_end = $_days > 0 ? \Carbon\Carbon::parse($auction->created_at)->addDays($_days) : null;
+                            $_aTime = trim((string)($auction->get->auction_time ?? ''));
+                            $_end = null;
+                            if ($_aTime !== '') {
+                                $_parts = explode(' ', $_aTime);
+                                $_val   = (int)($_parts[0] ?? 0);
+                                $_unit  = strtolower($_parts[1] ?? 'days');
+                                if ($_val > 0) {
+                                    $_start = \Carbon\Carbon::parse($auction->created_at);
+                                    $_end = match(true) {
+                                        in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
+                                        in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
+                                        in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
+                                        default                               => $_start->addDays($_val),
+                                    };
+                                }
                             }
                             if (!empty($_end)) {
                                 $remainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_end, false);
                                 $pretty = function (int $sec) {
                                     if ($sec <= 0) { return 'Expired'; }
+                                    if ($sec < 60) { return $sec . 's Remaining'; }
                                     $d = intdiv($sec, 86400); $sec %= 86400;
-                                    $h = intdiv($sec, 3600); $sec %= 3600;
-                                    $i = intdiv($sec, 60); $s = $sec % 60;
-                                    return sprintf('%dd %02d:%02d:%02d', $d, $h, $i, $s);
+                                    $h = intdiv($sec, 3600);  $sec %= 3600;
+                                    $i = intdiv($sec, 60);
+                                    $p = [];
+                                    if ($d) $p[] = $d . 'd';
+                                    if ($h) $p[] = $h . 'h';
+                                    if ($i) $p[] = $i . 'm';
+                                    return implode(' ', $p) . ' Remaining';
                                 };
                             }
                         }
@@ -345,40 +358,29 @@
 @push('scripts')
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/timer.jquery/0.9.0/timer.jquery.min.js" crossorigin="anonymous"
-        referrerpolicy="no-referrer"></script>
     <script>
         (function() {
-            function secondsToTimerString(total) {
-                if (!total || total <= 0) return "0s";
-                var d = Math.floor(total / 86400);
-                total %= 86400;
-                var h = Math.floor(total / 3600);
-                total %= 3600;
-                var m = Math.floor(total / 60);
-                var s = total % 60;
-                var out = "";
-                if (d) out += d + "d";
-                if (h) out += h + "h";
-                if (m) out += m + "m";
-                if (s || (!d && !h && !m)) out += s + "s";
-                return out;
+            function bpFmt(s) {
+                if (s <= 0) return 'Expired';
+                if (s < 60) return s + 's Remaining';
+                var d = Math.floor(s / 86400); s %= 86400;
+                var h = Math.floor(s / 3600);  s %= 3600;
+                var m = Math.floor(s / 60);
+                var p = [];
+                if (d) p.push(d + 'd');
+                if (h) p.push(h + 'h');
+                if (m) p.push(m + 'm');
+                return p.join(' ') + ' Remaining';
             }
-
             document.querySelectorAll('[class*="timer-"][data-seconds]').forEach(function(el) {
                 var secs = parseInt(el.getAttribute('data-seconds'), 10) || 0;
-                if (secs <= 0) {
-                    el.textContent = 'Expired';
-                    return;
-                }
-                $(el).timer({
-                    countdown: true,
-                    duration: secondsToTimerString(secs),
-                    format: '%dd %H:%M:%S',
-                    callback: function() {
-                        el.textContent = 'Expired';
-                    }
-                });
+                el.textContent = bpFmt(secs);
+                if (secs <= 0) return;
+                var iv = setInterval(function() {
+                    secs--;
+                    el.textContent = bpFmt(secs);
+                    if (secs <= 0) clearInterval(iv);
+                }, 1000);
             });
         })();
     </script>

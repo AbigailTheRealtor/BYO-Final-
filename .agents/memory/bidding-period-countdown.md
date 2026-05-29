@@ -3,15 +3,23 @@ name: Bidding Period countdown source
 description: Platform source of truth for countdown timers on Bidding Period offer listings.
 ---
 
-The canonical source for Bidding Period countdown timers is `expiration_date` (stored in the listing's meta table).
+The canonical source for Bidding Period countdown timers is `created_at + auction_time` exclusively.
 
-**Why:** The Tenant form stores only `expiration_date` — `auction_time` (duration string like "5 Days") was never wired to save for Tenant/Landlord listings. Using the absolute date is also more precise than computing `created_at + N days`.
+**Why:** The task explicitly requires removing `expiration_date` as the primary source. `auction_time` is a duration string like "5 Days", "2 Weeks", "3 Hours", "30 Minutes" — always stored in meta. `created_at` is the listing's start timestamp. Together they define the end of the bidding window without relying on an optional `expiration_date` field.
 
 **How to apply:**
 - Check `auction_type === 'bidding period'`
-- Primary: use `expiration_date` → `Carbon::parse($expDate)->endOfDay()`
-- Fallback (backward compat): if `expiration_date` is empty, use `created_at + auction_time days`
-- If both are empty → no timer
-- This logic is identical across all search cards (tenant, landlord, seller, buyer) and the tenant public view.
+- Parse `auction_time` by splitting on space: `[$val, $unit]`
+- Compute end: `Carbon::parse(created_at)->add{Unit}($val)`
+- Supported units: hours/hour → addHours; weeks/week → addWeeks; minutes/minute → addMinutes; default → addDays
+- If `auction_time` is empty or `$val === 0` → no timer
+- This logic is identical across all 6 bidding period views: buyer/seller/landlord/tenant search cards, landlord view, tenant view, seller view, buyer view
 
-Seller/buyer listings from before this task have both fields set consistently; `expiration_date` takes priority.
+**Files using this pattern:**
+- `resources/views/offer-listing/*/search.blade.php` (4 search files, PHP block)
+- `resources/views/offer-listing/landlord/view.blade.php` (PHP block, JS timer via lol-bp-timer)
+- `resources/views/offer-listing/tenant/view.blade.php` (PHP block, JS timer via tcl-bp-timer)
+- `resources/views/offer-listing/seller/view.blade.php` (PHP block, JS timer via sol-bp-timer)
+- `resources/views/offer-listing/buyer/view.blade.php` (PHP block, JS timer via bol-bp-timer)
+
+**`buyerAgentAuctionDetail.blade.php`** and **`seller_property/view.blade.php`** are separate — the buyer agent detail already correctly uses `auction_time + created_at` for bidding period; seller_property uses `auction_length` column for "Auction Listing" type (unrelated).

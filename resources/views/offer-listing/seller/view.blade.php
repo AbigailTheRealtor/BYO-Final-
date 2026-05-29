@@ -1294,6 +1294,34 @@
     </div>
     @endif
 
+    @php
+        // Bidding Period countdown — calculated exclusively from created_at + auction_time
+        $hasBPTimer = false;
+        $timerRemainingSeconds = 0;
+        if (strtolower(trim($str('auction_type'))) === 'bidding period') {
+            $_aTime = trim($str('auction_time'));
+            $_timerEnd = null;
+            if ($_aTime !== '') {
+                $_parts = explode(' ', $_aTime);
+                $_val   = (int)($_parts[0] ?? 0);
+                $_unit  = strtolower($_parts[1] ?? 'days');
+                if ($_val > 0) {
+                    $_start = \Carbon\Carbon::parse($auction->created_at);
+                    $_timerEnd = match(true) {
+                        in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
+                        in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
+                        in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
+                        default                               => $_start->addDays($_val),
+                    };
+                }
+            }
+            if (!empty($_timerEnd)) {
+                $timerRemainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_timerEnd, false);
+                $hasBPTimer = true;
+            }
+        }
+    @endphp
+
     {{-- Listing Details --}}
     <div class="card section-card" @if(!$val('additional_details')) id="section-overview" @endif>
         <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Listing Details</div>
@@ -1310,6 +1338,38 @@
                     {!! $row('Auction Time', $str('auction_time')) !!}
                 </div>
             </div>
+            {{-- Bidding Period countdown timer (source: created_at + auction_time) --}}
+            @if($hasBPTimer)
+            <div class="mt-3 pt-3" style="border-top:1px solid #e2e8f0;">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="text-muted fw-semibold" style="font-size:.85rem;">
+                        <i class="fa-regular fa-clock me-1"></i>Bidding Period Time Remaining:
+                    </span>
+                    @if($timerRemainingSeconds <= 0)
+                        <span class="badge bg-secondary" style="font-size:.85rem;">Expired</span>
+                    @else
+                        <span class="badge bg-info text-dark sol-bp-timer"
+                              data-seconds="{{ $timerRemainingSeconds }}"
+                              style="font-size:.85rem;font-variant-numeric:tabular-nums;">
+                            @php
+                                $_s = $timerRemainingSeconds;
+                                if ($_s < 60) { echo $_s . 's Remaining'; }
+                                else {
+                                    $_d = intdiv($_s, 86400); $_s %= 86400;
+                                    $_h = intdiv($_s, 3600);  $_s %= 3600;
+                                    $_i = intdiv($_s, 60);
+                                    $_p = [];
+                                    if ($_d) $_p[] = $_d . 'd';
+                                    if ($_h) $_p[] = $_h . 'h';
+                                    if ($_i) $_p[] = $_i . 'm';
+                                    echo implode(' ', $_p) . ' Remaining';
+                                }
+                            @endphp
+                        </span>
+                    @endif
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -2429,6 +2489,36 @@
 <script>
 (function () {
     'use strict';
+
+    /* ---- Bidding period countdown timer ---- */
+    (function () {
+        function solBpFormat(s) {
+            if (s <= 0) return 'Expired';
+            if (s < 60) return s + 's Remaining';
+            var d = Math.floor(s / 86400); s %= 86400;
+            var h = Math.floor(s / 3600);  s %= 3600;
+            var m = Math.floor(s / 60);
+            var p = [];
+            if (d) p.push(d + 'd');
+            if (h) p.push(h + 'h');
+            if (m) p.push(m + 'm');
+            return p.join(' ') + ' Remaining';
+        }
+        document.querySelectorAll('.sol-bp-timer[data-seconds]').forEach(function (el) {
+            var secs = parseInt(el.getAttribute('data-seconds'), 10) || 0;
+            el.textContent = solBpFormat(secs);
+            if (secs <= 0) { el.classList.replace('bg-info', 'bg-secondary'); return; }
+            var iv = setInterval(function () {
+                secs--;
+                el.textContent = solBpFormat(secs);
+                if (secs <= 0) {
+                    clearInterval(iv);
+                    el.classList.remove('bg-info', 'text-dark');
+                    el.classList.add('bg-secondary');
+                }
+            }, 1000);
+        });
+    }());
 
     /* ---- Smooth scroll offset (app header ~70px + buffer) ---- */
     document.querySelectorAll('.sol-nav-tabs a[href^="#"]').forEach(function (link) {
