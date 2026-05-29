@@ -61,6 +61,7 @@
                         <li><a href="{{ route('admin.dna.scores.index') }}" class="fw-bold"><i class="fa-solid fa-circle"></i> Coverage Scores</a></li>
                     </ul>
                 </li>
+                <li><a class="nav-link" href="{{ route('admin.bya.preview.index') }}"><i class="fa-solid fa-shield-halved me-2"></i> <span>BYA Preview</span></a></li>
                 <li><a class="nav-link" href="{{ route('admin.settings') }}"><i class="icofont icofont-wheel me-2"></i> <span>Settings</span></a></li>
             </ul>
         </div>

@@ -50,7 +50,17 @@ class ByaCompatibilityAlignmentServiceTest extends TestCase
         'neutral_compatibility_count',
         'incompatible_alignment_count',
         'insufficient_data_count',
+        'alignment_category_counts',
         'advisory_label',
+    ];
+
+    private const ALL_ALIGNMENT_CATEGORIES = [
+        'full_alignment',
+        'partial_alignment',
+        'adjacent_compatibility',
+        'neutral_compatibility',
+        'incompatible_alignment',
+        'insufficient_data',
     ];
 
     protected function setUp(): void
@@ -188,6 +198,74 @@ class ByaCompatibilityAlignmentServiceTest extends TestCase
 
         foreach (self::EXPECTED_SUMMARY_KEYS as $key) {
             $this->assertArrayHasKey($key, $summary, "summary missing key: {$key}");
+        }
+    }
+
+    /** @test */
+    public function summary_contains_alignment_category_counts_as_a_nested_array(): void
+    {
+        $payload = $this->makeUniformCompPayload('same');
+
+        $result  = $this->service->categorize($payload);
+        $summary = $result['summary'];
+
+        $this->assertArrayHasKey('alignment_category_counts', $summary, 'summary missing alignment_category_counts');
+        $this->assertIsArray($summary['alignment_category_counts'], 'alignment_category_counts must be an array');
+
+        foreach (self::ALL_ALIGNMENT_CATEGORIES as $cat) {
+            $this->assertArrayHasKey($cat, $summary['alignment_category_counts'], "alignment_category_counts missing key: {$cat}");
+        }
+    }
+
+    /** @test */
+    public function alignment_category_counts_matches_flat_summary_counts_for_all_same_input(): void
+    {
+        $payload = $this->makeUniformCompPayload('same');
+
+        $result  = $this->service->categorize($payload);
+        $summary = $result['summary'];
+        $nested  = $summary['alignment_category_counts'];
+
+        $this->assertSame($summary['full_alignment_count'],         $nested['full_alignment']);
+        $this->assertSame($summary['partial_alignment_count'],       $nested['partial_alignment']);
+        $this->assertSame($summary['adjacent_compatibility_count'],  $nested['adjacent_compatibility']);
+        $this->assertSame($summary['neutral_compatibility_count'],   $nested['neutral_compatibility']);
+        $this->assertSame($summary['incompatible_alignment_count'],  $nested['incompatible_alignment']);
+        $this->assertSame($summary['insufficient_data_count'],       $nested['insufficient_data']);
+    }
+
+    /** @test */
+    public function alignment_category_counts_nested_values_are_correct_for_mixed_input(): void
+    {
+        // 3 same → full_alignment:3, 2 similar → partial_alignment:2,
+        // 4 different → incompatible_alignment:4, 3 unknown → insufficient_data:3
+        $payload = $this->makeMixedCompPayload([
+            'd1' => 'same',     'd2' => 'same',     'd3' => 'same',
+            'd4' => 'similar',  'd5' => 'similar',
+            'd6' => 'different','d7' => 'different', 'd8' => 'different', 'd9' => 'different',
+            'd10'=> 'unknown',  'd11'=> 'unknown',   'd12'=> 'unknown',
+        ]);
+
+        $result = $this->service->categorize($payload);
+        $nested = $result['summary']['alignment_category_counts'];
+
+        $this->assertSame(3, $nested['full_alignment']);
+        $this->assertSame(2, $nested['partial_alignment']);
+        $this->assertSame(0, $nested['adjacent_compatibility']);
+        $this->assertSame(0, $nested['neutral_compatibility']);
+        $this->assertSame(4, $nested['incompatible_alignment']);
+        $this->assertSame(3, $nested['insufficient_data']);
+    }
+
+    /** @test */
+    public function stub_payload_has_alignment_category_counts_all_zero(): void
+    {
+        $result  = $this->service->categorize(null);
+        $nested  = $result['summary']['alignment_category_counts'];
+
+        $this->assertIsArray($nested);
+        foreach (self::ALL_ALIGNMENT_CATEGORIES as $cat) {
+            $this->assertSame(0, $nested[$cat], "stub alignment_category_counts[{$cat}] must be 0");
         }
     }
 

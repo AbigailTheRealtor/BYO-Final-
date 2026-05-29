@@ -264,10 +264,22 @@ class ByaCompatibilityAlignmentService
             $counts['partial_alignment_count']
         );
 
+        // Build the nested alignment_category_counts sub-array consumed by
+        // ByaCompatibilityReportService. Keys match ALL_ALIGNMENT_CATEGORIES
+        // without the _count suffix, consistent with explanation_type_counts
+        // and narrative_type_counts in the downstream pipeline.
+        $alignmentCategoryCounts = [];
+        foreach (self::ALL_ALIGNMENT_CATEGORIES as $cat) {
+            $alignmentCategoryCounts[$cat] = $counts[$cat . '_count'];
+        }
+
         return array_merge(
             ['scored_dimensions' => $scoredDimensions],
             $counts,
-            ['advisory_label' => $advisoryLabel]
+            [
+                'alignment_category_counts' => $alignmentCategoryCounts,
+                'advisory_label'            => $advisoryLabel,
+            ]
         );
     }
 
@@ -361,6 +373,8 @@ class ByaCompatibilityAlignmentService
             0
         );
 
+        $zeroAlignmentCategoryCounts = array_fill_keys(self::ALL_ALIGNMENT_CATEGORIES, 0);
+
         return [
             'alignment_version'  => self::ALIGNMENT_VERSION,
             'comparison_version' => $comparisonVersion,
@@ -368,7 +382,10 @@ class ByaCompatibilityAlignmentService
             'summary'            => array_merge(
                 ['scored_dimensions' => 0],
                 $zeroCounts,
-                ['advisory_label' => self::LABEL_INSUFFICIENT_DATA]
+                [
+                    'alignment_category_counts' => $zeroAlignmentCategoryCounts,
+                    'advisory_label'            => self::LABEL_INSUFFICIENT_DATA,
+                ]
             ),
         ];
     }

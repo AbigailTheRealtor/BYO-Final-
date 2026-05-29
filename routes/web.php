@@ -43,6 +43,7 @@ use App\Http\Controllers\LandlordAuctionController;
 use App\Http\Controllers\PropertyAuctionController;
 use App\Http\Controllers\ReferralAuctionController;
 use App\Http\Controllers\Admin\AdminAgentController;
+use App\Http\Controllers\Admin\ByaPreviewController;
 use App\Http\Controllers\Admin\DnaInspectorController;
 use App\Http\Controllers\Admin\FeeIncludeController;
 use App\Http\Controllers\Admin\WaterExtraController;
@@ -841,6 +842,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Phase S — Marketing Brief Preview (admin-only, read-only)
         Route::get('property-dna/{profile}/marketing-brief-preview', [DnaInspectorController::class, 'marketingBriefPreview'])->name('property-dna.marketing-brief-preview');
+
+        // Milestone 11 — BYA Internal Admin Preview UI (read-only, admin-only)
+        Route::prefix('bya-compatibility-preview')->name('bya.preview.')->group(function () {
+            Route::get('/', [ByaPreviewController::class, 'index'])->name('index');
+            Route::get('{id}', [ByaPreviewController::class, 'show'])->name('show');
+        });
     });
 });
 
