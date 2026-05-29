@@ -1372,6 +1372,7 @@
                     'photo_enhancements': data.photo_enhancements || [],
                     'property_items': data.property_items || [],
                     'tenant_require': data.tenant_require || [],
+                    'pet_species_allowed': data.pet_species_allowed || [],
                 };
                 // MLS Property Detail — hydrate by element ID
                 var mlsIdFields = {

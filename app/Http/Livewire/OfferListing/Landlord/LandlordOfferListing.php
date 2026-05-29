@@ -1624,7 +1624,7 @@ class LandlordOfferListing extends Component
             'listing_date'                    => $this->listing_date,
             'desired_agent_hire_date'         => $this->desired_agent_hire_date,
             'expiration_date'                 => $this->expiration_date,
-            'auction_time'                    => $this->auction_type === 'Bidding Period' ? $this->auction_time : '',
+            'auction_time'                    => $this->auction_time,
             'cities'                          => json_encode($this->ensureArray($this->cities)),
             'counties'                        => json_encode($this->ensureArray($this->counties)),
             'state'                           => $this->state,
@@ -2499,7 +2499,8 @@ class LandlordOfferListing extends Component
             if (is_array($rawPhotos)) {
                 $this->propertyPhotos = $rawPhotos;
             } elseif (is_string($rawPhotos) && $rawPhotos !== '') {
-                $this->propertyPhotos = [$rawPhotos];
+                $decoded = json_decode($rawPhotos, true);
+                $this->propertyPhotos = is_array($decoded) ? $decoded : [$rawPhotos];
             } else {
                 $this->propertyPhotos = [];
             }
@@ -2866,6 +2867,7 @@ class LandlordOfferListing extends Component
                 'photo_enhancements' => $this->ensureArray($this->photo_enhancements),
                 'property_items' => $this->ensureArray($this->property_items),
                 'tenant_require' => $this->ensureArray($this->tenant_require),
+                'pet_species_allowed' => $this->ensureArray($this->pet_species_allowed),
                 // MLS Property Detail Fields
                 'heating_fuel' => $this->ensureArray($this->heating_fuel),
                 'air_conditioning' => $this->ensureArray($this->air_conditioning),
@@ -2913,7 +2915,7 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('listing_date', $this->listing_date);
         $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);
         $auction->saveMeta('expiration_date', $this->expiration_date);
-        $auction->saveMeta('auction_time', $this->auction_type === 'Bidding Period' ? $this->auction_time : '');
+        $auction->saveMeta('auction_time', $this->auction_time);
 
         // Location Information
         $auction->saveMeta('cities', json_encode($this->ensureArray($this->cities)));

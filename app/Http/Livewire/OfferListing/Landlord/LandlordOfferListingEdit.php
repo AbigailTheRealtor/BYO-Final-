@@ -1562,7 +1562,7 @@ class LandlordOfferListingEdit extends Component
             'listing_date'                    => $this->listing_date,
             'desired_agent_hire_date'         => $this->desired_agent_hire_date,
             'expiration_date'                 => $this->expiration_date,
-            'auction_time'                    => $this->auction_type === 'Bidding Period' ? $this->auction_time : '',
+            'auction_time'                    => $this->auction_time,
             'cities'                          => json_encode($this->ensureArray($this->cities)),
             'counties'                        => json_encode($this->ensureArray($this->counties)),
             'state'                           => $this->state,
@@ -2898,7 +2898,7 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('listing_date', $this->listing_date);
         $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);
         $auction->saveMeta('expiration_date', $this->expiration_date);
-        $auction->saveMeta('auction_time', $this->auction_type === 'Bidding Period' ? $this->auction_time : '');
+        $auction->saveMeta('auction_time', $this->auction_time);
 
         // Location Information
         $auction->saveMeta('cities', json_encode($this->cities));

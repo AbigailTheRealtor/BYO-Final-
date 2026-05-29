@@ -6031,6 +6031,25 @@ $lease_types = [
 
         errorEl && (errorEl.innerText = "");
     }
+
+    function formatAllTenantNumericInputs() {
+        var scope = document.querySelector('form') || document;
+        scope.querySelectorAll('input[onblur*="reformatNumber"]').forEach(function(inp) {
+            if (!inp.value || inp.value.includes(',')) return;
+            reformatNumber(inp);
+        });
+        scope.querySelectorAll('input[onblur*="formatWithCommas"]').forEach(function(inp) {
+            if (!inp.value || inp.value.includes(',')) return;
+            if (typeof formatWithCommas === 'function') formatWithCommas(inp);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(formatAllTenantNumericInputs, 100);
+    });
+    Livewire.hook('message.processed', function() {
+        setTimeout(formatAllTenantNumericInputs, 50);
+    });
 </script>
 
 

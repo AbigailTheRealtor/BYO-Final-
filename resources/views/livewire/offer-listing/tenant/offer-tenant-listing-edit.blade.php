@@ -5237,5 +5237,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         setTimeout(formatAllTenantNumericInputs, 100);
     });
+    Livewire.hook('message.processed', function() {
+        setTimeout(formatAllTenantNumericInputs, 50);
+    });
 </script>
 @endpush

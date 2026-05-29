@@ -2638,7 +2638,7 @@ class TenantOfferListing extends Component
             'listing_date'        => $this->listing_date,
             'desired_agent_hire_date' => $this->desired_agent_hire_date,
             'expiration_date'     => $this->expiration_date,
-            'auction_time'        => $this->auction_type === 'Bidding Period' ? $this->auction_time : '',
+            'auction_time'        => $this->auction_time,
             'agent_bid_visibility' => $this->agent_bid_visibility,
             'meeting_Preference'  => $this->meeting_Preference,
             'number_of_unit'      => $this->number_of_unit,
@@ -4280,7 +4280,7 @@ class TenantOfferListing extends Component
         $auction->saveMeta('listing_date', $this->listing_date);
         $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);
         $auction->saveMeta('expiration_date', $this->expiration_date);
-        $auction->saveMeta('auction_time', $this->auction_type === 'Bidding Period' ? $this->auction_time : '');
+        $auction->saveMeta('auction_time', $this->auction_time);
         $auction->saveMeta('agent_bid_visibility', $this->agent_bid_visibility);
         $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
         $auction->saveMeta('number_of_unit', $this->number_of_unit);
