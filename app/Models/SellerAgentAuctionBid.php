@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\HasCompatibilityPreferences;
 
 class SellerAgentAuctionBid extends Model
 {
-    use HasFactory;
+    use HasFactory, HasCompatibilityPreferences;
     protected $appends = ["get"];
     protected $with = ['meta'];
 

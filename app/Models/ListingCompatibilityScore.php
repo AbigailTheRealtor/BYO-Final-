@@ -13,6 +13,8 @@ class ListingCompatibilityScore extends Model
     const CREATED_AT = 'created_at';
     const UPDATED_AT = null;
 
+    const BYA_COMPAT_V1 = 'BYA_COMPAT_V1';
+
     protected $fillable = [
         'demand_listing_type',
         'demand_listing_id',
@@ -33,21 +35,33 @@ class ListingCompatibilityScore extends Model
         'computed_at',
         'archived_at',
         'created_at',
+        'representation_compatibility_score',
+        'representation_compatibility_label',
+        'compatibility_trait_results',
+        'compatibility_framework_version',
+        'ai_explanation_version',
+        'moderation_status',
+        'compatibility_computed_at',
+        'compatibility_archived_at',
     ];
 
     protected $casts = [
-        'overall_score'                      => 'decimal:2',
-        'physical_match_score'               => 'decimal:2',
-        'financial_match_score'              => 'decimal:2',
-        'location_match_score'               => 'decimal:2',
-        'terms_match_score'                  => 'decimal:2',
-        'deal_breaker_triggered'             => 'boolean',
-        'deal_breaker_flags'                 => 'array',
-        'score_explanation'                  => 'array',
-        'demand_listing_updated_at_snapshot' => 'datetime',
-        'supply_listing_updated_at_snapshot' => 'datetime',
-        'computed_at'                        => 'datetime',
-        'archived_at'                        => 'datetime',
-        'created_at'                         => 'datetime',
+        'overall_score'                         => 'decimal:2',
+        'physical_match_score'                  => 'decimal:2',
+        'financial_match_score'                 => 'decimal:2',
+        'location_match_score'                  => 'decimal:2',
+        'terms_match_score'                     => 'decimal:2',
+        'deal_breaker_triggered'                => 'boolean',
+        'deal_breaker_flags'                    => 'array',
+        'score_explanation'                     => 'array',
+        'demand_listing_updated_at_snapshot'    => 'datetime',
+        'supply_listing_updated_at_snapshot'    => 'datetime',
+        'computed_at'                           => 'datetime',
+        'archived_at'                           => 'datetime',
+        'created_at'                            => 'datetime',
+        'representation_compatibility_score'    => 'decimal:2',
+        'compatibility_trait_results'           => 'array',
+        'compatibility_computed_at'             => 'datetime',
+        'compatibility_archived_at'             => 'datetime',
     ];
 }
