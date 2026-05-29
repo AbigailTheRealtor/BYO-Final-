@@ -395,9 +395,7 @@
             || count($arr('pet_species_allowed')) > 0;
 
         /* Compensation */
-        $navHasCompensation = $str('commission_structure') || $str('lease_fee_type') || $str('brokerage_relationship')
-            || $str('agency_agreement_timeframe') || $str('protection_period') || $str('retainer_fee_option')
-            || $str('purchase_fee_type') || $str('lease_option_fee_type');
+        $navHasCompensation = (bool)$str('tenant_broker_commission_structure');
 
         /* Contact */
         $navHasContact = $str('first_name') || $str('last_name') || $str('email')
@@ -430,7 +428,7 @@
             <li><a href="#section-pets">Pets &amp; Occupancy</a></li>
             @endif
             @if($navHasCompensation)
-            <li><a href="#section-compensation">Compensation</a></li>
+            <li><a href="#section-tenant-broker">Compensation</a></li>
             @endif
             @if($navHasContact)
             <li><a href="#section-contact">Contact</a></li>
@@ -542,6 +540,25 @@
     {{-- ================================================================
          LISTING OVERVIEW
          ============================================================== --}}
+    @php
+        // Bidding Period countdown — primary: expiration_date (end of day); fallback: created_at + auction_time days
+        $hasBPTimer = false;
+        $timerRemainingSeconds = 0;
+        if (strtolower(trim($str('auction_type'))) === 'bidding period') {
+            $_expDate = trim($str('expiration_date'));
+            if ($_expDate !== '') {
+                $_timerEnd = \Carbon\Carbon::parse($_expDate)->endOfDay();
+            } else {
+                preg_match('/\d+/', trim($str('auction_time')), $_tm);
+                $_days = isset($_tm[0]) ? (int)$_tm[0] : 0;
+                $_timerEnd = $_days > 0 ? \Carbon\Carbon::parse($auction->created_at)->addDays($_days) : null;
+            }
+            if (!empty($_timerEnd)) {
+                $timerRemainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_timerEnd, false);
+                $hasBPTimer = true;
+            }
+        }
+    @endphp
     <div class="card section-card" id="section-overview">
         <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Listing Overview</div>
         <div class="card-body">
@@ -550,7 +567,6 @@
                     {!! $row('Listing Title', $str('listing_title') ?: $auction->title) !!}
                     {!! $row('Auction / Listing Type', $str('auction_type')) !!}
                     {!! $row('Listing Status', $str('listing_status')) !!}
-                    {!! $row('Service Type', ucwords(str_replace('_', ' ', $str('service_type')))) !!}
                 </div>
                 <div class="col-md-6">
                     {!! $row('Listing Date', $fmtDate($str('listing_date'))) !!}
@@ -559,6 +575,31 @@
                     {!! $row('Available Date', $fmtDate($str('available_date') ?: $str('lease_available_date'))) !!}
                 </div>
             </div>
+            {{-- Bidding Period countdown timer (source: expiration_date; fallback: created_at + auction_time) --}}
+            @if($hasBPTimer)
+            <div class="mt-3 pt-3" style="border-top:1px solid #e2e8f0;">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="text-muted fw-semibold" style="font-size:.85rem;">
+                        <i class="fa-regular fa-clock me-1"></i>Bidding Period Time Remaining:
+                    </span>
+                    @if($timerRemainingSeconds <= 0)
+                        <span class="badge bg-secondary" style="font-size:.85rem;">Expired</span>
+                    @else
+                        <span class="badge bg-info text-dark lol-bp-timer"
+                              data-seconds="{{ $timerRemainingSeconds }}"
+                              style="font-size:.85rem;font-variant-numeric:tabular-nums;">
+                            @php
+                                $_s = $timerRemainingSeconds;
+                                $_d = intdiv($_s, 86400); $_s %= 86400;
+                                $_h = intdiv($_s, 3600);  $_s %= 3600;
+                                $_i = intdiv($_s, 60);    $_s %= 60;
+                                echo sprintf('%dd %02d:%02d:%02d', $_d, $_h, $_i, $_s);
+                            @endphp
+                        </span>
+                    @endif
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -885,85 +926,39 @@
     @endif
 
     {{-- ================================================================
-         BROKER COMPENSATION & AGENCY AGREEMENT
+         TENANT'S BROKER COMPENSATION
          ============================================================== --}}
-    @php
-        $hasCompensation = $str('commission_structure') || $str('lease_fee_type') || $str('brokerage_relationship')
-            || $str('agency_agreement_timeframe') || $str('protection_period') || $str('retainer_fee_option')
-            || $str('purchase_fee_type') || $str('lease_option_fee_type');
-    @endphp
-    @if($hasCompensation)
-    <div class="card section-card" id="section-compensation">
-        <div class="card-header"><i class="fa-solid fa-file-contract me-2"></i>Broker Compensation &amp; Agency Agreement</div>
+    @if($navHasCompensation)
+    <div class="card section-card" id="section-tenant-broker">
+        <div class="card-header"><i class="fa-solid fa-handshake me-2"></i>Tenant's Broker Compensation</div>
         <div class="card-body">
+            @php
+                $_tbcs  = $str('tenant_broker_commission_structure');
+                $_tbfs  = $str('tenant_broker_fee_structure');
+            @endphp
             <div class="row">
                 <div class="col-md-6">
-                    {!! $row('Commission Structure', $str('commission_structure')) !!}
-                    {{-- Lease fee --}}
-                    {!! $row('Lease Fee Type', $str('lease_fee_type')) !!}
-                    @if($str('lease_fee_type') === 'flat')
-                        {!! $row('Lease Fee', $fmtMoney($str('lease_fee_flat'))) !!}
-                    @elseif($str('lease_fee_type') === 'percentage')
-                        {!! $row('Lease Fee (%)', $fmtPercent($str('lease_fee_percentage'))) !!}
-                        {!! $row('Lease Fee Months', $str('lease_fee_months')) !!}
-                        {!! $row('Lease Fee % of Monthly Rent', $fmtPercent($str('lease_fee_percentage_monthly_rent'))) !!}
-                    @elseif($str('lease_fee_type') === 'combo')
-                        @php $_lc = array_filter([$fmtPercent($str('lease_fee_percentage_combo')), $fmtMoney($str('lease_fee_flat_combo'))]); @endphp
-                        {!! $row('Lease Fee', count($_lc) ? implode(' + ', $_lc) : null) !!}
-                    @elseif($str('lease_fee_type') === 'other')
-                        {!! $row('Lease Fee', $str('lease_fee_other')) !!}
-                    @endif
-                    {!! $row('Brokerage Relationship', $str('brokerage_relationship')) !!}
-                </div>
-                <div class="col-md-6">
-                    {!! $row('Agency Agreement Timeframe', $orOther($str('agency_agreement_timeframe'), $str('agency_agreement_custom'))) !!}
-                    {!! $row('Protection Period', $str('protection_period')) !!}
-                    {!! $row('Early Termination Fee', $yesNo($str('early_termination_fee_option'))) !!}
-                    {!! $row('Early Termination Fee Amount', $fmtMoney($str('early_termination_fee_amount'))) !!}
-                    {!! $row('Retainer Fee', $yesNo($str('retainer_fee_option'))) !!}
-                    {!! $row('Retainer Fee Amount', $fmtMoney($str('retainer_fee_amount'))) !!}
-                    {!! $row('Retainer Fee Application', $str('retainer_fee_application')) !!}
-                </div>
-            </div>
-
-            {{-- Lease Option compensation --}}
-            @if($str('lease_option_fee_type'))
-            <hr>
-            <h6 class="fw-semibold mb-3" style="font-size:.9rem;letter-spacing:0;">Lease Option Compensation</h6>
-            <div class="row">
-                <div class="col-md-6">
-                    {!! $row('Lease Option Fee Type', $str('lease_option_fee_type')) !!}
-                    @if($str('lease_option_fee_type') === 'flat')
-                        {!! $row('Lease Option Fee', $fmtMoney($str('lease_option_fee_flat'))) !!}
-                    @elseif($str('lease_option_fee_type') === 'percentage')
-                        {!! $row('Lease Option Fee', $fmtPercent($str('lease_option_fee_percentage'))) !!}
-                    @else
-                        {!! $row('Lease Option Fee', $str('lease_option_fee_other')) !!}
+                    {!! $row("Tenant's Broker Commission Structure", $_tbcs) !!}
+                    @if($_tbfs)
+                        {!! $row("Tenant's Broker Commission Fee Type", $_tbfs) !!}
+                        @if($_tbfs === 'Percentage of the Rent Due Each Rental Period')
+                            {!! $row("Tenant's Broker Fee", $fmtPercent($str('tenant_broker_percentage'))) !!}
+                        @elseif($_tbfs === 'Percentage of the Gross Lease Value')
+                            {!! $row("Tenant's Broker Fee", $fmtPercent($str('tenant_broker_gross_lease'))) !!}
+                        @elseif($_tbfs === "Percentage of the First Month's Rent")
+                            {!! $row("Tenant's Broker Fee", $fmtPercent($str('tenant_broker_first_month_rent'))) !!}
+                        @elseif($_tbfs === 'Percentage of the Net Aggregate Rent')
+                            {!! $row("Tenant's Broker Fee", $fmtPercent($str('tenant_broker_percentage'))) !!}
+                        @elseif($_tbfs === 'Percentage of the Gross Rent')
+                            {!! $row("Tenant's Broker Fee", $fmtPercent($str('tenant_broker_gross_lease'))) !!}
+                        @elseif($_tbfs === 'Flat fee')
+                            {!! $row("Tenant's Broker Fee", $fmtMoney($str('tenant_broker_flat_fee'))) !!}
+                        @elseif($_tbfs === 'Other')
+                            {!! $row("Tenant's Broker Fee", $str('tenant_broker_other')) !!}
+                        @endif
                     @endif
                 </div>
             </div>
-            @endif
-
-            {{-- Purchase / conversion fee --}}
-            @if($str('purchase_fee_type'))
-            <hr>
-            <h6 class="fw-semibold mb-3" style="font-size:.9rem;letter-spacing:0;">Purchase / Conversion Compensation</h6>
-            <div class="row">
-                <div class="col-md-6">
-                    {!! $row('Purchase Fee Type', $str('purchase_fee_type')) !!}
-                    @if($str('purchase_fee_type') === 'percentage')
-                        {!! $row('Purchase Fee', $fmtPercent($str('purchase_fee_percentage'))) !!}
-                    @elseif($str('purchase_fee_type') === 'flat')
-                        {!! $row('Purchase Fee', $fmtMoney($str('purchase_fee_flat'))) !!}
-                    @elseif($str('purchase_fee_type') === 'combo')
-                        @php $_pc = array_filter([$fmtPercent($str('purchase_fee_percentage_combo')), $fmtMoney($str('purchase_fee_flat_combo'))]); @endphp
-                        {!! $row('Purchase Fee', count($_pc) ? implode(' + ', $_pc) : null) !!}
-                    @else
-                        {!! $row('Purchase Fee', $str('purchase_fee_other')) !!}
-                    @endif
-                </div>
-            </div>
-            @endif
         </div>
     </div>
     @endif
@@ -1120,8 +1115,36 @@
 </div>
 
 @push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/timer.jquery/0.9.0/timer.jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 (function () {
+    /* ── Bidding period countdown timer ── */
+    function lolSecondsToStr(total) {
+        if (!total || total <= 0) return '0s';
+        var d = Math.floor(total / 86400); total %= 86400;
+        var h = Math.floor(total / 3600);  total %= 3600;
+        var m = Math.floor(total / 60);
+        var s = total % 60;
+        var out = '';
+        if (d) out += d + 'd ';
+        out += (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        return out.trim();
+    }
+    document.querySelectorAll('.lol-bp-timer[data-seconds]').forEach(function (el) {
+        var secs = parseInt(el.getAttribute('data-seconds'), 10) || 0;
+        if (secs <= 0) { el.textContent = 'Expired'; el.classList.replace('bg-info', 'bg-secondary'); return; }
+        $(el).timer({
+            countdown: true,
+            duration: lolSecondsToStr(secs),
+            format: '%dd %H:%M:%S',
+            callback: function () {
+                el.textContent = 'Expired';
+                el.classList.remove('bg-info', 'text-dark');
+                el.classList.add('bg-secondary');
+            }
+        });
+    });
+
     /* ── Hero carousel ── */
     var photos  = (typeof _lolHeroPhotos !== 'undefined') ? _lolHeroPhotos : [];
     var heroIdx = (typeof _lolHeroStartIdx !== 'undefined') ? _lolHeroStartIdx : 0;
