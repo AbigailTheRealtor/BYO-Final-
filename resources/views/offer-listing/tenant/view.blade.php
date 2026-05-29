@@ -1120,6 +1120,7 @@
             if (is_array($mVal)) {
                 $flat = array_filter($mVal, fn($v) => $v !== null && $v !== '');
                 if (!count($flat)) continue;
+                $flat = array_map(fn($v) => is_array($v) ? json_encode($v) : (string)$v, $flat);
                 $remainingFields[$mKey] = implode(', ', $flat);
             } else {
                 $s = trim((string)$mVal);

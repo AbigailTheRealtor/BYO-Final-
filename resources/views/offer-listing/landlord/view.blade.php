@@ -29,10 +29,10 @@
         catch (\Exception $e) { return null; }
     };
 
-    /** Return meta value as a plain string (array → comma list) */
+    /** Return meta value as a plain string (array → comma list, nested arrays → JSON) */
     $str = function (string $key) use ($meta): string {
         $v = $meta[$key] ?? '';
-        return is_array($v) ? implode(', ', $v) : (string) $v;
+        return is_array($v) ? implode(', ', array_map(fn($e) => is_array($e) ? json_encode($e) : (string)$e, $v)) : (string) $v;
     };
 
     /** Return meta value as an array (double-decode JSON strings) */

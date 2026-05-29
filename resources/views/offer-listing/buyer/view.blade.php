@@ -15,7 +15,7 @@
         return (floor($num) == $num ? (string)(int)$num : (string)$num) . '%';
     };
     $val = fn($key) => $meta[$key] ?? null;
-    $str = function($key) use ($meta) { $v = $meta[$key] ?? ''; return is_array($v) ? implode(', ', $v) : (string)$v; };
+    $str = function($key) use ($meta) { $v = $meta[$key] ?? ''; return is_array($v) ? implode(', ', array_map(fn($e) => is_array($e) ? json_encode($e) : (string)$e, $v)) : (string)$v; };
     $arr = function($key) use ($meta) {
         $v = $meta[$key] ?? [];
         if (is_string($v)) {
