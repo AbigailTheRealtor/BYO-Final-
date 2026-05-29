@@ -2071,6 +2071,12 @@ class SellerOfferListingEdit extends Component
                 ? SellerAgentAuctionModel::find($this->listingId)
                 : null;
 
+            // Guard: do not create a draft version of a published listing.
+            if ($previousDraft && !$previousDraft->is_draft) {
+                session()->flash('error', 'Cannot create a new draft version of a published listing.');
+                return;
+            }
+
             $previousVersion = 0;
             $parentDraftId   = null;
             if ($previousDraft && $previousDraft->is_draft) {

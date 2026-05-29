@@ -1204,35 +1204,59 @@ class BuyerAgentAuctionEdit extends Component
     }
     public function saveDraft()
     {
-
         try {
-
+            // Step 1 — Pre-check: resolve source record and guard against versioning
+            // published listings. Must happen before any state mutation.
+            $source = $this->auctionId
+                ? HireBuyerAgentAuction::where('id', $this->auctionId)->where('user_id', Auth::id())->first()
+                : null;
+            if ($this->auctionId && (!$source || !$source->is_draft)) {
+                session()->flash('error', 'Cannot create a new draft version of a published listing.');
+                return;
+            }
 
             $this->isDraft = true;
 
-            $auction = $this->listingId
-                ? HireBuyerAgentAuction::find($this->listingId)
-                : new HireBuyerAgentAuction();
+            $previousVersion = (int) ($source ? ($source->info('draft_version') ?? 1) : 0);
+            $parentDraftId   = $source ? $source->id : null;
 
-            $auction->user_id = Auth::id();
-            $auction->title = $this->listing_title;
-            $auction->is_draft = true;
-            $auction->save();
+            // Step 2 — Create a new shell record. Use current form title so any
+            // in-session edits to the title are captured on the new version.
+            $newDraft           = new HireBuyerAgentAuction();
+            $newDraft->user_id  = Auth::id();
+            $newDraft->title    = $this->listing_title;
+            $newDraft->is_draft = true;
+            $newDraft->save();
 
-            $this->listingId = $auction->id;
+            // Step 3 — Clone ALL meta rows from source first so locked keys that
+            // saveAllMetadata intentionally skips (e.g. auction_type) are preserved.
+            if ($source) {
+                foreach ($source->meta()->get() as $meta) {
+                    $newDraft->saveMeta($meta->meta_key, $meta->meta_value);
+                }
+            }
 
-            $this->saveAllMetadata($auction);
+            // Step 4 — Overwrite editable meta with current form state. Source
+            // record is never mutated, keeping the original draft intact.
+            $this->saveAllMetadata($newDraft);
 
-            \Log::info('[BUYER EDIT DRAFT SAVED]', [
-                'record_id' => $auction->id,
-                'listing_id' => $auction->listing_id ?? 'N/A',
-                'user_id' => $auction->user_id,
-                'is_draft' => $auction->is_draft,
-                'is_approved' => $auction->is_approved,
+            // Step 5 — Stamp versioning keys; drop stale hash from cloned meta.
+            $newDraft->saveMeta('draft_version',      $previousVersion + 1);
+            $newDraft->saveMeta('parent_draft_id',    $parentDraftId);
+            $newDraft->deleteMeta('draft_payload_hash');
+
+            $this->listingId = $newDraft->id;
+            $this->auctionId = $newDraft->id;
+
+            \Log::info('[BUYER EDIT DRAFT VERSIONED]', [
+                'new_record_id'   => $newDraft->id,
+                'parent_draft_id' => $parentDraftId,
+                'draft_version'   => $previousVersion + 1,
+                'user_id'         => $newDraft->user_id,
             ]);
 
-            $displayId = $auction->listing_id ?? $auction->id;
-            session()->flash('success', "Draft saved (Listing ID: {$displayId}). You can return later to complete your listing.");
+            session()->flash('success', 'Draft saved as new version (Version ' . ($previousVersion + 1) . ').');
+            return redirect()->route('edit-auction', ['auctionId' => $newDraft->id, 'user_type' => 'buyer']);
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving draft: ' . $e->getMessage());
         }

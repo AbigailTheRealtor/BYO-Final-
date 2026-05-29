@@ -4,7 +4,7 @@ namespace App\Http\Livewire\HireSellerAgent;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use App\Models\BuyerAgentAuction as HireBuyerAgentAuction;
+use App\Models\SellerAgentAuction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -690,7 +690,7 @@ class SellerAgentAuctionEdit extends Component
     }
     public function getDrafts()
     {
-        return HireBuyerAgentAuction::where('user_id', Auth::id())
+        return SellerAgentAuction::where('user_id', Auth::id())
             ->where('is_draft', true)
             ->latest()
             ->get();
@@ -1126,26 +1126,59 @@ class SellerAgentAuctionEdit extends Component
     }
     public function saveDraft()
     {
-
         try {
-
+            // Step 1 — Pre-check: resolve source record and guard against versioning
+            // published listings. Must happen before any state mutation.
+            $source = $this->auctionId
+                ? SellerAgentAuction::where('id', $this->auctionId)->where('user_id', Auth::id())->first()
+                : null;
+            if ($this->auctionId && (!$source || !$source->is_draft)) {
+                session()->flash('error', 'Cannot create a new draft version of a published listing.');
+                return;
+            }
 
             $this->isDraft = true;
 
-            $auction = $this->listingId
-                ? HireBuyerAgentAuction::find($this->listingId)
-                : new HireBuyerAgentAuction();
+            $previousVersion = (int) ($source ? ($source->info('draft_version') ?? 1) : 0);
+            $parentDraftId   = $source ? $source->id : null;
 
-            $auction->user_id = Auth::id();
-            $auction->title = $this->listing_title;
-            $auction->is_draft = true;
-            $auction->save();
+            // Step 2 — Create a new shell record. Use current form title so any
+            // in-session edits to the title are captured on the new version.
+            $newDraft           = new SellerAgentAuction();
+            $newDraft->user_id  = Auth::id();
+            $newDraft->title    = $this->listing_title;
+            $newDraft->is_draft = true;
+            $newDraft->save();
 
-            $this->listingId = $auction->id;
+            // Step 3 — Clone ALL meta rows from source first so locked keys that
+            // saveAllMetadata intentionally skips (e.g. auction_type) are preserved.
+            if ($source) {
+                foreach ($source->meta()->get() as $meta) {
+                    $newDraft->saveMeta($meta->meta_key, $meta->meta_value);
+                }
+            }
 
-            $this->saveAllMetadata($auction);
+            // Step 4 — Overwrite editable meta with current form state. Source
+            // record is never mutated, keeping the original draft intact.
+            $this->saveAllMetadata($newDraft);
 
-            session()->flash('success', 'Draft saved successfully. You can return later to complete your listing.');
+            // Step 5 — Stamp versioning keys; drop stale hash from cloned meta.
+            $newDraft->saveMeta('draft_version',      $previousVersion + 1);
+            $newDraft->saveMeta('parent_draft_id',    $parentDraftId);
+            $newDraft->deleteMeta('draft_payload_hash');
+
+            $this->listingId = $newDraft->id;
+            $this->auctionId = $newDraft->id;
+
+            \Log::info('[SELLER EDIT DRAFT VERSIONED]', [
+                'new_record_id'   => $newDraft->id,
+                'parent_draft_id' => $parentDraftId,
+                'draft_version'   => $previousVersion + 1,
+                'user_id'         => $newDraft->user_id,
+            ]);
+
+            session()->flash('success', 'Draft saved as new version (Version ' . ($previousVersion + 1) . ').');
+            return redirect()->route('editSellerAgentHireAuction', ['id' => $newDraft->id]);
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving draft: ' . $e->getMessage());
         }
@@ -1153,7 +1186,7 @@ class SellerAgentAuctionEdit extends Component
 
     public function loadAuctionData($listingId)
     {
-        $auction = HireBuyerAgentAuction::where('id', $listingId)
+        $auction = SellerAgentAuction::where('id', $listingId)
             ->where('user_id', Auth::id())
             ->first();
         if ($auction) {
@@ -1977,9 +2010,9 @@ class SellerAgentAuctionEdit extends Component
 
             $this->isDraft = 0;
 
-            $auction =$this->auctionId
-                ? HireBuyerAgentAuction::find($this->auctionId)
-                : new HireBuyerAgentAuction();
+            $auction = $this->auctionId
+                ? SellerAgentAuction::find($this->auctionId)
+                : new SellerAgentAuction();
             $auction->title = $this->listing_title;
             $auction->is_draft = 0;
             $auction->save();
