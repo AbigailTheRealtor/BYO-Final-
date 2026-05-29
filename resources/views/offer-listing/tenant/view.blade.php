@@ -460,14 +460,6 @@
             || $ifFilled($str('signage_request')) || $ifFilled($str('commercial_parking_access_needs'))
             || $ifFilled($str('personal_guarantee_preference')) || $ifFilled($str('commercial_approval_conditions'));
 
-        // Services nav: check the new JSON `services` array (not the stale flat boolean keys).
-        // Filter empty values before counting — same logic as the section renderer — so the
-        // nav tab only appears when at least one non-blank service will actually be displayed.
-        $navServicesArr = $arr('services');
-        $navOtherServicesArr = array_filter($arr('other_services'), fn($v) => trim((string)$v) !== '');
-        $navHasServices = count(array_filter($navServicesArr, fn($v) => trim((string)$v) !== '')) > 0
-                          || count($navOtherServicesArr) > 0;
-
         $navHasContact = $ifFilled($str('first_name')) || $ifFilled($str('last_name'))
             || $ifFilled($str('email')) || $ifFilled($str('phone_number'))
             || $ifFilled($str('video_link')) || $ifFilled($str('video'));
@@ -484,7 +476,6 @@
             @if($navHasParking)<li><a href="#section-parking">Parking</a></li>@endif
             @if($navHasPrescreening)<li><a href="#section-prescreening">Pre-Screening</a></li>@endif
             @if($navHasLeasePrefs)<li><a href="#section-lease-prefs">Lease Preferences</a></li>@endif
-            @if($navHasServices)<li><a href="#section-services">Services</a></li>@endif
             @if($navHasContact)<li><a href="#section-contact">Contact</a></li>@endif
         </ul>
     </div>
@@ -882,29 +873,6 @@
     </div>
     @endif
 
-    {{-- ===== REQUESTED AGENT SERVICES ===== --}}
-    @php
-        // Read from the new JSON `services` + `other_services` arrays
-        $svcItems = array_filter($arr('services'), fn($v) => trim((string)$v) !== '');
-        $svcOther = array_filter($arr('other_services'), fn($v) => trim((string)$v) !== '');
-        $hasServices = count($svcItems) > 0 || count($svcOther) > 0;
-    @endphp
-    @if($hasServices)
-    <div class="card section-card" id="section-services">
-        <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Requested Agent Services</div>
-        <div class="card-body">
-            <ul class="mb-0 ps-3">
-                @foreach($svcItems as $svcText)
-                    <li class="mb-1">{{ $svcText }}</li>
-                @endforeach
-                @foreach($svcOther as $svcText)
-                    <li class="mb-1">{{ $svcText }}</li>
-                @endforeach
-            </ul>
-        </div>
-    </div>
-    @endif
-
     {{-- Broker Compensation / Terms section removed: these are Hire-Agent negotiation
          fields (commission_structure, lease_fee_type, purchase_fee_type, referral_percentage, etc.)
          and must not appear on the public Tenant Criteria Offer Listing view. --}}
@@ -1016,10 +984,10 @@
             'agency_agreement_timeframe','agency_agreement_custom',
             'brokerage_relationship','additional_details_broker',
             // --- broker compensation fields (section removed from public view) ---
-            'commission_structure','lease_fee_type','lease_fee_flat','lease_fee_percentage','lease_fee_other',
+            'commission_structure','lease_fee_type','lease_fee_flat_type','lease_fee_flat','lease_fee_percentage','lease_fee_other',
             'lease_fee_percentage_combo','lease_fee_flat_combo',
             'lease_fee_flat_combo_net','lease_fee_percentage_combo_net',
-            'purchase_fee_type','purchase_fee_flat','purchase_fee_percentage','purchase_fee_other',
+            'purchase_fee_type','purchase_fee_flat_type','purchase_fee_flat','purchase_fee_percentage','purchase_fee_other',
             'purchase_fee_percentage_combo','purchase_fee_flat_combo',
             'renewal_fee_type','referral_percentage',
             // --- private / sensitive (never public) ---
