@@ -322,7 +322,40 @@ Commands 3 and 4 must return zero matches. Commands 1 and 2 must report no synta
 
 ---
 
-## 12. Files
+## 12. Summary Field Definitions
+
+### `PropertyMarketingContextService` — `summary` block
+
+| Field | Type | Definition |
+|-------|------|------------|
+| `total_archetype_tags` | `int` | Count of all records in `archetype_tag_explanations` returned by Phase O. Equals the number of tag strings present in `ai_buyer_archetype_tags` on the profile at compute time. |
+| `total_marketing_hooks` | `int` | Count of all records in `marketing_hook_explanations` returned by Phase O. Equals the number of hook records present in `ai_marketing_hooks` on the profile at compute time. |
+| `non_empty_attribute_groups` | `int` | Count of bucket arrays within `attribute_context` (including `unrecognized`) that contain at least one record. Range: 0 – 11 (10 named buckets + `unrecognized`). |
+| `non_empty_transaction_groups` | `int` | Count of bucket arrays within `transaction_context` (including `unrecognized`) that contain at least one record. Range: 0 – 5 (4 named buckets + `unrecognized`). |
+
+**Rules:**
+- All four fields are always present in the `summary` key, even when the profile has no tags.
+- All values are non-negative integers. No floats, percentages, or derived metrics are permitted.
+- `non_empty_attribute_groups` and `non_empty_transaction_groups` count buckets that are non-empty **after** routing; they reflect actual tag coverage across named dimensions.
+
+### `BuyerTenantMarketingContextService` — `summary` block
+
+| Field | Type | Definition |
+|-------|------|------------|
+| `total_lifestyle_tags` | `int` | Count of all records in `lifestyle_tag_explanations` returned by Phase O. Equals the number of tag strings present in `lifestyle_tags` on the profile at compute time. |
+| `total_deal_breaker_flags` | `int` | Count of all records in `deal_breaker_explanations` returned by Phase O. Equals the number of flag records present in `deal_breaker_flags` on the profile at compute time. |
+| `non_empty_preference_groups` | `int` | Count of bucket arrays within `preference_context` (including `unrecognized`) that contain at least one record. Range: 0 – 9 (8 named buckets + `unrecognized`). |
+| `has_hard_requirements` | `bool` | `true` when `requirements_context` contains at least one deal-breaker flag record; `false` otherwise. Derived directly from `total_deal_breaker_flags > 0`. |
+
+**Rules:**
+- All four fields are always present in the `summary` key, even when the profile has no tags or flags.
+- `total_lifestyle_tags`, `total_deal_breaker_flags`, and `non_empty_preference_groups` are non-negative integers.
+- `has_hard_requirements` is a boolean only — never a count, score, or severity signal.
+- No percentages, ratios, weighted signals, or derived scores are permitted in either summary block.
+
+---
+
+## 13. Files
 
 | File | Role |
 |------|------|
