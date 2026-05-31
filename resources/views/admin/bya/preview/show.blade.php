@@ -331,4 +331,121 @@
      ============================================================ --}}
 @include('admin.bya.review._form', ['record' => $record])
 
+{{-- ============================================================
+     SECTION 8: GA Diagnostics Panel (read-only, admin-only)
+     ============================================================ --}}
+@if(isset($diagnostics))
+<div class="card mb-4 border-info">
+    <div class="card-header bg-transparent border-info d-flex align-items-center gap-2">
+        <i class="fa-solid fa-stethoscope text-info"></i>
+        <h6 class="mb-0 text-info">GA Access Diagnostics</h6>
+        <span class="badge badge-secondary ml-auto" style="font-size:.68rem;">Read-only</span>
+    </div>
+    <div class="card-body" style="font-size:.84rem;">
+        <div class="row g-3">
+
+            {{-- Feature flags --}}
+            <div class="col-md-4">
+                <strong class="d-block mb-2 text-uppercase" style="font-size:.7rem;letter-spacing:.06em;color:#888;">Feature Flags</strong>
+                <table class="table table-sm table-bordered mb-0" style="font-size:.8rem;">
+                    <tbody>
+                        <tr>
+                            <td>Consumer Beta Enabled</td>
+                            <td>
+                                @if($diagnostics['consumer_beta_enabled'])
+                                    <span class="badge badge-success">true</span>
+                                @else
+                                    <span class="badge badge-secondary">false</span>
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>GA Enabled</td>
+                            <td>
+                                @if($diagnostics['ga_enabled'])
+                                    <span class="badge badge-success">true</span>
+                                @else
+                                    <span class="badge badge-secondary">false</span>
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Kill Switch</td>
+                            <td>
+                                @if($diagnostics['kill_switch'])
+                                    <span class="badge badge-danger">ACTIVE</span>
+                                @else
+                                    <span class="badge badge-success">off</span>
+                                @endif
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Rollout config --}}
+            <div class="col-md-4">
+                <strong class="d-block mb-2 text-uppercase" style="font-size:.7rem;letter-spacing:.06em;color:#888;">Rollout Config</strong>
+                <table class="table table-sm table-bordered mb-0" style="font-size:.8rem;">
+                    <tbody>
+                        <tr>
+                            <td>Rollout Percentage</td>
+                            <td><code style="font-size:.78rem;">{{ $diagnostics['rollout_percentage'] }}%</code></td>
+                        </tr>
+                        <tr>
+                            <td>Allowlist User Count</td>
+                            <td><code style="font-size:.78rem;">{{ $diagnostics['allowed_user_ids_count'] }}</code></td>
+                        </tr>
+                        <tr>
+                            <td>Report Approved</td>
+                            <td>
+                                @if($diagnostics['report_approved'])
+                                    <span class="badge badge-success">yes</span>
+                                @else
+                                    <span class="badge badge-secondary">no</span>
+                                @endif
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Current admin user GA check --}}
+            <div class="col-md-4">
+                <strong class="d-block mb-2 text-uppercase" style="font-size:.7rem;letter-spacing:.06em;color:#888;">Your GA Access Check</strong>
+                <table class="table table-sm table-bordered mb-0" style="font-size:.8rem;">
+                    <tbody>
+                        <tr>
+                            <td>Would Qualify</td>
+                            <td>
+                                @if($diagnostics['admin_ga_allowed'])
+                                    <span class="badge badge-success">yes</span>
+                                @else
+                                    <span class="badge badge-secondary">no</span>
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Denial Reason</td>
+                            <td>
+                                @if($diagnostics['admin_ga_denial_reason'])
+                                    <code style="font-size:.77rem;color:#c82333;">{{ $diagnostics['admin_ga_denial_reason'] }}</code>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="text-muted mt-2 mb-0" style="font-size:.75rem;">
+                    This check runs the access resolver against your admin account for this report.
+                    Admins are not consumers — this is purely diagnostic.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+@endif
+
 @endsection

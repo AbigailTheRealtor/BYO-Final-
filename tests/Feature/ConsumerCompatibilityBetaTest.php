@@ -108,11 +108,15 @@ class ConsumerCompatibilityBetaTest extends TestCase
     private function enableBeta(): void
     {
         Config::set('bya_consumer_beta.consumer_beta_enabled', true);
+        Config::set('bya_compatibility.kill_switch', false);
+        Config::set('bya_compatibility.ga_enabled', false);
     }
 
     private function disableBeta(): void
     {
         Config::set('bya_consumer_beta.consumer_beta_enabled', false);
+        Config::set('bya_compatibility.ga_enabled', false);
+        Config::set('bya_compatibility.kill_switch', false);
     }
 
     private function logCountFor(int $scoreId): int
@@ -148,7 +152,7 @@ class ConsumerCompatibilityBetaTest extends TestCase
         $log = $this->latestLog($score->id);
         $this->assertNotNull($log);
         $this->assertFalse((bool) $log->allowed);
-        $this->assertSame('feature_flag_disabled', $log->denial_reason);
+        $this->assertSame('feature_disabled', $log->denial_reason);
         $this->assertSame($user->id, $log->user_id);
     }
 

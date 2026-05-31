@@ -6,9 +6,7 @@ use App\Models\ByaReviewLog;
 use App\Models\ListingCompatibilityScore;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Schema;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -99,91 +97,21 @@ class AuthServiceProvider extends ServiceProvider
         /*
          * bya-consumer-beta-access
          *
-         * Single source of truth for the Milestone 14 consumer BYA compatibility beta route.
-         * Accepts the authenticated $user and the ListingCompatibilityScore being requested.
-         * Enforces ALL four eligibility conditions in order:
+         * Delegates entirely to ByaCompatibilityAccessResolver::resolve(), which
+         * enforces the kill switch, feature flag, GA rollout, agent exclusion,
+         * demand-listing ownership, and report-approval conditions in one place.
          *
-         *   1. Feature flag `bya_consumer_beta.consumer_beta_enabled` is true.
-         *   2. User is not an agent (`user_type !== 'agent'`).
-         *   3. Ownership resolver confirms this user owns the demand-side listing.
-         *   4. The ListingCompatibilityScore's latest ByaReviewLog has status
-         *      'approved' or 'approved_with_notes'.
-         *
-         * Returns a named Response::deny() so callers can extract the reason
-         * for audit logging via Gate::inspect().
-         *
-         * The ownership resolver switches on demand_listing_type:
-         *   'buyer'  → BuyerCriteriaAuction
-         *   'tenant' → TenantCriteriaAuction
-         * Any unrecognised type, missing record, or missing user_id → null → denied.
-         * The resolver never infers or falls back to alternative fields.
+         * Returns a named Response::deny() so callers can extract the denial
+         * reason for audit logging via Gate::inspect().
          */
         Gate::define('bya-consumer-beta-access', function ($user, ListingCompatibilityScore $score) {
-            if (!config('bya_consumer_beta.consumer_beta_enabled', false)) {
-                return Response::deny('feature_flag_disabled');
+            $resolver = app(\App\Services\Bya\ByaCompatibilityAccessResolver::class);
+            $result   = $resolver->resolve($user, $score);
+
+            if ($result['allowed']) {
+                return Response::allow();
             }
-
-            if ($user->user_type === 'agent') {
-                return Response::deny('agent_denied');
-            }
-
-            $resolvedUserId = self::resolveConsumerOwnerUserId($score);
-            if ($resolvedUserId === null || $resolvedUserId !== $user->id) {
-                return Response::deny('not_owner');
-            }
-
-            $latestLog = ByaReviewLog::where('listing_compatibility_score_id', $score->id)
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            if (!$latestLog || !in_array($latestLog->status, ['approved', 'approved_with_notes'], true)) {
-                return Response::deny('report_not_approved');
-            }
-
-            return Response::allow();
+            return Response::deny($result['denial_reason']);
         });
-    }
-
-    /**
-     * Resolve the owning user_id for the demand-side listing of a score.
-     *
-     * Switches on demand_listing_type:
-     *   'buyer'  → BuyerCriteriaAuction::find($score->demand_listing_id)?->user_id
-     *   'tenant' → TenantCriteriaAuction::find($score->demand_listing_id)?->user_id
-     *
-     * Returns null immediately for any unrecognised type, missing record, or
-     * missing user_id. Never infers, falls back, or uses probabilistic matching.
-     */
-    private static function resolveConsumerOwnerUserId(ListingCompatibilityScore $score): ?int
-    {
-        $type = $score->demand_listing_type;
-        $id   = $score->demand_listing_id;
-
-        if (!$id) {
-            return null;
-        }
-
-        if ($type === 'buyer') {
-            $row = DB::table('buyer_criteria_auctions')
-                ->select('user_id')
-                ->where('id', $id)
-                ->first();
-            return ($row && $row->user_id) ? (int) $row->user_id : null;
-        }
-
-        if ($type === 'tenant') {
-            // The tenant_criteria_auctions table may not exist in all environments.
-            // Check before querying to avoid aborting the active PostgreSQL transaction.
-            if (!Schema::hasTable('tenant_criteria_auctions')) {
-                return null;
-            }
-            $row = DB::table('tenant_criteria_auctions')
-                ->select('user_id')
-                ->where('id', $id)
-                ->first();
-            return ($row && $row->user_id) ? (int) $row->user_id : null;
-        }
-
-        return null;
     }
 }

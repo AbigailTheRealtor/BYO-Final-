@@ -332,7 +332,7 @@
                                      Shown only to non-agents when the consumer
                                      beta flag is enabled and approved reports exist.
                                 ═══════════════════════════════════════════════ --}}
-                                @if($user->user_type !== 'agent' && config('bya_consumer_beta.consumer_beta_enabled') && isset($consumerBetaScores) && $consumerBetaScores->isNotEmpty())
+                                @if($user->user_type !== 'agent' && !config('bya_compatibility.kill_switch', true) && (config('bya_consumer_beta.consumer_beta_enabled') || config('bya_compatibility.ga_enabled')) && isset($consumerBetaScores) && $consumerBetaScores->isNotEmpty())
                                 <div class="mb-4">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
                                         <div class="small text-uppercase text-muted fw-bold" style="letter-spacing:.06em;font-size:.7rem;">Compatibility Insights</div>

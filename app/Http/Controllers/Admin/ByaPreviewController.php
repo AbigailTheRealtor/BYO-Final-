@@ -125,8 +125,28 @@ class ByaPreviewController extends Controller
 
         $latestReviewStatus = $reviewLogs->last()?->status ?? null;
 
+        // ── GA Diagnostics (read-only, admin-facing) ────────────────────────
+        $allowedIds     = (array) config('bya_compatibility.allowed_user_ids', []);
+        $rolloutPct     = (int)   config('bya_compatibility.rollout_percentage', 0);
+        $reportApproved = in_array($latestReviewStatus, ['approved', 'approved_with_notes'], true);
+
+        $resolver       = app(\App\Services\Bya\ByaCompatibilityAccessResolver::class);
+        $adminUser      = Auth::user();
+        $gaCheckResult  = $resolver->resolveGaOnly($adminUser, $record);
+
+        $diagnostics = [
+            'consumer_beta_enabled'   => config('bya_consumer_beta.consumer_beta_enabled', false),
+            'ga_enabled'              => config('bya_compatibility.ga_enabled', false),
+            'kill_switch'             => config('bya_compatibility.kill_switch', true),
+            'rollout_percentage'      => $rolloutPct,
+            'allowed_user_ids_count'  => count($allowedIds),
+            'report_approved'         => $reportApproved,
+            'admin_ga_allowed'        => $gaCheckResult['allowed'],
+            'admin_ga_denial_reason'  => $gaCheckResult['denial_reason'],
+        ];
+
         return response()
-            ->view('admin.bya.preview.show', compact('record', 'reportV1', 'reviewLogs', 'latestReviewStatus'))
+            ->view('admin.bya.preview.show', compact('record', 'reportV1', 'reviewLogs', 'latestReviewStatus', 'diagnostics'))
             ->header('Cache-Control', 'no-store');
     }
 }

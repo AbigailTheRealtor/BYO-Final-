@@ -194,14 +194,17 @@ class DashboardController extends Controller
             }
         }
 
-        // ── Consumer Beta: approved compatibility report links (non-agents only) ──
-        // Query ListingCompatibilityScore records associated with this user's
-        // demand-side listings (buyer or tenant criteria auctions). For each
-        // score, we verify the latest review log is approved or approved_with_notes
-        // before including it. Feature-flag and agent checks happen in the view
-        // so the collection is always available (empty for agents/flag-off).
+        // ── Consumer Compatibility Report Links (beta + GA paths) ───────────────
+        // Loads approved compatibility reports for this user's demand-side listings.
+        // Filtered through ByaCompatibilityAccessResolver — handles kill switch,
+        // feature flags, ownership, report approval, and GA rollout in one place.
+        // Empty collection for agents, when kill switch is on, or when no reports qualify.
         $page_data['consumerBetaScores'] = collect();
-        if ($user->user_type !== 'agent' && config('bya_consumer_beta.consumer_beta_enabled', false)) {
+        $byaKillSwitch  = config('bya_compatibility.kill_switch', true);
+        $byaBetaEnabled = config('bya_consumer_beta.consumer_beta_enabled', false);
+        $byaGaEnabled   = config('bya_compatibility.ga_enabled', false);
+
+        if ($user->user_type !== 'agent' && !$byaKillSwitch && ($byaBetaEnabled || $byaGaEnabled)) {
             try {
                 $buyerIds = DB::table('buyer_criteria_auctions')
                     ->where('user_id', $uid)
@@ -233,9 +236,15 @@ class DashboardController extends Controller
                     ->keys()
                     ->all();
 
-                $page_data['consumerBetaScores'] = $scores->whereIn('id', $approvedScoreIds)->values();
+                $candidates = $scores->whereIn('id', $approvedScoreIds)->values();
+
+                // Filter through the resolver — handles GA rollout bucket and allowlist.
+                $resolver = app(\App\Services\Bya\ByaCompatibilityAccessResolver::class);
+                $page_data['consumerBetaScores'] = $candidates->filter(function ($cbScore) use ($resolver, $user) {
+                    return $resolver->resolve($user, $cbScore)['allowed'];
+                })->values();
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('Dashboard: could not load consumer beta scores', [
+                \Illuminate\Support\Facades\Log::error('Dashboard: could not load consumer compatibility scores', [
                     'user_id' => $uid,
                     'error'   => $e->getMessage(),
                 ]);
