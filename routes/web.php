@@ -854,6 +854,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
+// Milestone 13 — BYA Hidden Beta (invite-only, not linked from any nav/dashboard/sitemap)
+Route::middleware(['auth', 'bya.beta.access'])->group(function () {
+    Route::get('/bya-beta/compatibility-report/{id}', [\App\Http\Controllers\ByaBetaController::class, 'show'])
+        ->name('bya.beta.compatibility-report');
+});
+
 Route::get('logout', function () {
     Auth::logout();
     return redirect()->to(route('login'));
