@@ -843,6 +843,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Phase S — Marketing Brief Preview (admin-only, read-only)
         Route::get('property-dna/{profile}/marketing-brief-preview', [DnaInspectorController::class, 'marketingBriefPreview'])->name('property-dna.marketing-brief-preview');
 
+        // Phase XL — AI Marketing Report Read View (admin-only, read-only)
+        Route::get('property-dna/marketing-reports/{report}', [\App\Http\Controllers\Admin\AiMarketingReportAdminController::class, 'show'])->name('property-dna.marketing-reports.show');
+
         // Milestone 11 — BYA Internal Admin Preview UI (read-only, admin-only)
         Route::prefix('bya-compatibility-preview')->name('bya.preview.')->group(function () {
             Route::get('/', [ByaPreviewController::class, 'index'])->name('index');
