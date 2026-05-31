@@ -871,6 +871,9 @@ select {
 .-mr-2 {
   margin-right: -0.5rem;
 }
+.mr-1 {
+  margin-right: 0.25rem;
+}
 .block {
   display: block;
 }
@@ -1270,6 +1273,9 @@ select {
 }
 .pb-3 {
   padding-bottom: 0.75rem;
+}
+.pl-2 {
+  padding-left: 0.5rem;
 }
 .text-center {
   text-align: center;
