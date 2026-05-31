@@ -112,7 +112,7 @@ class BuyerOfferListing extends Component
     public $seller_late_fee_amount = '';
 
     // Exchange/Trade Properties
-    public $exchange_item = '';
+    public $exchange_item = [];
     public $other_exchange_item = '';
     public $exchange_item_value = '';
     public $exchange_item_condition = '';
@@ -1928,8 +1928,18 @@ class BuyerOfferListing extends Component
             $this->seller_payment_frequency_other = $auction->get->seller_payment_frequency_other ?? '';
             $this->seller_late_fee_amount = $auction->get->seller_late_fee_amount ?? '';
 
-            // Exchange/Trade
-            $this->exchange_item = $auction->get->exchange_item ?? '';
+            // Exchange/Trade — normalize to array for consistency with BuyerOfferListingEdit.
+            // Create may have persisted a raw string; Edit persists as JSON array.
+            // Both forms share the same blade which handles string or array via is_array() guard.
+            $rawExchangeItem = $auction->get->exchange_item ?? null;
+            if (is_string($rawExchangeItem)) {
+                $decoded = json_decode($rawExchangeItem, true);
+                $this->exchange_item = is_array($decoded) ? $decoded : ($rawExchangeItem !== '' ? [$rawExchangeItem] : []);
+            } elseif (is_array($rawExchangeItem)) {
+                $this->exchange_item = $rawExchangeItem;
+            } else {
+                $this->exchange_item = [];
+            }
             $this->other_exchange_item = $auction->get->other_exchange_item ?? '';
             $this->exchange_item_value = $auction->get->exchange_item_value ?? '';
             $this->exchange_item_condition = $auction->get->exchange_item_condition ?? '';

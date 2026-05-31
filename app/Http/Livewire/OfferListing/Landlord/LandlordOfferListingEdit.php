@@ -29,7 +29,7 @@ class LandlordOfferListingEdit extends Component
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
-    public $user_type = 'buyer'; // Default to tenant or whatever makes sense
+    public $user_type = 'landlord'; // Default user_type for Landlord Offer Listing
     public $auction_type = '';
     public $listing_title = '';
     public $working_with_agent = '';

@@ -111,11 +111,21 @@ class LandlordOfferListingController extends Controller
             ->whereDoesntHave('meta', function ($m) {
                 $m->where('meta_key', 'workflow_type')->where('meta_value', 'hire_agent');
             })
-            // Primary: workflow_type = offer_listing (strict — no meta-key fallback available
-            // because HireLandLordAgent/LandLordAgentAuction Livewire writes identical meta keys
-            // to LandlordOfferListing, making any key-presence check ambiguous for legacy records)
-            ->whereHas('meta', function ($m) {
-                $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing');
+            // Include stamped offer_listing records (primary path) OR unstamped legacy records
+            // that pre-date the workflow_type stamp but carry Offer-Listing-exclusive meta keys.
+            // The whereDoesntHave(hire_agent) guard above blocks all explicitly stamped
+            // hire_agent records, so the fallback path is safe for truly unstamped listings.
+            ->where(function ($q) {
+                $q->whereHas('meta', function ($m) {
+                    $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing');
+                })->orWhere(function ($q2) {
+                    // Legacy path: no workflow_type row at all + at least one Offer-Listing-exclusive key
+                    $q2->whereDoesntHave('meta', function ($m) {
+                        $m->where('meta_key', 'workflow_type');
+                    })->whereHas('meta', function ($m) {
+                        $m->whereIn('meta_key', self::OFFER_LISTING_META_KEYS);
+                    });
+                });
             });
 
         if (!empty($request->title)) {
