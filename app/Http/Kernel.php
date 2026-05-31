@@ -77,6 +77,7 @@ class Kernel extends HttpKernel
         'ensureAgent'          => \App\Http\Middleware\EnsureAgent::class,
         'offerPlayoffAccess'   => \App\Http\Middleware\EnsureOfferPlayoffAccess::class,
         'bya.beta.access'      => \App\Http\Middleware\ByaBetaAccessMiddleware::class,
+        'bya.consumer.beta.access' => \App\Http\Middleware\ByaConsumerBetaAccessMiddleware::class,
         'landlordAuth' => \App\Http\Middleware\LandlordAuth::class,
         'tenantAuth' => \App\Http\Middleware\TenantAuth::class,
     ];

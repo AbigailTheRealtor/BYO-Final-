@@ -327,6 +327,41 @@
                                     @endif
                                 </div>
 
+                                {{-- ═══════════════════════════════════════════════
+                                     CONSUMER BETA: COMPATIBILITY REPORT LINKS
+                                     Shown only to non-agents when the consumer
+                                     beta flag is enabled and approved reports exist.
+                                ═══════════════════════════════════════════════ --}}
+                                @if($user->user_type !== 'agent' && config('bya_consumer_beta.consumer_beta_enabled') && isset($consumerBetaScores) && $consumerBetaScores->isNotEmpty())
+                                <div class="mb-4">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="small text-uppercase text-muted fw-bold" style="letter-spacing:.06em;font-size:.7rem;">Compatibility Insights</div>
+                                        @if($consumerBetaScores->count() > 1)
+                                            <span class="badge bg-secondary" style="font-size:.68rem;">{{ $consumerBetaScores->count() }} report{{ $consumerBetaScores->count() != 1 ? 's' : '' }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="d-flex flex-column gap-2">
+                                        @foreach($consumerBetaScores as $cbScore)
+                                        <div class="card border-0 rounded-3 overflow-hidden" style="border-left:3px solid #049399 !important;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                                            <div class="card-body py-3 px-3 d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                                                <div style="font-size:.85rem;color:#555;">
+                                                    <span class="fw-semibold" style="color:#1a2333;">Compatibility Report</span>
+                                                    <span class="ms-2 text-muted" style="font-size:.78rem;">
+                                                        {{ ucfirst($cbScore->demand_listing_type) }} Listing #{{ $cbScore->demand_listing_id }}
+                                                    </span>
+                                                </div>
+                                                <a href="{{ route('bya.consumer.beta.compatibility-report', $cbScore->id) }}"
+                                                   class="btn btn-sm"
+                                                   style="background:#049399;color:#fff;font-size:.75rem;white-space:nowrap;">
+                                                    View Report &rarr;
+                                                </a>
+                                            </div>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endif
+
                                 @else
                                 {{-- ═══════════════════════════════════════════════
                                      AGENT: HIRE AGENT FRAMEWORK DASHBOARD

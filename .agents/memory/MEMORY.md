@@ -1,2 +1,4 @@
 - [Phase D year_built collision resolution](phase-d-year-built-collision.md) — year_built was pre-existing in both Landlord components before Phase D; skipped per stop-and-report rule.
 - [Bidding Period countdown source](bidding-period-countdown.md) — expiration_date is platform source of truth; fallback to created_at+auction_time for legacy records.
+- [PostgreSQL Gate resolver — raw DB over Eloquent](postgres-gate-resolver.md) — use DB::table() not Eloquent models in Gate callbacks; Eloquent eager-load ($with) aborts the PG transaction on any query error, poisoning subsequent writes even inside try/catch.
+- [tenant_criteria_auctions missing table guard](postgres-gate-resolver.md) — Schema::hasTable() check required before querying tenant_criteria_auctions; table absent in this environment; two tests skipped until table is created.

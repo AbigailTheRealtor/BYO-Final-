@@ -6,8 +6,11 @@ use App\Models\AgentService;
 use App\Models\AgentServiceAuctionBid;
 use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
+use App\Models\BuyerCriteriaAuction;
 use App\Models\BuyerCriteriaAuctionBid;
+use App\Models\ByaReviewLog;
 use App\Models\City;
+use App\Models\ListingCompatibilityScore;
 use App\Models\Country;
 use App\Models\County;
 use App\Models\LandlordAgentAuction;
@@ -188,6 +191,54 @@ class DashboardController extends Controller
                     ->sum('partner_referral_amount');
             } catch (\Throwable $e) {
                 $page_data['pendingReferralEarnings'] = null;
+            }
+        }
+
+        // ── Consumer Beta: approved compatibility report links (non-agents only) ──
+        // Query ListingCompatibilityScore records associated with this user's
+        // demand-side listings (buyer or tenant criteria auctions). For each
+        // score, we verify the latest review log is approved or approved_with_notes
+        // before including it. Feature-flag and agent checks happen in the view
+        // so the collection is always available (empty for agents/flag-off).
+        $page_data['consumerBetaScores'] = collect();
+        if ($user->user_type !== 'agent' && config('bya_consumer_beta.consumer_beta_enabled', false)) {
+            try {
+                $buyerIds = DB::table('buyer_criteria_auctions')
+                    ->where('user_id', $uid)
+                    ->pluck('id');
+
+                // tenant_criteria_auctions may not exist in all environments.
+                $tenantIds = \Illuminate\Support\Facades\Schema::hasTable('tenant_criteria_auctions')
+                    ? DB::table('tenant_criteria_auctions')->where('user_id', $uid)->pluck('id')
+                    : collect();
+
+                $scores = ListingCompatibilityScore::where(function ($q) use ($buyerIds, $tenantIds) {
+                    $q->where(function ($q2) use ($buyerIds) {
+                        $q2->where('demand_listing_type', 'buyer')
+                           ->whereIn('demand_listing_id', $buyerIds);
+                    })->orWhere(function ($q2) use ($tenantIds) {
+                        $q2->where('demand_listing_type', 'tenant')
+                           ->whereIn('demand_listing_id', $tenantIds);
+                    });
+                })->get(['id', 'demand_listing_type', 'demand_listing_id']);
+
+                $approvedScoreIds = ByaReviewLog::whereIn('listing_compatibility_score_id', $scores->pluck('id'))
+                    ->orderBy('created_at', 'desc')
+                    ->get(['listing_compatibility_score_id', 'status'])
+                    ->groupBy('listing_compatibility_score_id')
+                    ->filter(function ($logs) {
+                        $latest = $logs->first();
+                        return $latest && in_array($latest->status, ['approved', 'approved_with_notes'], true);
+                    })
+                    ->keys()
+                    ->all();
+
+                $page_data['consumerBetaScores'] = $scores->whereIn('id', $approvedScoreIds)->values();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Dashboard: could not load consumer beta scores', [
+                    'user_id' => $uid,
+                    'error'   => $e->getMessage(),
+                ]);
             }
         }
 

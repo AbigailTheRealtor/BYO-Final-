@@ -860,6 +860,12 @@ Route::middleware(['auth', 'bya.beta.access'])->group(function () {
         ->name('bya.beta.compatibility-report');
 });
 
+// Milestone 14 — BYA Consumer Beta (consumer-facing, gated by ownership + approval)
+Route::middleware(['auth', 'bya.consumer.beta.access'])->group(function () {
+    Route::get('/consumer/compatibility-report/{id}', [\App\Http\Controllers\ConsumerCompatibilityReportController::class, 'show'])
+        ->name('bya.consumer.beta.compatibility-report');
+});
+
 Route::get('logout', function () {
     Auth::logout();
     return redirect()->to(route('login'));
