@@ -415,6 +415,15 @@
             || $str('minimum_annual_net_income') || $str('minimum_cap_rate')
             || count($arr('number_of_unit_type')) || $str('number_of_unit') || $str('property_criteria');
 
+        $hasPurchaseTermsContent = $str('earnest_money_amount') || $str('earnest_money_timing')
+            || $str('due_diligence_yn') || $str('inspection_contingency_buyer')
+            || $str('appraisal_contingency_buyer') || $str('financing_contingency_buyer')
+            || $str('home_sale_contingency') || $str('seller_contribution')
+            || $str('possession_preference') || $str('home_warranty_requested')
+            || $str('as_is_purchase') || $str('property_inclusions')
+            || $str('property_exclusions') || $str('closing_cost_responsibility')
+            || $str('additional_purchase_terms');
+
         $contactName = trim(($str('first_name') . ' ' . $str('last_name')));
         $hasContact  = $contactName || $str('email') || $str('phone_number')
             || $str('agent_brokerage') || $str('agent_license_number') || $str('agent_nar_member_id');
@@ -426,6 +435,7 @@
             <li><a href="#section-overview">Overview</a></li>
             @if($hasCriteriaContent)<li><a href="#section-criteria">Purchase Criteria</a></li>@endif
             @if($hasFinancingContent)<li><a href="#section-financing">Financing</a></li>@endif
+            @if($hasPurchaseTermsContent)<li><a href="#section-purchase-terms">Purchase Terms</a></li>@endif
             @if($hasFeaturesContent)<li><a href="#section-features">Property Features</a></li>@endif
             @if($hasContact)<li><a href="#section-contact">Contact</a></li>@endif
         </ul>
@@ -840,6 +850,133 @@
     </div>
 
     @endif {{-- /hasFeaturesContent --}}
+
+    {{-- Additional Purchase Terms --}}
+    @if($hasPurchaseTermsContent)
+    <div class="card section-card" id="section-purchase-terms">
+        <div class="card-header"><i class="fa-solid fa-file-signature me-2"></i>Additional Purchase Terms</div>
+        <div class="card-body">
+
+            {{-- Earnest Money --}}
+            @php
+                $_emType = $str('earnest_money_type');
+                $_emAmt  = $str('earnest_money_amount');
+                $_emFmt  = null;
+                if ($_emAmt !== '') {
+                    $_emFmt = ($_emType === '%') ? $fmtPercent($_emAmt) : $fmtMoney($_emAmt);
+                }
+            @endphp
+            @if($_emFmt || $str('earnest_money_timing'))
+            <h6 class="fw-semibold mb-2">Earnest Money / EMD</h6>
+            <div class="row">
+                <div class="col-md-6">{!! $row('EMD Amount', $_emFmt) !!}</div>
+                <div class="col-md-6">{!! $row('EMD Timing', $str('earnest_money_timing')) !!}</div>
+            </div>
+            <hr>
+            @endif
+
+            {{-- Inspections & Contingencies --}}
+            <h6 class="fw-semibold mb-2">Inspections & Contingencies</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Due Diligence / Inspection Period', $str('due_diligence_yn')) !!}
+                    @if($str('due_diligence_yn') === 'Yes')
+                        {!! $row('Inspection Period Duration', $str('inspection_period_days') === 'Other' ? ($str('inspection_period_other') ?: 'Other') : $str('inspection_period_days')) !!}
+                    @endif
+                    {!! $row('Inspection Contingency', $str('inspection_contingency_buyer')) !!}
+                    {!! $row('Appraisal Contingency', $str('appraisal_contingency_buyer')) !!}
+                    @if($str('appraisal_contingency_buyer') === 'Yes' && $str('appraisal_contingency_days') !== '')
+                        {!! $row('Appraisal Contingency Period', $str('appraisal_contingency_days') . ' days') !!}
+                    @endif
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Financing Contingency', $str('financing_contingency_buyer')) !!}
+                    @if($str('financing_contingency_buyer') === 'Yes' && $str('financing_contingency_period') !== '')
+                        {!! $row('Financing Contingency Period', $str('financing_contingency_period') . ' days') !!}
+                    @endif
+                </div>
+            </div>
+
+            {{-- Home Sale Contingency --}}
+            @if($str('home_sale_contingency') !== '')
+            <hr>
+            @if($str('home_sale_contingency') === 'Yes')
+            <h6 class="fw-semibold mb-2">Home Sale Contingency</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Home Sale Contingency', $str('home_sale_contingency')) !!}
+                    {!! $row('Property Address', $str('home_sale_contingency_address')) !!}
+                    {!! $row('Target Date', $fmtDate($str('home_sale_contingency_date'))) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Under Contract', $str('home_sale_contingency_under_contract')) !!}
+                    {!! $row('Details', $str('home_sale_contingency_details')) !!}
+                </div>
+            </div>
+            @else
+            <div class="row">
+                <div class="col-md-6">{!! $row('Home Sale Contingency', $str('home_sale_contingency')) !!}</div>
+            </div>
+            @endif
+            @endif
+
+            {{-- Possession & Closing --}}
+            @php
+                $_hasPossClosing = $str('seller_contribution') || $str('possession_preference') || $str('closing_cost_responsibility');
+            @endphp
+            @if($_hasPossClosing)
+            <hr>
+            <h6 class="fw-semibold mb-2">Possession & Closing</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Seller Contribution', $str('seller_contribution')) !!}
+                    @if($str('seller_contribution') !== '' && $str('seller_contribution') !== 'None')
+                        {!! $row('Seller Contribution Details', $str('seller_contribution_details')) !!}
+                    @endif
+                    {!! $row('Possession Preference', $str('possession_preference') === 'Other' ? ($str('possession_preference_other') ?: $str('possession_preference')) : $str('possession_preference')) !!}
+                    @if($str('possession_preference') !== '' && $str('possession_preference') !== 'At Closing' && $str('possession_preference') !== 'Other')
+                        {!! $row('Possession Details', $str('possession_details')) !!}
+                    @endif
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Closing Cost Responsibility', $str('closing_cost_responsibility')) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Property & Warranty --}}
+            @php
+                $_hasPropWarranty = $str('home_warranty_requested') || $str('as_is_purchase') || $str('property_inclusions') || $str('property_exclusions');
+            @endphp
+            @if($_hasPropWarranty)
+            <hr>
+            <h6 class="fw-semibold mb-2">Property & Warranty</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Home Warranty Requested', $str('home_warranty_requested')) !!}
+                    @if($str('home_warranty_requested') !== '' && $str('home_warranty_requested') !== 'No')
+                        {!! $row('Home Warranty Details', $str('home_warranty_details')) !!}
+                    @endif
+                    {!! $row('As-Is Purchase', $str('as_is_purchase')) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Property Inclusions', $str('property_inclusions')) !!}
+                    {!! $row('Property Exclusions', $str('property_exclusions')) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Additional Notes --}}
+            @if($str('additional_purchase_terms'))
+            <hr>
+            <div class="row">
+                <div class="col-md-12">{!! $row('Additional Purchase Terms', $str('additional_purchase_terms')) !!}</div>
+            </div>
+            @endif
+
+        </div>
+    </div>
+    @endif {{-- /hasPurchaseTermsContent --}}
 
     {{-- Broker Compensation & Agency Agreement Terms --}}
     @php

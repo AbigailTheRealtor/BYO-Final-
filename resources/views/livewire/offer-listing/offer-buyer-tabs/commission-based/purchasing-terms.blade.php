@@ -1699,6 +1699,25 @@
 @endif
 @endif
 
+<!-- 4. Inspection Contingency -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Inspection Contingency:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Buyer's offer will include an inspection contingency, allowing them to negotiate repairs or exit the contract based on inspection findings.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="inspection_contingency_buyer" class="form-control has-icon"
+            data-icon="fa-solid fa-file-signature">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Waived">Waived</option>
+        </select>
+    </div>
+</div>
+
 <!-- 5. Appraisal Contingency -->
 <div class="form-group mt-3">
     <label class="fw-bold">Appraisal Contingency:
