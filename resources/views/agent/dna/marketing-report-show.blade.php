@@ -13,6 +13,31 @@
 </div>
 
 {{-- ================================================================
+     FLASH MESSAGES
+     ================================================================ --}}
+@if(session('success'))
+    <div class="alert alert-success mb-4" role="alert">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger mb-4" role="alert">
+        {{ session('error') }}
+    </div>
+@endif
+
+@if($errors->any())
+    <div class="alert alert-danger mb-4" role="alert">
+        <ul class="mb-0">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+{{-- ================================================================
      SECTION 1: Report Summary
      ================================================================ --}}
 <div class="card mb-4">
@@ -114,22 +139,76 @@
 </div>
 
 {{-- ================================================================
-     SECTION 4: Report Sections
+     SECTION 4: Report Sections (Editable + Read-Only)
      ================================================================ --}}
+@php
+    $sectionsDecoded = $record ? json_decode($record->sections, true) : [];
+    $sectionsDecoded = is_array($sectionsDecoded) ? $sectionsDecoded : [];
+
+    $editableSections = [
+        'property_feature_narrative'  => 'Property Feature Narrative',
+        'transaction_terms_summary'   => 'Transaction Terms Summary',
+        'marketing_asset_statement'   => 'Marketing Asset Statement',
+        'listing_preparation_summary' => 'Listing Preparation Summary',
+    ];
+@endphp
+
 <div class="card mb-4">
     <div class="card-header bg-light">
         <h5 class="mb-0 fw-semibold">4. Report Sections</h5>
-        <div class="text-muted small"><code>sections</code> &mdash; JSONB field containing all five AI-generated content sections</div>
+        <div class="text-muted small">Four editable sections (agent may submit revisions) + one read-only section (<code>missing_information_note</code>)</div>
     </div>
-    <div class="card-body p-0">
+    <div class="card-body">
+
+        {{-- 4a. Four editable sections --}}
+        @foreach($editableSections as $sectionKey => $sectionLabel)
+            @php
+                $sectionData    = $sectionsDecoded[$sectionKey] ?? [];
+                $currentText    = is_array($sectionData) ? ($sectionData['draft_text'] ?? '') : (string) $sectionData;
+                $updateRoute    = route('agent.property-dna.marketing-reports.sections.update', [
+                    'report'  => $record->id,
+                    'section' => $sectionKey,
+                ]);
+            @endphp
+            <div class="mb-4 border rounded p-3">
+                <h6 class="fw-semibold mb-1">
+                    <code>{{ $sectionKey }}</code> &mdash; {{ $sectionLabel }}
+                </h6>
+                <p class="text-muted small mb-2">Submit a revision to update this section's draft text. A new version row will be recorded.</p>
+                <form method="POST" action="{{ $updateRoute }}">
+                    @csrf
+                    <div class="mb-2">
+                        <textarea
+                            name="draft_text"
+                            class="form-control"
+                            rows="8"
+                            maxlength="10000"
+                            aria-label="{{ $sectionLabel }} draft text"
+                        >{{ old('draft_text', $currentText) }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Revision</button>
+                </form>
+            </div>
+        @endforeach
+
+        {{-- 4b. missing_information_note — read-only --}}
         @php
-            $sectionsDecoded = $record ? json_decode($record->sections, true) : null;
+            $missingData = $sectionsDecoded['missing_information_note'] ?? [];
+            $missingText = is_array($missingData) ? ($missingData['draft_text'] ?? '') : (string) $missingData;
         @endphp
-        @if(empty($sectionsDecoded))
-            <p class="text-muted p-3 mb-0"><em>No data available.</em></p>
-        @else
-            <pre class="p-3 mb-0" style="font-size:.82rem;white-space:pre-wrap;word-break:break-word;">{{ json_encode($sectionsDecoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</pre>
-        @endif
+        <div class="mb-2 border rounded p-3 bg-light">
+            <h6 class="fw-semibold mb-1">
+                <code>missing_information_note</code> &mdash; Missing Information Note
+                <span class="badge bg-secondary ms-1" style="font-size:.7rem;">Read-only</span>
+            </h6>
+            <p class="text-muted small mb-2">This section is informational only and cannot be revised.</p>
+            @if(blank($missingText))
+                <p class="text-muted mb-0"><em>No data available.</em></p>
+            @else
+                <pre class="mb-0" style="font-size:.82rem;white-space:pre-wrap;word-break:break-word;">{{ $missingText }}</pre>
+            @endif
+        </div>
+
     </div>
 </div>
 
