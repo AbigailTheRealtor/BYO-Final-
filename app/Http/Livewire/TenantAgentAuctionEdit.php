@@ -3321,7 +3321,14 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('listing_date', $this->listing_date);
             $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);
             $auction->saveMeta('expiration_date', $this->expiration_date);
-            // LOCKED: auction_time (timer settings) cannot be changed after listing creation
+            // LOCKED — auction_time: the bidding-period timer is immutable after listing
+            // creation.  The countdown starts the moment the listing is first saved and is
+            // already running for any agents who have seen it.  Editing the timer length
+            // post-creation would silently extend or shorten an active bidding window,
+            // invalidating bids submitted under the original terms and breaking the countdown
+            // shown on public listing and search pages.  Mirrors the same immutability applied
+            // to auction_type and working_with_agent above.  The value is still read from DB
+            // on every edit-page load (~line 2511) so users can see the original setting.
             // $auction->saveMeta('auction_time', $this->auction_time);
             $auction->saveMeta('agent_bid_visibility', $this->agent_bid_visibility);
             $auction->saveMeta('meeting_Preference', $this->meeting_Preference);

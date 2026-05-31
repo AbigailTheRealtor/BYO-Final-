@@ -340,7 +340,14 @@
                                         </svg>
                                     </div>
                                     <div class="col-6 right text-end">
-                                        <b>{{ @$auction->get->buyer_budget }}</b>
+                                        @php
+                                            $_bb = preg_replace('/[^0-9.]/', '', (string)(@$auction->get->buyer_budget ?? ''));
+                                        @endphp
+                                        @if($_bb !== '' && is_numeric($_bb))
+                                            <b>${{ number_format((float)$_bb, 0) }}</b>
+                                        @elseif(!empty(@$auction->get->buyer_budget))
+                                            <b>{{ @$auction->get->buyer_budget }}</b>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
