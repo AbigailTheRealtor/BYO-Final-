@@ -292,83 +292,43 @@
 </div>
 
 {{-- ============================================================
-     Fair Housing Review Checklist (display only — no form)
+     SECTION 5: Current Review Status Banner
      ============================================================ --}}
-<div class="card mb-4 border-warning">
-    <div class="card-header bg-warning text-dark d-flex align-items-center gap-2">
-        <i class="fa-solid fa-scale-balanced"></i>
-        <h6 class="mb-0">Fair Housing Review Checklist</h6>
-        <span class="badge badge-dark ms-auto" style="font-size:.7rem;">Display Only — No Workflow</span>
+@php
+    $statusBannerMap = [
+        'pending_review'      => ['class' => 'alert-secondary',  'icon' => 'fa-clock',          'label' => 'Pending Review'],
+        'in_review'           => ['class' => 'alert-info',       'icon' => 'fa-magnifying-glass','label' => 'In Review'],
+        'approved'            => ['class' => 'alert-success',    'icon' => 'fa-circle-check',   'label' => 'Approved'],
+        'approved_with_notes' => ['class' => 'alert-primary',    'icon' => 'fa-circle-check',   'label' => 'Approved with Notes'],
+        'flagged'             => ['class' => 'alert-warning',    'icon' => 'fa-flag',            'label' => 'Flagged'],
+        'rejected'            => ['class' => 'alert-danger',     'icon' => 'fa-ban',             'label' => 'Rejected'],
+    ];
+    $statusBanner = $latestReviewStatus ? ($statusBannerMap[$latestReviewStatus] ?? null) : null;
+@endphp
+
+<div class="mb-4">
+    @if($statusBanner)
+    <div class="alert {{ $statusBanner['class'] }} d-flex align-items-center gap-2 mb-0" role="alert">
+        <i class="fa-solid {{ $statusBanner['icon'] }}"></i>
+        <span><strong>Current Review Status:</strong> {{ $statusBanner['label'] }}</span>
+        <span class="ml-auto text-muted small">Based on most recent review entry</span>
     </div>
-    <div class="card-body" style="font-size:.85rem;">
-        <p class="text-muted mb-3" style="font-size:.82rem;">
-            The following checklist is for internal reference only. It does not constitute legal review, compliance approval,
-            or a workflow gate. No checkbox state is saved or transmitted.
-        </p>
-        <ul class="list-unstyled mb-0">
-            <li class="d-flex align-items-start gap-2 mb-3">
-                <input type="checkbox" disabled class="mt-1" style="width:1rem;height:1rem;flex-shrink:0;">
-                <div>
-                    <strong>Protected-class references</strong><br>
-                    <span class="text-muted" style="font-size:.8rem;">
-                        Confirm no dimension name, explanation key, template ID, or sentence text references a
-                        protected class (race, color, national origin, religion, sex, familial status, disability,
-                        or any state-level addition).
-                    </span>
-                </div>
-            </li>
-            <li class="d-flex align-items-start gap-2 mb-3">
-                <input type="checkbox" disabled class="mt-1" style="width:1rem;height:1rem;flex-shrink:0;">
-                <div>
-                    <strong>Proxy characteristics</strong><br>
-                    <span class="text-muted" style="font-size:.8rem;">
-                        Confirm no dimension or output field serves as a proxy for a protected characteristic
-                        (e.g., neighborhood name, school district, zip code used as a demographic signal).
-                    </span>
-                </div>
-            </li>
-            <li class="d-flex align-items-start gap-2 mb-3">
-                <input type="checkbox" disabled class="mt-1" style="width:1rem;height:1rem;flex-shrink:0;">
-                <div>
-                    <strong>Steering language</strong><br>
-                    <span class="text-muted" style="font-size:.8rem;">
-                        Confirm no sentence or summary text steers a consumer toward or away from a property, area,
-                        or listing based on characteristics of the neighborhood or its residents.
-                    </span>
-                </div>
-            </li>
-            <li class="d-flex align-items-start gap-2 mb-3">
-                <input type="checkbox" disabled class="mt-1" style="width:1rem;height:1rem;flex-shrink:0;">
-                <div>
-                    <strong>Recommendation language</strong><br>
-                    <span class="text-muted" style="font-size:.8rem;">
-                        Confirm the report contains no language that constitutes a recommendation, suggestion,
-                        or endorsement of a listing to a consumer or agent. Output must remain neutral and descriptive.
-                    </span>
-                </div>
-            </li>
-            <li class="d-flex align-items-start gap-2 mb-3">
-                <input type="checkbox" disabled class="mt-1" style="width:1rem;height:1rem;flex-shrink:0;">
-                <div>
-                    <strong>Ranking language</strong><br>
-                    <span class="text-muted" style="font-size:.8rem;">
-                        Confirm the report does not rank, order, or score listings in a way that could be construed
-                        as preference or qualification assessment for a consumer or protected class.
-                    </span>
-                </div>
-            </li>
-            <li class="d-flex align-items-start gap-2 mb-3">
-                <input type="checkbox" disabled class="mt-1" style="width:1rem;height:1rem;flex-shrink:0;">
-                <div>
-                    <strong>Suitability language</strong><br>
-                    <span class="text-muted" style="font-size:.8rem;">
-                        Confirm no sentence or field implies that a listing is or is not "suitable," "appropriate,"
-                        or "right" for a specific type of buyer, tenant, or household composition.
-                    </span>
-                </div>
-            </li>
-        </ul>
+    @else
+    <div class="alert alert-light border d-flex align-items-center gap-2 mb-0" role="alert">
+        <i class="fa-solid fa-circle-question text-muted"></i>
+        <span class="text-muted"><strong>Current Review Status:</strong> No review entries yet</span>
     </div>
+    @endif
 </div>
+
+{{-- ============================================================
+     SECTION 6: Review History
+     ============================================================ --}}
+@include('admin.bya.review._history', ['reviewLogs' => $reviewLogs])
+
+{{-- ============================================================
+     SECTION 7: Submit New Review Entry
+     ============================================================ --}}
+@include('admin.bya.review._form', ['record' => $record])
 
 @endsection

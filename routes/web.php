@@ -848,6 +848,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [ByaPreviewController::class, 'index'])->name('index');
             Route::get('{id}', [ByaPreviewController::class, 'show'])->name('show');
         });
+
+        // Milestone 12 — BYA Legal & Fair Housing Review Workflow (append-only, admin-only)
+        Route::post('bya-review/{id}', [\App\Http\Controllers\Admin\ByaReviewController::class, 'store'])->name('bya.review.store');
     });
 });
 

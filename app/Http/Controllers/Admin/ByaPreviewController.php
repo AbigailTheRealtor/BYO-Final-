@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ByaReviewLog;
 use App\Models\ListingCompatibilityScore;
 use App\Services\Dna\Compatibility\ByaCompatibilityAlignmentService;
 use App\Services\Dna\Compatibility\ByaCompatibilityExplanationService;
@@ -117,8 +118,15 @@ class ByaPreviewController extends Controller
         $narrativeV1 = $this->narrativeService->generate($explainV1, $alignV1);
         $reportV1    = $this->reportService->generate($alignV1, $explainV1, $narrativeV1);
 
+        $reviewLogs = ByaReviewLog::where('listing_compatibility_score_id', $record->id)
+            ->with('reviewer')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $latestReviewStatus = $reviewLogs->last()?->status ?? null;
+
         return response()
-            ->view('admin.bya.preview.show', compact('record', 'reportV1'))
+            ->view('admin.bya.preview.show', compact('record', 'reportV1', 'reviewLogs', 'latestReviewStatus'))
             ->header('Cache-Control', 'no-store');
     }
 }
