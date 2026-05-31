@@ -568,8 +568,7 @@ class SellerAcceptedBidSummaryService
             $referralFeeVal = trim((string) (data_get($listing->get, 'referral_percentage', '')));
         }
         $hasReferralFee   = $referralFeeVal !== '';
-        $cooperationTerms = trim((string) ($sourceData['additional_details_broker'] ?? ''));
-        $hasReferralSection = $isAgentCreated && ($hasReferralFee || $cooperationTerms !== '');
+        $hasReferralSection = $isAgentCreated && $hasReferralFee;
         $referralFeeSectionHtml = '';
         if ($hasReferralSection) {
             $rows = '';
@@ -578,12 +577,6 @@ class SellerAcceptedBidSummaryService
                 $rows .= '<tr>'
                     . '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">Referral Fee (%)</td>'
                     . '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($displayVal) . '</td>'
-                    . '</tr>';
-            }
-            if ($cooperationTerms !== '') {
-                $rows .= '<tr>'
-                    . '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">Cooperation Terms</td>'
-                    . '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($cooperationTerms) . '</td>'
                     . '</tr>';
             }
             $referralFeeSectionHtml = '<div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">'
@@ -752,82 +745,6 @@ class SellerAcceptedBidSummaryService
             }
             $rows .= $row("Buyer's Broker Compensation", $buyerBrokerFee);
         }
-
-        // C) Seller's Purchase Commission
-        $purchaseFeeType = (string) ($g('purchase_fee_type') ?? '');
-        if (!empty($purchaseFeeType)) {
-            $purchaseFeeDisplay = $this->resolvePurchaseFeeDisplay($data, $purchaseFeeType);
-            if ($purchaseFeeDisplay) {
-                $rows .= $row("Seller's Purchase Commission", $purchaseFeeDisplay);
-            }
-        }
-
-        // D) Leasing Fee (if interested in leasing)
-        $interestedLeasing = $g('interested_purchase_fee_type');
-        if (!empty($interestedLeasing)) {
-            $rows .= $row('Interested in Offering a Lease Fee', $yesNo($interestedLeasing));
-            if (strtolower((string) $interestedLeasing) === 'yes') {
-                $leasingFeeDisplay = $this->resolveSellerLeasingFeeDisplay($data);
-                $rows .= $row("Seller's Broker Leasing Fee", $leasingFeeDisplay);
-            }
-        }
-
-        // E) Lease-Option Terms
-        $interestedLeaseOption = $g('interested_lease_option_agreement');
-        if (!empty($interestedLeaseOption)) {
-            $rows .= $row('Interested in Offering a Lease-Option Agreement', $yesNo($interestedLeaseOption));
-            if (strtolower((string) $interestedLeaseOption) === 'yes') {
-                $leaseOptionDisplay = $this->resolveLeaseOptionCompDisplay($data, 'lease');
-                $rows .= $row('Compensation for Creating the Lease-Option Agreement', $leaseOptionDisplay);
-                $purchaseOptionDisplay = $this->resolveLeaseOptionCompDisplay($data, 'purchase');
-                $rows .= $row('Compensation if Purchase Option is Exercised', $purchaseOptionDisplay);
-            }
-        }
-
-        // F) Legal Terms
-        $protectionPeriod = $g('protection_period');
-        if (!empty($protectionPeriod)) {
-            $rows .= $row('Protection Period Timeframe', $protectionPeriod . ' Days');
-        }
-
-        $agencyTimeframe = (string) ($g('agency_agreement_timeframe') ?? '');
-        if (!empty($agencyTimeframe)) {
-            if (strtolower($agencyTimeframe) === 'other') {
-                $agencyTimeframe = (string) ($g('agency_agreement_custom') ?? $agencyTimeframe);
-            }
-            $rows .= $row('Seller Agency Agreement Timeframe', $agencyTimeframe);
-        }
-
-        $earlyTermination = $g('early_termination_fee_option');
-        if (!empty($earlyTermination)) {
-            $rows .= $row('Early Termination Fee', $yesNo($earlyTermination));
-            if (strtolower((string) $earlyTermination) === 'yes' && $g('early_termination_fee_amount')) {
-                $rows .= $row('Early Termination Fee Amount', $money($g('early_termination_fee_amount')));
-            }
-        }
-
-        $retainerFee = $g('retainer_fee_option');
-        if (!empty($retainerFee)) {
-            $rows .= $row('Retainer Fee', $yesNo($retainerFee));
-            if (strtolower((string) $retainerFee) === 'yes') {
-                if ($g('retainer_fee_amount')) {
-                    $rows .= $row('Retainer Fee Amount', $money($g('retainer_fee_amount')));
-                }
-                if (!empty($g('retainer_fee_application'))) {
-                    $rows .= $row('Retainer Fee Application', (string) $g('retainer_fee_application'));
-                }
-            }
-        }
-
-        // G) Brokerage Relationship
-        $brokerageRelationship = $g('brokerage_relationship');
-        if (!empty($brokerageRelationship)) {
-            $rows .= $row('Acceptable Brokerage Relationship', (string) $brokerageRelationship);
-        }
-
-        // H) Additional Terms (agent's broker notes, never additional_details which is listing owner's text)
-        $additionalTerms = $g('additional_details_broker') ?? $g('additional_terms') ?? null;
-        $rows .= $row('Additional Terms', $additionalTerms);
 
         if (empty($rows)) {
             return '<p><em>No compensation terms specified.</em></p>';
@@ -998,11 +915,6 @@ class SellerAcceptedBidSummaryService
         $sellerDetails = data_get($listingData, 'additional_details');
         if (!empty($sellerDetails)) {
             $parts[] = '<div class="mb-2"><strong>Seller\'s Additional Details:</strong><br>' . nl2br(e($sellerDetails)) . '</div>';
-        }
-
-        $agentDetails = $sourceData['additional_details_broker'] ?? $sourceData['additional_details'] ?? null;
-        if (!empty($agentDetails)) {
-            $parts[] = '<div class="mb-2"><strong>Agent\'s Additional Details:</strong><br>' . nl2br(e($agentDetails)) . '</div>';
         }
 
         if (empty($parts)) {

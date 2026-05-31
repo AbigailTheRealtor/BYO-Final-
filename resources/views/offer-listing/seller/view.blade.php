@@ -1873,7 +1873,7 @@
         <div class="card-header"><i class="fa-solid fa-file-contract me-2"></i>Broker Compensation &amp; Agency Agreement</div>
         <div class="card-body">
 
-            {{-- Purchase Compensation --}}
+            {{-- Buyer's Broker Compensation --}}
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Buyer\'s Broker Commission Structure', $str('commission_structure')) !!}
@@ -1891,102 +1891,6 @@
                     @elseif($str('commission_structure_type') === 'other')
                         {!! $row('Buyer\'s Broker Commission Fee', $str('commission_structure_type_fee_other')) !!}
                     @endif
-                </div>
-                <div class="col-md-6">
-                    {!! $row('Seller\'s Broker Purchase Fee Type', $str('purchase_fee_type')) !!}
-                    @if($str('purchase_fee_type') === 'percentage')
-                        {!! $row('Seller\'s Broker Purchase Fee', $fmtPercent($str('purchase_fee_percentage'))) !!}
-                    @elseif($str('purchase_fee_type') === 'flat')
-                        {!! $row('Seller\'s Broker Purchase Fee', $fmtMoney($str('purchase_fee_flat'))) !!}
-                    @elseif($str('purchase_fee_type') === 'combo')
-                        @php
-                            $_sbPct = $fmtPercent($str('purchase_fee_percentage_combo'));
-                            $_sbFlat = $fmtMoney($str('purchase_fee_flat_combo'));
-                            $_sbCombo = ($_sbPct && $_sbFlat) ? $_sbPct . ' + ' . $_sbFlat : ($_sbPct ?: $_sbFlat);
-                        @endphp
-                        {!! $row('Seller\'s Broker Purchase Fee', $_sbCombo) !!}
-                    @elseif($str('purchase_fee_type') === 'other')
-                        {!! $row('Seller\'s Broker Purchase Fee', $str('purchase_fee_other')) !!}
-                    @endif
-                    {!! $row('Nominal Consideration Fee', $fmtMoney($str('nominal'))) !!}
-                </div>
-            </div>
-
-            {{-- Leasing Compensation --}}
-            @if($str('interested_purchase_fee_type'))
-            <hr>
-            <h6 class="fw-semibold mt-3 mb-2">Leasing Compensation</h6>
-            <div class="row">
-                <div class="col-md-6">
-                    {!! $row('Interested in Offering a Lease Agreement', $str('interested_purchase_fee_type')) !!}
-                    @if($str('interested_purchase_fee_type') === 'Yes')
-                        {!! $row('Seller\'s Broker Leasing Fee Type', $str('seller_leasing_fee_type')) !!}
-                        @if($str('seller_leasing_fee_type') === 'Percentage of the Gross Lease Value')
-                            {!! $row('Leasing Fee', $fmtPercent($str('seller_leasing_gross'))) !!}
-                            {!! $row('Sales Tax', $str('sales_tax_option_gross')) !!}
-                        @elseif($str('seller_leasing_fee_type') === 'Percentage of the Rent Due Each Rental Period')
-                            {!! $row('Leasing Fee', $fmtPercent($str('seller_leasing_gross_rental'))) !!}
-                        @elseif(in_array($str('seller_leasing_fee_type'), ["Percentage of the First Month's Rent", "Percentage of Month's Rent"]))
-                            {!! $row('Leasing Fee', $fmtPercent($str('seller_leasing_gross_month_rent'))) !!}
-                            {!! $row('Sales Tax', $str('seller_leasing_gross_sales_tax_first_month')) !!}
-                            {!! $row('Number of Months', $str('seller_leasing_gross_no_of_months')) !!}
-                        @elseif($str('seller_leasing_fee_type') === 'Flat Fee')
-                            {!! $row('Leasing Fee', $fmtMoney($str('seller_leasing_gross_purchase_fee_flat_amount'))) !!}
-                            {!! $row('Sales Tax', $str('seller_leasing_gross_sales_tax_flat_free_gross')) !!}
-                        @elseif($str('seller_leasing_fee_type') === 'Flat Fee + Percentage of the Gross Lease Value')
-                            {!! $row('Leasing Fee', $fmtMoney($str('seller_leasing_gross_flat_combo')) . ' + ' . $fmtPercent($str('seller_leasing_gross_percentage_combo'))) !!}
-                        @elseif($str('seller_leasing_fee_type') === 'Flat Fee + Percentage of the Net Aggregate Rent')
-                            {!! $row('Leasing Fee', $fmtMoney($str('seller_leasing_gross_flat_net_combo')) . ' + ' . $fmtPercent($str('seller_leasing_gross_percentage_net_combo'))) !!}
-                        @elseif($str('seller_leasing_fee_type') === 'Percentage of Gross Rent')
-                            {!! $row('Leasing Fee', $fmtPercent($str('seller_leasing_gross_percentage'))) !!}
-                            {!! $row('Sales Tax', $str('seller_leasing_gross_sales_tax_option_gross')) !!}
-                        @elseif($str('seller_leasing_fee_type') === 'Percentage of Net Aggregate Rent')
-                            {!! $row('Leasing Fee', $fmtPercent($str('seller_leasing_gross_other'))) !!}
-                        @elseif($str('seller_leasing_fee_type') === 'other')
-                            {!! $row('Leasing Fee', $str('seller_leasing_gross_purchase_fee_other')) !!}
-                        @endif
-                    @endif
-                </div>
-            </div>
-            @endif
-
-            {{-- Lease-Option Compensation --}}
-            @if($str('interested_lease_option_agreement'))
-            <hr>
-            <h6 class="fw-semibold mt-3 mb-2">Lease-Option Compensation</h6>
-            <div class="row">
-                <div class="col-md-6">
-                    {!! $row('Interested in Lease-Option Agreement', $str('interested_lease_option_agreement')) !!}
-                    @if($str('interested_lease_option_agreement') === 'Yes')
-                        @php
-                            $leaseTypeLabel = $str('lease_type') === 'flat' ? 'Flat Fee' : ($str('lease_type') === 'percent' ? 'Percentage' : $str('lease_type'));
-                            $leaseValFmt = $str('lease_type') === 'flat' ? $fmtMoney($str('lease_value')) : ($str('lease_type') === 'percent' ? $fmtPercent($str('lease_value')) : $str('lease_value'));
-                            $purchaseTypeLabel = $str('purchase_type') === 'flat' ? 'Flat Fee' : ($str('purchase_type') === 'percent' ? 'Percentage' : $str('purchase_type'));
-                            $purchaseValFmt = $str('purchase_type') === 'flat' ? $fmtMoney($str('purchase_value')) : ($str('purchase_type') === 'percent' ? $fmtPercent($str('purchase_value')) : $str('purchase_value'));
-                        @endphp
-                        {!! $row('Lease-Option Creation Fee', ($leaseTypeLabel ? $leaseTypeLabel . ': ' : '') . $leaseValFmt) !!}
-                        {!! $row('If Purchase Option Exercised', ($purchaseTypeLabel ? $purchaseTypeLabel . ': ' : '') . $purchaseValFmt) !!}
-                    @endif
-                </div>
-            </div>
-            @endif
-
-            {{-- Agency Agreement --}}
-            <hr>
-            <div class="row">
-                <div class="col-md-6">
-                    {!! $row('Brokerage Relationship', $str('brokerage_relationship')) !!}
-                    {!! $row('Agency Agreement Timeframe', $orOther($str('agency_agreement_timeframe'), $str('agency_agreement_custom'))) !!}
-                    {!! $row('Protection Period (Days)', $str('protection_period')) !!}
-                    {!! $row('Broker\'s Share of Retained Deposits', $str('retained_deposits') !== '' && $str('retained_deposits') !== null ? $fmtPercent($str('retained_deposits')) : null) !!}
-                </div>
-                <div class="col-md-6">
-                    {!! $row('Retainer Fee', $yesNo($str('retainer_fee_option'))) !!}
-                    {!! $row('Retainer Fee Amount', $fmtMoney($str('retainer_fee_amount'))) !!}
-                    {!! $row('Retainer Fee Application', $str('retainer_fee_application')) !!}
-                    {!! $row('Early Termination Fee', $yesNo($str('early_termination_fee_option'))) !!}
-                    {!! $row('Early Termination Fee Amount', $fmtMoney($str('early_termination_fee_amount'))) !!}
-                    {!! $row('Additional Broker Details', $str('additional_details_broker')) !!}
                 </div>
             </div>
         </div>

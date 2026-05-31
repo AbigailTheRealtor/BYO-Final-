@@ -315,17 +315,7 @@
                                         <!-- 2. Broker Compensation & Agency Agreement Terms -->
                                         @php
                                             $bidBrokerHasAny = data_get($bid, 'get.commission_structure') ||
-                                                data_get($bid, 'get.purchase_fee_type') ||
-                                                data_get($bid, 'get.nominal') ||
-                                                data_get($bid, 'get.commission_structure_type') ||
-                                                data_get($bid, 'get.interested_purchase_fee_type') ||
-                                                data_get($bid, 'get.interested_lease_option_agreement') ||
-                                                data_get($bid, 'get.protection_period') ||
-                                                data_get($bid, 'get.early_termination_fee_option') ||
-                                                data_get($bid, 'get.retainer_fee_option') ||
-                                                data_get($bid, 'get.retained_deposits') ||
-                                                data_get($bid, 'get.agency_agreement_timeframe') ||
-                                                data_get($bid, 'get.brokerage_relationship');
+                                                data_get($bid, 'get.commission_structure_type');
                                         @endphp
                                         @if ($bidBrokerHasAny)
                                         <div class="mb-5">
@@ -333,11 +323,9 @@
                                                 <i class="fa-solid fa-handshake me-2"></i>Broker Compensation &amp; Agency Agreement Terms
                                             </h6>
 
-                                            <!-- A) Seller's Broker Compensation -->
+                                            <!-- A) Buyer's Broker Compensation -->
                                             @php
                                                 $bidCommStruct = data_get($bid, 'get.commission_structure');
-                                                $bidPurchaseFeeType = data_get($bid, 'get.purchase_fee_type');
-                                                $bidNominal = data_get($bid, 'get.nominal');
                                                 $bidCommStructType = data_get($bid, 'get.commission_structure_type');
                                                 // Build Buyer's Broker Commission Fee display
                                                 $bidBuyerBrokerFee = null;
@@ -355,197 +343,18 @@
                                                 } elseif ($bidCommStructType) {
                                                     $bidBuyerBrokerFee = $bidCommStructType;
                                                 }
-                                                $showSellerBrokerComp = $bidCommStruct || $bidPurchaseFeeType || $bidNominal || $bidCommStructType;
+                                                $showSellerBrokerComp = $bidCommStruct || $bidCommStructType;
                                             @endphp
                                             @if ($showSellerBrokerComp)
                                             <div class="mb-4">
                                                 <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Broker Compensation</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
-                                                    @if ($bidPurchaseFeeType)
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Seller's Broker Purchase Fee:</span> {{ $sellerPurchaseFeeDisplay }}{!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}</li>
-                                                    @endif
-                                                    @if ($bidNominal)
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['nominal']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Nominal Consideration Fee:</span> {{ $fmtMoney($bidNominal) ?? '-' }}{!! isset($brokerMismatches['nominal']) ? $mismatchBadge : '' !!}</li>
-                                                    @endif
                                                     @if ($bidCommStruct)
                                                     <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Buyer's Broker Commission Structure:</span> {{ $bidCommStruct }}{!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}</li>
                                                     @endif
                                                     @if ($bidBuyerBrokerFee)
                                                     <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Buyer's Broker Commission Fee:</span> {{ $bidBuyerBrokerFee }}{!! isset($brokerMismatches['commission_structure_type']) ? $mismatchBadge : '' !!}</li>
                                                     @endif
-                                                </ul>
-                                            </div>
-                                            @endif
-
-                                            <!-- B) Lease Terms -->
-                                            @php
-                                                $bidInterestedLease = data_get($bid, 'get.interested_purchase_fee_type');
-                                                $showLeaseTerms = strtolower(trim($bidInterestedLease ?? '')) === 'yes';
-                                                $bidLeasingFeeType = data_get($bid, 'get.seller_leasing_fee_type');
-                                                // Build leasing fee amount display (mirrors listing view logic)
-                                                $bidLeasingFeeAmt = null;
-                                                if ($bidLeasingFeeType === 'Flat Fee' && data_get($bid, 'get.seller_leasing_gross_purchase_fee_flat_amount')) {
-                                                    $bidLeasingFeeAmt = $fmtMoney(data_get($bid, 'get.seller_leasing_gross_purchase_fee_flat_amount'));
-                                                } elseif ($bidLeasingFeeType === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.seller_leasing_gross')) {
-                                                    $bidLeasingFeeAmt = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross')) ?? '-') . ' of the Gross Lease Value';
-                                                } elseif ($bidLeasingFeeType === 'Percentage of the Rent Due Each Rental Period' && data_get($bid, 'get.seller_leasing_gross_rental')) {
-                                                    $bidLeasingFeeAmt = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross_rental')) ?? '-') . ' of the Rent Due Each Rental Period';
-                                                } elseif ($bidLeasingFeeType === "Percentage of the First Month's Rent" && data_get($bid, 'get.seller_leasing_gross_month_rent')) {
-                                                    $bidLeasingFeeAmt = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross_month_rent')) ?? '-') . " of the First Month's Rent";
-                                                } elseif ($bidLeasingFeeType === "Percentage of Month's Rent" && data_get($bid, 'get.seller_leasing_gross_month_rent')) {
-                                                    $bidLeasingFeeAmt = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross_month_rent')) ?? '-') . " of Month's Rent";
-                                                    $bidLeasingMonths = data_get($bid, 'get.seller_leasing_gross_no_of_months');
-                                                    if (!empty($bidLeasingMonths) && $bidLeasingMonths != 'null') {
-                                                        $bidLeasingFeeAmt .= ' x ' . intval($bidLeasingMonths) . ' Months';
-                                                    }
-                                                } elseif ($bidLeasingFeeType === 'Percentage of Net Aggregate Rent' && (data_get($bid, 'get.seller_leasing_gross_other') ?: data_get($bid, 'get.seller_leasing_gross'))) {
-                                                    $netAggVal = data_get($bid, 'get.seller_leasing_gross_other') ?: data_get($bid, 'get.seller_leasing_gross');
-                                                    $bidLeasingFeeAmt = ($fmtPercent($netAggVal) ?? '-') . ' of Net Aggregate Rent';
-                                                } elseif ($bidLeasingFeeType === 'Percentage of Gross Rent' && (data_get($bid, 'get.seller_leasing_gross_percentage') || data_get($bid, 'get.seller_leasing_gross_ross_percentage_rent'))) {
-                                                    $grossRentVal = data_get($bid, 'get.seller_leasing_gross_percentage') ?? data_get($bid, 'get.seller_leasing_gross_ross_percentage_rent');
-                                                    $bidLeasingFeeAmt = ($fmtPercent($grossRentVal) ?? '-') . ' of Gross Rent';
-                                                } elseif ($bidLeasingFeeType === 'Flat Fee + Percentage of the Gross Lease Value' && (data_get($bid, 'get.seller_leasing_gross_flat_combo') || data_get($bid, 'get.seller_leasing_gross_percentage_combo'))) {
-                                                    $lfParts = [];
-                                                    if (data_get($bid, 'get.seller_leasing_gross_flat_combo')) $lfParts[] = $fmtMoney(data_get($bid, 'get.seller_leasing_gross_flat_combo'));
-                                                    if (data_get($bid, 'get.seller_leasing_gross_percentage_combo')) $lfParts[] = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross_percentage_combo')) ?? '') . ' of Gross Lease Value';
-                                                    $bidLeasingFeeAmt = implode(' + ', array_filter($lfParts));
-                                                } elseif ($bidLeasingFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent' && (data_get($bid, 'get.seller_leasing_gross_flat_net_combo') || data_get($bid, 'get.seller_leasing_gross_percentage_net_combo'))) {
-                                                    $lfParts = [];
-                                                    if (data_get($bid, 'get.seller_leasing_gross_flat_net_combo')) $lfParts[] = $fmtMoney(data_get($bid, 'get.seller_leasing_gross_flat_net_combo'));
-                                                    if (data_get($bid, 'get.seller_leasing_gross_percentage_net_combo')) $lfParts[] = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross_percentage_net_combo')) ?? '') . ' of Net Aggregate Rent';
-                                                    $bidLeasingFeeAmt = implode(' + ', array_filter($lfParts));
-                                                } elseif (strtolower($bidLeasingFeeType ?? '') === 'other' && data_get($bid, 'get.seller_leasing_gross_purchase_fee_other')) {
-                                                    $bidLeasingFeeAmt = data_get($bid, 'get.seller_leasing_gross_purchase_fee_other');
-                                                } elseif ($bidLeasingFeeType) {
-                                                    $bidLeasingFeeAmt = $bidLeasingFeeType;
-                                                }
-                                            @endphp
-                                            @if ($bidInterestedLease)
-                                            <div class="mb-4">
-                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Lease Terms</h6>
-                                                <ul class="list-unstyled ps-3 mb-0">
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in Offering a Lease Agreement:</span> {{ $bidInterestedLease }}{!! isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchBadge : '' !!}</li>
-                                                    @if ($showLeaseTerms && $bidLeasingFeeAmt)
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['seller_leasing_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Seller's Broker Leasing Fee:</span> {{ $bidLeasingFeeAmt }}{!! isset($brokerMismatches['seller_leasing_fee_type']) ? $mismatchBadge : '' !!}</li>
-                                                    @endif
-                                                </ul>
-                                            </div>
-                                            @endif
-
-                                            <!-- C) Lease-Option Terms -->
-                                            @php
-                                                $bidLeaseOption = data_get($bid, 'get.interested_lease_option_agreement');
-                                                $showLeaseOption = strtolower(trim($bidLeaseOption ?? '')) === 'yes';
-                                                $bidLeaseType = data_get($bid, 'get.lease_type');
-                                                $bidLeaseValue = data_get($bid, 'get.lease_value');
-                                                $bidPurchaseType = data_get($bid, 'get.purchase_type');
-                                                $bidPurchaseValue = data_get($bid, 'get.purchase_value');
-                                                // Format lease-option creation fee (mirrors listing view: % of Total Purchase Price)
-                                                $bidLeaseOptionFee = null;
-                                                if ($bidLeaseValue) {
-                                                    if (in_array($bidLeaseType, ['%', 'percent']) || str_contains((string)($bidLeaseValue ?? ''), '%')) {
-                                                        $bidLeaseOptionFee = str_replace('%', '', $bidLeaseValue) . '% of Total Purchase Price';
-                                                    } else {
-                                                        $bidLeaseOptionFee = $fmtMoney($bidLeaseValue);
-                                                    }
-                                                }
-                                                // Format purchase option exercise fee
-                                                $bidPurchaseOptFee = null;
-                                                if ($bidPurchaseValue) {
-                                                    if (in_array($bidPurchaseType, ['%', 'percent']) || str_contains((string)($bidPurchaseValue ?? ''), '%')) {
-                                                        $bidPurchaseOptFee = str_replace('%', '', $bidPurchaseValue) . '% of Total Purchase Price';
-                                                    } else {
-                                                        $bidPurchaseOptFee = $fmtMoney($bidPurchaseValue);
-                                                    }
-                                                }
-                                            @endphp
-                                            @if ($bidLeaseOption)
-                                            <div class="mb-4">
-                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Terms</h6>
-                                                <ul class="list-unstyled ps-3 mb-0">
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in Lease-Option Agreement:</span> {{ $bidLeaseOption }}{!! isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchBadge : '' !!}</li>
-                                                    @if ($showLeaseOption && $bidLeaseOptionFee)
-                                                    <li class="mb-1" style="{{ (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation for Creating Lease-Option Agreement:</span> {{ $bidLeaseOptionFee }}{!! (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchBadge : '' !!}</li>
-                                                    @elseif ($showLeaseOption && (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])))
-                                                    <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Compensation for Creating Lease-Option Agreement:</span> —{!! $mismatchBadge !!}</li>
-                                                    @endif
-                                                    @if ($showLeaseOption && $bidPurchaseOptFee)
-                                                    <li class="mb-1" style="{{ (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $bidPurchaseOptFee }}{!! (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchBadge : '' !!}</li>
-                                                    @elseif ($showLeaseOption && (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])))
-                                                    <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> —{!! $mismatchBadge !!}</li>
-                                                    @endif
-                                                </ul>
-                                            </div>
-                                            @endif
-
-                                            <!-- D) Legal Terms -->
-                                            @php
-                                                $bidEarlyTermOpt = data_get($bid, 'get.early_termination_fee_option');
-                                                $bidEarlyTermAmt = data_get($bid, 'get.early_termination_fee_amount');
-                                                $bidRetainedDep  = data_get($bid, 'get.retained_deposits');
-                                                $bidRetainerOpt  = data_get($bid, 'get.retainer_fee_option');
-                                                $bidRetainerAmt  = data_get($bid, 'get.retainer_fee_amount');
-                                                $bidRetainerApp  = data_get($bid, 'get.retainer_fee_application');
-                                                $bidProtPeriod   = data_get($bid, 'get.protection_period');
-                                                $bidAgencyTf     = data_get($bid, 'get.agency_agreement_timeframe');
-                                                $bidAgencyCus    = data_get($bid, 'get.agency_agreement_custom');
-                                                $bidAgencyDsp    = strtolower(trim($bidAgencyTf ?? '')) === 'other' ? ($bidAgencyCus ?: 'Other') : ($bidAgencyTf ?: '');
-                                                $showLegalTerms  = $bidEarlyTermOpt || $bidRetainedDep || $bidRetainerOpt || $bidProtPeriod || $bidAgencyTf;
-                                            @endphp
-                                            @if ($showLegalTerms)
-                                            <div class="mb-4">
-                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
-                                                <ul class="list-unstyled ps-3 mb-0">
-                                                    @if ($bidEarlyTermOpt)
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ ucfirst($bidEarlyTermOpt) }}{!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}</li>
-                                                    @if (strtolower($bidEarlyTermOpt) === 'yes' && $bidEarlyTermAmt)
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney($bidEarlyTermAmt) }}{!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}</li>
-                                                    @elseif (strtolower($bidEarlyTermOpt) === 'yes' && isset($brokerMismatches['early_termination_fee_amount']))
-                                                    <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Termination Fee Amount:</span> —{!! $mismatchBadge !!}</li>
-                                                    @endif
-                                                    @endif
-                                                    @if ($bidRetainerOpt)
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Retainer Fee:</span> {{ ucfirst($bidRetainerOpt) }}{!! isset($brokerMismatches['retainer_fee_option']) ? $mismatchBadge : '' !!}</li>
-                                                        @if (strtolower($bidRetainerOpt) === 'yes' && $bidRetainerAmt)
-                                                        <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_amount']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Retainer Fee Amount:</span> {{ $fmtMoney($bidRetainerAmt) }}{!! isset($brokerMismatches['retainer_fee_amount']) ? $mismatchBadge : '' !!}</li>
-                                                        @elseif (isset($brokerMismatches['retainer_fee_amount']))
-                                                        <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Retainer Fee Amount:</span> —{!! $mismatchBadge !!}</li>
-                                                        @endif
-                                                        @if (strtolower($bidRetainerOpt) === 'yes' && $bidRetainerApp)
-                                                        <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_application']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Retainer Fee Application:</span> {{ $bidRetainerApp }}{!! isset($brokerMismatches['retainer_fee_application']) ? $mismatchBadge : '' !!}</li>
-                                                        @elseif (isset($brokerMismatches['retainer_fee_application']))
-                                                        <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Retainer Fee Application:</span> —{!! $mismatchBadge !!}</li>
-                                                        @endif
-                                                    @endif
-                                                    @if ($bidRetainedDep)
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['retained_deposits']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Seller's Broker's Share of Retained Deposits:</span> {{ $fmtPercent($bidRetainedDep) }}{!! isset($brokerMismatches['retained_deposits']) ? $mismatchBadge : '' !!}</li>
-                                                    @endif
-                                                    @if ($bidProtPeriod)
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $bidProtPeriod }} days{!! isset($brokerMismatches['protection_period']) ? $mismatchBadge : '' !!}</li>
-                                                    @endif
-                                                    @if ($bidAgencyTf)
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Seller Agency Agreement Timeframe:</span> {{ $bidAgencyDsp }}{!! isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchBadge : '' !!}</li>
-                                                    @endif
-                                                </ul>
-                                            </div>
-                                            @endif
-
-                                            <!-- E) Brokerage Relationship -->
-                                            @if (data_get($bid, 'get.brokerage_relationship'))
-                                            <div class="mb-4">
-                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
-                                                <ul class="list-unstyled ps-3 mb-0">
-                                                    <li class="mb-1" style="{{ isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}{!! isset($brokerMismatches['brokerage_relationship']) ? $mismatchBadge : '' !!}</li>
-                                                </ul>
-                                            </div>
-                                            @endif
-
-                                            <!-- F) Additional Terms -->
-                                            @if (data_get($bid, 'get.additional_details_broker'))
-                                            <div class="mb-4">
-                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
-                                                <ul class="list-unstyled ps-3 mb-0">
-                                                    <li class="mb-1"><span class="fw-semibold">Additional Terms:</span> {{ data_get($bid, 'get.additional_details_broker') }}</li>
                                                 </ul>
                                             </div>
                                             @endif

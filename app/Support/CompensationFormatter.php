@@ -103,11 +103,6 @@ class CompensationFormatter
             // SELLER
             // ──────────────────────────────────────────────────────────────
             case 'seller':
-                $pft = $g('purchase_fee_type');
-                if (!$isBlank($pft)) {
-                    $addRow("Seller's Broker Purchase Fee", self::sellerPurchaseFee($pft, $data));
-                }
-
                 $addRow("Buyer's Broker Commission Structure", $g('commission_structure'));
 
                 $cst = $g('commission_structure_type');
@@ -115,27 +110,6 @@ class CompensationFormatter
                     $addRow("Buyer's Broker Commission Fee", self::sellerBuyerBrokerFee($cst, $data));
                 }
 
-                $nominal = $g('nominal');
-                if (!$isBlank($nominal)) {
-                    $addRow('Nominal Consideration Fee', Format::money($nominal));
-                }
-
-                $intPurchase = $g('interested_purchase_fee_type');
-                if (!$isBlank($intPurchase)) {
-                    $addRow('Interested in Offering a Lease Agreement', $intPurchase);
-                    if (strtolower($intPurchase) === 'yes') {
-                        $slf = $g('seller_leasing_fee_type');
-                        if (!$isBlank($slf)) {
-                            $addRow("Seller's Broker Leasing Fee", self::sellerLeasingFee($slf, $data));
-                        }
-                    }
-                }
-
-                self::leaseOptionRows($addRow, $g, $isBlank);
-                self::legalTermRows($addRow, $g, $isBlank);
-
-                $addRow('Brokerage Relationship', $g('brokerage_relationship'));
-                $addRow('Additional Terms', $g('additional_details_broker'));
                 $refFeeRaw = $g('referral_fee_percent');
                 if (!$isBlank($refFeeRaw)) {
                     $addRow('Referral Fee (%)', (strpos($refFeeRaw, '%') !== false) ? $refFeeRaw : ($refFeeRaw . '%'));
