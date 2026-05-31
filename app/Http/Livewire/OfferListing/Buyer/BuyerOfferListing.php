@@ -232,12 +232,13 @@ class BuyerOfferListing extends Component
 
     // Property DNA Phase C — Buyer Tier 1 EAV fields
     public $purchase_purpose = '';
+    public $purchase_purpose_other = '';
     public $commute_destination_zip = '';
     public $max_commute_minutes = '';
     public $commute_mode = '';
     public $hoa_acceptance = '';
     public $hoa_max_monthly_fee = '';
-    public $flood_zone_tolerance = '';
+    public $flood_zone_tolerance = [];
 
     // Broker compensation
     public $commission_structure = '';
@@ -1735,6 +1736,8 @@ class BuyerOfferListing extends Component
             'video_link'                      => $this->video_link,
             'listing_ai_faq'                  => json_encode($this->listing_ai_faq ?: []),
             'photo'                           => is_string($this->photo) ? $this->photo : '',
+            'purchase_purpose_other'          => $this->purchase_purpose_other,
+            'flood_zone_tolerance'            => json_encode($this->flood_zone_tolerance ?? []),
         ];
 
         if ($isAgent) {
@@ -1871,12 +1874,14 @@ class BuyerOfferListing extends Component
 
             // Property DNA Phase C — Buyer Tier 1 EAV fields
             $this->purchase_purpose = $auction->get->purchase_purpose ?? '';
+            $this->purchase_purpose_other = $auction->get->purchase_purpose_other ?? '';
             $this->commute_destination_zip = $auction->get->commute_destination_zip ?? '';
             $this->max_commute_minutes = $auction->get->max_commute_minutes ?? '';
             $this->commute_mode = $auction->get->commute_mode ?? '';
             $this->hoa_acceptance = $auction->get->hoa_acceptance ?? '';
             $this->hoa_max_monthly_fee = $auction->get->hoa_max_monthly_fee ?? '';
-            $this->flood_zone_tolerance = $auction->get->flood_zone_tolerance ?? '';
+            $floodZoneRaw = $auction->get->flood_zone_tolerance ?? null;
+            $this->flood_zone_tolerance = $floodZoneRaw ? (is_string($floodZoneRaw) ? json_decode($floodZoneRaw, true) ?? [] : (array)$floodZoneRaw) : [];
 
 
             // Sale Provision
@@ -2267,6 +2272,8 @@ class BuyerOfferListing extends Component
                 'property_items' => $this->property_items,
                 'assets' => $this->assets,
                 'garage_parking_spaces_option' => $this->garage_parking_spaces_option,
+                'flood_zone_tolerance' => $this->flood_zone_tolerance,
+                'purchase_purpose_other' => $this->purchase_purpose_other,
             ]);
             
             // Track resumed state for SAVE_AS_NEW_DRAFT guard
@@ -2397,12 +2404,13 @@ class BuyerOfferListing extends Component
 
         // Property DNA Phase C — Buyer Tier 1 EAV fields
         $auction->saveMeta('purchase_purpose', $this->purchase_purpose);
+        $auction->saveMeta('purchase_purpose_other', $this->purchase_purpose_other);
         $auction->saveMeta('commute_destination_zip', $this->commute_destination_zip);
         $auction->saveMeta('max_commute_minutes', $this->max_commute_minutes);
         $auction->saveMeta('commute_mode', $this->commute_mode);
         $auction->saveMeta('hoa_acceptance', $this->hoa_acceptance);
         $auction->saveMeta('hoa_max_monthly_fee', $this->hoa_max_monthly_fee);
-        $auction->saveMeta('flood_zone_tolerance', $this->flood_zone_tolerance);
+        $auction->saveMeta('flood_zone_tolerance', json_encode($this->flood_zone_tolerance ?? []));
 
         // Sale Provisions
         $auction->saveMeta('sale_provision', json_encode($this->sale_provision ?? []));

@@ -3246,7 +3246,8 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);
             $auction->saveMeta('expiration_date', $this->expiration_date);
             // LOCKED: auction_time (timer settings) cannot be changed after listing creation
-            // $auction->saveMeta('auction_time', $this->auction_time);
+            // Re-save from the value loaded in loadAuctionData() (populated from DB), not from form input.
+            $auction->saveMeta('auction_time', $this->auction_time);
             $auction->saveMeta('agent_bid_visibility', $this->agent_bid_visibility);
             $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
             $auction->saveMeta('number_of_unit', $this->number_of_unit);

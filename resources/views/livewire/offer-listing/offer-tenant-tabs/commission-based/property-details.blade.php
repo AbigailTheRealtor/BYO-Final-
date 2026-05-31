@@ -897,7 +897,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="accessibility_requirements" class="form-control has-icon" rows="2"
+        <textarea wire:model="accessibility_requirements" class="form-control has-icon" rows="1"
             data-icon="fa-solid fa-wheelchair"
             placeholder="Enter accessibility requirements (e.g., Ground floor or elevator required)"></textarea>
     </div>

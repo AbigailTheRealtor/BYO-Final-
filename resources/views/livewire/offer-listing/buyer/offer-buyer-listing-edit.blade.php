@@ -1205,6 +1205,7 @@
                     '#garage_parking_spaces_option': 'garage_parking_spaces_option',
                     '#assets': 'assets',
                     '#business_type_inline': 'business_type_selected',
+                    '#flood_zone_tolerance': 'flood_zone_tolerance',
                 };
                 Object.entries(multiFields).forEach(function([selector, prop]) {
                     var $el = $(selector);
@@ -1582,10 +1583,17 @@
                     width: '100%',
                     closeOnSelect: false,
                 });
-                $('#assets').off('change.assetsSync').on('change.assetsSync', function() {
+            }
+            $('#assets').off('change.assetsSync').on('change.assetsSync', function() {
+                let selectedValues = $(this).val() || [];
+                selectedValues = [...new Set(selectedValues)];
+                debouncedSet('assets', selectedValues);
+            });
+
+            if ($('#flood_zone_tolerance').length) {
+                $('#flood_zone_tolerance').off('change.fztSync').on('change.fztSync', function() {
                     let selectedValues = $(this).val() || [];
-                    selectedValues = [...new Set(selectedValues)];
-                    debouncedSet('assets', selectedValues);
+                    debouncedSet('flood_zone_tolerance', selectedValues);
                 });
             }
 

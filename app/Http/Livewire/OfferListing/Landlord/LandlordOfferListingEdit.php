@@ -3492,9 +3492,7 @@ class LandlordOfferListingEdit extends Component
         // Photos, Tours & Documents
         $auction->saveMeta('video_tour_url', $this->videoTourUrl ?? '');
         $auction->saveMeta('virtual_tour_url', $this->virtualTourUrl ?? '');
-        if (!empty($this->propertyPhotos)) {
-            $auction->saveMeta('property_photos', $this->propertyPhotos);
-        }
+        $auction->saveMeta('property_photos', $this->propertyPhotos ?? []);
         if ($this->listingDocuments && !is_string($this->listingDocuments)) {
             $allowedMimes = ['application/pdf', 'application/msword',
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -3652,6 +3650,7 @@ class LandlordOfferListingEdit extends Component
             return;
         }
         $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        $rejectedCount = 0;
         foreach ($this->newPropertyPhotos as $photo) {
             if (in_array($photo->getMimeType(), $allowedMimes)) {
                 $ext      = $photo->getClientOriginalExtension();
@@ -3659,9 +3658,14 @@ class LandlordOfferListingEdit extends Component
                 $fileName = $uuid . '.' . $ext;
                 $photo->storeAs('auction/images', $fileName, 'public');
                 $this->propertyPhotos[] = $fileName;
+            } else {
+                $rejectedCount++;
             }
         }
         $this->newPropertyPhotos = [];
+        if ($rejectedCount > 0) {
+            $this->addError('newPropertyPhotos', $rejectedCount . ' file(s) were skipped because they are not valid image types (JPG, PNG, WebP only).');
+        }
     }
 
     public function updatedNewPropertyPhotos()
@@ -3675,8 +3679,9 @@ class LandlordOfferListingEdit extends Component
                 return;
             }
             $this->processPendingPhotoUploads();
-            if ($this->listingId) {
-                $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+            $_photoId = $this->auctionId ?? $this->listingId;
+            if ($_photoId) {
+                $auction = HirelandLordAgentAuction::findOrFail($_photoId);
                 $auction->saveMeta('property_photos', $this->propertyPhotos);
             }
         } catch (\Throwable $e) {
@@ -3691,8 +3696,9 @@ class LandlordOfferListingEdit extends Component
             $filename = $this->propertyPhotos[$index];
             Storage::disk('public')->delete('auction/images/' . $filename);
             array_splice($this->propertyPhotos, $index, 1);
-            if ($this->listingId) {
-                $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+            $_photoId = $this->auctionId ?? $this->listingId;
+            if ($_photoId) {
+                $auction = HirelandLordAgentAuction::findOrFail($_photoId);
                 if (empty($this->propertyPhotos)) {
                     $auction->deleteMeta('property_photos');
                 } else {
@@ -3717,8 +3723,9 @@ class LandlordOfferListingEdit extends Component
             }
         }
         $this->propertyPhotos = $newOrder;
-        if ($this->listingId) {
-            $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+        $_photoId = $this->auctionId ?? $this->listingId;
+        if ($_photoId) {
+            $auction = HirelandLordAgentAuction::findOrFail($_photoId);
             $auction->saveMeta('property_photos', $this->propertyPhotos);
         }
     }
@@ -3730,8 +3737,9 @@ class LandlordOfferListingEdit extends Component
         }
         [$this->propertyPhotos[$index - 1], $this->propertyPhotos[$index]] =
             [$this->propertyPhotos[$index], $this->propertyPhotos[$index - 1]];
-        if ($this->listingId) {
-            $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+        $_photoId = $this->auctionId ?? $this->listingId;
+        if ($_photoId) {
+            $auction = HirelandLordAgentAuction::findOrFail($_photoId);
             $auction->saveMeta('property_photos', $this->propertyPhotos);
         }
     }
@@ -3743,8 +3751,9 @@ class LandlordOfferListingEdit extends Component
         }
         [$this->propertyPhotos[$index], $this->propertyPhotos[$index + 1]] =
             [$this->propertyPhotos[$index + 1], $this->propertyPhotos[$index]];
-        if ($this->listingId) {
-            $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+        $_photoId = $this->auctionId ?? $this->listingId;
+        if ($_photoId) {
+            $auction = HirelandLordAgentAuction::findOrFail($_photoId);
             $auction->saveMeta('property_photos', $this->propertyPhotos);
         }
     }

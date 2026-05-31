@@ -1390,11 +1390,17 @@
                     width: '100%',
                     closeOnSelect: false,
                 });
+            }
+            $('#assets').off('change.assetsSync').on('change.assetsSync', function() {
+                let selectedValues = $(this).val() || [];
+                selectedValues = [...new Set(selectedValues)];
+                debouncedSet('assets', selectedValues);
+            });
 
-                $('#assets').off('change.assetsSync').on('change.assetsSync', function() {
+            if ($('#flood_zone_tolerance').length) {
+                $('#flood_zone_tolerance').off('change.fztSync').on('change.fztSync', function() {
                     let selectedValues = $(this).val() || [];
-                    selectedValues = [...new Set(selectedValues)];
-                    debouncedSet('assets', selectedValues);
+                    debouncedSet('flood_zone_tolerance', selectedValues);
                 });
             }
 

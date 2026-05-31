@@ -1314,7 +1314,7 @@
         </div>
     </div>
 @endif
-@if ($property_type === 'Income')
+@if (false && $property_type === 'Income')
 <div class="form-group">
     <label class="fw-bold">Additional Details:
 
@@ -1354,6 +1354,15 @@
             <option value="Development">Development</option>
             <option value="Other">Other</option>
         </select>
+    </div>
+</div>
+
+{{-- Purchase Purpose Other --}}
+<div class="form-group purchase_purpose_other_wrapper {{ $purchase_purpose === 'Other' ? '' : 'd-none' }}" wire:key="purchase-purpose-other-wrapper">
+    <div class="input-cover">
+        <input type="text" wire:model.defer="purchase_purpose_other" class="form-control has-icon"
+            data-icon="fa-solid fa-bullseye"
+            placeholder="Enter title (e.g., example)">
     </div>
 </div>
 
@@ -1415,7 +1424,7 @@
 
 {{-- HOA Max Monthly Fee — shown only when HOA acceptance is Yes or Flexible --}}
 <div class="form-group mt-3" x-data x-show="['Yes', 'Flexible'].includes($wire.hoa_acceptance)" x-cloak>
-    <label class="fw-bold">Maximum HOA Monthly Fee ($):
+    <label class="fw-bold">Maximum HOA Monthly Fee:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the maximum monthly HOA fee the Buyer is willing to pay.">
             <i class="fa-solid fa-circle-info"></i>
@@ -1432,17 +1441,23 @@
 <div class="form-group mt-3">
     <label class="fw-bold">Flood Zone Tolerance:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the Buyer's tolerance for flood zone designations.">
+            title="Select the Buyer's acceptable flood zone designations. Multiple selections allowed.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover">
-        <select wire:model="flood_zone_tolerance" class="form-control has-icon" data-icon="fa-solid fa-water">
-            <option value="">Select</option>
-            <option value="No flood zone">No flood zone</option>
-            <option value="Zone X only">Zone X only</option>
-            <option value="Moderate risk">Moderate risk</option>
-            <option value="Any">Any</option>
+    <div class="input-cover has-select-icon" wire:ignore>
+        <select id="flood_zone_tolerance" class="form-control has-icon select2-multiple"
+            data-icon="fa-solid fa-water" data-placeholder="Select" multiple>
+            <option value="X" {{ in_array('X', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>X — Minimal Flood Hazard</option>
+            <option value="AE" {{ in_array('AE', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>AE — High Risk (Base Flood Elevation Determined)</option>
+            <option value="A" {{ in_array('A', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>A — High Risk (No Base Flood Elevation)</option>
+            <option value="AH" {{ in_array('AH', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>AH — High Risk (Shallow Flooding)</option>
+            <option value="AO" {{ in_array('AO', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>AO — High Risk (Sheet Flow Flooding)</option>
+            <option value="VE" {{ in_array('VE', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>VE — Coastal High Hazard</option>
+            <option value="V" {{ in_array('V', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>V — Coastal High Hazard (No Base Flood Elevation)</option>
+            <option value="D" {{ in_array('D', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>D — Undetermined Risk</option>
+            <option value="Unknown" {{ in_array('Unknown', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>Unknown</option>
+            <option value="Other" {{ in_array('Other', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>Other</option>
         </select>
     </div>
 </div>
@@ -1495,6 +1510,7 @@
         syncSelect2('.number_of_unit_type', data.number_of_unit_type);
         syncSelect2('#condition_prop_buyer', data.condition_prop_buyer);
         syncSelect2('#property_items', data.property_items);
+        syncSelect2('#flood_zone_tolerance', data.flood_zone_tolerance);
         
         // Clear flag after a short delay to allow all change events to complete
         setTimeout(function() {
