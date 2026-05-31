@@ -427,6 +427,21 @@
         $contactName = trim(($str('first_name') . ' ' . $str('last_name')));
         $hasContact  = $contactName || $str('email') || $str('phone_number')
             || $str('agent_brokerage') || $str('agent_license_number') || $str('agent_nar_member_id');
+
+        $hasPurchaseTermsContent =
+            $str('earnest_money_amount') || $str('earnest_money_timing')
+            || $str('due_diligence_yn') || $str('inspection_period_days') || $str('inspection_period_other')
+            || $str('inspection_contingency_buyer') || $str('appraisal_contingency_buyer')
+            || $str('appraisal_contingency_days') || $str('financing_contingency_buyer')
+            || $str('financing_contingency_period') || $str('home_sale_contingency')
+            || $str('home_sale_contingency_address') || $str('home_sale_contingency_date')
+            || $str('home_sale_contingency_under_contract') || $str('home_sale_contingency_details')
+            || $str('seller_contribution') || $str('seller_contribution_details')
+            || $str('possession_preference') || $str('possession_preference_other')
+            || $str('possession_details') || $str('closing_cost_responsibility')
+            || $str('home_warranty_requested') || $str('home_warranty_details')
+            || $str('as_is_purchase') || $str('property_inclusions') || $str('property_exclusions')
+            || $str('additional_purchase_terms');
     @endphp
 
     {{-- SMOOTH-SCROLL NAV TABS --}}

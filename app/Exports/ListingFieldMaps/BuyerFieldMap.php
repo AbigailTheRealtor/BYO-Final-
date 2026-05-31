@@ -83,6 +83,7 @@ class BuyerFieldMap
             ],
 
             'Additional Purchase Terms' => [
+                'Earnest Money / EMD Type'            => 'earnest_money_type',
                 'Earnest Money / EMD Amount'          => 'earnest_money_amount',
                 'Earnest Money Deposit Timing'        => 'earnest_money_timing',
                 'Due Diligence / Inspection Period'   => 'due_diligence_yn',
@@ -96,7 +97,7 @@ class BuyerFieldMap
                 'Home Sale Contingency'               => 'home_sale_contingency',
                 'Home Sale Contingency Address'       => 'home_sale_contingency_address',
                 'Home Sale Contingency Date'          => 'home_sale_contingency_date',
-                'Home Under Contract'                 => 'home_sale_contingency_under_contract',
+                'Home Currently Under Contract'       => 'home_sale_contingency_under_contract',
                 'Home Sale Contingency Details'       => 'home_sale_contingency_details',
                 'Seller Contribution'                 => 'seller_contribution',
                 'Seller Contribution Details'         => 'seller_contribution_details',
@@ -382,6 +383,8 @@ class BuyerFieldMap
             'crypto_transfer_timing' => 'crypto_transfer_timing_other',
             'seller_amortization_type' => 'seller_amortization_other',
             'seller_payment_frequency' => 'seller_payment_frequency_other',
+            'possession_preference' => 'possession_preference_other',
+            'inspection_period_days' => 'inspection_period_other',
         ];
     }
 }
