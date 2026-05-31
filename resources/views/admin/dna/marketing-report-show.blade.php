@@ -13,6 +13,51 @@
 </div>
 
 {{-- ================================================================
+     FLASH MESSAGES
+     ================================================================ --}}
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+{{-- ================================================================
+     PUBLICATION CONTROLS
+     ================================================================ --}}
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0 fw-semibold">Publication Controls</h5>
+        <div class="small opacity-75">Admin-only workflow action &mdash; archive is deferred (not supported by current schema)</div>
+    </div>
+    <div class="card-body">
+        @if($record && $record->status === 'seller_approved')
+            <p class="mb-3">This report has been approved by the property owner and is ready to publish. Publishing transitions the status to <strong>published</strong> and records an audit entry.</p>
+            <form method="POST" action="{{ route('admin.property-dna.marketing-reports.publish', $record->id) }}"
+                  onsubmit="return confirm('Publish this marketing report? This action cannot be undone.');">
+                @csrf
+                <button type="submit" class="btn btn-primary">
+                    Publish Report
+                </button>
+            </form>
+        @else
+            <p class="mb-0 text-muted">
+                <strong>Status:</strong>
+                <span class="badge bg-secondary">{{ $record->status ?? '—' }}</span>
+                &mdash; No publication action is available for reports in this status.
+                Only reports with status <code>seller_approved</code> may be published.
+            </p>
+        @endif
+    </div>
+</div>
+
+{{-- ================================================================
      SECTION 1: Report Summary
      ================================================================ --}}
 <div class="card mb-4">

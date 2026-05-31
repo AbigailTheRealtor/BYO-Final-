@@ -860,6 +860,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Phase XL — AI Marketing Report Read View (admin-only, read-only)
         Route::get('property-dna/marketing-reports/{report}', [\App\Http\Controllers\Admin\AiMarketingReportAdminController::class, 'show'])->name('property-dna.marketing-reports.show');
 
+        // Phase XP — AI Marketing Report Publication (admin-only)
+        // Archive is deferred: 'archived' is absent from marketing_reports_status_check constraint.
+        Route::post('property-dna/marketing-reports/{report}/publish', [\App\Http\Controllers\Admin\AiMarketingReportPublicationController::class, 'publish'])->name('property-dna.marketing-reports.publish');
+
         // Milestone 11 — BYA Internal Admin Preview UI (read-only, admin-only)
         Route::prefix('bya-compatibility-preview')->name('bya.preview.')->group(function () {
             Route::get('/', [ByaPreviewController::class, 'index'])->name('index');
