@@ -497,7 +497,7 @@
         if ($_auctionType === '') {
             $_auctionType = trim((string)($auction->auction_type ?? ''));
         }
-        if (strtolower($_auctionType) === 'bidding period') {
+        if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
             // auction_time: read from EAV meta first; fall back to native column / auction_length
             $_aTime = trim($str('auction_time'));
             if ($_aTime === '') {
