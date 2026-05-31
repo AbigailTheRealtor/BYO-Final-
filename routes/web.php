@@ -80,6 +80,7 @@ use App\Http\Controllers\LandlordAgentAuctionBidController;
 use App\Http\Controllers\LandlordCounteredTermsController;
 use App\Http\Controllers\Agent\PropertyMarketingBriefReviewController;
 use App\Http\Controllers\Agent\AiMarketingReportAgentController;
+use App\Http\Controllers\Owner\AiMarketingReportOwnerApprovalController;
 use App\Http\Controllers\SellerCounterBidController;
 use App\Http\Controllers\SellerCounteredTermsController;
 use App\Http\Controllers\SellerServiceAuctionBidController;
@@ -401,6 +402,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Admin Can't be access these routes
     Route::middleware('noAdmin')->group(function () {
+
+        // Phase XO — Seller/Landlord Marketing Report Approval
+        Route::get('/owner/property-dna/marketing-reports/{report}/approval', [AiMarketingReportOwnerApprovalController::class, 'show'])
+            ->name('owner.property-dna.marketing-reports.approval.show');
+        Route::post('/owner/property-dna/marketing-reports/{report}/approve', [AiMarketingReportOwnerApprovalController::class, 'approve'])
+            ->name('owner.property-dna.marketing-reports.approve');
+        Route::post('/owner/property-dna/marketing-reports/{report}/reject', [AiMarketingReportOwnerApprovalController::class, 'reject'])
+            ->name('owner.property-dna.marketing-reports.reject');
+
         Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
         Route::get('/my-listings', [DashboardController::class, 'allListings'])->name('my.listings');
         Route::get('/settings', [DashboardController::class, 'settings'])->name('settings');
