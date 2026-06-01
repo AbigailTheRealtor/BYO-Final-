@@ -287,7 +287,8 @@
     transition: color .15s, border-color .15s;
     letter-spacing: 0.01em;
 }
-.sol-view-page .sol-nav-tabs li a:hover {
+.sol-view-page .sol-nav-tabs li a:hover,
+.sol-view-page .sol-nav-tabs li a.sol-nav-active {
     color: #2563eb;
     border-bottom-color: #2563eb;
 }
@@ -1088,8 +1089,9 @@
 
     {{-- ===== SMOOTH-SCROLL NAV TABS ===== --}}
     <div class="sol-nav-tabs-wrap">
-        <ul class="sol-nav-tabs">
+        <ul class="sol-nav-tabs" id="solNavTabs">
             <li><a href="#section-overview">Overview</a></li>
+            @if($val('additional_details'))<li><a href="#section-description">Description</a></li>@endif
             <li><a href="#section-photos">Photos</a></li>
             <li><a href="#section-details">Details</a></li>
             <li><a href="#section-financing">Financing</a></li>
@@ -1286,7 +1288,7 @@
 
     {{-- Property Description --}}
     @if($val('additional_details'))
-    <div class="card section-card" id="section-overview">
+    <div class="card section-card" id="section-description">
         <div class="card-header"><i class="fa-solid fa-align-left me-2"></i>Property Description</div>
         <div class="card-body">
             <p class="field-value mb-0">{!! nl2br(e($val('additional_details'))) !!}</p>
@@ -1330,7 +1332,7 @@
     @endphp
 
     {{-- Listing Details --}}
-    <div class="card section-card" @if(!$val('additional_details')) id="section-overview" @endif>
+    <div class="card section-card" id="section-overview">
         <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Listing Details</div>
         <div class="card-body">
             <div class="row">
@@ -2448,18 +2450,36 @@
         });
     }());
 
-    /* ---- Smooth scroll offset (app header ~70px + buffer) ---- */
-    document.querySelectorAll('.sol-nav-tabs a[href^="#"]').forEach(function (link) {
-        link.addEventListener('click', function (e) {
-            var targetId = this.getAttribute('href').slice(1);
-            var target = document.getElementById(targetId);
+    /* ---- Smooth-scroll + active-section highlighting ---- */
+    var SOL_OFFSET = 82;
+    var solNavLinks = Array.from(document.querySelectorAll('#solNavTabs a[href^="#"]'));
+    var solSections  = solNavLinks.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+    solSections.sort(function (a, b) { return a.offsetTop - b.offsetTop; });
+
+    solNavLinks.forEach(function (a) {
+        a.addEventListener('click', function (e) {
+            var target = document.querySelector(a.getAttribute('href'));
             if (!target) return;
             e.preventDefault();
-            var offset = 82;
-            var top = target.getBoundingClientRect().top + window.scrollY - offset;
+            var top = target.getBoundingClientRect().top + window.scrollY - SOL_OFFSET;
             window.scrollTo({ top: top, behavior: 'smooth' });
         });
     });
+
+    function solOnScroll() {
+        var scrollY = window.scrollY + SOL_OFFSET + 10;
+        var active = null;
+        solSections.forEach(function (s) {
+            if (s && s.offsetTop <= scrollY) active = s;
+        });
+        solNavLinks.forEach(function (a) { a.classList.remove('sol-nav-active'); });
+        if (active) {
+            var link = document.querySelector('#solNavTabs a[href="#' + active.id + '"]');
+            if (link) link.classList.add('sol-nav-active');
+        }
+    }
+    window.addEventListener('scroll', solOnScroll, { passive: true });
+    solOnScroll();
 
     /* ---- Auto-reopen modal after validation failure ---- */
     @if(session('open_modal'))

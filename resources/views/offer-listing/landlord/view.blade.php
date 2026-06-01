@@ -165,7 +165,8 @@
 .lol-view-page .lol-nav-tabs { display:flex;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;gap:0;list-style:none;padding:0;margin:0; }
 .lol-view-page .lol-nav-tabs::-webkit-scrollbar { display:none; }
 .lol-view-page .lol-nav-tabs li a { display:block;padding:.75rem 1.1rem;font-size:.82rem;font-weight:600;color:#64748b;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s; }
-.lol-view-page .lol-nav-tabs li a:hover { color:#0f766e;border-bottom-color:#0f766e; }
+.lol-view-page .lol-nav-tabs li a:hover,
+.lol-view-page .lol-nav-tabs li a.lol-nav-active { color:#0f766e;border-bottom-color:#0f766e; }
 
 /* Sticky sidebar */
 .lol-view-page .lol-sticky-card { position:sticky;top:72px;background:#fff;border-radius:.75rem;border:1px solid #e2e8f0;box-shadow:0 4px 16px rgba(0,0,0,.08);padding:1.25rem 1rem; }
@@ -410,7 +411,7 @@
 
     {{-- Smooth-scroll nav tabs (each tab is only rendered when its section has content) --}}
     <div class="lol-nav-tabs-wrap">
-        <ul class="lol-nav-tabs">
+        <ul class="lol-nav-tabs" id="lolNavTabs">
             <li><a href="#section-overview">Overview</a></li>
             @if($navHasPhotos)
             <li><a href="#section-photos">Photos</a></li>
@@ -1305,16 +1306,36 @@
         if (el) el.addEventListener('click', doShare);
     });
 
-    /* ── Smooth-scroll nav tabs ── */
-    document.querySelectorAll('.lol-nav-tabs a[href^="#"]').forEach(function (link) {
-        link.addEventListener('click', function (e) {
-            var target = document.querySelector(this.getAttribute('href'));
+    /* ── Smooth-scroll nav tabs + active-section highlighting ── */
+    var LOL_OFFSET = 82;
+    var lolNavLinks = Array.from(document.querySelectorAll('#lolNavTabs a[href^="#"]'));
+    var lolSections  = lolNavLinks.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+    lolSections.sort(function (a, b) { return a.offsetTop - b.offsetTop; });
+
+    lolNavLinks.forEach(function (a) {
+        a.addEventListener('click', function (e) {
+            var target = document.querySelector(a.getAttribute('href'));
             if (!target) return;
             e.preventDefault();
-            var top = target.getBoundingClientRect().top + window.scrollY - 82;
+            var top = target.getBoundingClientRect().top + window.scrollY - LOL_OFFSET;
             window.scrollTo({ top: top, behavior: 'smooth' });
         });
     });
+
+    function lolOnScroll() {
+        var scrollY = window.scrollY + LOL_OFFSET + 10;
+        var active = null;
+        lolSections.forEach(function (s) {
+            if (s && s.offsetTop <= scrollY) active = s;
+        });
+        lolNavLinks.forEach(function (a) { a.classList.remove('lol-nav-active'); });
+        if (active) {
+            var link = document.querySelector('#lolNavTabs a[href="#' + active.id + '"]');
+            if (link) link.classList.add('lol-nav-active');
+        }
+    }
+    window.addEventListener('scroll', lolOnScroll, { passive: true });
+    lolOnScroll();
 
     /* ---- Auto-reopen modals after validation failure ---- */
     @if(session('open_modal') === 'question')

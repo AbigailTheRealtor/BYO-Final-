@@ -134,7 +134,8 @@
     border-bottom: 2px solid transparent; margin-bottom: -2px;
     transition: color .15s, border-color .15s; letter-spacing: 0.01em;
 }
-.bol-view-page .bol-nav-tabs li a:hover { color: #2563eb; border-bottom-color: #2563eb; }
+.bol-view-page .bol-nav-tabs li a:hover,
+.bol-view-page .bol-nav-tabs li a.bol-nav-active { color: #2563eb; border-bottom-color: #2563eb; }
 
 /* Sticky sidebar */
 .bol-view-page .bol-sticky-card {
@@ -446,7 +447,7 @@
 
     {{-- SMOOTH-SCROLL NAV TABS --}}
     <div class="bol-nav-tabs-wrap">
-        <ul class="bol-nav-tabs">
+        <ul class="bol-nav-tabs" id="bolNavTabs">
             <li><a href="#section-overview">Overview</a></li>
             @if($hasCriteriaContent)<li><a href="#section-criteria">Purchase Criteria</a></li>@endif
             @if($hasFinancingContent)<li><a href="#section-financing">Financing</a></li>@endif
@@ -1307,18 +1308,36 @@
         });
     }());
 
-    /* Smooth scroll offset */
-    document.querySelectorAll('.bol-nav-tabs a[href^="#"]').forEach(function (link) {
-        link.addEventListener('click', function (e) {
-            var targetId = this.getAttribute('href').slice(1);
-            var target = document.getElementById(targetId);
+    /* ---- Smooth-scroll + active-section highlighting ---- */
+    var BOL_OFFSET = 82;
+    var bolNavLinks = Array.from(document.querySelectorAll('#bolNavTabs a[href^="#"]'));
+    var bolSections  = bolNavLinks.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+    bolSections.sort(function (a, b) { return a.offsetTop - b.offsetTop; });
+
+    bolNavLinks.forEach(function (a) {
+        a.addEventListener('click', function (e) {
+            var target = document.querySelector(a.getAttribute('href'));
             if (!target) return;
             e.preventDefault();
-            var offset = 82;
-            var top = target.getBoundingClientRect().top + window.scrollY - offset;
+            var top = target.getBoundingClientRect().top + window.scrollY - BOL_OFFSET;
             window.scrollTo({ top: top, behavior: 'smooth' });
         });
     });
+
+    function bolOnScroll() {
+        var scrollY = window.scrollY + BOL_OFFSET + 10;
+        var active = null;
+        bolSections.forEach(function (s) {
+            if (s && s.offsetTop <= scrollY) active = s;
+        });
+        bolNavLinks.forEach(function (a) { a.classList.remove('bol-nav-active'); });
+        if (active) {
+            var link = document.querySelector('#bolNavTabs a[href="#' + active.id + '"]');
+            if (link) link.classList.add('bol-nav-active');
+        }
+    }
+    window.addEventListener('scroll', bolOnScroll, { passive: true });
+    bolOnScroll();
 
     /* Share listing */
     function shareHandler() {
