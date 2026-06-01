@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PropertyDnaProfile;
 use App\Models\BuyerTenantDnaProfile;
 use App\Services\Dna\PropertyDnaExplanationService;
+use App\Services\Dna\PropertyPersonalityService;
 use App\Services\Dna\BuyerTenantDnaExplanationService;
 use App\Services\Dna\BuyerAvatarService;
 use App\Services\Dna\TenantAvatarService;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 
 class DnaProfileController extends Controller
 {
-    public function seller($listingId, PropertyDnaExplanationService $explanationService)
+    public function seller($listingId, PropertyDnaExplanationService $explanationService, PropertyPersonalityService $propertyPersonalityService)
     {
         $profile = PropertyDnaProfile::where('listing_type', 'seller')
             ->where('listing_id', $listingId)
@@ -28,14 +29,15 @@ class DnaProfileController extends Controller
             'profile_found' => $profile !== null,
         ]);
 
-        $explanations = $profile ? $explanationService->generate($profile) : null;
+        $explanations      = $profile ? $explanationService->generate($profile) : null;
+        $personalityResult = $profile ? $propertyPersonalityService->generate($profile) : null;
 
         return response()
-            ->view('admin.dna.seller', compact('profile', 'explanations', 'listingId'))
+            ->view('admin.dna.seller', compact('profile', 'explanations', 'personalityResult', 'listingId'))
             ->header('Cache-Control', 'no-store');
     }
 
-    public function landlord($listingId, PropertyDnaExplanationService $explanationService)
+    public function landlord($listingId, PropertyDnaExplanationService $explanationService, PropertyPersonalityService $propertyPersonalityService)
     {
         $profile = PropertyDnaProfile::where('listing_type', 'landlord')
             ->where('listing_id', $listingId)
@@ -49,10 +51,11 @@ class DnaProfileController extends Controller
             'profile_found' => $profile !== null,
         ]);
 
-        $explanations = $profile ? $explanationService->generate($profile) : null;
+        $explanations      = $profile ? $explanationService->generate($profile) : null;
+        $personalityResult = $profile ? $propertyPersonalityService->generate($profile) : null;
 
         return response()
-            ->view('admin.dna.landlord', compact('profile', 'explanations', 'listingId'))
+            ->view('admin.dna.landlord', compact('profile', 'explanations', 'personalityResult', 'listingId'))
             ->header('Cache-Control', 'no-store');
     }
 

@@ -95,14 +95,87 @@
     </div>
 </div>
 
-{{-- Personality Summary (reserved) --}}
+{{-- Property Personality --}}
+@if($personalityResult !== null)
 <div class="card mb-4">
-    <div class="card-header"><h6 class="mb-0">Personality Summary</h6></div>
-    <div class="card-body">
-        <span class="badge badge-light border text-muted" style="font-size:.78rem;">Reserved — Not Yet Available</span>
-        <p class="text-muted small mb-0 mt-1">A narrative personality summary dimension is not yet generated for this profile version.</p>
+    <div class="card-header d-flex align-items-center gap-2">
+        <h6 class="mb-0">Property Personality</h6>
+        @if(($personalityResult['status'] ?? '') === 'generated')
+            <span class="badge badge-success" style="font-size:.78rem;">Generated</span>
+        @elseif(($personalityResult['status'] ?? '') === 'insufficient_data')
+            <span class="badge badge-warning" style="font-size:.78rem;">Insufficient Data</span>
+        @else
+            <span class="badge badge-danger" style="font-size:.78rem;">Failed</span>
+        @endif
+    </div>
+    <div class="card-body" style="font-size:.85rem;">
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <strong>Status:</strong>
+                <div class="mt-1">{{ $personalityResult['status'] ?? '—' }}</div>
+            </div>
+            <div class="col-md-6">
+                <strong>Primary Personality:</strong>
+                <div class="mt-1">
+                    @if(!empty($personalityResult['primary_personality']))
+                        <span class="badge badge-primary" style="font-size:.85rem;">{{ $personalityResult['primary_personality'] }}</span>
+                    @else
+                        <span class="text-muted">—</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <strong>Secondary Personalities:</strong>
+            <div class="mt-1">
+                @if(!empty($personalityResult['secondary_personalities']))
+                    {{ implode(', ', $personalityResult['secondary_personalities']) }}
+                @else
+                    <span class="text-muted">—</span>
+                @endif
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <strong>Personality Signals:</strong>
+            <div class="mt-1">
+                @if(!empty($personalityResult['personality_signals']))
+                    <ul class="mb-0 ps-3">
+                        @foreach($personalityResult['personality_signals'] as $row)
+                            @php $sigVal = $row['value']; @endphp
+                            <li><code>{{ $row['signal'] }}</code>: {{ is_bool($sigVal) ? ($sigVal ? 'true' : 'false') : $sigVal }}</li>
+                        @endforeach
+                    </ul>
+                @else
+                    <span class="text-muted">—</span>
+                @endif
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <strong>Missing Inputs:</strong>
+            <div class="mt-1">
+                @if(!empty($personalityResult['missing_inputs']))
+                    <ul class="mb-0 ps-3">
+                        @foreach($personalityResult['missing_inputs'] as $row)
+                            <li class="text-muted">{{ $row['dimension'] }}</li>
+                        @endforeach
+                    </ul>
+                @else
+                    <span class="text-muted">—</span>
+                @endif
+            </div>
+        </div>
+
+        @if(!empty($personalityResult['error']))
+        <div class="alert alert-warning mb-0 py-2 px-3" style="font-size:.83rem;">
+            <strong>Error:</strong> {{ $personalityResult['error'] }}
+        </div>
+        @endif
     </div>
 </div>
+@endif
 
 {{-- Buyer Archetype Tags --}}
 <div class="card mb-4">
