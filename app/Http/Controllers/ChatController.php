@@ -9,23 +9,32 @@ use GuzzleHttp\Client;
 
 class ChatController extends Controller
 {
-    protected $httpClient;
+    protected ?Client $httpClient = null;
 
     public function __construct()
     {
-        $key = "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";
-        $this->httpClient = new Client([
-            'base_uri' => 'https://api.openai.com/v1/',
-            'headers' => [
-                'Authorization' => 'Bearer ' .  $key,
-                // 'Authorization' => 'Bearer ' . env('CHATGPT_API_KEY'),
-                'Content-Type' => 'application/json',
-            ],
-        ]);
+        $apiKey = config('ai.api_key');
+
+        if (!empty($apiKey)) {
+            $this->httpClient = new Client([
+                'base_uri' => 'https://api.openai.com/v1/',
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+        }
     }
+
     // Integrating View oF CHat GPT
     public function askToChatGpt_integrate_view(Request $request)
     {
+        if (empty($this->httpClient)) {
+            return response()->json([
+                'message' => 'Chat service is not configured.',
+            ], 503);
+        }
+
         $id = $request->auction_id;
         $property_auction = PropertyAuction::whereId($id)->first();
         $owner_name=$property_auction->user->name;
@@ -40,6 +49,14 @@ class ChatController extends Controller
     }
     public function askToChatGpt_integrate(Request $request)
     {
+        if (empty($this->httpClient)) {
+            return response()->json([
+                'bestAnswer' => 'Chat service is not configured.',
+                'id' => $request->id,
+                'message' => 503,
+            ], 503);
+        }
+
         $id = $request->id;
         $property_auction = PropertyAuction::whereId($id)->first();
         $owner_name=$property_auction->user->name;
