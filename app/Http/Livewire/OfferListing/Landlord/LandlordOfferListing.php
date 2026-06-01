@@ -28,7 +28,7 @@ class LandlordOfferListing extends Component
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
     public $isResumingDraft = false; // True when a draft has been loaded via loadDraft()
-    public $isLoadingDraft = false; // Prevents updated* hooks from resetting dependent fields during draft load
+    public $isLoadingData = false; // Prevents updated* hooks from resetting dependent fields during draft load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
@@ -886,7 +886,7 @@ class LandlordOfferListing extends Component
      */
     public function updatedLeaseFeeType($value)
     {
-        if ($this->isLoadingDraft) return;
+        if ($this->isLoadingData) return;
         $this->reset([
             'lease_fee_flat',
             'lease_fee_percentage',
@@ -904,7 +904,7 @@ class LandlordOfferListing extends Component
      */
     public function updatedPurchaseFeeType($value)
     {
-        if ($this->isLoadingDraft) return;
+        if ($this->isLoadingData) return;
         $this->reset([
             'purchase_fee_flat',
             'purchase_fee_rental_period',
@@ -944,7 +944,7 @@ class LandlordOfferListing extends Component
 
     public function updatedOfferedFinancing()
     {
-        if ($this->isLoadingDraft) return;
+        if ($this->isLoadingData) return;
         $this->reset([
             'other_financing',
             'cash_budget',
@@ -974,7 +974,7 @@ class LandlordOfferListing extends Component
 
     public function updatedSaleProvision()
     {
-        if ($this->isLoadingDraft) return;
+        if ($this->isLoadingData) return;
         $this->reset([
             'sale_provision_other',
             'sale_provision_assignment',
@@ -985,13 +985,13 @@ class LandlordOfferListing extends Component
 
     public function updatedSaleProvisionAssignment()
     {
-        if ($this->isLoadingDraft) return;
+        if ($this->isLoadingData) return;
         $this->reset(['assignment_fee_amount', 'buyer_sell_contract']);
     }
 
     public function updatedBuyerSellContract()
     {
-        if ($this->isLoadingDraft) return;
+        if ($this->isLoadingData) return;
         $this->reset(['assignment_fee_amount']);
     }
 
@@ -2180,7 +2180,7 @@ class LandlordOfferListing extends Component
 
     public function finishDraftLoad()
     {
-        $this->isLoadingDraft = false;
+        $this->isLoadingData = false;
     }
 
     public function loadDraft($listingId)
@@ -2190,7 +2190,7 @@ class LandlordOfferListing extends Component
             ->first();
 
         if ($auction) {
-            $this->isLoadingDraft = true;
+            $this->isLoadingData = true;
 
             // Load all metadata fields
             // title is EAV-stored; $auction->get->title is the canonical meta accessor

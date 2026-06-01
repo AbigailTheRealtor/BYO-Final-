@@ -3202,6 +3202,8 @@ class SellerOfferListing extends Component
         $auction->saveMeta('seller_amortization_other', $this->seller_amortization_other);
         $auction->saveMeta('seller_payment_frequency', $this->seller_payment_frequency);
         $auction->saveMeta('seller_payment_frequency_other', $this->seller_payment_frequency_other);
+        $auction->saveMeta('seller_down_payment_amount', $this->stripCommas($this->seller_down_payment_amount));
+        $auction->saveMeta('seller_late_fee_amount', $this->stripCommas($this->seller_late_fee_amount));
         $auction->saveMeta('interest_rate', $this->interest_rate);
         $auction->saveMeta('loan_duration', $this->loan_duration);
         $auction->saveMeta('prepayment_penalty', $this->prepayment_penalty);
