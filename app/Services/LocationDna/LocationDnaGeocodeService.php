@@ -32,6 +32,7 @@ class LocationDnaGeocodeService
 
     public function __construct(
         private readonly ?ClientInterface $httpClient = null,
+        private readonly ?LocationDnaAuditService $auditService = null,
     ) {}
 
     /**
@@ -77,7 +78,9 @@ class LocationDnaGeocodeService
             // (a) Validate minimum required fields
             foreach (self::REQUIRED_ADDRESS_FIELDS as $field) {
                 if (empty($addressData[$field])) {
-                    return $this->skippedOutput($listingType, $listingId, 'missing_required_address_fields');
+                    $output = $this->skippedOutput($listingType, $listingId, 'missing_required_address_fields');
+                    $this->audit($listingType, $listingId, $output, $addressData);
+                    return $output;
                 }
             }
 
@@ -104,12 +107,14 @@ class LocationDnaGeocodeService
                 ($record->source_county ?? '') === $county &&
                 ($record->source_zip    ?? '') === $zip
             ) {
-                return $this->geocodedOutput(
+                $output = $this->geocodedOutput(
                     $listingType,
                     $listingId,
                     (float) $record->geocoded_lat,
                     (float) $record->geocoded_lng,
                 );
+                $this->audit($listingType, $listingId, $output, $addressData);
+                return $output;
             }
 
             // (d) If any address field changed, clear prior geocode data
@@ -147,7 +152,9 @@ class LocationDnaGeocodeService
             $apiKey = config('services.google.places_key');
 
             if (blank($apiKey)) {
-                return $this->failedOutput($listingType, $listingId, 'missing_google_api_key');
+                $output = $this->failedOutput($listingType, $listingId, 'missing_google_api_key');
+                $this->audit($listingType, $listingId, $output, $addressData);
+                return $output;
             }
 
             $fullAddress = "{$address}, {$city}, {$state}" . ($zip ? " {$zip}" : '');
@@ -174,7 +181,9 @@ class LocationDnaGeocodeService
                 $record->geocode_error  = $errorMsg;
                 $record->save();
 
-                return $this->failedOutput($listingType, $listingId, $errorMsg);
+                $output = $this->failedOutput($listingType, $listingId, $errorMsg);
+                $this->audit($listingType, $listingId, $output, $addressData);
+                return $output;
             }
 
             // (f) Success — persist geocoded data
@@ -190,7 +199,9 @@ class LocationDnaGeocodeService
             $record->geocoded_at    = now();
             $record->save();
 
-            return $this->geocodedOutput($listingType, $listingId, $lat, $lng);
+            $output = $this->geocodedOutput($listingType, $listingId, $lat, $lng);
+            $this->audit($listingType, $listingId, $output, $addressData);
+            return $output;
 
         } catch (Throwable $e) {
             // (h) Catch-all — persist failed status when the record was already initialised,
@@ -205,7 +216,36 @@ class LocationDnaGeocodeService
                 }
             }
 
-            return $this->failedOutput($listingType, $listingId, $e->getMessage());
+            $output = $this->failedOutput($listingType, $listingId, $e->getMessage());
+            $this->audit($listingType, $listingId, $output, $addressData);
+            return $output;
+        }
+    }
+
+    // =========================================================================
+    // Private helpers
+    // =========================================================================
+
+    /**
+     * Write an audit row. Wrapped in its own try/catch so a failure cannot
+     * prevent the caller's return value from being delivered.
+     */
+    private function audit(string $listingType, int $listingId, array $output, array $addressData): void
+    {
+        try {
+            $auditService = $this->auditService ?? new LocationDnaAuditService();
+            $auditService->record(
+                listingType:    $listingType,
+                listingId:      $listingId,
+                eventType:      'geocode',
+                status:         $output['status'],
+                source:         $output['source'] ?? null,
+                inputSnapshot:  $addressData,
+                outputSnapshot: $output,
+                error:          $output['error'] ?? null,
+            );
+        } catch (Throwable) {
+            // Audit failure must never alter the service's return value.
         }
     }
 

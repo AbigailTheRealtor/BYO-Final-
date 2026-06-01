@@ -94,6 +94,7 @@ class LocationDnaPoiDistanceService
 
     public function __construct(
         private readonly ?ClientInterface $httpClient = null,
+        private readonly ?LocationDnaAuditService $auditService = null,
     ) {}
 
     /**
@@ -141,29 +142,35 @@ class LocationDnaPoiDistanceService
                 ->first();
 
             if ($dnaRecord === null) {
-                return $this->skippedOutput(
+                $output = $this->skippedOutput(
                     $listingType,
                     $listingId,
                     'No PropertyLocationDna record found for this listing',
                 );
+                $this->audit($listingType, $listingId, $output);
+                return $output;
             }
 
             // (b) Validate: record must have geocode_status === 'geocoded'
             if ($dnaRecord->geocode_status !== 'geocoded') {
-                return $this->skippedOutput(
+                $output = $this->skippedOutput(
                     $listingType,
                     $listingId,
                     "PropertyLocationDna geocode_status is '{$dnaRecord->geocode_status}', expected 'geocoded'",
                 );
+                $this->audit($listingType, $listingId, $output);
+                return $output;
             }
 
             // (c) Validate: coordinates must be present
             if (blank($dnaRecord->geocoded_lat) || blank($dnaRecord->geocoded_lng)) {
-                return $this->skippedOutput(
+                $output = $this->skippedOutput(
                     $listingType,
                     $listingId,
                     'PropertyLocationDna record is missing geocoded coordinates',
                 );
+                $this->audit($listingType, $listingId, $output);
+                return $output;
             }
 
             $sourceLat = (float) $dnaRecord->geocoded_lat;
@@ -183,7 +190,7 @@ class LocationDnaPoiDistanceService
                     abs($cachedLat - $sourceLat) < 0.0000001 &&
                     abs($cachedLng - $sourceLng) < 0.0000001
                 ) {
-                    return $this->completedOutput(
+                    $output = $this->completedOutput(
                         $listingType,
                         $listingId,
                         $sourceLat,
@@ -191,6 +198,8 @@ class LocationDnaPoiDistanceService
                         $existingRows->toArray(),
                         'cached',
                     );
+                    $this->audit($listingType, $listingId, $output);
+                    return $output;
                 }
 
                 // Coordinates changed — clear all existing rows
@@ -202,13 +211,15 @@ class LocationDnaPoiDistanceService
             // (e) API key guard
             $apiKey = config('services.google.places_key');
             if (blank($apiKey)) {
-                return $this->failedOutput(
+                $output = $this->failedOutput(
                     $listingType,
                     $listingId,
                     $sourceLat,
                     $sourceLng,
                     'missing_google_api_key',
                 );
+                $this->audit($listingType, $listingId, $output);
+                return $output;
             }
 
             $client  = $this->httpClient ?? new Client();
@@ -230,7 +241,7 @@ class LocationDnaPoiDistanceService
                 $results[] = $row;
             }
 
-            return $this->completedOutput(
+            $output = $this->completedOutput(
                 $listingType,
                 $listingId,
                 $sourceLat,
@@ -238,21 +249,48 @@ class LocationDnaPoiDistanceService
                 $results,
                 'completed',
             );
+            $this->audit($listingType, $listingId, $output);
+            return $output;
 
         } catch (Throwable $e) {
-            return $this->failedOutput(
+            $output = $this->failedOutput(
                 $listingType,
                 $listingId,
                 null,
                 null,
                 $e->getMessage(),
             );
+            $this->audit($listingType, $listingId, $output);
+            return $output;
         }
     }
 
     // =========================================================================
     // Private helpers
     // =========================================================================
+
+    /**
+     * Write an audit row. Wrapped in its own try/catch so a failure cannot
+     * prevent the caller's return value from being delivered.
+     */
+    private function audit(string $listingType, int $listingId, array $output): void
+    {
+        try {
+            $auditService = $this->auditService ?? new LocationDnaAuditService();
+            $auditService->record(
+                listingType:    $listingType,
+                listingId:      $listingId,
+                eventType:      'poi_distance',
+                status:         $output['status'],
+                source:         null,
+                inputSnapshot:  ['listing_type' => $listingType, 'listing_id' => $listingId],
+                outputSnapshot: $output,
+                error:          $output['error'] ?? null,
+            );
+        } catch (Throwable) {
+            // Audit failure must never alter the service's return value.
+        }
+    }
 
     /**
      * Fetch the nearest Google Places result for one category and persist the row.

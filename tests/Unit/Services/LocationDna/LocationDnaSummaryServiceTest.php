@@ -789,4 +789,81 @@ class LocationDnaSummaryServiceTest extends TestCase
         $this->assertNull($result['summary']['transportation']['nearest_transit_miles']);
         $this->assertNull($result['summary']['transportation']['nearest_gas_station_miles']);
     }
+
+    // =========================================================================
+    // Phase E integration — audit row written, audit failure does not mutate output
+    // =========================================================================
+
+    /** @test */
+    public function summary_service_writes_an_audit_row_after_a_completed_summary(): void
+    {
+        $this->createGeocodedDnaRecord();
+        $this->createPoiRows([
+            ['poi_category' => 'grocery_store', 'status' => 'found', 'distance_miles' => 0.5],
+        ]);
+
+        $result = $this->makeService()->summarizeForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('completed', $result['status']);
+
+        $this->assertDatabaseHas('property_location_dna_audits', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'event_type'   => 'summary_generated',
+            'status'       => 'completed',
+        ]);
+    }
+
+    /** @test */
+    public function summary_service_writes_an_audit_row_on_skipped_path(): void
+    {
+        $result = $this->makeService()->summarizeForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('skipped', $result['status']);
+
+        $this->assertDatabaseHas('property_location_dna_audits', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'event_type'   => 'summary_generated',
+            'status'       => 'skipped',
+        ]);
+    }
+
+    /** @test */
+    public function summary_service_audit_failure_does_not_alter_return_array(): void
+    {
+        $this->createGeocodedDnaRecord();
+        $this->createPoiRows([
+            ['poi_category' => 'grocery_store', 'status' => 'found', 'distance_miles' => 0.5],
+        ]);
+
+        // Inject a failing audit service
+        $failingAudit = new class extends \App\Services\LocationDna\LocationDnaAuditService {
+            public function record(
+                string  $listingType,
+                int     $listingId,
+                string  $eventType,
+                string  $status,
+                ?string $source,
+                ?array  $inputSnapshot,
+                ?array  $outputSnapshot,
+                ?string $error,
+            ): \App\Models\PropertyLocationDnaAudit {
+                throw new \RuntimeException('Audit service is down');
+            }
+        };
+
+        $service = new LocationDnaSummaryService($failingAudit);
+
+        $result = $service->summarizeForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        // Return value must be identical regardless of audit failure
+        $this->assertContractShape($result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('completed', $result['status']);
+        $this->assertNull($result['error']);
+        $this->assertIsArray($result['summary']);
+    }
 }

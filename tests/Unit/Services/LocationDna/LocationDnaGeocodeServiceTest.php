@@ -603,4 +603,93 @@ class LocationDnaGeocodeServiceTest extends TestCase
             'LocationDnaGeocodeService must not import DnaMarketingOutput'
         );
     }
+
+    // =========================================================================
+    // Phase E integration — audit row written, audit failure does not mutate output
+    // =========================================================================
+
+    /** @test */
+    public function geocode_service_writes_an_audit_row_after_a_successful_geocode(): void
+    {
+        $this->mockClient->expects($this->once())
+            ->method('request')
+            ->willReturn($this->makeGeoResponse(27.9506, -82.4572));
+
+        $result = $this->makeService()->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            self::VALID_ADDRESS
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('geocoded', $result['status']);
+
+        $this->assertDatabaseHas('property_location_dna_audits', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'event_type'   => 'geocode',
+            'status'       => 'geocoded',
+        ]);
+    }
+
+    /** @test */
+    public function geocode_service_writes_an_audit_row_on_skipped_path(): void
+    {
+        $this->mockClient->expects($this->never())->method('request');
+
+        $result = $this->makeService()->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            ['city' => 'Tampa', 'state' => 'FL']
+        );
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('skipped', $result['status']);
+
+        $this->assertDatabaseHas('property_location_dna_audits', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'event_type'   => 'geocode',
+            'status'       => 'skipped',
+        ]);
+    }
+
+    /** @test */
+    public function geocode_service_audit_failure_does_not_alter_return_array(): void
+    {
+        $this->mockClient->expects($this->once())
+            ->method('request')
+            ->willReturn($this->makeGeoResponse(27.9506, -82.4572));
+
+        // Inject a failing audit service
+        $failingAudit = new class extends \App\Services\LocationDna\LocationDnaAuditService {
+            public function record(
+                string  $listingType,
+                int     $listingId,
+                string  $eventType,
+                string  $status,
+                ?string $source,
+                ?array  $inputSnapshot,
+                ?array  $outputSnapshot,
+                ?string $error,
+            ): \App\Models\PropertyLocationDnaAudit {
+                throw new \RuntimeException('Audit service is down');
+            }
+        };
+
+        $service = new \App\Services\LocationDna\LocationDnaGeocodeService($this->mockClient, $failingAudit);
+
+        $result = $service->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            self::VALID_ADDRESS
+        );
+
+        // Return value must be identical regardless of audit failure
+        $this->assertContractShape($result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('geocoded', $result['status']);
+        $this->assertEqualsWithDelta(27.9506, $result['lat'], 0.0001);
+        $this->assertEqualsWithDelta(-82.4572, $result['lng'], 0.0001);
+    }
 }

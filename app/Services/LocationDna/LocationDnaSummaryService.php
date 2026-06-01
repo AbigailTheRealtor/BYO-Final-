@@ -56,6 +56,10 @@ class LocationDnaSummaryService
         ],
     ];
 
+    public function __construct(
+        private readonly ?LocationDnaAuditService $auditService = null,
+    ) {}
+
     /**
      * Compile and persist a Location DNA summary for the given listing.
      *
@@ -89,20 +93,24 @@ class LocationDnaSummaryService
                 ->first();
 
             if ($dnaRecord === null) {
-                return $this->skippedOutput(
+                $output = $this->skippedOutput(
                     $listingType,
                     $listingId,
                     'No PropertyLocationDna record found for this listing',
                 );
+                $this->audit($listingType, $listingId, $output);
+                return $output;
             }
 
             // (b) Guard: DNA record must be geocoded
             if ($dnaRecord->geocode_status !== 'geocoded') {
-                return $this->skippedOutput(
+                $output = $this->skippedOutput(
                     $listingType,
                     $listingId,
                     "PropertyLocationDna geocode_status is '{$dnaRecord->geocode_status}', expected 'geocoded'",
                 );
+                $this->audit($listingType, $listingId, $output);
+                return $output;
             }
 
             // (c) Guard: POI rows must exist
@@ -111,11 +119,13 @@ class LocationDnaSummaryService
                 ->get();
 
             if ($poiRows->isEmpty()) {
-                return $this->skippedOutput(
+                $output = $this->skippedOutput(
                     $listingType,
                     $listingId,
                     'No PropertyLocationPoi rows found for this listing',
                 );
+                $this->audit($listingType, $listingId, $output);
+                return $output;
             }
 
             // Build nearest_by_category — keyed by poi_category
@@ -187,10 +197,41 @@ class LocationDnaSummaryService
             $dnaRecord->generated_at  = now();
             $dnaRecord->save();
 
-            return $this->completedOutput($listingType, $listingId, $summary);
+            $output = $this->completedOutput($listingType, $listingId, $summary);
+            $this->audit($listingType, $listingId, $output);
+            return $output;
 
         } catch (Throwable $e) {
-            return $this->failedOutput($listingType, $listingId, $e->getMessage());
+            $output = $this->failedOutput($listingType, $listingId, $e->getMessage());
+            $this->audit($listingType, $listingId, $output);
+            return $output;
+        }
+    }
+
+    // =========================================================================
+    // Private helpers
+    // =========================================================================
+
+    /**
+     * Write an audit row. Wrapped in its own try/catch so a failure cannot
+     * prevent the caller's return value from being delivered.
+     */
+    private function audit(string $listingType, int $listingId, array $output): void
+    {
+        try {
+            $auditService = $this->auditService ?? new LocationDnaAuditService();
+            $auditService->record(
+                listingType:    $listingType,
+                listingId:      $listingId,
+                eventType:      'summary_generated',
+                status:         $output['status'],
+                source:         null,
+                inputSnapshot:  ['listing_type' => $listingType, 'listing_id' => $listingId],
+                outputSnapshot: $output,
+                error:          $output['error'] ?? null,
+            );
+        } catch (Throwable) {
+            // Audit failure must never alter the service's return value.
         }
     }
 

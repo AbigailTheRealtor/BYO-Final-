@@ -799,4 +799,85 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
             'Phase B LocationDnaGeocodeService must not reference Phase C POI service',
         );
     }
+
+    // =========================================================================
+    // Phase E integration — audit row written, audit failure does not mutate output
+    // =========================================================================
+
+    /** @test */
+    public function poi_distance_service_writes_an_audit_row_after_a_completed_run(): void
+    {
+        $this->createGeocodedDnaRecord();
+
+        $this->mockClient
+            ->method('request')
+            ->willReturn($this->makePlacesResponse());
+
+        $result = $this->makeService()->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('completed', $result['status']);
+
+        $this->assertDatabaseHas('property_location_dna_audits', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'event_type'   => 'poi_distance',
+            'status'       => 'completed',
+        ]);
+    }
+
+    /** @test */
+    public function poi_distance_service_writes_an_audit_row_on_skipped_path(): void
+    {
+        $this->mockClient->expects($this->never())->method('request');
+
+        $result = $this->makeService()->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('skipped', $result['status']);
+
+        $this->assertDatabaseHas('property_location_dna_audits', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'event_type'   => 'poi_distance',
+            'status'       => 'skipped',
+        ]);
+    }
+
+    /** @test */
+    public function poi_distance_service_audit_failure_does_not_alter_return_array(): void
+    {
+        $this->createGeocodedDnaRecord();
+
+        $this->mockClient
+            ->method('request')
+            ->willReturn($this->makePlacesResponse());
+
+        // Inject a failing audit service
+        $failingAudit = new class extends \App\Services\LocationDna\LocationDnaAuditService {
+            public function record(
+                string  $listingType,
+                int     $listingId,
+                string  $eventType,
+                string  $status,
+                ?string $source,
+                ?array  $inputSnapshot,
+                ?array  $outputSnapshot,
+                ?string $error,
+            ): \App\Models\PropertyLocationDnaAudit {
+                throw new \RuntimeException('Audit service is down');
+            }
+        };
+
+        $service = new \App\Services\LocationDna\LocationDnaPoiDistanceService($this->mockClient, $failingAudit);
+
+        $result = $service->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        // Return value must be identical regardless of audit failure
+        $this->assertContractShape($result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('completed', $result['status']);
+        $this->assertNull($result['error']);
+        $this->assertNotEmpty($result['results']);
+    }
 }
