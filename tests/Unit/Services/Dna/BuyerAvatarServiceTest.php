@@ -4,7 +4,9 @@ namespace Tests\Unit\Services\Dna;
 
 use App\Models\BuyerTenantDnaProfile;
 use App\Services\Dna\BuyerAvatarService;
+use App\Services\Dna\BuyerAvatarProfileService;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
 
 /**
  * BuyerAvatarServiceTest
@@ -20,6 +22,9 @@ use PHPUnit\Framework\TestCase;
  *   (d) missing_inputs — populated correctly from absent signal dimensions
  *   (e) Contract consistency — listing_type is always 'buyer' in every output path
  *   (f) No AI/OpenAI imports — service is deterministic only
+ *   (g) New output keys — motivation, narrative, preference summary, personality tags,
+ *       match preferences, confidence score, readiness score, avatar version
+ *   (h) BuyerAvatarProfileService — buyer-only guard and delegation
  *
  * NOTE — Relocation Buyer is not tested here because there is no explicit timeline
  * signal in the current BuyerTenantDnaProfile (the DNA generator does not emit a
@@ -132,15 +137,24 @@ class BuyerAvatarServiceTest extends TestCase
 
         $result = $this->service->generate($profile);
 
-        $this->assertArrayHasKey('success',           $result);
-        $this->assertArrayHasKey('status',            $result);
-        $this->assertArrayHasKey('listing_type',      $result);
-        $this->assertArrayHasKey('listing_id',        $result);
-        $this->assertArrayHasKey('primary_avatar',    $result);
-        $this->assertArrayHasKey('secondary_avatars', $result);
-        $this->assertArrayHasKey('signals',           $result);
-        $this->assertArrayHasKey('missing_inputs',    $result);
-        $this->assertArrayHasKey('error',             $result);
+        $this->assertArrayHasKey('success',                  $result);
+        $this->assertArrayHasKey('status',                   $result);
+        $this->assertArrayHasKey('listing_type',             $result);
+        $this->assertArrayHasKey('listing_id',               $result);
+        $this->assertArrayHasKey('primary_avatar',           $result);
+        $this->assertArrayHasKey('secondary_avatars',        $result);
+        $this->assertArrayHasKey('signals',                  $result);
+        $this->assertArrayHasKey('missing_inputs',           $result);
+        $this->assertArrayHasKey('error',                    $result);
+        $this->assertArrayHasKey('primary_motivation',       $result);
+        $this->assertArrayHasKey('secondary_motivation',     $result);
+        $this->assertArrayHasKey('buyer_narrative',          $result);
+        $this->assertArrayHasKey('buyer_preference_summary', $result);
+        $this->assertArrayHasKey('buyer_personality_tags',   $result);
+        $this->assertArrayHasKey('buyer_match_preferences',  $result);
+        $this->assertArrayHasKey('avatar_confidence_score',  $result);
+        $this->assertArrayHasKey('buyer_readiness_score',    $result);
+        $this->assertArrayHasKey('buyer_avatar_version',     $result);
     }
 
     /** @test */
@@ -152,15 +166,24 @@ class BuyerAvatarServiceTest extends TestCase
 
         $result = $this->service->generate($profile);
 
-        $this->assertArrayHasKey('success',           $result);
-        $this->assertArrayHasKey('status',            $result);
-        $this->assertArrayHasKey('listing_type',      $result);
-        $this->assertArrayHasKey('listing_id',        $result);
-        $this->assertArrayHasKey('primary_avatar',    $result);
-        $this->assertArrayHasKey('secondary_avatars', $result);
-        $this->assertArrayHasKey('signals',           $result);
-        $this->assertArrayHasKey('missing_inputs',    $result);
-        $this->assertArrayHasKey('error',             $result);
+        $this->assertArrayHasKey('success',                  $result);
+        $this->assertArrayHasKey('status',                   $result);
+        $this->assertArrayHasKey('listing_type',             $result);
+        $this->assertArrayHasKey('listing_id',               $result);
+        $this->assertArrayHasKey('primary_avatar',           $result);
+        $this->assertArrayHasKey('secondary_avatars',        $result);
+        $this->assertArrayHasKey('signals',                  $result);
+        $this->assertArrayHasKey('missing_inputs',           $result);
+        $this->assertArrayHasKey('error',                    $result);
+        $this->assertArrayHasKey('primary_motivation',       $result);
+        $this->assertArrayHasKey('secondary_motivation',     $result);
+        $this->assertArrayHasKey('buyer_narrative',          $result);
+        $this->assertArrayHasKey('buyer_preference_summary', $result);
+        $this->assertArrayHasKey('buyer_personality_tags',   $result);
+        $this->assertArrayHasKey('buyer_match_preferences',  $result);
+        $this->assertArrayHasKey('avatar_confidence_score',  $result);
+        $this->assertArrayHasKey('buyer_readiness_score',    $result);
+        $this->assertArrayHasKey('buyer_avatar_version',     $result);
 
         $this->assertTrue($result['success']);
         $this->assertSame('generated', $result['status']);
@@ -316,8 +339,25 @@ class BuyerAvatarServiceTest extends TestCase
     }
 
     /** @test */
-    public function it_classifies_budget_conscious_buyer_when_budget_set_and_not_pre_approved(): void
+    public function it_classifies_budget_conscious_buyer_when_budget_set_not_pre_approved_and_has_financing_signal(): void
     {
+        // Budget-Conscious requires ≥1 financing signal (distinguishes it from First-Time Buyer).
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => ['open-to:seller-financing'],
+            'deal_breaker_flags' => [
+                ['flag' => 'budget_ceiling_specified', 'source_field' => 'maximum_budget', 'value' => '250000'],
+            ],
+        ]);
+
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('Budget-Conscious Buyer', $result['primary_avatar']);
+    }
+
+    /** @test */
+    public function it_classifies_first_time_buyer_when_budget_set_not_pre_approved_and_no_financing_signals(): void
+    {
+        // First-Time Buyer = budget only + no pre-approval + no financing research (truly new).
         $profile = $this->makeBaseProfile([
             'lifestyle_tags'     => [],
             'deal_breaker_flags' => [
@@ -327,7 +367,7 @@ class BuyerAvatarServiceTest extends TestCase
 
         $result = $this->service->generate($profile);
 
-        $this->assertSame('Budget-Conscious Buyer', $result['primary_avatar']);
+        $this->assertSame('First-Time Buyer', $result['primary_avatar']);
     }
 
     /** @test */
@@ -639,5 +679,489 @@ class BuyerAvatarServiceTest extends TestCase
         $result = $this->service->generate($profile);
 
         $this->assertNotSame('Luxury Buyer', $result['primary_avatar']);
+    }
+
+    // -------------------------------------------------------------------------
+    // (g) New output keys — motivations, narrative, preference summary,
+    //     personality tags, match preferences, confidence score,
+    //     readiness score, avatar version
+    // -------------------------------------------------------------------------
+
+    /** @test */
+    public function new_output_keys_are_present_for_generated_path(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags' => ['prefers-type:SingleFamily'],
+        ]);
+
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('generated', $result['status']);
+        $this->assertArrayHasKey('primary_motivation',       $result);
+        $this->assertArrayHasKey('secondary_motivation',     $result);
+        $this->assertArrayHasKey('buyer_narrative',          $result);
+        $this->assertArrayHasKey('buyer_preference_summary', $result);
+        $this->assertArrayHasKey('buyer_personality_tags',   $result);
+        $this->assertArrayHasKey('buyer_match_preferences',  $result);
+        $this->assertArrayHasKey('avatar_confidence_score',  $result);
+        $this->assertArrayHasKey('buyer_readiness_score',    $result);
+        $this->assertArrayHasKey('buyer_avatar_version',     $result);
+    }
+
+    /** @test */
+    public function new_output_keys_are_present_for_insufficient_data_path(): void
+    {
+        $profile = $this->makeBaseProfile(['preference_completeness' => 5.0]);
+
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('insufficient_data', $result['status']);
+        $this->assertArrayHasKey('primary_motivation',       $result);
+        $this->assertArrayHasKey('secondary_motivation',     $result);
+        $this->assertArrayHasKey('buyer_narrative',          $result);
+        $this->assertArrayHasKey('buyer_preference_summary', $result);
+        $this->assertArrayHasKey('buyer_personality_tags',   $result);
+        $this->assertArrayHasKey('buyer_match_preferences',  $result);
+        $this->assertArrayHasKey('avatar_confidence_score',  $result);
+        $this->assertArrayHasKey('buyer_readiness_score',    $result);
+        $this->assertArrayHasKey('buyer_avatar_version',     $result);
+    }
+
+    /** @test */
+    public function correct_motivations_for_luxury_buyer(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => ['financial:pre-approved'],
+            'deal_breaker_flags' => [
+                ['flag' => 'budget_ceiling_specified', 'source_field' => 'maximum_budget', 'value' => '900000'],
+            ],
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Luxury Buyer', $result['primary_avatar']);
+        $this->assertSame('Lifestyle Upgrade', $result['primary_motivation']);
+        $this->assertSame('Investment', $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function correct_motivations_for_investor_buyer(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags' => ['open-to:lease-option', 'open-to:seller-financing'],
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Investor Buyer', $result['primary_avatar']);
+        $this->assertSame('Investment', $result['primary_motivation']);
+        $this->assertSame('Cash Flow', $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function correct_motivations_for_vacation_buyer(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Vacation']]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Vacation Buyer', $result['primary_avatar']);
+        $this->assertSame('Lifestyle Upgrade', $result['primary_motivation']);
+        $this->assertSame('Retirement Planning', $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function correct_motivations_for_move_up_buyer(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => ['financial:pre-approved', 'requires:pool'],
+            'deal_breaker_flags' => [
+                ['flag' => 'pool_required', 'source_field' => 'pool_needed'],
+                ['flag' => 'budget_ceiling_specified', 'source_field' => 'maximum_budget', 'value' => '400000'],
+            ],
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Move-Up Buyer', $result['primary_avatar']);
+        $this->assertSame('Family Growth', $result['primary_motivation']);
+        $this->assertSame('Lifestyle Upgrade', $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function correct_motivations_for_first_time_buyer(): void
+    {
+        // First-Time Buyer: budget set + not pre-approved + no financing signals.
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => [],
+            'deal_breaker_flags' => [
+                ['flag' => 'budget_ceiling_specified', 'source_field' => 'maximum_budget', 'value' => '200000'],
+            ],
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('First-Time Buyer', $result['primary_avatar']);
+        $this->assertSame('Stability', $result['primary_motivation']);
+        $this->assertSame('Family Growth', $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function correct_motivations_for_budget_conscious_buyer(): void
+    {
+        // Budget-Conscious requires at least one financing signal alongside the budget.
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => ['open-to:seller-financing'],
+            'deal_breaker_flags' => [
+                ['flag' => 'budget_ceiling_specified', 'source_field' => 'maximum_budget', 'value' => '200000'],
+            ],
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Budget-Conscious Buyer', $result['primary_avatar']);
+        $this->assertSame('Stability', $result['primary_motivation']);
+        $this->assertSame('Relocation', $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function correct_motivations_for_commercial_buyer(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Commercial']]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Commercial Buyer', $result['primary_avatar']);
+        $this->assertSame('Investment', $result['primary_motivation']);
+        $this->assertSame('Business Expansion', $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function correct_motivations_for_waterfront_buyer(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Waterfront']]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Waterfront Buyer', $result['primary_avatar']);
+        $this->assertSame('Lifestyle Upgrade', $result['primary_motivation']);
+        $this->assertSame('Appreciation', $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function correct_motivations_for_downsizing_buyer(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['seeks:55-plus-community']]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Downsizing Buyer', $result['primary_avatar']);
+        $this->assertSame('Retirement Planning', $result['primary_motivation']);
+        $this->assertSame('Lifestyle Upgrade', $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function correct_motivations_for_flexible_buyer(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['financial:pre-approved']]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Flexible Buyer', $result['primary_avatar']);
+        $this->assertSame('Relocation', $result['primary_motivation']);
+        $this->assertSame('Lifestyle Upgrade', $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function unknown_buyer_returns_null_for_both_motivation_fields(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => [],
+            'deal_breaker_flags' => [],
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Unknown Buyer', $result['primary_avatar']);
+        $this->assertNull($result['primary_motivation']);
+        $this->assertNull($result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function buyer_narrative_is_non_empty_string_for_all_types_except_unknown(): void
+    {
+        $profiles = [
+            'Luxury Buyer'           => $this->makeBaseProfile(['lifestyle_tags' => ['financial:pre-approved'], 'deal_breaker_flags' => [['flag' => 'budget_ceiling_specified', 'source_field' => 'maximum_budget', 'value' => '900000']]]),
+            'Investor Buyer'         => $this->makeBaseProfile(['lifestyle_tags' => ['open-to:lease-option', 'open-to:seller-financing']]),
+            'Vacation Buyer'         => $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Vacation']]),
+            'Downsizing Buyer'       => $this->makeBaseProfile(['lifestyle_tags' => ['seeks:55-plus-community']]),
+            'Waterfront Buyer'       => $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Waterfront']]),
+            'Commercial Buyer'       => $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Commercial']]),
+            'Flexible Buyer'         => $this->makeBaseProfile(['lifestyle_tags' => ['financial:pre-approved']]),
+            // Budget-Conscious requires ≥1 financing signal.
+            'Budget-Conscious Buyer' => $this->makeBaseProfile(['lifestyle_tags' => ['open-to:seller-financing'], 'deal_breaker_flags' => [['flag' => 'budget_ceiling_specified', 'source_field' => 'maximum_budget', 'value' => '250000']]]),
+            // First-Time Buyer: budget only, no pre-approval, no financing signals.
+            'First-Time Buyer'       => $this->makeBaseProfile(['deal_breaker_flags' => [['flag' => 'budget_ceiling_specified', 'source_field' => 'maximum_budget', 'value' => '180000']]]),
+        ];
+
+        foreach ($profiles as $avatarType => $profile) {
+            $result = $this->service->generate($profile);
+            $this->assertSame($avatarType, $result['primary_avatar'], "Expected {$avatarType}");
+            $this->assertIsString($result['buyer_narrative'],
+                "buyer_narrative must be a non-empty string for {$avatarType}");
+            $this->assertNotEmpty($result['buyer_narrative'],
+                "buyer_narrative must not be empty for {$avatarType}");
+        }
+    }
+
+    /** @test */
+    public function buyer_narrative_is_null_for_unknown_buyer(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => [], 'deal_breaker_flags' => []]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Unknown Buyer', $result['primary_avatar']);
+        $this->assertNull($result['buyer_narrative']);
+    }
+
+    /** @test */
+    public function buyer_preference_summary_is_structured_with_four_groups(): void
+    {
+        $profiles = [
+            $this->makeBaseProfile(['lifestyle_tags' => [], 'deal_breaker_flags' => []]),
+            $this->makeBaseProfile(['lifestyle_tags' => ['financial:pre-approved']]),
+            $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Waterfront']]),
+        ];
+
+        foreach ($profiles as $profile) {
+            $result  = $this->service->generate($profile);
+            $summary = $result['buyer_preference_summary'];
+
+            $this->assertIsArray($summary);
+            $this->assertArrayHasKey('property_types',    $summary);
+            $this->assertArrayHasKey('amenities',         $summary);
+            $this->assertArrayHasKey('budget_signals',    $summary);
+            $this->assertArrayHasKey('financing_signals', $summary);
+            $this->assertIsArray($summary['property_types']);
+            $this->assertIsArray($summary['amenities']);
+            $this->assertIsArray($summary['budget_signals']);
+            $this->assertIsArray($summary['financing_signals']);
+        }
+    }
+
+    /** @test */
+    public function buyer_preference_summary_insufficient_data_path_returns_four_empty_groups(): void
+    {
+        $profile = $this->makeBaseProfile(['preference_completeness' => 5.0]);
+        $result  = $this->service->generate($profile);
+        $summary = $result['buyer_preference_summary'];
+
+        $this->assertSame([], $summary['property_types']);
+        $this->assertSame([], $summary['amenities']);
+        $this->assertSame([], $summary['budget_signals']);
+        $this->assertSame([], $summary['financing_signals']);
+    }
+
+    /** @test */
+    public function buyer_personality_tags_is_always_an_array(): void
+    {
+        $profiles = [
+            $this->makeBaseProfile(['lifestyle_tags' => [], 'deal_breaker_flags' => []]),
+            $this->makeBaseProfile(['lifestyle_tags' => ['financial:pre-approved']]),
+            $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Commercial']]),
+        ];
+
+        foreach ($profiles as $profile) {
+            $result = $this->service->generate($profile);
+            $this->assertIsArray($result['buyer_personality_tags']);
+        }
+    }
+
+    /** @test */
+    public function buyer_match_preferences_is_always_an_array(): void
+    {
+        $profiles = [
+            $this->makeBaseProfile(['lifestyle_tags' => [], 'deal_breaker_flags' => []]),
+            $this->makeBaseProfile(['lifestyle_tags' => ['requires:pool', 'financial:pre-approved']]),
+        ];
+
+        foreach ($profiles as $profile) {
+            $result = $this->service->generate($profile);
+            $this->assertIsArray($result['buyer_match_preferences']);
+        }
+    }
+
+    /** @test */
+    public function avatar_confidence_score_is_integer_between_0_and_100(): void
+    {
+        $profiles = [
+            $this->makeBaseProfile(['lifestyle_tags' => [], 'deal_breaker_flags' => []]),
+            $this->makeBaseProfile(['lifestyle_tags' => ['financial:pre-approved']]),
+            $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Waterfront'], 'preference_completeness' => 100.0]),
+        ];
+
+        foreach ($profiles as $profile) {
+            $result = $this->service->generate($profile);
+            $score = $result['avatar_confidence_score'];
+            $this->assertIsInt($score);
+            $this->assertGreaterThanOrEqual(0, $score);
+            $this->assertLessThanOrEqual(100, $score);
+        }
+    }
+
+    /** @test */
+    public function buyer_readiness_score_is_integer_between_0_and_100(): void
+    {
+        $profiles = [
+            $this->makeBaseProfile(['lifestyle_tags' => [], 'deal_breaker_flags' => []]),
+            $this->makeBaseProfile(['lifestyle_tags' => ['financial:pre-approved']]),
+        ];
+
+        foreach ($profiles as $profile) {
+            $result = $this->service->generate($profile);
+            $score = $result['buyer_readiness_score'];
+            $this->assertIsInt($score);
+            $this->assertGreaterThanOrEqual(0, $score);
+            $this->assertLessThanOrEqual(100, $score);
+        }
+    }
+
+    /** @test */
+    public function unknown_buyer_confidence_score_is_at_most_20(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'          => [],
+            'deal_breaker_flags'      => [],
+            'preference_completeness' => 100.0,
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Unknown Buyer', $result['primary_avatar']);
+        $this->assertLessThanOrEqual(20, $result['avatar_confidence_score']);
+    }
+
+    /** @test */
+    public function flexible_buyer_confidence_score_is_at_most_60(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'          => ['financial:pre-approved'],
+            'preference_completeness' => 100.0,
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('Flexible Buyer', $result['primary_avatar']);
+        $this->assertLessThanOrEqual(60, $result['avatar_confidence_score']);
+    }
+
+    /** @test */
+    public function buyer_readiness_score_is_zero_when_no_readiness_signals_present(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => [],
+            'deal_breaker_flags' => [],
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertSame(0, $result['buyer_readiness_score']);
+    }
+
+    /** @test */
+    public function buyer_readiness_score_is_at_least_30_when_pre_approval_is_present(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags' => ['financial:pre-approved'],
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertGreaterThanOrEqual(30, $result['buyer_readiness_score']);
+    }
+
+    /** @test */
+    public function buyer_avatar_version_is_always_buyer_avatar_v1(): void
+    {
+        $profiles = [
+            $this->makeBaseProfile(['lifestyle_tags' => [], 'deal_breaker_flags' => []]),
+            $this->makeBaseProfile(['lifestyle_tags' => ['financial:pre-approved']]),
+            $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Commercial']]),
+            $this->makeBaseProfile(['preference_completeness' => 5.0]),
+        ];
+
+        foreach ($profiles as $profile) {
+            $result = $this->service->generate($profile);
+            $this->assertSame('BUYER_AVATAR_V1', $result['buyer_avatar_version'],
+                'buyer_avatar_version must always be BUYER_AVATAR_V1');
+        }
+    }
+
+    /** @test */
+    public function buyer_avatar_version_is_buyer_avatar_v1_for_insufficient_data(): void
+    {
+        $profile = $this->makeBaseProfile(['preference_completeness' => 5.0]);
+        $result = $this->service->generate($profile);
+        $this->assertSame('insufficient_data', $result['status']);
+        $this->assertSame('BUYER_AVATAR_V1', $result['buyer_avatar_version']);
+    }
+
+    /** @test */
+    public function match_preferences_contains_pool_when_pool_required_signal_set(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => ['requires:pool'],
+            'deal_breaker_flags' => [['flag' => 'pool_required', 'source_field' => 'pool_needed']],
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertContains('Pool', $result['buyer_match_preferences']);
+    }
+
+    /** @test */
+    public function match_preferences_contains_waterfront_when_waterfront_signal_set(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Waterfront']]);
+        $result = $this->service->generate($profile);
+        $this->assertContains('Waterfront', $result['buyer_match_preferences']);
+    }
+
+    /** @test */
+    public function preference_summary_budget_signals_contains_pre_approved_when_signal_set(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['financial:pre-approved']]);
+        $result  = $this->service->generate($profile);
+        $this->assertContains('Pre-Approved', $result['buyer_preference_summary']['budget_signals']);
+    }
+
+    /** @test */
+    public function preference_summary_financing_signals_contains_seller_financing_when_signal_set(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['open-to:seller-financing']]);
+        $result  = $this->service->generate($profile);
+        $this->assertContains('Seller Financing', $result['buyer_preference_summary']['financing_signals']);
+    }
+
+    /** @test */
+    public function preference_summary_property_types_contains_waterfront_when_signal_set(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Waterfront']]);
+        $result  = $this->service->generate($profile);
+        $this->assertContains('Waterfront', $result['buyer_preference_summary']['property_types']);
+    }
+
+    /** @test */
+    public function preference_summary_amenities_contains_pool_when_signal_set(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => ['requires:pool'],
+            'deal_breaker_flags' => [['flag' => 'pool_required', 'source_field' => 'pool_needed']],
+        ]);
+        $result = $this->service->generate($profile);
+        $this->assertContains('Pool', $result['buyer_preference_summary']['amenities']);
+    }
+
+    // -------------------------------------------------------------------------
+    // (h) BuyerAvatarProfileService — buyer-only guard
+    // -------------------------------------------------------------------------
+
+    /** @test */
+    public function buyer_avatar_profile_service_does_not_call_avatar_service_for_non_buyer(): void
+    {
+        /** @var BuyerAvatarService|MockObject $mockAvatarService */
+        $mockAvatarService = $this->createMock(BuyerAvatarService::class);
+
+        $mockAvatarService->expects($this->never())
+            ->method('generate');
+
+        $orchestrator = new BuyerAvatarProfileService($mockAvatarService);
+
+        $tenantProfile = new BuyerTenantDnaProfile();
+        $tenantProfile->listing_type = 'tenant';
+        $tenantProfile->listing_id   = 1;
+
+        $orchestrator->compute($tenantProfile);
+    }
+
+    /** @test */
+    public function buyer_avatar_profile_service_silently_noops_for_non_buyer_profile(): void
+    {
+        $mockAvatarService = $this->createMock(BuyerAvatarService::class);
+        $mockAvatarService->expects($this->never())->method('generate');
+
+        $service = new BuyerAvatarProfileService($mockAvatarService);
+
+        $profile = new BuyerTenantDnaProfile();
+        $profile->listing_type = 'seller';
+
+        $service->compute($profile);
     }
 }

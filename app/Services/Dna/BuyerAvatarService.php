@@ -46,6 +46,11 @@ class BuyerAvatarService
     private const MIN_COMPLETENESS = 20.0;
 
     /**
+     * Avatar version stamp — bump in a future phase when classification rules change.
+     */
+    private const AVATAR_VERSION = 'BUYER_AVATAR_V1';
+
+    /**
      * Ordered list of all allowed avatar type values.
      * Priority among them is determined by the rule order in classify().
      *
@@ -68,6 +73,23 @@ class BuyerAvatarService
     ];
 
     /**
+     * Standardized motivation vocabulary.
+     */
+    private const MOTIVATION_MAP = [
+        'Luxury Buyer'           => ['primary' => 'Lifestyle Upgrade',    'secondary' => 'Investment'],
+        'Investor Buyer'         => ['primary' => 'Investment',            'secondary' => 'Cash Flow'],
+        'Vacation Buyer'         => ['primary' => 'Lifestyle Upgrade',    'secondary' => 'Retirement Planning'],
+        'Move-Up Buyer'          => ['primary' => 'Family Growth',         'secondary' => 'Lifestyle Upgrade'],
+        'First-Time Buyer'       => ['primary' => 'Stability',             'secondary' => 'Family Growth'],
+        'Budget-Conscious Buyer' => ['primary' => 'Stability',             'secondary' => 'Relocation'],
+        'Commercial Buyer'       => ['primary' => 'Investment',            'secondary' => 'Business Expansion'],
+        'Waterfront Buyer'       => ['primary' => 'Lifestyle Upgrade',    'secondary' => 'Appreciation'],
+        'Downsizing Buyer'       => ['primary' => 'Retirement Planning',  'secondary' => 'Lifestyle Upgrade'],
+        'Flexible Buyer'         => ['primary' => 'Relocation',            'secondary' => 'Lifestyle Upgrade'],
+        'Unknown Buyer'          => ['primary' => null,                    'secondary' => null],
+    ];
+
+    /**
      * Classify a BuyerTenantDnaProfile into structured avatar categories.
      *
      * Reads only lifestyle_tags, deal_breaker_flags, preference_completeness,
@@ -75,48 +97,67 @@ class BuyerAvatarService
      * No additional database queries are issued.
      *
      * Output contract — always returns exactly these keys:
-     *   success          bool
-     *   status           'generated' | 'insufficient_data' | 'failed'
-     *   listing_type     'buyer'   (always 'buyer'; this service only processes buyer profiles)
-     *   listing_id       int
-     *   primary_avatar   string|null
-     *   secondary_avatars array
-     *   signals          array
-     *   missing_inputs   array
-     *   error            string|null
+     *   success                bool
+     *   status                 'generated' | 'insufficient_data' | 'failed'
+     *   listing_type           'buyer'   (always 'buyer'; this service only processes buyer profiles)
+     *   listing_id             int
+     *   primary_avatar         string|null
+     *   secondary_avatars      array
+     *   signals                array
+     *   missing_inputs         array
+     *   error                  string|null
+     *   primary_motivation     string|null
+     *   secondary_motivation   string|null
+     *   buyer_narrative        string|null
+     *   buyer_preference_summary  array
+     *   buyer_personality_tags    array
+     *   buyer_match_preferences   array
+     *   avatar_confidence_score   int
+     *   buyer_readiness_score     int
+     *   buyer_avatar_version      string
      *
      * @param  BuyerTenantDnaProfile $profile  A cast, in-memory profile instance.
      * @return array
      */
     public function generate(BuyerTenantDnaProfile $profile): array
     {
-        // listing_type is always 'buyer' in the output contract regardless of
-        // what the profile actually contains — this service is buyer-only.
-        $stub = [
-            'success'           => false,
-            'status'            => 'insufficient_data',
-            'listing_type'      => 'buyer',
-            'listing_id'        => (int) ($profile->listing_id ?? 0),
-            'primary_avatar'    => null,
-            'secondary_avatars' => [],
-            'signals'           => [],
-            'missing_inputs'    => [],
-            'error'             => null,
+        // Each output-contract key is defined exactly once here.
+        // listing_type is always 'buyer' regardless of what the profile contains
+        // — this service is buyer-only.
+        $result = [
+            'success'                  => false,
+            'status'                   => 'insufficient_data',
+            'listing_type'             => 'buyer',
+            'listing_id'               => (int) ($profile->listing_id ?? 0),
+            'primary_avatar'           => null,
+            'secondary_avatars'        => [],
+            'signals'                  => [],
+            'missing_inputs'           => [],
+            'error'                    => null,
+            'primary_motivation'       => null,
+            'secondary_motivation'     => null,
+            'buyer_narrative'          => null,
+            'buyer_preference_summary' => ['property_types' => [], 'amenities' => [], 'budget_signals' => [], 'financing_signals' => []],
+            'buyer_personality_tags'   => [],
+            'buyer_match_preferences'  => [],
+            'avatar_confidence_score'  => 0,
+            'buyer_readiness_score'    => 0,
+            'buyer_avatar_version'     => self::AVATAR_VERSION,
         ];
 
         if (($profile->listing_type ?? '') !== 'buyer') {
-            $stub['missing_inputs'] = ['listing_type must be buyer'];
-            return $stub;
+            $result['missing_inputs'] = ['listing_type must be buyer'];
+            return $result;
         }
 
         $completeness = (float) ($profile->preference_completeness ?? 0.0);
 
         if ($completeness < self::MIN_COMPLETENESS) {
-            $stub['missing_inputs'] = $this->buildMissingInputsFromCompleteness(
+            $result['missing_inputs'] = $this->buildMissingInputsFromCompleteness(
                 (array) ($profile->lifestyle_tags ?? []),
                 (array) ($profile->deal_breaker_flags ?? [])
             );
-            return $stub;
+            return $result;
         }
 
         try {
@@ -128,22 +169,31 @@ class BuyerAvatarService
 
             [$primary, $secondaries] = $this->classify($signals);
 
-            return [
-                'success'           => true,
-                'status'            => 'generated',
-                'listing_type'      => 'buyer',
-                'listing_id'        => (int) $profile->listing_id,
-                'primary_avatar'    => $primary,
-                'secondary_avatars' => $secondaries,
-                'signals'           => $signals,
-                'missing_inputs'    => $missingInputs,
-                'error'             => null,
-            ];
+            [$primaryMotivation, $secondaryMotivation] = $this->generateMotivations($primary, $signals);
+
+            // Overwrite only the keys that differ for the generated path.
+            $result['success']                  = true;
+            $result['status']                   = 'generated';
+            $result['listing_id']               = (int) $profile->listing_id;
+            $result['primary_avatar']           = $primary;
+            $result['secondary_avatars']        = $secondaries;
+            $result['signals']                  = $signals;
+            $result['missing_inputs']           = $missingInputs;
+            $result['primary_motivation']       = $primaryMotivation;
+            $result['secondary_motivation']     = $secondaryMotivation;
+            $result['buyer_narrative']          = $this->generateNarrative($primary, $signals);
+            $result['buyer_preference_summary'] = $this->generatePreferenceSummary($primary, $signals);
+            $result['buyer_personality_tags']   = $this->generatePersonalityTags($primary, $signals);
+            $result['buyer_match_preferences']  = $this->generateMatchPreferences($signals);
+            $result['avatar_confidence_score']  = $this->generateConfidenceScore($completeness, $primary);
+            $result['buyer_readiness_score']    = $this->generateReadinessScore($signals);
+            $result['buyer_avatar_version']     = $this->generateAvatarVersion();
+
+            return $result;
         } catch (\Throwable $e) {
-            return array_merge($stub, [
-                'status' => 'failed',
-                'error'  => $e->getMessage(),
-            ]);
+            $result['status'] = 'failed';
+            $result['error']  = $e->getMessage();
+            return $result;
         }
     }
 
@@ -291,8 +341,8 @@ class BuyerAvatarService
      *   5. Downsizing Buyer   — 55-plus community preference
      *   6. Luxury Buyer       — pre-approved + budget > $750,000
      *   7. Move-Up Buyer      — pre-approved + hard amenity requirement (non-Luxury)
-     *   8. Budget-Conscious   — budget set, not pre-approved, not Investor
-     *   9. First-Time Buyer   — not pre-approved, budget set, no prior avatar
+     *   8. Budget-Conscious   — budget set, not pre-approved, not Investor, ≥1 financing signal
+     *   9. First-Time Buyer   — budget set, not pre-approved, no financing signals, no prior avatar
      *  10. Flexible Buyer     — signals present but no specific rule matched
      *  11. Unknown Buyer      — no meaningful signals found
      *
@@ -352,18 +402,29 @@ class BuyerAvatarService
             $candidates[] = 'Move-Up Buyer';
         }
 
-        // Rule 8 — Budget-Conscious Buyer: budget ceiling set but not pre-approved,
-        // and not primarily an investor pattern.
+        // Rule 8 — Budget-Conscious Buyer: budget ceiling set, not pre-approved, not Investor,
+        // AND at least one alternative financing signal present (they have explored alternatives
+        // but have not secured pre-approval). Requires ≥1 financing signal to be distinct from
+        // First-Time Buyer (Rule 9).
+        $hasAnyFinancingSignal = $signals['open_to_seller_financing']
+            || $signals['open_to_assumable_loan']
+            || $signals['open_to_lease_option']
+            || $signals['open_to_lease_purchase'];
+
         if ($signals['budget_ceiling_specified']
             && !$signals['pre_approved']
             && !in_array('Investor Buyer', $candidates, true)
+            && $hasAnyFinancingSignal
         ) {
             $candidates[] = 'Budget-Conscious Buyer';
         }
 
-        // Rule 9 — First-Time Buyer: not pre-approved, budget set, no prior avatar.
-        if (!$signals['pre_approved']
-            && $signals['budget_ceiling_specified']
+        // Rule 9 — First-Time Buyer: budget set, not pre-approved, no alternative financing
+        // signals (no prior financing research), and no prior avatar classification. Distinct
+        // from Budget-Conscious by the absence of any financing signal — truly new to the process.
+        if ($signals['budget_ceiling_specified']
+            && !$signals['pre_approved']
+            && !$hasAnyFinancingSignal
             && empty($candidates)
         ) {
             $candidates[] = 'First-Time Buyer';
@@ -390,6 +451,242 @@ class BuyerAvatarService
         $secondaries = array_values(array_slice($candidates, 1));
 
         return [$primary, $secondaries];
+    }
+
+    /**
+     * Return [primary_motivation, secondary_motivation] from the standardized vocabulary
+     * based on avatar type. Signals parameter is reserved for future signal-based overrides.
+     *
+     * Vocabulary: Investment, Cash Flow, Appreciation, Retirement Planning,
+     * Lifestyle Upgrade, Family Growth, Relocation, Stability, Business Expansion.
+     *
+     * @param  string $primaryAvatar
+     * @param  array  $signals
+     * @return array{0: string|null, 1: string|null}
+     */
+    private function generateMotivations(string $primaryAvatar, array $signals): array
+    {
+        $map = self::MOTIVATION_MAP[$primaryAvatar] ?? ['primary' => null, 'secondary' => null];
+        return [$map['primary'], $map['secondary']];
+    }
+
+    /**
+     * Return a short deterministic template narrative string for the avatar type.
+     * Returns null for Unknown Buyer.
+     *
+     * @param  string $primaryAvatar
+     * @param  array  $signals
+     * @return string|null
+     */
+    private function generateNarrative(string $primaryAvatar, array $signals): ?string
+    {
+        $narratives = [
+            'Luxury Buyer'           => 'Seeking a premium property that reflects an elevated lifestyle and long-term investment value.',
+            'Investor Buyer'         => 'Looking for a property with flexible ownership and financing options to maximize investment returns.',
+            'Vacation Buyer'         => 'In search of an ideal vacation or resort retreat for personal enjoyment and seasonal use.',
+            'Move-Up Buyer'          => 'Ready to upgrade to a larger home with the amenities needed for the next chapter of life.',
+            'First-Time Buyer'       => 'Taking the first step toward homeownership with a clear budget and growing financial confidence.',
+            'Budget-Conscious Buyer' => 'Focused on finding the best value within a defined budget to achieve long-term stability.',
+            'Commercial Buyer'       => 'Pursuing a commercial property opportunity aligned with business expansion and investment goals.',
+            'Waterfront Buyer'       => 'Drawn to waterfront living for its lifestyle appeal and long-term appreciation potential.',
+            'Downsizing Buyer'       => 'Simplifying into a right-sized home, ideally in an active adult or 55-plus community.',
+            'Flexible Buyer'         => 'Open to a range of property types and purchase structures to find the right opportunity.',
+            'Unknown Buyer'          => null,
+        ];
+
+        return $narratives[$primaryAvatar] ?? null;
+    }
+
+    /**
+     * Return a JSON-ready structured array of preference labels grouped by category.
+     *
+     * Structure:
+     *   property_types   — inferred property-type signals (Commercial, Waterfront, Vacation)
+     *   amenities        — hard amenity and community requirements (Pool, Garage, 55-Plus)
+     *   budget_signals   — financial qualification signals (Pre-Approved, Budget Set)
+     *   financing_signals — alternative financing interest signals (Seller Financing, etc.)
+     *
+     * Each group is an array of label strings. Empty groups are always present as [].
+     *
+     * @param  string $primaryAvatar
+     * @param  array  $signals
+     * @return array{property_types: list<string>, amenities: list<string>, budget_signals: list<string>, financing_signals: list<string>}
+     */
+    private function generatePreferenceSummary(string $primaryAvatar, array $signals): array
+    {
+        $propertyTypes = [];
+        if ($signals['commercial_signal'])  { $propertyTypes[] = 'Commercial'; }
+        if ($signals['waterfront_signal'])  { $propertyTypes[] = 'Waterfront'; }
+        if ($signals['vacation_signal'])    { $propertyTypes[] = 'Vacation/Resort'; }
+        if ($signals['has_property_type'] && empty($propertyTypes)) {
+            $propertyTypes[] = 'Property Type Specified';
+        }
+
+        $amenities = [];
+        if ($signals['pool_required'])   { $amenities[] = 'Pool'; }
+        if ($signals['garage_required']) { $amenities[] = 'Garage'; }
+        if ($signals['seeks_55_plus'])   { $amenities[] = '55-Plus Community'; }
+
+        $budgetSignals = [];
+        if ($signals['pre_approved'])             { $budgetSignals[] = 'Pre-Approved'; }
+        if ($signals['budget_ceiling_specified']) { $budgetSignals[] = 'Budget Set'; }
+
+        $financingSignals = [];
+        if ($signals['open_to_seller_financing']) { $financingSignals[] = 'Seller Financing'; }
+        if ($signals['open_to_assumable_loan'])   { $financingSignals[] = 'Assumable Loan'; }
+        if ($signals['open_to_lease_option'])     { $financingSignals[] = 'Lease Option'; }
+        if ($signals['open_to_lease_purchase'])   { $financingSignals[] = 'Lease Purchase'; }
+
+        return [
+            'property_types'    => $propertyTypes,
+            'amenities'         => $amenities,
+            'budget_signals'    => $budgetSignals,
+            'financing_signals' => $financingSignals,
+        ];
+    }
+
+    /**
+     * Return a JSON array of personality labels keyed by avatar type and signal presence.
+     * Examples: ['Investment Focused', 'Lifestyle Driven', 'Flexible Financing', 'Amenity Focused']
+     *
+     * @param  string $primaryAvatar
+     * @param  array  $signals
+     * @return array
+     */
+    private function generatePersonalityTags(string $primaryAvatar, array $signals): array
+    {
+        $baseTags = [
+            'Luxury Buyer'           => ['Lifestyle Driven', 'Investment Focused', 'Quality Conscious'],
+            'Investor Buyer'         => ['Investment Focused', 'Flexible Financing', 'Return Oriented'],
+            'Vacation Buyer'         => ['Lifestyle Driven', 'Leisure Focused', 'Seasonal Buyer'],
+            'Move-Up Buyer'          => ['Growth Oriented', 'Amenity Focused', 'Pre-Approved Buyer'],
+            'First-Time Buyer'       => ['Goal Oriented', 'Value Conscious', 'Budget Aware'],
+            'Budget-Conscious Buyer' => ['Value Conscious', 'Budget Aware', 'Stability Seeking'],
+            'Commercial Buyer'       => ['Investment Focused', 'Business Oriented', 'Return Oriented'],
+            'Waterfront Buyer'       => ['Lifestyle Driven', 'Amenity Focused', 'Appreciation Minded'],
+            'Downsizing Buyer'       => ['Lifestyle Driven', 'Stability Seeking', 'Community Oriented'],
+            'Flexible Buyer'         => ['Open Minded', 'Opportunity Driven', 'Adaptable'],
+            'Unknown Buyer'          => [],
+        ];
+
+        $tags = $baseTags[$primaryAvatar] ?? [];
+
+        // Signal-based additions (avoid duplicates).
+        if ($signals['open_to_seller_financing'] || $signals['open_to_assumable_loan']
+            || $signals['open_to_lease_option'] || $signals['open_to_lease_purchase']
+        ) {
+            if (!in_array('Flexible Financing', $tags, true)) {
+                $tags[] = 'Flexible Financing';
+            }
+        }
+        if (($signals['pool_required'] || $signals['garage_required'])
+            && !in_array('Amenity Focused', $tags, true)
+        ) {
+            $tags[] = 'Amenity Focused';
+        }
+
+        return array_values($tags);
+    }
+
+    /**
+     * Return a flat JSON array of match-ready preference strings derived directly
+     * from signal booleans. Examples: ['Waterfront', 'Pool', 'Garage', 'Seller Financing']
+     *
+     * @param  array $signals
+     * @return array
+     */
+    private function generateMatchPreferences(array $signals): array
+    {
+        $prefs = [];
+
+        if ($signals['waterfront_signal'])         { $prefs[] = 'Waterfront'; }
+        if ($signals['vacation_signal'])           { $prefs[] = 'Vacation'; }
+        if ($signals['commercial_signal'])         { $prefs[] = 'Commercial'; }
+        if ($signals['pool_required'])             { $prefs[] = 'Pool'; }
+        if ($signals['garage_required'])           { $prefs[] = 'Garage'; }
+        if ($signals['seeks_55_plus'])             { $prefs[] = '55-Plus Community'; }
+        if ($signals['open_to_seller_financing'])  { $prefs[] = 'Seller Financing'; }
+        if ($signals['open_to_assumable_loan'])    { $prefs[] = 'Assumable Loan'; }
+        if ($signals['open_to_lease_option'])      { $prefs[] = 'Lease Option'; }
+        if ($signals['open_to_lease_purchase'])    { $prefs[] = 'Lease Purchase'; }
+        if ($signals['pre_approved'])              { $prefs[] = 'Pre-Approved'; }
+        if ($signals['budget_ceiling_specified'])  { $prefs[] = 'Budget Ceiling'; }
+
+        return $prefs;
+    }
+
+    /**
+     * Return a deterministic confidence score (0–100).
+     *   - Unknown Buyer: caps at 20 regardless of completeness.
+     *   - Flexible Buyer: caps at 60 regardless of completeness.
+     *   - All others: scales proportionally from preference_completeness (0–100).
+     *
+     * @param  float  $completeness  0–100 preference completeness score.
+     * @param  string $primaryAvatar
+     * @return int
+     */
+    private function generateConfidenceScore(float $completeness, string $primaryAvatar): int
+    {
+        if ($primaryAvatar === 'Unknown Buyer') {
+            return min((int) round($completeness * 0.2), 20);
+        }
+
+        if ($primaryAvatar === 'Flexible Buyer') {
+            return min((int) round($completeness * 0.6), 60);
+        }
+
+        return min((int) round($completeness), 100);
+    }
+
+    /**
+     * Return a deterministic readiness score (0–100) measuring transactional readiness,
+     * distinct from profile completeness confidence.
+     *
+     * Scoring:
+     *   pre_approved present:                 +30
+     *   budget_ceiling_specified:             +25
+     *   at least one financing preference:    +20
+     *   property type preference present:     +15
+     *   amenity requirement (pool or garage): +10
+     *   Total caps at 100.
+     *
+     * @param  array $signals
+     * @return int
+     */
+    private function generateReadinessScore(array $signals): int
+    {
+        $score = 0;
+
+        if ($signals['pre_approved']) {
+            $score += 30;
+        }
+        if ($signals['budget_ceiling_specified']) {
+            $score += 25;
+        }
+        if ($signals['open_to_seller_financing'] || $signals['open_to_assumable_loan']
+            || $signals['open_to_lease_option'] || $signals['open_to_lease_purchase']
+        ) {
+            $score += 20;
+        }
+        if ($signals['has_property_type']) {
+            $score += 15;
+        }
+        if ($signals['pool_required'] || $signals['garage_required']) {
+            $score += 10;
+        }
+
+        return min($score, 100);
+    }
+
+    /**
+     * Return the current avatar version constant string.
+     * Bump the constant value in a future phase when classification rules change.
+     *
+     * @return string
+     */
+    private function generateAvatarVersion(): string
+    {
+        return self::AVATAR_VERSION;
     }
 
     /**

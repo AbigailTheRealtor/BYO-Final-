@@ -20,6 +20,16 @@ class BuyerTenantDnaProfile extends Model
         'commute_polygon_cache',
         'computed_at',
         'archived_at',
+        'avatar_type',
+        'primary_motivation',
+        'secondary_motivation',
+        'buyer_narrative',
+        'buyer_preference_summary',
+        'buyer_personality_tags',
+        'buyer_match_preferences',
+        'avatar_confidence_score',
+        'buyer_avatar_version',
+        'buyer_readiness_score',
     ];
 
     protected $casts = [
@@ -29,5 +39,10 @@ class BuyerTenantDnaProfile extends Model
         'source_listing_updated_at' => 'datetime',
         'computed_at'               => 'datetime',
         'archived_at'               => 'datetime',
+        'buyer_preference_summary'  => 'array',
+        'buyer_personality_tags'    => 'array',
+        'buyer_match_preferences'   => 'array',
+        'avatar_confidence_score'   => 'integer',
+        'buyer_readiness_score'     => 'integer',
     ];
 }

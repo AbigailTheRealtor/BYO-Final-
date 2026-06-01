@@ -48,6 +48,10 @@ class BuyerTenantDnaGenerator
         'hoa_preference_specified',
     ];
 
+    public function __construct(private BuyerAvatarProfileService $avatarProfileService)
+    {
+    }
+
     public function generate(string $listingType, int $listingId): void
     {
         if ($listingType === 'buyer') {
@@ -71,13 +75,17 @@ class BuyerTenantDnaGenerator
         $dealBreakerFlags = $this->buildDealBreakerFlags($dimensions);
         $completeness = $this->computeCompleteness($dimensions);
 
-        $this->persist($listingType, $listingId, $listing->updated_at, [
+        $profile = $this->persist($listingType, $listingId, $listing->updated_at, [
             'preference_completeness' => $completeness,
             'lifestyle_tags'          => $lifestyleTags,
             'deal_breaker_flags'      => $dealBreakerFlags,
             'archetype_label'         => null,
             'commute_polygon_cache'   => null,
         ]);
+
+        if ($listingType === 'buyer' && $profile !== null) {
+            $this->avatarProfileService->compute($profile);
+        }
     }
 
     private function flattenMeta($listing): array
@@ -320,6 +328,10 @@ class BuyerTenantDnaGenerator
     /**
      * Persist a new preference profile version using append-only semantics.
      *
+     * Returns the newly created BuyerTenantDnaProfile instance so the caller can
+     * dispatch downstream services (e.g. BuyerAvatarProfileService) outside the
+     * transaction boundary.
+     *
      * Idempotency contract (satisfies governance rule #13):
      * - Acquires a per-listing mutual exclusion lock (driver-conditional, see
      *   acquireListingLock) before any read or write to prevent concurrent duplicate
@@ -329,9 +341,11 @@ class BuyerTenantDnaGenerator
      * - Wraps lock acquisition, archive, and create in a single DB transaction;
      *   on PostgreSQL the advisory lock is released automatically on commit/rollback.
      */
-    private function persist(string $listingType, int $listingId, $sourceUpdatedAt, array $payload): void
+    private function persist(string $listingType, int $listingId, $sourceUpdatedAt, array $payload): ?BuyerTenantDnaProfile
     {
-        DB::transaction(function () use ($listingType, $listingId, $sourceUpdatedAt, $payload) {
+        $created = null;
+
+        DB::transaction(function () use ($listingType, $listingId, $sourceUpdatedAt, $payload, &$created) {
             $this->acquireListingLock($listingType, $listingId);
 
             $prior = BuyerTenantDnaProfile::where('listing_type', $listingType)
@@ -349,7 +363,7 @@ class BuyerTenantDnaGenerator
                 $newVersion = $prior->version + 1;
             }
 
-            BuyerTenantDnaProfile::create(array_merge($payload, [
+            $created = BuyerTenantDnaProfile::create(array_merge($payload, [
                 'listing_type'              => $listingType,
                 'listing_id'                => $listingId,
                 'version'                   => $newVersion,
@@ -358,5 +372,7 @@ class BuyerTenantDnaGenerator
                 'archived_at'               => null,
             ]));
         });
+
+        return $created;
     }
 }
