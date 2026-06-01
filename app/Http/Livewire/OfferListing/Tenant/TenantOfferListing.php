@@ -2458,34 +2458,6 @@ class TenantOfferListing extends Component
     {
         $this->activeTab = $index;
     }
-    public function updatedOtherServicesEnabled($enabled): void
-    {
-        // If toggled on and no field exists, create the first one
-        if ($enabled && empty($this->other_services)) { // Use empty() to check if array is empty
-            $this->other_services[] = '';
-        }
-
-        // If toggled off, clear array (optional: keep if you prefer)
-        if (! $enabled) {
-            $this->other_services = [];
-        }
-    }
-
-    public function addServiceField(): void
-    {
-        $this->other_services[] = ''; // Add a new empty field
-    }
-
-    public function removeService(int $index): void
-    {
-        unset($this->other_services[$index]);
-        // reindex to 0..n so bindings become other_services.0, .1, .2 …
-        $this->other_services = array_values($this->other_services);
-    }
-
-
-
-
     public function updatedVideoLink($value)
     {
         // instantly preview when pasted or typed
@@ -2694,7 +2666,6 @@ class TenantOfferListing extends Component
             'type_of_pets'        => $this->type_of_pets,
             'weight_of_pets'      => $this->weight_of_pets,
             'service_animal'      => $this->service_animal,
-            'other_services_enabled' => $this->other_services_enabled,
             'support_animal'      => $this->support_animal,
             'emotional_support_animal' => $this->emotional_support_animal,
             'has_breed_restrictions' => $this->has_breed_restrictions,
@@ -2812,7 +2783,6 @@ class TenantOfferListing extends Component
             'prior_felony_explanation' => $this->prior_felony_explanation,
             'monthly_income'      => $this->monthly_income,
             'number_occupant'     => $this->number_occupant,
-            'other_services'      => json_encode($this->other_services),
             'photo_enhancements'  => json_encode($this->photo_enhancements),
             'custom_enhancement'  => $this->custom_enhancement,
             'additional_details'  => $this->additional_details,
@@ -3403,7 +3373,6 @@ class TenantOfferListing extends Component
             $this->type_of_pets = $auction->get->type_of_pets ?? '';
             $this->weight_of_pets = $auction->get->weight_of_pets ?? '';
             $this->service_animal = $auction->get->service_animal ?? '';
-            $this->other_services_enabled = $auction->get->other_services_enabled ?? '';
             $this->support_animal = $auction->get->support_animal ?? '';
             $this->emotional_support_animal = $auction->get->emotional_support_animal ?? '';
             $this->has_breed_restrictions = $auction->get->has_breed_restrictions ?? '';
@@ -3578,9 +3547,6 @@ class TenantOfferListing extends Component
             $this->number_occupant = $auction->get->number_occupant ?? '';
 
             // Services
-            $otherServicesRaw = $auction->get->other_services ?? null;
-            $this->other_services = $otherServicesRaw ? (is_string($otherServicesRaw) ? json_decode($otherServicesRaw, true) ?? [] : (array)$otherServicesRaw) : [];
-
             $this->additional_details = $auction->get->additional_details ?? '';
 
             // Broker compensation
@@ -4350,7 +4316,6 @@ class TenantOfferListing extends Component
         $auction->saveMeta('type_of_pets', $this->type_of_pets);
         $auction->saveMeta('weight_of_pets', $this->weight_of_pets);
         $auction->saveMeta('service_animal', $this->service_animal);
-        $auction->saveMeta('other_services_enabled', $this->other_services_enabled);
         $auction->saveMeta('support_animal', $this->support_animal);
         $auction->saveMeta('emotional_support_animal', $this->emotional_support_animal);
         $auction->saveMeta('has_breed_restrictions', $this->has_breed_restrictions);
@@ -4505,8 +4470,6 @@ class TenantOfferListing extends Component
         $auction->saveMeta('monthly_income', $this->monthly_income);
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
-        // Services
-        $auction->saveMeta('other_services', json_encode($this->other_services));
         $auction->saveMeta('photo_enhancements', json_encode($this->photo_enhancements));
         $auction->saveMeta('custom_enhancement', $this->custom_enhancement);
         $auction->saveMeta('additional_details', $this->additional_details);

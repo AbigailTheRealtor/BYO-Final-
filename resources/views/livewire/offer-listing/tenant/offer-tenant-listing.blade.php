@@ -1741,7 +1741,6 @@ $lease_types = [
                                 </div>
                                 @endif
 
-
                                 <!-- Additional Details Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"

@@ -2123,7 +2123,6 @@
                     }
                 }
 
-
                 // Offered Financing is required in purchasing-terms — Select2 removes 'required' so check manually
                 if (currentTabContent.id === 'purchasing-terms') {
                     var ofErrorSpan2 = currentTabContent.querySelector('#offered_financing_error');

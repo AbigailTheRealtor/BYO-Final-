@@ -222,10 +222,6 @@ class BuyerOfferListing extends Component
     public $emotional_support_animal = '';
     public $target_closing_date = '';
     public $occupant_types = '';
-    public $other_services_enabled = false;
-    public $other_services = '';
-
-
     public $additional_details = '';
     public $preferance_details = '';
 
@@ -1568,7 +1564,6 @@ class BuyerOfferListing extends Component
             'emotional_support_animal'        => $this->emotional_support_animal,
             'target_closing_date'             => $this->target_closing_date,
             'occupant_types'                  => $this->occupant_types,
-            'other_services'                  => $this->other_services,
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_type'                      => $this->lease_type,
@@ -2056,9 +2051,6 @@ class BuyerOfferListing extends Component
             $this->occupant_types = $auction->get->occupant_types ?? '';
 
             // Services
-            $otherServicesRaw = $auction->get->other_services ?? null;
-            $this->other_services = $otherServicesRaw ? (is_string($otherServicesRaw) ? json_decode($otherServicesRaw, true) ?? [] : (array)$otherServicesRaw) : [];
-
             $this->additional_details = $auction->get->additional_details ?? '';
 
             // Broker compensation
@@ -2571,7 +2563,6 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('occupant_types', $this->occupant_types);
 
         // Services
-        $auction->saveMeta('other_services', $this->other_services);
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

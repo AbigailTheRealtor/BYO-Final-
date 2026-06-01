@@ -189,10 +189,6 @@ class LandlordOfferListingEdit extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
-    public $other_services_enabled = false;
-    public $other_services = '';
-
-
     public $additional_details = '';
 
     // Broker compensation
@@ -1720,7 +1716,6 @@ class LandlordOfferListingEdit extends Component
             'prior_felony_explanation'        => $this->prior_felony_explanation,
             'monthly_income'                  => $this->monthly_income,
             'number_occupant'                 => $this->number_occupant,
-            'other_services'                  => $this->other_services,
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_fee_type'                  => $this->lease_fee_type,
@@ -2422,8 +2417,6 @@ class LandlordOfferListingEdit extends Component
 
             // Services
 
-            $this->other_services = $auction->get->other_services ?? null;
-
             $this->additional_details = $auction->get->additional_details ?? null;
 
             // Broker compensation
@@ -3072,7 +3065,6 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
         // Services
-        $auction->saveMeta('other_services', $this->other_services);
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

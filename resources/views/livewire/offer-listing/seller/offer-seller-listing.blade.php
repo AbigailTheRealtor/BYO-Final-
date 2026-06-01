@@ -737,7 +737,6 @@
                                 $hasFinancialTab = $user_type === 'seller' && in_array($property_type, ['Income', 'Commercial', 'Business']);
                                 if ($user_type === 'seller') {
                                     // Seller flow: no Services tab
-                                    $servicesIdx         = -1;
                                     $saleTermsIdx        = $hasFinancialTab ? 3 : 2;
                                     $additionalDetailsIdx = $hasFinancialTab ? 4 : 3;
                                     $brokerCompIdx       = $hasFinancialTab ? 5 : 4;
@@ -747,16 +746,15 @@
                                     $sellerInfoIdx       = $hasFinancialTab ? 10 : 9;
                                     $aiIdx               = $hasFinancialTab ? 9 : 8;
                                 } else {
-                                    // Non-seller flows retain the Services tab
+                                    // Non-seller flows
                                     $saleTermsIdx        = 2;
-                                    $servicesIdx         = 3;
-                                    $additionalDetailsIdx = 4;
-                                    $brokerCompIdx       = 5;
-                                    $taxLegalIdx         = 6;
-                                    $docsIdx             = 7;
-                                    $photosIdx           = 8;
-                                    $sellerInfoIdx       = 10;
-                                    $aiIdx               = 9;
+                                    $additionalDetailsIdx = 3;
+                                    $brokerCompIdx       = 4;
+                                    $taxLegalIdx         = 5;
+                                    $docsIdx             = 6;
+                                    $photosIdx           = 7;
+                                    $sellerInfoIdx       = 9;
+                                    $aiIdx               = 8;
                                 }
                             @endphp
 
@@ -896,7 +894,7 @@
                                         </button>
                                     </li>
                                 @else
-                                    {{-- Non-seller: Sale Terms=2, Services=3, Description=4, Broker Comp=5, Photos=6, Info=7, AI=8 --}}
+                                    {{-- Non-seller: Sale Terms=2, Description=3, Broker Comp=4, Photos=5, Info=6, AI=7 --}}
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === 2 ? 'active' : '' }}"
                                             wire:click="setActiveTab(2)"
@@ -917,57 +915,57 @@
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                            wire:click="setActiveTab(4)"
+                                        <button class="nav-link {{ $activeTab === 3 ? 'active' : '' }}"
+                                            wire:click="setActiveTab(3)"
                                             id="additional-details-tab" data-bs-toggle="tab"
                                             data-bs-target="#additional-details"
                                             type="button" role="tab"
                                             aria-controls="additional-details"
-                                            aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
+                                            aria-selected="{{ $activeTab === 3 ? 'true' : 'false' }}">
                                             Description
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
+                                            wire:click="setActiveTab(4)"
+                                            id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
+                                            data-bs-target="#broker-compensation-agency-agreement-terms"
+                                            type="button" role="tab"
+                                            aria-controls="broker-compensation-agency-agreement-terms"
+                                            aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
+                                            Broker Compensation &amp; Agency Agreement Terms
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
                                             wire:click="setActiveTab(5)"
-                                            id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
-                                            data-bs-target="#broker-compensation-agency-agreement-terms"
+                                            id="photos-tours-documents-tab" data-bs-toggle="tab"
+                                            data-bs-target="#photos-tours-documents"
                                             type="button" role="tab"
-                                            aria-controls="broker-compensation-agency-agreement-terms"
+                                            aria-controls="photos-tours-documents"
                                             aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                            Broker Compensation &amp; Agency Agreement Terms
+                                            Photos &amp; Tours
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
                                             wire:click="setActiveTab(6)"
-                                            id="photos-tours-documents-tab" data-bs-toggle="tab"
-                                            data-bs-target="#photos-tours-documents"
+                                            id="seller-information-tab" data-bs-toggle="tab"
+                                            data-bs-target="#seller-information"
                                             type="button" role="tab"
-                                            aria-controls="photos-tours-documents"
+                                            aria-controls="seller-information"
                                             aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                            Photos &amp; Tours
+                                            Agent Credentials & Contact Info
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === 7 ? 'active' : '' }}"
                                             wire:click="setActiveTab(7)"
-                                            id="seller-information-tab" data-bs-toggle="tab"
-                                            data-bs-target="#seller-information"
-                                            type="button" role="tab"
-                                            aria-controls="seller-information"
-                                            aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
-                                            Agent Credentials & Contact Info
-                                        </button>
-                                    </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === 8 ? 'active' : '' }}"
-                                            wire:click="setActiveTab(8)"
                                             id="ai-questions-tab" data-bs-toggle="tab"
                                             data-bs-target="#ai-questions"
                                             type="button" role="tab"
                                             aria-controls="ai-questions"
-                                            aria-selected="{{ $activeTab === 8 ? 'true' : 'false' }}">
+                                            aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
                                             AI Knowledge Base
                                         </button>
                                     </li>
@@ -1084,7 +1082,6 @@
                                         @include('livewire.offer-listing.offer-landlord-tabs.commission-based.lease-terms')
                                     @endif
                                 </div>
-
 
                                 <!-- Additional Details Tab -->
                                 <div class="tab-pane fade {{ $activeTab === $additionalDetailsIdx ? 'show active' : '' }}"

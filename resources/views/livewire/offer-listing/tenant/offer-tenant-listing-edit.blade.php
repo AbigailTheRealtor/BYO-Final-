@@ -1722,7 +1722,6 @@
                             </div>
                         @endif
 
-
                         <!-- Additional Details Tab -->
 
                         <div class="tab-pane fade {{ $activeTab === $descriptionTabIndex ? 'show active' : '' }}"

@@ -225,10 +225,6 @@ class BuyerOfferListingEdit extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
-    public $other_services_enabled = false;
-    public $other_services = '';
-
-
     public $additional_details = '';
 
     // Broker compensation
@@ -1257,7 +1253,7 @@ class BuyerOfferListingEdit extends Component
     public function nextTab()
     {
         // Determine max tabs based on service type
-        $maxTabs = $this->service_type === 'full_service' ? 6 : 3;
+        $maxTabs = $this->service_type === 'full_service' ? 5 : 3;
         
         if ($this->activeTab < $maxTabs) {
             $this->activeTab++;
@@ -1514,7 +1510,6 @@ class BuyerOfferListingEdit extends Component
             'emotional_support_animal'        => $this->emotional_support_animal,
             'target_closing_date'             => $this->target_closing_date,
             'occupant_types'                  => $this->occupant_types,
-            'other_services'                  => $this->other_services,
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_type'                      => $this->lease_type,
@@ -2037,9 +2032,6 @@ class BuyerOfferListingEdit extends Component
             $this->number_occupant = $auction->get->number_occupant ?? '';
 
             // Services
-            $this->other_services = $auction->get->other_services ?? '';
-            $this->other_services_enabled = (bool)($auction->get->other_services_enabled ?? false);
-
             $this->additional_details = $auction->get->additional_details ?? '';
 
             // Broker compensation
@@ -2496,8 +2488,6 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
         // Services
-        $auction->saveMeta('other_services', $this->other_services);
-        $auction->saveMeta('other_services_enabled', $this->other_services_enabled);
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

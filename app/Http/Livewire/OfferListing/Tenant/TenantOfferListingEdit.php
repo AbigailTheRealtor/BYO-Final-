@@ -1550,6 +1550,8 @@ class TenantOfferListingEdit extends Component
     }
 
 
+
+
     public function updatedWorkingWithAgent($value)
     {
         if ($this->isLoadingData) return;
@@ -2217,30 +2219,6 @@ class TenantOfferListingEdit extends Component
 
 
 
-    public function updatedOtherServicesEnabled($enabled): void
-    {
-        // If toggled on and no field exists, create the first one
-        if ($enabled && empty($this->other_services)) { // Use empty() to check if array is empty
-            $this->other_services[] = '';
-        }
-
-        // If toggled off, clear array (optional: keep if you prefer)
-        if (! $enabled) {
-            $this->other_services = [];
-        }
-    }
-
-    public function addServiceField(): void
-    {
-        $this->other_services[] = ''; // Add a new empty field
-    }
-
-    public function removeService(int $index): void
-    {
-        unset($this->other_services[$index]);
-        // reindex to 0..n so bindings become other_services.0, .1, .2 …
-        $this->other_services = array_values($this->other_services);
-    }
     public function updatedVideoLink($value)
     {
         // instantly preview when pasted or typed
@@ -2759,16 +2737,6 @@ class TenantOfferListingEdit extends Component
         $this->lease_purchase_maintenance = $auction->info('lease_purchase_maintenance') ?? '';
         $this->lease_purchase_extension_terms = $auction->info('lease_purchase_extension_terms') ?? '';
 
-        // Load other_services
-        $rawOtherServices = $auction->get->other_services;
-        if (is_array($rawOtherServices)) {
-            $this->other_services = $rawOtherServices;
-        } elseif (is_string($rawOtherServices) && !empty($rawOtherServices)) {
-            $this->other_services = json_decode($rawOtherServices, true) ?? [];
-        } else {
-            $this->other_services = [];
-        }
-
         $photoEnhRaw = $auction->info('photo_enhancements');
         $this->photo_enhancements = $photoEnhRaw ? (is_string($photoEnhRaw) ? json_decode($photoEnhRaw, true) ?? [] : (array)$photoEnhRaw) : [];
         $this->custom_enhancement = $auction->info('custom_enhancement') ?? '';
@@ -2890,8 +2858,6 @@ class TenantOfferListingEdit extends Component
         $this->purchase_value = $auction->info('purchase_value');
         $this->lease_type = $auction->info('lease_type') ?: 'percent';
         $this->lease_value = $auction->info('lease_value');
-        $this->other_services_enabled = $auction->info('other_services_enabled');
-
         $this->purchase_fee_type = $auction->info('purchase_fee_type');
         $this->purchase_fee_percentage = $auction->info('purchase_fee_percentage');
         $this->purchase_fee_flat = $auction->info('purchase_fee_flat');
@@ -3129,8 +3095,6 @@ class TenantOfferListingEdit extends Component
                 }
             }
 
-            // dd($this->other_services);
-
             DB::beginTransaction();
 
             // Fetch the auction to update
@@ -3341,7 +3305,6 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('type_of_pets', $this->type_of_pets);
             $auction->saveMeta('weight_of_pets', $this->weight_of_pets);
             $auction->saveMeta('service_animal', $this->service_animal);
-            $auction->saveMeta('other_services_enabled', $this->other_services_enabled);
             $auction->saveMeta('support_animal', $this->support_animal);
             $auction->saveMeta('emotional_support_animal', $this->emotional_support_animal);
             $auction->saveMeta('has_breed_restrictions', $this->has_breed_restrictions);
@@ -3497,8 +3460,6 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('monthly_income', $this->monthly_income);
             $auction->saveMeta('number_occupant', $this->number_occupant);
 
-            // Services
-            $auction->saveMeta('other_services', json_encode($this->other_services));
             $auction->saveMeta('photo_enhancements', json_encode($this->photo_enhancements));
             $auction->saveMeta('custom_enhancement', $this->custom_enhancement);
             $auction->saveMeta('additional_details', $this->additional_details);

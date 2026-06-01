@@ -1507,10 +1507,8 @@
         syncSelect2('#non_negotiable_amenities', data.non_negotiable_amenities);
         syncSelect2('.pool_type', data.pool_type);
         syncSelect2('#offered_financing', data.offered_financing);
-        syncSelect2('#services', data.services);
         syncSelect2('#lease_for', data.lease_for);
         syncSelect2('#credit_scroe_rating', data.credit_scroe_rating);
-        syncSelect2('#flat_fee_services', data.flat_fee_services);
         syncSelect2('.number_of_unit_type', data.number_of_unit_type);
         syncSelect2('#condition_prop_buyer', data.condition_prop_buyer);
         syncSelect2('#property_items', data.property_items);
