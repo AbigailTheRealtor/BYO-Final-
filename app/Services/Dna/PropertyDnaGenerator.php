@@ -455,6 +455,15 @@ class PropertyDnaGenerator
      *   run (archived but not yet created) still produces the correct next version.
      * - Wraps lock acquisition, archive, and create in a single DB transaction;
      *   on PostgreSQL the advisory lock is released automatically on commit/rollback.
+     *
+     * PHASE F NOTE — Location DNA context integration deferred:
+     * LocationDnaPropertyContextService::getForListing() is available and returns a
+     * structured location_dna_context block, but PropertyDnaProfile has no corresponding
+     * nullable column to store it (property_dna_profiles schema has no location_dna_context
+     * column). Appending a non-schema key to the $payload array would cause the Eloquent
+     * create() call to fail or silently discard the value. Full wiring is deferred pending
+     * a schema extension that adds a nullable JSON column (e.g. location_dna_context) to
+     * property_dna_profiles and a matching fillable/cast entry in PropertyDnaProfile.
      */
     private function persist(string $listingType, int $listingId, $sourceUpdatedAt, array $payload): void
     {
