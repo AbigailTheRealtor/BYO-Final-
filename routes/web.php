@@ -45,6 +45,7 @@ use App\Http\Controllers\ReferralAuctionController;
 use App\Http\Controllers\Admin\AdminAgentController;
 use App\Http\Controllers\Admin\ByaPreviewController;
 use App\Http\Controllers\Admin\DnaInspectorController;
+use App\Http\Controllers\Admin\DnaProfileController;
 use App\Http\Controllers\Admin\FeeIncludeController;
 use App\Http\Controllers\Admin\WaterExtraController;
 use App\Http\Controllers\Admin\HeatingFuelController;
@@ -855,6 +856,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('demand/{id}', [DnaInspectorController::class, 'demandShow'])->name('demand.show');
             Route::get('scores', [DnaInspectorController::class, 'scoresIndex'])->name('scores.index');
             Route::get('scores/{id}', [DnaInspectorController::class, 'scoresShow'])->name('scores.show');
+
+            // Phase D (Display Layer) — role-scoped DNA profile views (read-only, admin-only)
+            Route::prefix('profiles')->name('profiles.')->group(function () {
+                Route::get('seller/{listingId}', [DnaProfileController::class, 'seller'])->name('seller');
+                Route::get('landlord/{listingId}', [DnaProfileController::class, 'landlord'])->name('landlord');
+                Route::get('buyer/{listingId}', [DnaProfileController::class, 'buyer'])->name('buyer');
+                Route::get('tenant/{listingId}', [DnaProfileController::class, 'tenant'])->name('tenant');
+            });
         });
 
         // Phase S — Marketing Brief Preview (admin-only, read-only)

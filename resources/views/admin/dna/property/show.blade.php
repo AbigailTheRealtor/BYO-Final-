@@ -1,7 +1,14 @@
 @extends('layouts.admin')
 @section('content')
-<div class="mb-3">
+<div class="mb-3 d-flex align-items-center gap-2 flex-wrap">
     <a href="{{ route('admin.dna.property.index') }}" class="btn btn-sm btn-outline-secondary">&larr; Back to Property DNA Index</a>
+    @if($current)
+        @if($current->listing_type === 'seller')
+            <a href="{{ route('admin.dna.profiles.seller', $current->listing_id) }}" class="btn btn-sm btn-outline-primary">View Seller DNA Profile</a>
+        @elseif($current->listing_type === 'landlord')
+            <a href="{{ route('admin.dna.profiles.landlord', $current->listing_id) }}" class="btn btn-sm btn-outline-primary">View Landlord DNA Profile</a>
+        @endif
+    @endif
 </div>
 
 @if($current)
