@@ -869,6 +869,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Phase S — Marketing Brief Preview (admin-only, read-only)
         Route::get('property-dna/{profile}/marketing-brief-preview', [DnaInspectorController::class, 'marketingBriefPreview'])->name('property-dna.marketing-brief-preview');
 
+        // Phase XQ — AI Marketing Report Generation Trigger (admin-only)
+        Route::post('property-dna/{profile}/marketing-reports/generate', [\App\Http\Controllers\Admin\AiMarketingReportAdminController::class, 'generate'])->name('property-dna.marketing-reports.generate');
+
         // Phase XL — AI Marketing Report Read View (admin-only, read-only)
         Route::get('property-dna/marketing-reports/{report}', [\App\Http\Controllers\Admin\AiMarketingReportAdminController::class, 'show'])->name('property-dna.marketing-reports.show');
 

@@ -5,8 +5,32 @@
     <strong>&#9888; Internal admin preview only &mdash; not public, not client-facing, not agent-facing.</strong>
 </div>
 
-<div class="mb-3">
+@if(session('error'))
+    <div class="alert alert-danger border border-danger mb-4" role="alert">
+        <strong>Error:</strong> {{ session('error') }}
+    </div>
+@endif
+
+@if(session('success'))
+    <div class="alert alert-success border border-success mb-4" role="alert">
+        {{ session('success') }}
+    </div>
+@endif
+
+<div class="mb-3 d-flex align-items-center gap-2">
     <a href="{{ route('admin.dna.property.index') }}" class="btn btn-sm btn-outline-secondary">&larr; Back to Property DNA Index</a>
+
+    @if(auth()->user() && auth()->user()->user_type === 'admin' && isset($profile) && !($hasExistingReport ?? true))
+        <form method="POST" action="{{ route('admin.property-dna.marketing-reports.generate', $profile->id) }}" class="d-inline">
+            @csrf
+            <button type="submit" class="btn btn-sm btn-primary"
+                onclick="return confirm('Generate a marketing report for this profile? This will call the AI pipeline and create rows in the database.')">
+                Generate Marketing Report
+            </button>
+        </form>
+    @elseif(auth()->user() && auth()->user()->user_type === 'admin' && isset($profile) && ($hasExistingReport ?? false))
+        <span class="text-muted small">A marketing report already exists for this profile.</span>
+    @endif
 </div>
 
 <div class="card mb-3">

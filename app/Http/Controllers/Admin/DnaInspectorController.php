@@ -349,8 +349,12 @@ class DnaInspectorController extends Controller
     {
         $brief = $briefService->build($profile);
 
+        $hasExistingReport = \Illuminate\Support\Facades\DB::table('marketing_reports')
+            ->where('profile_id', $profile->id)
+            ->exists();
+
         return response()
-            ->view('admin.dna.marketing-brief-preview', compact('profile', 'brief'))
+            ->view('admin.dna.marketing-brief-preview', compact('profile', 'brief', 'hasExistingReport'))
             ->header('Cache-Control', 'no-store');
     }
 
