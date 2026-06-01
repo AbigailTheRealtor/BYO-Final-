@@ -435,6 +435,9 @@ class PropertyDnaGenerator
      * On other drivers: no advisory lock; relies on the wrapping DB::transaction() for
      * best-effort ordering. Duplicate-version violations on non-PostgreSQL drivers are
      * caught by the job's top-level try/catch and logged without rethrowing.
+     *
+     * Location DNA context integration is handled downstream by
+     * PropertyIntelligenceProfileService, not by this generator.
      */
     private function acquireListingLock(string $listingType, int $listingId): void
     {
@@ -456,14 +459,6 @@ class PropertyDnaGenerator
      * - Wraps lock acquisition, archive, and create in a single DB transaction;
      *   on PostgreSQL the advisory lock is released automatically on commit/rollback.
      *
-     * PHASE F NOTE — Location DNA context integration deferred:
-     * LocationDnaPropertyContextService::getForListing() is available and returns a
-     * structured location_dna_context block, but PropertyDnaProfile has no corresponding
-     * nullable column to store it (property_dna_profiles schema has no location_dna_context
-     * column). Appending a non-schema key to the $payload array would cause the Eloquent
-     * create() call to fail or silently discard the value. Full wiring is deferred pending
-     * a schema extension that adds a nullable JSON column (e.g. location_dna_context) to
-     * property_dna_profiles and a matching fillable/cast entry in PropertyDnaProfile.
      */
     private function persist(string $listingType, int $listingId, $sourceUpdatedAt, array $payload): void
     {
