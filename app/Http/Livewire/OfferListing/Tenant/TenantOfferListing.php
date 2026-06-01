@@ -38,7 +38,7 @@ class TenantOfferListing extends Component
     public $isResumingDraft = false; // True when a draft has been loaded via loadDraft()
     public $isLoadingData = false; // Guard flag to prevent updated* hooks from resetting fields during draft load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Leased', 'Expired', or 'Draft'
 
     // public $user_type = 'tenant'; // Default to tenant or whatever makes sense
     public $auction_type = '';

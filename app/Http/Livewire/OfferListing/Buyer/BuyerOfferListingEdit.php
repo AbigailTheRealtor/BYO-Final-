@@ -28,7 +28,7 @@ class BuyerOfferListingEdit extends Component
     public bool $isListingDraft = false; // Source of truth for button mode (read from DB in mount)
     public $isLoadingData = false; // Flag to prevent reset during draft/edit load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Purchased', 'Expired', or 'Draft'
     public $meeting_Preference = ''; // Meeting preference field
 
     public $user_type = 'buyer'; // Default to tenant or whatever makes sense

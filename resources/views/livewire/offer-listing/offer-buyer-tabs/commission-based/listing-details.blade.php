@@ -182,14 +182,13 @@
                     </label>
                 </div>
                 <div class="input-field col-3">
-
-                    <input type="radio" class="btn-check" wire:model="listing_status" id="status-hired"
-                        value="Hired Agent" autocomplete="off">
+                    <input type="radio" class="btn-check" wire:model="listing_status" id="status-purchased"
+                        value="Purchased" autocomplete="off">
                     <label class="btn btn-status btn-outline-primary px-3 px-md-4 position-relative"
-                        for="status-hired" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="This listing has reached a completed sale transaction and is no longer accepting offers.">
-                        <span class="status-icon"><i class="fa-solid fa-user-tie me-2"></i></span>
-                        <span class="status-text">Sold</span>
+                        for="status-purchased" data-bs-toggle="tooltip" data-bs-placement="top"
+                        title="This listing has reached a completed purchase transaction and is no longer accepting offers.">
+                        <span class="status-icon"><i class="fa-solid fa-handshake me-2"></i></span>
+                        <span class="status-text">Purchased</span>
                         <span
                             class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
                             <i class="fa-solid fa-handshake"></i>

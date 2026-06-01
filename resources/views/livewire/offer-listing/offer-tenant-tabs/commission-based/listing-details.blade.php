@@ -253,13 +253,12 @@
                     </label>
                 </div>
                 <div class="input-field col-3">
-
-                    <input type="radio" class="btn-check" wire:model="listing_status" id="status-hired"
-                        value="Hired Agent" autocomplete="off">
+                    <input type="radio" class="btn-check" wire:model="listing_status" id="status-leased"
+                        value="Leased" autocomplete="off">
                     <label class="btn btn-status btn-outline-primary px-3 px-md-4 position-relative"
-                        for="status-hired" data-bs-toggle="tooltip" data-bs-placement="top"
+                        for="status-leased" data-bs-toggle="tooltip" data-bs-placement="top"
                         title="This listing has reached a completed lease transaction and is no longer accepting offers.">
-                        <span class="status-icon"><i class="fa-solid fa-user-tie me-2"></i></span>
+                        <span class="status-icon"><i class="fa-solid fa-handshake me-2"></i></span>
                         <span class="status-text">Leased</span>
                         <span
                             class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">

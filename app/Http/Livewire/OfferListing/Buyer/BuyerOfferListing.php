@@ -32,7 +32,7 @@ class BuyerOfferListing extends Component
     public $isResumingDraft = false; // True when a draft has been loaded via loadDraft()
     public $isLoadingData = false; // Flag to prevent reset during draft/edit load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Purchased', 'Expired', or 'Draft'
 
     public $user_type = 'buyer'; // Default to tenant or whatever makes sense
     public $auction_type = '';

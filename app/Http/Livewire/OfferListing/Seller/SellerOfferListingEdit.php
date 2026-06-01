@@ -28,7 +28,7 @@ class SellerOfferListingEdit extends Component
     public bool $isListingDraft = false; // Source of truth for button mode (read from DB in mount)
     public $isLoadingData = false;
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Sold', 'Expired', or 'Draft'
 
     public $user_type = 'seller'; // Seller Offer Listing
     public $auction_type = '';

@@ -27,7 +27,7 @@ class LandlordOfferListingEdit extends Component
     public $isDraft = false; // To track draft status
     public bool $isListingDraft = false; // Source of truth for button mode (read from DB in mount)
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Leased', 'Expired', or 'Draft'
 
     public $user_type = 'landlord'; // Default user_type for Landlord Offer Listing
     public $auction_type = '';

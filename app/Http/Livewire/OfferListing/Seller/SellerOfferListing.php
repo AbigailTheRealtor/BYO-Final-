@@ -31,7 +31,7 @@ class SellerOfferListing extends Component
     public $isDraft = false; // To track draft status
     public $isResumingDraft = false; // True when a draft has been loaded via loadDraft()
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Sold', 'Expired', or 'Draft'
 
     public $user_type = 'seller'; // Default to tenant or whatever makes sense
     public $auction_type = '';
