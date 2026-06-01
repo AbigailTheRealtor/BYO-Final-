@@ -1052,7 +1052,8 @@
                 </div>
             </div>
 
-            {{-- 6. Activity --}}
+            {{-- 6. Activity — hidden until live data is available --}}
+            @if(false)
             <div class="sol-interaction-card">
                 <div class="sol-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
                 <div class="sol-interaction-card-label">Activity</div>
@@ -1077,6 +1078,7 @@
                     @endif
                 </div>
             </div>
+            @endif
 
         </div>{{-- /sol-interaction-grid --}}
     </div>{{-- /sol-interaction-hub --}}

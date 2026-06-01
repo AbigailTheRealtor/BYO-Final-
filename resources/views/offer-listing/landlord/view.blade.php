@@ -320,11 +320,11 @@
         $leaseLengths  = $subOther($arr('desired_lease_length'), $str('other_lease_for') ?: $str('lease_for'));
         $badgeShortTerm = !empty($leaseLengths) && (in_array('Monthly', $leaseLengths) || in_array('Short-Term', $leaseLengths));
         $heroBadgesDisplay = array_slice(array_values(array_filter([
-            ['show' => $badgePets,      'label' => 'Pets Allowed',     'icon' => 'fa-solid fa-paw',            'color' => 'green'],
-            ['show' => $badgePool,      'label' => 'Pool',             'icon' => 'fa-solid fa-water-ladder',   'color' => 'blue'],
-            ['show' => $badge55Plus,    'label' => '55+ Community',    'icon' => 'fa-solid fa-person-cane',    'color' => 'purple'],
-            ['show' => $badgeShortTerm, 'label' => 'Short-Term OK',    'icon' => 'fa-solid fa-calendar-days', 'color' => 'amber'],
-            ['show' => (bool)$heroPropType, 'label' => $heroPropType,  'icon' => 'fa-solid fa-tag',           'color' => 'teal'],
+            ['show' => $badgePets,      'label' => 'Pets Allowed',     'icon' => 'fa-solid fa-paw',            'color' => 'green',  'strong' => true],
+            ['show' => $badgePool,      'label' => 'Pool',             'icon' => 'fa-solid fa-water-ladder',   'color' => 'blue',   'strong' => true],
+            ['show' => $badge55Plus,    'label' => '55+ Community',    'icon' => 'fa-solid fa-person-cane',    'color' => 'purple', 'strong' => true],
+            ['show' => $badgeShortTerm, 'label' => 'Short-Term OK',    'icon' => 'fa-solid fa-calendar-days', 'color' => 'amber',  'strong' => true],
+            ['show' => (bool)$heroPropType, 'label' => $heroPropType,  'icon' => 'fa-solid fa-tag',           'color' => 'teal',   'strong' => false],
         ], fn($b) => $b['show'])), 0, 5);
     @endphp
 
@@ -353,6 +353,40 @@
     </div>
 
     {{-- ===== HERO ===== --}}
+    @php
+        // Bidding Period countdown — computed once here; used by hero badge, sidebar, and overview
+        $hasBPTimer = false;
+        $timerRemainingSeconds = 0;
+        $_auctionType = trim($str('auction_type'));
+        if ($_auctionType === '') {
+            $_auctionType = trim((string)($auction->auction_type ?? ''));
+        }
+        if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
+            $_aTime = trim($str('auction_time'));
+            if ($_aTime === '') {
+                $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
+            }
+            $_timerEnd = null;
+            if ($_aTime !== '') {
+                $_parts = explode(' ', $_aTime);
+                $_val   = (int)($_parts[0] ?? 0);
+                $_unit  = strtolower($_parts[1] ?? 'days');
+                if ($_val > 0) {
+                    $_start = \Carbon\Carbon::parse($auction->created_at);
+                    $_timerEnd = match(true) {
+                        in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
+                        in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
+                        in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
+                        default                               => $_start->addDays($_val),
+                    };
+                }
+            }
+            if (!empty($_timerEnd)) {
+                $timerRemainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_timerEnd, false);
+                $hasBPTimer = true;
+            }
+        }
+    @endphp
     <div class="lol-hero mb-4">
         <div class="row g-0" style="min-height:280px;">
             <div class="col-lg-8">
@@ -405,8 +439,57 @@
                             <span class="lol-badge lol-badge-{{ $_b['color'] }}"><i class="{{ $_b['icon'] }}"></i> {{ $_b['label'] }}</span>
                         @endforeach
                     </div>
+
+                    @if($hasBPTimer)
+                    <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+                        <span class="text-muted fw-semibold" style="font-size:.8rem;"><i class="fa-regular fa-clock me-1"></i>Bidding Period:</span>
+                        @if($timerRemainingSeconds <= 0)
+                            <span class="badge bg-secondary" style="font-size:.8rem;">Expired</span>
+                        @else
+                            <span class="badge bg-info text-dark lol-bp-timer"
+                                  data-seconds="{{ $timerRemainingSeconds }}"
+                                  style="font-size:.8rem;font-variant-numeric:tabular-nums;">
+                                @php
+                                    $_ls = $timerRemainingSeconds;
+                                    if ($_ls < 60) { echo $_ls . 's Remaining'; }
+                                    else {
+                                        $_ld = intdiv($_ls, 86400); $_ls %= 86400;
+                                        $_lh = intdiv($_ls, 3600);  $_ls %= 3600;
+                                        $_li = intdiv($_ls, 60);
+                                        $_lp = [];
+                                        if ($_ld) $_lp[] = $_ld . 'd';
+                                        if ($_lh) $_lp[] = $_lh . 'h';
+                                        if ($_li) $_lp[] = $_li . 'm';
+                                        echo implode(' ', $_lp) . ' Remaining';
+                                    }
+                                @endphp
+                            </span>
+                        @endif
+                    </div>
+                    @endif
+
+                    @php
+                        $lolStandoutParts = array_values(array_map(
+                            fn($b) => $b['label'],
+                            array_filter($heroBadgesDisplay, fn($b) => !empty($b['strong']))
+                        ));
+                    @endphp
+                    @if(count($lolStandoutParts) >= 2)
+                    <div style="margin-top:10px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">
+                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#166534;margin-bottom:3px;">Why This Rental Stands Out</div>
+                        @php
+                            $lSlice = array_slice($lolStandoutParts, 0, -1);
+                            $lLast  = end($lolStandoutParts);
+                        @endphp
+                        <div style="font-size:0.88rem;color:#14532d;">{{ count($lolStandoutParts) > 1 ? implode(', ', $lSlice) . ' and ' . $lLast : $lLast }}.</div>
+                    </div>
+                    @endif
+
                     <div class="lol-hero-ctas">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
+                            <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
                             <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
                         </button>
                         <button type="button" class="btn btn-outline-secondary" id="lolShareHeroBtn">
@@ -494,7 +577,8 @@
                 </div>
             </div>
 
-            {{-- 5. Activity --}}
+            {{-- 5. Activity — hidden until live data is available --}}
+            @if(false)
             <div class="lol-interaction-card">
                 <div class="lol-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
                 <div class="lol-interaction-card-label">Activity</div>
@@ -513,6 +597,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             {{-- 6. Leasing Information --}}
             <div class="lol-interaction-card">
@@ -741,40 +826,6 @@
     {{-- ================================================================
          LISTING OVERVIEW
          ============================================================== --}}
-    @php
-        // Bidding Period countdown — calculated exclusively from created_at + auction_time
-        $hasBPTimer = false;
-        $timerRemainingSeconds = 0;
-        $_auctionType = trim($str('auction_type'));
-        if ($_auctionType === '') {
-            $_auctionType = trim((string)($auction->auction_type ?? ''));
-        }
-        if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
-            $_aTime = trim($str('auction_time'));
-            if ($_aTime === '') {
-                $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
-            }
-            $_timerEnd = null;
-            if ($_aTime !== '') {
-                $_parts = explode(' ', $_aTime);
-                $_val   = (int)($_parts[0] ?? 0);
-                $_unit  = strtolower($_parts[1] ?? 'days');
-                if ($_val > 0) {
-                    $_start = \Carbon\Carbon::parse($auction->created_at);
-                    $_timerEnd = match(true) {
-                        in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
-                        in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
-                        in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
-                        default                               => $_start->addDays($_val),
-                    };
-                }
-            }
-            if (!empty($_timerEnd)) {
-                $timerRemainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_timerEnd, false);
-                $hasBPTimer = true;
-            }
-        }
-    @endphp
     <div class="card section-card" id="section-overview">
         <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Listing Overview</div>
         <div class="card-body">
@@ -1301,6 +1352,28 @@
             </div>
             @endif
 
+            @if($hasBPTimer)
+            @php
+                $_lolSidebarEndDate = null;
+                $_lolExpDateStr = $str('expiration_date');
+                if ($_lolExpDateStr) {
+                    $_lolSidebarEndDate = $fmtDate($_lolExpDateStr);
+                } elseif (!empty($_timerEnd) && $_timerEnd instanceof \Carbon\Carbon) {
+                    $_lolSidebarEndDate = $_timerEnd->format('M j, Y');
+                }
+            @endphp
+            @if($_lolSidebarEndDate)
+            <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
+                <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;">
+                    <span><i class="fa-regular fa-clock me-1"></i>Bidding Ends</span>
+                    <span style="font-weight:700;color:#475569;">{{ $_lolSidebarEndDate }}</span>
+                </div>
+            </div>
+            @endif
+            @endif
+
+            {{-- Activity section hidden until live data is available --}}
+            @if(false)
             <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
                 <div style="font-size:0.74rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem;">Activity</div>
                 <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
@@ -1318,6 +1391,7 @@
                 </div>
                 @endif
             </div>
+            @endif
         </div>
     </div>
 

@@ -401,6 +401,40 @@
             $_bolHIdx++;
         }
     @endphp
+    @php
+        // Bidding Period countdown — computed once here; used by hero badge, sidebar, and overview
+        $hasBPTimer = false;
+        $timerRemainingSeconds = 0;
+        $_auctionType = trim($str('auction_type'));
+        if ($_auctionType === '') {
+            $_auctionType = trim((string)($auction->auction_type ?? ''));
+        }
+        if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
+            $_aTime = trim($str('auction_time'));
+            if ($_aTime === '') {
+                $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
+            }
+            $_timerEnd = null;
+            if ($_aTime !== '') {
+                $_parts = explode(' ', $_aTime);
+                $_val   = (int)($_parts[0] ?? 0);
+                $_unit  = strtolower($_parts[1] ?? 'days');
+                if ($_val > 0) {
+                    $_start = \Carbon\Carbon::parse($auction->created_at);
+                    $_timerEnd = match(true) {
+                        in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
+                        in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
+                        in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
+                        default                               => $_start->addDays($_val),
+                    };
+                }
+            }
+            if (!empty($_timerEnd)) {
+                $timerRemainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_timerEnd, false);
+                $hasBPTimer = true;
+            }
+        }
+    @endphp
     <div class="bol-hero mb-4">
         <div class="row g-0" style="min-height:280px;">
             <div class="col-lg-8">
@@ -421,8 +455,37 @@
                         <div class="bol-hero-carousel-counter" id="bolHeroCarouselCounter">{{ $bolCoverPhotoIdx + 1 }} / {{ count($bolHeroPhotoUrls) }}</div>
                         @endif
                     @else
-                    <div class="bol-hero-placeholder">
-                        <i class="fa-solid fa-magnifying-glass-dollar"></i>
+                    @php
+                        $_bSnapRows = [];
+                        if ($heroPrice) $_bSnapRows[] = ['icon'=>'fa-solid fa-dollar-sign','label'=>'Max Budget','val'=>$heroPrice];
+                        $_bLocParts = array_filter([$str('property_city') ?: null]);
+                        if (empty($_bLocParts)) {
+                            $_bLocCities = $arr('cities') ?: [];
+                            if (count($_bLocCities)) $_bLocParts[] = implode(', ', array_slice($_bLocCities, 0, 2));
+                        }
+                        $_bLocState = $str('state') ?: $str('property_state') ?: null;
+                        if ($_bLocState) $_bLocParts[] = $_bLocState;
+                        $_bSnapLoc = implode(', ', array_filter($_bLocParts));
+                        if ($_bSnapLoc) $_bSnapRows[] = ['icon'=>'fa-solid fa-location-dot','label'=>'Location','val'=>$_bSnapLoc];
+                        if ($heroPropType) $_bSnapRows[] = ['icon'=>'fa-solid fa-tag','label'=>'Property Type','val'=>$heroPropType];
+                        if ($heroBeds) $_bSnapRows[] = ['icon'=>'fa-solid fa-bed','label'=>'Min. Beds','val'=>$heroBeds];
+                        if ($heroBaths) $_bSnapRows[] = ['icon'=>'fa-solid fa-bath','label'=>'Min. Baths','val'=>$heroBaths];
+                        if ($heroSqft) $_bSnapRows[] = ['icon'=>'fa-solid fa-ruler-combined','label'=>'Min. Sq Ft','val'=>number_format((int)preg_replace('/[^0-9]/','',$heroSqft)).'+ sq ft'];
+                        $_bPurpose = $str('purchase_purpose');
+                        if ($_bPurpose) $_bSnapRows[] = ['icon'=>'fa-solid fa-bullseye','label'=>'Purpose','val'=>$_bPurpose];
+                        if ($badgePreApproved) $_bSnapRows[] = ['icon'=>'fa-solid fa-circle-check','label'=>'Pre-Approved','val'=>'Yes'];
+                        if (count($heroOfFin)) $_bSnapRows[] = ['icon'=>'fa-solid fa-hand-holding-dollar','label'=>'Financing','val'=>implode(', ', array_slice($heroOfFin, 0, 2))];
+                        if ($heroStatus) $_bSnapRows[] = ['icon'=>'fa-solid fa-circle','label'=>'Status','val'=>$heroStatus];
+                    @endphp
+                    <div style="height:100%;min-height:280px;padding:1.5rem 1.25rem;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);display:flex;flex-direction:column;justify-content:center;">
+                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#93c5fd;margin-bottom:.5rem;">Buyer Criteria Snapshot</div>
+                        @foreach($_bSnapRows as $_bsr)
+                        <div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.4);">
+                            <i class="{{ $_bsr['icon'] }}" style="font-size:.68rem;color:#60a5fa;min-width:13px;text-align:center;"></i>
+                            <span style="font-size:.7rem;color:#93c5fd;white-space:nowrap;">{{ $_bsr['label'] }}</span>
+                            <span style="font-size:.78rem;font-weight:700;color:#1e3a8a;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ $_bsr['val'] }}">{{ $_bsr['val'] }}</span>
+                        </div>
+                        @endforeach
                     </div>
                     @endif
                 </div>
@@ -503,6 +566,34 @@
                             $bLast  = end($bolStandoutParts);
                         @endphp
                         <div style="font-size:0.88rem;color:#1e3a5f;">{{ count($bolStandoutParts) > 1 ? implode(', ', $bSlice) . ' and ' . $bLast : $bLast }}.</div>
+                    </div>
+                    @endif
+
+                    @if($hasBPTimer)
+                    <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+                        <span class="text-muted fw-semibold" style="font-size:.8rem;"><i class="fa-regular fa-clock me-1"></i>Bidding Period:</span>
+                        @if($timerRemainingSeconds <= 0)
+                            <span class="badge bg-secondary" style="font-size:.8rem;">Expired</span>
+                        @else
+                            <span class="badge bg-info text-dark bol-bp-timer"
+                                  data-seconds="{{ $timerRemainingSeconds }}"
+                                  style="font-size:.8rem;font-variant-numeric:tabular-nums;">
+                                @php
+                                    $_bs = $timerRemainingSeconds;
+                                    if ($_bs < 60) { echo $_bs . 's Remaining'; }
+                                    else {
+                                        $_bd = intdiv($_bs, 86400); $_bs %= 86400;
+                                        $_bh = intdiv($_bs, 3600);  $_bs %= 3600;
+                                        $_bi = intdiv($_bs, 60);
+                                        $_bp = [];
+                                        if ($_bd) $_bp[] = $_bd . 'd';
+                                        if ($_bh) $_bp[] = $_bh . 'h';
+                                        if ($_bi) $_bp[] = $_bi . 'm';
+                                        echo implode(' ', $_bp) . ' Remaining';
+                                    }
+                                @endphp
+                            </span>
+                        @endif
                     </div>
                     @endif
 
@@ -610,7 +701,8 @@
                 </div>
             </div>
 
-            {{-- 6. Activity --}}
+            {{-- 6. Activity — hidden until live data is available --}}
+            @if(false)
             <div class="bol-interaction-card">
                 <div class="bol-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
                 <div class="bol-interaction-card-label">Activity</div>
@@ -629,6 +721,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
         </div>{{-- /bol-interaction-grid --}}
     </div>{{-- /bol-interaction-hub --}}
@@ -702,41 +795,6 @@
             @if($hasContact)<li><a href="#section-contact">Contact</a></li>@endif
         </ul>
     </div>
-
-    @php
-        // Bidding Period countdown — calculated exclusively from created_at + auction_time
-        $hasBPTimer = false;
-        $timerRemainingSeconds = 0;
-        $_auctionType = trim($str('auction_type'));
-        if ($_auctionType === '') {
-            $_auctionType = trim((string)($auction->auction_type ?? ''));
-        }
-        if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
-            $_aTime = trim($str('auction_time'));
-            if ($_aTime === '') {
-                $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
-            }
-            $_timerEnd = null;
-            if ($_aTime !== '') {
-                $_parts = explode(' ', $_aTime);
-                $_val   = (int)($_parts[0] ?? 0);
-                $_unit  = strtolower($_parts[1] ?? 'days');
-                if ($_val > 0) {
-                    $_start = \Carbon\Carbon::parse($auction->created_at);
-                    $_timerEnd = match(true) {
-                        in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
-                        in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
-                        in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
-                        default                               => $_start->addDays($_val),
-                    };
-                }
-            }
-            if (!empty($_timerEnd)) {
-                $timerRemainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_timerEnd, false);
-                $hasBPTimer = true;
-            }
-        }
-    @endphp
 
     {{-- Listing Overview --}}
     <div class="card section-card" id="section-overview">
@@ -1395,11 +1453,33 @@
                 </div>
                 @endif
 
+                @if($hasBPTimer)
+                @php
+                    $_bolSidebarEndDate = null;
+                    $_bolExpDateStr = $str('expiration_date');
+                    if ($_bolExpDateStr) {
+                        $_bolSidebarEndDate = $fmtDate($_bolExpDateStr);
+                    } elseif (!empty($_timerEnd) && $_timerEnd instanceof \Carbon\Carbon) {
+                        $_bolSidebarEndDate = $_timerEnd->format('M j, Y');
+                    }
+                @endphp
+                @if($_bolSidebarEndDate)
+                <div class="mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
+                    <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;">
+                        <span><i class="fa-regular fa-clock me-1"></i>Bidding Ends</span>
+                        <span style="font-weight:700;color:#475569;">{{ $_bolSidebarEndDate }}</span>
+                    </div>
+                </div>
+                @endif
+                @endif
+
                 <a href="{{ route('offer.listing.buyer.searchListing') }}"
                    class="bol-action-btn bol-action-outline" style="justify-content:center;text-align:center;">
                     <i class="fa-solid fa-arrow-left"></i>Back to Search
                 </a>
 
+                {{-- Activity section hidden until live data is available --}}
+                @if(false)
                 <div style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid #f1f5f9;">
                     <div style="font-size:0.74rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem;">Activity</div>
                     <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
@@ -1417,6 +1497,7 @@
                     </div>
                     @endif
                 </div>
+                @endif
 
                 </div>{{-- /data summary panel --}}
             </div>

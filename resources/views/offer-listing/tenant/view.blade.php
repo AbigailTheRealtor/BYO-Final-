@@ -417,6 +417,40 @@
             if ($_tclSingle) $tclHeroPhotoUrls[] = asset('storage/' . $_tclSingle);
         }
     @endphp
+    @php
+        // Bidding Period countdown — computed once here; used by hero badge, sidebar, and overview
+        $hasBPTimer = false;
+        $timerRemainingSeconds = 0;
+        $_auctionType = trim($str('auction_type'));
+        if ($_auctionType === '') {
+            $_auctionType = trim((string)($auction->auction_type ?? ''));
+        }
+        if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
+            $_aTime = trim($str('auction_time'));
+            if ($_aTime === '') {
+                $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
+            }
+            $_timerEnd = null;
+            if ($_aTime !== '') {
+                $_parts = explode(' ', $_aTime);
+                $_val   = (int)($_parts[0] ?? 0);
+                $_unit  = strtolower($_parts[1] ?? 'days');
+                if ($_val > 0) {
+                    $_start = \Carbon\Carbon::parse($auction->created_at);
+                    $_timerEnd = match(true) {
+                        in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
+                        in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
+                        in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
+                        default                               => $_start->addDays($_val),
+                    };
+                }
+            }
+            if (!empty($_timerEnd)) {
+                $timerRemainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_timerEnd, false);
+                $hasBPTimer = true;
+            }
+        }
+    @endphp
     <div class="tcl-hero mb-4">
         <div class="row g-0" style="min-height:280px;">
             <div class="col-lg-8">
@@ -437,8 +471,34 @@
                         <div class="tcl-hero-carousel-counter" id="tclHeroCarouselCounter">{{ $tclCoverPhotoIdx + 1 }} / {{ count($tclHeroPhotoUrls) }}</div>
                         @endif
                     @else
-                    <div class="tcl-hero-photo-placeholder">
-                        <i class="fa-solid fa-person-shelter"></i>
+                    @php
+                        $_tSnapRows = [];
+                        if ($heroPrice) $_tSnapRows[] = ['icon'=>'fa-solid fa-dollar-sign','label'=>'Rent Budget','val'=>$heroPrice.'/mo'];
+                        if ($heroLocation) $_tSnapRows[] = ['icon'=>'fa-solid fa-location-dot','label'=>'Location','val'=>$heroLocation];
+                        if ($heroPropType) $_tSnapRows[] = ['icon'=>'fa-solid fa-tag','label'=>'Property Type','val'=>$heroPropType];
+                        if ($heroBeds) $_tSnapRows[] = ['icon'=>'fa-solid fa-bed','label'=>'Min. Beds','val'=>$heroBeds];
+                        if ($heroBaths) $_tSnapRows[] = ['icon'=>'fa-solid fa-bath','label'=>'Min. Baths','val'=>$heroBaths];
+                        if ($heroHSqft) $_tSnapRows[] = ['icon'=>'fa-solid fa-ruler-combined','label'=>'Min. Sq Ft','val'=>number_format((int)preg_replace('/[^0-9]/','',$heroHSqft)).' sq ft'];
+                        $_tMoveIn = $fmtDate($str('move_in_date_earliest'));
+                        if ($_tMoveIn) $_tSnapRows[] = ['icon'=>'fa-solid fa-calendar-days','label'=>'Move-In','val'=>$_tMoveIn];
+                        $_tCredit = $str('credit_score_range');
+                        if ($_tCredit) $_tSnapRows[] = ['icon'=>'fa-solid fa-chart-line','label'=>'Credit Range','val'=>$_tCredit];
+                        $_tIncomeRaw = $str('monthly_income');
+                        if ($_tIncomeRaw) $_tSnapRows[] = ['icon'=>'fa-solid fa-wallet','label'=>'Mo. Income','val'=>$fmtMoney($_tIncomeRaw)];
+                        $_tLeaseArr = $arr('desired_lease_length');
+                        $_tLease = count($_tLeaseArr) ? implode(', ', array_slice($_tLeaseArr, 0, 2)) : ($str('tenant_desired_lease_length') ?: null);
+                        if ($_tLease) $_tSnapRows[] = ['icon'=>'fa-solid fa-file-signature','label'=>'Lease Pref.','val'=>$_tLease];
+                        if ($heroStatus) $_tSnapRows[] = ['icon'=>'fa-solid fa-circle','label'=>'Status','val'=>$heroStatus];
+                    @endphp
+                    <div style="height:100%;min-height:280px;padding:1.5rem 1.25rem;background:linear-gradient(135deg,#f0fdfa 0%,#ccfbf1 100%);display:flex;flex-direction:column;justify-content:center;">
+                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#5eead4;margin-bottom:.5rem;">Tenant Criteria Snapshot</div>
+                        @foreach($_tSnapRows as $_tsr)
+                        <div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.4);">
+                            <i class="{{ $_tsr['icon'] }}" style="font-size:.68rem;color:#2dd4bf;min-width:13px;text-align:center;"></i>
+                            <span style="font-size:.7rem;color:#5eead4;white-space:nowrap;">{{ $_tsr['label'] }}</span>
+                            <span style="font-size:.78rem;font-weight:700;color:#134e4a;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ $_tsr['val'] }}">{{ $_tsr['val'] }}</span>
+                        </div>
+                        @endforeach
                     </div>
                     @endif
                 </div>
@@ -504,6 +564,34 @@
                             $tLast  = end($tclStandoutParts);
                         @endphp
                         <div style="font-size:0.88rem;color:#134e4a;">{{ count($tclStandoutParts) > 1 ? implode(', ', $tSlice) . ' and ' . $tLast : $tLast }}.</div>
+                    </div>
+                    @endif
+
+                    @if($hasBPTimer)
+                    <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+                        <span class="text-muted fw-semibold" style="font-size:.8rem;"><i class="fa-regular fa-clock me-1"></i>Bidding Period:</span>
+                        @if($timerRemainingSeconds <= 0)
+                            <span class="badge bg-secondary" style="font-size:.8rem;">Expired</span>
+                        @else
+                            <span class="badge bg-info text-dark tcl-bp-timer"
+                                  data-seconds="{{ $timerRemainingSeconds }}"
+                                  style="font-size:.8rem;font-variant-numeric:tabular-nums;">
+                                @php
+                                    $_ts = $timerRemainingSeconds;
+                                    if ($_ts < 60) { echo $_ts . 's Remaining'; }
+                                    else {
+                                        $_td = intdiv($_ts, 86400); $_ts %= 86400;
+                                        $_th = intdiv($_ts, 3600);  $_ts %= 3600;
+                                        $_ti = intdiv($_ts, 60);
+                                        $_tp = [];
+                                        if ($_td) $_tp[] = $_td . 'd';
+                                        if ($_th) $_tp[] = $_th . 'h';
+                                        if ($_ti) $_tp[] = $_ti . 'm';
+                                        echo implode(' ', $_tp) . ' Remaining';
+                                    }
+                                @endphp
+                            </span>
+                        @endif
                     </div>
                     @endif
 
@@ -619,7 +707,8 @@
                 </div>
             </div>
 
-            {{-- 6. Activity --}}
+            {{-- 6. Activity — hidden until live data is available --}}
+            @if(false)
             <div class="tcl-interaction-card">
                 <div class="tcl-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
                 <div class="tcl-interaction-card-label">Activity</div>
@@ -638,6 +727,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
         </div>{{-- /tcl-interaction-grid --}}
     </div>{{-- /tcl-interaction-hub --}}
@@ -738,42 +828,6 @@
     </div>
 
     {{-- ===== LISTING OVERVIEW ===== --}}
-    @php
-        // Bidding Period countdown — calculated exclusively from created_at + auction_time
-        $hasBPTimer = false;
-        $timerRemainingSeconds = 0;
-        // auction_type: read from EAV meta first; fall back to native column on the model
-        $_auctionType = trim($str('auction_type'));
-        if ($_auctionType === '') {
-            $_auctionType = trim((string)($auction->auction_type ?? ''));
-        }
-        if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
-            // auction_time: read from EAV meta first; fall back to native column / auction_length
-            $_aTime = trim($str('auction_time'));
-            if ($_aTime === '') {
-                $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
-            }
-            $_timerEnd = null;
-            if ($_aTime !== '') {
-                $_parts = explode(' ', $_aTime);
-                $_val   = (int)($_parts[0] ?? 0);
-                $_unit  = strtolower($_parts[1] ?? 'days');
-                if ($_val > 0) {
-                    $_start = \Carbon\Carbon::parse($auction->created_at);
-                    $_timerEnd = match(true) {
-                        in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
-                        in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
-                        in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
-                        default                               => $_start->addDays($_val),
-                    };
-                }
-            }
-            if (!empty($_timerEnd)) {
-                $timerRemainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_timerEnd, false);
-                $hasBPTimer = true;
-            }
-        }
-    @endphp
     <div class="card section-card" id="section-overview">
         <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Listing Overview</div>
         <div class="card-body">
@@ -1017,7 +1071,7 @@
                     {!! $row('Pet Information', $str('pet_information')) !!}
                 </div>
                 <div class="col-md-6">
-                    {!! $row('Number of Occupants', $str('number_of_occupants') ?: $str('number_occupant') ?: $str('number_occupied')) !!}
+                    {{-- Number of Occupants hidden from public view --}}
                     {!! $row('Service Animal', $yesNo($str('service_animal'))) !!}
                     {!! $row('Support Animal', $yesNo($str('support_animal') ?: $str('emotional_support_animal'))) !!}
                     {!! $row('Breed Restrictions', $yesNo($str('has_breed_restrictions'))) !!}
@@ -1479,6 +1533,28 @@
                 </div>
                 @endif
 
+                @if($hasBPTimer)
+                @php
+                    $_tclSidebarEndDate = null;
+                    $_tclExpDateStr = $str('expiration_date');
+                    if ($_tclExpDateStr) {
+                        $_tclSidebarEndDate = $fmtDate($_tclExpDateStr);
+                    } elseif (!empty($_timerEnd) && $_timerEnd instanceof \Carbon\Carbon) {
+                        $_tclSidebarEndDate = $_timerEnd->format('M j, Y');
+                    }
+                @endphp
+                @if($_tclSidebarEndDate)
+                <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
+                    <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;">
+                        <span><i class="fa-regular fa-clock me-1"></i>Bidding Ends</span>
+                        <span style="font-weight:700;color:#475569;">{{ $_tclSidebarEndDate }}</span>
+                    </div>
+                </div>
+                @endif
+                @endif
+
+                {{-- Activity section hidden until live data is available --}}
+                @if(false)
                 <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
                     <div style="font-size:0.74rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem;">Activity</div>
                     <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
@@ -1496,6 +1572,7 @@
                     </div>
                     @endif
                 </div>
+                @endif
             </div>
         </div>
 
