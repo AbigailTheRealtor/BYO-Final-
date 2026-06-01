@@ -26,8 +26,7 @@ class LandlordOfferListingEdit extends Component
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
     public bool $isListingDraft = false; // Source of truth for button mode (read from DB in mount)
-    public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', 'Leased', 'Expired', or 'Draft'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Expired', or 'Draft'
 
     public $user_type = 'landlord'; // Default user_type for Landlord Offer Listing
     public $auction_type = '';
@@ -189,6 +188,9 @@ class LandlordOfferListingEdit extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
+    public $other_services_enabled = false;
+    public $other_services = '';
+
     public $additional_details = '';
 
     // Broker compensation
@@ -987,7 +989,7 @@ class LandlordOfferListingEdit extends Component
     public function startNew()
     {
         // Reset all properties to their initial state
-        $this->resetExcept(['hasDrafts', 'service_type', 'user_type']);
+        $this->resetExcept(['hasDrafts', 'user_type']);
 
         // Re-initialize necessary properties
         $this->addService();
@@ -1061,6 +1063,8 @@ class LandlordOfferListingEdit extends Component
     {
         $this->calculateTotals();
     }
+
+
 
 
     public function updatedWorkingWithAgent($value)
@@ -1534,7 +1538,6 @@ class LandlordOfferListingEdit extends Component
 
         $data = [
             'listing_title'                   => $this->listing_title,
-            'service_type'                    => $this->service_type,
             'user_type'                       => $this->user_type,
             'listing_status'                  => $this->listing_status,
             'auction_type'                    => $this->auction_type,
@@ -1716,6 +1719,7 @@ class LandlordOfferListingEdit extends Component
             'prior_felony_explanation'        => $this->prior_felony_explanation,
             'monthly_income'                  => $this->monthly_income,
             'number_occupant'                 => $this->number_occupant,
+            'other_services'                  => $this->other_services,
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_fee_type'                  => $this->lease_fee_type,
@@ -2137,7 +2141,6 @@ class LandlordOfferListingEdit extends Component
 
             // Load all metadata fields
             $this->listing_title = $auction->get->title ?? $auction->title ?? '';
-            $this->service_type = $auction->get->service_type ?? 'full_service';
             $this->user_type = $auction->get->user_type ?? 'landlord';
             $this->listing_status = $auction->get->listing_status ?? null;
             $this->auction_type = $auction->get->auction_type ?? $auction->auction_type ?? null;
@@ -2416,7 +2419,7 @@ class LandlordOfferListingEdit extends Component
             $this->number_occupant = $auction->get->number_occupant ?? null;
 
             // Services
-
+            $this->other_services = $auction->get->other_services ?? null;
             $this->additional_details = $auction->get->additional_details ?? null;
 
             // Broker compensation
@@ -2849,7 +2852,6 @@ class LandlordOfferListingEdit extends Component
     protected function saveAllMetadata($auction)
     {
         $auction->saveMeta('workflow_type', 'offer_listing');
-        $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
         $auction->saveMeta('auction_type', $this->auction_type);
@@ -3065,6 +3067,7 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
         // Services
+        $auction->saveMeta('other_services', $this->other_services);
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

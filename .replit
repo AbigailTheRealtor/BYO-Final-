@@ -49,10 +49,6 @@ task = "shell.exec"
 args = "php -d upload_max_filesize=50M -d post_max_size=55M -d memory_limit=256M -d max_file_uploads=50 artisan serve --host=0.0.0.0 --port=5000"
 waitForPort = 5000
 
-[[ports]]
-localPort = 5000
-externalPort = 80
-
 [deployment]
 deploymentTarget = "vm"
 run = ["php", "artisan", "serve", "--host=0.0.0.0", "--port=5000"]

@@ -27,8 +27,7 @@ class SellerOfferListingEdit extends Component
     public $isDraft = false; // To track draft status
     public bool $isListingDraft = false; // Source of truth for button mode (read from DB in mount)
     public $isLoadingData = false;
-    public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', 'Sold', 'Expired', or 'Draft'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Expired', or 'Draft'
 
     public $user_type = 'seller'; // Seller Offer Listing
     public $auction_type = '';
@@ -180,6 +179,9 @@ class SellerOfferListingEdit extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
+    public $other_services_enabled = false;
+    public $other_services = '';
+
     public $additional_details = '';
 
     // Broker compensation
@@ -1005,7 +1007,7 @@ class SellerOfferListingEdit extends Component
     public function startNew()
     {
         // Reset all properties to their initial state
-        $this->resetExcept(['hasDrafts', 'service_type', 'user_type']);
+        $this->resetExcept(['hasDrafts', 'user_type']);
 
         // Re-initialize necessary properties
         $this->addService();
@@ -1550,7 +1552,6 @@ class SellerOfferListingEdit extends Component
 
         $data = [
             'listing_title'                   => $this->listing_title,
-            'service_type'                    => $this->service_type,
             'user_type'                       => $this->user_type,
             'listing_status'                  => $this->listing_status,
             'auction_type'                    => $this->auction_type,
@@ -1797,6 +1798,7 @@ class SellerOfferListingEdit extends Component
             'prior_felony_explanation'        => $this->prior_felony_explanation,
             'monthly_income'                  => $this->monthly_income,
             'number_occupant'                 => $this->number_occupant,
+            'other_services'                  => $this->other_services,
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_fee_type'                  => $this->lease_fee_type,
@@ -2111,7 +2113,6 @@ class SellerOfferListingEdit extends Component
 
             // Load all metadata fields
             $this->listing_title = $auction->title;
-            $this->service_type = $auction->get->service_type;
             $this->user_type = $auction->get->user_type;
             $this->listing_status = $auction->get->listing_status;
             $this->auction_type = $auction->get->auction_type;
@@ -2300,6 +2301,7 @@ class SellerOfferListingEdit extends Component
 
             // Services
 
+            $this->other_services = $auction->get->other_services;
             $this->additional_details = $auction->get->additional_details;
 
             // Broker compensation
@@ -3014,7 +3016,6 @@ class SellerOfferListingEdit extends Component
 
 
 
-        $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
         $auction->saveMeta('auction_type', $this->auction_type);
@@ -3354,6 +3355,7 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
         // Services
+        $auction->saveMeta('other_services', $this->other_services);
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

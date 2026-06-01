@@ -722,7 +722,7 @@
                     </div>
                 @endif
 
-                <div id="wizard-form-container" class="container pt-5 pb-5" data-service-type="{{ $service_type }}">
+                <div id="wizard-form-container" class="container pt-5 pb-5">
 
                     <form id="create-auction-form" wire:submit.prevent="store" novalidate>
                         <div id="submit-error-banner" class="alert alert-danger d-none" role="alert" style="position: sticky; top: 0; z-index: 1050;">
@@ -731,12 +731,10 @@
                         </div>
                         <!-- Tab Navigation -->
 
-                        @if ($service_type === 'full_service')
                             @php
                                 $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent';
                                 $hasFinancialTab = $user_type === 'seller' && in_array($property_type, ['Income', 'Commercial', 'Business']);
                                 if ($user_type === 'seller') {
-                                    // Seller flow: no Services tab
                                     $saleTermsIdx        = $hasFinancialTab ? 3 : 2;
                                     $additionalDetailsIdx = $hasFinancialTab ? 4 : 3;
                                     $brokerCompIdx       = $hasFinancialTab ? 5 : 4;
@@ -746,7 +744,7 @@
                                     $sellerInfoIdx       = $hasFinancialTab ? 10 : 9;
                                     $aiIdx               = $hasFinancialTab ? 9 : 8;
                                 } else {
-                                    // Non-seller flows
+                                    // Non-seller flows (no Services tab)
                                     $saleTermsIdx        = 2;
                                     $additionalDetailsIdx = 3;
                                     $brokerCompIdx       = 4;
@@ -894,7 +892,7 @@
                                         </button>
                                     </li>
                                 @else
-                                    {{-- Non-seller: Sale Terms=2, Description=3, Broker Comp=4, Photos=5, Info=6, AI=7 --}}
+                                    {{-- Non-seller: Sale Terms=2, Services=3, Description=4, Broker Comp=5, Photos=6, Info=7, AI=8 --}}
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === 2 ? 'active' : '' }}"
                                             wire:click="setActiveTab(2)"
@@ -915,115 +913,62 @@
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === 3 ? 'active' : '' }}"
-                                            wire:click="setActiveTab(3)"
+                                        <button class="nav-link {{ $activeTab === $additionalDetailsIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $additionalDetailsIdx }})"
                                             id="additional-details-tab" data-bs-toggle="tab"
                                             data-bs-target="#additional-details"
                                             type="button" role="tab"
                                             aria-controls="additional-details"
-                                            aria-selected="{{ $activeTab === 3 ? 'true' : 'false' }}">
+                                            aria-selected="{{ $activeTab === $additionalDetailsIdx ? 'true' : 'false' }}">
                                             Description
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                            wire:click="setActiveTab(4)"
+                                        <button class="nav-link {{ $activeTab === $brokerCompIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $brokerCompIdx }})"
                                             id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
                                             data-bs-target="#broker-compensation-agency-agreement-terms"
                                             type="button" role="tab"
                                             aria-controls="broker-compensation-agency-agreement-terms"
-                                            aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
+                                            aria-selected="{{ $activeTab === $brokerCompIdx ? 'true' : 'false' }}">
                                             Broker Compensation &amp; Agency Agreement Terms
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                            wire:click="setActiveTab(5)"
+                                        <button class="nav-link {{ $activeTab === $photosIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $photosIdx }})"
                                             id="photos-tours-documents-tab" data-bs-toggle="tab"
                                             data-bs-target="#photos-tours-documents"
                                             type="button" role="tab"
                                             aria-controls="photos-tours-documents"
-                                            aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                            aria-selected="{{ $activeTab === $photosIdx ? 'true' : 'false' }}">
                                             Photos &amp; Tours
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
-                                            wire:click="setActiveTab(6)"
+                                        <button class="nav-link {{ $activeTab === $sellerInfoIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $sellerInfoIdx }})"
                                             id="seller-information-tab" data-bs-toggle="tab"
                                             data-bs-target="#seller-information"
                                             type="button" role="tab"
                                             aria-controls="seller-information"
-                                            aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                            aria-selected="{{ $activeTab === $sellerInfoIdx ? 'true' : 'false' }}">
                                             Agent Credentials & Contact Info
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === 7 ? 'active' : '' }}"
-                                            wire:click="setActiveTab(7)"
+                                        <button class="nav-link {{ $activeTab === $aiIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $aiIdx }})"
                                             id="ai-questions-tab" data-bs-toggle="tab"
                                             data-bs-target="#ai-questions"
                                             type="button" role="tab"
                                             aria-controls="ai-questions"
-                                            aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
+                                            aria-selected="{{ $activeTab === $aiIdx ? 'true' : 'false' }}">
                                             AI Knowledge Base
                                         </button>
                                     </li>
                                 @endif
                             </ul>
-                        @else
-                            <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Location and Meeting Details', 'Service Selection and Pricing', 'Additional Details'] as $index => $tab)
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
-                                            wire:click="setActiveTab({{ $index }})"
-                                            id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
-                                            data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
-                                            type="button" role="tab"
-                                            aria-controls="{{ str_replace(' ', '-', strtolower($tab)) }}"
-                                            aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
-                                            {{ $tab }}
-                                        </button>
-                                    </li>
-                                @endforeach
-
-                                <!-- Photos, Tours & Documents Tab (limited_service: index 4) -->
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(4)"
-                                        id="photos-tours-documents-ls-tab" data-bs-toggle="tab"
-                                        data-bs-target="#photos-tours-documents-ls"
-                                        type="button" role="tab"
-                                        aria-controls="photos-tours-documents-ls"
-                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        Photos, Tours &amp; Documents
-                                    </button>
-                                </li>
-
-                                <!-- Dynamic Information Tab Based on User Type -->
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(5)" id="information-tab" data-bs-toggle="tab"
-                                        data-bs-target="#information" type="button" role="tab"
-                                        aria-controls="information"
-                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        Agent Credentials & Contact Info
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(6)"
-                                        id="ai-questions-tab" data-bs-toggle="tab"
-                                        data-bs-target="#ai-questions"
-                                        type="button" role="tab"
-                                        aria-controls="ai-questions"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        AI Knowledge Base
-                                    </button>
-                                </li>
-                            </ul>
-
-                        @endif
 
                         <!-- Tab Content -->
                         <div class="tab-content" id="myTabContent">
@@ -1042,7 +987,6 @@
 
                                 @endif
                             </div>
-                            @if ($service_type === 'full_service')
                                 <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                                     id="property-details" role="tabpanel"
                                     aria-labelledby="property-details-tab">
@@ -1082,6 +1026,7 @@
                                         @include('livewire.offer-listing.offer-landlord-tabs.commission-based.lease-terms')
                                     @endif
                                 </div>
+
 
                                 <!-- Additional Details Tab -->
                                 <div class="tab-pane fade {{ $activeTab === $additionalDetailsIdx ? 'show active' : '' }}"
@@ -1155,8 +1100,8 @@
                                     @endif
                                 </div>
 
-                                <!-- Info Tab (non-seller full_service: index 7) -->
-                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}" id="seller-information"
+                                <!-- Info Tab (non-seller: index $sellerInfoIdx) -->
+                                <div class="tab-pane fade {{ $activeTab === $sellerInfoIdx ? 'show active' : '' }}" id="seller-information"
                                     role="tabpanel" aria-labelledby="seller-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1169,39 +1114,12 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Knowledge Base Tab (non-seller full_service: index 8) -->
-                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}" id="ai-questions"
+                                <!-- AI Knowledge Base Tab (non-seller: index $aiIdx) -->
+                                <div class="tab-pane fade {{ $activeTab === $aiIdx ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
                                 @endif
-                    @else
-                                <!-- Photos, Tours & Documents Tab (limited_service: index 4) -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}" id="photos-tours-documents-ls"
-                                    role="tabpanel" aria-labelledby="photos-tours-documents-ls-tab">
-                                    @if($user_type === 'seller')
-                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.photos-tours-documents')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.photos-tours-documents')
-                                    @endif
-                                </div>
-
-                                <!-- Information Tab (limited_service: index 5) -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}" id="information"
-                                    role="tabpanel" aria-labelledby="information-tab">
-                                    @if(auth()->user() && auth()->user()->user_type === 'agent')
-                                        @include('livewire.partials.agent-credentials')
-                                    @else
-                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.seller-info')
-                                    @endif
-                                </div>
-
-                                <!-- AI Knowledge Base Tab (limited_service: index 6) -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="ai-questions"
-                                    role="tabpanel" aria-labelledby="ai-questions-tab">
-                                    @include('livewire.offer-listing.shared.ai-questions-input')
-                                </div>
-                    @endif
                 </div>
                 <!-- Navigation Buttons -->
                 <div class="d-flex justify-content-between form-group mt-4">
@@ -1497,18 +1415,8 @@
             // Initialize tooltips on page load
             initializeTooltips();
 
-            // Detect which service is preselected on load
-            if (document.getElementById('fullService')?.checked) {
-                currentServiceType = 'full_service';
-                try { initializeFullService(); } catch(e) { console.warn('[Seller] initializeFullService DOMContentLoaded error:', e); }
-            } else if (document.getElementById('limitedService')?.checked) {
-                currentServiceType = 'limited_service';
-                initializeLimitedService();
-            } else {
-                // Default to full service if no service type radio buttons found (limited service removed)
-                currentServiceType = 'full_service';
-                try { initializeFullService(); } catch(e) { console.warn('[Seller] initializeFullService DOMContentLoaded error:', e); }
-            }
+            currentServiceType = 'full_service';
+            try { initializeFullService(); } catch(e) { console.warn('[Seller] initializeFullService DOMContentLoaded error:', e); }
 
             // Multi-pass icon injection AFTER initializeFullService()/Select2 have run.
             // Inline calls ensure icons fire even if runSellerInitialIconPasses is not yet
@@ -1641,8 +1549,6 @@
             // wizard nav clicks via window._wizardNextHandler; no need to clone/replace buttons
             if (serviceType === 'full_service') {
                 initializeFullService();
-            } else if (serviceType === 'limited_service') {
-                initializeLimitedService();
             }
 
             Livewire.emit('serviceTypeChanged', serviceType);
@@ -2443,26 +2349,6 @@
                     }
                 });
 
-                // Limited-Service-only: require #understandTerms on the service-selection-and-pricing tab
-                if (currentTabContent.id === 'service-selection-and-pricing') {
-                    const understandTerms = currentTabContent.querySelector('#understandTerms');
-                    if (understandTerms && !understandTerms.checked) {
-                        isValid = false;
-                        const existingError = understandTerms.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const termsError = document.createElement('div');
-                            termsError.className = 'error text-danger mt-2';
-                            termsError.textContent = 'You must accept the terms to continue';
-                            understandTerms.parentNode.appendChild(termsError);
-                        }
-                    } else if (understandTerms) {
-                        const existingError = understandTerms.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
                 // If all fields are valid, proceed to the next tab
                 if (isValid) {
                     const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
@@ -2692,32 +2578,10 @@
                 });
             })();
 
-            // Re-detect selected service type after DOM update
-            const fullServiceChecked = document.getElementById('fullService')?.checked;
-            const limitedServiceChecked = document.getElementById('limitedService')?.checked;
-
-            let newServiceType = null;
-            if (fullServiceChecked) {
-                newServiceType = 'full_service';
-            } else if (limitedServiceChecked) {
-                newServiceType = 'limited_service';
-            } else {
-                // Default to full service if no service type radio buttons found
-                newServiceType = 'full_service';
-            }
-
-            if (newServiceType !== currentServiceType) {
-                currentServiceType = newServiceType;
-            }
-
             var _now = Date.now();
             if (_now - _lastInitTime > 300) {
                 _lastInitTime = _now;
-                if (currentServiceType === 'full_service') {
-                    initializeFullService();
-                } else if (currentServiceType === 'limited_service') {
-                    initializeLimitedService();
-                }
+                initializeFullService();
                 // Re-run icon passes AFTER initializeFullService() so Select2 wrapping
                 // has already happened before icons are injected into .input-cover wrappers
                 runSellerInitialIconPasses();
@@ -2774,12 +2638,11 @@
             const saveButton = document.getElementById('save-button');
             const formContainer = document.getElementById('wizard-form-container');
 
-            // Get all required fields from only active tabs depending on service type
+            // Get all required fields from active tabs
             function getAllRequiredFields() {
                 const requiredFields = [];
-                const serviceType = formContainer.getAttribute('data-service-type');
 
-                const tabSelector = serviceType === 'full_service' ? [
+                const tabSelector = [
                     '#listing-details',
                     '#property-details',
                     '#financial-details',
@@ -2791,11 +2654,6 @@
                     '#photos-tours-documents',
                     '#ai-questions',
                     '#seller-information',
-                ] : [
-                    '#listing-details',
-                    '#location-and-meeting-details',
-                    '#service-selection-and-pricing',
-                    '#tenant-info'
                 ];
 
                 tabSelector.forEach(selector => {
@@ -2884,13 +2742,6 @@
                 window.__wizardHandlerHookBound = true;
                 Livewire.hook('message.processed', () => {
                     setTimeout(() => {
-                        // Refresh listeners and service type
-                        const updatedServiceType = document.querySelector('[data-service-type]');
-                        if (updatedServiceType) {
-                            formContainer.setAttribute('data-service-type', updatedServiceType
-                                .getAttribute('data-service-type'));
-                        }
-
                         setupGlobalListeners();
                         updateSaveButton();
                     }, 300);

@@ -27,8 +27,7 @@ class BuyerOfferListingEdit extends Component
     public $isDraft = false; // To track draft status
     public bool $isListingDraft = false; // Source of truth for button mode (read from DB in mount)
     public $isLoadingData = false; // Flag to prevent reset during draft/edit load
-    public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', 'Purchased', 'Expired', or 'Draft'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Expired', or 'Draft'
     public $meeting_Preference = ''; // Meeting preference field
 
     public $user_type = 'buyer'; // Default to tenant or whatever makes sense
@@ -225,6 +224,9 @@ class BuyerOfferListingEdit extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
+    public $other_services_enabled = false;
+    public $other_services = '';
+
     public $additional_details = '';
 
     // Broker compensation
@@ -780,7 +782,7 @@ class BuyerOfferListingEdit extends Component
     public function startNew()
     {
         // Reset all properties to their initial state
-        $this->resetExcept(['hasDrafts', 'service_type', 'user_type']);
+        $this->resetExcept(['hasDrafts', 'user_type']);
 
         // Re-initialize necessary properties
         $this->addService();
@@ -854,6 +856,8 @@ class BuyerOfferListingEdit extends Component
     {
         $this->calculateTotals();
     }
+
+
 
 
     public function updatedWorkingWithAgent($value)
@@ -1252,8 +1256,7 @@ class BuyerOfferListingEdit extends Component
     // Navigate to next tab
     public function nextTab()
     {
-        // Determine max tabs based on service type
-        $maxTabs = $this->service_type === 'full_service' ? 5 : 3;
+        $maxTabs = 6;
         
         if ($this->activeTab < $maxTabs) {
             $this->activeTab++;
@@ -1350,7 +1353,6 @@ class BuyerOfferListingEdit extends Component
 
         $data = [
             'listing_title'                   => $this->listing_title,
-            'service_type'                    => $this->service_type,
             'user_type'                       => $this->user_type,
             'listing_status'                  => $this->listing_status,
             'auction_type'                    => $this->auction_type,
@@ -1510,6 +1512,7 @@ class BuyerOfferListingEdit extends Component
             'emotional_support_animal'        => $this->emotional_support_animal,
             'target_closing_date'             => $this->target_closing_date,
             'occupant_types'                  => $this->occupant_types,
+            'other_services'                  => $this->other_services,
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_type'                      => $this->lease_type,
@@ -1784,7 +1787,6 @@ class BuyerOfferListingEdit extends Component
 
             // Load all metadata fields
             $this->listing_title = $auction->title ?? '';
-            $this->service_type = $auction->get->service_type ?? 'full_service';
             $this->user_type = $auction->get->user_type ?? 'buyer';
             $this->listing_status = $auction->get->listing_status ?? 'Active';
             $this->meeting_Preference = $auction->get->meeting_Preference ?? '';
@@ -2031,7 +2033,8 @@ class BuyerOfferListingEdit extends Component
             $this->monthly_income = $auction->get->monthly_income ?? '';
             $this->number_occupant = $auction->get->number_occupant ?? '';
 
-            // Services
+            $this->other_services = $auction->get->other_services ?? '';
+            $this->other_services_enabled = (bool)($auction->get->other_services_enabled ?? false);
             $this->additional_details = $auction->get->additional_details ?? '';
 
             // Broker compensation
@@ -2282,7 +2285,6 @@ class BuyerOfferListingEdit extends Component
     protected function saveAllMetadata($auction)
     {
         $auction->saveMeta('workflow_type', 'offer_listing');
-        $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
         $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
@@ -2488,6 +2490,8 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
         // Services
+        $auction->saveMeta('other_services', $this->other_services);
+        $auction->saveMeta('other_services_enabled', $this->other_services_enabled);
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

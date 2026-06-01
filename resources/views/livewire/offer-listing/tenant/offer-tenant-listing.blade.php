@@ -1523,7 +1523,7 @@ $lease_types = [
                     </div>
                 @endif
 
-            <div id="wizard-form-container" class="container pt-5 pb-5" data-service-type="{{ $service_type }}">
+            <div id="wizard-form-container" class="container pt-5 pb-5">
 
                 <div id="submit-error-banner" class="alert alert-danger d-none" role="alert" style="position: sticky; top: 0; z-index: 1050;">
                     <strong>Please complete the required fields before submitting.</strong>
@@ -1532,8 +1532,6 @@ $lease_types = [
 
                 <form id="create-auction-form" wire:submit.prevent="store" novalidate>
                     <!-- Tab Navigation -->
-
-                    @if ($service_type === 'full_service')
 
                     @php
                     // Safe slug function - removes special chars, keeps only a-z, 0-9, and dashes
@@ -1615,54 +1613,6 @@ $lease_types = [
                         @endif
                         @endforeach
                     </ul>
-                    @else
-                    <ul class="nav nav-tabs" id="myTab" role="tablist">
-                        @foreach (['Listing Details', 'Location and Meeting Details', 'Service Selection and Pricing', 'Additional Details'] as $index => $tab)
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
-                                wire:click="setActiveTab({{ $index }})"
-                                id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
-                                data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
-                                type="button" role="tab"
-                                aria-controls="{{ str_replace(' ', '-', strtolower($tab)) }}"
-                                aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
-                                {{ $tab }}
-                            </button>
-                        </li>
-                        @endforeach
-
-                        <!-- Dynamic Information Tab Based on User Type -->
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                wire:click="setActiveTab(4)" id="information-tab" data-bs-toggle="tab"
-                                data-bs-target="#information" type="button" role="tab"
-                                aria-controls="information"
-                                aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                @if ($user_type === 'tenant')
-                                Agent Credentials & Contact Info
-                                @elseif($user_type === 'seller')
-                                Seller Information
-                                @elseif($user_type === 'buyer')
-                                Buyer Information
-                                @elseif($user_type === 'landlord')
-                                Landlord Information
-                                @endif
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                wire:click="setActiveTab(5)"
-                                id="ai-questions-tab" data-bs-toggle="tab"
-                                data-bs-target="#ai-questions"
-                                type="button" role="tab"
-                                aria-controls="ai-questions"
-                                aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                AI Knowledge Base
-                            </button>
-                        </li>
-                    </ul>
-
-                    @endif
 
                     <!-- Tab Content -->
                     <div class="tab-content" id="myTabContent">
@@ -1681,7 +1631,6 @@ $lease_types = [
                             @endif
                         </div>
 
-                        @if ($service_type === 'full_service')
                         <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                             id="{{ $propertyId }}" role="tabpanel"
                             aria-labelledby="{{ $propertyId }}-tab">
@@ -1839,42 +1788,6 @@ $lease_types = [
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.landlord-info')
                                     @endif
                                 </div>
-                                @elseif($service_type === 'limited_service')
-                                <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
-                                    id="location-and-meeting-details" role="tabpanel"
-                                    aria-labelledby="location-and-meeting-details-tab">
-                                    @include('livewire.offer-listing.offer-tenant-tabs.flat-fee.location-and-meeting-details')
-
-                                </div>
-                                <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                                    id="service-selection-and-pricing" role="tabpanel"
-                                    aria-labelledby="service-selection-and-pricing-tab">
-                                    @include('livewire.offer-listing.offer-tenant-tabs.flat-fee.service_selection_pricing')
-
-                                </div>
-
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
-                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
-
-                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.additional-details')
-
-                                </div>
-
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}" id="information"
-                                    role="tabpanel" aria-labelledby="information-tab">
-                                    @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
-                                    @include('livewire.partials.agent-credentials')
-                                    @else
-                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.tenant-info')
-                                    @endif
-                                </div>
-
-                                <!-- AI Knowledge Base Tab (limited_service: index 5) -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}" id="ai-questions"
-                                    role="tabpanel" aria-labelledby="ai-questions-tab">
-                                    @include('livewire.offer-listing.shared.ai-questions-input')
-                                </div>
-                                @endif
                             </div>
                             <!-- Navigation Buttons -->
                             <div class="d-flex justify-content-between form-group mt-4">
@@ -2122,53 +2035,13 @@ $lease_types = [
     document.addEventListener('DOMContentLoaded', () => {
         // Sync select values from their selected options (fixes draft loading issue)
         syncSelectValues();
-        
-        // Detect which service is preselected on load
-        if (document.getElementById('fullService')?.checked) {
-            currentServiceType = 'full_service';
-            initializeFullService();
-        } else if (document.getElementById('limitedService')?.checked) {
-            currentServiceType = 'limited_service';
-            initializeLimitedService();
-        } else {
-            // Default to full service if no service type radio buttons found (limited service removed)
-            currentServiceType = 'full_service';
-            initializeFullService();
-        }
-
+        currentServiceType = 'full_service';
+        initializeFullService();
         addIconsToInputs();
     });
 
     Livewire.hook('message.processed', () => {
         addIconsToInputs();
-
-        const fullServiceChecked = document.getElementById('fullService')?.checked;
-        const limitedServiceChecked = document.getElementById('limitedService')?.checked;
-
-        let newServiceType = null;
-        if (fullServiceChecked) {
-            newServiceType = 'full_service';
-        } else if (limitedServiceChecked) {
-            newServiceType = 'limited_service';
-        } else {
-            newServiceType = 'full_service';
-        }
-
-        if (newServiceType !== currentServiceType) {
-            currentServiceType = newServiceType;
-
-            if (typeof isNavigating !== 'undefined' && isNavigating) {
-                return;
-            }
-
-            removeWizardEventListeners();
-
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
-            } else if (currentServiceType === 'limited_service') {
-                initializeLimitedService();
-            }
-        }
     });
     
     // Sync select element values from Livewire component data
@@ -2308,8 +2181,6 @@ $lease_types = [
         // Initialize new service logic
         if (serviceType === 'full_service') {
             initializeFullService();
-        } else if (serviceType === 'limited_service') {
-            initializeLimitedService();
         }
 
         Livewire.emit('serviceTypeChanged', serviceType);
@@ -3903,25 +3774,6 @@ $lease_types = [
             }
         }
 
-        if (currentServiceType === 'limited_service' && currentTabContent.id === 'service-selection-and-pricing') {
-            const understandTerms = currentTabContent.querySelector('#understandTerms');
-            if (understandTerms && !understandTerms.checked) {
-                isValid = false;
-                const existingError = understandTerms.parentNode.querySelector('.error');
-                if (!existingError) {
-                    const termsError = document.createElement('div');
-                    termsError.className = 'error text-danger mt-2';
-                    termsError.textContent = 'You must accept the terms to continue';
-                    understandTerms.parentNode.appendChild(termsError);
-                }
-            } else if (understandTerms) {
-                const existingError = understandTerms.parentNode.querySelector('.error');
-                if (existingError) {
-                    existingError.remove();
-                }
-            }
-        }
-
         return isValid;
     }
 
@@ -4254,35 +4106,6 @@ $lease_types = [
             return;
         }
 
-        // Re-detect selected service type after DOM update
-        const fullServiceChecked = document.getElementById('fullService')?.checked;
-        const limitedServiceChecked = document.getElementById('limitedService')?.checked;
-
-        let newServiceType = null;
-        if (fullServiceChecked) {
-            newServiceType = 'full_service';
-        } else if (limitedServiceChecked) {
-            newServiceType = 'limited_service';
-        } else {
-            newServiceType = 'full_service';
-        }
-
-        if (newServiceType !== currentServiceType) {
-            currentServiceType = newServiceType;
-
-            if (typeof isNavigating !== 'undefined' && isNavigating) {
-                return;
-            }
-
-            removeWizardEventListeners();
-
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
-            } else if (currentServiceType === 'limited_service') {
-                initializeLimitedService();
-            }
-        }
-
     });
 </script>
 
@@ -4292,14 +4115,13 @@ $lease_types = [
         const saveButton = document.getElementById('save-button');
         const formContainer = document.getElementById('wizard-form-container');
 
-        // Get all required fields from only active tabs depending on service type
+        // Get all required fields from active tabs
         function getAllRequiredFields() {
             const requiredFields = [];
-            const serviceType = formContainer.getAttribute('data-service-type');
             const userType = (typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : 'tenant').toLowerCase();
             const infoTabId = userType === 'tenant' ? '#agent-credentials-contact-info' : '#' + userType + '-information';
 
-            const tabSelector = serviceType === 'full_service' ? [
+            const tabSelector = [
                 '#listing-details',
                 '#property-preferences',
                 '#property-details',
@@ -4310,11 +4132,6 @@ $lease_types = [
 
                 '#description',
                 '#broker-compensation-agency-agreement-terms',
-                infoTabId
-            ] : [
-                '#listing-details',
-                '#location-and-meeting-details',
-                '#service-selection-and-pricing',
                 infoTabId
             ];
 
@@ -4480,9 +4297,8 @@ $lease_types = [
                 if (wireEl && typeof Livewire !== 'undefined') {
                     var comp = Livewire.find(wireEl.getAttribute('wire:id'));
                     if (comp && comp.get) {
-                        var serviceType = formContainer.getAttribute('data-service-type');
                         var curUserType = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : 'tenant';
-                        if (serviceType === 'full_service') {
+                        {
                             var lwChecks = [
                                 { prop: 'property_type', label: 'Property Type' },
                             ];
@@ -4568,13 +4384,6 @@ $lease_types = [
                         syncSelectValues();
                     }
                     
-                    // Refresh listeners and service type
-                    const updatedServiceType = document.querySelector('[data-service-type]');
-                    if (updatedServiceType) {
-                        formContainer.setAttribute('data-service-type', updatedServiceType
-                            .getAttribute('data-service-type'));
-                    }
-
                     setupGlobalListeners();
                     updateSaveButton();
                 }, 300);
@@ -4737,9 +4546,8 @@ $lease_types = [
                     if (_wireEl && typeof Livewire !== 'undefined') {
                         var _comp = Livewire.find(_wireEl.getAttribute('wire:id'));
                         if (_comp && _comp.get) {
-                            var _svcType = formContainer.getAttribute('data-service-type');
                             var _curUTgi = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : 'tenant';
-                            if (_svcType === 'full_service') {
+                            {
                                 // property_type: required for all roles; label is role-aware.
                                 // Resolve the actual DOM element so tenantNavigateToItem()
                                 // can switch to the correct tab when it is empty.
@@ -5105,9 +4913,8 @@ $lease_types = [
                     if (wireEl && typeof Livewire !== 'undefined') {
                         var comp = Livewire.find(wireEl.getAttribute('wire:id'));
                         if (comp && comp.get) {
-                            var svcType = formContainer.getAttribute('data-service-type');
                             var curUT = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : 'tenant';
-                            if (svcType === 'full_service') {
+                            {
                                 // property_type: required for all roles; label and tab are role-aware.
                                 // Find the actual DOM element so guided correction can navigate to its tab.
                                 var _ptValSub = comp.get('property_type');

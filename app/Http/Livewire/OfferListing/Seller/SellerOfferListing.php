@@ -30,8 +30,7 @@ class SellerOfferListing extends Component
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
     public $isResumingDraft = false; // True when a draft has been loaded via loadDraft()
-    public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', 'Sold', 'Expired', or 'Draft'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Expired', or 'Draft'
 
     public $user_type = 'seller'; // Default to tenant or whatever makes sense
     public $auction_type = '';
@@ -407,6 +406,9 @@ class SellerOfferListing extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
+    public $other_services_enabled = false;
+    public $other_services = '';
+
     public $additional_details = '';
     public $preferance_details = '';
 
@@ -1153,7 +1155,7 @@ class SellerOfferListing extends Component
     public function startNew()
     {
         // Reset all properties to their initial state
-        $this->resetExcept(['hasDrafts', 'service_type', 'user_type']);
+        $this->resetExcept(['hasDrafts', 'user_type']);
 
         // Re-initialize necessary properties
         $this->addService();
@@ -1874,7 +1876,6 @@ class SellerOfferListing extends Component
 
         $data = [
             'listing_title'                   => $this->listing_title,
-            'service_type'                    => $this->service_type,
             'user_type'                       => $this->user_type,
             'listing_status'                  => $this->listing_status,
             'auction_type'                    => $this->auction_type,
@@ -2121,6 +2122,7 @@ class SellerOfferListing extends Component
             'prior_felony_explanation'        => $this->prior_felony_explanation,
             'monthly_income'                  => $this->monthly_income,
             'number_occupant'                 => $this->number_occupant,
+            'other_services'                  => $this->other_services,
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_fee_type'                  => $this->lease_fee_type,
@@ -2405,7 +2407,6 @@ class SellerOfferListing extends Component
 
             // Load all metadata fields
             $this->listing_title = $auction->title;
-            $this->service_type = $auction->get->service_type;
             $this->user_type = $auction->get->user_type;
             $this->listing_status = $auction->get->listing_status;
             $this->auction_type = $auction->get->auction_type;
@@ -2726,6 +2727,7 @@ class SellerOfferListing extends Component
             $this->monthly_income = $auction->get->monthly_income;
             $this->number_occupant = $auction->get->number_occupant;
 
+            $this->other_services = $auction->get->other_services;
             $this->additional_details = $auction->get->additional_details;
 
             // Broker compensation
@@ -2996,7 +2998,6 @@ class SellerOfferListing extends Component
 
 
 
-        $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('workflow_type', 'offer_listing');
         $auction->saveMeta('listing_status', $this->listing_status);
@@ -3301,6 +3302,8 @@ class SellerOfferListing extends Component
         $auction->saveMeta('monthly_income', $this->monthly_income);
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
+        // Services
+        $auction->saveMeta('other_services', $this->other_services);
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

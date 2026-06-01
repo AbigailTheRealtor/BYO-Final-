@@ -19,79 +19,6 @@ $auction_lengths_seller = [
             </div>
         </div>
     </div>
-    <div class="form-group mb-4 d-none">
-        <div class="row">
-            <!-- Full Service (Commission-Based) Option -->
-            <div class="col-md-6 mb-3">
-                <div class="card service-option-card h-100 {{ $service_type === 'full_service' ? 'active-service border-primary' : '' }}"
-                    wire:click="$set('service_type', 'full_service')" style="cursor: pointer;">
-                    <div class="card-body p-4">
-                        <div class="form-check">
-                            <input class="form-check-input card-check" type="radio" wire:model="service_type"
-                                id="fullService" value="full_service"
-                                {{ $service_type === 'full_service' ? 'checked' : '' }}>
-                            <label class="form-check-label fw-bold" for="fullService">
-                                <div class="d-flex align-items-center commission-based-agent">
-                                    <i class="fa-solid fa-crown text-warning me-2 fs-5"></i>
-                                    <h5 class="mb-0">Hire a Commission-Based Agent (Full Service)</h5>
-                                    @if ($service_type === 'full_service')
-                                        <span class="ms-2 text-success"><i class="fa-solid fa-circle-check"></i></span>
-                                    @endif
-                                </div>
-                                @if ($service_type === 'full_service')
-                                    <p class="text-success mt-2">
-                                        ✓ Pay only when your transaction closes or lease is signed.
-                                        Includes full-service representation from start to finish.
-                                    </p>
-                                @else
-                                    <p class="text-muted mt-2">Pay only when your transaction closes or lease is signed.
-                                    </p>
-                                @endif
-                            </label>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-transparent border-top-0 text-end">
-                        <span class="badge bg-primary bg-opacity-10 text-primary">(Commission-Based)</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Limited Service (Flat Fee) Option -->
-            <div class="col-md-6 mb-3">
-                <div class="card service-option-card h-100 {{ $service_type === 'limited_service' ? 'active-service border-primary' : '' }}"
-                    wire:click="$set('service_type', 'limited_service')" style="cursor: pointer;">
-                    <div class="card-body p-4">
-                        <div class="form-check">
-                            <input class="form-check-input card-check" type="radio" wire:model="service_type"
-                                id="limitedService" value="limited_service"
-                                {{ $service_type === 'limited_service' ? 'checked' : '' }}>
-                            <label class="form-check-label fw-bold" for="limitedService">
-                                <div class="d-flex align-items-center">
-                                    <i class="fa-solid fa-file-invoice-dollar text-info me-2 fs-5"></i>
-                                    <h5 class="mb-0">Hire a Flat Fee Agent (Limited Service)</h5>
-                                    @if ($service_type === 'limited_service')
-                                        <span class="ms-2 text-success"><i class="fa-solid fa-circle-check"></i></span>
-                                    @endif
-                                </div>
-                                @if ($service_type === 'limited_service')
-                                    <p class="text-success mt-2">
-                                        ✓ Pay a set fee upfront for specific services.
-                                        No ongoing commitment or commission.
-                                    </p>
-                                @else
-                                    <p class="text-muted mt-2">Pay a set fee upfront for specific services.</p>
-                                @endif
-                            </label>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-transparent border-top-0 text-end">
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary">(Flat Fee)</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Select Listing Type -->
     <div class="form-group mb-4 text-center">
         <label class="fw-bold mb-3">Select Listing Type:</label>
@@ -149,11 +76,10 @@ $auction_lengths_seller = [
         </div>
     </div>
 
-    @if ($service_type === 'full_service')
         <div class="form-group mb-4">
             <label class="fw-bold mb-3 d-block">Listing Status:
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Choose the current stage of this listing: Active means the listing is open and accepting offers; Pending indicates the listing is under review or in progress; Sold means the listing has reached a completed sale transaction.">
+                    title="Choose the current stage of this listing: Active means the listing is open and accepting offers; Pending indicates the listing is under review or in progress; Expired means the listing is no longer active because the expiration date has passed.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span></label>
 
@@ -188,20 +114,6 @@ $auction_lengths_seller = [
                         </span>
                     </label>
                 </div>
-                <div class="input-field col-3">
-                    <input type="radio" class="btn-check" wire:model="listing_status" id="status-sold"
-                        value="Sold" autocomplete="off">
-                    <label class="btn btn-status btn-outline-primary px-3 px-md-0 position-relative"
-                        for="status-sold" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="This listing has reached a completed sale transaction and is no longer accepting offers.">
-                        <span class="status-icon"><i class="fa-solid fa-handshake me-2"></i></span>
-                        <span class="status-text">Sold</span>
-                        <span
-                            class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
-                            <i class="fa-solid fa-handshake"></i>
-                        </span>
-                    </label>
-                </div>
                 <div id="expired_tooltip" class="input-field col-3">
                     <!-- Expired Status -->
                     <input type="radio" class="btn-check" wire:model="listing_status" id="status-expired"
@@ -222,16 +134,13 @@ $auction_lengths_seller = [
 
             </div>
         </div>
-    @endif
 
-    @if ($service_type === 'full_service')
         <div class="alert alert-warning mt-3 p-2 small">
 
             Fields marked with <span class="text-danger">*</span> are required. You do not need to fill in all other
             fields; however, providing additional information will help Agents better serve you.
 
         </div>
-    @endif
 
     <!-- Listing Title -->
 

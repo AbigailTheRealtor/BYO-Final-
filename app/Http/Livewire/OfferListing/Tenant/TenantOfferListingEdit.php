@@ -34,8 +34,7 @@ class TenantOfferListingEdit extends Component
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
     public bool $isListingDraft = false; // Source of truth for button mode (read from DB in mount)
-    public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', 'Leased', 'Expired', or 'Draft'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Expired', or 'Draft'
 
     public $user_type = ''; // Default to tenant or whatever makes sense
     public $auction_type = '';
@@ -2405,7 +2404,6 @@ class TenantOfferListingEdit extends Component
         // $auction = HireTenantAgentAuction::findOrFail($auctionId);
         // Populate Livewire properties with the fetched data
         $this->listing_title = $auction->title ?? $auction->info('title') ?? '';
-        $this->service_type = $auction->info('service_type');
         $this->user_type = $auction->info('user_type') ?: $user_type;
         $this->listing_status = $auction->info('listing_status');
         $this->working_with_agent = $auction->info('working_with_agent');
@@ -3124,7 +3122,6 @@ class TenantOfferListingEdit extends Component
             $this->isListingDraft = (bool) $this->_isDraftSave;
             $auction->save();
             $auction->saveMeta('workflow_type', 'offer_listing');
-            $auction->saveMeta('service_type', $this->service_type);
             $auction->saveMeta('user_type', $this->user_type);
             $auction->saveMeta('listing_status', $this->listing_status);
             if (auth()->user() && auth()->user()->user_type === 'agent') {

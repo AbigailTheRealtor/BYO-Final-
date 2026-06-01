@@ -48,7 +48,6 @@
             placeholder="Enter email address" required>
     </div>
 </div>
-@if ($service_type === 'full_service')
 
     <!-- Photo Upload -->
     <div class="form-group">
@@ -139,7 +138,6 @@
     <div class="alert alert-warning mt-3 p-2 small">
         <strong> 🛡️ Privacy Notice: </strong> Your last name, email address, and phone number are only visible to the platform admin. Only your first name and any uploaded photo or video will appear on the public listing. This ensures Agents contact you through the platform and protects your personal information.
     </div>
-@endif
 
 <script>
 function formatPhoneNumber(input) {

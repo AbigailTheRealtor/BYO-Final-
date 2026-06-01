@@ -37,8 +37,7 @@ class TenantOfferListing extends Component
     public $isDraft = false; // To track draft status
     public $isResumingDraft = false; // True when a draft has been loaded via loadDraft()
     public $isLoadingData = false; // Guard flag to prevent updated* hooks from resetting fields during draft load
-    public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', 'Leased', 'Expired', or 'Draft'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Expired', or 'Draft'
 
     // public $user_type = 'tenant'; // Default to tenant or whatever makes sense
     public $auction_type = '';
@@ -1605,12 +1604,8 @@ class TenantOfferListing extends Component
         // Set user_type from route parameter, or default to 'tenant'
         $this->user_type = ($user_type !== null) ? $user_type : 'tenant';
 
-        // The flat-fee route passes user_type='flat-fee'; map it to limited_service
-        // so the blade skips the full_service block (which has no 'flat-fee' match arm)
-        // and renders the correct flat-fee tab set and partials instead.
-        if ($this->user_type === 'flat-fee') {
-            $this->service_type = 'limited_service';
-        }
+
+
 
         $this->initializeFeeStructure();
         $this->addService();
@@ -1650,7 +1645,7 @@ class TenantOfferListing extends Component
     public function startNew()
     {
         // Reset all properties to their initial state
-        $this->resetExcept(['hasDrafts', 'service_type', 'user_type']);
+        $this->resetExcept(['hasDrafts', 'user_type']);
 
         // Re-initialize necessary properties
         $this->initializeFeeStructure();
@@ -1733,6 +1728,8 @@ class TenantOfferListing extends Component
     {
         $this->calculateTotals();
     }
+
+
 
 
     public function updatedWorkingWithAgent($value)
@@ -2458,6 +2455,34 @@ class TenantOfferListing extends Component
     {
         $this->activeTab = $index;
     }
+    public function updatedOtherServicesEnabled($enabled): void
+    {
+        // If toggled on and no field exists, create the first one
+        if ($enabled && empty($this->other_services)) { // Use empty() to check if array is empty
+            $this->other_services[] = '';
+        }
+
+        // If toggled off, clear array (optional: keep if you prefer)
+        if (! $enabled) {
+            $this->other_services = [];
+        }
+    }
+
+    public function addServiceField(): void
+    {
+        $this->other_services[] = ''; // Add a new empty field
+    }
+
+    public function removeService(int $index): void
+    {
+        unset($this->other_services[$index]);
+        // reindex to 0..n so bindings become other_services.0, .1, .2 …
+        $this->other_services = array_values($this->other_services);
+    }
+
+
+
+
     public function updatedVideoLink($value)
     {
         // instantly preview when pasted or typed
@@ -2551,7 +2576,6 @@ class TenantOfferListing extends Component
 
         $data = [
             'workflow_type'       => $this->workflow_type ?: 'hire_agent',
-            'service_type'        => $this->service_type,
             'user_type'           => $this->user_type,
             'listing_status'      => $this->listing_status,
             'auction_type'        => $this->auction_type,
@@ -2666,6 +2690,7 @@ class TenantOfferListing extends Component
             'type_of_pets'        => $this->type_of_pets,
             'weight_of_pets'      => $this->weight_of_pets,
             'service_animal'      => $this->service_animal,
+            'other_services_enabled' => $this->other_services_enabled,
             'support_animal'      => $this->support_animal,
             'emotional_support_animal' => $this->emotional_support_animal,
             'has_breed_restrictions' => $this->has_breed_restrictions,
@@ -2783,6 +2808,7 @@ class TenantOfferListing extends Component
             'prior_felony_explanation' => $this->prior_felony_explanation,
             'monthly_income'      => $this->monthly_income,
             'number_occupant'     => $this->number_occupant,
+            'other_services'      => json_encode($this->other_services),
             'photo_enhancements'  => json_encode($this->photo_enhancements),
             'custom_enhancement'  => $this->custom_enhancement,
             'additional_details'  => $this->additional_details,
@@ -3170,7 +3196,6 @@ class TenantOfferListing extends Component
             // Load all metadata fields
             $this->listing_title = $auction->title;
             $this->workflow_type = $auction->get->workflow_type ?? 'hire_agent';
-            $this->service_type = $auction->get->service_type;
             $this->user_type = $auction->get->user_type;
             $this->listing_status = $auction->get->listing_status;
             $this->auction_type = $auction->get->auction_type;
@@ -3373,6 +3398,7 @@ class TenantOfferListing extends Component
             $this->type_of_pets = $auction->get->type_of_pets ?? '';
             $this->weight_of_pets = $auction->get->weight_of_pets ?? '';
             $this->service_animal = $auction->get->service_animal ?? '';
+            $this->other_services_enabled = $auction->get->other_services_enabled ?? '';
             $this->support_animal = $auction->get->support_animal ?? '';
             $this->emotional_support_animal = $auction->get->emotional_support_animal ?? '';
             $this->has_breed_restrictions = $auction->get->has_breed_restrictions ?? '';
@@ -3547,6 +3573,8 @@ class TenantOfferListing extends Component
             $this->number_occupant = $auction->get->number_occupant ?? '';
 
             // Services
+            $otherServicesRaw = $auction->get->other_services ?? null;
+            $this->other_services = $otherServicesRaw ? (is_string($otherServicesRaw) ? json_decode($otherServicesRaw, true) ?? [] : (array)$otherServicesRaw) : [];
             $this->additional_details = $auction->get->additional_details ?? '';
 
             // Broker compensation
@@ -3889,7 +3917,6 @@ class TenantOfferListing extends Component
     {
         $rules = [
             // Basic Information (all user types)
-            'service_type'        => 'required',
             'user_type'           => 'required',
             'listing_title'       => 'required|string|max:255',
             'listing_date'        => 'required|date',
@@ -3897,8 +3924,8 @@ class TenantOfferListing extends Component
             'auction_type'        => 'required',
         ];
 
-        // Tenant-specific required fields (full_service only)
-        if ($this->user_type === 'tenant' && $this->service_type === 'full_service') {
+        // Tenant-specific required fields
+        if ($this->user_type === 'tenant') {
             // Tab 1 – Listing Details
             $rules['desired_agent_hire_date'] = 'required|date';
 
@@ -3937,8 +3964,8 @@ class TenantOfferListing extends Component
             $rules['email']        = 'required|email';
         }
 
-        // Landlord-specific required fields (full_service only)
-        if ($this->user_type === 'landlord' && $this->service_type === 'full_service') {
+        // Landlord-specific required fields
+        if ($this->user_type === 'landlord') {
             // Tab 1 – Listing Details
             $rules['desired_agent_hire_date'] = 'required|date';
 
@@ -3977,8 +4004,8 @@ class TenantOfferListing extends Component
             $rules['email']        = 'required|email';
         }
 
-        // Buyer-specific required fields (full_service only)
-        if ($this->user_type === 'buyer' && $this->service_type === 'full_service') {
+        // Buyer-specific required fields
+        if ($this->user_type === 'buyer') {
             // Tab 1 – Listing Details
             $rules['desired_agent_hire_date'] = 'required|date';
 
@@ -4019,8 +4046,8 @@ class TenantOfferListing extends Component
             $rules['email']          = 'required|email';
         }
 
-        // Seller-specific required fields (full_service only)
-        if ($this->user_type === 'seller' && $this->service_type === 'full_service') {
+        // Seller-specific required fields
+        if ($this->user_type === 'seller') {
             // Tab 1 – Listing Details
             $rules['desired_agent_hire_date'] = 'required|date';
 
@@ -4157,7 +4184,6 @@ class TenantOfferListing extends Component
         }
 
         $auction->saveMeta('workflow_type', 'offer_listing');
-        $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
         $auction->saveMeta('auction_type', $this->auction_type);
@@ -4316,6 +4342,7 @@ class TenantOfferListing extends Component
         $auction->saveMeta('type_of_pets', $this->type_of_pets);
         $auction->saveMeta('weight_of_pets', $this->weight_of_pets);
         $auction->saveMeta('service_animal', $this->service_animal);
+        $auction->saveMeta('other_services_enabled', $this->other_services_enabled);
         $auction->saveMeta('support_animal', $this->support_animal);
         $auction->saveMeta('emotional_support_animal', $this->emotional_support_animal);
         $auction->saveMeta('has_breed_restrictions', $this->has_breed_restrictions);
@@ -4470,6 +4497,8 @@ class TenantOfferListing extends Component
         $auction->saveMeta('monthly_income', $this->monthly_income);
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
+        // Services
+        $auction->saveMeta('other_services', json_encode($this->other_services));
         $auction->saveMeta('photo_enhancements', json_encode($this->photo_enhancements));
         $auction->saveMeta('custom_enhancement', $this->custom_enhancement);
         $auction->saveMeta('additional_details', $this->additional_details);

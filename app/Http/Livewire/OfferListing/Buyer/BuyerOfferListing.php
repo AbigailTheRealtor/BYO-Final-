@@ -31,8 +31,7 @@ class BuyerOfferListing extends Component
     public $isDraft = false; // To track draft status
     public $isResumingDraft = false; // True when a draft has been loaded via loadDraft()
     public $isLoadingData = false; // Flag to prevent reset during draft/edit load
-    public $service_type = 'full_service'; // 'full_service' or 'limited_service'
-    public $listing_status = 'Active'; // 'Active', 'Pending', 'Purchased', 'Expired', or 'Draft'
+    public $listing_status = 'Active'; // 'Active', 'Pending', 'Expired', or 'Draft'
 
     public $user_type = 'buyer'; // Default to tenant or whatever makes sense
     public $auction_type = '';
@@ -222,6 +221,9 @@ class BuyerOfferListing extends Component
     public $emotional_support_animal = '';
     public $target_closing_date = '';
     public $occupant_types = '';
+    public $other_services_enabled = false;
+    public $other_services = '';
+
     public $additional_details = '';
     public $preferance_details = '';
 
@@ -832,7 +834,7 @@ class BuyerOfferListing extends Component
     public function startNew()
     {
         // Reset all properties to their initial state
-        $this->resetExcept(['hasDrafts', 'service_type', 'user_type']);
+        $this->resetExcept(['hasDrafts', 'user_type']);
 
         // Re-initialize necessary properties
         $this->addService();
@@ -906,6 +908,8 @@ class BuyerOfferListing extends Component
     {
         $this->calculateTotals();
     }
+
+
 
 
     public function updatedWorkingWithAgent($value)
@@ -1403,7 +1407,6 @@ class BuyerOfferListing extends Component
 
         $data = [
             'listing_title'                   => $this->listing_title,
-            'service_type'                    => $this->service_type,
             'user_type'                       => $this->user_type,
             'listing_status'                  => $this->listing_status,
             'auction_type'                    => $this->auction_type,
@@ -1564,6 +1567,7 @@ class BuyerOfferListing extends Component
             'emotional_support_animal'        => $this->emotional_support_animal,
             'target_closing_date'             => $this->target_closing_date,
             'occupant_types'                  => $this->occupant_types,
+            'other_services'                  => $this->other_services,
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_type'                      => $this->lease_type,
@@ -1806,7 +1810,6 @@ class BuyerOfferListing extends Component
 
             // Load all metadata fields
             $this->listing_title = $auction->title ?? '';
-            $this->service_type = $auction->get->service_type ?? '';
             $this->user_type = $auction->get->user_type ?? 'buyer';
             $this->listing_status = $auction->get->listing_status ?? 'Active';
             $this->auction_type = $auction->get->auction_type ?? '';
@@ -2051,6 +2054,8 @@ class BuyerOfferListing extends Component
             $this->occupant_types = $auction->get->occupant_types ?? '';
 
             // Services
+            $otherServicesRaw = $auction->get->other_services ?? null;
+            $this->other_services = $otherServicesRaw ? (is_string($otherServicesRaw) ? json_decode($otherServicesRaw, true) ?? [] : (array)$otherServicesRaw) : [];
             $this->additional_details = $auction->get->additional_details ?? '';
 
             // Broker compensation
@@ -2310,7 +2315,6 @@ class BuyerOfferListing extends Component
         \Log::info('[saveAllMetadata CALLED]', ['auction_id' => $auction->id]);
 
         $auction->saveMeta('workflow_type', 'offer_listing');
-        $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
         $auction->saveMeta('auction_type', $this->auction_type);
@@ -2563,6 +2567,7 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('occupant_types', $this->occupant_types);
 
         // Services
+        $auction->saveMeta('other_services', $this->other_services);
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

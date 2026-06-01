@@ -734,7 +734,7 @@
                     </div>
                 @endif
 
-                <div id="wizard-form-container" class="container pt-5 pb-5" data-service-type="{{ $service_type }}">
+                <div id="wizard-form-container" class="container pt-5 pb-5">
 
                     <form id="create-auction-form" wire:submit.prevent="store" novalidate>
                         <div id="submit-error-banner" class="alert alert-danger d-none" role="alert" style="position: sticky; top: 0; z-index: 1050;">
@@ -743,8 +743,7 @@
                         </div>
                         <!-- Tab Navigation -->
 
-                        @if ($service_type === 'full_service')
-                            @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
+                        @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @php
@@ -794,46 +793,6 @@
                                     </button>
                                 </li>
                             </ul>
-                        @else
-                            <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Location and Meeting Details', 'Service Selection and Pricing', 'Additional Details'] as $index => $tab)
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
-                                            wire:click="setActiveTab({{ $index }})"
-                                            id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
-                                            data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
-                                            type="button" role="tab"
-                                            aria-controls="{{ str_replace(' ', '-', strtolower($tab)) }}"
-                                            aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
-                                            {{ $tab }}
-                                        </button>
-                                    </li>
-                                @endforeach
-
-                                <!-- Dynamic Information Tab Based on User Type -->
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(4)" id="information-tab" data-bs-toggle="tab"
-                                        data-bs-target="#information" type="button" role="tab"
-                                        aria-controls="information"
-                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        Agent Credentials & Contact Info
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(5)"
-                                        id="ai-questions-tab" data-bs-toggle="tab"
-                                        data-bs-target="#ai-questions"
-                                        type="button" role="tab"
-                                        aria-controls="ai-questions"
-                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        AI Knowledge Base
-                                    </button>
-                                </li>
-                            </ul>
-
-                        @endif
 
                         <!-- Tab Content -->
                         <div class="tab-content" id="myTabContent">
@@ -851,7 +810,6 @@
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.listing-details')
                                 @endif
                             </div>
-                            @if ($service_type === 'full_service')
                                 <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                                     id="property-preferences" role="tabpanel"
                                     aria-labelledby="property-preferences-tab">
@@ -926,13 +884,6 @@
                                         @include('livewire.offer-listing.offer-landlord-tabs.commission-based.landlord-info')
                                     @endif
                                 </div>
-                            @elseif($service_type === 'limited_service')
-                                <!-- AI Knowledge Base Tab (limited_service: index 5) -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}" id="ai-questions"
-                                    role="tabpanel" aria-labelledby="ai-questions-tab">
-                                    @include('livewire.offer-listing.shared.ai-questions-input')
-                                </div>
-                            @endif
                         </div>
                         <!-- Navigation Buttons -->
                         <div class="d-flex justify-content-between form-group mt-4">
@@ -984,19 +935,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Detect which service is preselected on load
-            if (document.getElementById('fullService')?.checked) {
-                currentServiceType = 'full_service';
-                initializeFullService();
-            } else if (document.getElementById('limitedService')?.checked) {
-                currentServiceType = 'limited_service';
-                initializeLimitedService();
-            } else {
-                // Default to full service if no service type radio buttons found (limited service removed)
-                currentServiceType = 'full_service';
-                initializeFullService();
-            }
-
+            currentServiceType = 'full_service';
+            initializeFullService();
             addIconsToInputs();
         });
         
@@ -1097,8 +1037,6 @@
             // Initialize new service logic
             if (serviceType === 'full_service') {
                 initializeFullService();
-            } else if (serviceType === 'limited_service') {
-                initializeLimitedService();
             }
 
             Livewire.emit('serviceTypeChanged', serviceType);
@@ -2142,25 +2080,6 @@
                     }
                 }
 
-                if (currentTabContent.id === 'service-selection-and-pricing') {
-                    const understandTerms = currentTabContent.querySelector('#understandTerms');
-                    if (understandTerms && !understandTerms.checked) {
-                        isValid = false;
-                        const existingError = understandTerms.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const termsError = document.createElement('div');
-                            termsError.className = 'error text-danger mt-2';
-                            termsError.textContent = 'You must accept the terms to continue';
-                            understandTerms.parentNode.appendChild(termsError);
-                        }
-                    } else {
-                        const existingError = understandTerms.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
                 // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
                     const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
@@ -2465,35 +2384,12 @@
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
 
-            // Re-detect selected service type after DOM update
-            const fullServiceChecked = document.getElementById('fullService')?.checked;
-            const limitedServiceChecked = document.getElementById('limitedService')?.checked;
-
-            let newServiceType = null;
-            if (fullServiceChecked) {
-                newServiceType = 'full_service';
-            } else if (limitedServiceChecked) {
-                newServiceType = 'limited_service';
-            } else {
-                // Default to full service if no service type radio buttons found
-                newServiceType = 'full_service';
-            }
-
-            if (newServiceType !== currentServiceType) {
-                currentServiceType = newServiceType;
-            }
-
             var now = Date.now();
             var propertyItemsNeedsInit = $('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible');
             if (propertyItemsNeedsInit || now - _lastInitTime > 300) {
                 _lastInitTime = now;
                 removeWizardEventListeners();
-
-                if (currentServiceType === 'full_service') {
-                    initializeFullService();
-                } else if (currentServiceType === 'limited_service') {
-                    initializeLimitedService();
-                }
+                initializeFullService();
             }
 
             var _savedTabId = sessionStorage.getItem('buyer_create_active_tab');
@@ -2511,22 +2407,16 @@
             const saveButton = document.getElementById('save-button');
             const formContainer = document.getElementById('wizard-form-container');
 
-            // Get all required fields from only active tabs depending on service type
+            // Get all required fields from active tabs
             function getAllRequiredFields() {
                 const requiredFields = [];
-                const serviceType = formContainer.getAttribute('data-service-type');
 
-                const tabSelector = serviceType === 'full_service' ? [
+                const tabSelector = [
                     '#listing-details',
                     '#property-preferences',
                     '#purchasing-terms',
                     '#additional-details',
                     '#ai-questions',
-                    '#buyer-information'
-                ] : [
-                    '#listing-details',
-                    '#location-and-meeting-details',
-                    '#service-selection-and-pricing',
                     '#buyer-information'
                 ];
 
@@ -2613,13 +2503,6 @@
             if (typeof Livewire !== 'undefined') {
                 Livewire.hook('message.processed', () => {
                     setTimeout(() => {
-                        // Refresh listeners and service type
-                        const updatedServiceType = document.querySelector('[data-service-type]');
-                        if (updatedServiceType) {
-                            formContainer.setAttribute('data-service-type', updatedServiceType
-                                .getAttribute('data-service-type'));
-                        }
-
                         setupGlobalListeners();
                         updateSaveButton();
                     }, 300);
