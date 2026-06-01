@@ -12,8 +12,8 @@ use App\Models\PropertyDnaProfile;
  * a PropertyDnaProfile (supply side: seller or landlord) against a
  * BuyerTenantDnaProfile (demand side: buyer or tenant).
  *
- * Of the 14 approved dimensions, 9 are structurally eligible in the current Phase E
- * DNA encoding (both supply and demand generator signals exist). The remaining 5 are
+ * Of the 14 approved dimensions, 8 are structurally eligible in the current Phase H
+ * DNA encoding (both supply and demand generator signals exist). The remaining 6 are
  * structurally ineligible because one or both generators do not yet emit the required
  * source signals for those dimension classes. The `compatibility_coverage_metric`
  * denominator is the count of structurally eligible dimensions, not the full 14,
@@ -35,7 +35,7 @@ class CompatibilityEngine
 {
     /**
      * Dimensions for which BOTH the supply-side (PropertyDnaGenerator) and demand-side
-     * (BuyerTenantDnaGenerator) generators emit the required source signals in Phase E.
+     * (BuyerTenantDnaGenerator) generators emit the required source signals in Phase H.
      *
      * These are the only dimensions counted in the coverage metric denominator.
      * Dimensions absent from this list are structurally ineligible — they always return
@@ -85,6 +85,88 @@ class CompatibilityEngine
         'budget_alignment',
         'lease_term_alignment',
         'hoa_alignment',
+    ];
+
+    /**
+     * Dimension-to-score-bucket grouping map.
+     *
+     * Each dimension is assigned to exactly one of three property-scoring buckets:
+     * Physical, Financial, or Terms. The Location bucket has no dimensions —
+     * location_match_score is always null until Location DNA Phase 2 delivers the
+     * required lifestyle/preference signals.
+     *
+     * This map is the single authoritative source for computeGroupedScores() and must
+     * not be reordered or expanded without a corresponding SCORING_FRAMEWORK_VERSION bump.
+     *
+     * Bucket assignment rationale:
+     *   Physical  — dimensions that reflect tangible property characteristics
+     *               (type, parking, amenities, occupancy, furnishing, HOA governance)
+     *   Financial — dimensions that reflect monetary or financing terms
+     *               (financing type, budget ceiling)
+     *   Terms     — dimensions that reflect agreement / policy terms
+     *               (lease structure, pet policy, smoking restrictions, timeline,
+     *                lease length, commercial use designation)
+     *   Location  — no dimensions in Phase H; always null
+     */
+    protected const DIMENSION_BUCKET_MAP = [
+        'property_type_alignment'   => 'physical',
+        'parking_alignment'         => 'physical',
+        'amenity_alignment'         => 'physical',
+        'occupancy_alignment'       => 'physical',
+        'furnishing_alignment'      => 'physical',
+        'hoa_alignment'             => 'physical',
+
+        'financing_alignment'       => 'financial',
+        'budget_alignment'          => 'financial',
+
+        'lease_structure_alignment' => 'terms',
+        'pet_policy_alignment'      => 'terms',
+        'smoking_policy_alignment'  => 'terms',
+        'timeline_alignment'        => 'terms',
+        'lease_term_alignment'      => 'terms',
+        'commercial_alignment'      => 'terms',
+    ];
+
+    /**
+     * Human-readable positive highlight labels for aligned dimensions.
+     * Used by computeHighlights() to produce transparency strings for persisted highlights.
+     */
+    private const HIGHLIGHT_LABELS = [
+        'property_type_alignment'   => 'Property Type Compatible',
+        'financing_alignment'       => 'Financing Terms Aligned',
+        'lease_structure_alignment' => 'Lease Structure Aligned',
+        'pet_policy_alignment'      => 'Pet Policy Compatible',
+        'smoking_policy_alignment'  => 'Restrictions Policy Aligned',
+        'parking_alignment'         => 'Parking Requirements Met',
+        'commercial_alignment'      => 'Commercial Use Compatible',
+        'amenity_alignment'         => 'Amenity Requirements Met',
+        'occupancy_alignment'       => 'Occupancy Status Compatible',
+        'furnishing_alignment'      => 'Furnishing Terms Compatible',
+        'timeline_alignment'        => 'Timeline Aligned',
+        'hoa_alignment'             => 'HOA Preference Compatible',
+        'budget_alignment'          => 'Budget Alignment Confirmed',
+        'lease_term_alignment'      => 'Lease Term Length Compatible',
+    ];
+
+    /**
+     * Transparency strings for unresolved/ineligible dimensions.
+     * Used by computeWarnings() to surface what could not be compared.
+     */
+    private const WARNING_LABELS = [
+        'property_type_alignment'   => 'Property Type Comparison Unavailable',
+        'financing_alignment'       => 'Financing Comparison Unavailable',
+        'lease_structure_alignment' => 'Lease Structure Comparison Unavailable',
+        'pet_policy_alignment'      => 'Pet Policy Comparison Unavailable',
+        'smoking_policy_alignment'  => 'Restrictions Policy Comparison Unavailable',
+        'parking_alignment'         => 'Parking Comparison Unavailable',
+        'commercial_alignment'      => 'Commercial Use Comparison Unavailable',
+        'amenity_alignment'         => 'Amenity Comparison Unavailable',
+        'occupancy_alignment'       => 'Occupancy Comparison Unavailable',
+        'furnishing_alignment'      => 'Furnishing Comparison Unavailable',
+        'timeline_alignment'        => 'Timeline Comparison Unavailable',
+        'hoa_alignment'             => 'HOA Preference Unavailable',
+        'budget_alignment'          => 'Budget Alignment Unavailable',
+        'lease_term_alignment'      => 'Lease Term Comparison Unavailable',
     ];
 
     /**
@@ -168,7 +250,7 @@ class CompatibilityEngine
 
         // compatibility_coverage_metric: (resolved eligible dimensions / eligible_dimension_count) × 100.
         //
-        // Denominator = count of structurally eligible dimensions only (currently 9 of 14).
+        // Denominator = count of structurally eligible dimensions only (currently 8 of 14).
         // Structurally ineligible dimensions are excluded from the denominator because their
         // 'unresolved' result is caused by missing generator architecture, not by absent listing
         // data — including them would systematically deflate the metric for all pairs regardless
@@ -191,6 +273,148 @@ class CompatibilityEngine
             'eligible_dimension_count'      => $eligibleCount,
             'compatibility_coverage_metric' => $coverageMetric,
         ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Grouped score computation — Step 3
+    // -------------------------------------------------------------------------
+
+    /**
+     * Compute per-bucket sub-scores from the dimension match map.
+     *
+     * For each bucket (physical, financial, terms), counts aligned against
+     * (aligned + conflicting) resolved dimensions in that group and returns a
+     * float 0–100 or null if no dimensions in the group were resolved.
+     *
+     * Location bucket always returns null — no location dimensions exist in Phase H.
+     * Unresolved / ineligible dimensions do not enter the denominator for any bucket.
+     *
+     * @param  array  $matchMap  dimension_match_map from compute()
+     * @return array{physical: float|null, financial: float|null, terms: float|null, location: null}
+     */
+    public function computeGroupedScores(array $matchMap): array
+    {
+        $buckets = ['physical' => [], 'financial' => [], 'terms' => []];
+
+        foreach ($matchMap as $dimension => $result) {
+            $bucket = self::DIMENSION_BUCKET_MAP[$dimension] ?? null;
+            if ($bucket === null || !isset($buckets[$bucket])) {
+                continue;
+            }
+            if ($result === 'aligned' || $result === 'conflicting') {
+                $buckets[$bucket][] = $result;
+            }
+            // unresolved dimensions are excluded from each bucket's denominator
+        }
+
+        $scores = [];
+        foreach ($buckets as $bucket => $results) {
+            if (empty($results)) {
+                $scores[$bucket] = null;
+            } else {
+                $alignedCount = count(array_filter($results, fn($r) => $r === 'aligned'));
+                $scores[$bucket] = round(($alignedCount / count($results)) * 100, 2);
+            }
+        }
+
+        // Location bucket: always null — no location dimensions exist in Phase H.
+        // PREREQUISITE: Location DNA Phase 2 must emit lifestyle/preference signals
+        // and supply-side location geometry before this bucket can be computed.
+        $scores['location'] = null;
+
+        return $scores;
+    }
+
+    // -------------------------------------------------------------------------
+    // Highlights and warnings extractors — Step 5
+    // -------------------------------------------------------------------------
+
+    /**
+     * Compute a JSON-array-ready list of positive highlight strings for aligned dimensions.
+     *
+     * Uses a static label map — no dynamic or AI generation.
+     * Aligned dimensions only; conflicting and unresolved dimensions are excluded.
+     *
+     * @param  array  $matchMap  dimension_match_map from compute()
+     * @return string[]
+     */
+    public function computeHighlights(array $matchMap): array
+    {
+        $highlights = [];
+        foreach ($matchMap as $dimension => $result) {
+            if ($result === 'aligned') {
+                $label        = self::HIGHLIGHT_LABELS[$dimension] ?? null;
+                if ($label !== null) {
+                    $highlights[] = $label;
+                }
+            }
+        }
+        return $highlights;
+    }
+
+    /**
+     * Compute a JSON-array-ready list of transparency warning strings for
+     * unresolved (including ineligible) dimensions.
+     *
+     * Uses a static label map — no dynamic or AI generation.
+     * Only unresolved dimensions appear here; aligned and conflicting dimensions are excluded.
+     *
+     * @param  array  $matchMap  dimension_match_map from compute()
+     * @return string[]
+     */
+    public function computeWarnings(array $matchMap): array
+    {
+        $warnings = [];
+        foreach ($matchMap as $dimension => $result) {
+            if ($result === 'unresolved') {
+                $label = self::WARNING_LABELS[$dimension] ?? null;
+                if ($label !== null) {
+                    $warnings[] = $label;
+                }
+            }
+        }
+        return $warnings;
+    }
+
+    // -------------------------------------------------------------------------
+    // Readiness score — Step 6
+    // -------------------------------------------------------------------------
+
+    /**
+     * Compute the compatibility readiness score.
+     *
+     * Returns (resolved_dimensions / eligible_dimensions) × 100 as a float,
+     * where resolved = aligned + conflicting across STRUCTURALLY_ELIGIBLE_DIMENSIONS
+     * and eligible = count(STRUCTURALLY_ELIGIBLE_DIMENSIONS).
+     *
+     * This mirrors the existing compatibility_coverage_metric logic but is stored
+     * as its own dedicated column (compatibility_readiness_score) to allow independent
+     * evolution of the readiness concept in future phases without altering the
+     * coverage metric column.
+     *
+     * Ineligible dimensions are excluded from both numerator and denominator.
+     *
+     * @param  array  $matchMap  dimension_match_map from compute()
+     * @return float             0.0–100.0
+     */
+    public function computeReadinessScore(array $matchMap): float
+    {
+        $eligible = self::STRUCTURALLY_ELIGIBLE_DIMENSIONS;
+        $total    = count($eligible);
+
+        if ($total === 0) {
+            return 0.0;
+        }
+
+        $resolved = 0;
+        foreach ($eligible as $dim) {
+            $result = $matchMap[$dim] ?? 'unresolved';
+            if ($result === 'aligned' || $result === 'conflicting') {
+                $resolved++;
+            }
+        }
+
+        return round(($resolved / $total) * 100, 2);
     }
 
     // -------------------------------------------------------------------------
@@ -304,6 +528,9 @@ class CompatibilityEngine
      * Demand source: deal_breaker_flags (no dedicated lifestyle tag for occupant preference)
      * Rule: if supply specifies occupant status and no demand signal exists → unresolved;
      *        both sides specify and match → aligned; both specify and differ → conflicting
+     *
+     * PREREQUISITE: BuyerTenantDnaGenerator must emit an occupant_preference lifestyle tag
+     * before this dimension can produce aligned/conflicting results. Currently ineligible.
      */
     private function computeOccupancyAlignment(array $supplyHooks, array $demandFlags): string
     {
@@ -311,7 +538,7 @@ class CompatibilityEngine
             $supplyOccupancy = $this->extractHookValue($supplyHooks, 'occupant_status');
 
             // No structured demand-side occupant_status preference is encoded in current
-            // Phase E BuyerTenant DNA outputs — dimension is unresolved until demand
+            // Phase H BuyerTenant DNA outputs — dimension is unresolved until demand
             // encoding is introduced in a future phase.
             if ($supplyOccupancy === null) {
                 return 'unresolved';
@@ -415,16 +642,19 @@ class CompatibilityEngine
     /**
      * furnishing_alignment: Does the supply specify furnishing terms?
      * Supply source: archetype tag `feature:furnishing-terms-specified`
-     * Demand source: no dedicated furnishing preference tag in current Phase E BuyerTenant DNA
+     * Demand source: no dedicated furnishing preference tag in current Phase H BuyerTenant DNA
      * Rule: supply specifies furnishing → unresolved (demand signal not available in current schema);
      *        neither specifies → unresolved
      * Note: Once a demand-side furnishing dimension is added in a future phase, this
      *       dimension will produce aligned/conflicting results.
+     *
+     * PREREQUISITE: BuyerTenantDnaGenerator must emit a furnishing_preference lifestyle tag
+     * before this dimension can produce aligned/conflicting results. Currently ineligible.
      */
     private function computeFurnishingAlignment(array $supplyTags, array $demandTags): string
     {
         try {
-            // No demand-side furnishing preference tag exists in Phase E BuyerTenant DNA output.
+            // No demand-side furnishing preference tag exists in Phase H BuyerTenant DNA output.
             // Dimension is unresolved until demand-side furnishing preference is encoded.
             return 'unresolved';
         } catch (\Throwable $e) {
@@ -435,16 +665,19 @@ class CompatibilityEngine
     /**
      * timeline_alignment: Do both sides have move-in/availability timing signals?
      * Supply source: archetype tag `timing:move-in-specified`
-     * Demand source: no dedicated timeline lifestyle tag in current Phase E BuyerTenant DNA
+     * Demand source: no dedicated timeline lifestyle tag in current Phase H BuyerTenant DNA
      * Rule: both specify timing → aligned; only supply specifies → unresolved
      * Note: BuyerTenant DNA stores `timeline_flexibility` internally but does not emit
-     *       a corresponding lifestyle tag in Phase E. Unresolved until demand tag is added.
+     *       a corresponding lifestyle tag in Phase H. Unresolved until demand tag is added.
+     *
+     * PREREQUISITE: BuyerTenantDnaGenerator must emit a timeline_flexibility lifestyle tag
+     * before this dimension can produce aligned/conflicting results. Currently ineligible.
      */
     private function computeTimelineAlignment(array $supplyTags, array $demandTags): string
     {
         try {
             $supplySpecified = $this->hasTag($supplyTags, 'timing:move-in-specified');
-            // No timeline lifestyle tag emitted by BuyerTenantDnaGenerator in Phase E.
+            // No timeline lifestyle tag emitted by BuyerTenantDnaGenerator in Phase H.
             if (!$supplySpecified) {
                 return 'unresolved';
             }
@@ -456,20 +689,21 @@ class CompatibilityEngine
 
     /**
      * hoa_alignment: Does the supply HOA status match the demand HOA awareness?
-     * Supply source: archetype tag `governance:hoa`
-     * Demand source: lifestyle tag `preference:hoa-community-aware`
-     * Rule: supply has HOA + demand is HOA-aware → aligned;
-     *        only one side has signal → unresolved
+     * Supply source: archetype tag `governance:hoa-exists`
+     * Demand source: no dedicated HOA preference field in BuyerTenantDnaGenerator
+     * Rule: supply specifies HOA and demand has no HOA preference signal → unresolved;
+     *        both specify and match → aligned; both specify and differ → conflicting
+     *
+     * PREREQUISITE: BuyerTenantDnaGenerator must emit a dedicated HOA preference field
+     * (buyer/tenant listing form HOA preference) before this dimension can produce
+     * aligned/conflicting results. Currently ineligible — confirmed Phase J / R-03.
      */
     private function computeHoaAlignment(array $supplyTags, array $demandTags): string
     {
         try {
-            $supplyHasHoa   = $this->hasTag($supplyTags, 'governance:hoa');
-            $demandHoaAware = $this->hasTag($demandTags, 'preference:hoa-community-aware');
-
-            if ($supplyHasHoa && $demandHoaAware) {
-                return 'aligned';
-            }
+            // No demand-side HOA preference field is emitted by BuyerTenantDnaGenerator in Phase H.
+            // Dimension is unresolved until a dedicated HOA preference field is added to
+            // buyer/tenant listing forms and BuyerTenantDnaGenerator emits the corresponding signal.
             return 'unresolved';
         } catch (\Throwable $e) {
             return 'unresolved';
@@ -477,12 +711,12 @@ class CompatibilityEngine
     }
 
     /**
-     * commercial_alignment: Does the supply's commercial classification match demand's property type interest?
-     * Supply source: archetype tag `use:commercial`
-     * Demand source: lifestyle tag `prefers-type:{value}` (indirect signal via property_type_preference)
-     * Rule: supply is commercial + demand prefers commercial type → aligned;
-     *        supply is commercial + demand prefers residential type → conflicting;
-     *        supply is not commercial → unresolved (residential is the default, not tagged explicitly)
+     * commercial_alignment: Does the supply's commercial use match the demand's property type interest?
+     * Supply source: archetype tags `use:commercial` or type tags indicating commercial designation
+     * Demand source: lifestyle tag `prefers-type:{value}` where value includes commercial keyword
+     * Rule: supply is commercial + demand wants commercial → aligned;
+     *        supply is commercial + demand wants residential → conflicting;
+     *        supply is not commercial → unresolved (supply non-commercial is the default case)
      */
     private function computeCommercialAlignment(array $supplyTags, array $demandTags): string
     {
@@ -494,6 +728,7 @@ class CompatibilityEngine
             }
 
             $demandType = $this->extractTagValue($demandTags, 'prefers-type:');
+
             if ($demandType === null) {
                 return 'unresolved';
             }
@@ -540,16 +775,20 @@ class CompatibilityEngine
 
     /**
      * budget_alignment: Does the supply listing fall within the demand's stated budget ceiling?
-     * Supply source: no price/value dimension is stored in PropertyDnaProfile in current Phase E schema
+     * Supply source: no price/value dimension is stored in PropertyDnaProfile in current Phase H schema
      * Demand source: deal_breaker_flag `budget_ceiling_specified`
-     * Rule: unresolved — supply-side price signal is not encoded in PropertyDnaProfile in Phase E.
+     * Rule: unresolved — supply-side price signal is not encoded in PropertyDnaProfile in Phase H.
      *        This dimension will produce aligned/conflicting results once a supply-side price
      *        dimension is added to PropertyDnaProfile in a future phase.
+     *
+     * PREREQUISITE: PropertyDnaGenerator must emit a price/asking-value dimension in
+     * PropertyDnaProfile before this dimension can produce aligned/conflicting results.
+     * Currently ineligible.
      */
     private function computeBudgetAlignment(array $supplyHooks, array $demandFlags): string
     {
         try {
-            // Supply-side listing price is not encoded in PropertyDnaProfile Phase E output.
+            // Supply-side listing price is not encoded in PropertyDnaProfile Phase H output.
             // Dimension is unresolved until a supply-side price dimension is available.
             return 'unresolved';
         } catch (\Throwable $e) {
@@ -560,15 +799,18 @@ class CompatibilityEngine
     /**
      * lease_term_alignment: Do the supply's offered lease lengths align with demand's preferred length?
      * Supply source: marketing hook with trait `lease_length`
-     * Demand source: deal_breaker_flag `minimum_lease_length_specified` (not currently emitted in Phase E)
+     * Demand source: deal_breaker_flag `minimum_lease_length_specified` (not currently emitted in Phase H)
      * Rule: unresolved — no structured lease length deal_breaker_flag is emitted by
-     *        BuyerTenantDnaGenerator in Phase E. Dimension becomes active once demand-side
+     *        BuyerTenantDnaGenerator in Phase H. Dimension becomes active once demand-side
      *        lease term encoding is added in a future phase.
+     *
+     * PREREQUISITE: BuyerTenantDnaGenerator must emit a desired_lease_length deal_breaker_flag
+     * before this dimension can produce aligned/conflicting results. Currently ineligible.
      */
     private function computeLeaseTermAlignment(array $supplyHooks, array $demandFlags): string
     {
         try {
-            // No structured demand-side lease term signal in Phase E BuyerTenant DNA output.
+            // No structured demand-side lease term signal in Phase H BuyerTenant DNA output.
             return 'unresolved';
         } catch (\Throwable $e) {
             return 'unresolved';

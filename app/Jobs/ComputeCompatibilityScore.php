@@ -6,6 +6,8 @@ use App\Models\BuyerTenantDnaProfile;
 use App\Models\ListingCompatibilityScore;
 use App\Models\PropertyDnaProfile;
 use App\Services\Dna\Compatibility\CompatibilityEngine;
+use App\Services\Dna\Compatibility\CompatibilityExplanationService;
+use App\Services\Dna\Compatibility\PropertyCompatibilityNarrativeService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -115,7 +117,7 @@ class ComputeCompatibilityScore implements ShouldQueue
 
         $result = $engine->compute($supplyProfile, $demandProfile);
 
-        $this->persist($result, $supplyProfile, $demandProfile);
+        $this->persist($result, $engine, $supplyProfile, $demandProfile);
     }
 
     /**
@@ -149,9 +151,13 @@ class ComputeCompatibilityScore implements ShouldQueue
      * - The ListingCompatibilityScore model save inside this transaction does NOT trigger
      *   any observer that dispatches further compatibility jobs (governance safeguard #7).
      */
-    private function persist(array $result, PropertyDnaProfile $supplyProfile, BuyerTenantDnaProfile $demandProfile): void
-    {
-        DB::transaction(function () use ($result, $supplyProfile, $demandProfile) {
+    private function persist(
+        array $result,
+        CompatibilityEngine $engine,
+        PropertyDnaProfile $supplyProfile,
+        BuyerTenantDnaProfile $demandProfile
+    ): void {
+        DB::transaction(function () use ($result, $engine, $supplyProfile, $demandProfile) {
             $this->acquirePairLock();
 
             $prior = ListingCompatibilityScore::where('demand_listing_type', $this->demandListingType)
@@ -178,6 +184,59 @@ class ComputeCompatibilityScore implements ShouldQueue
                 $conflictingDimensions = [];
             }
 
+            // $resolvedMatchMap holds the per-dimension outcome array produced by
+            // CompatibilityEngine::compute(). It is stored under the JSON key
+            // 'dimension_match_map' (exactly once) in score_explanation below.
+            $resolvedMatchMap = $result['dimension_match_map'] ?? [];
+
+            // --- Grouped sub-scores ---
+            // Compute per-bucket scores using the dimension-to-category grouping map.
+            // location_match_score is always explicitly null — no location dimensions
+            // exist in Phase H; PREREQUISITE: Location DNA Phase 2.
+            $groupedScores = $engine->computeGroupedScores($resolvedMatchMap);
+
+            // --- Highlights and warnings ---
+            $highlights = $engine->computeHighlights($resolvedMatchMap);
+            $warnings   = $engine->computeWarnings($resolvedMatchMap);
+
+            // --- Readiness score ---
+            $readinessScore = $engine->computeReadinessScore($resolvedMatchMap);
+
+            // --- Property compatibility narrative ---
+            $narrativeService = app(PropertyCompatibilityNarrativeService::class);
+            $narrativePayload = $narrativeService->generate($resolvedMatchMap);
+
+            // --- CompatibilityExplanationService — confirm outputs are captured ---
+            // CompatibilityExplanationService reads from a persisted score row, so we
+            // build a transient stub score to extract per-dimension explanation strings
+            // and store them under an 'explanations' key in score_explanation.
+            // This ensures no structured output produced in memory is orphaned.
+            $explanationService = app(CompatibilityExplanationService::class);
+            $stubScore = new ListingCompatibilityScore();
+            $stubScore->score_explanation = [
+                'aligned_dimensions'      => $result['aligned_dimensions'] ?? [],
+                'conflicting_dimensions'  => $conflictingDimensions,
+                'unresolved_dimensions'   => $result['unresolved_dimensions'] ?? [],
+                'dimension_match_map'     => $resolvedMatchMap,
+                'eligible_dimension_count' => $result['eligible_dimension_count'] ?? 0,
+            ];
+            $explanations = $explanationService->generate($stubScore);
+
+            // --- Compatibility summary JSON ---
+            // Structured JSON object for internal audit use.
+            // 'narrative_summary' captures the single-sentence summary from
+            // PropertyCompatibilityNarrativeService so no generated output is orphaned.
+            $compatibilitySummaryJson = [
+                'overall_score'          => $result['compatibility_coverage_metric'] ?? 0.0,
+                'physical_score'         => $groupedScores['physical'],
+                'financial_score'        => $groupedScores['financial'],
+                'terms_score'            => $groupedScores['terms'],
+                'matched_dimensions'     => $result['aligned_dimensions'] ?? [],
+                'unresolved_dimensions'  => $result['unresolved_dimensions'] ?? [],
+                'conflicting_dimensions' => $conflictingDimensions,
+                'narrative_summary'      => $narrativePayload['summary'] ?? '',
+            ];
+
             ListingCompatibilityScore::create([
                 'demand_listing_type'              => $this->demandListingType,
                 'demand_listing_id'                => $this->demandListingId,
@@ -189,11 +248,18 @@ class ComputeCompatibilityScore implements ShouldQueue
                 'supply_listing_updated_at_snapshot' => $supplyProfile->source_listing_updated_at,
 
                 // overall_score stores the compatibility_coverage_metric — a deterministic
-                // coverage/completeness metric ONLY (non-unresolved dimensions / 14 × 100).
+                // coverage/completeness metric ONLY (non-unresolved dimensions / 8 × 100).
                 // It must NEVER be interpreted as ranking quality, recommendation strength,
                 // user desirability, approval likelihood, tenant quality, buyer quality,
                 // investment quality, or transactional probability.
                 'overall_score'   => $result['compatibility_coverage_metric'],
+
+                // Grouped sub-scores per property dimension bucket.
+                // location_match_score is always null — awaiting Location DNA Phase 2.
+                'physical_match_score'  => $groupedScores['physical'],
+                'financial_match_score' => $groupedScores['financial'],
+                'terms_match_score'     => $groupedScores['terms'],
+                'location_match_score'  => null,
 
                 // deal_breaker_triggered is a conflict-presence indicator ONLY.
                 // True means one or more deterministic field conflicts were detected.
@@ -217,13 +283,32 @@ class ComputeCompatibilityScore implements ShouldQueue
                 // at the time this row was computed. It equals count(STRUCTURALLY_ELIGIBLE_DIMENSIONS)
                 // from CompatibilityEngine and is stored here so historical rows remain self-describing
                 // even after future phases expand the eligible set and bump SCORING_FRAMEWORK_VERSION.
+                //
+                // 'explanations' captures the CompatibilityExplanationService output so no
+                // structured per-dimension explanation strings are orphaned in memory.
                 'score_explanation' => [
                     'aligned_dimensions'       => $result['aligned_dimensions'],
                     'conflicting_dimensions'   => $conflictingDimensions,
                     'unresolved_dimensions'    => $result['unresolved_dimensions'],
-                    'dimension_match_map'      => $result['dimension_match_map'],
+                    'dimension_match_map'      => $resolvedMatchMap,
                     'eligible_dimension_count' => $result['eligible_dimension_count'],
+                    'explanations'             => $explanations,
                 ],
+
+                // Property compatibility narrative — full per-dimension plain-language text.
+                'compatibility_narrative' => $narrativePayload['narrative'] ?? '',
+
+                // Structured JSON summary object for internal audit use.
+                'compatibility_summary_json' => $compatibilitySummaryJson,
+
+                // Positive signal strings for aligned dimensions.
+                'compatibility_highlights' => $highlights,
+
+                // Transparency strings for unresolved/ineligible dimensions.
+                'compatibility_warnings' => $warnings,
+
+                // Readiness score: resolved eligible dimensions / eligible dimensions × 100.
+                'compatibility_readiness_score' => $readinessScore,
 
                 'computed_at' => now(),
                 'archived_at' => null,

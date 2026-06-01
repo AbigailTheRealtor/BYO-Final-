@@ -43,6 +43,11 @@ class ListingCompatibilityScore extends Model
         'moderation_status',
         'compatibility_computed_at',
         'compatibility_archived_at',
+        'compatibility_narrative',
+        'compatibility_summary_json',
+        'compatibility_highlights',
+        'compatibility_warnings',
+        'compatibility_readiness_score',
     ];
 
     protected $casts = [
@@ -63,5 +68,9 @@ class ListingCompatibilityScore extends Model
         'compatibility_trait_results'           => 'array',
         'compatibility_computed_at'             => 'datetime',
         'compatibility_archived_at'             => 'datetime',
+        'compatibility_summary_json'            => 'array',
+        'compatibility_highlights'              => 'array',
+        'compatibility_warnings'                => 'array',
+        'compatibility_readiness_score'         => 'float',
     ];
 }
