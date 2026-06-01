@@ -222,10 +222,9 @@ class BuyerOfferListing extends Component
     public $emotional_support_animal = '';
     public $target_closing_date = '';
     public $occupant_types = '';
-    public $services = [];
     public $other_services_enabled = false;
     public $other_services = '';
-    public $flat_fee_services = [];
+
 
     public $additional_details = '';
     public $preferance_details = '';
@@ -913,21 +912,6 @@ class BuyerOfferListing extends Component
     }
 
 
-    public function add_flat_fee_service()
-    {
-        $this->flat_fee_services[] = [
-            'description' => '',
-            'fee' => 0
-        ];
-    }
-
-    public function remove_flat_fee_service($index)
-    {
-        unset($this->flat_fee_services[$index]);
-        $this->flat_fee_services = array_values($this->flat_fee_services); // Reindex array
-    }
-
-
     public function updatedWorkingWithAgent($value)
     {
         if ($value === 'Represented') {
@@ -1584,9 +1568,7 @@ class BuyerOfferListing extends Component
             'emotional_support_animal'        => $this->emotional_support_animal,
             'target_closing_date'             => $this->target_closing_date,
             'occupant_types'                  => $this->occupant_types,
-            'services'                        => json_encode($this->services),
             'other_services'                  => $this->other_services,
-            'flat_fee_services'               => json_encode($this->flat_fee_services),
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_type'                      => $this->lease_type,
@@ -2074,14 +2056,9 @@ class BuyerOfferListing extends Component
             $this->occupant_types = $auction->get->occupant_types ?? '';
 
             // Services
-            $servicesRaw = $auction->get->services ?? null;
-            $this->services = $servicesRaw ? (is_string($servicesRaw) ? json_decode($servicesRaw, true) ?? [] : (array)$servicesRaw) : [];
-
             $otherServicesRaw = $auction->get->other_services ?? null;
             $this->other_services = $otherServicesRaw ? (is_string($otherServicesRaw) ? json_decode($otherServicesRaw, true) ?? [] : (array)$otherServicesRaw) : [];
 
-            $flatFeeServicesRaw = $auction->get->flat_fee_services ?? null;
-            $this->flat_fee_services = $flatFeeServicesRaw ? (is_string($flatFeeServicesRaw) ? json_decode($flatFeeServicesRaw, true) ?? [] : (array)$flatFeeServicesRaw) : [];
             $this->additional_details = $auction->get->additional_details ?? '';
 
             // Broker compensation
@@ -2276,10 +2253,8 @@ class BuyerOfferListing extends Component
                 'non_negotiable_amenities' => $this->non_negotiable_amenities,
                 'pool_type' => $this->pool_type,
                 'offered_financing' => $this->offered_financing,
-                'services' => $this->services,
                 'lease_for' => $this->lease_for,
                 'credit_scroe_rating' => $this->credit_scroe_rating,
-                'flat_fee_services' => $this->flat_fee_services,
                 'number_of_unit_type' => $this->number_of_unit_type,
                 'condition_prop_buyer' => $this->condition_prop_buyer,
                 'property_items' => $this->property_items,
@@ -2596,9 +2571,7 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('occupant_types', $this->occupant_types);
 
         // Services
-        $auction->saveMeta('services', json_encode($this->services));
         $auction->saveMeta('other_services', $this->other_services);
-        $auction->saveMeta('flat_fee_services', json_encode($this->flat_fee_services));
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

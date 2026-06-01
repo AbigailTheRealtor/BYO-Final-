@@ -663,59 +663,6 @@
         ['name' => 'Other'],
     ];
 
-    // Define the updated services array
-    $services = [
-        ['name' => 'List the Tenant’s rental criteria on BidYourOffer.com.'],
-        [
-            'name' =>
-                'Market the Tenant’s rental criteria across various real estate groups, pages, and affiliates directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Promote the Tenant’s rental criteria on social media platforms directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Launch an online marketing campaign to drive traffic to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Conduct email marketing campaigns targeting agents and potential Landlords, linking to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Implement neighborhood marketing efforts in the Tenant’s desired area directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Send prompt email notifications with properties that match the Tenant’s criteria as soon as they are listed, ensuring access to the most up-to-date options.',
-        ],
-        ['name' => 'Schedule and accompany the Tenant on property viewings and showings.'],
-        ['name' => 'Arrange video tours of the Tenant’s preferred properties.'],
-        [
-            'name' =>
-                'Conduct a thorough Rental Market Analysis (RMA) to assess property values and rental pricing strategies.',
-        ],
-        ['name' => 'Assist with the Tenant’s rental application process, providing guidance and support.'],
-        ['name' => 'Help the Tenant understand lease terms and potential penalties before signing.'],
-        [
-            'name' =>
-                'Negotiate lease terms on behalf of the Tenant, including rental price, lease duration, and additional clauses or provisions.',
-        ],
-        ['name' => 'Coordinate with property managers, Landlords, and Agents to expedite application processing.'],
-        ['name' => 'Coordinate and oversee the move-in process, including inspections and key handovers.'],
-        ['name' => 'Advocate for security deposit refunds and ensure fair lease terms.'],
-        [
-            'name' =>
-                'Provide moving assistance resources, including utility setup, moving companies, and renter’s insurance.',
-        ],
-        [
-            'name' =>
-                'Help the Tenant establish a rental history report through recognized services (e.g., Experian RentBureau, RentReporters, or similar platforms) to support future leasing or homeownership goals.',
-        ],
-        ['name' => 'Provide guidance on lease renewal options and negotiate rent adjustments if necessary.'],
-        ['name' => 'Other – Specify additional services as needed.'],
-    ];
 
     $property_items = [
         ['name' => '1/2 Duplex', 'class' => 'residential-length'],
@@ -1610,7 +1557,6 @@
                                 $aiQuestionsTabIndex  = array_search('AI Knowledge Base', $allTabs);
                                 $brokerCompTabIndex   = array_search('Broker Compensation & Agency Agreement Terms', $allTabs);
                                 $descriptionTabIndex  = array_search('Description', $allTabs);
-                                $servicesTabIndex     = array_search('Services', $allTabs);
                                 $referralTabIndex     = array_search('Referral & Cooperation Terms', $allTabs);
                                 $preScreeningTabIndex = array_search('Pre-Screening', $allTabs);
 
@@ -1776,21 +1722,6 @@
                             </div>
                         @endif
 
-                        <!-- Services Tab - Not shown for tenant -->
-
-                        @if ($user_type !== 'tenant')
-                        <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}"
-                            id="services" role="tabpanel" aria-labelledby="services-tab">
-
-                            @if ($user_type === 'seller')
-                                @include('livewire.offer-listing.offer-seller-tabs.commission-based.services')
-                            @elseif($user_type === 'buyer')
-                                @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
-                            @elseif($user_type === 'landlord')
-                                @include('livewire.offer-listing.offer-landlord-tabs.commission-based.services')
-                            @endif
-                        </div>
-                        @endif
 
                         <!-- Additional Details Tab -->
 
@@ -3756,49 +3687,6 @@
                 return allValid;
             }
 
-            // Add this function to validate services tab
-            function validateServicesTab(tabContent) {
-                if (!tabContent || tabContent.id !== 'services') return true;
-
-                let isValid = true;
-
-                // Check at least one service is selected (excluding "Other" checkbox)
-                const hasServices = tabContent.querySelectorAll(
-                    'input[type="checkbox"][wire\\:model="services"]:checked:not(#other-services-checkbox)'
-                ).length > 0;
-
-                // Check "Other Services" if enabled
-                const otherCheckbox = tabContent.querySelector('#other-services-checkbox');
-                const otherTextarea = tabContent.querySelector('#other-services-input');
-                const hasOtherDescription = otherTextarea && otherTextarea.value.trim() !== '';
-
-                // Clear previous errors
-                const existingErrors = tabContent.querySelectorAll('.service-error');
-                if (existingErrors) {
-                    existingErrors.forEach(el => el.remove());
-                }
-                if (otherTextarea) otherTextarea.classList.remove('is-invalid');
-
-                // Services validation removed - selecting services is now optional
-                // No validation error will be shown if no services are selected
-
-                // if (otherCheckbox && otherCheckbox.checked && (!otherTextarea || !hasOtherDescription)) {
-                //     isValid = false;
-                //     const errorDiv = document.createElement('div');
-                //     errorDiv.className = 'service-error error mt-2';
-                //     errorDiv.textContent = 'Please describe the additional services you require.';
-
-                //     if (otherTextarea) {
-                //         otherTextarea.classList.add('is-invalid');
-                //         const container = otherTextarea.closest('.mb-3') || otherTextarea.parentNode;
-                //         if (container) {
-                //             container.appendChild(errorDiv);
-                //         }
-                //     }
-                // }
-
-                return isValid;
-            }
             // Initialize shared wizard navigation (removes old handlers first)
             initializeWizardNavigation();
 
@@ -4007,10 +3895,6 @@
                 }
             }
 
-            if (currentTabContent.id === 'services') {
-                isValid = isValid && validateServicesTab(currentTabContent);
-            }
-
             if (currentTabContent.id === 'service-selection-and-pricing') {
                 const understandTerms = currentTabContent.querySelector('#understandTerms');
                 if (understandTerms && !understandTerms.checked) {
@@ -4031,11 +3915,6 @@
             }
 
             return isValid;
-        }
-
-        function validateServicesTab(tabContent) {
-            if (!tabContent || tabContent.id !== 'services') return true;
-            return true;
         }
 
         function showValidationBanner(currentTabContent) {
@@ -4204,7 +4083,6 @@
                     '#sale-terms',
                     '#leasing-terms',
                     '#pre-screening',
-                    '#services',
                     '#additional-details',
                     '#broker-compensation-agency-agreement-terms',
                     infoTabId

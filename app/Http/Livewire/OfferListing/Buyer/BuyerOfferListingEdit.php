@@ -225,10 +225,9 @@ class BuyerOfferListingEdit extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
-    public $services = [];
     public $other_services_enabled = false;
     public $other_services = '';
-    public $flat_fee_services = [];
+
 
     public $additional_details = '';
 
@@ -858,21 +857,6 @@ class BuyerOfferListingEdit extends Component
     public function updatedCustomServices()
     {
         $this->calculateTotals();
-    }
-
-
-    public function add_flat_fee_service()
-    {
-        $this->flat_fee_services[] = [
-            'description' => '',
-            'fee' => 0
-        ];
-    }
-
-    public function remove_flat_fee_service($index)
-    {
-        unset($this->flat_fee_services[$index]);
-        $this->flat_fee_services = array_values($this->flat_fee_services); // Reindex array
     }
 
 
@@ -1530,9 +1514,7 @@ class BuyerOfferListingEdit extends Component
             'emotional_support_animal'        => $this->emotional_support_animal,
             'target_closing_date'             => $this->target_closing_date,
             'occupant_types'                  => $this->occupant_types,
-            'services'                        => json_encode($this->services),
             'other_services'                  => $this->other_services,
-            'flat_fee_services'               => json_encode($this->flat_fee_services),
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_type'                      => $this->lease_type,
@@ -2055,14 +2037,9 @@ class BuyerOfferListingEdit extends Component
             $this->number_occupant = $auction->get->number_occupant ?? '';
 
             // Services
-            $servicesRaw = $auction->get->services ?? null;
-            $this->services = $servicesRaw ? (is_string($servicesRaw) ? json_decode($servicesRaw, true) ?? [] : (array)$servicesRaw) : [];
-
             $this->other_services = $auction->get->other_services ?? '';
             $this->other_services_enabled = (bool)($auction->get->other_services_enabled ?? false);
 
-            $flatFeeServicesRaw = $auction->get->flat_fee_services ?? null;
-            $this->flat_fee_services = $flatFeeServicesRaw ? (is_string($flatFeeServicesRaw) ? json_decode($flatFeeServicesRaw, true) ?? [] : (array)$flatFeeServicesRaw) : [];
             $this->additional_details = $auction->get->additional_details ?? '';
 
             // Broker compensation
@@ -2272,13 +2249,11 @@ class BuyerOfferListingEdit extends Component
                 'sale_provision'            => $this->sale_provision,
                 'garage_parking_spaces_option' => $this->garage_parking_spaces_option,
                 'assets'                    => $this->assets,
-                'services'                  => $this->services,
                 'property_items'            => $this->property_items,
                 'condition_prop_buyer'      => $this->condition_prop_buyer,
                 'pool_type'                 => $this->pool_type,
                 'lease_for'                 => $this->lease_for,
                 'credit_scroe_rating'       => $this->credit_scroe_rating,
-                'flat_fee_services'         => $this->flat_fee_services,
                 'number_of_unit_type'       => $this->number_of_unit_type,
                 'flood_zone_tolerance'       => $this->flood_zone_tolerance,
                 'flood_zone_tolerance_other' => $this->flood_zone_tolerance_other,
@@ -2521,10 +2496,8 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
         // Services
-        $auction->saveMeta('services', json_encode($this->services));
         $auction->saveMeta('other_services', $this->other_services);
         $auction->saveMeta('other_services_enabled', $this->other_services_enabled);
-        $auction->saveMeta('flat_fee_services', json_encode($this->flat_fee_services));
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

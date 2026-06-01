@@ -663,59 +663,6 @@ $lease_for_com = [
 ['name' => 'Other'],
 ];
 
-// Define the updated services array
-$services = [
-['name' => 'List the Tenant’s rental criteria on BidYourOffer.com.'],
-[
-'name' =>
-'Market the Tenant’s rental criteria across various real estate groups, pages, and affiliates directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-],
-[
-'name' =>
-'Promote the Tenant’s rental criteria on social media platforms directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-],
-[
-'name' =>
-'Launch an online marketing campaign to drive traffic to the Tenant’s criteria listing on BidYourOffer.com.',
-],
-[
-'name' =>
-'Conduct email marketing campaigns targeting agents and potential Landlords, linking to the Tenant’s criteria listing on BidYourOffer.com.',
-],
-[
-'name' =>
-'Implement neighborhood marketing efforts in the Tenant’s desired area directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-],
-[
-'name' =>
-'Send prompt email notifications with properties that match the Tenant’s criteria as soon as they are listed, ensuring access to the most up-to-date options.',
-],
-['name' => 'Schedule and accompany the Tenant on property viewings and showings.'],
-['name' => 'Arrange video tours of the Tenant’s preferred properties.'],
-[
-'name' =>
-'Conduct a thorough Rental Market Analysis (RMA) to assess property values and rental pricing strategies.',
-],
-['name' => 'Assist with the Tenant’s rental application process, providing guidance and support.'],
-['name' => 'Help the Tenant understand lease terms and potential penalties before signing.'],
-[
-'name' =>
-'Negotiate lease terms on behalf of the Tenant, including rental price, lease duration, and additional clauses or provisions.',
-],
-['name' => 'Coordinate with property managers, Landlords, and Agents to expedite application processing.'],
-['name' => 'Coordinate and oversee the move-in process, including inspections and key handovers.'],
-['name' => 'Advocate for security deposit refunds and ensure fair lease terms.'],
-[
-'name' =>
-'Provide moving assistance resources, including utility setup, moving companies, and renter’s insurance.',
-],
-[
-'name' =>
-'Help the Tenant establish a rental history report through recognized services (e.g., Experian RentBureau, RentReporters, or similar platforms) to support future leasing or homeownership goals.',
-],
-['name' => 'Provide guidance on lease renewal options and negotiate rent adjustments if necessary.'],
-['name' => 'Other – Specify additional services as needed.'],
-];
 
 $property_items = [
 ['name' => '1/2 Duplex', 'class' => 'residential-length'],
@@ -1619,7 +1566,7 @@ $lease_types = [
                     if ($user_type === 'tenant') {
                     $restTabs = [$firstRest, 'Pre-Screening', 'Description', 'Broker Compensation & Agency Agreement Terms'];
                     } else {
-                    $restTabs = [$firstRest, 'Services', 'Description', 'Broker Compensation & Agency Agreement Terms'];
+                    $restTabs = [$firstRest, 'Description', 'Broker Compensation & Agency Agreement Terms'];
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
                     array_splice($restTabs, 1, 0, 'Pre-Screening');
                     }
@@ -1794,21 +1741,6 @@ $lease_types = [
                                 </div>
                                 @endif
 
-                                <!-- Services Tab - Adjust index based on user_type -->
-
-                                @if ($user_type !== 'tenant')
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
-                                    id="services" role="tabpanel" aria-labelledby="services-tab">
-
-                                    @if ($user_type === 'seller')
-                                    @include('livewire.offer-listing.offer-seller-tabs.commission-based.services')
-                                    @elseif($user_type === 'buyer')
-                                    @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
-                                    @elseif($user_type === 'landlord')
-                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.services')
-                                    @endif
-                                </div>
-                                @endif
 
                                 <!-- Additional Details Tab - Adjust index based on user_type -->
 
@@ -3824,11 +3756,6 @@ $lease_types = [
 
     // === WIZARD NAVIGATION (global scope — survives Livewire DOM morphing) ===
 
-    function validateServicesTab(tabContent) {
-        if (!tabContent || tabContent.id !== 'services') return true;
-        return true;
-    }
-
     // AUTHORITATIVE TAB ORDER - Dynamically derived from actual DOM
     function getTabOrder() {
         const tabLinks = document.querySelectorAll('.nav-tabs .nav-link');
@@ -3975,10 +3902,6 @@ $lease_types = [
                     countiesErrorSpan.textContent = '';
                 }
             }
-        }
-
-        if (currentTabContent.id === 'services') {
-            isValid = isValid && validateServicesTab(currentTabContent);
         }
 
         if (currentServiceType === 'limited_service' && currentTabContent.id === 'service-selection-and-pricing') {
@@ -4386,7 +4309,6 @@ $lease_types = [
                 '#leasing-terms',
                 '#pre-screening',
 
-                '#services',
                 '#description',
                 '#broker-compensation-agency-agreement-terms',
                 infoTabId

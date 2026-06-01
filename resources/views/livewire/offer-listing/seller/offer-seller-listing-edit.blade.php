@@ -485,59 +485,6 @@
         ['name' => 'Other'],
     ];
 
-    // Define the updated services array
-    $services = [
-        ['name' => 'List the Tenant’s rental criteria on BidYourOffer.com.'],
-        [
-            'name' =>
-                'Market the Tenant’s rental criteria across various real estate groups, pages, and affiliates directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Promote the Tenant’s rental criteria on social media platforms directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Launch an online marketing campaign to drive traffic to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Conduct email marketing campaigns targeting agents and potential Landlords, linking to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Implement neighborhood marketing efforts in the Tenant’s desired area directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Send prompt email notifications with properties that match the Tenant’s criteria as soon as they are listed, ensuring access to the most up-to-date options.',
-        ],
-        ['name' => 'Schedule and accompany the Tenant on property viewings and showings.'],
-        ['name' => 'Arrange video tours of the Tenant’s preferred properties.'],
-        [
-            'name' =>
-                'Conduct a thorough Rental Market Analysis (RMA) to assess property values and rental pricing strategies.',
-        ],
-        ['name' => 'Assist with the Tenant’s rental application process, providing guidance and support.'],
-        ['name' => 'Help the Tenant understand lease terms and potential penalties before signing.'],
-        [
-            'name' =>
-                'Negotiate lease terms on behalf of the Tenant, including rental price, lease duration, and additional clauses or provisions.',
-        ],
-        ['name' => 'Coordinate with property managers, Landlords, and Agents to expedite application processing.'],
-        ['name' => 'Coordinate and oversee the move-in process, including inspections and key handovers.'],
-        ['name' => 'Advocate for security deposit refunds and ensure fair lease terms.'],
-        [
-            'name' =>
-                'Provide moving assistance resources, including utility setup, moving companies, and renter’s insurance.',
-        ],
-        [
-            'name' =>
-                'Help the Tenant establish a rental history report through recognized services (e.g., Experian RentBureau, RentReporters, or similar platforms) to support future leasing or homeownership goals.',
-        ],
-        ['name' => 'Provide guidance on lease renewal options and negotiate rent adjustments if necessary.'],
-        ['name' => 'Other – Specify additional services as needed.'],
-    ];
 
     $property_items = [
     // Residential (alphabetical order)

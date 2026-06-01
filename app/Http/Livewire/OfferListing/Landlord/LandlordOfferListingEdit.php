@@ -189,10 +189,9 @@ class LandlordOfferListingEdit extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
-    public $services = [];
     public $other_services_enabled = false;
     public $other_services = '';
-    public $flat_fee_services = [];
+
 
     public $additional_details = '';
 
@@ -1068,21 +1067,6 @@ class LandlordOfferListingEdit extends Component
     }
 
 
-    public function add_flat_fee_service()
-    {
-        $this->flat_fee_services[] = [
-            'description' => '',
-            'fee' => 0
-        ];
-    }
-
-    public function remove_flat_fee_service($index)
-    {
-        unset($this->flat_fee_services[$index]);
-        $this->flat_fee_services = array_values($this->flat_fee_services); // Reindex array
-    }
-
-
     public function updatedWorkingWithAgent($value)
     {
         if ($value === 'Represented') {
@@ -1736,9 +1720,7 @@ class LandlordOfferListingEdit extends Component
             'prior_felony_explanation'        => $this->prior_felony_explanation,
             'monthly_income'                  => $this->monthly_income,
             'number_occupant'                 => $this->number_occupant,
-            'services'                        => json_encode($this->ensureArray($this->services)),
             'other_services'                  => $this->other_services,
-            'flat_fee_services'               => json_encode($this->ensureArray($this->flat_fee_services)),
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_fee_type'                  => $this->lease_fee_type,
@@ -2440,15 +2422,8 @@ class LandlordOfferListingEdit extends Component
 
             // Services
 
-            $raw = $auction->get->services ?? null;
-            $this->services = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
-
-
             $this->other_services = $auction->get->other_services ?? null;
 
-
-            $raw = $auction->get->flat_fee_services ?? null;
-            $this->flat_fee_services = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
             $this->additional_details = $auction->get->additional_details ?? null;
 
             // Broker compensation
@@ -2864,15 +2839,6 @@ class LandlordOfferListingEdit extends Component
 
             $this->showOtherAppliances = is_array($this->appliances) && in_array('Other', $this->appliances);
 
-            if (is_array($this->services)) {
-                $this->showOpenHouseInput = in_array('Host open houses', $this->services)
-                    || in_array('Host broker tours', $this->services)
-                    || in_array('Host site visit event (administrative coordination only)', $this->services);
-            }
-
-            if (is_array($this->services) && in_array('Provide digital photo enhancements', $this->services)) {
-                $this->showEnhancements = true;
-            }
             if (!empty($this->photo_enhancements)) {
                 $this->showEnhancements = true;
                 $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
@@ -3106,9 +3072,7 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
         // Services
-        $auction->saveMeta('services', json_encode($this->services));
         $auction->saveMeta('other_services', $this->other_services);
-        $auction->saveMeta('flat_fee_services', json_encode($this->flat_fee_services));
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

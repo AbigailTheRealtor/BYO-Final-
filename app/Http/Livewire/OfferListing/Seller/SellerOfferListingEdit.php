@@ -180,10 +180,9 @@ class SellerOfferListingEdit extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
-    public $services = [];
     public $other_services_enabled = false;
     public $other_services = '';
-    public $flat_fee_services = [];
+
 
     public $additional_details = '';
 
@@ -1086,21 +1085,6 @@ class SellerOfferListingEdit extends Component
     }
 
 
-    public function add_flat_fee_service()
-    {
-        $this->flat_fee_services[] = [
-            'description' => '',
-            'fee' => 0
-        ];
-    }
-
-    public function remove_flat_fee_service($index)
-    {
-        unset($this->flat_fee_services[$index]);
-        $this->flat_fee_services = array_values($this->flat_fee_services); // Reindex array
-    }
-
-
     public function updatedWorkingWithAgent($value)
     {
         if ($this->isLoadingData) return;
@@ -1817,9 +1801,7 @@ class SellerOfferListingEdit extends Component
             'prior_felony_explanation'        => $this->prior_felony_explanation,
             'monthly_income'                  => $this->monthly_income,
             'number_occupant'                 => $this->number_occupant,
-            'services'                        => json_encode($this->services),
             'other_services'                  => $this->other_services,
-            'flat_fee_services'               => json_encode($this->flat_fee_services),
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_fee_type'                  => $this->lease_fee_type,
@@ -2323,13 +2305,10 @@ class SellerOfferListingEdit extends Component
 
             // Services
 
-            $this->services = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
-
 
             $this->other_services = $auction->get->other_services;
 
 
-            $this->flat_fee_services = is_string($auction->get->flat_fee_services) ? json_decode($auction->get->flat_fee_services, true) ?? [] : (array)$auction->get->flat_fee_services;
             $this->additional_details = $auction->get->additional_details;
 
             // Broker compensation
@@ -3384,9 +3363,7 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
         // Services
-        $auction->saveMeta('services', json_encode($this->services));
         $auction->saveMeta('other_services', $this->other_services);
-        $auction->saveMeta('flat_fee_services', json_encode($this->flat_fee_services));
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation

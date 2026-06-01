@@ -260,7 +260,6 @@ class TenantOfferListingEdit extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
-    public $services = [];
     public $photo_enhancements = [];
     public $custom_enhancement = '';
     public bool $other_services_enabled = false;
@@ -281,8 +280,6 @@ class TenantOfferListingEdit extends Component
     public $move_in_date_latest = '';
     public $accessibility_requirements = '';
     public $smoking_preference = '';
-
-    public $flat_fee_services = [];
 
     public $additional_details = '';
 
@@ -1278,39 +1275,6 @@ class TenantOfferListingEdit extends Component
     }
 
 
-    public function updatedServices()
-    {
-        if ($this->isLoadingData) return;
-        $hasEnhancements = in_array('Provide digital photo enhancements', $this->services)
-            || in_array('Provide digital enhancements to media assets', $this->services);
-        if ($hasEnhancements) {
-            $this->showEnhancements = true;
-        } else {
-            $this->showEnhancements = false;
-            $this->showCustomEnhancement = false;
-        }
-
-
-        $this->showOpenHouseInput = in_array('Host open houses', $this->services);
-
-        // Reset count if deselected
-        if (!$this->showOpenHouseInput) {
-            $this->openHouseCount = null;
-        }
-        $this->showOpenHouseInput = in_array('Host broker tours', $this->services);
-
-        // Reset count if deselected
-        if (!$this->showOpenHouseInput) {
-            $this->openHouseCount = null;
-        }
-        $this->showOpenHouseInput = in_array('Host site visit event (administrative coordination only)', $this->services);
-
-        // Reset count if deselected
-        if (!$this->showOpenHouseInput) {
-            $this->openHouseCount = null;
-        }
-    }
-
     public function updatedPhotoEnhancements()
     {
         if ($this->isLoadingData) return;
@@ -1583,21 +1547,6 @@ class TenantOfferListingEdit extends Component
     public function updatedCustomServices()
     {
         $this->calculateTotals();
-    }
-
-
-    public function add_flat_fee_service()
-    {
-        $this->flat_fee_services[] = [
-            'description' => '',
-            'fee' => 0
-        ];
-    }
-
-    public function remove_flat_fee_service($index)
-    {
-        unset($this->flat_fee_services[$index]);
-        $this->flat_fee_services = array_values($this->flat_fee_services); // Reindex array
     }
 
 
@@ -2810,16 +2759,6 @@ class TenantOfferListingEdit extends Component
         $this->lease_purchase_maintenance = $auction->info('lease_purchase_maintenance') ?? '';
         $this->lease_purchase_extension_terms = $auction->info('lease_purchase_extension_terms') ?? '';
 
-        // Load services - handle both JSON string and already-decoded array from get accessor
-        $rawServices = $auction->get->services;
-        if (is_array($rawServices)) {
-            $this->services = $rawServices;
-        } elseif (is_string($rawServices) && !empty($rawServices)) {
-            $this->services = json_decode($rawServices, true) ?? [];
-        } else {
-            $this->services = [];
-        }
-        
         // Load other_services
         $rawOtherServices = $auction->get->other_services;
         if (is_array($rawOtherServices)) {
@@ -2830,12 +2769,6 @@ class TenantOfferListingEdit extends Component
             $this->other_services = [];
         }
 
-        if (is_array($this->services) && (
-            in_array('Provide digital photo enhancements', $this->services)
-            || in_array('Provide digital enhancements to media assets', $this->services)
-        )) {
-            $this->showEnhancements = true;
-        }
         $photoEnhRaw = $auction->info('photo_enhancements');
         $this->photo_enhancements = $photoEnhRaw ? (is_string($photoEnhRaw) ? json_decode($photoEnhRaw, true) ?? [] : (array)$photoEnhRaw) : [];
         $this->custom_enhancement = $auction->info('custom_enhancement') ?? '';
@@ -2908,7 +2841,6 @@ class TenantOfferListingEdit extends Component
 
 
 
-        $this->flat_fee_services = json_decode($auction->info('flat_fee_services'), true) ?? [];
         $this->additional_details = $auction->info('additional_details');
         $this->commission_structure = $auction->info('commission_structure');
         $this->commission_structure_type = $auction->info('commission_structure_type');
@@ -3114,10 +3046,8 @@ class TenantOfferListingEdit extends Component
                 'non_negotiable_amenities' => $this->non_negotiable_amenities,
                 'pool_type' => $this->pool_type,
                 'offered_financing' => $this->offered_financing,
-                'services' => $this->services,
                 'lease_for' => $this->lease_for,
                 'credit_scroe_rating' => $this->credit_scroe_rating,
-                'flat_fee_services' => $this->flat_fee_services,
                 'number_of_unit_type' => $this->number_of_unit_type,
                 'condition_prop_buyer' => $this->condition_prop_buyer,
                 'property_items' => $this->property_items,
@@ -3199,7 +3129,6 @@ class TenantOfferListingEdit extends Component
                 }
             }
 
-            // dump($this->services);
             // dd($this->other_services);
 
             DB::beginTransaction();
@@ -3569,18 +3498,9 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('number_occupant', $this->number_occupant);
 
             // Services
-            $auction->saveMeta('services', json_encode($this->services));
             $auction->saveMeta('other_services', json_encode($this->other_services));
-            $auction->saveMeta('flat_fee_services', json_encode($this->flat_fee_services));
             $auction->saveMeta('photo_enhancements', json_encode($this->photo_enhancements));
             $auction->saveMeta('custom_enhancement', $this->custom_enhancement);
-            
-            // Build and save services snapshot for ordered display
-            $servicesSnapshot = TenantServicesCatalog::buildSnapshot(
-                is_array($this->services) ? $this->services : [],
-                $this->property_type ?? 'Residential Property'
-            );
-            $auction->saveMeta('services_snapshot', json_encode($servicesSnapshot));
             $auction->saveMeta('additional_details', $this->additional_details);
             $auction->saveMeta('desired_lease_length', json_encode($this->desired_lease_length));
             $auction->saveMeta('other_lease_term', $this->other_lease_term);

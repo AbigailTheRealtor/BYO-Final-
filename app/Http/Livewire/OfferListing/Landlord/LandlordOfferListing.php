@@ -194,10 +194,9 @@ class LandlordOfferListing extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
-    public $services = [];
     public $other_services_enabled = false;
     public $other_services = '';
-    public $flat_fee_services = [];
+
 
     public $additional_details = '';
     public $preferance_details = '';
@@ -1122,21 +1121,6 @@ class LandlordOfferListing extends Component
     }
 
 
-    public function add_flat_fee_service()
-    {
-        $this->flat_fee_services[] = [
-            'description' => '',
-            'fee' => 0
-        ];
-    }
-
-    public function remove_flat_fee_service($index)
-    {
-        unset($this->flat_fee_services[$index]);
-        $this->flat_fee_services = array_values($this->flat_fee_services); // Reindex array
-    }
-
-
     public function updatedWorkingWithAgent($value)
     {
         if ($value === 'Represented') {
@@ -1798,9 +1782,7 @@ class LandlordOfferListing extends Component
             'prior_felony_explanation'        => $this->prior_felony_explanation,
             'monthly_income'                  => $this->monthly_income,
             'number_occupant'                 => $this->number_occupant,
-            'services'                        => json_encode($this->ensureArray($this->services)),
             'other_services'                  => $this->other_services,
-            'flat_fee_services'               => json_encode($this->ensureArray($this->flat_fee_services)),
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
             'lease_fee_type'                  => $this->lease_fee_type,
@@ -2442,13 +2424,8 @@ class LandlordOfferListing extends Component
 
             // Services
 
-            $this->services = $this->ensureArray($auction->get->services ?? null);
-
-
             $this->other_services = $auction->get->other_services ?? null;
 
-
-            $this->flat_fee_services = $this->ensureArray($auction->get->flat_fee_services ?? null);
             $this->additional_details = $auction->get->additional_details ?? null;
 
             // Broker compensation
@@ -2862,7 +2839,6 @@ class LandlordOfferListing extends Component
                 'non_negotiable_amenities' => $this->ensureArray($this->non_negotiable_amenities),
                 'lease_for' => $this->ensureArray($this->lease_for),
                 'credit_scroe_rating' => $this->ensureArray($this->credit_scroe_rating),
-                'services' => $this->ensureArray($this->services),
                 'pool_type' => $this->ensureArray($this->pool_type),
                 'photo_enhancements' => $this->ensureArray($this->photo_enhancements),
                 'property_items' => $this->ensureArray($this->property_items),
@@ -3120,9 +3096,7 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
         // Services
-        $auction->saveMeta('services', json_encode($this->ensureArray($this->services)));
         $auction->saveMeta('other_services', $this->other_services);
-        $auction->saveMeta('flat_fee_services', json_encode($this->ensureArray($this->flat_fee_services)));
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation
