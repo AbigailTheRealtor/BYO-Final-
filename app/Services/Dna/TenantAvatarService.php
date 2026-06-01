@@ -43,6 +43,11 @@ class TenantAvatarService
     private const MIN_COMPLETENESS = 20.0;
 
     /**
+     * Avatar version stamp — bump in a future phase when classification rules change.
+     */
+    private const AVATAR_VERSION = 'TENANT_AVATAR_V1';
+
+    /**
      * Ordered list of all allowed avatar type values.
      * Priority among them is determined by the rule order in classify().
      */
@@ -58,6 +63,23 @@ class TenantAvatarService
     ];
 
     /**
+     * Standardized motivation vocabulary for tenant avatar types.
+     * Vocabulary: Pet-Friendly Required, Budget Constrained, Amenity Access,
+     * Space Requirements, Lease Flexibility, Commercial Use, Stable Housing.
+     *
+     * Amenity-Focused Tenant secondary is signal-driven — see generateMotivations().
+     */
+    private const MOTIVATION_MAP = [
+        'Commercial Tenant'      => ['primary' => 'Commercial Use',        'secondary' => 'Lease Flexibility'],
+        'Lease-Option Tenant'    => ['primary' => 'Lease Flexibility',     'secondary' => 'Stable Housing'],
+        'Pet-Conscious Tenant'   => ['primary' => 'Pet-Friendly Required', 'secondary' => 'Stable Housing'],
+        'Space-Focused Tenant'   => ['primary' => 'Space Requirements',    'secondary' => 'Stable Housing'],
+        'Budget-Conscious Tenant'=> ['primary' => 'Budget Constrained',    'secondary' => 'Stable Housing'],
+        'Flexible Tenant'        => ['primary' => 'Stable Housing',        'secondary' => null],
+        'Unknown Tenant'         => ['primary' => null,                    'secondary' => null],
+    ];
+
+    /**
      * Classify a BuyerTenantDnaProfile into structured tenant avatar categories.
      *
      * Reads only lifestyle_tags, deal_breaker_flags, preference_completeness,
@@ -65,15 +87,23 @@ class TenantAvatarService
      * No additional database queries are issued.
      *
      * Output contract — always returns exactly these keys:
-     *   success          bool
-     *   status           'generated' | 'insufficient_data' | 'failed'
-     *   listing_type     'tenant'   (always 'tenant'; this service only processes tenant profiles)
-     *   listing_id       int
-     *   primary_avatar   string|null
-     *   secondary_avatars array
-     *   signals          array
-     *   missing_inputs   array
-     *   error            string|null
+     *   success                   bool
+     *   status                    'generated' | 'insufficient_data' | 'failed'
+     *   listing_type              'tenant'   (always 'tenant'; this service only processes tenant profiles)
+     *   listing_id                int
+     *   primary_avatar            string|null
+     *   secondary_avatars         array
+     *   signals                   array
+     *   missing_inputs            array
+     *   error                     string|null
+     *   primary_motivation        string|null
+     *   secondary_motivation      string|null
+     *   tenant_narrative          string|null
+     *   tenant_preference_summary array
+     *   tenant_personality_tags   array
+     *   tenant_match_preferences  array
+     *   avatar_confidence_score   int
+     *   tenant_avatar_version     string
      *
      * @param  BuyerTenantDnaProfile $profile  A cast, in-memory profile instance.
      * @return array
@@ -82,31 +112,39 @@ class TenantAvatarService
     {
         // listing_type is always 'tenant' in the output contract regardless of
         // what the profile actually contains — this service is tenant-only.
-        $stub = [
-            'success'           => false,
-            'status'            => 'insufficient_data',
-            'listing_type'      => 'tenant',
-            'listing_id'        => (int) ($profile->listing_id ?? 0),
-            'primary_avatar'    => null,
-            'secondary_avatars' => [],
-            'signals'           => [],
-            'missing_inputs'    => [],
-            'error'             => null,
+        $result = [
+            'success'                   => false,
+            'status'                    => 'insufficient_data',
+            'listing_type'              => 'tenant',
+            'listing_id'                => (int) ($profile->listing_id ?? 0),
+            'primary_avatar'            => null,
+            'secondary_avatars'         => [],
+            'signals'                   => [],
+            'missing_inputs'            => [],
+            'error'                     => null,
+            'primary_motivation'        => null,
+            'secondary_motivation'      => null,
+            'tenant_narrative'          => null,
+            'tenant_preference_summary' => ['property_types' => [], 'amenities' => [], 'budget_signals' => [], 'space_requirements' => []],
+            'tenant_personality_tags'   => [],
+            'tenant_match_preferences'  => [],
+            'avatar_confidence_score'   => 0,
+            'tenant_avatar_version'     => self::AVATAR_VERSION,
         ];
 
         if (($profile->listing_type ?? '') !== 'tenant') {
-            $stub['missing_inputs'] = ['listing_type must be tenant'];
-            return $stub;
+            $result['missing_inputs'] = ['listing_type must be tenant'];
+            return $result;
         }
 
         $completeness = (float) ($profile->preference_completeness ?? 0.0);
 
         if ($completeness < self::MIN_COMPLETENESS) {
-            $stub['missing_inputs'] = $this->buildMissingInputsFromCompleteness(
+            $result['missing_inputs'] = $this->buildMissingInputsFromCompleteness(
                 (array) ($profile->lifestyle_tags ?? []),
                 (array) ($profile->deal_breaker_flags ?? [])
             );
-            return $stub;
+            return $result;
         }
 
         try {
@@ -118,22 +156,29 @@ class TenantAvatarService
 
             [$primary, $secondaries] = $this->classify($signals);
 
-            return [
-                'success'           => true,
-                'status'            => 'generated',
-                'listing_type'      => 'tenant',
-                'listing_id'        => (int) $profile->listing_id,
-                'primary_avatar'    => $primary,
-                'secondary_avatars' => $secondaries,
-                'signals'           => $signals,
-                'missing_inputs'    => $missingInputs,
-                'error'             => null,
-            ];
+            [$primaryMotivation, $secondaryMotivation] = $this->generateMotivations($primary, $signals);
+
+            $result['success']                   = true;
+            $result['status']                    = 'generated';
+            $result['listing_id']                = (int) $profile->listing_id;
+            $result['primary_avatar']            = $primary;
+            $result['secondary_avatars']         = $secondaries;
+            $result['signals']                   = $signals;
+            $result['missing_inputs']            = $missingInputs;
+            $result['primary_motivation']        = $primaryMotivation;
+            $result['secondary_motivation']      = $secondaryMotivation;
+            $result['tenant_narrative']          = $this->generateNarrative($primary, $signals);
+            $result['tenant_preference_summary'] = $this->generatePreferenceSummary($primary, $signals);
+            $result['tenant_personality_tags']   = $this->generatePersonalityTags($primary, $signals);
+            $result['tenant_match_preferences']  = $this->generateMatchPreferences($signals);
+            $result['avatar_confidence_score']   = $this->generateConfidenceScore($completeness, $primary);
+            $result['tenant_avatar_version']     = $this->generateAvatarVersion();
+
+            return $result;
         } catch (\Throwable $e) {
-            return array_merge($stub, [
-                'status' => 'failed',
-                'error'  => $e->getMessage(),
-            ]);
+            $result['status'] = 'failed';
+            $result['error']  = $e->getMessage();
+            return $result;
         }
     }
 
@@ -314,6 +359,197 @@ class TenantAvatarService
         $secondaries = array_values(array_slice($candidates, 1));
 
         return [$primary, $secondaries];
+    }
+
+    /**
+     * Return [primary_motivation, secondary_motivation] from the standardized tenant vocabulary.
+     *
+     * Vocabulary: Pet-Friendly Required, Budget Constrained, Amenity Access,
+     * Space Requirements, Lease Flexibility, Commercial Use, Stable Housing.
+     *
+     * Amenity-Focused Tenant secondary is signal-driven:
+     *   - garage_required (only) → Space Requirements
+     *   - otherwise              → Stable Housing
+     *
+     * @param  string $primaryAvatar
+     * @param  array  $signals
+     * @return array{0: string|null, 1: string|null}
+     */
+    private function generateMotivations(string $primaryAvatar, array $signals): array
+    {
+        if ($primaryAvatar === 'Amenity-Focused Tenant') {
+            $secondary = ($signals['garage_required'] && !$signals['pool_required'])
+                ? 'Space Requirements'
+                : 'Stable Housing';
+            return ['Amenity Access', $secondary];
+        }
+
+        $map = self::MOTIVATION_MAP[$primaryAvatar] ?? ['primary' => null, 'secondary' => null];
+        return [$map['primary'], $map['secondary']];
+    }
+
+    /**
+     * Return a short deterministic template narrative string for the avatar type.
+     * Returns null for Unknown Tenant and insufficient_data paths.
+     *
+     * @param  string $primaryAvatar
+     * @param  array  $signals
+     * @return string|null
+     */
+    private function generateNarrative(string $primaryAvatar, array $signals): ?string
+    {
+        $narratives = [
+            'Commercial Tenant'      => 'Seeking a commercial space that aligns with business operational needs and lease flexibility.',
+            'Lease-Option Tenant'    => 'Open to a lease-option arrangement as a path toward future ownership with flexible entry terms.',
+            'Pet-Conscious Tenant'   => 'Requires a pet-friendly rental that accommodates their pets comfortably and without restriction.',
+            'Amenity-Focused Tenant' => 'Prioritizing specific amenities as non-negotiable requirements for their rental search.',
+            'Space-Focused Tenant'   => 'Looking for a rental that meets defined minimum space requirements for bedrooms, bathrooms, or square footage.',
+            'Budget-Conscious Tenant'=> 'Focused on finding quality rental value within a clearly defined budget ceiling.',
+            'Flexible Tenant'        => 'Open to a range of rental options and property types to find the right fit.',
+            'Unknown Tenant'         => null,
+        ];
+
+        return $narratives[$primaryAvatar] ?? null;
+    }
+
+    /**
+     * Return a JSON-ready structured array of preference labels grouped by category.
+     *
+     * Structure:
+     *   property_types   — inferred property-type signals (Commercial, or generic)
+     *   amenities        — hard amenity requirements (Pool, Garage, Pet Friendly)
+     *   budget_signals   — financial signals (Budget Set)
+     *   space_requirements — space dimension signals (Space Requirements)
+     *
+     * Each group is an array of label strings. Empty groups are always present as [].
+     *
+     * @param  string $primaryAvatar
+     * @param  array  $signals
+     * @return array{property_types: list<string>, amenities: list<string>, budget_signals: list<string>, space_requirements: list<string>}
+     */
+    private function generatePreferenceSummary(string $primaryAvatar, array $signals): array
+    {
+        $propertyTypes = [];
+        if ($signals['commercial_signal']) {
+            $propertyTypes[] = 'Commercial';
+        } elseif ($signals['has_property_type']) {
+            $propertyTypes[] = 'Property Type Specified';
+        }
+
+        $amenities = [];
+        if ($signals['pool_required'])   { $amenities[] = 'Pool'; }
+        if ($signals['garage_required']) { $amenities[] = 'Garage'; }
+        if ($signals['has_pets'])        { $amenities[] = 'Pet Friendly'; }
+
+        $budgetSignals = [];
+        if ($signals['budget_ceiling_specified']) { $budgetSignals[] = 'Budget Set'; }
+        if ($signals['lease_option_signal'])      { $budgetSignals[] = 'Lease Option'; }
+
+        $spaceRequirements = [];
+        if ($signals['space_requirement']) { $spaceRequirements[] = 'Space Requirements'; }
+
+        return [
+            'property_types'    => $propertyTypes,
+            'amenities'         => $amenities,
+            'budget_signals'    => $budgetSignals,
+            'space_requirements'=> $spaceRequirements,
+        ];
+    }
+
+    /**
+     * Return a JSON array of personality labels keyed by avatar type and signal presence.
+     * Examples: ['Pet Friendly Required', 'Budget Focused', 'Amenity Focused', 'Space Focused']
+     *
+     * @param  string $primaryAvatar
+     * @param  array  $signals
+     * @return array
+     */
+    private function generatePersonalityTags(string $primaryAvatar, array $signals): array
+    {
+        $baseTags = [
+            'Commercial Tenant'      => ['Business Oriented', 'Commercial Focused', 'Return Oriented'],
+            'Lease-Option Tenant'    => ['Flexibility Seeking', 'Lease Option Interested', 'Stable Housing'],
+            'Pet-Conscious Tenant'   => ['Pet Friendly Required', 'Lifestyle Driven', 'Stable Housing'],
+            'Amenity-Focused Tenant' => ['Amenity Focused', 'Lifestyle Driven'],
+            'Space-Focused Tenant'   => ['Space Focused', 'Stability Seeking'],
+            'Budget-Conscious Tenant'=> ['Budget Focused', 'Value Conscious'],
+            'Flexible Tenant'        => ['Open Minded', 'Adaptable'],
+            'Unknown Tenant'         => [],
+        ];
+
+        $tags = $baseTags[$primaryAvatar] ?? [];
+
+        // Signal-based additions (avoid duplicates).
+        if (($signals['pool_required'] || $signals['garage_required'])
+            && !in_array('Amenity Focused', $tags, true)
+        ) {
+            $tags[] = 'Amenity Focused';
+        }
+        if ($signals['space_requirement'] && !in_array('Space Focused', $tags, true)) {
+            $tags[] = 'Space Focused';
+        }
+        if ($signals['budget_ceiling_specified'] && !in_array('Budget Focused', $tags, true)) {
+            $tags[] = 'Budget Focused';
+        }
+
+        return array_values($tags);
+    }
+
+    /**
+     * Return a flat JSON array of match-ready preference strings derived directly
+     * from signal booleans.
+     * Examples: ['Pool', 'Garage', 'Pet Friendly', 'Lease Option']
+     *
+     * @param  array $signals
+     * @return array
+     */
+    private function generateMatchPreferences(array $signals): array
+    {
+        $prefs = [];
+
+        if ($signals['commercial_signal'])         { $prefs[] = 'Commercial'; }
+        if ($signals['pool_required'])             { $prefs[] = 'Pool'; }
+        if ($signals['garage_required'])           { $prefs[] = 'Garage'; }
+        if ($signals['has_pets'])                  { $prefs[] = 'Pet Friendly'; }
+        if ($signals['lease_option_signal'])       { $prefs[] = 'Lease Option'; }
+        if ($signals['space_requirement'])         { $prefs[] = 'Space Requirements'; }
+        if ($signals['budget_ceiling_specified'])  { $prefs[] = 'Budget Ceiling'; }
+
+        return $prefs;
+    }
+
+    /**
+     * Return a deterministic confidence score (0–100).
+     *   - Unknown Tenant: caps at 20 regardless of completeness.
+     *   - Flexible Tenant: caps at 60 regardless of completeness.
+     *   - All others: scales proportionally from preference_completeness (0–100).
+     *
+     * @param  float  $completeness  0–100 preference completeness score.
+     * @param  string $primaryAvatar
+     * @return int
+     */
+    private function generateConfidenceScore(float $completeness, string $primaryAvatar): int
+    {
+        if ($primaryAvatar === 'Unknown Tenant') {
+            return min((int) round($completeness * 0.2), 20);
+        }
+
+        if ($primaryAvatar === 'Flexible Tenant') {
+            return min((int) round($completeness * 0.6), 60);
+        }
+
+        return min((int) round($completeness), 100);
+    }
+
+    /**
+     * Return the current avatar version constant string.
+     * Bump the constant value in a future phase when classification rules change.
+     *
+     * @return string
+     */
+    private function generateAvatarVersion(): string
+    {
+        return self::AVATAR_VERSION;
     }
 
     /**

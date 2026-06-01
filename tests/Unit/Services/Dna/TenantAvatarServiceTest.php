@@ -793,4 +793,509 @@ class TenantAvatarServiceTest extends TestCase
         $this->assertContains('Space-Focused Tenant',   $result['secondary_avatars']);
         $this->assertContains('Budget-Conscious Tenant',$result['secondary_avatars']);
     }
+
+    // =========================================================================
+    // New output contract keys — Phase: Tenant Avatar Completion
+    // =========================================================================
+
+    // -------------------------------------------------------------------------
+    // (a) All eight new output keys present in the contract
+    // -------------------------------------------------------------------------
+
+    /** @test */
+    public function new_output_keys_present_in_generated_result(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags' => ['has-pets'],
+        ]);
+
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('generated', $result['status']);
+        $this->assertArrayHasKey('primary_motivation',        $result);
+        $this->assertArrayHasKey('secondary_motivation',      $result);
+        $this->assertArrayHasKey('tenant_narrative',          $result);
+        $this->assertArrayHasKey('tenant_preference_summary', $result);
+        $this->assertArrayHasKey('tenant_personality_tags',   $result);
+        $this->assertArrayHasKey('tenant_match_preferences',  $result);
+        $this->assertArrayHasKey('avatar_confidence_score',   $result);
+        $this->assertArrayHasKey('tenant_avatar_version',     $result);
+    }
+
+    /** @test */
+    public function new_output_keys_present_in_insufficient_data_result(): void
+    {
+        $profile = $this->makeBaseProfile(['preference_completeness' => 5.0]);
+
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('insufficient_data', $result['status']);
+        $this->assertArrayHasKey('primary_motivation',        $result);
+        $this->assertArrayHasKey('secondary_motivation',      $result);
+        $this->assertArrayHasKey('tenant_narrative',          $result);
+        $this->assertArrayHasKey('tenant_preference_summary', $result);
+        $this->assertArrayHasKey('tenant_personality_tags',   $result);
+        $this->assertArrayHasKey('tenant_match_preferences',  $result);
+        $this->assertArrayHasKey('avatar_confidence_score',   $result);
+        $this->assertArrayHasKey('tenant_avatar_version',     $result);
+    }
+
+    // -------------------------------------------------------------------------
+    // (b) Correct primary_motivation and secondary_motivation for every type
+    // -------------------------------------------------------------------------
+
+    /** @test */
+    public function commercial_tenant_has_correct_motivations(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Commercial']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('Commercial Tenant', $result['primary_avatar']);
+        $this->assertSame('Commercial Use',    $result['primary_motivation']);
+        $this->assertSame('Lease Flexibility', $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function lease_option_tenant_has_correct_motivations(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['open-to:lease-option']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('Lease-Option Tenant',  $result['primary_avatar']);
+        $this->assertSame('Lease Flexibility',    $result['primary_motivation']);
+        $this->assertSame('Stable Housing',       $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function pet_conscious_tenant_has_correct_motivations(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['has-pets']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('Pet-Conscious Tenant',    $result['primary_avatar']);
+        $this->assertSame('Pet-Friendly Required',   $result['primary_motivation']);
+        $this->assertSame('Stable Housing',          $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function amenity_focused_tenant_pool_driven_has_correct_motivations(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['requires:pool']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('Amenity-Focused Tenant', $result['primary_avatar']);
+        $this->assertSame('Amenity Access',         $result['primary_motivation']);
+        $this->assertSame('Stable Housing',         $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function amenity_focused_tenant_garage_only_driven_has_space_requirements_as_secondary(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['requires:garage']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('Amenity-Focused Tenant', $result['primary_avatar']);
+        $this->assertSame('Amenity Access',         $result['primary_motivation']);
+        $this->assertSame('Space Requirements',     $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function amenity_focused_tenant_pool_and_garage_has_stable_housing_as_secondary(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['requires:pool', 'requires:garage']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('Amenity-Focused Tenant', $result['primary_avatar']);
+        $this->assertSame('Amenity Access',         $result['primary_motivation']);
+        $this->assertSame('Stable Housing',         $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function space_focused_tenant_has_correct_motivations(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['min-bedrooms:3']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('Space-Focused Tenant', $result['primary_avatar']);
+        $this->assertSame('Space Requirements',   $result['primary_motivation']);
+        $this->assertSame('Stable Housing',       $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function budget_conscious_tenant_has_correct_motivations(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'deal_breaker_flags' => [
+                ['flag' => 'budget_ceiling_specified', 'source_field' => 'max_rent', 'value' => '1800'],
+            ],
+        ]);
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('Budget-Conscious Tenant', $result['primary_avatar']);
+        $this->assertSame('Budget Constrained',      $result['primary_motivation']);
+        $this->assertSame('Stable Housing',          $result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function flexible_tenant_has_correct_motivations(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Apartment']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('Flexible Tenant',  $result['primary_avatar']);
+        $this->assertSame('Stable Housing',   $result['primary_motivation']);
+        $this->assertNull($result['secondary_motivation']);
+    }
+
+    /** @test */
+    public function unknown_tenant_has_null_motivations(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => [],
+            'deal_breaker_flags' => [],
+        ]);
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('Unknown Tenant', $result['primary_avatar']);
+        $this->assertNull($result['primary_motivation']);
+        $this->assertNull($result['secondary_motivation']);
+    }
+
+    // -------------------------------------------------------------------------
+    // (c) tenant_narrative is non-empty for all types except Unknown Tenant
+    // -------------------------------------------------------------------------
+
+    /** @test */
+    public function commercial_tenant_has_non_empty_narrative(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Commercial']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('Commercial Tenant', $result['primary_avatar']);
+        $this->assertIsString($result['tenant_narrative']);
+        $this->assertNotEmpty($result['tenant_narrative']);
+    }
+
+    /** @test */
+    public function lease_option_tenant_has_non_empty_narrative(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['open-to:lease-option']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertIsString($result['tenant_narrative']);
+        $this->assertNotEmpty($result['tenant_narrative']);
+    }
+
+    /** @test */
+    public function pet_conscious_tenant_has_non_empty_narrative(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['has-pets']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertIsString($result['tenant_narrative']);
+        $this->assertNotEmpty($result['tenant_narrative']);
+    }
+
+    /** @test */
+    public function amenity_focused_tenant_has_non_empty_narrative(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['requires:pool']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertIsString($result['tenant_narrative']);
+        $this->assertNotEmpty($result['tenant_narrative']);
+    }
+
+    /** @test */
+    public function space_focused_tenant_has_non_empty_narrative(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['min-sqft:1000']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertIsString($result['tenant_narrative']);
+        $this->assertNotEmpty($result['tenant_narrative']);
+    }
+
+    /** @test */
+    public function budget_conscious_tenant_has_non_empty_narrative(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'deal_breaker_flags' => [
+                ['flag' => 'budget_ceiling_specified', 'source_field' => 'max_rent', 'value' => '1500'],
+            ],
+        ]);
+        $result = $this->service->generate($profile);
+
+        $this->assertIsString($result['tenant_narrative']);
+        $this->assertNotEmpty($result['tenant_narrative']);
+    }
+
+    /** @test */
+    public function flexible_tenant_has_non_empty_narrative(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['prefers-type:Townhome']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('Flexible Tenant', $result['primary_avatar']);
+        $this->assertIsString($result['tenant_narrative']);
+        $this->assertNotEmpty($result['tenant_narrative']);
+    }
+
+    /** @test */
+    public function unknown_tenant_has_null_narrative(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => [],
+            'deal_breaker_flags' => [],
+        ]);
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('Unknown Tenant', $result['primary_avatar']);
+        $this->assertNull($result['tenant_narrative']);
+    }
+
+    // -------------------------------------------------------------------------
+    // (d) tenant_preference_summary, tenant_personality_tags, tenant_match_preferences
+    //     are always arrays
+    // -------------------------------------------------------------------------
+
+    /** @test */
+    public function preference_fields_are_always_arrays_for_generated_result(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['has-pets']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertIsArray($result['tenant_preference_summary']);
+        $this->assertIsArray($result['tenant_personality_tags']);
+        $this->assertIsArray($result['tenant_match_preferences']);
+    }
+
+    /** @test */
+    public function preference_fields_are_always_arrays_for_unknown_tenant(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'lifestyle_tags'     => [],
+            'deal_breaker_flags' => [],
+        ]);
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('Unknown Tenant', $result['primary_avatar']);
+        $this->assertIsArray($result['tenant_preference_summary']);
+        $this->assertIsArray($result['tenant_personality_tags']);
+        $this->assertIsArray($result['tenant_match_preferences']);
+    }
+
+    /** @test */
+    public function preference_fields_are_always_arrays_for_insufficient_data(): void
+    {
+        $profile = $this->makeBaseProfile(['preference_completeness' => 5.0]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('insufficient_data', $result['status']);
+        $this->assertIsArray($result['tenant_preference_summary']);
+        $this->assertIsArray($result['tenant_personality_tags']);
+        $this->assertIsArray($result['tenant_match_preferences']);
+    }
+
+    /** @test */
+    public function tenant_preference_summary_has_required_structure_keys(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['has-pets', 'requires:pool']]);
+        $result  = $this->service->generate($profile);
+
+        $summary = $result['tenant_preference_summary'];
+        $this->assertArrayHasKey('property_types',    $summary);
+        $this->assertArrayHasKey('amenities',         $summary);
+        $this->assertArrayHasKey('budget_signals',    $summary);
+        $this->assertArrayHasKey('space_requirements',$summary);
+    }
+
+    /** @test */
+    public function tenant_match_preferences_contains_pool_when_pool_required(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['requires:pool']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertContains('Pool', $result['tenant_match_preferences']);
+    }
+
+    /** @test */
+    public function tenant_match_preferences_contains_pet_friendly_when_has_pets(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['has-pets']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertContains('Pet Friendly', $result['tenant_match_preferences']);
+    }
+
+    /** @test */
+    public function tenant_match_preferences_contains_lease_option_when_signal_present(): void
+    {
+        $profile = $this->makeBaseProfile(['lifestyle_tags' => ['open-to:lease-option']]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertContains('Lease Option', $result['tenant_match_preferences']);
+    }
+
+    // -------------------------------------------------------------------------
+    // (e) avatar_confidence_score is an integer between 0 and 100
+    // -------------------------------------------------------------------------
+
+    /** @test */
+    public function avatar_confidence_score_is_integer_between_0_and_100_for_all_types(): void
+    {
+        $scenarios = [
+            ['lifestyle_tags' => ['prefers-type:Commercial']],
+            ['lifestyle_tags' => ['open-to:lease-option']],
+            ['lifestyle_tags' => ['has-pets']],
+            ['lifestyle_tags' => ['requires:pool']],
+            ['lifestyle_tags' => ['min-bedrooms:2']],
+            ['deal_breaker_flags' => [['flag' => 'budget_ceiling_specified', 'source_field' => 'max_rent', 'value' => '2000']]],
+            ['lifestyle_tags' => ['prefers-type:Apartment']],
+            ['lifestyle_tags' => [], 'deal_breaker_flags' => []],
+        ];
+
+        foreach ($scenarios as $overrides) {
+            $profile = $this->makeBaseProfile($overrides);
+            $result  = $this->service->generate($profile);
+
+            $this->assertIsInt($result['avatar_confidence_score'],
+                "avatar_confidence_score must be int for avatar: {$result['primary_avatar']}");
+            $this->assertGreaterThanOrEqual(0, $result['avatar_confidence_score'],
+                "avatar_confidence_score must be >= 0 for avatar: {$result['primary_avatar']}");
+            $this->assertLessThanOrEqual(100, $result['avatar_confidence_score'],
+                "avatar_confidence_score must be <= 100 for avatar: {$result['primary_avatar']}");
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // (f) Unknown Tenant returns null motivations and confidence score <= 20
+    // -------------------------------------------------------------------------
+
+    /** @test */
+    public function unknown_tenant_confidence_score_is_at_most_20(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'preference_completeness' => 100.0,
+            'lifestyle_tags'          => [],
+            'deal_breaker_flags'      => [],
+        ]);
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('Unknown Tenant', $result['primary_avatar']);
+        $this->assertNull($result['primary_motivation']);
+        $this->assertNull($result['secondary_motivation']);
+        $this->assertLessThanOrEqual(20, $result['avatar_confidence_score']);
+    }
+
+    /** @test */
+    public function unknown_tenant_confidence_score_with_zero_completeness_is_zero(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'preference_completeness' => 20.0,
+            'lifestyle_tags'          => [],
+            'deal_breaker_flags'      => [],
+        ]);
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('Unknown Tenant', $result['primary_avatar']);
+        $this->assertLessThanOrEqual(20, $result['avatar_confidence_score']);
+    }
+
+    // -------------------------------------------------------------------------
+    // (g) tenant_avatar_version is always TENANT_AVATAR_V1
+    // -------------------------------------------------------------------------
+
+    /** @test */
+    public function tenant_avatar_version_is_always_tenant_avatar_v1_for_generated(): void
+    {
+        $scenarios = [
+            ['lifestyle_tags' => ['prefers-type:Commercial']],
+            ['lifestyle_tags' => ['open-to:lease-option']],
+            ['lifestyle_tags' => ['has-pets']],
+            ['lifestyle_tags' => ['requires:pool']],
+            ['lifestyle_tags' => ['min-bedrooms:3']],
+            ['deal_breaker_flags' => [['flag' => 'budget_ceiling_specified', 'source_field' => 'max_rent', 'value' => '2000']]],
+            ['lifestyle_tags' => ['prefers-type:Apartment']],
+            ['lifestyle_tags' => [], 'deal_breaker_flags' => []],
+        ];
+
+        foreach ($scenarios as $overrides) {
+            $profile = $this->makeBaseProfile($overrides);
+            $result  = $this->service->generate($profile);
+
+            $this->assertSame('TENANT_AVATAR_V1', $result['tenant_avatar_version'],
+                "tenant_avatar_version must be TENANT_AVATAR_V1 for avatar: {$result['primary_avatar']}");
+        }
+    }
+
+    /** @test */
+    public function tenant_avatar_version_is_always_tenant_avatar_v1_for_insufficient_data(): void
+    {
+        $profile = $this->makeBaseProfile(['preference_completeness' => 5.0]);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('insufficient_data',  $result['status']);
+        $this->assertSame('TENANT_AVATAR_V1',   $result['tenant_avatar_version']);
+    }
+
+    /** @test */
+    public function tenant_avatar_version_is_always_tenant_avatar_v1_for_wrong_type_guard(): void
+    {
+        $profile = $this->makeBaseProfile(['listing_type' => 'buyer']);
+        $result  = $this->service->generate($profile);
+
+        $this->assertSame('TENANT_AVATAR_V1', $result['tenant_avatar_version']);
+    }
+
+    // -------------------------------------------------------------------------
+    // (h) Service file contains no OpenAI/AI imports
+    // -------------------------------------------------------------------------
+
+    /** @test */
+    public function tenant_avatar_service_file_contains_no_openai_or_ai_service_imports(): void
+    {
+        $serviceFile = file_get_contents(
+            dirname(__DIR__, 4) . '/app/Services/Dna/TenantAvatarService.php'
+        );
+
+        $this->assertStringNotContainsStringIgnoringCase('openai', $serviceFile,
+            'TenantAvatarService must not import or reference OpenAI');
+        $this->assertStringNotContainsStringIgnoringCase('use OpenAI', $serviceFile,
+            'TenantAvatarService must not import OpenAI SDK');
+        $this->assertStringNotContainsStringIgnoringCase('AiMarketing', $serviceFile,
+            'TenantAvatarService must not import AI marketing services');
+    }
+
+    // -------------------------------------------------------------------------
+    // Confidence score cap behaviour for Flexible Tenant
+    // -------------------------------------------------------------------------
+
+    /** @test */
+    public function flexible_tenant_confidence_score_is_at_most_60(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'preference_completeness' => 100.0,
+            'lifestyle_tags'          => ['prefers-type:Apartment'],
+            'deal_breaker_flags'      => [],
+        ]);
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('Flexible Tenant', $result['primary_avatar']);
+        $this->assertLessThanOrEqual(60, $result['avatar_confidence_score']);
+    }
+
+    /** @test */
+    public function non_flexible_non_unknown_tenant_confidence_score_scales_with_completeness(): void
+    {
+        $profile = $this->makeBaseProfile([
+            'preference_completeness' => 80.0,
+            'lifestyle_tags'          => ['has-pets'],
+            'deal_breaker_flags'      => [],
+        ]);
+        $result = $this->service->generate($profile);
+
+        $this->assertSame('Pet-Conscious Tenant', $result['primary_avatar']);
+        $this->assertSame(80, $result['avatar_confidence_score']);
+    }
 }

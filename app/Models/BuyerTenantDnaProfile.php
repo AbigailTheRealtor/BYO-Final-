@@ -30,6 +30,11 @@ class BuyerTenantDnaProfile extends Model
         'avatar_confidence_score',
         'buyer_avatar_version',
         'buyer_readiness_score',
+        'tenant_narrative',
+        'tenant_preference_summary',
+        'tenant_personality_tags',
+        'tenant_match_preferences',
+        'tenant_avatar_version',
     ];
 
     protected $casts = [
@@ -44,5 +49,8 @@ class BuyerTenantDnaProfile extends Model
         'buyer_match_preferences'   => 'array',
         'avatar_confidence_score'   => 'integer',
         'buyer_readiness_score'     => 'integer',
+        'tenant_preference_summary' => 'array',
+        'tenant_personality_tags'   => 'array',
+        'tenant_match_preferences'  => 'array',
     ];
 }

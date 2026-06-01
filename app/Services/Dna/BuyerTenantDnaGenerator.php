@@ -48,8 +48,10 @@ class BuyerTenantDnaGenerator
         'hoa_preference_specified',
     ];
 
-    public function __construct(private BuyerAvatarProfileService $avatarProfileService)
-    {
+    public function __construct(
+        private BuyerAvatarProfileService $avatarProfileService,
+        private TenantAvatarProfileService $tenantAvatarProfileService
+    ) {
     }
 
     public function generate(string $listingType, int $listingId): void
@@ -85,6 +87,10 @@ class BuyerTenantDnaGenerator
 
         if ($listingType === 'buyer' && $profile !== null) {
             $this->avatarProfileService->compute($profile);
+        }
+
+        if ($listingType === 'tenant' && $profile !== null) {
+            $this->tenantAvatarProfileService->compute($profile);
         }
     }
 
