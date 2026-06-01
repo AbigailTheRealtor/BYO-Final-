@@ -293,6 +293,9 @@ Route::get('/offer-listing/tenant/view/{id}', [TenantOfferListingController::cla
 Route::post('/offer-listing/seller/{auction}/question', [SellerOfferListingController::class, 'submitQuestion'])->name('offer.listing.seller.question');
 Route::post('/offer-listing/seller/{auction}/showing', [SellerOfferListingController::class, 'submitShowing'])->name('offer.listing.seller.showing');
 Route::post('/offer-listing/buyer/{auction}/question', [BuyerOfferListingController::class, 'submitQuestion'])->name('offer.listing.buyer.question');
+Route::post('/offer-listing/landlord/{auction}/question', [LandlordOfferListingController::class, 'submitQuestion'])->name('offer.listing.landlord.question');
+Route::post('/offer-listing/landlord/{auction}/showing', [LandlordOfferListingController::class, 'submitShowing'])->name('offer.listing.landlord.showing');
+Route::post('/offer-listing/tenant/{auction}/question', [TenantOfferListingController::class, 'submitQuestion'])->name('offer.listing.tenant.question');
 Route::get('/search/buyer-agent-needed', [BuyerAgentAuctionController::class, 'searchListing'])->name('buyer.agent.searchListing');
 Route::get('/search/buyer-criteria-auctions', [BuyerCriteriaAuctionController::class, 'searchListing'])->name('buyer.criteria.searchListing');
 Route::get('/search/agents', [SearchAgentController::class, 'search'])->name('search.agents');

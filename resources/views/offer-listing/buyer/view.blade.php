@@ -460,8 +460,15 @@
         // Bidding Period countdown — calculated exclusively from created_at + auction_time
         $hasBPTimer = false;
         $timerRemainingSeconds = 0;
-        if (strtolower(trim($str('auction_type'))) === 'bidding period') {
+        $_auctionType = trim($str('auction_type'));
+        if ($_auctionType === '') {
+            $_auctionType = trim((string)($auction->auction_type ?? ''));
+        }
+        if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
             $_aTime = trim($str('auction_time'));
+            if ($_aTime === '') {
+                $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
+            }
             $_timerEnd = null;
             if ($_aTime !== '') {
                 $_parts = explode(' ', $_aTime);
@@ -1237,6 +1244,7 @@
             </div>
         </div>
     </div>
+
 
 </div>{{-- /container --}}
 

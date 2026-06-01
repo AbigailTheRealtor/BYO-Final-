@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\LandlordAgentAuction;
+use App\Models\SellerListingInquiry;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class LandlordOfferListingController extends Controller
 {
@@ -97,6 +99,86 @@ class LandlordOfferListingController extends Controller
         ];
 
         return view('offer-listing.landlord.view', compact('auction', 'meta') + $page_data);
+    }
+
+    public function submitQuestion(Request $request, $auction)
+    {
+        if ($request->input('website') !== null && $request->input('website') !== '') {
+            return redirect()->back()->with('success', 'Your question has been sent.');
+        }
+
+        $listing = $this->resolveOfferListing($auction);
+
+        $validator = Validator::make($request->all(), [
+            'name'     => 'required|string|max:191',
+            'email'    => 'required|email|max:191',
+            'phone'    => 'nullable|string|max:64',
+            'question' => 'required|string|max:5000',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator, 'lolQuestionInquiry')
+                ->withInput()
+                ->with('open_modal', 'question');
+        }
+
+        SellerListingInquiry::create([
+            'auction_id' => $listing->id,
+            'type'       => 'question',
+            'name'       => $request->input('name'),
+            'email'      => $request->input('email'),
+            'phone'      => $request->input('phone'),
+            'question'   => $request->input('question'),
+            'status'     => 'new',
+            'source'     => 'landlord_listing',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return redirect()->back()->with('success', 'Your question has been sent.');
+    }
+
+    public function submitShowing(Request $request, $auction)
+    {
+        if ($request->input('website') !== null && $request->input('website') !== '') {
+            return redirect()->back()->with('success', 'Your showing request has been sent.');
+        }
+
+        $listing = $this->resolveOfferListing($auction);
+
+        $validator = Validator::make($request->all(), [
+            'name'           => 'required|string|max:191',
+            'email'          => 'required|email|max:191',
+            'phone'          => 'nullable|string|max:64',
+            'preferred_date' => 'nullable|date',
+            'preferred_time' => 'nullable|string|max:32',
+            'message'        => 'nullable|string|max:5000',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator, 'lolShowingInquiry')
+                ->withInput()
+                ->with('open_modal', 'showing');
+        }
+
+        SellerListingInquiry::create([
+            'auction_id'     => $listing->id,
+            'type'           => 'showing',
+            'name'           => $request->input('name'),
+            'email'          => $request->input('email'),
+            'phone'          => $request->input('phone'),
+            'preferred_date' => $request->input('preferred_date'),
+            'preferred_time' => $request->input('preferred_time'),
+            'message'        => $request->input('message'),
+            'status'         => 'new',
+            'source'         => 'landlord_listing',
+            'ip_address'     => $request->ip(),
+            'user_agent'     => $request->userAgent(),
+        ]);
+
+        return redirect()->back()->with('success', 'Your showing request has been sent.');
     }
 
     public function searchOfferListings(Request $request)

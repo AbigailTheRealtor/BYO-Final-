@@ -182,6 +182,9 @@
 .lol-mobile-bar-btn { display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;font-size:.65rem;font-weight:700;color:#334155;text-decoration:none;padding:.4rem .25rem;border-radius:8px;border:none;background:transparent;cursor:pointer;transition:background .15s;min-height:52px;justify-content:center; }
 .lol-mobile-bar-btn i { font-size:1.15rem;color:#0f766e; }
 .lol-mobile-bar-btn:hover,.lol-mobile-bar-btn:active { background:#f1f5f9;color:#1e293b; }
+.lol-mobile-bar-btn.lol-mobile-primary { background:#0f766e !important;color:#fff !important;border-radius:10px; }
+.lol-mobile-bar-btn.lol-mobile-primary i { color:#fff !important; }
+.lol-mobile-bar-btn.lol-mobile-primary:hover { background:#0d5c56 !important; }
 @media (max-width:991.98px) {
     .lol-mobile-bar { display:flex; }
     .lol-main-content-wrap { padding-bottom:calc(80px + env(safe-area-inset-bottom)); }
@@ -348,8 +351,8 @@
                         @endforeach
                     </div>
                     <div class="lol-hero-ctas">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#lolContactModal">
-                            <i class="fa-solid fa-envelope me-1"></i>Contact Landlord
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
+                            <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
                         </button>
                         <button type="button" class="btn btn-outline-secondary" id="lolShareHeroBtn">
                             <i class="fa-solid fa-share-nodes me-1"></i>Share
@@ -544,8 +547,15 @@
         // Bidding Period countdown — calculated exclusively from created_at + auction_time
         $hasBPTimer = false;
         $timerRemainingSeconds = 0;
-        if (strtolower(trim($str('auction_type'))) === 'bidding period') {
+        $_auctionType = trim($str('auction_type'));
+        if ($_auctionType === '') {
+            $_auctionType = trim((string)($auction->auction_type ?? ''));
+        }
+        if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
             $_aTime = trim($str('auction_time'));
+            if ($_aTime === '') {
+                $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
+            }
             $_timerEnd = null;
             if ($_aTime !== '') {
                 $_parts = explode(' ', $_aTime);
@@ -1014,8 +1024,11 @@
                         <i class="fa-solid fa-envelope me-1"></i>Email Landlord
                     </a>
                 @endif
-                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#lolContactModal">
-                    <i class="fa-solid fa-paper-plane me-1"></i>Send Inquiry
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
+                    <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
+                    <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
                 </button>
             </div>
         </div>
@@ -1058,8 +1071,11 @@
     <div class="col-lg-3 d-none d-lg-block">
         <div class="lol-sticky-card">
             <div class="lol-sticky-title">Quick Actions</div>
-            <button class="lol-action-btn lol-action-primary" data-bs-toggle="modal" data-bs-target="#lolContactModal">
-                <i class="fa-solid fa-envelope"></i>Contact Landlord
+            <button class="lol-action-btn lol-action-primary" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
+                <i class="fa-solid fa-circle-question"></i>Ask a Question
+            </button>
+            <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
+                <i class="fa-solid fa-calendar-days"></i>Schedule Showing
             </button>
             <button class="lol-action-btn lol-action-outline" type="button" disabled style="cursor:default;opacity:.6;">
                 <i class="fa-regular fa-bookmark"></i>Save Listing
@@ -1082,29 +1098,111 @@
 
     </div>{{-- /row --}}
 
-    {{-- ===== CONTACT MODAL ===== --}}
-    <div class="modal fade" id="lolContactModal" tabindex="-1" aria-labelledby="lolContactModalLabel" aria-modal="true" role="dialog">
+    {{-- ===== ASK A QUESTION MODAL ===== --}}
+    <div class="modal fade" id="lolQuestionModal" tabindex="-1" aria-labelledby="lolQuestionModalLabel" aria-modal="true" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
                 <div class="modal-header lol-modal-header">
-                    <h5 class="modal-title fw-bold" id="lolContactModalLabel"><i class="fa-solid fa-envelope me-2"></i>Contact Landlord</h5>
+                    <h5 class="modal-title fw-bold" id="lolQuestionModalLabel"><i class="fa-solid fa-circle-question me-2"></i>Ask a Question</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
                 </div>
-                <div class="modal-body p-4 text-center">
-                    <div style="font-size:3rem;margin-bottom:1rem;">🏠</div>
-                    <h6 class="fw-bold mb-2">Interested in This Rental?</h6>
-                    <p class="text-muted mb-3" style="font-size:.9rem;">Reach out to the landlord using the contact details in the listing.</p>
-                    @if($str('email'))
-                        <a href="mailto:{{ $str('email') }}" class="btn btn-primary">
-                            <i class="fa-solid fa-envelope me-1"></i>Email Landlord
-                        </a>
-                    @else
-                        <span class="badge bg-secondary px-3 py-2" style="font-size:.85rem;">See contact info above</span>
+                <form method="POST" action="{{ route('offer.listing.landlord.question', ['auction' => $auction->id]) }}">
+                @csrf
+                <input type="text" name="website" value="" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1" autocomplete="off" aria-hidden="true">
+                <div class="modal-body p-4">
+                    @if(session('success') && str_contains((string)session('success'), 'question'))
+                        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @endif
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('name', 'lolQuestionInquiry') is-invalid @enderror" name="name" placeholder="Jane Smith" value="{{ old('name') }}" required>
+                            @error('name', 'lolQuestionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control @error('email', 'lolQuestionInquiry') is-invalid @enderror" name="email" placeholder="jane@example.com" value="{{ old('email') }}" required>
+                            @error('email', 'lolQuestionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Phone Number</label>
+                            <input type="tel" class="form-control" name="phone" placeholder="(555) 000-0000" value="{{ old('phone') }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Question <span class="text-danger">*</span></label>
+                            <textarea class="form-control @error('question', 'lolQuestionInquiry') is-invalid @enderror" name="question" rows="4" placeholder="What would you like to know about this rental property?" required>{{ old('question') }}</textarea>
+                            @error('question', 'lolQuestionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-footer border-0 justify-content-center pb-4">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <div class="modal-footer border-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-paper-plane me-1"></i>Send Question
+                    </button>
                 </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- ===== SCHEDULE A SHOWING MODAL ===== --}}
+    <div class="modal fade" id="lolShowingModal" tabindex="-1" aria-labelledby="lolShowingModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+                <div class="modal-header lol-modal-header">
+                    <h5 class="modal-title fw-bold" id="lolShowingModalLabel"><i class="fa-solid fa-calendar-days me-2"></i>Schedule a Showing</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+                </div>
+                <form method="POST" action="{{ route('offer.listing.landlord.showing', ['auction' => $auction->id]) }}">
+                @csrf
+                <input type="text" name="website" value="" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1" autocomplete="off" aria-hidden="true">
+                <div class="modal-body p-4">
+                    @if(session('success') && str_contains((string)session('success'), 'showing'))
+                        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('name', 'lolShowingInquiry') is-invalid @enderror" name="name" placeholder="Jane Smith" value="{{ old('name') }}" required>
+                            @error('name', 'lolShowingInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control @error('email', 'lolShowingInquiry') is-invalid @enderror" name="email" placeholder="jane@example.com" value="{{ old('email') }}" required>
+                            @error('email', 'lolShowingInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Phone Number</label>
+                            <input type="tel" class="form-control" name="phone" placeholder="(555) 000-0000" value="{{ old('phone') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Preferred Date</label>
+                            <input type="date" class="form-control" name="preferred_date" value="{{ old('preferred_date') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Preferred Time</label>
+                            <input type="time" class="form-control" name="preferred_time" value="{{ old('preferred_time') }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Message (Optional)</label>
+                            <textarea class="form-control" name="message" rows="3" placeholder="Any special requests or notes…">{{ old('message') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-calendar-check me-1"></i>Request Showing
+                    </button>
+                </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1113,8 +1211,11 @@
 
 {{-- ===== MOBILE STICKY BOTTOM BAR ===== --}}
 <div class="lol-mobile-bar d-lg-none">
-    <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolContactModal">
-        <i class="fa-solid fa-envelope"></i><span>Contact</span>
+    <button type="button" class="lol-mobile-bar-btn lol-mobile-primary" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
+        <i class="fa-solid fa-circle-question"></i><span>Ask</span>
+    </button>
+    <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
+        <i class="fa-solid fa-calendar-days"></i><span>Showing</span>
     </button>
     @if(auth()->check() && auth()->id() == $auction->user_id)
     <a href="{{ route('offer.listing.landlord.edit', ['auctionId' => $auction->id]) }}" class="lol-mobile-bar-btn">
@@ -1205,9 +1306,30 @@
     document.querySelectorAll('.lol-nav-tabs a[href^="#"]').forEach(function (link) {
         link.addEventListener('click', function (e) {
             var target = document.querySelector(this.getAttribute('href'));
-            if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+            if (!target) return;
+            e.preventDefault();
+            var top = target.getBoundingClientRect().top + window.scrollY - 82;
+            window.scrollTo({ top: top, behavior: 'smooth' });
         });
     });
+
+    /* ---- Auto-reopen modals after validation failure ---- */
+    @if(session('open_modal') === 'question')
+    (function () {
+        var el = document.getElementById('lolQuestionModal');
+        if (el && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+        }
+    }());
+    @endif
+    @if(session('open_modal') === 'showing')
+    (function () {
+        var el = document.getElementById('lolShowingModal');
+        if (el && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+        }
+    }());
+    @endif
 })();
 </script>
 @endpush

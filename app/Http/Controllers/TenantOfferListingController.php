@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\TenantAgentAuction;
+use App\Models\SellerListingInquiry;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class TenantOfferListingController extends Controller
 {
@@ -87,6 +89,44 @@ class TenantOfferListingController extends Controller
             'meta'    => $meta,
             'ownerId' => $auction->user_id,
         ]);
+    }
+
+    public function submitQuestion(Request $request, $auction)
+    {
+        if ($request->input('website') !== null && $request->input('website') !== '') {
+            return redirect()->back()->with('success', 'Your question has been sent.');
+        }
+
+        [$listing] = $this->resolveOfferListing((int) $auction);
+
+        $validator = Validator::make($request->all(), [
+            'name'     => 'required|string|max:191',
+            'email'    => 'required|email|max:191',
+            'phone'    => 'nullable|string|max:64',
+            'question' => 'required|string|max:5000',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator, 'tclQuestionInquiry')
+                ->withInput()
+                ->with('open_modal', 'question');
+        }
+
+        SellerListingInquiry::create([
+            'auction_id' => $listing->id,
+            'type'       => 'question',
+            'name'       => $request->input('name'),
+            'email'      => $request->input('email'),
+            'phone'      => $request->input('phone'),
+            'question'   => $request->input('question'),
+            'status'     => 'new',
+            'source'     => 'tenant_listing',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return redirect()->back()->with('success', 'Your question has been sent.');
     }
 
     public function searchOfferListings(Request $request)

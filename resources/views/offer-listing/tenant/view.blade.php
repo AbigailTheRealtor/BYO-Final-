@@ -235,7 +235,7 @@
 .tcl-view-page h6.fw-semibold, .tcl-view-page h6.fw-bold {
     color: #1e293b; font-size: 0.97rem; font-weight: 600; letter-spacing: 0;
 }
-.tcl-view-page .sol-contact-cta-row {
+.tcl-view-page .tcl-contact-cta-row {
     display: flex; flex-wrap: wrap; gap: 0.5rem;
     margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f1f5f9;
 }
@@ -536,6 +536,7 @@
                 <div class="col-md-6">
                     {!! $row('Listing Date', $fmtDate($str('listing_date'))) !!}
                     {!! $row('Expiration Date', $fmtDate($str('expiration_date'))) !!}
+                    {!! $row('Auction Time', $str('auction_time') ?: (trim((string)($auction->auction_time ?? $auction->auction_length ?? '')))) !!}
                 </div>
             </div>
             {{-- Bidding Period countdown timer (source: created_at + auction_time) --}}
@@ -992,12 +993,15 @@
                     @endif
                 </div>
             </div>
-            <div class="sol-contact-cta-row">
+            <div class="tcl-contact-cta-row">
                 @if($ifFilled($str('email')))
                     <a href="mailto:{{ $str('email') }}" class="btn btn-primary btn-sm">
-                        <i class="fa-solid fa-envelope me-1"></i>Contact
+                        <i class="fa-solid fa-envelope me-1"></i>Contact Tenant
                     </a>
                 @endif
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#tclQuestionModal">
+                    <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
+                </button>
             </div>
         </div>
     </div>
@@ -1181,15 +1185,23 @@
             <div class="tcl-sticky-card">
                 <div class="tcl-sticky-title">Quick Actions</div>
 
-                <a href="{{ route('offer.listing.tenant.searchListing') }}" class="tcl-action-btn tcl-action-primary">
-                    <i class="fa-solid fa-arrow-left"></i>Back to Search
+                @if($ifFilled($str('email')))
+                <a href="mailto:{{ $str('email') }}" class="tcl-action-btn tcl-action-primary">
+                    <i class="fa-solid fa-envelope"></i>Contact Tenant
                 </a>
+                @endif
+                <button class="tcl-action-btn tcl-action-outline" data-bs-toggle="modal" data-bs-target="#tclQuestionModal">
+                    <i class="fa-solid fa-circle-question"></i>Ask a Question
+                </button>
                 <button class="tcl-action-btn tcl-action-outline" id="tclShareBtnSidebar">
                     <i class="fa-solid fa-share-nodes"></i>Share Listing
                 </button>
                 <button class="tcl-action-btn tcl-action-outline" type="button" disabled style="cursor:default;opacity:.6;">
                     <i class="fa-regular fa-bookmark"></i>Save Listing
                 </button>
+                <a href="{{ route('offer.listing.tenant.searchListing') }}" class="tcl-action-btn tcl-action-outline">
+                    <i class="fa-solid fa-arrow-left"></i>Back to Search
+                </a>
 
                 @if(auth()->id() == $ownerId)
                 <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
@@ -1219,6 +1231,17 @@
         <i class="fa-solid fa-arrow-left"></i>
         <span>Search</span>
     </a>
+    <button class="tcl-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#tclQuestionModal"
+        @if(auth()->id() == $ownerId) style="display:none;" @endif>
+        <i class="fa-solid fa-circle-question"></i>
+        <span>Ask</span>
+    </button>
+    @if($ifFilled($str('email')) && auth()->id() != $ownerId)
+    <a href="mailto:{{ $str('email') }}" class="tcl-mobile-bar-btn tcl-mobile-primary">
+        <i class="fa-solid fa-envelope"></i>
+        <span>Contact</span>
+    </a>
+    @endif
     <button class="tcl-mobile-bar-btn" id="tclShareBtnMobile">
         <i class="fa-solid fa-share-nodes"></i>
         <span>Share</span>
@@ -1229,6 +1252,57 @@
         <span>Edit</span>
     </a>
     @endif
+</div>
+
+{{-- ===== QUESTION MODAL ===== --}}
+<div class="modal fade" id="tclQuestionModal" tabindex="-1" aria-labelledby="tclQuestionModalLabel" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;">
+                <h5 class="modal-title fw-bold" id="tclQuestionModalLabel"><i class="fa-solid fa-circle-question me-2"></i>Ask a Question</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+            </div>
+            <form method="POST" action="{{ route('offer.listing.tenant.question', ['auction' => $auction->id]) }}">
+            @csrf
+            <input type="text" name="website" value="" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <div class="modal-body p-4">
+                @if(session('success') && str_contains((string)session('success'), 'question'))
+                    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                        {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control @error('name', 'tclQuestionInquiry') is-invalid @enderror" name="name" placeholder="Jane Smith" value="{{ old('name') }}" required>
+                        @error('name', 'tclQuestionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control @error('email', 'tclQuestionInquiry') is-invalid @enderror" name="email" placeholder="jane@example.com" value="{{ old('email') }}" required>
+                        @error('email', 'tclQuestionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" style="font-size:.85rem;">Phone Number</label>
+                        <input type="tel" class="form-control" name="phone" placeholder="(555) 000-0000" value="{{ old('phone') }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" style="font-size:.85rem;">Your Question <span class="text-danger">*</span></label>
+                        <textarea class="form-control @error('question', 'tclQuestionInquiry') is-invalid @enderror" name="question" rows="4" placeholder="What would you like to know about this Tenant Criteria listing?" required>{{ old('question') }}</textarea>
+                        @error('question', 'tclQuestionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pb-4">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-paper-plane me-1"></i>Send Question
+                </button>
+            </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 @push('scripts')
@@ -1309,6 +1383,16 @@
         var el = document.getElementById(id);
         if (el) el.addEventListener('click', doShare);
     });
+
+    /* ---- Auto-reopen question modal after validation failure ---- */
+    @if(session('open_modal') === 'question')
+    (function () {
+        var el = document.getElementById('tclQuestionModal');
+        if (el && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+        }
+    }());
+    @endif
 })();
 </script>
 @endpush
