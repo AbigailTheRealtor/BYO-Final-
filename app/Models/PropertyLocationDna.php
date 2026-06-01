@@ -23,12 +23,14 @@ class PropertyLocationDna extends Model
         'geocode_error',
         'geocoded_at',
         'summary_json',
+        'lifestyle_json',
         'generated_at',
     ];
 
     protected $casts = [
-        'summary_json' => 'array',
-        'geocoded_at'  => 'datetime',
-        'generated_at' => 'datetime',
+        'summary_json'   => 'array',
+        'lifestyle_json' => 'array',
+        'geocoded_at'    => 'datetime',
+        'generated_at'   => 'datetime',
     ];
 }
