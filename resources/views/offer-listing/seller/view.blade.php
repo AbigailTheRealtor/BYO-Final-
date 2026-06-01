@@ -1876,6 +1876,14 @@
     @endif
 
     {{-- Broker Compensation & Agency Agreement --}}
+    @php
+        $hasBrokerComp = $str('commission_structure') || $str('commission_structure_type')
+            || $str('commission_structure_type_fee_flat') || $str('commission_structure_type_fee_percentage')
+            || $str('commission_structure_type_fee_percentage_combo') || $str('commission_structure_type_fee_flat_combo')
+            || $str('commission_structure_type_fee_other') || $str('agency_agreement_timeframe')
+            || $str('agency_agreement_custom');
+    @endphp
+    @if($hasBrokerComp)
     <div class="card section-card">
         <div class="card-header"><i class="fa-solid fa-file-contract me-2"></i>Broker Compensation &amp; Agency Agreement</div>
         <div class="card-body">
@@ -1902,6 +1910,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- Financial Details (Income / Commercial / Business property types only) --}}
     {{-- Fields: minimum_annual_net_income, minimum_cap_rate, gross_annual_income, annual_operating_expenses,
@@ -2136,8 +2145,9 @@
                     {!! $row('Email', $str('email')) !!}
                     @php
                         $phone = $str('phone_number');
-                        if ($phone && strlen(preg_replace('/\D/', '', $phone)) === 10) {
-                            $phone = '(' . substr($phone, 0, 3) . ') ' . substr($phone, 3, 3) . '-' . substr($phone, 6);
+                        $digits = preg_replace('/\D/', '', $phone);
+                        if ($phone && strlen($digits) === 10) {
+                            $phone = '(' . substr($digits, 0, 3) . ') ' . substr($digits, 3, 3) . '-' . substr($digits, 6);
                         }
                     @endphp
                     {!! $row('Phone', $phone) !!}
@@ -2200,6 +2210,9 @@
                 <button class="sol-action-btn sol-action-outline" id="solShareBtn" type="button">
                     <i class="fa-solid fa-share-nodes"></i>Share Listing
                 </button>
+                <a href="{{ route('offer.listing.seller.searchListing') }}" class="sol-action-btn sol-action-outline">
+                    <i class="fa-solid fa-arrow-left"></i>Back to Search
+                </a>
 
                 @if($heroPrice)
                 <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f1f5f9;text-align:center;">
@@ -2392,6 +2405,10 @@
         <i class="fa-solid fa-share-nodes"></i>
         <span>Share</span>
     </button>
+    <a href="{{ route('offer.listing.seller.searchListing') }}" class="sol-mobile-bar-btn">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Search</span>
+    </a>
 </div>
 
 @endsection

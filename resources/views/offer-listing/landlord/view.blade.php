@@ -194,7 +194,7 @@
 .lol-view-page .lol-contact-cta-row { display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid #f1f5f9; }
 
 /* Modals */
-.lol-modal-header { background:linear-gradient(135deg,#0f4c3a,#1e293b);color:#fff;border-radius:.75rem .75rem 0 0;padding:1.25rem 1.5rem;border-bottom:none; }
+.lol-view-page .lol-modal-header { background:linear-gradient(135deg,#0f4c3a,#1e293b);color:#fff;border-radius:.75rem .75rem 0 0;padding:1.25rem 1.5rem;border-bottom:none; }
 </style>
 @endpush
 
@@ -435,6 +435,9 @@
             @endif
             @if($navHasContact)
             <li><a href="#section-contact">Contact</a></li>
+            @endif
+            @if($navHasAddl)
+            <li><a href="#section-additional">Additional Details</a></li>
             @endif
         </ul>
     </div>

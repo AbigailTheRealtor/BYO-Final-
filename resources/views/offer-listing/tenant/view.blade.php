@@ -239,6 +239,10 @@
     display: flex; flex-wrap: wrap; gap: 0.5rem;
     margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f1f5f9;
 }
+.tcl-modal-header {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    color: #fff;
+}
 </style>
 @endpush
 
@@ -1258,7 +1262,7 @@
 <div class="modal fade" id="tclQuestionModal" tabindex="-1" aria-labelledby="tclQuestionModalLabel" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
-            <div class="modal-header" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;">
+            <div class="modal-header tcl-modal-header">
                 <h5 class="modal-title fw-bold" id="tclQuestionModalLabel"><i class="fa-solid fa-circle-question me-2"></i>Ask a Question</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
             </div>
