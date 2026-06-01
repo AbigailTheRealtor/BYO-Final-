@@ -239,6 +239,7 @@ class BuyerOfferListing extends Component
     public $hoa_acceptance = '';
     public $hoa_max_monthly_fee = '';
     public $flood_zone_tolerance = [];
+    public $flood_zone_tolerance_other = '';
 
     // Broker compensation
     public $commission_structure = '';
@@ -1882,6 +1883,7 @@ class BuyerOfferListing extends Component
             $this->hoa_max_monthly_fee = $auction->get->hoa_max_monthly_fee ?? '';
             $floodZoneRaw = $auction->get->flood_zone_tolerance ?? null;
             $this->flood_zone_tolerance = $floodZoneRaw ? (is_string($floodZoneRaw) ? json_decode($floodZoneRaw, true) ?? [] : (array)$floodZoneRaw) : [];
+            $this->flood_zone_tolerance_other = $auction->get->flood_zone_tolerance_other ?? '';
 
 
             // Sale Provision
@@ -2270,6 +2272,7 @@ class BuyerOfferListing extends Component
             // Dispatch browser event to sync select values after draft loads
             $this->dispatchBrowserEvent('buyer-agent-select2-sync', [
                 'view_preference' => $this->view_preference,
+                'other_preferences' => $this->other_preferences,
                 'non_negotiable_amenities' => $this->non_negotiable_amenities,
                 'pool_type' => $this->pool_type,
                 'offered_financing' => $this->offered_financing,
@@ -2283,6 +2286,7 @@ class BuyerOfferListing extends Component
                 'assets' => $this->assets,
                 'garage_parking_spaces_option' => $this->garage_parking_spaces_option,
                 'flood_zone_tolerance' => $this->flood_zone_tolerance,
+                'flood_zone_tolerance_other' => $this->flood_zone_tolerance_other,
                 'purchase_purpose_other' => $this->purchase_purpose_other,
             ]);
             
@@ -2421,6 +2425,7 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('hoa_acceptance', $this->hoa_acceptance);
         $auction->saveMeta('hoa_max_monthly_fee', $this->hoa_max_monthly_fee);
         $auction->saveMeta('flood_zone_tolerance', json_encode($this->flood_zone_tolerance ?? []));
+        $auction->saveMeta('flood_zone_tolerance_other', $this->flood_zone_tolerance_other ?? '');
 
         // Sale Provisions
         $auction->saveMeta('sale_provision', json_encode($this->sale_provision ?? []));

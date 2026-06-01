@@ -194,6 +194,7 @@ class BuyerOfferListingEdit extends Component
     public $hoa_acceptance = '';
     public $hoa_max_monthly_fee = '';
     public $flood_zone_tolerance = [];
+    public $flood_zone_tolerance_other = '';
 
     public $leasing_55_plus = '';
     public $non_negotiable_amenities = [];
@@ -1863,6 +1864,7 @@ class BuyerOfferListingEdit extends Component
             $this->hoa_max_monthly_fee = $auction->get->hoa_max_monthly_fee ?? '';
             $floodZoneRaw = $auction->get->flood_zone_tolerance ?? null;
             $this->flood_zone_tolerance = $floodZoneRaw ? (is_string($floodZoneRaw) ? json_decode($floodZoneRaw, true) ?? [] : (array)$floodZoneRaw) : [];
+            $this->flood_zone_tolerance_other = $auction->get->flood_zone_tolerance_other ?? '';
 
 
             // Sale Provision
@@ -2278,7 +2280,8 @@ class BuyerOfferListingEdit extends Component
                 'credit_scroe_rating'       => $this->credit_scroe_rating,
                 'flat_fee_services'         => $this->flat_fee_services,
                 'number_of_unit_type'       => $this->number_of_unit_type,
-                'flood_zone_tolerance'      => $this->flood_zone_tolerance,
+                'flood_zone_tolerance'       => $this->flood_zone_tolerance,
+                'flood_zone_tolerance_other' => $this->flood_zone_tolerance_other,
                 'purchase_purpose_other'    => $this->purchase_purpose_other,
                 // New fields — not Select2, but included so JS can restore wrapper visibility
                 'earnest_money_type'        => $this->earnest_money_type,
@@ -2361,6 +2364,7 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('hoa_acceptance', $this->hoa_acceptance);
         $auction->saveMeta('hoa_max_monthly_fee', $this->hoa_max_monthly_fee);
         $auction->saveMeta('flood_zone_tolerance', json_encode($this->flood_zone_tolerance ?? []));
+        $auction->saveMeta('flood_zone_tolerance_other', $this->flood_zone_tolerance_other ?? '');
 
         // Sale Provisions
         $auction->saveMeta('sale_provision', json_encode($this->sale_provision ?? []));

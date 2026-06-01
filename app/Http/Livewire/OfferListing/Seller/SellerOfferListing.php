@@ -4168,7 +4168,7 @@ class SellerOfferListing extends Component
                 'is_sold' => $auction->is_sold ?? 'N/A',
             ]);
 
-            session()->flash('success', 'Listing submitted successfully!');
+            session()->flash('success', 'Listing submitted successfully.');
 
             $url = route('offer.listing.seller.view', ['id' => $auction->id]);
 

@@ -2657,6 +2657,28 @@
         </div>
     </div>
 
+    <div class="form-group" wire:key="current-adjacent-use-vl-{{ $property_type }}">
+        <label class="fw-bold">Current Adjacent Use:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select how the adjacent properties are currently being used.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="current_adjacent_use" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-map-location" data-placeholder="Select" multiple>
+                @foreach (['Church','Commercial','Industrial','Mobile Home Park','Multi-Family','Park','Professional Office','Residential','Retail','School','Vacant','Other'] as $_opt)
+                    <option value="{{ $_opt }}" {{ is_array($current_adjacent_use) && in_array($_opt, $current_adjacent_use) ? 'selected' : '' }}>{{ $_opt }}</option>
+                @endforeach
+            </select>
+        </div>
+        <span class="error mt-2" id="current_adjacent_use_error"></span>
+    </div>
+    <div class="form-group" id="other_current_adjacent_use_wrapper" style="{{ is_array($current_adjacent_use) && in_array('Other', $current_adjacent_use) ? '' : 'display:none;' }}">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="other_current_adjacent_use" class="form-control has-icon"
+                data-icon="fa-solid fa-pen" placeholder="Enter adjacent use (e.g., Conservation land, Nature preserve)">
+        </div>
+    </div>
+
     <div class="form-group">
         <label class="fw-bold">Zoning:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -2960,28 +2982,6 @@
                 data-icon="fa-solid fa-circle-nodes" placeholder="Enter number of septic systems (e.g., 1)">
         </div>
         <span class="error mt-2" id="number_of_septics_error"></span>
-    </div>
-
-    <div class="form-group" wire:key="current-adjacent-use-vl-{{ $property_type }}">
-        <label class="fw-bold">Current Adjacent Use:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how the adjacent properties are currently being used.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover has-select-icon" wire:ignore>
-            <select id="current_adjacent_use" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-map-location" data-placeholder="Select" multiple>
-                @foreach (['Church','Commercial','Industrial','Mobile Home Park','Multi-Family','Park','Professional Office','Residential','Retail','School','Vacant','Other'] as $_opt)
-                    <option value="{{ $_opt }}" {{ is_array($current_adjacent_use) && in_array($_opt, $current_adjacent_use) ? 'selected' : '' }}>{{ $_opt }}</option>
-                @endforeach
-            </select>
-        </div>
-        <span class="error mt-2" id="current_adjacent_use_error"></span>
-    </div>
-    <div class="form-group" id="other_current_adjacent_use_wrapper" style="{{ is_array($current_adjacent_use) && in_array('Other', $current_adjacent_use) ? '' : 'display:none;' }}">
-        <div class="input-cover">
-            <input type="text" wire:model.defer="other_current_adjacent_use" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter adjacent use (e.g., Conservation land, Nature preserve)">
-        </div>
     </div>
 
     <div class="form-group" wire:key="fences-vl-{{ $property_type }}">

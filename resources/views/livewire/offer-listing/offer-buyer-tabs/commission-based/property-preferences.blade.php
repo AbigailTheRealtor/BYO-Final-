@@ -1362,7 +1362,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="purchase_purpose_other" class="form-control has-icon"
             data-icon="fa-solid fa-bullseye"
-            placeholder="Enter title (e.g., example)">
+            placeholder="Enter purchase purpose (e.g., Business expansion, House flipping, Estate planning)">
     </div>
 </div>
 
@@ -1431,34 +1431,38 @@
         </span>
     </label>
     <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
         <input type="number" wire:model.defer="hoa_max_monthly_fee"
-            class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
-            placeholder="e.g., 350" min="0" step="0.01">
+            class="form-control"
+            placeholder="Enter maximum monthly HOA fee (e.g., $350)" min="0" step="0.01">
     </div>
 </div>
 
-{{-- Flood Zone Tolerance --}}
+{{-- Flood Zone Preference --}}
 <div class="form-group mt-3">
-    <label class="fw-bold">Flood Zone Tolerance:
+    <label class="fw-bold">Flood Zone Preference:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the Buyer's acceptable flood zone designations. Multiple selections allowed.">
+            title="Select the Buyer's flood zone preference. Multiple selections allowed.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div class="input-cover has-select-icon" wire:ignore>
         <select id="flood_zone_tolerance" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-water" data-placeholder="Select" multiple>
-            <option value="X" {{ in_array('X', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>X — Minimal Flood Hazard</option>
-            <option value="AE" {{ in_array('AE', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>AE — High Risk (Base Flood Elevation Determined)</option>
-            <option value="A" {{ in_array('A', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>A — High Risk (No Base Flood Elevation)</option>
-            <option value="AH" {{ in_array('AH', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>AH — High Risk (Shallow Flooding)</option>
-            <option value="AO" {{ in_array('AO', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>AO — High Risk (Sheet Flow Flooding)</option>
-            <option value="VE" {{ in_array('VE', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>VE — Coastal High Hazard</option>
-            <option value="V" {{ in_array('V', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>V — Coastal High Hazard (No Base Flood Elevation)</option>
-            <option value="D" {{ in_array('D', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>D — Undetermined Risk</option>
-            <option value="Unknown" {{ in_array('Unknown', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>Unknown</option>
+            <option value="No Preference" {{ in_array('No Preference', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>No Preference</option>
+            <option value="Preferred Outside Flood Zones" {{ in_array('Preferred Outside Flood Zones', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>Preferred Outside Flood Zones</option>
+            <option value="Open to Flood Zones with Affordable Insurance" {{ in_array('Open to Flood Zones with Affordable Insurance', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>Open to Flood Zones with Affordable Insurance</option>
+            <option value="Open to Any Flood Zone" {{ in_array('Open to Any Flood Zone', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>Open to Any Flood Zone</option>
             <option value="Other" {{ in_array('Other', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>Other</option>
         </select>
+    </div>
+</div>
+{{-- Flood Zone Preference Other --}}
+<div class="form-group flood_zone_tolerance_other_wrapper {{ in_array('Other', $flood_zone_tolerance ?? []) ? '' : 'd-none' }}" wire:key="flood-zone-tolerance-other-wrapper">
+    <div class="input-cover">
+        <input type="text" wire:model.defer="flood_zone_tolerance_other" class="form-control has-icon"
+            data-icon="fa-solid fa-water"
+            placeholder="Enter flood zone preference (e.g., Open to coastal properties if insurance costs are reasonable)">
     </div>
 </div>
 
@@ -1511,6 +1515,7 @@
         syncSelect2('#condition_prop_buyer', data.condition_prop_buyer);
         syncSelect2('#property_items', data.property_items);
         syncSelect2('#flood_zone_tolerance', data.flood_zone_tolerance);
+        syncSelect2('#assets', data.assets);
         
         // Clear flag after a short delay to allow all change events to complete
         setTimeout(function() {
@@ -1564,6 +1569,9 @@
         // Update visibility of "Other" text fields based on synced values
         if (data.non_negotiable_amenities && data.non_negotiable_amenities.includes('Other')) {
             $('#other_non_negotiable_amenities_wrapper').show();
+        }
+        if (data.flood_zone_tolerance && data.flood_zone_tolerance.includes('Other')) {
+            $('.flood_zone_tolerance_other_wrapper').removeClass('d-none');
         }
         
         // Trigger financing visibility updates

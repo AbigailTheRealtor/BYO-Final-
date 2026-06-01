@@ -1399,6 +1399,7 @@
 
             if ($('#flood_zone_tolerance').length) {
                 $('#flood_zone_tolerance').off('change.fztSync').on('change.fztSync', function() {
+                    if (window.financingSyncInProgress) return;
                     let selectedValues = $(this).val() || [];
                     debouncedSet('flood_zone_tolerance', selectedValues);
                 });
