@@ -89,6 +89,27 @@
     display: flex; align-items: center; justify-content: center;
     color: #94a3b8; font-size: 3rem;
 }
+.bol-view-page .bol-hero-carousel-wrap {
+    position: relative; height: 100%; min-height: 280px; overflow: hidden; background: #0f172a;
+}
+.bol-view-page .bol-hero-photo {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.bol-view-page .bol-hero-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(0,0,0,.45); color: #fff; border: none; border-radius: 50%;
+    width: 40px; height: 40px; font-size: 1.55rem; line-height: 1; cursor: pointer;
+    z-index: 10; display: flex; align-items: center; justify-content: center;
+    transition: background .15s; padding: 0; flex-shrink: 0;
+}
+.bol-view-page .bol-hero-arrow:hover { background: rgba(0,0,0,.72); }
+.bol-view-page .bol-hero-arrow-prev { left: 12px; }
+.bol-view-page .bol-hero-arrow-next { right: 12px; }
+.bol-view-page .bol-hero-carousel-counter {
+    position: absolute; bottom: 12px; right: 14px;
+    background: rgba(0,0,0,.50); color: #fff; font-size: .76rem; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px; z-index: 10; pointer-events: none;
+}
 .bol-view-page .bol-hero-summary {
     background: #fff; padding: 1.6rem 1.4rem;
     display: flex; flex-direction: column; justify-content: space-between;
@@ -346,28 +367,66 @@
         $badgePreApproved = (strtolower((string)($str('pre_approved'))) === 'yes' || strtolower((string)($str('pre_approved'))) === '1' || strtolower((string)($str('pre_approved'))) === 'true');
 
         $heroBadges = [
-            ['show' => $badgePreApproved,   'label' => 'Pre-Approved',      'icon' => 'fa-solid fa-circle-check',        'color' => 'green'],
-            ['show' => $badgeCash,          'label' => 'Cash Buyer',        'icon' => 'fa-solid fa-money-bill-wave',      'color' => 'green'],
-            ['show' => $badgeAssumable,     'label' => 'Assumable Mortgage','icon' => 'fa-solid fa-hand-holding-dollar',  'color' => 'teal'],
-            ['show' => $badgeSellerFin,     'label' => 'Seller Financing',  'icon' => 'fa-solid fa-hand-holding-dollar',  'color' => 'teal'],
-            ['show' => $badgeLeaseOpt,      'label' => 'Lease Option',      'icon' => 'fa-solid fa-key',                 'color' => 'purple'],
-            ['show' => $badgeLeasePur,      'label' => 'Lease Purchase',    'icon' => 'fa-solid fa-key',                 'color' => 'purple'],
-            ['show' => $badgeCrypto,        'label' => 'Crypto Accepted',   'icon' => 'fa-brands fa-bitcoin',            'color' => 'amber'],
-            ['show' => $badgeExchange,      'label' => 'Exchange / Trade',  'icon' => 'fa-solid fa-arrows-rotate',       'color' => 'amber'],
+            ['show' => $badgePreApproved,   'label' => 'Pre-Approved',      'icon' => 'fa-solid fa-circle-check',        'color' => 'green',  'strong' => true],
+            ['show' => $badgeCash,          'label' => 'Cash Buyer',        'icon' => 'fa-solid fa-money-bill-wave',      'color' => 'green',  'strong' => true],
+            ['show' => $badgeAssumable,     'label' => 'Assumable Mortgage','icon' => 'fa-solid fa-hand-holding-dollar',  'color' => 'teal',   'strong' => true],
+            ['show' => $badgeSellerFin,     'label' => 'Seller Financing',  'icon' => 'fa-solid fa-hand-holding-dollar',  'color' => 'teal',   'strong' => false],
+            ['show' => $badgeLeaseOpt,      'label' => 'Lease Option',      'icon' => 'fa-solid fa-key',                 'color' => 'purple', 'strong' => false],
+            ['show' => $badgeLeasePur,      'label' => 'Lease Purchase',    'icon' => 'fa-solid fa-key',                 'color' => 'purple', 'strong' => false],
+            ['show' => $badgeCrypto,        'label' => 'Crypto Accepted',   'icon' => 'fa-brands fa-bitcoin',            'color' => 'amber',  'strong' => false],
+            ['show' => $badgeExchange,      'label' => 'Exchange / Trade',  'icon' => 'fa-solid fa-arrows-rotate',       'color' => 'amber',  'strong' => false],
             ['show' => $badgeFinancing && !$badgeCash && !$badgeAssumable && !$badgeSellerFin && !$badgeLeaseOpt && !$badgeLeasePur && !$badgeCrypto && !$badgeExchange,
-                       'label' => 'Flexible Financing', 'icon' => 'fa-solid fa-hand-holding-dollar', 'color' => 'blue'],
-            ['show' => (bool)$heroPropType, 'label' => (string)$heroPropType, 'icon' => 'fa-solid fa-tag', 'color' => 'blue'],
+                       'label' => 'Flexible Financing', 'icon' => 'fa-solid fa-hand-holding-dollar', 'color' => 'blue',   'strong' => false],
+            ['show' => (bool)$heroPropType, 'label' => (string)$heroPropType, 'icon' => 'fa-solid fa-tag',              'color' => 'blue',   'strong' => false],
         ];
         $heroBadgesDisplay = array_slice(array_values(array_filter($heroBadges, fn($b) => $b['show'])), 0, 5);
     @endphp
 
     {{-- HERO --}}
+    @php
+        /* Hero photos: decode property_photos JSON array */
+        $bolPropertyPhotos = $meta['property_photos'] ?? [];
+        if (is_string($bolPropertyPhotos)) {
+            $bolDecoded = json_decode($bolPropertyPhotos, true);
+            $bolPropertyPhotos = is_array($bolDecoded) ? $bolDecoded : [];
+        }
+        $bolHeroPhotoUrls = [];
+        $bolCoverPhotoIdx = 0;
+        $_bolHIdx = 0;
+        foreach ($bolPropertyPhotos as $_bolPh) {
+            $_bolFn = is_array($_bolPh) ? ($_bolPh['filename'] ?? '') : $_bolPh;
+            if (!$_bolFn) continue;
+            $bolHeroPhotoUrls[] = asset('storage/auction/images/' . $_bolFn);
+            if (is_array($_bolPh) && !empty($_bolPh['is_cover'])) $bolCoverPhotoIdx = $_bolHIdx;
+            $_bolHIdx++;
+        }
+    @endphp
     <div class="bol-hero mb-4">
         <div class="row g-0" style="min-height:280px;">
             <div class="col-lg-8">
-                <div class="bol-hero-placeholder">
-                    <i class="fa-solid fa-magnifying-glass-dollar"></i>
+                <div class="bol-hero-carousel-wrap">
+                    @if(count($bolHeroPhotoUrls))
+                        <img id="bolHeroCarouselImg"
+                             src="{{ $bolHeroPhotoUrls[$bolCoverPhotoIdx] }}"
+                             alt="Buyer listing photo"
+                             class="bol-hero-photo"
+                             style="cursor:pointer;"
+                             onerror="this.style.display='none';var ph=document.getElementById('bolHeroCarouselPlaceholder');if(ph)ph.style.display='flex'">
+                        <div id="bolHeroCarouselPlaceholder" class="bol-hero-placeholder" style="display:none;">
+                            <i class="fa-solid fa-magnifying-glass-dollar"></i>
+                        </div>
+                        @if(count($bolHeroPhotoUrls) > 1)
+                        <button class="bol-hero-arrow bol-hero-arrow-prev" id="bolHeroCarouselPrev" aria-label="Previous photo">&#8249;</button>
+                        <button class="bol-hero-arrow bol-hero-arrow-next" id="bolHeroCarouselNext" aria-label="Next photo">&#8250;</button>
+                        <div class="bol-hero-carousel-counter" id="bolHeroCarouselCounter">{{ $bolCoverPhotoIdx + 1 }} / {{ count($bolHeroPhotoUrls) }}</div>
+                        @endif
+                    @else
+                    <div class="bol-hero-placeholder">
+                        <i class="fa-solid fa-magnifying-glass-dollar"></i>
+                    </div>
+                    @endif
                 </div>
+                <script>var _bolHeroPhotos={!! json_encode($bolHeroPhotoUrls) !!};var _bolHeroStartIdx={{ $bolCoverPhotoIdx }};</script>
             </div>
             <div class="col-lg-4">
                 <div class="bol-hero-summary">
@@ -430,9 +489,29 @@
                         @endforeach
                     </div>
 
+                    @php
+                        $bolStandoutParts = array_values(array_map(
+                            fn($b) => $b['label'],
+                            array_filter($heroBadgesDisplay, fn($b) => !empty($b['strong']))
+                        ));
+                    @endphp
+                    @if(count($bolStandoutParts) >= 2)
+                    <div style="margin-top:10px;padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;">
+                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#1d4ed8;margin-bottom:3px;">Why This Buyer Stands Out</div>
+                        @php
+                            $bSlice = array_slice($bolStandoutParts, 0, -1);
+                            $bLast  = end($bolStandoutParts);
+                        @endphp
+                        <div style="font-size:0.88rem;color:#1e3a5f;">{{ count($bolStandoutParts) > 1 ? implode(', ', $bSlice) . ' and ' . $bLast : $bLast }}.</div>
+                    </div>
+                    @endif
+
                     <div class="bol-hero-ctas">
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bolRespondModal" aria-label="Respond to this Buyer Criteria listing">
                             <i class="fa-solid fa-reply me-1"></i>Respond to Buyer Criteria
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#bolShowingModal" aria-label="Schedule a showing">
+                            <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
                         </button>
                         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#bolQuestionModal" aria-label="Ask a question about this listing">
                             <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
@@ -1281,6 +1360,9 @@
                 <button type="button" class="bol-action-btn bol-action-outline" id="bolShareBtn">
                     <i class="fa-solid fa-share-nodes"></i>Share Listing
                 </button>
+                <button type="button" class="bol-action-btn bol-action-outline" disabled style="cursor:default;opacity:.6;">
+                    <i class="fa-regular fa-bookmark"></i>Save Listing
+                </button>
 
                 <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f1f5f9;">
 
@@ -1325,6 +1407,9 @@
                     </div>
                     <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
                         <span>Saves</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
+                        <span>Questions</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
                     </div>
                     @if($heroUpdDate)
                     <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;margin-top:.3rem;padding-top:.3rem;border-top:1px solid #f1f5f9;">
@@ -1461,6 +1546,25 @@
                     </button>
                 </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Photo lightbox modal --}}
+    <div class="modal fade" id="bolPhotoModal" tabindex="-1" aria-label="Buyer listing photo" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-dark border-0">
+                <div class="modal-header border-0 pb-0">
+                    <span class="text-white small" id="bolPhotoModalCounter"></span>
+                    <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center p-2">
+                    <img id="bolPhotoModalImg" src="" alt="Buyer listing photo" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:6px;">
+                </div>
+                <div class="modal-footer border-0 justify-content-center gap-3 pt-0">
+                    <button type="button" class="btn btn-outline-light btn-sm px-4" id="bolPhotoModalPrev">&#8249; Prev</button>
+                    <button type="button" class="btn btn-outline-light btn-sm px-4" id="bolPhotoModalNext">Next &#8250;</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1649,5 +1753,55 @@
     @endif
 
 })();
+
+/* ---- Buyer hero carousel + photo lightbox ---- */
+(function () {
+    var photos = (typeof _bolHeroPhotos !== 'undefined') ? _bolHeroPhotos : [];
+    if (!photos.length) return;
+
+    var heroIdx     = (typeof _bolHeroStartIdx !== 'undefined') ? _bolHeroStartIdx : 0;
+    var heroImg     = document.getElementById('bolHeroCarouselImg');
+    var heroPrev    = document.getElementById('bolHeroCarouselPrev');
+    var heroNext    = document.getElementById('bolHeroCarouselNext');
+    var heroCounter = document.getElementById('bolHeroCarouselCounter');
+
+    /* Lightbox elements */
+    var lbImg     = document.getElementById('bolPhotoModalImg');
+    var lbCounter = document.getElementById('bolPhotoModalCounter');
+    var lbPrev    = document.getElementById('bolPhotoModalPrev');
+    var lbNext    = document.getElementById('bolPhotoModalNext');
+    var lbModalEl = document.getElementById('bolPhotoModal');
+    var lbModal   = lbModalEl && typeof bootstrap !== 'undefined'
+                    ? bootstrap.Modal.getOrCreateInstance(lbModalEl) : null;
+    var lbIdx = 0;
+
+    function showLb(idx) {
+        if (idx < 0) idx = photos.length - 1;
+        if (idx >= photos.length) idx = 0;
+        lbIdx = idx;
+        if (lbImg)     lbImg.src = photos[lbIdx];
+        if (lbCounter) lbCounter.textContent = (lbIdx + 1) + ' / ' + photos.length;
+    }
+    window._bolShowPhoto = function (idx) { showLb(idx); };
+    if (lbPrev) lbPrev.addEventListener('click', function () { showLb(lbIdx - 1); });
+    if (lbNext) lbNext.addEventListener('click', function () { showLb(lbIdx + 1); });
+
+    function updateHero(idx) {
+        if (idx < 0) idx = photos.length - 1;
+        if (idx >= photos.length) idx = 0;
+        heroIdx = idx;
+        if (heroImg)     heroImg.src = photos[heroIdx];
+        if (heroCounter) heroCounter.textContent = (heroIdx + 1) + ' / ' + photos.length;
+    }
+    if (heroPrev) heroPrev.addEventListener('click', function () { updateHero(heroIdx - 1); });
+    if (heroNext) heroNext.addEventListener('click', function () { updateHero(heroIdx + 1); });
+    if (heroImg) {
+        heroImg.addEventListener('click', function () {
+            showLb(heroIdx);
+            if (lbModal) lbModal.show();
+        });
+    }
+    updateHero(heroIdx);
+}());
 </script>
 @endpush

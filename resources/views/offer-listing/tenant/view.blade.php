@@ -137,6 +137,27 @@
     display: flex; align-items: center; justify-content: center;
     color: #94a3b8; font-size: 3rem;
 }
+.tcl-view-page .tcl-hero-carousel-wrap {
+    position: relative; height: 100%; min-height: 280px; overflow: hidden; background: #0f172a;
+}
+.tcl-view-page .tcl-hero-photo {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.tcl-view-page .tcl-hero-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(0,0,0,.45); color: #fff; border: none; border-radius: 50%;
+    width: 40px; height: 40px; font-size: 1.55rem; line-height: 1; cursor: pointer;
+    z-index: 10; display: flex; align-items: center; justify-content: center;
+    transition: background .15s; padding: 0; flex-shrink: 0;
+}
+.tcl-view-page .tcl-hero-arrow:hover { background: rgba(0,0,0,.72); }
+.tcl-view-page .tcl-hero-arrow-prev { left: 12px; }
+.tcl-view-page .tcl-hero-arrow-next { right: 12px; }
+.tcl-view-page .tcl-hero-carousel-counter {
+    position: absolute; bottom: 12px; right: 14px;
+    background: rgba(0,0,0,.50); color: #fff; font-size: .76rem; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px; z-index: 10; pointer-events: none;
+}
 .tcl-view-page .tcl-hero-summary {
     background: #fff; padding: 1.6rem 1.4rem;
     display: flex; flex-direction: column; justify-content: space-between;
@@ -342,13 +363,14 @@
         /* Badges */
         $ofFin = $arr('offered_financing');
         $heroBadges = array_values(array_filter([
-            ['show' => count($heroCities) > 0,                          'label' => 'Location Flexible', 'icon' => 'fa-solid fa-location-dot',       'color' => 'teal'],
-            ['show' => in_array('Lease Option', $ofFin),                'label' => 'Lease Option',      'icon' => 'fa-solid fa-key',                 'color' => 'purple'],
-            ['show' => in_array('Lease Purchase', $ofFin),              'label' => 'Lease Purchase',    'icon' => 'fa-solid fa-key',                 'color' => 'purple'],
-            ['show' => in_array('Cryptocurrency', $ofFin),              'label' => 'Crypto OK',         'icon' => 'fa-brands fa-bitcoin',            'color' => 'amber'],
-            ['show' => (bool)$heroPropType,                             'label' => $heroPropType,        'icon' => 'fa-solid fa-tag',                 'color' => 'blue'],
-            ['show' => $str('prior_eviction') === 'No',                 'label' => 'No Evictions',      'icon' => 'fa-solid fa-circle-check',        'color' => 'green'],
-            ['show' => (bool)$heroStatus,                               'label' => $heroStatus,          'icon' => 'fa-solid fa-circle-check',        'color' => 'green'],
+            ['show' => count($heroCities) > 0,                          'label' => 'Location Flexible', 'icon' => 'fa-solid fa-location-dot',       'color' => 'teal',   'strong' => false],
+            ['show' => in_array('Lease Option', $ofFin),                'label' => 'Lease Option',      'icon' => 'fa-solid fa-key',                 'color' => 'purple', 'strong' => true],
+            ['show' => in_array('Lease Purchase', $ofFin),              'label' => 'Lease Purchase',    'icon' => 'fa-solid fa-key',                 'color' => 'purple', 'strong' => true],
+            ['show' => in_array('Cryptocurrency', $ofFin),              'label' => 'Crypto OK',         'icon' => 'fa-brands fa-bitcoin',            'color' => 'amber',  'strong' => false],
+            ['show' => (bool)$heroPropType,                             'label' => $heroPropType,        'icon' => 'fa-solid fa-tag',                 'color' => 'blue',   'strong' => false],
+            ['show' => $str('prior_eviction') === 'No',                 'label' => 'No Evictions',      'icon' => 'fa-solid fa-circle-check',        'color' => 'green',  'strong' => true],
+            ['show' => $str('prior_felony') === 'No',                   'label' => 'No Prior Felony',   'icon' => 'fa-solid fa-circle-check',        'color' => 'green',  'strong' => true],
+            ['show' => (bool)$heroStatus,                               'label' => $heroStatus,          'icon' => 'fa-solid fa-circle-check',        'color' => 'green',  'strong' => false],
         ], fn($b) => $b['show']));
         $heroBadgesDisplay = array_slice($heroBadges, 0, 5);
     @endphp
@@ -372,19 +394,55 @@
     </div>
 
     {{-- ===== HERO SECTION ===== --}}
+    @php
+        /* Hero photos: decode property_photos JSON array, fallback to photo meta */
+        $tclPropertyPhotos = $meta['property_photos'] ?? [];
+        if (is_string($tclPropertyPhotos)) {
+            $tclDecoded = json_decode($tclPropertyPhotos, true);
+            $tclPropertyPhotos = is_array($tclDecoded) ? $tclDecoded : [];
+        }
+        $tclHeroPhotoUrls = [];
+        $tclCoverPhotoIdx = 0;
+        $_tclHIdx = 0;
+        foreach ($tclPropertyPhotos as $_tclPh) {
+            $_tclFn = is_array($_tclPh) ? ($_tclPh['filename'] ?? '') : $_tclPh;
+            if (!$_tclFn) continue;
+            $tclHeroPhotoUrls[] = asset('storage/auction/images/' . $_tclFn);
+            if (is_array($_tclPh) && !empty($_tclPh['is_cover'])) $tclCoverPhotoIdx = $_tclHIdx;
+            $_tclHIdx++;
+        }
+        /* Fallback: single photo meta key */
+        if (empty($tclHeroPhotoUrls)) {
+            $_tclSingle = $str('photo');
+            if ($_tclSingle) $tclHeroPhotoUrls[] = asset('storage/' . $_tclSingle);
+        }
+    @endphp
     <div class="tcl-hero mb-4">
         <div class="row g-0" style="min-height:280px;">
             <div class="col-lg-8">
-                @php $heroPhotoFile = $str('photo') ?: null; @endphp
-                @if($heroPhotoFile)
-                    <img src="{{ asset('storage/' . $heroPhotoFile) }}"
-                         alt="{{ $listingTitle }}"
-                         style="width:100%;height:100%;min-height:280px;object-fit:cover;display:block;">
-                @else
-                <div class="tcl-hero-photo-placeholder">
-                    <i class="fa-solid fa-person-shelter"></i>
+                <div class="tcl-hero-carousel-wrap">
+                    @if(count($tclHeroPhotoUrls))
+                        <img id="tclHeroCarouselImg"
+                             src="{{ $tclHeroPhotoUrls[$tclCoverPhotoIdx] }}"
+                             alt="Tenant listing photo"
+                             class="tcl-hero-photo"
+                             style="cursor:pointer;"
+                             onerror="this.style.display='none';var ph=document.getElementById('tclHeroCarouselPlaceholder');if(ph)ph.style.display='flex'">
+                        <div id="tclHeroCarouselPlaceholder" class="tcl-hero-photo-placeholder" style="display:none;">
+                            <i class="fa-solid fa-person-shelter"></i>
+                        </div>
+                        @if(count($tclHeroPhotoUrls) > 1)
+                        <button class="tcl-hero-arrow tcl-hero-arrow-prev" id="tclHeroCarouselPrev" aria-label="Previous photo">&#8249;</button>
+                        <button class="tcl-hero-arrow tcl-hero-arrow-next" id="tclHeroCarouselNext" aria-label="Next photo">&#8250;</button>
+                        <div class="tcl-hero-carousel-counter" id="tclHeroCarouselCounter">{{ $tclCoverPhotoIdx + 1 }} / {{ count($tclHeroPhotoUrls) }}</div>
+                        @endif
+                    @else
+                    <div class="tcl-hero-photo-placeholder">
+                        <i class="fa-solid fa-person-shelter"></i>
+                    </div>
+                    @endif
                 </div>
-                @endif
+                <script>var _tclHeroPhotos={!! json_encode($tclHeroPhotoUrls) !!};var _tclHeroStartIdx={{ $tclCoverPhotoIdx }};</script>
             </div>
             <div class="col-lg-4">
                 <div class="tcl-hero-summary">
@@ -432,7 +490,29 @@
                         @endforeach
                     </div>
 
+                    @php
+                        $tclStandoutParts = array_values(array_map(
+                            fn($b) => $b['label'],
+                            array_filter($heroBadgesDisplay, fn($b) => !empty($b['strong']))
+                        ));
+                    @endphp
+                    @if(count($tclStandoutParts) >= 2)
+                    <div style="margin-top:10px;padding:10px 14px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;">
+                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#0d9488;margin-bottom:3px;">Why This Tenant Stands Out</div>
+                        @php
+                            $tSlice = array_slice($tclStandoutParts, 0, -1);
+                            $tLast  = end($tclStandoutParts);
+                        @endphp
+                        <div style="font-size:0.88rem;color:#134e4a;">{{ count($tclStandoutParts) > 1 ? implode(', ', $tSlice) . ' and ' . $tLast : $tLast }}.</div>
+                    </div>
+                    @endif
+
                     <div class="tcl-hero-ctas">
+                        @if(auth()->id() != $ownerId)
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tclQuestionModal" aria-label="Ask a question about this listing">
+                            <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
+                        </button>
+                        @endif
                         <a href="{{ route('offer.listing.tenant.searchListing') }}" class="btn btn-outline-secondary">
                             <i class="fa-solid fa-arrow-left me-1"></i>Back to Search
                         </a>
@@ -1388,6 +1468,34 @@
                     <div style="font-size:1.4rem;font-weight:800;color:#1e293b;letter-spacing:-.02em;">{{ $heroPrice }}</div>
                 </div>
                 @endif
+
+                @if($heroBeds || $heroBaths || $heroHSqft || $heroPropType || $heroLocation)
+                <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
+                    @if($heroBeds)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Bedrooms</span><span style="font-size:.82rem;font-weight:700;">{{ $heroBeds }}</span></div>@endif
+                    @if($heroBaths)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Bathrooms</span><span style="font-size:.82rem;font-weight:700;">{{ $heroBaths }}</span></div>@endif
+                    @if($heroHSqft)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Sq Ft</span><span style="font-size:.82rem;font-weight:700;">{{ number_format((int)preg_replace('/[^0-9]/','',$heroHSqft)) }}</span></div>@endif
+                    @if($heroPropType)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Type</span><span style="font-size:.82rem;font-weight:700;text-align:right;max-width:55%;">{{ $heroPropType }}</span></div>@endif
+                    @if($heroLocation)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Location</span><span style="font-size:.82rem;font-weight:700;text-align:right;max-width:55%;">{{ $heroLocation }}</span></div>@endif
+                </div>
+                @endif
+
+                <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
+                    <div style="font-size:0.74rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem;">Activity</div>
+                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
+                        <span>Views</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
+                        <span>Saves</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
+                        <span>Questions</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
+                    </div>
+                    @if($heroUpdDate)
+                    <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;margin-top:.3rem;padding-top:.3rem;border-top:1px solid #f1f5f9;">
+                        <span>Updated</span><span style="font-weight:700;color:#475569;">{{ $auction->updated_at ? \Carbon\Carbon::parse($auction->updated_at)->format('M j, Y') : '' }}</span>
+                    </div>
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -1422,6 +1530,25 @@
         <span>Edit</span>
     </a>
     @endif
+</div>
+
+{{-- Photo lightbox modal --}}
+<div class="modal fade" id="tclPhotoModal" tabindex="-1" aria-label="Tenant listing photo" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark border-0">
+            <div class="modal-header border-0 pb-0">
+                <span class="text-white small" id="tclPhotoModalCounter"></span>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-2">
+                <img id="tclPhotoModalImg" src="" alt="Tenant listing photo" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:6px;">
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-3 pt-0">
+                <button type="button" class="btn btn-outline-light btn-sm px-4" id="tclPhotoModalPrev">&#8249; Prev</button>
+                <button type="button" class="btn btn-outline-light btn-sm px-4" id="tclPhotoModalNext">Next &#8250;</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- ===== QUESTION MODAL ===== --}}
@@ -1682,6 +1809,56 @@
     }());
     @endif
 })();
+
+/* ---- Tenant hero carousel + photo lightbox ---- */
+(function () {
+    var photos = (typeof _tclHeroPhotos !== 'undefined') ? _tclHeroPhotos : [];
+    if (!photos.length) return;
+
+    var heroIdx     = (typeof _tclHeroStartIdx !== 'undefined') ? _tclHeroStartIdx : 0;
+    var heroImg     = document.getElementById('tclHeroCarouselImg');
+    var heroPrev    = document.getElementById('tclHeroCarouselPrev');
+    var heroNext    = document.getElementById('tclHeroCarouselNext');
+    var heroCounter = document.getElementById('tclHeroCarouselCounter');
+
+    /* Lightbox elements */
+    var lbImg     = document.getElementById('tclPhotoModalImg');
+    var lbCounter = document.getElementById('tclPhotoModalCounter');
+    var lbPrev    = document.getElementById('tclPhotoModalPrev');
+    var lbNext    = document.getElementById('tclPhotoModalNext');
+    var lbModalEl = document.getElementById('tclPhotoModal');
+    var lbModal   = lbModalEl && typeof bootstrap !== 'undefined'
+                    ? bootstrap.Modal.getOrCreateInstance(lbModalEl) : null;
+    var lbIdx = 0;
+
+    function showLb(idx) {
+        if (idx < 0) idx = photos.length - 1;
+        if (idx >= photos.length) idx = 0;
+        lbIdx = idx;
+        if (lbImg)     lbImg.src = photos[lbIdx];
+        if (lbCounter) lbCounter.textContent = (lbIdx + 1) + ' / ' + photos.length;
+    }
+    window._tclShowPhoto = function (idx) { showLb(idx); };
+    if (lbPrev) lbPrev.addEventListener('click', function () { showLb(lbIdx - 1); });
+    if (lbNext) lbNext.addEventListener('click', function () { showLb(lbIdx + 1); });
+
+    function updateHero(idx) {
+        if (idx < 0) idx = photos.length - 1;
+        if (idx >= photos.length) idx = 0;
+        heroIdx = idx;
+        if (heroImg)     heroImg.src = photos[heroIdx];
+        if (heroCounter) heroCounter.textContent = (heroIdx + 1) + ' / ' + photos.length;
+    }
+    if (heroPrev) heroPrev.addEventListener('click', function () { updateHero(heroIdx - 1); });
+    if (heroNext) heroNext.addEventListener('click', function () { updateHero(heroIdx + 1); });
+    if (heroImg) {
+        heroImg.addEventListener('click', function () {
+            showLb(heroIdx);
+            if (lbModal) lbModal.show();
+        });
+    }
+    updateHero(heroIdx);
+}());
 </script>
 @endpush
 @endsection

@@ -1291,6 +1291,33 @@
                 <div style="font-size:.72rem;color:#94a3b8;">per month</div>
             </div>
             @endif
+
+            @if($heroBeds || $heroBaths || $heroSqft || $heroPropType)
+            <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
+                @if($heroBeds)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Bedrooms</span><span style="font-size:.82rem;font-weight:700;">{{ $heroBeds }}</span></div>@endif
+                @if($heroBaths)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Bathrooms</span><span style="font-size:.82rem;font-weight:700;">{{ $heroBaths }}</span></div>@endif
+                @if($heroSqft)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Sq Ft</span><span style="font-size:.82rem;font-weight:700;">{{ number_format((int)preg_replace('/[^0-9]/','',$heroSqft)) }}</span></div>@endif
+                @if($heroPropType)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Type</span><span style="font-size:.82rem;font-weight:700;text-align:right;max-width:55%;">{{ $heroPropType }}</span></div>@endif
+            </div>
+            @endif
+
+            <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
+                <div style="font-size:0.74rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem;">Activity</div>
+                <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
+                    <span>Views</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
+                    <span>Saves</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
+                    <span>Questions</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
+                </div>
+                @if($heroUpdDate)
+                <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;margin-top:.3rem;padding-top:.3rem;border-top:1px solid #f1f5f9;">
+                    <span>Updated</span><span style="font-weight:700;color:#475569;">{{ $auction->updated_at ? \Carbon\Carbon::parse($auction->updated_at)->format('M j, Y') : '' }}</span>
+                </div>
+                @endif
+            </div>
         </div>
     </div>
 
