@@ -196,6 +196,60 @@
 
 /* Modals */
 .lol-view-page .lol-modal-header { background:linear-gradient(135deg,#0f4c3a,#1e293b);color:#fff;border-radius:.75rem .75rem 0 0;padding:1.25rem 1.5rem;border-bottom:none; }
+
+/* ============================================================
+   lol-interaction-hub — six-panel action hub
+   ============================================================ */
+.lol-view-page .lol-interaction-hub {
+    margin-bottom: 1.75rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%);
+    border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1.25rem 1rem;
+    box-shadow: 0 2px 12px rgba(15,118,110,.07);
+}
+.lol-view-page .lol-interaction-hub-label {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: #94a3b8;
+    margin-bottom: 0.9rem; padding-bottom: 0.6rem; border-bottom: 1px solid #e2e8f0;
+}
+.lol-view-page .lol-interaction-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem;
+}
+@media (max-width: 1199.98px) { .lol-view-page .lol-interaction-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 767.98px)  { .lol-view-page .lol-interaction-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 479.98px)  { .lol-view-page .lol-interaction-grid { grid-template-columns: 1fr; } }
+.lol-view-page .lol-interaction-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 0.75rem;
+    padding: 1rem 0.85rem 0.9rem; display: flex; flex-direction: column;
+    gap: 0.4rem; transition: box-shadow .15s, border-color .15s, transform .15s; min-height: 0;
+}
+.lol-view-page .lol-interaction-card:hover {
+    box-shadow: 0 4px 18px rgba(15,118,110,.12); border-color: #99f6e4; transform: translateY(-2px);
+}
+.lol-view-page .lol-interaction-card-icon { font-size: 1.45rem; color: #0f766e; margin-bottom: 0.1rem; line-height: 1; }
+.lol-view-page .lol-interaction-card-label { font-size: 0.83rem; font-weight: 700; color: #1e293b; letter-spacing: -0.01em; line-height: 1.2; }
+.lol-view-page .lol-interaction-card-helper { font-size: 0.74rem; color: #64748b; line-height: 1.45; flex: 1; }
+.lol-view-page .lol-interaction-cta {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 700;
+    padding: 0.38rem 0.7rem; border-radius: 7px; border: none; cursor: pointer;
+    transition: background .15s, color .15s; white-space: nowrap;
+    margin-top: 0.25rem; align-self: flex-start; text-decoration: none;
+}
+.lol-view-page .lol-interaction-cta:focus-visible { outline: 2px solid #0f766e; outline-offset: 2px; }
+.lol-view-page .lol-interaction-cta-primary { background: #0f766e; color: #fff; }
+.lol-view-page .lol-interaction-cta-primary:hover { background: #115e59; color: #fff; }
+.lol-view-page .lol-interaction-cta-outline { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; }
+.lol-view-page .lol-interaction-cta-outline:hover { background: #ccfbf1; color: #115e59; }
+.lol-view-page .lol-interaction-cta-muted { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; cursor: default; font-weight: 600; opacity: .75; }
+.lol-view-page .lol-interaction-share-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; }
+.lol-view-page .lol-interaction-activity-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; padding: 0.18rem 0; border-bottom: 1px solid #f1f5f9; }
+.lol-view-page .lol-interaction-activity-row:last-child { border-bottom: none; }
+.lol-view-page .lol-interaction-activity-val { font-weight: 700; color: #94a3b8; font-size: 0.72rem; }
+.lol-view-page .lol-interaction-ai-chips { display: flex; flex-direction: column; gap: 0.28rem; margin-bottom: 0.35rem; }
+.lol-view-page .lol-interaction-ai-chip {
+    font-size: 0.69rem; color: #0f766e; background: #f0fdfa; border: 1px solid #99f6e4;
+    border-radius: 20px; padding: 0.2rem 0.5rem; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; max-width: 100%; cursor: default;
+}
 </style>
 @endpush
 
@@ -363,6 +417,146 @@
             </div>
         </div>
     </div>
+
+    {{-- ===== INTERACTION HUB ===== --}}
+    <div class="lol-interaction-hub" id="lol-interaction-hub">
+        <div class="lol-interaction-hub-label"><i class="fa-solid fa-bolt me-1"></i>Quick Actions &amp; Listing Info</div>
+        <div class="lol-interaction-grid">
+
+            {{-- 1. Schedule Showing (reuses existing lolShowingModal — no new modal created) --}}
+            <div class="lol-interaction-card">
+                <div class="lol-interaction-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
+                <div class="lol-interaction-card-label">Schedule Showing</div>
+                <div class="lol-interaction-card-helper">Request an in-person or virtual showing of this property.</div>
+                <button type="button" class="lol-interaction-cta lol-interaction-cta-primary"
+                        data-bs-toggle="modal" data-bs-target="#lolShowingModal"
+                        aria-label="Schedule a showing for this property">
+                    <i class="fa-solid fa-calendar-plus"></i>Request Showing
+                </button>
+            </div>
+
+            {{-- 2. Ask AI --}}
+            <div class="lol-interaction-card">
+                <div class="lol-interaction-card-icon"><i class="fa-solid fa-robot"></i></div>
+                <div class="lol-interaction-card-label">Ask AI</div>
+                <div class="lol-interaction-ai-chips">
+                    <span class="lol-interaction-ai-chip">What utilities are included?</span>
+                    <span class="lol-interaction-ai-chip">Are pets allowed?</span>
+                    <span class="lol-interaction-ai-chip">What is the lease term?</span>
+                    <span class="lol-interaction-ai-chip">What are the move-in costs?</span>
+                    <span class="lol-interaction-ai-chip">Is parking available?</span>
+                </div>
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="Ask a question about this property…"
+                       aria-label="AI question input" disabled
+                       style="font-size:.73rem;border-radius:6px;background:#f8fafc;cursor:default;">
+                <button type="button" class="lol-interaction-cta lol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#lolAiModal"
+                        aria-label="Ask AI a question about this property">
+                    <i class="fa-solid fa-robot"></i>Ask AI
+                </button>
+            </div>
+
+            {{-- 3. Ask a Question --}}
+            <div class="lol-interaction-card">
+                <div class="lol-interaction-card-icon"><i class="fa-solid fa-circle-question"></i></div>
+                <div class="lol-interaction-card-label">Ask a Question</div>
+                <div class="lol-interaction-card-helper">Send a direct question to the listing contact.</div>
+                <button type="button" class="lol-interaction-cta lol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#lolQuestionModal"
+                        aria-label="Ask a question about this listing">
+                    <i class="fa-solid fa-paper-plane"></i>Send Question
+                </button>
+            </div>
+
+            {{-- 4. Share Listing --}}
+            <div class="lol-interaction-card">
+                <div class="lol-interaction-card-icon"><i class="fa-solid fa-share-nodes"></i></div>
+                <div class="lol-interaction-card-label">Share Listing</div>
+                <div class="lol-interaction-card-helper">Share this property with friends, family, or your network.</div>
+                <div class="lol-interaction-share-row">
+                    <button type="button" class="lol-interaction-cta lol-interaction-cta-outline" id="lolHubCopyBtn"
+                            aria-label="Copy listing link to clipboard">
+                        <i class="fa-solid fa-link"></i>Copy Link
+                    </button>
+                    <button type="button" class="lol-interaction-cta lol-interaction-cta-outline" id="lolHubNativeShareBtn"
+                            style="display:none;" aria-label="Share this listing via your device's share sheet">
+                        <i class="fa-solid fa-share-nodes"></i>Share
+                    </button>
+                </div>
+                <div class="lol-interaction-share-row" style="margin-top:.15rem;">
+                    <span class="lol-interaction-cta lol-interaction-cta-muted" aria-label="QR Code — coming soon">
+                        <i class="fa-solid fa-qrcode"></i>QR Code
+                    </span>
+                    <span class="lol-interaction-cta lol-interaction-cta-muted" aria-label="Embed widget — coming soon">
+                        <i class="fa-solid fa-code"></i>Embed
+                    </span>
+                </div>
+            </div>
+
+            {{-- 5. Activity --}}
+            <div class="lol-interaction-card">
+                <div class="lol-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
+                <div class="lol-interaction-card-label">Activity</div>
+                <div style="margin-top:.1rem;">
+                    <div class="lol-interaction-activity-row">
+                        <span>Views</span><span class="lol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="lol-interaction-activity-row">
+                        <span>Saves</span><span class="lol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="lol-interaction-activity-row">
+                        <span>Questions</span><span class="lol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="lol-interaction-activity-row">
+                        <span>Offers/Bids</span><span class="lol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 6. Leasing Information --}}
+            <div class="lol-interaction-card">
+                <div class="lol-interaction-card-icon"><i class="fa-solid fa-file-contract"></i></div>
+                <div class="lol-interaction-card-label">Leasing Information</div>
+                @php
+                    $_hubRent  = $heroPrice ?: null;
+                    $_hubLease = implode(', ', array_slice($leaseLengths ?? [], 0, 2)) ?: null;
+                    $_hubPets  = $badgePets ? 'Allowed' : null;
+                    $_hub55    = $badge55Plus ? '55+' : null;
+                @endphp
+                <div style="margin-top:.1rem;">
+                    @if($_hubRent)
+                    <div class="lol-interaction-activity-row">
+                        <span>Rent</span><span class="lol-interaction-activity-val" style="color:#0f766e;font-size:.76rem;">{{ $_hubRent }}/mo</span>
+                    </div>
+                    @endif
+                    @if($_hubLease)
+                    <div class="lol-interaction-activity-row">
+                        <span>Lease</span><span class="lol-interaction-activity-val" style="color:#475569;font-size:.72rem;">{{ $_hubLease }}</span>
+                    </div>
+                    @endif
+                    @if($_hubPets)
+                    <div class="lol-interaction-activity-row">
+                        <span>Pets</span><span class="lol-interaction-activity-val" style="color:#475569;">Allowed</span>
+                    </div>
+                    @endif
+                    @if($_hub55)
+                    <div class="lol-interaction-activity-row">
+                        <span>Community</span><span class="lol-interaction-activity-val" style="color:#475569;font-size:.68rem;">55+</span>
+                    </div>
+                    @endif
+                    @if(!$_hubRent && !$_hubLease && !$_hubPets && !$_hub55)
+                    <div class="lol-interaction-card-helper">See listing details for full leasing terms.</div>
+                    @endif
+                </div>
+                <a href="#section-leasing" class="lol-interaction-cta lol-interaction-cta-outline"
+                   onclick="event.preventDefault();var t=document.getElementById('section-leasing');if(t){var top=t.getBoundingClientRect().top+window.scrollY-82;window.scrollTo({top:top,behavior:'smooth'});}">
+                    <i class="fa-solid fa-file-contract"></i>View Terms
+                </a>
+            </div>
+
+        </div>{{-- /lol-interaction-grid --}}
+    </div>{{-- /lol-interaction-hub --}}
 
     {{-- ===== TWO-COLUMN LAYOUT ===== --}}
     <div class="row g-4 align-items-start">
@@ -1211,6 +1405,34 @@
         </div>
     </div>
 
+    {{-- Modal: Ask AI About This Property --}}
+    <div class="modal fade" id="lolAiModal" tabindex="-1" aria-labelledby="lolAiModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+                <div class="modal-header lol-modal-header">
+                    <h5 class="modal-title fw-bold" id="lolAiModalLabel"><i class="fa-solid fa-robot me-2"></i>Ask AI About This Property</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted mb-3" style="font-size:.875rem;">Get instant AI-powered answers about this rental listing. Try asking:</p>
+                    <div id="lolAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
+                        <span class="text-muted fst-italic" style="font-size:.875rem;" id="lolAiExampleText"></span>
+                    </div>
+                    <label class="form-label fw-semibold" style="font-size:.85rem;">Your Question</label>
+                    <textarea class="form-control" rows="4" id="lolAiTextarea"
+                              placeholder="What would you like to know?"
+                              disabled></textarea>
+                </div>
+                <div class="modal-footer border-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" disabled>
+                        <i class="fa-solid fa-robot me-1"></i>Coming Soon
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>{{-- /container --}}
 
 {{-- ===== MOBILE STICKY BOTTOM BAR ===== --}}
@@ -1297,14 +1519,57 @@
         var url = window.location.href;
         if (navigator.share) {
             navigator.share({ title: document.title, url: url }).catch(function () {});
-        } else if (navigator.clipboard) {
-            navigator.clipboard.writeText(url).then(function () { alert('Link copied to clipboard!'); });
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(function () {
+                alert('Link copied to clipboard!');
+            }).catch(function () { alert('Share: ' + url); });
+        } else {
+            alert('Share: ' + url);
         }
     }
     ['lolShareSidebarBtn', 'lolShareHeroBtn', 'lolMobileShareBtn'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener('click', doShare);
     });
+
+    /* ── Interaction Hub ── */
+    (function () {
+        var lolAiExamples = [
+            'What utilities are included in the rent?',
+            'Are pets allowed at this property?',
+            'What is the minimum lease term?',
+            'What are the move-in costs and deposits?',
+            'Is parking included or available?',
+            'Is the property near public transit?',
+            'What appliances are included?'
+        ];
+        var lolAiIdx = 0;
+        var lolAiEl = document.getElementById('lolAiExampleText');
+        var lolAiModal = document.getElementById('lolAiModal');
+        if (lolAiEl && lolAiModal) {
+            lolAiEl.textContent = lolAiExamples[0];
+            lolAiModal.addEventListener('show.bs.modal', function () {
+                lolAiEl.textContent = lolAiExamples[lolAiIdx % lolAiExamples.length];
+                lolAiIdx++;
+            });
+        }
+        var lolHubNativeBtn = document.getElementById('lolHubNativeShareBtn');
+        if (navigator.share && lolHubNativeBtn) { lolHubNativeBtn.style.display = ''; }
+        /* Copy Link — goes directly to clipboard regardless of native share availability */
+        var lolHubCopyBtn = document.getElementById('lolHubCopyBtn');
+        if (lolHubCopyBtn) {
+            lolHubCopyBtn.addEventListener('click', function () {
+                var url = window.location.href;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(url).then(function () {
+                        alert('Link copied to clipboard!');
+                    }).catch(function () { alert('Share: ' + url); });
+                } else { alert('Share: ' + url); }
+            });
+        }
+        /* Native Share button — uses doShare() which correctly invokes navigator.share */
+        if (lolHubNativeBtn) { lolHubNativeBtn.addEventListener('click', doShare); }
+    }());
 
     /* ── Smooth-scroll nav tabs + active-section highlighting ── */
     var LOL_OFFSET = 82;

@@ -224,6 +224,62 @@
 .bol-mobile-bar-btn.bol-mobile-bar-respond:active {
     background: #1d4ed8 !important; color: #fff !important;
 }
+
+/* ============================================================
+   bol-interaction-hub — six-panel action hub
+   ============================================================ */
+.bol-view-page .bol-interaction-hub {
+    margin-bottom: 1.75rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem 1rem;
+    box-shadow: 0 2px 12px rgba(37,99,235,.07);
+}
+.bol-view-page .bol-interaction-hub-label {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: #94a3b8;
+    margin-bottom: 0.9rem; padding-bottom: 0.6rem; border-bottom: 1px solid #e2e8f0;
+}
+.bol-view-page .bol-interaction-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem;
+}
+@media (max-width: 1199.98px) { .bol-view-page .bol-interaction-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 767.98px)  { .bol-view-page .bol-interaction-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 479.98px)  { .bol-view-page .bol-interaction-grid { grid-template-columns: 1fr; } }
+.bol-view-page .bol-interaction-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 0.75rem;
+    padding: 1rem 0.85rem 0.9rem; display: flex; flex-direction: column;
+    gap: 0.4rem; transition: box-shadow .15s, border-color .15s, transform .15s; min-height: 0;
+}
+.bol-view-page .bol-interaction-card:hover {
+    box-shadow: 0 4px 18px rgba(37,99,235,.12); border-color: #bfdbfe; transform: translateY(-2px);
+}
+.bol-view-page .bol-interaction-card-icon { font-size: 1.45rem; color: #2563eb; margin-bottom: 0.1rem; line-height: 1; }
+.bol-view-page .bol-interaction-card-label { font-size: 0.83rem; font-weight: 700; color: #1e293b; letter-spacing: -0.01em; line-height: 1.2; }
+.bol-view-page .bol-interaction-card-helper { font-size: 0.74rem; color: #64748b; line-height: 1.45; flex: 1; }
+.bol-view-page .bol-interaction-cta {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 700;
+    padding: 0.38rem 0.7rem; border-radius: 7px; border: none; cursor: pointer;
+    transition: background .15s, color .15s; white-space: nowrap;
+    margin-top: 0.25rem; align-self: flex-start; text-decoration: none;
+}
+.bol-view-page .bol-interaction-cta:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.bol-view-page .bol-interaction-cta-primary { background: #2563eb; color: #fff; }
+.bol-view-page .bol-interaction-cta-primary:hover { background: #1d4ed8; color: #fff; }
+.bol-view-page .bol-interaction-cta-outline { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.bol-view-page .bol-interaction-cta-outline:hover { background: #dbeafe; color: #1e40af; }
+.bol-view-page .bol-interaction-cta-muted { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; cursor: default; font-weight: 600; opacity: .75; }
+.bol-view-page .bol-interaction-share-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; }
+.bol-view-page .bol-interaction-activity-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; padding: 0.18rem 0; border-bottom: 1px solid #f1f5f9; }
+.bol-view-page .bol-interaction-activity-row:last-child { border-bottom: none; }
+.bol-view-page .bol-interaction-activity-val { font-weight: 700; color: #94a3b8; font-size: 0.72rem; }
+.bol-view-page .bol-interaction-ai-chips { display: flex; flex-direction: column; gap: 0.28rem; margin-bottom: 0.35rem; }
+.bol-view-page .bol-interaction-ai-chip {
+    font-size: 0.69rem; color: #3b82f6; background: #eff6ff; border: 1px solid #bfdbfe;
+    border-radius: 20px; padding: 0.2rem 0.5rem; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; max-width: 100%; cursor: default;
+}
 </style>
 @endpush
 
@@ -386,6 +442,117 @@
             </div>
         </div>
     </div>
+
+    {{-- ===== INTERACTION HUB ===== --}}
+    <div class="bol-interaction-hub" id="bol-interaction-hub">
+        <div class="bol-interaction-hub-label"><i class="fa-solid fa-bolt me-1"></i>Quick Actions &amp; Listing Info</div>
+        <div class="bol-interaction-grid">
+
+            {{-- 1. Respond to Buyer Criteria --}}
+            <div class="bol-interaction-card">
+                <div class="bol-interaction-card-icon"><i class="fa-solid fa-reply"></i></div>
+                <div class="bol-interaction-card-label">Respond to Buyer Criteria</div>
+                <div class="bol-interaction-card-helper">Submit a property that matches this buyer's criteria.</div>
+                <button type="button" class="bol-interaction-cta bol-interaction-cta-primary"
+                        data-bs-toggle="modal" data-bs-target="#bolRespondModal"
+                        aria-label="Respond to this Buyer Criteria listing">
+                    <i class="fa-solid fa-reply"></i>Respond
+                </button>
+            </div>
+
+            {{-- 2. Schedule Showing --}}
+            <div class="bol-interaction-card">
+                <div class="bol-interaction-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
+                <div class="bol-interaction-card-label">Schedule Showing</div>
+                <div class="bol-interaction-card-helper">Request an in-person or virtual showing.</div>
+                <button type="button" class="bol-interaction-cta bol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#bolShowingModal"
+                        aria-label="Schedule a showing">
+                    <i class="fa-solid fa-calendar-plus"></i>Request Showing
+                </button>
+            </div>
+
+            {{-- 3. Ask AI --}}
+            <div class="bol-interaction-card">
+                <div class="bol-interaction-card-icon"><i class="fa-solid fa-robot"></i></div>
+                <div class="bol-interaction-card-label">Ask AI</div>
+                <div class="bol-interaction-ai-chips">
+                    <span class="bol-interaction-ai-chip">What financing does this buyer prefer?</span>
+                    <span class="bol-interaction-ai-chip">Is this buyer pre-approved?</span>
+                    <span class="bol-interaction-ai-chip">What property features are required?</span>
+                    <span class="bol-interaction-ai-chip">What is the buyer's timeline?</span>
+                    <span class="bol-interaction-ai-chip">What contingencies does the buyer need?</span>
+                </div>
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="Ask a question about this buyer…"
+                       aria-label="AI question input" disabled
+                       style="font-size:.73rem;border-radius:6px;background:#f8fafc;cursor:default;">
+                <button type="button" class="bol-interaction-cta bol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#bolAiModal"
+                        aria-label="Ask AI a question about this buyer listing">
+                    <i class="fa-solid fa-robot"></i>Ask AI
+                </button>
+            </div>
+
+            {{-- 4. Ask a Question --}}
+            <div class="bol-interaction-card">
+                <div class="bol-interaction-card-icon"><i class="fa-solid fa-circle-question"></i></div>
+                <div class="bol-interaction-card-label">Ask a Question</div>
+                <div class="bol-interaction-card-helper">Send a direct question to the listing contact.</div>
+                <button type="button" class="bol-interaction-cta bol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#bolQuestionModal"
+                        aria-label="Ask a question about this listing">
+                    <i class="fa-solid fa-paper-plane"></i>Send Question
+                </button>
+            </div>
+
+            {{-- 5. Share Listing --}}
+            <div class="bol-interaction-card">
+                <div class="bol-interaction-card-icon"><i class="fa-solid fa-share-nodes"></i></div>
+                <div class="bol-interaction-card-label">Share Listing</div>
+                <div class="bol-interaction-card-helper">Share this listing with friends, family, or your network.</div>
+                <div class="bol-interaction-share-row">
+                    <button type="button" class="bol-interaction-cta bol-interaction-cta-outline" id="bolHubCopyBtn"
+                            aria-label="Copy listing link to clipboard">
+                        <i class="fa-solid fa-link"></i>Copy Link
+                    </button>
+                    <button type="button" class="bol-interaction-cta bol-interaction-cta-outline" id="bolHubNativeShareBtn"
+                            style="display:none;" aria-label="Share this listing via your device's share sheet">
+                        <i class="fa-solid fa-share-nodes"></i>Share
+                    </button>
+                </div>
+                <div class="bol-interaction-share-row" style="margin-top:.15rem;">
+                    <span class="bol-interaction-cta bol-interaction-cta-muted" aria-label="QR Code — coming soon">
+                        <i class="fa-solid fa-qrcode"></i>QR Code
+                    </span>
+                    <span class="bol-interaction-cta bol-interaction-cta-muted" aria-label="Embed widget — coming soon">
+                        <i class="fa-solid fa-code"></i>Embed
+                    </span>
+                </div>
+            </div>
+
+            {{-- 6. Activity --}}
+            <div class="bol-interaction-card">
+                <div class="bol-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
+                <div class="bol-interaction-card-label">Activity</div>
+                <div style="margin-top:.1rem;">
+                    <div class="bol-interaction-activity-row">
+                        <span>Views</span><span class="bol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="bol-interaction-activity-row">
+                        <span>Saves</span><span class="bol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="bol-interaction-activity-row">
+                        <span>Questions</span><span class="bol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="bol-interaction-activity-row">
+                        <span>Bids</span><span class="bol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>{{-- /bol-interaction-grid --}}
+    </div>{{-- /bol-interaction-hub --}}
 
     {{-- TWO-COLUMN LAYOUT --}}
     <div class="row g-4 align-items-start">
@@ -1247,6 +1414,85 @@
     </div>
 
 
+    {{-- Modal: Schedule a Showing (UI only — route offer.listing.buyer.showing does not exist. Wiring pending.) --}}
+    <div class="modal fade" id="bolShowingModal" tabindex="-1" aria-labelledby="bolShowingModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+                <div class="modal-header bol-modal-header">
+                    <h5 class="modal-title fw-bold" id="bolShowingModalLabel"><i class="fa-solid fa-calendar-days me-2"></i>Schedule a Showing</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+                </div>
+                {{-- Route offer.listing.buyer.showing does not exist. Wiring pending. --}}
+                <form action="#" method="POST">
+                @csrf
+                <input type="text" name="website" value="" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1" autocomplete="off" aria-hidden="true">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" placeholder="Jane Smith" value="{{ old('name') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" name="email" placeholder="jane@example.com" value="{{ old('email') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Phone Number</label>
+                            <input type="tel" class="form-control" name="phone" placeholder="(555) 000-0000" value="{{ old('phone') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Preferred Date</label>
+                            <input type="date" class="form-control" name="preferred_date" value="{{ old('preferred_date') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Preferred Time</label>
+                            <input type="time" class="form-control" name="preferred_time" value="{{ old('preferred_time') }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Message (Optional)</label>
+                            <textarea class="form-control" name="message" rows="3" placeholder="Any special requests or notes…">{{ old('message') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" disabled>
+                        <i class="fa-solid fa-calendar-check me-1"></i>Coming Soon
+                    </button>
+                </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal: Ask AI About This Buyer Listing --}}
+    <div class="modal fade" id="bolAiModal" tabindex="-1" aria-labelledby="bolAiModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+                <div class="modal-header bol-modal-header">
+                    <h5 class="modal-title fw-bold" id="bolAiModalLabel"><i class="fa-solid fa-robot me-2"></i>Ask AI About This Buyer Listing</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted mb-3" style="font-size:.875rem;">Get instant AI-powered answers about this buyer's criteria. Try asking:</p>
+                    <div id="bolAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
+                        <span class="text-muted fst-italic" style="font-size:.875rem;" id="bolAiExampleText"></span>
+                    </div>
+                    <label class="form-label fw-semibold" style="font-size:.85rem;">Your Question</label>
+                    <textarea class="form-control" rows="4" id="bolAiTextarea"
+                              placeholder="What would you like to know?"
+                              disabled></textarea>
+                </div>
+                <div class="modal-footer border-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" disabled>
+                        <i class="fa-solid fa-robot me-1"></i>Coming Soon
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>{{-- /container --}}
 
 {{-- Mobile sticky bottom bar --}}
@@ -1354,6 +1600,43 @@
     }
     var shareBtn = document.getElementById('bolShareBtn');
     if (shareBtn) shareBtn.addEventListener('click', shareHandler);
+
+    /* ---- Interaction Hub ---- */
+    (function () {
+        var bolAiExamples = [
+            'What financing type does this buyer prefer?',
+            'Is this buyer pre-approved for a mortgage?',
+            'What property features are required vs. preferred?',
+            'What is this buyer\'s ideal timeline to close?',
+            'What contingencies does this buyer need?',
+            'How many bedrooms and bathrooms does this buyer require?',
+            'What locations or neighborhoods is this buyer targeting?'
+        ];
+        var bolAiIdx = 0;
+        var bolAiEl = document.getElementById('bolAiExampleText');
+        var bolAiModal = document.getElementById('bolAiModal');
+        if (bolAiEl && bolAiModal) {
+            bolAiEl.textContent = bolAiExamples[0];
+            bolAiModal.addEventListener('show.bs.modal', function () {
+                bolAiEl.textContent = bolAiExamples[bolAiIdx % bolAiExamples.length];
+                bolAiIdx++;
+            });
+        }
+        var hubNativeBtn = document.getElementById('bolHubNativeShareBtn');
+        if (navigator.share && hubNativeBtn) { hubNativeBtn.style.display = ''; }
+        var hubCopyBtn = document.getElementById('bolHubCopyBtn');
+        if (hubCopyBtn) {
+            hubCopyBtn.addEventListener('click', function () {
+                var url = window.location.href;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(url).then(function () {
+                        alert('Link copied to clipboard!');
+                    }).catch(function () { alert('Share: ' + url); });
+                } else { alert('Share: ' + url); }
+            });
+        }
+        if (hubNativeBtn) { hubNativeBtn.addEventListener('click', shareHandler); }
+    }());
 
     /* Auto-reopen question modal after validation failure */
     @if(session('open_modal') === 'question')

@@ -243,6 +243,60 @@
     background: linear-gradient(135deg, #0ea5e9, #0284c7);
     color: #fff;
 }
+
+/* ============================================================
+   tcl-interaction-hub — six-panel action hub
+   ============================================================ */
+.tcl-view-page .tcl-interaction-hub {
+    margin-bottom: 1.75rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%);
+    border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1.25rem 1rem;
+    box-shadow: 0 2px 12px rgba(13,148,136,.07);
+}
+.tcl-view-page .tcl-interaction-hub-label {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: #94a3b8;
+    margin-bottom: 0.9rem; padding-bottom: 0.6rem; border-bottom: 1px solid #e2e8f0;
+}
+.tcl-view-page .tcl-interaction-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem;
+}
+@media (max-width: 1199.98px) { .tcl-view-page .tcl-interaction-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 767.98px)  { .tcl-view-page .tcl-interaction-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 479.98px)  { .tcl-view-page .tcl-interaction-grid { grid-template-columns: 1fr; } }
+.tcl-view-page .tcl-interaction-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 0.75rem;
+    padding: 1rem 0.85rem 0.9rem; display: flex; flex-direction: column;
+    gap: 0.4rem; transition: box-shadow .15s, border-color .15s, transform .15s; min-height: 0;
+}
+.tcl-view-page .tcl-interaction-card:hover {
+    box-shadow: 0 4px 18px rgba(13,148,136,.12); border-color: #99f6e4; transform: translateY(-2px);
+}
+.tcl-view-page .tcl-interaction-card-icon { font-size: 1.45rem; color: #0d9488; margin-bottom: 0.1rem; line-height: 1; }
+.tcl-view-page .tcl-interaction-card-label { font-size: 0.83rem; font-weight: 700; color: #1e293b; letter-spacing: -0.01em; line-height: 1.2; }
+.tcl-view-page .tcl-interaction-card-helper { font-size: 0.74rem; color: #64748b; line-height: 1.45; flex: 1; }
+.tcl-view-page .tcl-interaction-cta {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 700;
+    padding: 0.38rem 0.7rem; border-radius: 7px; border: none; cursor: pointer;
+    transition: background .15s, color .15s; white-space: nowrap;
+    margin-top: 0.25rem; align-self: flex-start; text-decoration: none;
+}
+.tcl-view-page .tcl-interaction-cta:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
+.tcl-view-page .tcl-interaction-cta-primary { background: #0d9488; color: #fff; }
+.tcl-view-page .tcl-interaction-cta-primary:hover { background: #0f766e; color: #fff; }
+.tcl-view-page .tcl-interaction-cta-outline { background: #f0fdfa; color: #0d9488; border: 1px solid #99f6e4; }
+.tcl-view-page .tcl-interaction-cta-outline:hover { background: #ccfbf1; color: #0f766e; }
+.tcl-view-page .tcl-interaction-cta-muted { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; cursor: default; font-weight: 600; opacity: .75; }
+.tcl-view-page .tcl-interaction-share-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; }
+.tcl-view-page .tcl-interaction-activity-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; padding: 0.18rem 0; border-bottom: 1px solid #f1f5f9; }
+.tcl-view-page .tcl-interaction-activity-row:last-child { border-bottom: none; }
+.tcl-view-page .tcl-interaction-activity-val { font-weight: 700; color: #94a3b8; font-size: 0.72rem; }
+.tcl-view-page .tcl-interaction-ai-chips { display: flex; flex-direction: column; gap: 0.28rem; margin-bottom: 0.35rem; }
+.tcl-view-page .tcl-interaction-ai-chip {
+    font-size: 0.69rem; color: #0d9488; background: #f0fdfa; border: 1px solid #99f6e4;
+    border-radius: 20px; padding: 0.2rem 0.5rem; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; max-width: 100%; cursor: default;
+}
 </style>
 @endpush
 
@@ -395,6 +449,118 @@
             </div>
         </div>
     </div>
+
+    {{-- ===== INTERACTION HUB ===== --}}
+    <div class="tcl-interaction-hub" id="tcl-interaction-hub">
+        <div class="tcl-interaction-hub-label"><i class="fa-solid fa-bolt me-1"></i>Quick Actions &amp; Listing Info</div>
+        <div class="tcl-interaction-grid">
+
+            {{-- 1. Contact Tenant --}}
+            <div class="tcl-interaction-card">
+                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-envelope"></i></div>
+                <div class="tcl-interaction-card-label">Contact Tenant</div>
+                <div class="tcl-interaction-card-helper">Send a direct message or reach out to this tenant.</div>
+                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-primary"
+                        data-bs-toggle="modal" data-bs-target="#tclQuestionModal"
+                        aria-label="Contact this tenant">
+                    <i class="fa-solid fa-paper-plane"></i>Contact Tenant
+                </button>
+            </div>
+
+            {{-- 2. Schedule Showing --}}
+            {{-- Route offer.listing.tenant.showing does not exist. Wiring pending. --}}
+            <div class="tcl-interaction-card">
+                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
+                <div class="tcl-interaction-card-label">Schedule Showing</div>
+                <div class="tcl-interaction-card-helper">Arrange a property showing for this tenant.</div>
+                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#tclShowingModal"
+                        aria-label="Schedule a showing">
+                    <i class="fa-solid fa-calendar-plus"></i>Request Showing
+                </button>
+            </div>
+
+            {{-- 3. Ask AI --}}
+            <div class="tcl-interaction-card">
+                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-robot"></i></div>
+                <div class="tcl-interaction-card-label">Ask AI</div>
+                <div class="tcl-interaction-ai-chips">
+                    <span class="tcl-interaction-ai-chip">What lease length does this tenant prefer?</span>
+                    <span class="tcl-interaction-ai-chip">Does this tenant have pets?</span>
+                    <span class="tcl-interaction-ai-chip">What is the tenant's budget?</span>
+                    <span class="tcl-interaction-ai-chip">What amenities are required?</span>
+                    <span class="tcl-interaction-ai-chip">What is the tenant's move-in timeline?</span>
+                </div>
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="Ask a question about this tenant…"
+                       aria-label="AI question input" disabled
+                       style="font-size:.73rem;border-radius:6px;background:#f8fafc;cursor:default;">
+                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#tclAiModal"
+                        aria-label="Ask AI a question about this tenant listing">
+                    <i class="fa-solid fa-robot"></i>Ask AI
+                </button>
+            </div>
+
+            {{-- 4. Ask a Question --}}
+            <div class="tcl-interaction-card">
+                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-circle-question"></i></div>
+                <div class="tcl-interaction-card-label">Ask a Question</div>
+                <div class="tcl-interaction-card-helper">Send a direct question to the listing contact.</div>
+                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#tclQuestionModal"
+                        aria-label="Ask a question about this listing">
+                    <i class="fa-solid fa-paper-plane"></i>Send Question
+                </button>
+            </div>
+
+            {{-- 5. Share Listing --}}
+            <div class="tcl-interaction-card">
+                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-share-nodes"></i></div>
+                <div class="tcl-interaction-card-label">Share Listing</div>
+                <div class="tcl-interaction-card-helper">Share this listing with landlords or your network.</div>
+                <div class="tcl-interaction-share-row">
+                    <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline" id="tclHubCopyBtn"
+                            aria-label="Copy listing link to clipboard">
+                        <i class="fa-solid fa-link"></i>Copy Link
+                    </button>
+                    <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline" id="tclHubNativeShareBtn"
+                            style="display:none;" aria-label="Share this listing via your device's share sheet">
+                        <i class="fa-solid fa-share-nodes"></i>Share
+                    </button>
+                </div>
+                <div class="tcl-interaction-share-row" style="margin-top:.15rem;">
+                    <span class="tcl-interaction-cta tcl-interaction-cta-muted" aria-label="QR Code — coming soon">
+                        <i class="fa-solid fa-qrcode"></i>QR Code
+                    </span>
+                    <span class="tcl-interaction-cta tcl-interaction-cta-muted" aria-label="Embed widget — coming soon">
+                        <i class="fa-solid fa-code"></i>Embed
+                    </span>
+                </div>
+            </div>
+
+            {{-- 6. Activity --}}
+            <div class="tcl-interaction-card">
+                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
+                <div class="tcl-interaction-card-label">Activity</div>
+                <div style="margin-top:.1rem;">
+                    <div class="tcl-interaction-activity-row">
+                        <span>Views</span><span class="tcl-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="tcl-interaction-activity-row">
+                        <span>Saves</span><span class="tcl-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="tcl-interaction-activity-row">
+                        <span>Questions</span><span class="tcl-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="tcl-interaction-activity-row">
+                        <span>Offers/Bids</span><span class="tcl-interaction-activity-val">Coming Soon</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>{{-- /tcl-interaction-grid --}}
+    </div>{{-- /tcl-interaction-hub --}}
 
     {{-- ===== TWO-COLUMN LAYOUT ===== --}}
     <div class="row g-4 align-items-start">
@@ -1309,6 +1475,85 @@
     </div>
 </div>
 
+{{-- Modal: Schedule a Showing (UI only — route offer.listing.tenant.showing does not exist. Wiring pending.) --}}
+<div class="modal fade" id="tclShowingModal" tabindex="-1" aria-labelledby="tclShowingModalLabel" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+            <div class="modal-header tcl-modal-header">
+                <h5 class="modal-title fw-bold" id="tclShowingModalLabel"><i class="fa-solid fa-calendar-days me-2"></i>Schedule a Showing</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+            </div>
+            {{-- Route offer.listing.tenant.showing does not exist. Wiring pending. --}}
+            <form action="#" method="POST">
+            @csrf
+            <input type="text" name="website" value="" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="name" placeholder="Jane Smith" value="{{ old('name') }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" name="email" placeholder="jane@example.com" value="{{ old('email') }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:.85rem;">Phone Number</label>
+                        <input type="tel" class="form-control" name="phone" placeholder="(555) 000-0000" value="{{ old('phone') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold" style="font-size:.85rem;">Preferred Date</label>
+                        <input type="date" class="form-control" name="preferred_date" value="{{ old('preferred_date') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold" style="font-size:.85rem;">Preferred Time</label>
+                        <input type="time" class="form-control" name="preferred_time" value="{{ old('preferred_time') }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" style="font-size:.85rem;">Message (Optional)</label>
+                        <textarea class="form-control" name="message" rows="3" placeholder="Any special requests or notes…">{{ old('message') }}</textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pb-4">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" disabled>
+                    <i class="fa-solid fa-calendar-check me-1"></i>Coming Soon
+                </button>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Modal: Ask AI About This Tenant Listing --}}
+<div class="modal fade" id="tclAiModal" tabindex="-1" aria-labelledby="tclAiModalLabel" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+            <div class="modal-header tcl-modal-header">
+                <h5 class="modal-title fw-bold" id="tclAiModalLabel"><i class="fa-solid fa-robot me-2"></i>Ask AI About This Tenant Listing</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted mb-3" style="font-size:.875rem;">Get instant AI-powered answers about this tenant's criteria. Try asking:</p>
+                <div id="tclAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
+                    <span class="text-muted fst-italic" style="font-size:.875rem;" id="tclAiExampleText"></span>
+                </div>
+                <label class="form-label fw-semibold" style="font-size:.85rem;">Your Question</label>
+                <textarea class="form-control" rows="4" id="tclAiTextarea"
+                          placeholder="What would you like to know?"
+                          disabled></textarea>
+            </div>
+            <div class="modal-footer border-0 pb-4">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" disabled>
+                    <i class="fa-solid fa-robot me-1"></i>Coming Soon
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 (function () {
@@ -1374,19 +1619,58 @@
     function doShare() {
         var url = window.location.href;
         if (navigator.share) {
-            navigator.share({ title: document.title, url: url });
-        } else {
+            navigator.share({ title: document.title, url: url }).catch(function () {});
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(url).then(function () {
                 alert('Link copied to clipboard!');
-            }).catch(function () {
-                prompt('Copy this link:', url);
-            });
+            }).catch(function () { alert('Share: ' + url); });
+        } else {
+            alert('Share: ' + url);
         }
     }
     ['tclShareBtn','tclShareBtnSidebar','tclShareBtnMobile'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener('click', doShare);
     });
+
+    /* ---- Interaction Hub ---- */
+    (function () {
+        var tclAiExamples = [
+            'What lease length does this tenant prefer?',
+            'Does this tenant have pets?',
+            'What is this tenant\'s monthly rent budget?',
+            'What amenities are most important to this tenant?',
+            'What is this tenant\'s desired move-in date?',
+            'How many bedrooms does this tenant need?',
+            'What neighborhood or area is this tenant targeting?'
+        ];
+        var tclAiIdx = 0;
+        var tclAiEl = document.getElementById('tclAiExampleText');
+        var tclAiModal = document.getElementById('tclAiModal');
+        if (tclAiEl && tclAiModal) {
+            tclAiEl.textContent = tclAiExamples[0];
+            tclAiModal.addEventListener('show.bs.modal', function () {
+                tclAiEl.textContent = tclAiExamples[tclAiIdx % tclAiExamples.length];
+                tclAiIdx++;
+            });
+        }
+        var tclHubNativeBtn = document.getElementById('tclHubNativeShareBtn');
+        if (navigator.share && tclHubNativeBtn) { tclHubNativeBtn.style.display = ''; }
+        /* Copy Link — goes directly to clipboard regardless of native share availability */
+        var tclHubCopyBtn = document.getElementById('tclHubCopyBtn');
+        if (tclHubCopyBtn) {
+            tclHubCopyBtn.addEventListener('click', function () {
+                var url = window.location.href;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(url).then(function () {
+                        alert('Link copied to clipboard!');
+                    }).catch(function () { alert('Share: ' + url); });
+                } else { alert('Share: ' + url); }
+            });
+        }
+        /* Native Share button — uses doShare() which correctly invokes navigator.share */
+        if (tclHubNativeBtn) { tclHubNativeBtn.addEventListener('click', doShare); }
+    }());
 
     /* ---- Auto-reopen question modal after validation failure ---- */
     @if(session('open_modal') === 'question')
