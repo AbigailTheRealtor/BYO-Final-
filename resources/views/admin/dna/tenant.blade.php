@@ -55,6 +55,95 @@
     </div>
 </div>
 
+{{-- Tenant Avatar --}}
+@if($avatarResult)
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center gap-2">
+        <h6 class="mb-0">Tenant Avatar</h6>
+        @if($avatarResult['status'] === 'generated')
+            <span class="badge badge-success">Generated</span>
+        @elseif($avatarResult['status'] === 'insufficient_data')
+            <span class="badge badge-warning">Insufficient Data</span>
+        @elseif($avatarResult['status'] === 'failed')
+            <span class="badge badge-danger">Failed</span>
+        @endif
+    </div>
+    <div class="card-body" style="font-size:.85rem;">
+        @if($avatarResult['status'] === 'failed')
+            <div class="alert alert-danger mb-0">
+                <strong>Classification error:</strong> {{ $avatarResult['error'] }}
+            </div>
+        @elseif($avatarResult['status'] === 'insufficient_data')
+            <p class="text-muted mb-2">Profile does not have enough data to classify a tenant avatar. Missing inputs:</p>
+            @if(!empty($avatarResult['missing_inputs']))
+                <ul class="mb-0 ps-3">
+                    @foreach($avatarResult['missing_inputs'] as $item)
+                        <li class="text-muted">{{ $item }}</li>
+                    @endforeach
+                </ul>
+            @else
+                <span class="text-muted small">No missing input details available.</span>
+            @endif
+        @elseif($avatarResult['status'] === 'generated')
+            {{-- Primary Avatar --}}
+            <div class="mb-3">
+                <strong>Primary Avatar:</strong>
+                <span class="badge badge-primary ms-2" style="font-size:.95rem;">{{ $avatarResult['primary_avatar'] }}</span>
+            </div>
+            {{-- Secondary Avatars --}}
+            @if(!empty($avatarResult['secondary_avatars']))
+            <div class="mb-3">
+                <strong>Secondary Avatars:</strong>
+                <span class="ms-1">
+                    @foreach($avatarResult['secondary_avatars'] as $secondary)
+                        <span class="badge badge-secondary me-1">{{ $secondary }}</span>
+                    @endforeach
+                </span>
+            </div>
+            @endif
+            {{-- Signals --}}
+            @if(!empty($avatarResult['signals']))
+            <div class="mb-3">
+                <strong>Signals:</strong>
+                <table class="table table-sm table-hover mt-2 mb-0" style="font-size:.83rem;">
+                    <thead class="thead-light">
+                        <tr><th style="width:45%;">Signal</th><th>Value</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach($avatarResult['signals'] as $key => $value)
+                        <tr>
+                            <td class="text-muted"><code>{{ $key }}</code></td>
+                            <td>
+                                @if(is_bool($value))
+                                    {{ $value ? 'true' : 'false' }}
+                                @elseif(is_null($value))
+                                    <span class="text-muted">—</span>
+                                @else
+                                    {{ $value }}
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @endif
+            {{-- Missing Inputs --}}
+            @if(!empty($avatarResult['missing_inputs']))
+            <div>
+                <strong>Missing Inputs (for fuller classification):</strong>
+                <ul class="mb-0 ps-3 mt-1">
+                    @foreach($avatarResult['missing_inputs'] as $item)
+                        <li class="text-muted">{{ $item }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+        @endif
+    </div>
+</div>
+@endif
+
 {{-- Lifestyle Tags --}}
 <div class="card mb-4">
     <div class="card-header d-flex align-items-center justify-content-between">

@@ -7,6 +7,8 @@ use App\Models\PropertyDnaProfile;
 use App\Models\BuyerTenantDnaProfile;
 use App\Services\Dna\PropertyDnaExplanationService;
 use App\Services\Dna\BuyerTenantDnaExplanationService;
+use App\Services\Dna\BuyerAvatarService;
+use App\Services\Dna\TenantAvatarService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -54,7 +56,7 @@ class DnaProfileController extends Controller
             ->header('Cache-Control', 'no-store');
     }
 
-    public function buyer($listingId, BuyerTenantDnaExplanationService $explanationService)
+    public function buyer($listingId, BuyerTenantDnaExplanationService $explanationService, BuyerAvatarService $buyerAvatarService)
     {
         $profile = BuyerTenantDnaProfile::where('listing_type', 'buyer')
             ->where('listing_id', $listingId)
@@ -68,14 +70,15 @@ class DnaProfileController extends Controller
             'profile_found' => $profile !== null,
         ]);
 
-        $explanations = $profile ? $explanationService->generate($profile) : null;
+        $explanations  = $profile ? $explanationService->generate($profile) : null;
+        $avatarResult  = $profile ? $buyerAvatarService->generate($profile) : null;
 
         return response()
-            ->view('admin.dna.buyer', compact('profile', 'explanations', 'listingId'))
+            ->view('admin.dna.buyer', compact('profile', 'explanations', 'avatarResult', 'listingId'))
             ->header('Cache-Control', 'no-store');
     }
 
-    public function tenant($listingId, BuyerTenantDnaExplanationService $explanationService)
+    public function tenant($listingId, BuyerTenantDnaExplanationService $explanationService, TenantAvatarService $tenantAvatarService)
     {
         $profile = BuyerTenantDnaProfile::where('listing_type', 'tenant')
             ->where('listing_id', $listingId)
@@ -90,9 +93,10 @@ class DnaProfileController extends Controller
         ]);
 
         $explanations = $profile ? $explanationService->generate($profile) : null;
+        $avatarResult = $profile ? $tenantAvatarService->generate($profile) : null;
 
         return response()
-            ->view('admin.dna.tenant', compact('profile', 'explanations', 'listingId'))
+            ->view('admin.dna.tenant', compact('profile', 'explanations', 'avatarResult', 'listingId'))
             ->header('Cache-Control', 'no-store');
     }
 }
