@@ -887,6 +887,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Milestone 12 — BYA Legal & Fair Housing Review Workflow (append-only, admin-only)
         Route::post('bya-review/{id}', [\App\Http\Controllers\Admin\ByaReviewController::class, 'store'])->name('bya.review.store');
+
+        // Ask AI Internal Test Interface (admin-only, no public access)
+        Route::get('ask-ai/test', [\App\Http\Controllers\Admin\AskAiAdminTestController::class, 'index'])->name('ask-ai.test');
+        Route::post('ask-ai/test', [\App\Http\Controllers\Admin\AskAiAdminTestController::class, 'run'])->name('ask-ai.test.run');
     });
 });
 
