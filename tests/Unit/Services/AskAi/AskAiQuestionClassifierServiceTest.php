@@ -11,18 +11,18 @@ use PHPUnit\Framework\TestCase;
  * Pure unit tests — no database, no Laravel TestCase, no DB traits.
  * AskAiQuestionClassifierService is stateless and deterministic; no mocking required.
  *
- * Test coverage (cases A–J):
- *   A. property_standout — keyword questions are classified correctly.
- *   B. suited_audience — keyword questions are classified correctly.
- *   C. buyer_tenant_match — keyword questions are classified correctly.
+ * Test coverage (cases A–K):
+ *   A. property_standout   — keyword questions are classified correctly.
+ *   B. suited_audience     — keyword questions are classified correctly.
+ *   C. buyer_tenant_match  — keyword questions are classified correctly.
  *   D. compatibility_signals — keyword questions are classified correctly.
- *   E. missing_data — keyword questions are classified correctly.
- *   F. marketing_angles — keyword questions are classified correctly.
- *   G. educational — keyword questions are classified correctly.
- *   H. prohibited — fair-housing-sensitive questions are classified correctly.
- *   I. unsupported — unrecognised questions fall back to 'unsupported'.
- *   J. Return shape — all three keys present; confidence is float in [0, 1].
- *   K. Static governance grep — no OpenAI, Http::, \Http, or write calls in service file.
+ *   E. missing_data        — keyword questions are classified correctly.
+ *   F. marketing_angles    — keyword questions are classified correctly.
+ *   G. educational         — keyword questions are classified correctly.
+ *   H. prohibited          — fair-housing-sensitive questions are classified correctly.
+ *   I. unsupported         — unrecognised questions fall back to 'unsupported'.
+ *   J. Return shape        — all three keys present; confidence is float in [0, 1].
+ *   K. Governance grep     — no OpenAI, Http::, or write calls in the service file.
  */
 class AskAiQuestionClassifierServiceTest extends TestCase
 {
@@ -40,6 +40,22 @@ class AskAiQuestionClassifierServiceTest extends TestCase
     private function serviceFilePath(): string
     {
         return dirname(__DIR__, 4) . '/app/Services/AskAi/AskAiQuestionClassifierService.php';
+    }
+
+    private function loadCodeLines(): string
+    {
+        $path = $this->serviceFilePath();
+        $this->assertFileExists($path, 'Classifier service file does not exist at expected path');
+
+        $content = file_get_contents($path);
+
+        return implode("\n", array_filter(
+            explode("\n", $content),
+            static function (string $line): bool {
+                $trimmed = ltrim($line);
+                return !str_starts_with($trimmed, '*') && !str_starts_with($trimmed, '//');
+            }
+        ));
     }
 
     // =========================================================================
@@ -80,6 +96,18 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('suited_audience', $result['question_type']);
     }
 
+    public function test_case_B_ideal_buyer_classifies_as_suited_audience(): void
+    {
+        $result = $this->makeService()->classify('Who is the ideal buyer for this home?');
+        $this->assertSame('suited_audience', $result['question_type']);
+    }
+
+    public function test_case_B_suited_for_classifies_as_suited_audience(): void
+    {
+        $result = $this->makeService()->classify('Who is this property suited for?');
+        $this->assertSame('suited_audience', $result['question_type']);
+    }
+
     public function test_case_B_who_would_classifies_as_suited_audience(): void
     {
         $result = $this->makeService()->classify('Who would enjoy living in this home?');
@@ -108,21 +136,33 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('buyer_tenant_match', $result['question_type']);
     }
 
-    public function test_case_C_ideal_tenant_classifies_as_buyer_tenant_match(): void
+    public function test_case_C_tenant_match_classifies_as_buyer_tenant_match(): void
     {
-        $result = $this->makeService()->classify('Would this be ideal tenant material for this listing?');
+        $result = $this->makeService()->classify('Does this tenant match the listing criteria?');
         $this->assertSame('buyer_tenant_match', $result['question_type']);
     }
 
-    public function test_case_C_right_buyer_classifies_as_buyer_tenant_match(): void
+    public function test_case_C_buyer_match_classifies_as_buyer_tenant_match(): void
     {
-        $result = $this->makeService()->classify('Is this the right buyer for this property?');
+        $result = $this->makeService()->classify('Would a buyer match these property requirements?');
         $this->assertSame('buyer_tenant_match', $result['question_type']);
     }
 
     public function test_case_C_fit_for_tenant_classifies_as_buyer_tenant_match(): void
     {
         $result = $this->makeService()->classify('Would this listing be a fit for tenant applicants?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_C_buyer_fit_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('Does this home have a good buyer fit?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_C_how_well_does_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('How well does this listing suit the buyer?');
         $this->assertSame('buyer_tenant_match', $result['question_type']);
     }
 
@@ -146,6 +186,19 @@ class AskAiQuestionClassifierServiceTest extends TestCase
     {
         $result = $this->makeService()->classify('Is this listing compatible with my search criteria?');
         $this->assertSame('compatibility_signals', $result['question_type']);
+    }
+
+    public function test_case_D_score_breakdown_classifies_as_compatibility_signals(): void
+    {
+        $result = $this->makeService()->classify('Can you show me the compatibility score breakdown?');
+        $this->assertSame('compatibility_signals', $result['question_type']);
+    }
+
+    public function test_case_D_match_score_not_swallowed_by_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What is the match score for this listing?');
+        $this->assertSame('compatibility_signals', $result['question_type'],
+            '"match score" must route to compatibility_signals, not buyer_tenant_match');
     }
 
     // =========================================================================
@@ -204,6 +257,12 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('marketing_angles', $result['question_type']);
     }
 
+    public function test_case_F_listing_description_classifies_as_marketing_angles(): void
+    {
+        $result = $this->makeService()->classify('Can you write a listing description for this home?');
+        $this->assertSame('marketing_angles', $result['question_type']);
+    }
+
     // =========================================================================
     // Case G — educational
     // =========================================================================
@@ -232,6 +291,18 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('educational', $result['question_type']);
     }
 
+    public function test_case_G_what_is_earnest_money_classifies_as_educational(): void
+    {
+        $result = $this->makeService()->classify('What is earnest money in a real estate transaction?');
+        $this->assertSame('educational', $result['question_type']);
+    }
+
+    public function test_case_G_how_does_the_appraisal_process_classifies_as_educational(): void
+    {
+        $result = $this->makeService()->classify('How does the appraisal process work?');
+        $this->assertSame('educational', $result['question_type']);
+    }
+
     // =========================================================================
     // Case H — prohibited
     // =========================================================================
@@ -239,6 +310,12 @@ class AskAiQuestionClassifierServiceTest extends TestCase
     public function test_case_H_school_district_classifies_as_prohibited(): void
     {
         $result = $this->makeService()->classify('What is the school district rating for this area?');
+        $this->assertSame('prohibited', $result['question_type']);
+    }
+
+    public function test_case_H_best_schools_classifies_as_prohibited(): void
+    {
+        $result = $this->makeService()->classify('Which neighborhood has the best schools?');
         $this->assertSame('prohibited', $result['question_type']);
     }
 
@@ -278,11 +355,37 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('prohibited', $result['question_type']);
     }
 
-    public function test_case_H_prohibited_confidence_is_highest(): void
+    public function test_case_H_race_classifies_as_prohibited(): void
+    {
+        $result = $this->makeService()->classify('What race of people live in this neighborhood?');
+        $this->assertSame('prohibited', $result['question_type']);
+    }
+
+    public function test_case_H_discrimination_classifies_as_prohibited(): void
+    {
+        $result = $this->makeService()->classify('Is there any discrimination in this area?');
+        $this->assertSame('prohibited', $result['question_type']);
+    }
+
+    public function test_case_H_prohibited_confidence_is_1_0(): void
     {
         $result = $this->makeService()->classify('What is the crime rate in this neighborhood?');
         $this->assertSame('prohibited', $result['question_type']);
-        $this->assertGreaterThanOrEqual(0.90, $result['confidence']);
+        $this->assertSame(1.0, $result['confidence'], 'prohibited must always have confidence of 1.0');
+    }
+
+    public function test_case_H_prohibited_fires_first_over_other_types(): void
+    {
+        $result = $this->makeService()->classify('What race of buyers are typically interested in this style of home?');
+        $this->assertSame('prohibited', $result['question_type'],
+            'prohibited must take precedence over any other type when both keywords appear');
+    }
+
+    public function test_case_H_prohibited_fires_first_over_educational(): void
+    {
+        $result = $this->makeService()->classify('What is the religion of people in this neighborhood?');
+        $this->assertSame('prohibited', $result['question_type'],
+            'prohibited must take precedence over educational when both keywords appear');
     }
 
     // =========================================================================
@@ -295,51 +398,35 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('unsupported', $result['question_type']);
     }
 
-    public function test_case_I_empty_question_returns_unsupported(): void
-    {
-        $result = $this->makeService()->classify('');
-        $this->assertSame('unsupported', $result['question_type']);
-    }
-
     public function test_case_I_gibberish_returns_unsupported(): void
     {
         $result = $this->makeService()->classify('asdf qwerty zxcv1234');
         $this->assertSame('unsupported', $result['question_type']);
     }
 
-    public function test_case_I_unrelated_topic_returns_unsupported(): void
+    public function test_case_I_empty_string_returns_unsupported_with_zero_confidence(): void
     {
-        $result = $this->makeService()->classify('Can you write me a poem about autumn?');
+        $result = $this->makeService()->classify('');
         $this->assertSame('unsupported', $result['question_type']);
+        $this->assertSame(0.0, $result['confidence']);
     }
 
-    // =========================================================================
-    // Case J — Return shape: all three keys present; confidence is float in [0, 1]
-    // =========================================================================
-
-    public function test_case_J_result_contains_all_required_keys(): void
+    public function test_case_I_whitespace_only_returns_unsupported_with_zero_confidence(): void
     {
-        $service = $this->makeService();
-
-        $questions = [
-            'What makes this property stand out?',
-            'Who would this appeal to?',
-            'What is the match score?',
-            'What is missing from this listing?',
-            'How to market this home?',
-            'What is a cap rate?',
-            'Is it safe in this neighborhood?',
-            'Is this a good match for a buyer?',
-            'Completely unrelated question here.',
-        ];
-
-        foreach ($questions as $question) {
-            $result = $service->classify($question);
-            foreach (self::REQUIRED_KEYS as $key) {
-                $this->assertArrayHasKey($key, $result, "Key '{$key}' missing for question: {$question}");
-            }
-        }
+        $result = $this->makeService()->classify('   ');
+        $this->assertSame('unsupported', $result['question_type']);
+        $this->assertSame(0.0, $result['confidence']);
     }
+
+    public function test_case_I_unsupported_confidence_is_0_0(): void
+    {
+        $result = $this->makeService()->classify('zxyq987 totally unrecognised gibberish question here');
+        $this->assertSame(0.0, $result['confidence']);
+    }
+
+    // =========================================================================
+    // Case J — Return shape: all three keys, confidence float in [0, 1]
+    // =========================================================================
 
     public function test_case_J_result_contains_exactly_three_keys(): void
     {
@@ -347,16 +434,31 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertCount(3, $result, 'classify() must return exactly three keys: question_type, confidence, reason');
     }
 
-    public function test_case_J_confidence_is_float(): void
+    public function test_case_J_all_three_keys_present_for_matched_type(): void
+    {
+        $result = $this->makeService()->classify('What makes this property stand out?');
+        foreach (self::REQUIRED_KEYS as $key) {
+            $this->assertArrayHasKey($key, $result, "classify() result missing required key '{$key}'");
+        }
+    }
+
+    public function test_case_J_all_three_keys_present_for_unsupported(): void
+    {
+        $result = $this->makeService()->classify('abcxyz no keyword match at all nope');
+        foreach (self::REQUIRED_KEYS as $key) {
+            $this->assertArrayHasKey($key, $result, "unsupported result missing key '{$key}'");
+        }
+    }
+
+    public function test_case_J_confidence_is_a_float(): void
     {
         $result = $this->makeService()->classify('What makes this property stand out?');
         $this->assertIsFloat($result['confidence']);
     }
 
-    public function test_case_J_confidence_is_between_zero_and_one(): void
+    public function test_case_J_confidence_is_between_zero_and_one_for_all_types(): void
     {
         $service = $this->makeService();
-
         $questions = [
             'What makes this property stand out?',
             'Who would this appeal to?',
@@ -376,10 +478,9 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         }
     }
 
-    public function test_case_J_reason_is_non_empty_string(): void
+    public function test_case_J_reason_is_a_non_empty_string_for_all_outcomes(): void
     {
         $service = $this->makeService();
-
         foreach (['What makes this property stand out?', 'Who would this appeal to?', 'Random unmatched question.'] as $q) {
             $result = $service->classify($q);
             $this->assertIsString($result['reason'], "reason must be a string for: {$q}");
@@ -390,35 +491,21 @@ class AskAiQuestionClassifierServiceTest extends TestCase
     public function test_case_J_classification_is_case_insensitive(): void
     {
         $service = $this->makeService();
-
-        $lower = $service->classify('what makes this property stand out?');
-        $upper = $service->classify('WHAT MAKES THIS PROPERTY STAND OUT?');
-        $mixed = $service->classify('What Makes This Property Stand Out?');
-
-        $this->assertSame('property_standout', $lower['question_type']);
-        $this->assertSame('property_standout', $upper['question_type']);
-        $this->assertSame('property_standout', $mixed['question_type']);
+        $this->assertSame('property_standout', $service->classify('what makes this property stand out?')['question_type']);
+        $this->assertSame('property_standout', $service->classify('WHAT MAKES THIS PROPERTY STAND OUT?')['question_type']);
+        $this->assertSame('property_standout', $service->classify('What Makes This Property Stand Out?')['question_type']);
     }
 
-    // =========================================================================
-    // Case K — Static governance grep
-    // =========================================================================
-
-    private function loadCodeLines(): string
+    public function test_case_J_prohibited_is_case_insensitive(): void
     {
-        $path = $this->serviceFilePath();
-        $this->assertFileExists($path, 'Classifier service file does not exist at expected path');
-
-        $content = file_get_contents($path);
-
-        return implode("\n", array_filter(
-            explode("\n", $content),
-            static function (string $line): bool {
-                $trimmed = ltrim($line);
-                return !str_starts_with($trimmed, '*') && !str_starts_with($trimmed, '//');
-            }
-        ));
+        $result = $this->makeService()->classify('WHAT IS THE CRIME RATE HERE?');
+        $this->assertSame('prohibited', $result['question_type']);
     }
+
+    // =========================================================================
+    // Case K — Governance static grep: no OpenAI, Http::, or write calls
+    //          (comment lines stripped before scan)
+    // =========================================================================
 
     public function test_case_K_service_file_exists(): void
     {
@@ -432,19 +519,11 @@ class AskAiQuestionClassifierServiceTest extends TestCase
     {
         $codeLines = $this->loadCodeLines();
 
-        $prohibited = [
-            'use OpenAI\\',
-            'use OpenAi\\',
-            'use GuzzleHttp\\',
-            'OpenAI::',
-            'ChatGPT::',
-        ];
-
-        foreach ($prohibited as $term) {
+        foreach (['use OpenAI\\', 'use OpenAi\\', 'use GuzzleHttp\\', 'OpenAI::', 'ChatGPT::'] as $term) {
             $this->assertStringNotContainsString(
                 $term,
                 $codeLines,
-                "Classifier service file must not import or call '{$term}'"
+                "Classifier service must not import or call '{$term}'"
             );
         }
     }
@@ -453,19 +532,11 @@ class AskAiQuestionClassifierServiceTest extends TestCase
     {
         $codeLines = $this->loadCodeLines();
 
-        $prohibited = [
-            'Http::',
-            '\Http',
-            'curl_exec',
-            'file_get_contents(\'http',
-            'file_get_contents("http',
-        ];
-
-        foreach ($prohibited as $term) {
+        foreach (['Http::', '\\Http', 'curl_exec', 'file_get_contents(\'http', 'file_get_contents("http'] as $term) {
             $this->assertStringNotContainsString(
                 $term,
                 $codeLines,
-                "Classifier service file must not contain HTTP call '{$term}'"
+                "Classifier service must not contain HTTP call '{$term}'"
             );
         }
     }
@@ -474,23 +545,11 @@ class AskAiQuestionClassifierServiceTest extends TestCase
     {
         $codeLines = $this->loadCodeLines();
 
-        $prohibited = [
-            '->save(',
-            '->create(',
-            '->update(',
-            '->delete(',
-            '->insert(',
-            'DB::statement(',
-            'DB::insert(',
-            'DB::update(',
-            'DB::delete(',
-        ];
-
-        foreach ($prohibited as $term) {
+        foreach (['->save(', '->create(', '->update(', '->delete(', '->insert(', 'DB::statement(', 'DB::insert(', 'DB::update(', 'DB::delete('] as $term) {
             $this->assertStringNotContainsString(
                 $term,
                 $codeLines,
-                "Classifier service file must not contain write call '{$term}'"
+                "Classifier service must not contain write call '{$term}'"
             );
         }
     }
