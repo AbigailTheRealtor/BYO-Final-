@@ -402,7 +402,7 @@
         }
     @endphp
     @php
-        // Bidding Period countdown — computed once here; used by hero badge, sidebar, and overview
+        // Bidding Period countdown — uses expiration_date when available; falls back to created_at + auction_time for legacy records
         $hasBPTimer = false;
         $timerRemainingSeconds = 0;
         $_auctionType = trim($str('auction_type'));
@@ -410,23 +410,28 @@
             $_auctionType = trim((string)($auction->auction_type ?? ''));
         }
         if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
-            $_aTime = trim($str('auction_time'));
-            if ($_aTime === '') {
-                $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
-            }
             $_timerEnd = null;
-            if ($_aTime !== '') {
-                $_parts = explode(' ', $_aTime);
-                $_val   = (int)($_parts[0] ?? 0);
-                $_unit  = strtolower($_parts[1] ?? 'days');
-                if ($_val > 0) {
-                    $_start = \Carbon\Carbon::parse($auction->created_at);
-                    $_timerEnd = match(true) {
-                        in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
-                        in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
-                        in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
-                        default                               => $_start->addDays($_val),
-                    };
+            $_expDateStr = trim($str('expiration_date'));
+            if ($_expDateStr !== '') {
+                $_timerEnd = \Carbon\Carbon::parse($_expDateStr);
+            } else {
+                $_aTime = trim($str('auction_time'));
+                if ($_aTime === '') {
+                    $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
+                }
+                if ($_aTime !== '') {
+                    $_parts = explode(' ', $_aTime);
+                    $_val   = (int)($_parts[0] ?? 0);
+                    $_unit  = strtolower($_parts[1] ?? 'days');
+                    if ($_val > 0) {
+                        $_start = \Carbon\Carbon::parse($auction->created_at);
+                        $_timerEnd = match(true) {
+                            in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
+                            in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
+                            in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
+                            default                               => $_start->addDays($_val),
+                        };
+                    }
                 }
             }
             if (!empty($_timerEnd)) {
