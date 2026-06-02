@@ -1600,6 +1600,11 @@
         <i class="fa-solid fa-circle-question"></i>
         <span>Ask</span>
     </button>
+    <button class="tcl-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#tclAiModal"
+        @if(auth()->id() == $ownerId) style="display:none;" @endif>
+        <i class="fa-solid fa-robot"></i>
+        <span>Ask AI</span>
+    </button>
     @if($ifFilled($str('email')) && auth()->id() != $ownerId)
     <a href="mailto:{{ $str('email') }}" class="tcl-mobile-bar-btn tcl-mobile-primary">
         <i class="fa-solid fa-envelope"></i>

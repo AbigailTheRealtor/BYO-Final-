@@ -1699,6 +1699,10 @@
         <i class="fa-solid fa-circle-question"></i>
         <span>Ask</span>
     </button>
+    <button class="bol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#bolAiModal">
+        <i class="fa-solid fa-robot"></i>
+        <span>Ask AI</span>
+    </button>
     <button class="bol-mobile-bar-btn bol-mobile-bar-respond" data-bs-toggle="modal" data-bs-target="#bolRespondModal">
         <i class="fa-solid fa-reply"></i>
         <span>Respond</span>

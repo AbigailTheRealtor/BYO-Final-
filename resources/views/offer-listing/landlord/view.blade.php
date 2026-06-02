@@ -1550,6 +1550,9 @@
     <button type="button" class="lol-mobile-bar-btn lol-mobile-primary" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
         <i class="fa-solid fa-circle-question"></i><span>Ask</span>
     </button>
+    <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolAiModal">
+        <i class="fa-solid fa-robot"></i><span>Ask AI</span>
+    </button>
     <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
         <i class="fa-solid fa-calendar-days"></i><span>Showing</span>
     </button>

@@ -2219,6 +2219,27 @@
                 <button class="sol-action-btn sol-action-outline" id="solShareBtn" type="button">
                     <i class="fa-solid fa-share-nodes"></i>Share Listing
                 </button>
+                {{-- Bidding Ends --}}
+                @if($hasBPTimer)
+                @php
+                    $_solSidebarEndDate = null;
+                    $_solExpDateStr = $str('expiration_date');
+                    if ($_solExpDateStr) {
+                        $_solSidebarEndDate = $fmtDate($_solExpDateStr);
+                    } elseif (!empty($_timerEnd) && $_timerEnd instanceof \Carbon\Carbon) {
+                        $_solSidebarEndDate = $_timerEnd->format('M j, Y');
+                    }
+                @endphp
+                @if($_solSidebarEndDate)
+                <div class="mb-3 pb-3 mt-3" style="border-bottom:1px solid #f1f5f9;">
+                    <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;">
+                        <span><i class="fa-regular fa-clock me-1"></i>Bidding Ends</span>
+                        <span style="font-weight:700;color:#475569;">{{ $_solSidebarEndDate }}</span>
+                    </div>
+                </div>
+                @endif
+                @endif
+
                 <a href="{{ route('offer.listing.seller.searchListing') }}" class="sol-action-btn sol-action-outline">
                     <i class="fa-solid fa-arrow-left"></i>Back to Search
                 </a>
