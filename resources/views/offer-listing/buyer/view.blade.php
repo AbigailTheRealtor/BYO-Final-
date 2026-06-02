@@ -1417,6 +1417,10 @@
                 <button class="bol-action-btn bol-action-primary" data-bs-toggle="modal" data-bs-target="#bolRespondModal">
                     <i class="fa-solid fa-reply"></i>Respond to Buyer Criteria
                 </button>
+                {{-- Option A: Ask AI added to sidebar to match Seller view --}}
+                <button class="bol-action-btn bol-action-outline" data-bs-toggle="modal" data-bs-target="#bolAiModal">
+                    <i class="fa-solid fa-robot"></i>Ask AI About Criteria
+                </button>
                 <button class="bol-action-btn bol-action-outline" data-bs-toggle="modal" data-bs-target="#bolQuestionModal">
                     <i class="fa-solid fa-circle-question"></i>Ask a Question
                 </button>
@@ -1698,6 +1702,11 @@
     <button class="bol-mobile-bar-btn bol-mobile-bar-respond" data-bs-toggle="modal" data-bs-target="#bolRespondModal">
         <i class="fa-solid fa-reply"></i>
         <span>Respond</span>
+    </button>
+    {{-- Option A: Ask AI added to mobile bar to match Seller view --}}
+    <button class="bol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#bolAiModal">
+        <i class="fa-solid fa-robot"></i>
+        <span>Ask AI</span>
     </button>
     @if(auth()->check() && auth()->id() === $auction->user_id)
     <a href="{{ route('offer.listing.buyer.edit', ['auctionId' => $auction->id]) }}" class="bol-mobile-bar-btn">

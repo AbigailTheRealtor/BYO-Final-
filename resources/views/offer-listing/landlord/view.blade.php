@@ -523,7 +523,19 @@
                 </button>
             </div>
 
-            {{-- 2. Ask AI --}}
+            {{-- 2. Ask a Question (moved to position 2; Ask AI moved to position 3 to match Seller/Buyer/Tenant hub order) --}}
+            <div class="lol-interaction-card">
+                <div class="lol-interaction-card-icon"><i class="fa-solid fa-circle-question"></i></div>
+                <div class="lol-interaction-card-label">Ask a Question</div>
+                <div class="lol-interaction-card-helper">Send a direct question to the listing contact.</div>
+                <button type="button" class="lol-interaction-cta lol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#lolQuestionModal"
+                        aria-label="Ask a question about this listing">
+                    <i class="fa-solid fa-paper-plane"></i>Send Question
+                </button>
+            </div>
+
+            {{-- 3. Ask AI --}}
             <div class="lol-interaction-card">
                 <div class="lol-interaction-card-icon"><i class="fa-solid fa-robot"></i></div>
                 <div class="lol-interaction-card-label">Ask AI</div>
@@ -542,18 +554,6 @@
                         data-bs-toggle="modal" data-bs-target="#lolAiModal"
                         aria-label="Ask AI a question about this property">
                     <i class="fa-solid fa-robot"></i>Ask AI
-                </button>
-            </div>
-
-            {{-- 3. Ask a Question --}}
-            <div class="lol-interaction-card">
-                <div class="lol-interaction-card-icon"><i class="fa-solid fa-circle-question"></i></div>
-                <div class="lol-interaction-card-label">Ask a Question</div>
-                <div class="lol-interaction-card-helper">Send a direct question to the listing contact.</div>
-                <button type="button" class="lol-interaction-cta lol-interaction-cta-outline"
-                        data-bs-toggle="modal" data-bs-target="#lolQuestionModal"
-                        aria-label="Ask a question about this listing">
-                    <i class="fa-solid fa-paper-plane"></i>Send Question
                 </button>
             </div>
 
@@ -1331,6 +1331,10 @@
             <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
                 <i class="fa-solid fa-calendar-days"></i>Schedule Showing
             </button>
+            {{-- Option A: Ask AI added to sidebar to match Seller view --}}
+            <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolAiModal">
+                <i class="fa-solid fa-robot"></i>Ask AI About Property
+            </button>
             <button class="lol-action-btn lol-action-outline" type="button" disabled style="cursor:default;opacity:.6;">
                 <i class="fa-regular fa-bookmark"></i>Save Listing
             </button>
@@ -1548,6 +1552,10 @@
     </button>
     <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
         <i class="fa-solid fa-calendar-days"></i><span>Showing</span>
+    </button>
+    {{-- Option A: Ask AI added to mobile bar to match Seller view --}}
+    <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolAiModal">
+        <i class="fa-solid fa-robot"></i><span>Ask AI</span>
     </button>
     @if(auth()->check() && auth()->id() == $auction->user_id)
     <a href="{{ route('offer.listing.landlord.edit', ['auctionId' => $auction->id]) }}" class="lol-mobile-bar-btn">

@@ -1502,6 +1502,10 @@
                 <button class="tcl-action-btn tcl-action-outline" data-bs-toggle="modal" data-bs-target="#tclQuestionModal">
                     <i class="fa-solid fa-circle-question"></i>Ask a Question
                 </button>
+                {{-- Option A: Ask AI added to sidebar to match Seller view --}}
+                <button class="tcl-action-btn tcl-action-outline" data-bs-toggle="modal" data-bs-target="#tclAiModal">
+                    <i class="fa-solid fa-robot"></i>Ask AI About Tenant
+                </button>
                 <button class="tcl-action-btn tcl-action-outline" id="tclShareBtnSidebar">
                     <i class="fa-solid fa-share-nodes"></i>Share Listing
                 </button>
@@ -1602,6 +1606,11 @@
         <span>Contact</span>
     </a>
     @endif
+    {{-- Option A: Ask AI added to mobile bar to match Seller view --}}
+    <button class="tcl-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#tclAiModal">
+        <i class="fa-solid fa-robot"></i>
+        <span>Ask AI</span>
+    </button>
     <button class="tcl-mobile-bar-btn" id="tclShareBtnMobile">
         <i class="fa-solid fa-share-nodes"></i>
         <span>Share</span>
