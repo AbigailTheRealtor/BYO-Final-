@@ -227,6 +227,84 @@ class PropertyIntelligenceProfileService
         }
     }
 
+    /**
+     * Build the property intelligence payload from an already-persisted profile
+     * WITHOUT triggering any database write.
+     *
+     * This is the read-only sibling of generate(). It reads the already-persisted
+     * location_intelligence_context column on the profile (populated by generate()
+     * when it was last called) rather than querying LocationDnaIntelligenceContextService
+     * or calling save(). All derivation methods are called identically to generate().
+     *
+     * Use this method when the caller must remain side-effect free (e.g. Ask AI
+     * context assembly, read-only API endpoints, previews).
+     *
+     * Output contract — same keys as generate():
+     *   success, status, listing_type, listing_id,
+     *   property_strengths, property_highlights, property_positioning,
+     *   property_target_audiences, property_personality_tags, property_story,
+     *   location_intelligence_context, property_intelligence_version, error
+     *
+     * @param  PropertyDnaProfile $profile  A cast, in-memory or loaded profile instance.
+     * @return array
+     */
+    public function buildPayloadReadOnly(PropertyDnaProfile $profile): array
+    {
+        $stub = [
+            'success'                       => false,
+            'status'                        => 'insufficient_data',
+            'listing_type'                  => (string) ($profile->listing_type ?? ''),
+            'listing_id'                    => (int) ($profile->listing_id ?? 0),
+            'property_strengths'            => [],
+            'property_highlights'           => [],
+            'property_positioning'          => self::POSITIONING_MOVE_UP,
+            'property_target_audiences'     => [],
+            'property_personality_tags'     => [],
+            'property_story'                => '',
+            'location_intelligence_context' => null,
+            'property_intelligence_version' => self::PROPERTY_INTELLIGENCE_VERSION,
+            'error'                         => null,
+        ];
+
+        if ($this->isInsufficientData($profile)) {
+            $stub['error'] = 'Insufficient profile data: overall_dna_completeness is empty and no score fields are populated.';
+            return $stub;
+        }
+
+        try {
+            $tags            = (array) ($profile->ai_buyer_archetype_tags ?? []);
+            $locationContext = $profile->location_intelligence_context ?? null;
+
+            $strengths   = $this->deriveStrengths($tags);
+            $highlights  = $this->deriveHighlights($tags);
+            $positioning = $this->derivePositioning($tags, $profile);
+            $audiences   = $this->deriveTargetAudiences($tags, $profile);
+            $personality = $this->derivePersonalityTags($tags, $profile, $locationContext);
+            $story       = $this->assembleStory($positioning, $strengths, $profile, $locationContext);
+
+            return [
+                'success'                       => true,
+                'status'                        => 'generated',
+                'listing_type'                  => (string) $profile->listing_type,
+                'listing_id'                    => (int) $profile->listing_id,
+                'property_strengths'            => $strengths,
+                'property_highlights'           => $highlights,
+                'property_positioning'          => $positioning,
+                'property_target_audiences'     => $audiences,
+                'property_personality_tags'     => $personality,
+                'property_story'                => $story,
+                'location_intelligence_context' => $locationContext,
+                'property_intelligence_version' => self::PROPERTY_INTELLIGENCE_VERSION,
+                'error'                         => null,
+            ];
+        } catch (\Throwable $e) {
+            return array_merge($stub, [
+                'status' => 'failed',
+                'error'  => $e->getMessage(),
+            ]);
+        }
+    }
+
     // =========================================================================
     // Guard
     // =========================================================================
