@@ -13,6 +13,7 @@ class Offer extends Model
         'user_id',
         'offer_auction_id',
         'parent_offer_id',
+        'role',
         'listing_snapshot',
         'status',
         'submitted_at',
