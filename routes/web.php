@@ -192,6 +192,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/accepted-bid-summary/{id}/download-pdf', [AcceptedBidSummaryController::class, 'downloadPdf'])->name('accepted-bid-summary.download-pdf');
     Route::get('/accepted-bid-summary/{id}/document/{type}', [AcceptedBidSummaryController::class, 'downloadDocument'])->name('accepted-bid-summary.download-document');
     Route::get('/bid/{bidId}/summary', [AcceptedBidSummaryController::class, 'getByBid'])->name('accepted-bid-summary.by-bid');
+
+    Route::get('/offers', [\App\Http\Controllers\MyOffersController::class, 'index'])->name('offers.index');
 });
 
 // Public agent profile — generic fallback only. No auth required.
