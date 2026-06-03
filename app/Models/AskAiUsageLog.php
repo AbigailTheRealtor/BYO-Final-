@@ -18,5 +18,10 @@ class AskAiUsageLog extends Model
         'model',
         'response_time_ms',
         'error_code',
+        'prompt_tokens',
+        'completion_tokens',
+        'total_tokens',
+        'estimated_cost_usd',
+        'api_request_id',
     ];
 }

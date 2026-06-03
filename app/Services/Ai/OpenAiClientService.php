@@ -280,13 +280,28 @@ class OpenAiClientService
 
                 $completedAt = now()->utc()->toIso8601String();
 
+                $promptTokens     = $response->usage->promptTokens     ?? 0;
+                $completionTokens = $response->usage->completionTokens ?? 0;
+                $totalTokens      = $response->usage->totalTokens      ?? 0;
+                $apiRequestId     = null;
+
+                try {
+                    $meta         = $response->meta()                    ?? null;
+                    $apiRequestId = $meta ? ($meta->headers['x-request-id'][0] ?? null) : null;
+                } catch (\Throwable $ignored) {
+                }
+
                 return [
-                    'data'           => $decoded,
-                    'model'          => $model,
-                    'prompt_version' => $promptVersion,
-                    'attempt_count'  => $attemptCount,
-                    'requested_at'   => $requestedAt,
-                    'completed_at'   => $completedAt,
+                    'data'              => $decoded,
+                    'model'             => $model,
+                    'prompt_version'    => $promptVersion,
+                    'attempt_count'     => $attemptCount,
+                    'requested_at'      => $requestedAt,
+                    'completed_at'      => $completedAt,
+                    'prompt_tokens'     => (int) $promptTokens,
+                    'completion_tokens' => (int) $completionTokens,
+                    'total_tokens'      => (int) $totalTokens,
+                    'api_request_id'    => $apiRequestId,
                 ];
 
             } catch (ErrorException $e) {

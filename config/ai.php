@@ -77,4 +77,36 @@ return [
 
     'max_retries' => (int) env('OPENAI_MAX_RETRIES', 3),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Ask AI — Per-Model Cost Rates
+    |--------------------------------------------------------------------------
+    |
+    | Rate table used to estimate the USD cost of each Ask AI request.
+    | Rates are sourced from ASK_AI_COST_TRACKING_SPEC_V1 Section 4.
+    | Keys are OpenAI model identifiers; values are prompt and completion
+    | costs per 1,000 tokens. Update whenever OpenAI publishes price changes.
+    |
+    | If a model returned by the API is not listed here, estimated_cost_usd
+    | is stored as null and a warning is logged — the request is never blocked.
+    |
+    */
+
+    'ask_ai_costs' => [
+        'model_rates' => [
+            'gpt-4o' => [
+                'prompt_cost_per_1k_tokens'     => 0.005,
+                'completion_cost_per_1k_tokens' => 0.015,
+            ],
+            'gpt-4-turbo' => [
+                'prompt_cost_per_1k_tokens'     => 0.010,
+                'completion_cost_per_1k_tokens' => 0.030,
+            ],
+            'gpt-3.5-turbo' => [
+                'prompt_cost_per_1k_tokens'     => 0.0005,
+                'completion_cost_per_1k_tokens' => 0.0015,
+            ],
+        ],
+    ],
+
 ];

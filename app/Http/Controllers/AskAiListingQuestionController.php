@@ -54,6 +54,12 @@ class AskAiListingQuestionController extends Controller
                 $errorCode = 'failed';
             }
 
+            $adapterResult    = $result['adapter_result'] ?? [];
+            $promptTokens     = (int) ($adapterResult['prompt_tokens']     ?? 0);
+            $completionTokens = (int) ($adapterResult['completion_tokens'] ?? 0);
+            $totalTokens      = (int) ($adapterResult['total_tokens']      ?? 0);
+            $apiRequestId     = $adapterResult['api_request_id']           ?? null;
+
             try {
                 $this->logger->logListingQuestion([
                     'listing_type'     => $listingType,
@@ -67,6 +73,10 @@ class AskAiListingQuestionController extends Controller
                     'model'            => $model,
                     'response_time_ms' => $responseTimeMs,
                     'error_code'       => $errorCode,
+                    'prompt_tokens'     => $promptTokens,
+                    'completion_tokens' => $completionTokens,
+                    'total_tokens'      => $totalTokens,
+                    'api_request_id'    => $apiRequestId,
                 ]);
             } catch (\Throwable $logEx) {
             }
@@ -111,6 +121,10 @@ class AskAiListingQuestionController extends Controller
                     'model'            => null,
                     'response_time_ms' => $responseTimeMs,
                     'error_code'       => 'failed',
+                    'prompt_tokens'     => 0,
+                    'completion_tokens' => 0,
+                    'total_tokens'      => 0,
+                    'api_request_id'    => null,
                 ]);
             } catch (\Throwable $logEx) {
             }
