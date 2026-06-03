@@ -900,6 +900,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Ask AI Internal Test Interface (admin-only, no public access)
         Route::get('ask-ai/test', [\App\Http\Controllers\Admin\AskAiAdminTestController::class, 'index'])->name('ask-ai.test');
         Route::post('ask-ai/test', [\App\Http\Controllers\Admin\AskAiAdminTestController::class, 'run'])->name('ask-ai.test.run');
+
+        // Ask AI Analytics Dashboard (admin-only, read-only, direct URL only)
+        Route::get('ask-ai/analytics', [\App\Http\Controllers\Admin\AskAiAnalyticsController::class, 'index'])->name('ask-ai.analytics');
     });
 });
 
