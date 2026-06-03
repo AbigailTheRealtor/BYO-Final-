@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Offer;
 use App\Services\Offers\OfferAvailableActionsService;
+use App\Services\Offers\OfferTimelineBuilder;
 use App\Services\Offers\OfferWorkflowFacade;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ class OfferController extends Controller
     public function __construct(
         private readonly OfferWorkflowFacade $facade,
         private readonly OfferAvailableActionsService $actionsService,
+        private readonly OfferTimelineBuilder $timelineBuilder,
     ) {}
 
     public function store(Request $request): JsonResponse
@@ -167,5 +169,15 @@ class OfferController extends Controller
             'message' => 'Counter offer created.',
             'result'  => $result,
         ]);
+    }
+
+    public function show(Offer $offer)
+    {
+        $actorId   = Auth::id();
+        $actorRole = Auth::user()->role ?? 'system';
+        $timeline  = $this->timelineBuilder->buildForOffer($offer);
+        $actions   = $this->actionsService->forOffer($offer, $actorId, $actorRole);
+
+        return view('offers.show', compact('offer', 'timeline', 'actions'));
     }
 }

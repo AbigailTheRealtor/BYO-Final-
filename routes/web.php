@@ -106,6 +106,7 @@ use App\Http\Livewire\Buyer\BuyerAgentAuctionBid;
 use App\Http\Livewire\Seller\SellerAgentAuctionBid;
 
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OfferController;
 
 
 /*
@@ -294,6 +295,8 @@ Route::get('/search/seller-listings', [SellerOfferListingController::class, 'sea
 Route::get('/search/buyer-listings', [BuyerOfferListingController::class, 'searchOfferListings'])->name('offer.listing.buyer.searchListing');
 Route::get('/search/rental-properties', [LandlordOfferListingController::class, 'searchOfferListings'])->name('offer.listing.landlord.searchListing');
 Route::get('/search/tenant-listings', [TenantOfferListingController::class, 'searchOfferListings'])->name('offer.listing.tenant.searchListing');
+Route::get('/offers/{offer}', [OfferController::class, 'show'])->name('offers.show');
+
 Route::get('/offer-listing/tenant/view/{id}', [TenantOfferListingController::class, 'view'])->name('offer.listing.tenant.view');
 Route::post('/offer-listing/seller/{auction}/question', [SellerOfferListingController::class, 'submitQuestion'])->name('offer.listing.seller.question');
 Route::post('/offer-listing/seller/{auction}/showing', [SellerOfferListingController::class, 'submitShowing'])->name('offer.listing.seller.showing');
