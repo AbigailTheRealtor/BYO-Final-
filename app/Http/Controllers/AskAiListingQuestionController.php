@@ -42,6 +42,28 @@ class AskAiListingQuestionController extends Controller
         $rateLimitResult = $this->rateLimiter->check($request, $listingType, $listingId);
         if ($rateLimitResult !== null) {
             $retryAfter = $rateLimitResult['retry_after'];
+
+            try {
+                $this->logger->logListingQuestion([
+                    'listing_type'      => $listingType,
+                    'listing_id'        => $listingId,
+                    'user_id'           => auth()->id(),
+                    'ip_address'        => $request->ip(),
+                    'question_hash'     => $questionHash,
+                    'question_type'     => null,
+                    'status'            => 'rate_limited',
+                    'success'           => false,
+                    'model'             => null,
+                    'response_time_ms'  => null,
+                    'error_code'        => $rateLimitResult['limit_type'],
+                    'prompt_tokens'     => 0,
+                    'completion_tokens' => 0,
+                    'total_tokens'      => 0,
+                    'api_request_id'    => null,
+                ]);
+            } catch (\Throwable $logEx) {
+            }
+
             return response()->json([
                 'error' => [
                     'message'     => 'You have exceeded the Ask AI rate limit. Please try again later.',
