@@ -681,6 +681,58 @@
     max-width: 100%;
     cursor: default;
 }
+
+/* ---- Ask AI Suggestion Chips ---- */
+.ask-ai-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.5rem 0.85rem;
+    min-height: 44px;
+    border-radius: 20px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+    text-align: left;
+    line-height: 1.35;
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+}
+.ask-ai-chip:hover, .ask-ai-chip:focus {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1e40af;
+    outline: none;
+}
+.ask-ai-chip:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+.ask-ai-chip:active {
+    background: #bfdbfe;
+    border-color: #60a5fa;
+    color: #1e40af;
+}
+.ask-ai-chip-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+@media (max-width: 767.98px) {
+    .ask-ai-chip-wrap {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding-bottom: 4px;
+    }
+    .ask-ai-chip-wrap::-webkit-scrollbar { display: none; }
+    .ask-ai-chip { flex-shrink: 0; }
+}
 </style>
 @endpush
 
@@ -2400,6 +2452,31 @@
                     <div id="solAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
                         <span class="text-muted fst-italic" style="font-size:.875rem;" id="solAiExampleText"></span>
                     </div>
+                    @php $__solAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('seller'); @endphp
+                    @if(!empty($__solAiSuggestions))
+                    <div id="solAiSuggestions"
+                         aria-label="Suggested questions for this listing"
+                         aria-live="polite"
+                         class="mb-3">
+                        <div class="text-muted mb-2" style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">Suggested Questions</div>
+                        <div class="ask-ai-chip-wrap">
+                            @foreach($__solAiSuggestions as $__sq)
+                            @php $__sqLabel = mb_strlen($__sq['question']) > 80 ? mb_substr($__sq['question'], 0, 79) . '…' : $__sq['question']; @endphp
+                            <button type="button"
+                                    role="button"
+                                    class="ask-ai-chip"
+                                    data-question="{{ $__sq['question'] }}"
+                                    aria-label="{{ $__sq['question'] }}"
+                                    title="{{ $__sq['question'] }}">
+                                <i class="fa-solid fa-comment-dots me-1" aria-hidden="true"></i>{{ $__sqLabel }}
+                            </button>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+                    <p class="text-muted mb-3" style="font-size:.73rem;border-top:1px solid #f1f5f9;padding-top:.6rem;line-height:1.45;">
+                        <i class="fa-solid fa-shield-halved me-1 text-secondary" aria-hidden="true"></i>Ask AI provides informational summaries based on listing data and platform content only. It is not a licensed real estate broker, attorney, lender, tax advisor, or financial advisor. Nothing here constitutes professional advice. Always consult a qualified professional before making real estate decisions.
+                    </p>
                     <label class="form-label fw-semibold" style="font-size:.85rem;">Your Question</label>
                     <textarea class="form-control" rows="4" id="solAiTextarea"
                               placeholder="What would you like to know?"
@@ -2701,6 +2778,44 @@
                 });
             });
         }
+    }());
+
+    /* ---- Ask AI Suggestion Chips ---- */
+    (function () {
+        var STORAGE_KEY = 'askAiUsedQuestions';
+        var modalEl   = document.getElementById('solAiModal');
+        var chipsWrap = document.getElementById('solAiSuggestions');
+        if (!chipsWrap) return;
+
+        function getUsed() {
+            try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) { return []; }
+        }
+        function markUsed(q) {
+            var used = getUsed();
+            if (used.indexOf(q) === -1) used.push(q);
+            try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(used)); } catch (e) {}
+        }
+        function applyUsed() {
+            var used = getUsed();
+            chipsWrap.querySelectorAll('.ask-ai-chip').forEach(function (btn) {
+                if (used.indexOf(btn.getAttribute('data-question')) !== -1) btn.style.display = 'none';
+            });
+        }
+
+        if (modalEl) modalEl.addEventListener('show.bs.modal', function () { applyUsed(); });
+
+        chipsWrap.querySelectorAll('.ask-ai-chip').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var q  = btn.getAttribute('data-question');
+                var ta = document.getElementById('solAiTextarea');
+                if (ta) { ta.value = q; ta.focus(); }
+                markUsed(q);
+                btn.style.display = 'none';
+            });
+            btn.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
+            });
+        });
     }());
 
 })();
