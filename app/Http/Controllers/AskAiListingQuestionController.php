@@ -5,14 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Services\AskAi\AskAiRunnerV2Service;
+use App\Services\AskAi\AskAiUsageLoggerService;
 
 class AskAiListingQuestionController extends Controller
 {
     private AskAiRunnerV2Service $runner;
+    private AskAiUsageLoggerService $logger;
 
-    public function __construct(AskAiRunnerV2Service $runner)
+    public function __construct(AskAiRunnerV2Service $runner, AskAiUsageLoggerService $logger)
     {
         $this->runner = $runner;
+        $this->logger = $logger;
     }
 
     public function run(Request $request): JsonResponse
@@ -24,17 +27,49 @@ class AskAiListingQuestionController extends Controller
             'options'      => ['nullable', 'array'],
         ]);
 
+        $startTime    = microtime(true);
+        $listingType  = $validated['listing_type'];
+        $listingId    = (int) $validated['listing_id'];
+        $question     = $validated['question'];
+        $questionHash = hash('sha256', $question);
+
         try {
             $result = $this->runner->run(
-                $validated['listing_type'],
-                (int) $validated['listing_id'],
-                $validated['question'],
+                $listingType,
+                $listingId,
+                $question,
                 $validated['options'] ?? []
             );
 
-            $final = $result['final_response'] ?? [];
+            $responseTimeMs = (int) round((microtime(true) - $startTime) * 1000);
+            $status         = $result['status'] ?? 'failed';
+            $success        = $result['success'] ?? false;
+            $questionType   = $result['classification']['question_type'] ?? null;
+            $model          = $result['adapter_result']['model'] ?? null;
 
-            $status = $result['status'] ?? 'failed';
+            $errorCode = null;
+            if ($status === 'blocked') {
+                $errorCode = 'blocked';
+            } elseif ($status === 'failed') {
+                $errorCode = 'failed';
+            }
+
+            try {
+                $this->logger->logListingQuestion([
+                    'listing_type'     => $listingType,
+                    'listing_id'       => $listingId,
+                    'user_id'          => auth()->id(),
+                    'ip_address'       => $request->ip(),
+                    'question_hash'    => $questionHash,
+                    'question_type'    => $questionType,
+                    'status'           => $status,
+                    'success'          => $success,
+                    'model'            => $model,
+                    'response_time_ms' => $responseTimeMs,
+                    'error_code'       => $errorCode,
+                ]);
+            } catch (\Throwable $logEx) {
+            }
 
             if ($status === 'failed') {
                 return response()->json([
@@ -48,6 +83,8 @@ class AskAiListingQuestionController extends Controller
                 ]);
             }
 
+            $final = $result['final_response'] ?? [];
+
             return response()->json([
                 'success'            => $result['success'] ?? false,
                 'status'             => $status,
@@ -59,6 +96,25 @@ class AskAiListingQuestionController extends Controller
             ]);
 
         } catch (\Throwable $e) {
+            $responseTimeMs = (int) round((microtime(true) - $startTime) * 1000);
+
+            try {
+                $this->logger->logListingQuestion([
+                    'listing_type'     => $listingType,
+                    'listing_id'       => $listingId,
+                    'user_id'          => auth()->id(),
+                    'ip_address'       => $request->ip(),
+                    'question_hash'    => $questionHash,
+                    'question_type'    => null,
+                    'status'           => 'failed',
+                    'success'          => false,
+                    'model'            => null,
+                    'response_time_ms' => $responseTimeMs,
+                    'error_code'       => 'failed',
+                ]);
+            } catch (\Throwable $logEx) {
+            }
+
             return response()->json([
                 'success'            => false,
                 'status'             => 'failed',

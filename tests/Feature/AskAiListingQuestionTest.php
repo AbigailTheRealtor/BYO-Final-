@@ -253,29 +253,6 @@ class AskAiListingQuestionTest extends TestCase
     }
 
     /**
-     * (G) No persistence records created — no DB writes happen during the request.
-     */
-    public function test_no_persistence_records_created(): void
-    {
-        $mock = $this->createMock(AskAiRunnerV2Service::class);
-        $mock->method('run')->willReturn($this->makeReadyResult());
-        $this->app->instance(AskAiRunnerV2Service::class, $mock);
-
-        \Illuminate\Support\Facades\DB::listen(function ($query) {
-            $this->assertStringNotContainsStringIgnoringCase('INSERT', $query->sql, 'Unexpected INSERT query: ' . $query->sql);
-            $this->assertStringNotContainsStringIgnoringCase('UPDATE', $query->sql, 'Unexpected UPDATE query: ' . $query->sql);
-        });
-
-        $response = $this->postJson('/ask-ai/listing-question', [
-            'listing_type' => 'seller',
-            'listing_id'   => 99,
-            'question'     => 'What is the property size?',
-        ]);
-
-        $response->assertOk();
-    }
-
-    /**
      * (H) status=unsupported returns the safe answer message, not a generic failure.
      */
     public function test_unsupported_status_returns_safe_answer_message(): void

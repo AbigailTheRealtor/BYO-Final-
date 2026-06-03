@@ -142,8 +142,10 @@ class AskAiAdminTest extends TestCase
         $response->assertDontSee('final_response → disclosures');
     }
 
-    // (e) No Ask AI persistence tables exist — this feature has no logging or storage layer
-    public function test_no_ask_ai_persistence_tables_exist(): void
+    // (e) The admin test interface has no conversation-session or request-log tables of its own.
+    //     Note: ask_ai_usage_logs intentionally exists as the platform-wide usage logging layer
+    //     (written by AskAiListingQuestionController, not by this admin tool).
+    public function test_admin_test_interface_has_no_own_persistence_tables(): void
     {
         $admin = $this->makeAdminUser();
 
@@ -162,21 +164,27 @@ class AskAiAdminTest extends TestCase
             'question'     => 'What makes this property stand out?',
         ]);
 
-        // Schema::hasTable() confirms no Ask AI persistence tables have been
-        // created in this codebase. The test interface intentionally has no
-        // logging or storage layer — these tables must not exist at all.
-        $askAiTables = [
+        // These admin-tool-specific tables must never be created. The only
+        // intentional Ask AI storage table is ask_ai_usage_logs, which is
+        // managed by AskAiListingQuestionController and AskAiUsageLoggerService.
+        $forbiddenTables = [
             'ask_ai_logs',
             'ask_ai_conversations',
             'ask_ai_sessions',
             'ask_ai_requests',
         ];
 
-        foreach ($askAiTables as $table) {
+        foreach ($forbiddenTables as $table) {
             $this->assertFalse(
                 \Illuminate\Support\Facades\Schema::hasTable($table),
-                "Ask AI persistence table '{$table}' exists — this feature must not introduce any storage layer."
+                "Unexpected Ask AI admin table '{$table}' found — the admin test interface must not introduce its own storage layer."
             );
         }
+
+        // Confirm the platform usage log table does exist (created by migration).
+        $this->assertTrue(
+            \Illuminate\Support\Facades\Schema::hasTable('ask_ai_usage_logs'),
+            "ask_ai_usage_logs must exist — it is the platform-wide Ask AI usage logging table."
+        );
     }
 }
