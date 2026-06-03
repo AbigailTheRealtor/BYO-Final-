@@ -170,39 +170,30 @@ class OfferActionButtonWiringTest extends TestCase
         $this->assertStringContainsString($reason, $content);
     }
 
-    // ── Test 7: Counter is always a visible placeholder — no form, never disabled ─
+    // ── Test 7: Counter — disabled button with reason when can_counter=false and reason set ─
 
-    public function test_counter_is_always_visible_placeholder_never_form_never_disabled(): void
+    public function test_counter_renders_disabled_button_with_reason_when_blocked(): void
     {
         $offer = Offer::factory()->submitted()->create();
 
-        // Test with can_counter = true
-        $actionsEnabled = $this->makeActions(['can_counter' => true]);
-        $this->mockActionsService($offer, $actionsEnabled);
+        // can_counter=false with non-empty reason → disabled button, reason visible, no form action
+        $actions = $this->makeActions(['can_counter' => false]);
+        $this->mockActionsService($offer, $actions);
 
         $response = $this->get(route('offers.show', $offer));
         $response->assertStatus(200);
+
         $content    = $response->getContent();
-        $counterUrl = '/offers/' . $offer->id . '/counter';
+        $counterUrl = route('offers.counter', $offer);
 
-        $this->assertStringContainsString('Counter', $content, 'Counter must be visible when can_counter=true.');
-        $this->assertStringNotContainsString('action="' . $counterUrl . '"', $content, 'Counter must never have a form action.');
+        $this->assertStringContainsString('Counter', $content, 'Counter must be visible when can_counter=false and reason is set.');
+        $this->assertStringNotContainsString('action="' . $counterUrl . '"', $content, 'Counter must not have a form action when can_counter=false.');
+        $this->assertStringContainsString('Not allowed to counter', $content, 'Reason must be visible when can_counter=false and reason is set.');
 
-        // Test with can_counter = false — Counter still shows and is NOT disabled
-        $actionsDisabled = $this->makeActions(['can_counter' => false]);
-        $this->mockActionsService($offer, $actionsDisabled);
-
-        $response2 = $this->get(route('offers.show', $offer));
-        $response2->assertStatus(200);
-        $content2 = $response2->getContent();
-
-        $this->assertStringContainsString('Counter', $content2, 'Counter must be visible even when can_counter=false.');
-        $this->assertStringNotContainsString('action="' . $counterUrl . '"', $content2, 'Counter must never have a form action.');
-
-        $counterPos = strpos($content2, '>Counter<');
+        $counterPos = strpos($content, '>Counter<');
         $this->assertNotFalse($counterPos);
-        $snippet = substr($content2, max(0, $counterPos - 200), 250);
-        $this->assertStringNotContainsString(' disabled', $snippet, 'Counter must never render as disabled.');
+        $snippet = substr($content, max(0, $counterPos - 200), 250);
+        $this->assertStringContainsString(' disabled', $snippet, 'Counter must render as disabled when can_counter=false.');
     }
 
     // ── Test 8: Expire never appears in rendered HTML ─────────────────────────

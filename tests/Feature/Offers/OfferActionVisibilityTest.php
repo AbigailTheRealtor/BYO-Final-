@@ -194,29 +194,30 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertStringNotContainsString('action="' . $withdrawUrl . '"', $content, 'Disabled withdraw must not have a form action.');
     }
 
-    // ── Test 8: Counter is always a visible placeholder — never disabled, never a form ──
+    // ── Test 8: Counter — disabled button with reason when can_counter=false and reason is set ──
 
-    public function test_counter_is_always_visible_placeholder_never_disabled_never_a_form(): void
+    public function test_counter_renders_disabled_button_with_reason_when_blocked(): void
     {
         $offer = Offer::factory()->create(['status' => 'draft']);
 
-        // Counter disabled
+        // Counter disabled with non-empty reason (default in makeActions)
         $actions = $this->makeActions(['can_counter' => false]);
         $this->mockActionsService($offer, $actions);
 
         $response = $this->get(route('offers.show', $offer));
         $response->assertStatus(200);
 
-        $content     = $response->getContent();
-        $counterUrl  = '/offers/' . $offer->id . '/counter';
+        $content    = $response->getContent();
+        $counterUrl = route('offers.counter', $offer);
 
-        $this->assertStringContainsString('Counter', $content, 'Counter must always be visible.');
-        $this->assertStringNotContainsString('action="' . $counterUrl . '"', $content, 'Counter must never have a form action.');
+        $this->assertStringContainsString('Counter', $content, 'Counter must be visible when can_counter=false with a reason.');
+        $this->assertStringNotContainsString('action="' . $counterUrl . '"', $content, 'Counter must not have a form action when can_counter=false.');
+        $this->assertStringContainsString('Not allowed to counter', $content, 'Reason text must be visible when can_counter=false.');
 
-        // disabled attribute must not appear adjacent to the Counter label
+        // disabled attribute must appear adjacent to the Counter label
         $counterPos = strpos($content, '>Counter<');
         $this->assertNotFalse($counterPos);
         $snippet = substr($content, max(0, $counterPos - 200), 250);
-        $this->assertStringNotContainsString(' disabled', $snippet, 'Counter must never render as a disabled button.');
+        $this->assertStringContainsString(' disabled', $snippet, 'Counter must render as a disabled button when can_counter=false.');
     }
 }

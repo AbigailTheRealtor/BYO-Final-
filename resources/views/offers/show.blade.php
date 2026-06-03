@@ -99,7 +99,7 @@
 
             {{-- Available Actions --}}
             {{-- can_expire is intentionally not shown. Submit/Accept/Reject/Withdraw POST via named routes when enabled. --}}
-            {{-- Counter is always a visible placeholder (no form, no route). Disabled actions render as bare disabled buttons. --}}
+            {{-- Counter has dedicated three-branch logic below the shared loop. Disabled actions render as bare disabled buttons. --}}
             <div class="card mb-4">
                 <div class="card-header">
                     <strong>Available Actions</strong>
@@ -107,13 +107,13 @@
                 <div class="card-body">
                     @php
                         $actionButtons = [
-                            'can_submit'        => ['label' => 'Submit Offer',  'btn' => 'btn-primary',           'reason_key' => 'submit',        'route' => 'offers.submit', 'placeholder' => false],
-                            'can_counter'       => ['label' => 'Counter',        'btn' => 'btn-warning',           'reason_key' => 'counter',       'route' => null,            'placeholder' => true],
-                            'can_accept'        => ['label' => 'Accept',         'btn' => 'btn-success',           'reason_key' => 'accept',        'route' => 'offers.accept', 'placeholder' => false],
-                            'can_reject'        => ['label' => 'Reject',         'btn' => 'btn-danger',            'reason_key' => 'reject',        'route' => 'offers.reject', 'placeholder' => false],
-                            'can_withdraw'      => ['label' => 'Withdraw',       'btn' => 'btn-outline-secondary', 'reason_key' => 'withdraw',      'route' => 'offers.withdraw','placeholder' => false],
-                            'can_view_timeline' => ['label' => 'View Timeline',  'btn' => 'btn-outline-info',      'reason_key' => 'view_timeline', 'route' => null,            'placeholder' => false],
+                            'can_submit'        => ['label' => 'Submit Offer',  'btn' => 'btn-primary',           'reason_key' => 'submit',        'route' => 'offers.submit'],
+                            'can_accept'        => ['label' => 'Accept',         'btn' => 'btn-success',           'reason_key' => 'accept',        'route' => 'offers.accept'],
+                            'can_reject'        => ['label' => 'Reject',         'btn' => 'btn-danger',            'reason_key' => 'reject',        'route' => 'offers.reject'],
+                            'can_withdraw'      => ['label' => 'Withdraw',       'btn' => 'btn-outline-secondary', 'reason_key' => 'withdraw',      'route' => 'offers.withdraw'],
+                            'can_view_timeline' => ['label' => 'View Timeline',  'btn' => 'btn-outline-info',      'reason_key' => 'view_timeline', 'route' => null],
                         ];
+                        $counterReason = $actions['reasons']['counter'] ?? '';
                     @endphp
                     <div class="d-flex flex-wrap gap-3 align-items-start">
                         @foreach($actionButtons as $flag => $cfg)
@@ -122,10 +122,7 @@
                                 $reason  = $allowed ? '' : ($actions['reasons'][$cfg['reason_key']] ?? '');
                             @endphp
                             <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
-                                @if($cfg['placeholder'])
-                                    {{-- Counter: always a visible placeholder button, never a form, never disabled --}}
-                                    <button type="button" class="btn {{ $cfg['btn'] }} btn-sm">{{ $cfg['label'] }}</button>
-                                @elseif($allowed && $cfg['route'])
+                                @if($allowed && $cfg['route'])
                                     {{-- Enabled action with a route: POST form --}}
                                     <form method="POST" action="{{ route($cfg['route'], $offer) }}">
                                         @csrf
@@ -143,6 +140,27 @@
                                 @endif
                             </div>
                         @endforeach
+
+                        {{-- Counter: three-branch logic --}}
+                        @if(!empty($actions['can_counter']))
+                            {{-- can_counter=true: real POST form with expires_at date input --}}
+                            <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
+                                <form method="POST" action="{{ route('offers.counter', $offer) }}">
+                                    @csrf
+                                    <div class="mb-2">
+                                        <input type="date" name="expires_at" class="form-control form-control-sm">
+                                    </div>
+                                    <button type="submit" class="btn btn-warning btn-sm">Counter</button>
+                                </form>
+                            </div>
+                        @elseif($counterReason !== '')
+                            {{-- can_counter=false with reason: disabled button with tooltip and reason text --}}
+                            <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
+                                <button type="button" class="btn btn-warning btn-sm" disabled title="{{ $counterReason }}" aria-disabled="true" tabindex="-1">Counter</button>
+                                <small class="text-muted mt-1 px-1" style="font-size: 0.75rem; line-height: 1.3;">{{ $counterReason }}</small>
+                            </div>
+                        @endif
+                        {{-- can_counter=false with empty reason: nothing rendered --}}
                     </div>
                 </div>
             </div>
