@@ -104,41 +104,28 @@
                 </div>
                 <div class="card-body">
                     @php
-                        $actionFlags = [
-                            'can_submit'        => 'Submit',
-                            'can_counter'       => 'Counter',
-                            'can_accept'        => 'Accept',
-                            'can_reject'        => 'Reject',
-                            'can_withdraw'      => 'Withdraw',
-                            'can_expire'        => 'Expire',
-                            'can_view_timeline' => 'View Timeline',
-                        ];
-                        $reasonKeys = [
-                            'can_submit'        => 'submit',
-                            'can_counter'       => 'counter',
-                            'can_accept'        => 'accept',
-                            'can_reject'        => 'reject',
-                            'can_withdraw'      => 'withdraw',
-                            'can_expire'        => 'expire',
-                            'can_view_timeline' => 'view_timeline',
+                        $actionMap = [
+                            'can_submit'        => ['label' => 'Submit Offer',  'reason_key' => 'submit'],
+                            'can_counter'       => ['label' => 'Counter Offer', 'reason_key' => 'counter'],
+                            'can_accept'        => ['label' => 'Accept',        'reason_key' => 'accept'],
+                            'can_reject'        => ['label' => 'Reject',        'reason_key' => 'reject'],
+                            'can_withdraw'      => ['label' => 'Withdraw',      'reason_key' => 'withdraw'],
+                            'can_view_timeline' => ['label' => 'View Timeline', 'reason_key' => 'view_timeline'],
                         ];
                     @endphp
-                    <dl class="row mb-0">
-                        @foreach($actionFlags as $flag => $label)
-                        <dt class="col-sm-3">{{ $label }}</dt>
-                        <dd class="col-sm-9">
-                            @if($actions[$flag])
-                                <span class="badge bg-success">Allowed</span>
-                            @else
-                                <span class="badge bg-danger">Blocked</span>
-                                @php $reason = $actions['reasons'][$reasonKeys[$flag]] ?? ''; @endphp
-                                @if($reason)
-                                    <span class="ms-2 text-muted small">{{ $reason }}</span>
-                                @endif
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach($actionMap as $flag => $meta)
+                            @php
+                                $allowed = $actions[$flag] ?? false;
+                                $reason  = $actions['reasons'][$meta['reason_key']] ?? '';
+                            @endphp
+                            @if($allowed)
+                                <button type="button" class="btn btn-primary btn-sm">{{ $meta['label'] }}</button>
+                            @elseif($reason !== '')
+                                <button type="button" class="btn btn-secondary btn-sm" disabled title="{{ $reason }}">{{ $meta['label'] }}</button>
                             @endif
-                        </dd>
                         @endforeach
-                    </dl>
+                    </div>
                 </div>
             </div>
 
