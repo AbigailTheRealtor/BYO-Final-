@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Offer;
+use App\Notifications\Offers\OfferSubmittedNotification;
 use App\Services\Offers\OfferAvailableActionsService;
 use App\Services\Offers\OfferTimelineBuilder;
 use App\Services\Offers\OfferWorkflowFacade;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 
 class OfferController extends Controller
 {
@@ -58,6 +60,8 @@ class OfferController extends Controller
         if ($result['allowed'] === false) {
             return response()->json(['message' => $result['reason']], 422);
         }
+
+        Notification::send($offer->user, new OfferSubmittedNotification($offer));
 
         return response()->json([
             'message' => 'Offer submitted.',
