@@ -98,32 +98,41 @@
             </div>
 
             {{-- Available Actions --}}
+            {{-- can_expire is intentionally not shown. All buttons are display-only: no action, no form, no wire:click. --}}
             <div class="card mb-4">
                 <div class="card-header">
                     <strong>Available Actions</strong>
                 </div>
                 <div class="card-body">
                     @php
-                        $actionMap = [
-                            'can_submit'        => ['label' => 'Submit Offer',  'reason_key' => 'submit'],
-                            'can_counter'       => ['label' => 'Counter Offer', 'reason_key' => 'counter'],
-                            'can_accept'        => ['label' => 'Accept',        'reason_key' => 'accept'],
-                            'can_reject'        => ['label' => 'Reject',        'reason_key' => 'reject'],
-                            'can_withdraw'      => ['label' => 'Withdraw',      'reason_key' => 'withdraw'],
-                            'can_view_timeline' => ['label' => 'View Timeline', 'reason_key' => 'view_timeline'],
+                        $actionButtons = [
+                            'can_submit'        => ['label' => 'Submit Offer',   'btn' => 'btn-primary',           'reason_key' => 'submit'],
+                            'can_counter'       => ['label' => 'Counter',         'btn' => 'btn-warning',           'reason_key' => 'counter'],
+                            'can_accept'        => ['label' => 'Accept',          'btn' => 'btn-success',           'reason_key' => 'accept'],
+                            'can_reject'        => ['label' => 'Reject',          'btn' => 'btn-danger',            'reason_key' => 'reject'],
+                            'can_withdraw'      => ['label' => 'Withdraw',        'btn' => 'btn-outline-secondary', 'reason_key' => 'withdraw'],
+                            'can_view_timeline' => ['label' => 'View Timeline',   'btn' => 'btn-outline-info',      'reason_key' => 'view_timeline'],
                         ];
                     @endphp
-                    <div class="d-flex flex-wrap gap-2">
-                        @foreach($actionMap as $flag => $meta)
+                    <div class="d-flex flex-wrap gap-3 align-items-start">
+                        @foreach($actionButtons as $flag => $cfg)
                             @php
-                                $allowed = $actions[$flag] ?? false;
-                                $reason  = $actions['reasons'][$meta['reason_key']] ?? '';
+                                $allowed = !empty($actions[$flag]);
+                                $reason  = $allowed ? '' : ($actions['reasons'][$cfg['reason_key']] ?? '');
                             @endphp
-                            @if($allowed)
-                                <button type="button" class="btn btn-primary btn-sm">{{ $meta['label'] }}</button>
-                            @elseif($reason !== '')
-                                <button type="button" class="btn btn-secondary btn-sm" disabled title="{{ $reason }}">{{ $meta['label'] }}</button>
-                            @endif
+                            <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
+                                <button
+                                    type="button"
+                                    class="btn {{ $cfg['btn'] }} btn-sm w-100{{ $allowed ? '' : ' disabled' }}"
+                                    @if(!$allowed) aria-disabled="true" @endif
+                                    tabindex="{{ $allowed ? '0' : '-1' }}"
+                                >
+                                    {{ $cfg['label'] }}
+                                </button>
+                                @if(!$allowed && $reason)
+                                    <small class="text-muted mt-1 px-1" style="font-size: 0.75rem; line-height: 1.3;">{{ $reason }}</small>
+                                @endif
+                            </div>
                         @endforeach
                     </div>
                 </div>
