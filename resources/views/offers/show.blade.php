@@ -106,12 +106,12 @@
                 <div class="card-body">
                     @php
                         $actionButtons = [
-                            'can_submit'        => ['label' => 'Submit Offer',   'btn' => 'btn-primary',           'reason_key' => 'submit'],
-                            'can_counter'       => ['label' => 'Counter',         'btn' => 'btn-warning',           'reason_key' => 'counter'],
-                            'can_accept'        => ['label' => 'Accept',          'btn' => 'btn-success',           'reason_key' => 'accept'],
-                            'can_reject'        => ['label' => 'Reject',          'btn' => 'btn-danger',            'reason_key' => 'reject'],
-                            'can_withdraw'      => ['label' => 'Withdraw',        'btn' => 'btn-outline-secondary', 'reason_key' => 'withdraw'],
-                            'can_view_timeline' => ['label' => 'View Timeline',   'btn' => 'btn-outline-info',      'reason_key' => 'view_timeline'],
+                            'can_submit'        => ['label' => 'Submit Offer',  'btn' => 'btn-primary',           'reason_key' => 'submit'],
+                            'can_counter'       => ['label' => 'Counter',        'btn' => 'btn-warning',           'reason_key' => 'counter'],
+                            'can_accept'        => ['label' => 'Accept',         'btn' => 'btn-success',           'reason_key' => 'accept'],
+                            'can_reject'        => ['label' => 'Reject',         'btn' => 'btn-danger',            'reason_key' => 'reject'],
+                            'can_withdraw'      => ['label' => 'Withdraw',       'btn' => 'btn-outline-secondary', 'reason_key' => 'withdraw'],
+                            'can_view_timeline' => ['label' => 'View Timeline',  'btn' => 'btn-outline-info',      'reason_key' => 'view_timeline'],
                         ];
                     @endphp
                     <div class="d-flex flex-wrap gap-3 align-items-start">
@@ -121,14 +121,7 @@
                                 $reason  = $allowed ? '' : ($actions['reasons'][$cfg['reason_key']] ?? '');
                             @endphp
                             <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
-                                <button
-                                    type="button"
-                                    class="btn {{ $cfg['btn'] }} btn-sm w-100{{ $allowed ? '' : ' disabled' }}"
-                                    @if(!$allowed) aria-disabled="true" @endif
-                                    tabindex="{{ $allowed ? '0' : '-1' }}"
-                                >
-                                    {{ $cfg['label'] }}
-                                </button>
+                                <button type="button" class="btn {{ $cfg['btn'] }} btn-sm"@if(!$allowed) disabled title="{{ $reason }}" aria-disabled="true" tabindex="-1"@endif>{{ $cfg['label'] }}</button>
                                 @if(!$allowed && $reason)
                                     <small class="text-muted mt-1 px-1" style="font-size: 0.75rem; line-height: 1.3;">{{ $reason }}</small>
                                 @endif

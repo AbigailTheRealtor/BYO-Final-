@@ -89,8 +89,8 @@ class OfferActionVisibilityTest extends TestCase
 
         $content = $response->getContent();
 
-        $this->assertStringContainsString('btn-primary btn-sm">Accept', $content);
-        $this->assertStringContainsString('btn-primary btn-sm">Reject', $content);
+        $this->assertStringContainsString('btn-success btn-sm">Accept', $content);
+        $this->assertStringContainsString('btn-danger btn-sm">Reject', $content);
     }
 
     // ── Test 3: Buyer + submitted offer → Withdraw button is present and not disabled ──
@@ -107,7 +107,7 @@ class OfferActionVisibilityTest extends TestCase
 
         $content = $response->getContent();
 
-        $this->assertStringContainsString('btn-primary btn-sm">Withdraw', $content);
+        $this->assertStringContainsString('btn-outline-secondary btn-sm">Withdraw', $content);
     }
 
     // ── Test 4: Blocked action with non-empty reason → disabled button with reason tooltip ──
@@ -128,7 +128,7 @@ class OfferActionVisibilityTest extends TestCase
         $content = $response->getContent();
 
         $this->assertStringContainsString($blockedReason, $content);
-        $this->assertStringContainsString('disabled', $content);
+        $this->assertStringContainsString('disabled title="' . $blockedReason . '"', $content);
         $this->assertStringContainsString('title="' . $blockedReason . '"', $content);
     }
 
