@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Offer;
+use App\Notifications\Offers\OfferCounteredNotification;
 use App\Notifications\Offers\OfferSubmittedNotification;
 use App\Services\Offers\OfferAvailableActionsService;
 use App\Services\Offers\OfferTimelineBuilder;
@@ -168,6 +169,8 @@ class OfferController extends Controller
         if ($result['allowed'] === false) {
             return response()->json(['message' => $result['reason']], 422);
         }
+
+        $offer->user->notify(new OfferCounteredNotification($offer, $result['counter_offer']));
 
         return response()->json([
             'message' => 'Counter offer created.',
