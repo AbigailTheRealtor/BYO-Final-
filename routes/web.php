@@ -215,6 +215,10 @@ Route::get('/widget/hire/{agentShortId}/{role}/{propertyType?}', [\App\Http\Cont
     ->where('agentShortId', '[0-9a-f]+')
     ->name('hire.agent.widget');
 
+// Ask AI — public listing question endpoint. No auth required. CSRF-protected.
+Route::post('/ask-ai/listing-question', [\App\Http\Controllers\AskAiListingQuestionController::class, 'run'])
+    ->name('ask-ai.listing-question');
+
 
 // Route::post('/notification', [NotificationController::class, 'notification']);
 
