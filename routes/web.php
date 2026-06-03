@@ -1068,6 +1068,24 @@ Route::middleware(['auth'])->group(function () {
 // ===========================================================================
 
 // ===========================================================================
+// Offer Workflow — action endpoints (OfferController)
+// Protected by auth + offerPlayoffAccess Gate.
+// No GET /offers/{offer} here — that belongs to the Offer Detail Page task.
+// No expire endpoint — expire is system-only and has no HTTP surface.
+// ===========================================================================
+Route::middleware(['auth', 'offerPlayoffAccess'])->group(function () {
+    Route::post('/offers/store',            [\App\Http\Controllers\OfferController::class, 'store'])->name('offers.store');
+    Route::post('/offers/{offer}/submit',   [\App\Http\Controllers\OfferController::class, 'submit'])->name('offers.submit');
+    Route::post('/offers/{offer}/accept',   [\App\Http\Controllers\OfferController::class, 'accept'])->name('offers.accept');
+    Route::post('/offers/{offer}/reject',   [\App\Http\Controllers\OfferController::class, 'reject'])->name('offers.reject');
+    Route::post('/offers/{offer}/withdraw', [\App\Http\Controllers\OfferController::class, 'withdraw'])->name('offers.withdraw');
+    Route::post('/offers/{offer}/counter',  [\App\Http\Controllers\OfferController::class, 'counter'])->name('offers.counter');
+});
+// ===========================================================================
+// END Offer Workflow action endpoints
+// ===========================================================================
+
+// ===========================================================================
 // LAYER 2 DEV-ONLY — OfferListing duplication test routes
 // These routes are DEVELOPMENT-ONLY. Do NOT use in production.
 // Purpose: smoke-test the duplicated OfferListing Livewire components.
