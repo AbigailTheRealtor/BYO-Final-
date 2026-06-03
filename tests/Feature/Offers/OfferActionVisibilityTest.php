@@ -150,12 +150,12 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertStringNotContainsString('>Expire ', $content);
     }
 
-    // ── Test 6: No <form tags or action= attributes anywhere on page ──
+    // ── Test 6: When all actions are disabled, no form tags appear on page ──
 
-    public function test_no_form_tags_or_action_attributes_on_page(): void
+    public function test_all_disabled_actions_produce_no_form_tags(): void
     {
         $offer   = Offer::factory()->create(['status' => 'draft']);
-        $actions = $this->makeActions(['can_submit' => true, 'can_view_timeline' => true]);
+        $actions = $this->makeActions();
 
         $this->mockActionsService($offer, $actions);
 
@@ -166,5 +166,57 @@ class OfferActionVisibilityTest extends TestCase
 
         $this->assertStringNotContainsString('<form', $content);
         $this->assertStringNotContainsString('action=', $content);
+    }
+
+    // ── Test 7: Enabled actions produce forms; disabled actions of the same type do not ──
+
+    public function test_enabled_action_has_form_and_disabled_action_has_none(): void
+    {
+        $offer = Offer::factory()->create(['status' => 'draft']);
+
+        // Submit enabled — all others disabled
+        $actions = $this->makeActions(['can_submit' => true]);
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content    = $response->getContent();
+        $submitUrl  = route('offers.submit', $offer);
+        $acceptUrl  = route('offers.accept', $offer);
+        $rejectUrl  = route('offers.reject', $offer);
+        $withdrawUrl = route('offers.withdraw', $offer);
+
+        $this->assertStringContainsString('<form', $content, 'An enabled action must produce a form element.');
+        $this->assertStringContainsString('action="' . $submitUrl . '"', $content, 'Enabled submit must have its route as form action.');
+        $this->assertStringNotContainsString('action="' . $acceptUrl . '"', $content, 'Disabled accept must not have a form action.');
+        $this->assertStringNotContainsString('action="' . $rejectUrl . '"', $content, 'Disabled reject must not have a form action.');
+        $this->assertStringNotContainsString('action="' . $withdrawUrl . '"', $content, 'Disabled withdraw must not have a form action.');
+    }
+
+    // ── Test 8: Counter is always a visible placeholder — never disabled, never a form ──
+
+    public function test_counter_is_always_visible_placeholder_never_disabled_never_a_form(): void
+    {
+        $offer = Offer::factory()->create(['status' => 'draft']);
+
+        // Counter disabled
+        $actions = $this->makeActions(['can_counter' => false]);
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content     = $response->getContent();
+        $counterUrl  = '/offers/' . $offer->id . '/counter';
+
+        $this->assertStringContainsString('Counter', $content, 'Counter must always be visible.');
+        $this->assertStringNotContainsString('action="' . $counterUrl . '"', $content, 'Counter must never have a form action.');
+
+        // disabled attribute must not appear adjacent to the Counter label
+        $counterPos = strpos($content, '>Counter<');
+        $this->assertNotFalse($counterPos);
+        $snippet = substr($content, max(0, $counterPos - 200), 250);
+        $this->assertStringNotContainsString(' disabled', $snippet, 'Counter must never render as a disabled button.');
     }
 }
