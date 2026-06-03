@@ -25,6 +25,7 @@ class Kernel extends ConsoleKernel
         // $schedule->command('seller:autocounter')->everyMinute();
         // $schedule->command('buyer:autocounter')->everyMinute();
 
+        $schedule->command('offers:expire-pending')->everyMinute();
     }
 
     /**
