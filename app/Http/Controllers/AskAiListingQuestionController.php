@@ -5,17 +5,23 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Services\AskAi\AskAiRunnerV2Service;
+use App\Services\AskAi\AskAiRateLimitService;
 use App\Services\AskAi\AskAiUsageLoggerService;
 
 class AskAiListingQuestionController extends Controller
 {
     private AskAiRunnerV2Service $runner;
     private AskAiUsageLoggerService $logger;
+    private AskAiRateLimitService $rateLimiter;
 
-    public function __construct(AskAiRunnerV2Service $runner, AskAiUsageLoggerService $logger)
-    {
-        $this->runner = $runner;
-        $this->logger = $logger;
+    public function __construct(
+        AskAiRunnerV2Service $runner,
+        AskAiUsageLoggerService $logger,
+        AskAiRateLimitService $rateLimiter
+    ) {
+        $this->runner      = $runner;
+        $this->logger      = $logger;
+        $this->rateLimiter = $rateLimiter;
     }
 
     public function run(Request $request): JsonResponse
@@ -32,6 +38,18 @@ class AskAiListingQuestionController extends Controller
         $listingId    = (int) $validated['listing_id'];
         $question     = $validated['question'];
         $questionHash = hash('sha256', $question);
+
+        $rateLimitResult = $this->rateLimiter->check($request, $listingType, $listingId);
+        if ($rateLimitResult !== null) {
+            $retryAfter = $rateLimitResult['retry_after'];
+            return response()->json([
+                'error' => [
+                    'message'     => 'You have exceeded the Ask AI rate limit. Please try again later.',
+                    'retry_after' => $retryAfter,
+                    'limit_type'  => $rateLimitResult['limit_type'],
+                ],
+            ], 429)->header('Retry-After', $retryAfter);
+        }
 
         try {
             $result = $this->runner->run(
