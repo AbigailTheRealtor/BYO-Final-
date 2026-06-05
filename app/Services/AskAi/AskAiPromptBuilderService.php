@@ -288,11 +288,28 @@ class AskAiPromptBuilderService
     }
 
     /**
+     * Fields from an enriched faq_answers entry that are safe to forward to the LLM.
+     * Internal model attributes (id, listing_id, listing_type, created_at, updated_at)
+     * must never be forwarded.
+     */
+    private const FAQ_SAFE_FIELDS = [
+        'answer_text',
+        'question_label',
+        'question_group',
+        'intelligence_category',
+    ];
+
+    /**
      * Filter the full assembled context to only the dot-notation paths permitted by the contract.
      *
      * Each path in $allowedPaths is a dot-notation string such as
      * 'property_intelligence.property_highlights'. Only those nested keys are extracted;
      * no additional context bleeds through.
+     *
+     * Special handling for 'faq_answers': when entries are enriched objects (arrays),
+     * only the four safe fields (answer_text, question_label, question_group,
+     * intelligence_category) are forwarded. Internal model attributes are stripped.
+     * Legacy raw-string entries are forwarded as-is for backward compatibility.
      *
      * @param  array    $context      Full assembled context from AskAiContextBuilderService.
      * @param  string[] $allowedPaths Dot-notation paths from contract['allowed_context'].
@@ -308,7 +325,9 @@ class AskAiPromptBuilderService
             if (count($segments) === 1) {
                 $key = $segments[0];
                 if (array_key_exists($key, $context)) {
-                    $filtered[$key] = $context[$key];
+                    $filtered[$key] = $key === 'faq_answers'
+                        ? $this->sanitizeFaqAnswers($context[$key])
+                        : $context[$key];
                 }
                 continue;
             }
@@ -332,6 +351,39 @@ class AskAiPromptBuilderService
         }
 
         return $filtered;
+    }
+
+    /**
+     * Sanitize the faq_answers array for safe LLM forwarding.
+     *
+     * For enriched entries (arrays), only FAQ_SAFE_FIELDS are kept.
+     * Legacy raw-string entries are forwarded unchanged for backward compatibility.
+     *
+     * @param  mixed $faqAnswers  The faq_answers value from the assembled context.
+     * @return array
+     */
+    private function sanitizeFaqAnswers(mixed $faqAnswers): array
+    {
+        if (!is_array($faqAnswers)) {
+            return [];
+        }
+
+        $sanitized = [];
+        foreach ($faqAnswers as $key => $entry) {
+            if (is_array($entry)) {
+                $safe = [];
+                foreach (self::FAQ_SAFE_FIELDS as $field) {
+                    if (array_key_exists($field, $entry)) {
+                        $safe[$field] = $entry[$field];
+                    }
+                }
+                $sanitized[$key] = $safe;
+            } else {
+                $sanitized[$key] = $entry;
+            }
+        }
+
+        return $sanitized;
     }
 
     /**

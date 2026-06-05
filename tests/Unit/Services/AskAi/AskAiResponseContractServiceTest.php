@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
  * Pure unit tests — no database, no Laravel TestCase, no DB traits.
  * AskAiResponseContractService is stateless and requires no mocking.
  *
- * Test coverage (cases A–I):
+ * Test coverage (cases A–N):
  *   A. Each supported type returns 'contract_ready' when required context is present
  *   B. Missing required context returns 'insufficient_context' with missing_required_sources populated
  *   C. 'prohibited' type always returns 'refusal_required'
@@ -21,6 +21,9 @@ use PHPUnit\Framework\TestCase;
  *   G. No write calls exist in the service file (static grep on non-comment lines)
  *   H. Source attribution rule is required in every 'contract_ready' response that uses platform data
  *   I. Educational questions carry the 'General Educational Information' disclosure label
+ *   M. listing_facts — full coverage (allowed_context, response_rules, disclosures, shape)
+ *   N. FAQ shape compatibility — contract service handles both legacy raw-string and enriched object
+ *      shape faq_answers entries without error; it never reads individual entry values
  */
 class AskAiResponseContractServiceTest extends TestCase
 {
@@ -1030,5 +1033,190 @@ class AskAiResponseContractServiceTest extends TestCase
         $result  = $service->buildContract('listing_facts', []);
 
         $this->assertFalse($result['success']);
+    }
+
+    // =========================================================================
+    // Case N — FAQ shape compatibility (legacy raw-string vs enriched object)
+    // =========================================================================
+
+    /**
+     * The contract service only checks top-level source presence via isset($context[$source]).
+     * It never reads individual faq_answers entry values.
+     * Both the legacy string shape and the enriched array shape must therefore produce
+     * identical contract_ready outcomes for listing_facts.
+     */
+    public function test_case_N_listing_facts_contract_ready_with_legacy_string_faq_shape(): void
+    {
+        $service = $this->makeService();
+
+        $context = [
+            'listing' => ['listing_id' => 1, 'listing_type' => 'seller'],
+            'faq_answers' => [
+                'roof_age'  => 'Replaced in 2020',
+                'hvac'      => 'Serviced annually',
+            ],
+        ];
+
+        $result = $service->buildContract('listing_facts', $context);
+
+        $this->assertSame('contract_ready', $result['status'],
+            "listing_facts with legacy string FAQ values must produce contract_ready");
+        $this->assertTrue($result['success']);
+    }
+
+    public function test_case_N_listing_facts_contract_ready_with_enriched_object_faq_shape(): void
+    {
+        $service = $this->makeService();
+
+        $context = [
+            'listing' => ['listing_id' => 1, 'listing_type' => 'seller'],
+            'faq_answers' => [
+                'roof_age' => [
+                    'config_key'            => 'roof_age',
+                    'answer_text'           => 'Replaced in 2020',
+                    'question_label'        => 'How old is the roof?',
+                    'question_group'        => 'Property Condition & Maintenance',
+                    'intelligence_category' => 'property_condition_maintenance',
+                ],
+                'hvac' => [
+                    'config_key'            => 'hvac',
+                    'answer_text'           => 'Serviced annually',
+                    'question_label'        => 'What is the HVAC maintenance history?',
+                    'question_group'        => 'Property Condition & Maintenance',
+                    'intelligence_category' => 'property_condition_maintenance',
+                ],
+            ],
+        ];
+
+        $result = $service->buildContract('listing_facts', $context);
+
+        $this->assertSame('contract_ready', $result['status'],
+            "listing_facts with enriched object FAQ values must produce contract_ready");
+        $this->assertTrue($result['success']);
+    }
+
+    public function test_case_N_listing_facts_contract_ready_with_mixed_faq_shapes(): void
+    {
+        $service = $this->makeService();
+
+        $context = [
+            'listing' => ['listing_id' => 1, 'listing_type' => 'landlord'],
+            'faq_answers' => [
+                'parking_details' => 'One assigned spot',
+                'laundry' => [
+                    'config_key'            => 'laundry',
+                    'answer_text'           => 'In-unit washer/dryer',
+                    'question_label'        => 'Is laundry available?',
+                    'question_group'        => 'Property Amenities',
+                    'intelligence_category' => 'property_amenities',
+                ],
+            ],
+        ];
+
+        $result = $service->buildContract('listing_facts', $context);
+
+        $this->assertSame('contract_ready', $result['status'],
+            "listing_facts with mixed legacy and enriched FAQ shapes must produce contract_ready");
+        $this->assertTrue($result['success']);
+    }
+
+    public function test_case_N_contract_service_does_not_mutate_faq_answers_entries(): void
+    {
+        $service = $this->makeService();
+
+        $enrichedEntry = [
+            'config_key'            => 'roof_age',
+            'answer_text'           => 'Replaced in 2020',
+            'question_label'        => 'How old is the roof?',
+            'question_group'        => 'Property Condition & Maintenance',
+            'intelligence_category' => 'property_condition_maintenance',
+        ];
+
+        $context = [
+            'listing'     => ['listing_id' => 1, 'listing_type' => 'seller'],
+            'faq_answers' => ['roof_age' => $enrichedEntry],
+        ];
+
+        $contextBefore = json_encode($context);
+        $service->buildContract('listing_facts', $context);
+        $contextAfter = json_encode($context);
+
+        $this->assertSame($contextBefore, $contextAfter,
+            "buildContract() must not mutate the faq_answers entries in the passed context");
+    }
+
+    public function test_case_N_contract_service_does_not_mutate_legacy_faq_answers(): void
+    {
+        $service = $this->makeService();
+
+        $context = [
+            'listing'     => ['listing_id' => 1, 'listing_type' => 'seller'],
+            'faq_answers' => ['roof_age' => 'Replaced in 2020'],
+        ];
+
+        $contextBefore = json_encode($context);
+        $service->buildContract('listing_facts', $context);
+        $contextAfter = json_encode($context);
+
+        $this->assertSame($contextBefore, $contextAfter,
+            "buildContract() must not mutate legacy faq_answers string entries in the passed context");
+    }
+
+    public function test_case_N_listing_facts_contract_ready_with_null_metadata_faq_entries(): void
+    {
+        $service = $this->makeService();
+
+        $context = [
+            'listing' => ['listing_id' => 1, 'listing_type' => 'seller'],
+            'faq_answers' => [
+                'unknown_custom_key' => [
+                    'config_key'            => 'unknown_custom_key',
+                    'answer_text'           => 'Some answer',
+                    'question_label'        => null,
+                    'question_group'        => null,
+                    'intelligence_category' => null,
+                ],
+            ],
+        ];
+
+        $result = $service->buildContract('listing_facts', $context);
+
+        $this->assertSame('contract_ready', $result['status'],
+            "listing_facts with null-metadata enriched FAQ entries must still produce contract_ready");
+        $this->assertTrue($result['success']);
+    }
+
+    public function test_case_N_listing_facts_contract_ready_with_empty_faq_answers(): void
+    {
+        $service = $this->makeService();
+
+        $context = [
+            'listing'     => ['listing_id' => 1, 'listing_type' => 'seller'],
+            'faq_answers' => [],
+        ];
+
+        $result = $service->buildContract('listing_facts', $context);
+
+        $this->assertSame('contract_ready', $result['status'],
+            "listing_facts with empty faq_answers must produce contract_ready (faq_answers is not a required source)");
+        $this->assertTrue($result['success']);
+    }
+
+    public function test_case_N_faq_answers_in_listing_facts_allowed_context(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $this->assertContains('faq_answers', $result['allowed_context'],
+            "'faq_answers' must be listed in listing_facts allowed_context");
+    }
+
+    public function test_case_N_faq_answers_not_a_required_source_for_listing_facts(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $this->assertNotContains('faq_answers', $result['required_sources'],
+            "'faq_answers' must not be a required_source — it is optional supplemental data");
     }
 }

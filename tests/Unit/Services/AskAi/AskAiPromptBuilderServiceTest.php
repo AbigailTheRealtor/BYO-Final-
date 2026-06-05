@@ -28,6 +28,10 @@ use PHPUnit\Framework\TestCase;
  *   M. insufficient_context appends the fixed unavailable-data disclosure; missing_required_sources surfaced
  *   N. Service file contains no OpenAI or HTTP calls (static grep on non-comment lines)
  *   O. Service file contains no write calls (static grep on non-comment lines)
+ *   P. FAQ answer sanitization — enriched entries reach allowed_context with only safe fields;
+ *      config_key and internal model fields are stripped; legacy strings pass through;
+ *      faq_answers absent from output when not in allowed_context; consumer-audit grep confirms
+ *      faq_answers is only accessed through sanitizeFaqAnswers inside filterAllowedContext.
  */
 class AskAiPromptBuilderServiceTest extends TestCase
 {
@@ -1092,5 +1096,190 @@ class AskAiPromptBuilderServiceTest extends TestCase
                 "Service file must not contain write call '{$term}'"
             );
         }
+    }
+
+    // =========================================================================
+    // Case P — FAQ answer sanitization in allowed_context filtering
+    // =========================================================================
+
+    /**
+     * Build an enriched FAQ entry as returned by buildFaqAnswers().
+     */
+    private function makeEnrichedFaqEntry(string $answerText = 'Test answer'): array
+    {
+        return [
+            'config_key'            => 'roof_age',
+            'answer_text'           => $answerText,
+            'question_label'        => 'How old is the roof?',
+            'question_group'        => 'Property Condition & Maintenance',
+            'intelligence_category' => 'property_condition',
+        ];
+    }
+
+    public function test_case_P_enriched_faq_entries_in_allowed_context_contain_only_safe_fields(): void
+    {
+        $context  = $this->makeContext([
+            'faq_answers' => ['roof_age' => $this->makeEnrichedFaqEntry()],
+        ]);
+        $contract = $this->makeContractReady(['allowed_context' => ['faq_answers']]);
+
+        $result = $this->makeService()->buildPromptPackage('q', $context, $contract);
+
+        $this->assertArrayHasKey('faq_answers', $result['allowed_context']);
+        $this->assertArrayHasKey('roof_age', $result['allowed_context']['faq_answers']);
+
+        $entry = $result['allowed_context']['faq_answers']['roof_age'];
+
+        foreach (['answer_text', 'question_label', 'question_group', 'intelligence_category'] as $safeField) {
+            $this->assertArrayHasKey($safeField, $entry,
+                "Safe field '{$safeField}' must be present in sanitized FAQ entry");
+        }
+    }
+
+    public function test_case_P_config_key_is_stripped_from_enriched_faq_entries(): void
+    {
+        $context  = $this->makeContext([
+            'faq_answers' => ['roof_age' => $this->makeEnrichedFaqEntry()],
+        ]);
+        $contract = $this->makeContractReady(['allowed_context' => ['faq_answers']]);
+
+        $result = $this->makeService()->buildPromptPackage('q', $context, $contract);
+
+        $entry = $result['allowed_context']['faq_answers']['roof_age'];
+        $this->assertArrayNotHasKey('config_key', $entry,
+            'config_key must be stripped from FAQ entries before LLM forwarding');
+    }
+
+    public function test_case_P_internal_model_fields_stripped_from_enriched_faq_entries(): void
+    {
+        $entryWithInternals = array_merge($this->makeEnrichedFaqEntry(), [
+            'id'           => 42,
+            'listing_id'   => 7,
+            'listing_type' => 'seller',
+            'created_at'   => '2026-01-01 00:00:00',
+            'updated_at'   => '2026-01-02 00:00:00',
+        ]);
+
+        $context  = $this->makeContext(['faq_answers' => ['roof_age' => $entryWithInternals]]);
+        $contract = $this->makeContractReady(['allowed_context' => ['faq_answers']]);
+
+        $result = $this->makeService()->buildPromptPackage('q', $context, $contract);
+
+        $entry = $result['allowed_context']['faq_answers']['roof_age'];
+
+        foreach (['id', 'listing_id', 'listing_type', 'created_at', 'updated_at'] as $internal) {
+            $this->assertArrayNotHasKey($internal, $entry,
+                "Internal field '{$internal}' must not reach the LLM");
+        }
+    }
+
+    public function test_case_P_legacy_string_faq_entries_pass_through_unchanged(): void
+    {
+        $context  = $this->makeContext([
+            'faq_answers' => ['roof_age' => 'Replaced in 2020'],
+        ]);
+        $contract = $this->makeContractReady(['allowed_context' => ['faq_answers']]);
+
+        $result = $this->makeService()->buildPromptPackage('q', $context, $contract);
+
+        $this->assertArrayHasKey('faq_answers', $result['allowed_context']);
+        $this->assertSame('Replaced in 2020', $result['allowed_context']['faq_answers']['roof_age'],
+            'Legacy raw-string FAQ entries must pass through sanitizeFaqAnswers unchanged');
+    }
+
+    public function test_case_P_faq_answers_absent_from_output_when_not_in_allowed_context(): void
+    {
+        $context  = $this->makeContext([
+            'faq_answers' => ['roof_age' => $this->makeEnrichedFaqEntry()],
+        ]);
+        $contract = $this->makeContractReady([
+            'allowed_context' => ['property_intelligence.property_highlights'],
+        ]);
+
+        $result = $this->makeService()->buildPromptPackage('q', $context, $contract);
+
+        $this->assertArrayNotHasKey('faq_answers', $result['allowed_context'],
+            'faq_answers must not bleed into allowed_context when not listed by the contract');
+    }
+
+    public function test_case_P_mixed_enriched_and_legacy_faq_entries_both_handled(): void
+    {
+        $context  = $this->makeContext([
+            'faq_answers' => [
+                'roof_age' => $this->makeEnrichedFaqEntry('Replaced in 2020'),
+                'hvac'     => 'Serviced annually',
+            ],
+        ]);
+        $contract = $this->makeContractReady(['allowed_context' => ['faq_answers']]);
+
+        $result = $this->makeService()->buildPromptPackage('q', $context, $contract);
+
+        $faqOut = $result['allowed_context']['faq_answers'];
+
+        $this->assertIsArray($faqOut['roof_age'],
+            'Enriched entry must remain an array after sanitization');
+        $this->assertSame('Replaced in 2020', $faqOut['roof_age']['answer_text']);
+
+        $this->assertSame('Serviced annually', $faqOut['hvac'],
+            'Legacy string entry must pass through unchanged in mixed map');
+    }
+
+    public function test_case_P_empty_faq_answers_in_allowed_context_is_empty_array(): void
+    {
+        $context  = $this->makeContext(['faq_answers' => []]);
+        $contract = $this->makeContractReady(['allowed_context' => ['faq_answers']]);
+
+        $result = $this->makeService()->buildPromptPackage('q', $context, $contract);
+
+        $this->assertArrayHasKey('faq_answers', $result['allowed_context']);
+        $this->assertSame([], $result['allowed_context']['faq_answers'],
+            'Empty faq_answers must appear as an empty array, not null or absent');
+    }
+
+    public function test_case_P_consumer_audit_faq_answers_only_accessed_via_sanitize_in_filter_method(): void
+    {
+        $path    = $this->serviceFilePath();
+        $content = file_get_contents($path);
+
+        $this->assertFileExists($path);
+
+        $lines = explode("\n", $content);
+
+        $filterMethodLines = [];
+        $inFilterMethod    = false;
+        $braceDepth        = 0;
+
+        foreach ($lines as $line) {
+            if (!$inFilterMethod && str_contains($line, 'function filterAllowedContext(')) {
+                $inFilterMethod = true;
+            }
+            if ($inFilterMethod) {
+                $filterMethodLines[] = $line;
+                $braceDepth         += substr_count($line, '{') - substr_count($line, '}');
+                if ($braceDepth <= 0 && count($filterMethodLines) > 1) {
+                    break;
+                }
+            }
+        }
+
+        $filterBody = implode("\n", $filterMethodLines);
+
+        $this->assertStringContainsString('sanitizeFaqAnswers', $filterBody,
+            'filterAllowedContext must route faq_answers through sanitizeFaqAnswers');
+
+        $rawAccessPattern = '/\$context\[.faq_answers.\](?!\s*\?\s*\$this->sanitizeFaqAnswers)/';
+        $codeOnly         = implode("\n", array_filter($filterMethodLines, static function (string $ln): bool {
+            $t = ltrim($ln);
+            return !str_starts_with($t, '*') && !str_starts_with($t, '//');
+        }));
+
+        preg_match_all($rawAccessPattern, $codeOnly, $matches);
+
+        $rawHits = array_filter($matches[0] ?? [], static function (string $hit): bool {
+            return !str_contains($hit, 'sanitizeFaqAnswers');
+        });
+
+        $this->assertEmpty($rawHits,
+            'filterAllowedContext must not access $context[faq_answers] raw — only via sanitizeFaqAnswers()');
     }
 }

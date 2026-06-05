@@ -520,13 +520,25 @@ class AskAiContextBuilderService
      *      Expected shape: {"question_key": "answer text", ...}
      *   2. Fallback: rows in `ai_faq_answers` matching listing_type + listing_id.
      *
-     * Returns a flat string-keyed array of non-empty answer strings, or an empty
-     * array when no FAQ answers are available. Exceptions are caught and silenced
-     * so a missing or malformed FAQ record never interrupts context assembly.
+     * Each entry in the returned array is an enriched object shape:
+     *   config_key            — the original question key
+     *   answer_text           — the answer text
+     *   question_label        — human-readable question label (from config, or null)
+     *   question_group        — group/category the question belongs to (from config, or null)
+     *   intelligence_category — snake_case category derived from question_group (or null)
+     *
+     * Returns an empty array when no FAQ answers are available. Exceptions are
+     * caught and silenced so a missing or malformed FAQ record never interrupts
+     * context assembly.
+     *
+     * This method always returns the enriched object shape. The prompt builder's
+     * sanitizeFaqAnswers() forwards only the four LLM-safe fields and also accepts
+     * legacy raw-string entries for robustness when context is assembled from external
+     * or cached sources.
      *
      * @param  object $listing       Resolved listing model instance.
      * @param  string $canonicalType One of 'seller', 'buyer', 'landlord', 'tenant'.
-     * @return array<string, string>
+     * @return array<string, array{config_key: string, answer_text: string, question_label: string|null, question_group: string|null, intelligence_category: string|null}>
      */
     protected function buildFaqAnswers(object $listing, string $canonicalType): array
     {
@@ -552,9 +564,23 @@ class AskAiContextBuilderService
             $answers = [];
 
             if (is_array($raw)) {
+                $configIndex = AskAiFaqEnrichmentService::buildConfigIndex($canonicalType);
+
                 foreach ($raw as $qKey => $answerText) {
+                    $qKey = (string) $qKey;
                     if ($answerText !== null && $answerText !== '' && $answerText !== false) {
-                        $answers[(string) $qKey] = (string) $answerText;
+                        $meta = $configIndex[$qKey] ?? [
+                            'question_group'        => null,
+                            'question_label'        => null,
+                            'intelligence_category' => null,
+                        ];
+                        $answers[$qKey] = [
+                            'config_key'            => $qKey,
+                            'answer_text'           => (string) $answerText,
+                            'question_label'        => $meta['question_label'],
+                            'question_group'        => $meta['question_group'],
+                            'intelligence_category' => $meta['intelligence_category'],
+                        ];
                     }
                 }
             }
@@ -568,7 +594,15 @@ class AskAiContextBuilderService
                 foreach ($dbRows as $row) {
                     $text = $row->answer_text ?? null;
                     if (!empty($text)) {
-                        $answers[(string) $row->question_key] = (string) $text;
+                        $normalized    = is_array($row->answer_normalized) ? $row->answer_normalized : [];
+                        $qKey          = (string) $row->question_key;
+                        $answers[$qKey] = [
+                            'config_key'            => $normalized['config_key'] ?? $qKey,
+                            'answer_text'           => (string) $text,
+                            'question_label'        => $normalized['question_label'] ?? null,
+                            'question_group'        => $row->question_group ?? null,
+                            'intelligence_category' => $row->intelligence_category ?? null,
+                        ];
                     }
                 }
             }

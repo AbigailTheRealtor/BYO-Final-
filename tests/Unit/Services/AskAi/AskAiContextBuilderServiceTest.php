@@ -1751,7 +1751,14 @@ class AskAiContextBuilderServiceTest extends TestCase
         $this->assertIsArray($result['faq_answers']);
         $this->assertArrayHasKey('roof_age', $result['faq_answers'],
             "faq_answers must include 'roof_age' from EAV listing_ai_faq JSON");
-        $this->assertSame('Replaced in 2020', $result['faq_answers']['roof_age']);
+        $this->assertIsArray($result['faq_answers']['roof_age'],
+            "Each faq_answers entry must be an enriched array, not a raw string");
+        $this->assertSame('Replaced in 2020', $result['faq_answers']['roof_age']['answer_text'],
+            "answer_text must contain the original answer string");
+        $this->assertArrayHasKey('config_key', $result['faq_answers']['roof_age']);
+        $this->assertArrayHasKey('question_label', $result['faq_answers']['roof_age']);
+        $this->assertArrayHasKey('question_group', $result['faq_answers']['roof_age']);
+        $this->assertArrayHasKey('intelligence_category', $result['faq_answers']['roof_age']);
     }
 
     public function test_case_S_faq_answers_populated_from_landlord_eav_json(): void
@@ -1767,7 +1774,8 @@ class AskAiContextBuilderServiceTest extends TestCase
 
         $this->assertIsArray($result['faq_answers']);
         $this->assertArrayHasKey('parking_details', $result['faq_answers']);
-        $this->assertSame('One assigned spot in garage', $result['faq_answers']['parking_details']);
+        $this->assertIsArray($result['faq_answers']['parking_details']);
+        $this->assertSame('One assigned spot in garage', $result['faq_answers']['parking_details']['answer_text']);
     }
 
     public function test_case_S_faq_answers_populated_from_tenant_native_column(): void
@@ -1784,7 +1792,8 @@ class AskAiContextBuilderServiceTest extends TestCase
 
         $this->assertIsArray($result['faq_answers']);
         $this->assertArrayHasKey('move_in_flexibility', $result['faq_answers']);
-        $this->assertSame('Can move in within 30 days', $result['faq_answers']['move_in_flexibility']);
+        $this->assertIsArray($result['faq_answers']['move_in_flexibility']);
+        $this->assertSame('Can move in within 30 days', $result['faq_answers']['move_in_flexibility']['answer_text']);
     }
 
     public function test_case_S_faq_answers_skips_null_and_empty_values(): void
@@ -1799,10 +1808,57 @@ class AskAiContextBuilderServiceTest extends TestCase
         $result = $service->buildForListing('seller', 1);
 
         $this->assertArrayHasKey('good_key', $result['faq_answers']);
+        $this->assertIsArray($result['faq_answers']['good_key']);
+        $this->assertSame('Has value', $result['faq_answers']['good_key']['answer_text']);
         $this->assertArrayNotHasKey('empty_key', $result['faq_answers'],
             "faq_answers must exclude keys with empty string values");
         $this->assertArrayNotHasKey('null_key', $result['faq_answers'],
             "faq_answers must exclude keys with null values");
+    }
+
+    public function test_case_S_faq_answers_enriched_shape_has_all_required_keys(): void
+    {
+        $faqData = ['roof_age_and_condition' => 'Replaced in 2020'];
+
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['listing_ai_faq' => json_encode($faqData)])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $entry = $result['faq_answers']['roof_age_and_condition'] ?? null;
+        $this->assertIsArray($entry, "Known config key must produce an enriched array entry");
+        $this->assertArrayHasKey('config_key',            $entry);
+        $this->assertArrayHasKey('answer_text',           $entry);
+        $this->assertArrayHasKey('question_label',        $entry);
+        $this->assertArrayHasKey('question_group',        $entry);
+        $this->assertArrayHasKey('intelligence_category', $entry);
+        $this->assertSame('roof_age_and_condition',       $entry['config_key']);
+        $this->assertSame('Replaced in 2020',             $entry['answer_text']);
+        $this->assertNotNull($entry['question_label'],    "Known config key must resolve a non-null question_label");
+        $this->assertNotNull($entry['question_group'],    "Known config key must resolve a non-null question_group");
+        $this->assertNotNull($entry['intelligence_category'], "Known config key must resolve a non-null intelligence_category");
+    }
+
+    public function test_case_S_faq_answers_unknown_key_gets_null_metadata(): void
+    {
+        $faqData = ['some_unknown_key' => 'Answer text here'];
+
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['listing_ai_faq' => json_encode($faqData)])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $entry = $result['faq_answers']['some_unknown_key'] ?? null;
+        $this->assertIsArray($entry, "Unknown keys must still produce an enriched array entry");
+        $this->assertSame('some_unknown_key', $entry['config_key']);
+        $this->assertSame('Answer text here', $entry['answer_text']);
+        $this->assertNull($entry['question_label'],        "Unknown key must have null question_label");
+        $this->assertNull($entry['question_group'],        "Unknown key must have null question_group");
+        $this->assertNull($entry['intelligence_category'], "Unknown key must have null intelligence_category");
     }
 
     public function test_case_S_faq_answers_present_in_empty_payload_and_is_array(): void
