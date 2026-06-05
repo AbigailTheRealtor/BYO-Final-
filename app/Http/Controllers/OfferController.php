@@ -252,10 +252,7 @@ class OfferController extends Controller
                 'additional_deposit_amount'            => 'nullable|string|max:200',
                 'additional_deposit_timeframe'         => 'nullable|string|max:100',
                 'additional_deposit_timeframe_other'   => 'nullable|string|max:200',
-                'escrow_agent_preference'              => 'nullable|string|max:500',
                 'preferred_inspection_period'          => 'nullable|integer|min:0|max:365',
-                'appraisal_contingency_preference'     => 'nullable|in:Required,Preferred Waived,Negotiable,Not Applicable',
-                'financing_contingency_preference'     => 'nullable|in:Required,Preferred Waived,Negotiable,Not Applicable',
                 'sale_of_buyer_property_contingency'   => 'nullable|in:Accepted,Not Accepted,Negotiable',
                 'possession_preference'                => 'nullable|in:At Closing,Day After Closing,Seller Rent Back,Negotiable,Other',
                 'possession_details'                   => 'nullable|string|max:500',
@@ -265,8 +262,6 @@ class OfferController extends Controller
                 'excluded_items'                       => 'nullable|string|max:1000',
                 'home_warranty_requested'              => 'nullable|in:Yes,No',
                 'home_warranty_details'                => 'nullable|string|max:1000',
-                'hoa_condo_association_terms'          => 'nullable|string|max:1000',
-                'additional_seller_sale_terms'         => 'nullable|string|max:5000',
             ];
         } elseif (in_array($offerType, ['rental', 'lease'])) {
             $typeRules = [
@@ -328,10 +323,7 @@ class OfferController extends Controller
             $offer->saveMeta('additional_deposit_amount',           $validated['additional_deposit_amount'] ?? null);
             $offer->saveMeta('additional_deposit_timeframe',        $validated['additional_deposit_timeframe'] ?? null);
             $offer->saveMeta('additional_deposit_timeframe_other',  $validated['additional_deposit_timeframe_other'] ?? null);
-            $offer->saveMeta('escrow_agent_preference',             $validated['escrow_agent_preference'] ?? null);
             $offer->saveMeta('preferred_inspection_period',         $validated['preferred_inspection_period'] ?? null);
-            $offer->saveMeta('appraisal_contingency_preference',     $validated['appraisal_contingency_preference'] ?? null);
-            $offer->saveMeta('financing_contingency_preference',     $validated['financing_contingency_preference'] ?? null);
             $offer->saveMeta('sale_of_buyer_property_contingency',  $validated['sale_of_buyer_property_contingency'] ?? null);
             $offer->saveMeta('possession_preference',               $validated['possession_preference'] ?? null);
             $offer->saveMeta('possession_details',                  $validated['possession_details'] ?? null);
@@ -341,8 +333,6 @@ class OfferController extends Controller
             $offer->saveMeta('excluded_items',                      $validated['excluded_items'] ?? null);
             $offer->saveMeta('home_warranty_requested',             $validated['home_warranty_requested'] ?? null);
             $offer->saveMeta('home_warranty_details',               $validated['home_warranty_details'] ?? null);
-            $offer->saveMeta('hoa_condo_association_terms',         $validated['hoa_condo_association_terms'] ?? null);
-            $offer->saveMeta('additional_seller_sale_terms',        $validated['additional_seller_sale_terms'] ?? null);
         } elseif (in_array($offerType, ['rental', 'lease'])) {
             $offer->saveMeta('monthly_rent',      $validated['monthly_rent'] ?? null);
             $offer->saveMeta('security_deposit',  $validated['security_deposit'] ?? null);

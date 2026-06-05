@@ -316,6 +316,17 @@
                             </div>
                         </div>
 
+                        {{-- Sale of Buyer Property Contingency --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Sale of Buyer's Property Contingency</label>
+                            <select name="sale_of_buyer_property_contingency" class="form-select w-auto">
+                                <option value="">— Select —</option>
+                                @foreach(['Accepted','Not Accepted','Negotiable'] as $opt)
+                                <option value="{{ $opt }}" {{ old('sale_of_buyer_property_contingency', $metas->get('sale_of_buyer_property_contingency')) === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         {{-- Purchase Terms --}}
                         <h6 class="fw-semibold text-muted mt-4 mb-2">Purchase Terms</h6>
 
@@ -371,53 +382,12 @@
                             </div>
                         </div>
 
-                        {{-- Escrow & Inspection --}}
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Escrow Agent Preference</label>
-                                <input type="text" name="escrow_agent_preference" class="form-control"
-                                    placeholder="e.g., First American Title, Local Attorney"
-                                    value="{{ old('escrow_agent_preference', $metas->get('escrow_agent_preference')) }}">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold">Preferred Inspection Period (days)</label>
-                                <input type="number" name="preferred_inspection_period" class="form-control" min="0" max="365"
-                                    placeholder="e.g., 10"
-                                    value="{{ old('preferred_inspection_period', $metas->get('preferred_inspection_period')) }}">
-                            </div>
-                        </div>
-
-                        {{-- Appraisal Contingency Preference --}}
+                        {{-- Inspection Period --}}
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Appraisal Contingency Preference</label>
-                            <select name="appraisal_contingency_preference" class="form-select w-auto">
-                                <option value="">— Select —</option>
-                                @foreach(['Required','Preferred Waived','Negotiable','Not Applicable'] as $opt)
-                                <option value="{{ $opt }}" {{ old('appraisal_contingency_preference', $metas->get('appraisal_contingency_preference')) === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        {{-- Financing Contingency Preference --}}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Financing Contingency Preference</label>
-                            <select name="financing_contingency_preference" class="form-select w-auto">
-                                <option value="">— Select —</option>
-                                @foreach(['Required','Preferred Waived','Negotiable','Not Applicable'] as $opt)
-                                <option value="{{ $opt }}" {{ old('financing_contingency_preference', $metas->get('financing_contingency_preference')) === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        {{-- Sale of Buyer Property Contingency --}}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Sale of Buyer's Property Contingency</label>
-                            <select name="sale_of_buyer_property_contingency" class="form-select w-auto">
-                                <option value="">— Select —</option>
-                                @foreach(['Accepted','Not Accepted','Negotiable'] as $opt)
-                                <option value="{{ $opt }}" {{ old('sale_of_buyer_property_contingency', $metas->get('sale_of_buyer_property_contingency')) === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                                @endforeach
-                            </select>
+                            <label class="form-label fw-semibold">Preferred Inspection Period (days)</label>
+                            <input type="number" name="preferred_inspection_period" class="form-control w-auto" min="0" max="365"
+                                placeholder="e.g., 10"
+                                value="{{ old('preferred_inspection_period', $metas->get('preferred_inspection_period')) }}">
                         </div>
 
                         {{-- Seller Contribution --}}
@@ -483,21 +453,6 @@
                                     placeholder="e.g., $500 one-year home warranty through American Home Shield"
                                     value="{{ old('home_warranty_details', $metas->get('home_warranty_details')) }}">
                             </div>
-                        </div>
-
-                        {{-- HOA Notes --}}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Additional HOA / Association Notes</label>
-                            <input type="text" name="hoa_condo_association_terms" class="form-control"
-                                placeholder="e.g., $200 transfer fee, pending special assessment"
-                                value="{{ old('hoa_condo_association_terms', $metas->get('hoa_condo_association_terms')) }}">
-                        </div>
-
-                        {{-- Additional Sale Terms --}}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Additional Seller Sale Terms</label>
-                            <textarea name="additional_seller_sale_terms" class="form-control" rows="3"
-                                placeholder="Any additional sale terms or special conditions…">{{ old('additional_seller_sale_terms', $metas->get('additional_seller_sale_terms')) }}</textarea>
                         </div>
 
                         </div>{{-- end x-data --}}
@@ -658,24 +613,9 @@
                         <dd class="col-sm-9">{{ $metas->get('additional_deposit_amount') }}{{ $_addTfDisplay ? ' — ' . $_addTfDisplay : '' }}</dd>
                         @endif
 
-                        @if($metas->get('escrow_agent_preference'))
-                        <dt class="col-sm-3">Escrow Agent Preference</dt>
-                        <dd class="col-sm-9">{{ $metas->get('escrow_agent_preference') }}</dd>
-                        @endif
-
                         @if($metas->get('preferred_inspection_period') !== null && $metas->get('preferred_inspection_period') !== '')
                         <dt class="col-sm-3">Preferred Inspection Period</dt>
                         <dd class="col-sm-9">{{ $metas->get('preferred_inspection_period') }} days</dd>
-                        @endif
-
-                        @if($metas->get('appraisal_contingency_preference'))
-                        <dt class="col-sm-3">Appraisal Contingency Preference</dt>
-                        <dd class="col-sm-9">{{ $metas->get('appraisal_contingency_preference') }}</dd>
-                        @endif
-
-                        @if($metas->get('financing_contingency_preference'))
-                        <dt class="col-sm-3">Financing Contingency Preference</dt>
-                        <dd class="col-sm-9">{{ $metas->get('financing_contingency_preference') }}</dd>
                         @endif
 
                         @if($metas->get('sale_of_buyer_property_contingency'))
@@ -723,15 +663,6 @@
                         </dd>
                         @endif
 
-                        @if($metas->get('hoa_condo_association_terms'))
-                        <dt class="col-sm-3">HOA / Association Notes</dt>
-                        <dd class="col-sm-9">{{ $metas->get('hoa_condo_association_terms') }}</dd>
-                        @endif
-
-                        @if($metas->get('additional_seller_sale_terms'))
-                        <dt class="col-sm-3">Additional Sale Terms</dt>
-                        <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('additional_seller_sale_terms') }}</dd>
-                        @endif
                         @endif
 
                         @if(in_array($offerType, ['rental', 'lease']))
