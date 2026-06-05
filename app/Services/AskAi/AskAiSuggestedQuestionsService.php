@@ -30,6 +30,20 @@ namespace App\Services\AskAi;
 class AskAiSuggestedQuestionsService
 {
     /**
+     * Canonical map of question_type → category_label and category_icon.
+     * Fallback: label "General", icon "fa-comment-dots" for unmapped types.
+     */
+    private const CATEGORY_META = [
+        'property_standout'     => ['category_label' => 'Property',      'category_icon' => 'fa-house'],
+        'suited_audience'       => ['category_label' => 'Audience',       'category_icon' => 'fa-bullseye'],
+        'buyer_tenant_match'    => ['category_label' => 'Match',          'category_icon' => 'fa-chart-simple'],
+        'compatibility_signals' => ['category_label' => 'Compatibility',  'category_icon' => 'fa-scale-balanced'],
+        'missing_data'          => ['category_label' => 'Missing Info',   'category_icon' => 'fa-circle-question'],
+        'marketing_angles'      => ['category_label' => 'Marketing',      'category_icon' => 'fa-lightbulb'],
+        'educational'           => ['category_label' => 'Education',      'category_icon' => 'fa-book-open'],
+    ];
+
+    /**
      * Approved category priority order per spec Section 6.5.
      */
     private const CATEGORY_ORDER = [
@@ -211,7 +225,15 @@ class AskAiSuggestedQuestionsService
 
         $ordered = $this->sortByCategory($pool);
 
-        return array_slice($ordered, 0, self::MAX_SUGGESTIONS);
+        $sliced = array_slice($ordered, 0, self::MAX_SUGGESTIONS);
+
+        return array_map(function (array $item): array {
+            $meta = self::CATEGORY_META[$item['question_type']] ?? [
+                'category_label' => 'General',
+                'category_icon'  => 'fa-comment-dots',
+            ];
+            return array_merge($item, $meta);
+        }, $sliced);
     }
 
     /**

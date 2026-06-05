@@ -204,4 +204,80 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
             'AskAiSuggestedQuestionsService must have no constructor (no injected dependencies)'
         );
     }
+
+    public function test_every_suggestion_has_category_label(): void
+    {
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $results = $this->service->forListing($type);
+            foreach ($results as $i => $item) {
+                $this->assertArrayHasKey('category_label', $item, "[$type][$i] missing category_label");
+                $this->assertIsString($item['category_label'], "[$type][$i].category_label must be string");
+                $this->assertNotEmpty($item['category_label'], "[$type][$i].category_label must not be empty");
+            }
+        }
+    }
+
+    public function test_every_suggestion_has_category_icon(): void
+    {
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $results = $this->service->forListing($type);
+            foreach ($results as $i => $item) {
+                $this->assertArrayHasKey('category_icon', $item, "[$type][$i] missing category_icon");
+                $this->assertIsString($item['category_icon'], "[$type][$i].category_icon must be string");
+                $this->assertNotEmpty($item['category_icon'], "[$type][$i].category_icon must not be empty");
+            }
+        }
+    }
+
+    public function test_category_label_and_icon_match_question_type(): void
+    {
+        $canonicalMap = [
+            'property_standout'     => ['category_label' => 'Property',      'category_icon' => 'fa-house'],
+            'suited_audience'       => ['category_label' => 'Audience',       'category_icon' => 'fa-bullseye'],
+            'buyer_tenant_match'    => ['category_label' => 'Match',          'category_icon' => 'fa-chart-simple'],
+            'compatibility_signals' => ['category_label' => 'Compatibility',  'category_icon' => 'fa-scale-balanced'],
+            'missing_data'          => ['category_label' => 'Missing Info',   'category_icon' => 'fa-circle-question'],
+            'marketing_angles'      => ['category_label' => 'Marketing',      'category_icon' => 'fa-lightbulb'],
+            'educational'           => ['category_label' => 'Education',      'category_icon' => 'fa-book-open'],
+        ];
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $results = $this->service->forListing($type);
+            foreach ($results as $i => $item) {
+                $qt = $item['question_type'];
+                if (isset($canonicalMap[$qt])) {
+                    $this->assertSame(
+                        $canonicalMap[$qt]['category_label'],
+                        $item['category_label'],
+                        "[$type][$i] category_label mismatch for question_type '$qt'"
+                    );
+                    $this->assertSame(
+                        $canonicalMap[$qt]['category_icon'],
+                        $item['category_icon'],
+                        "[$type][$i] category_icon mismatch for question_type '$qt'"
+                    );
+                } else {
+                    $this->assertSame('General', $item['category_label'], "[$type][$i] unmapped type should fallback to 'General'");
+                    $this->assertSame('fa-comment-dots', $item['category_icon'], "[$type][$i] unmapped type should fallback to 'fa-comment-dots'");
+                }
+            }
+        }
+    }
+
+    public function test_original_required_keys_still_present(): void
+    {
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $results = $this->service->forListing($type);
+            foreach ($results as $i => $item) {
+                $this->assertArrayHasKey('label',          $item, "[$type][$i] missing label");
+                $this->assertArrayHasKey('question',       $item, "[$type][$i] missing question");
+                $this->assertArrayHasKey('question_type',  $item, "[$type][$i] missing question_type");
+                $this->assertArrayHasKey('category_label', $item, "[$type][$i] missing category_label");
+                $this->assertArrayHasKey('category_icon',  $item, "[$type][$i] missing category_icon");
+                $this->assertNotEmpty($item['label'],         "[$type][$i].label must not be empty");
+                $this->assertNotEmpty($item['question'],      "[$type][$i].question must not be empty");
+                $this->assertNotEmpty($item['question_type'], "[$type][$i].question_type must not be empty");
+            }
+        }
+    }
 }

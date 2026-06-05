@@ -1830,7 +1830,7 @@
                                 data-question="{{ $__sq['question'] }}"
                                 aria-label="{{ $__sq['question'] }}"
                                 title="{{ $__sq['question'] }}">
-                            <i class="fa-solid fa-comment-dots me-1" aria-hidden="true"></i>{{ $__sqLabel }}
+                            <span class="text-muted me-2" style="font-size:.7rem;"><i class="fa-solid {{ $__sq['category_icon'] }} me-1" aria-hidden="true"></i>{{ $__sq['category_label'] }}</span>{{ $__sqLabel }}
                         </button>
                         @endforeach
                     </div>
