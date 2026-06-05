@@ -244,7 +244,21 @@ class OfferControllerTest extends TestCase
         $response->assertStatus(404);
     }
 
-    // ── Test 10: static scan — no direct Offer.status mutation or OfferEventLog write ──
+    // ── Test 10: store with non-existent offer_auction_id → 422 ─────────────────
+
+    public function test_store_with_nonexistent_offer_auction_id_returns_422(): void
+    {
+        $response = $this->actingAsAllowedUser()
+            ->postJson(route('offers.store'), [
+                'offer_auction_id' => 999999,
+                'role'             => 'seller',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['offer_auction_id']);
+    }
+
+    // ── Test 11: static scan — no direct Offer.status mutation or OfferEventLog write ──
 
     public function test_controller_source_does_not_directly_mutate_offer_status_or_write_event_log(): void
     {

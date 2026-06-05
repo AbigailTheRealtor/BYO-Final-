@@ -28,7 +28,7 @@ class OfferController extends Controller
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $validated = $request->validate([
-            'offer_auction_id' => 'required|integer',
+            'offer_auction_id' => 'required|integer|exists:offer_auctions,id',
             'role'             => 'required|string|max:64',
             'listing_snapshot' => 'nullable|array',
             'expires_at'       => 'nullable|date',
