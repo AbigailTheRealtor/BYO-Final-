@@ -176,6 +176,13 @@ Route::middleware('auth')->group(function () {
     // Agent Referral Activity page
     Route::get('/agent/my-referrals', [\App\Http\Controllers\AgentReferralPageController::class, 'index'])->name('agent.my-referrals');
 
+    // Hire Agent Leads — agent-only management
+    Route::get('/agent/hire-leads', [\App\Http\Controllers\HireAgentLeadController::class, 'index'])->name('agent.hire-leads.index');
+    Route::get('/agent/hire-leads/{id}', [\App\Http\Controllers\HireAgentLeadController::class, 'show'])->name('agent.hire-leads.show');
+    Route::post('/agent/hire-leads/{id}/accept', [\App\Http\Controllers\HireAgentLeadController::class, 'accept'])->name('agent.hire-leads.accept');
+    Route::post('/agent/hire-leads/{id}/decline', [\App\Http\Controllers\HireAgentLeadController::class, 'decline'])->name('agent.hire-leads.decline');
+    Route::post('/agent/hire-leads/{id}/respond', [\App\Http\Controllers\HireAgentLeadController::class, 'respond'])->name('agent.hire-leads.respond');
+
     // Phase-3 Agent Preset Management
     Route::get('/agent/presets', [\App\Http\Controllers\AgentPresetController::class, 'index'])->name('agent.presets.index');
     Route::get('/agent/presets/{role}/{propertyType}/edit', [\App\Http\Controllers\AgentPresetController::class, 'edit'])->name('agent.presets.edit');
@@ -315,6 +322,10 @@ Route::get('/search/tenant-listings', [TenantOfferListingController::class, 'sea
 Route::get('/offers/{offer}', [OfferController::class, 'show'])->name('offers.show')->middleware('auth');
 
 Route::get('/offer-listing/tenant/view/{id}', [TenantOfferListingController::class, 'view'])->name('offer.listing.tenant.view');
+
+// Hire Agent Leads — public AJAX endpoints (no auth required)
+Route::post('/hire-agent-leads/match-presets', [\App\Http\Controllers\HireAgentLeadController::class, 'matchPresets'])->name('hire.agent.leads.match-presets');
+Route::post('/hire-agent-leads', [\App\Http\Controllers\HireAgentLeadController::class, 'store'])->name('hire.agent.leads.store');
 Route::post('/offer-listing/seller/{auction}/question', [SellerOfferListingController::class, 'submitQuestion'])->name('offer.listing.seller.question');
 Route::post('/offer-listing/seller/{auction}/showing', [SellerOfferListingController::class, 'submitShowing'])->name('offer.listing.seller.showing');
 Route::post('/offer-listing/buyer/{auction}/question', [BuyerOfferListingController::class, 'submitQuestion'])->name('offer.listing.buyer.question');

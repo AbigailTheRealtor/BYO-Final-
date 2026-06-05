@@ -114,6 +114,22 @@
         </div>
     </a>
     @endcan
+    <a href="{{ route('agent.hire-leads.index') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa-solid fa-user-tie" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>Hire Agent Leads</b>
+                    @php
+                        try {
+                            $hal_new = \App\Models\HireAgentLead::forAgent(auth()->id())->where('status','new')->count();
+                        } catch (\Throwable $_) { $hal_new = 0; }
+                    @endphp
+                    @if($hal_new)<span class="badge bg-danger ms-2">{{ $hal_new }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">Leads from public offer listing pages.</div>
+            </div>
+        </div>
+    </a>
     <a href="{{ route('agent.presets.index') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa-solid fa-sliders" style="font-size:1.1rem;line-height:1.5rem;"></i></div>

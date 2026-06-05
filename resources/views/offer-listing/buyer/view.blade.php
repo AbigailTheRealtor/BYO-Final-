@@ -786,7 +786,19 @@
                 </div>
             </div>
 
-            {{-- 6. Activity — hidden until live data is available --}}
+            {{-- 6. Hire an Agent --}}
+            <div class="bol-interaction-card">
+                <div class="bol-interaction-card-icon"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="bol-interaction-card-label">Hire an Agent</div>
+                <div class="bol-interaction-card-helper">Need representation? Connect with a licensed real estate agent.</div>
+                <button type="button" class="bol-interaction-cta bol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#bolHireAgentModal"
+                        aria-label="Find and hire a real estate agent">
+                    <i class="fa-solid fa-user-tie"></i>Find an Agent
+                </button>
+            </div>
+
+            {{-- Activity — hidden until live data is available --}}
             @if(false)
             <div class="bol-interaction-card">
                 <div class="bol-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
@@ -1512,6 +1524,11 @@
                 <button type="button" class="bol-action-btn bol-action-outline" id="bolShareBtn">
                     <i class="fa-solid fa-share-nodes"></i>Share Listing
                 </button>
+                <button type="button" class="bol-action-btn bol-action-outline"
+                        data-bs-toggle="modal" data-bs-target="#bolHireAgentModal"
+                        style="border-color:#0f766e;color:#0f766e;">
+                    <i class="fa-solid fa-user-tie"></i>Hire an Agent
+                </button>
                 <button type="button" class="bol-action-btn bol-action-outline" disabled style="cursor:default;opacity:.6;">
                     <i class="fa-regular fa-bookmark"></i>Save Listing
                 </button>
@@ -1786,6 +1803,11 @@
         <i class="fa-solid fa-arrow-left"></i>
         <span>Back</span>
     </a>
+    <button type="button" class="bol-mobile-bar-btn"
+            data-bs-toggle="modal" data-bs-target="#bolHireAgentModal">
+        <i class="fa-solid fa-user-tie"></i>
+        <span>Agent</span>
+    </button>
     <button class="bol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#bolQuestionModal">
         <i class="fa-solid fa-circle-question"></i>
         <span>Ask</span>
@@ -1815,6 +1837,16 @@
     </a>
     @endif
 </div>
+
+{{-- ===== HIRE AGENT MODAL ===== --}}
+<x-hire-agent-modal
+    listing-id="{{ $auction->id }}"
+    listing-type="buyer_offer"
+    listing-role="buyer"
+    :listing-title="$listingTitle ?? ''"
+    prefill-prop-type="{{ $meta['property_type'] ?? '' }}"
+    modal-id="bolHireAgentModal"
+/>
 
 @endsection
 

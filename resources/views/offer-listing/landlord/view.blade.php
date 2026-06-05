@@ -696,7 +696,19 @@
                 </div>
             </div>
 
-            {{-- 5. Activity — hidden until live data is available --}}
+            {{-- 5b. Hire an Agent --}}
+            <div class="lol-interaction-card">
+                <div class="lol-interaction-card-icon"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="lol-interaction-card-label">Hire an Agent</div>
+                <div class="lol-interaction-card-helper">Need representation? Connect with a licensed real estate agent.</div>
+                <button type="button" class="lol-interaction-cta lol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#lolHireAgentModal"
+                        aria-label="Find and hire a real estate agent">
+                    <i class="fa-solid fa-user-tie"></i>Find an Agent
+                </button>
+            </div>
+
+            {{-- Activity — hidden until live data is available --}}
             @if(false)
             <div class="lol-interaction-card">
                 <div class="lol-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
@@ -1469,6 +1481,11 @@
             <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolAiModal">
                 <i class="fa-solid fa-robot"></i>Ask AI About Property
             </button>
+            <button type="button" class="lol-action-btn lol-action-outline"
+                    data-bs-toggle="modal" data-bs-target="#lolHireAgentModal"
+                    style="border-color:#0f766e;color:#0f766e;">
+                <i class="fa-solid fa-user-tie"></i>Hire an Agent
+            </button>
             <button class="lol-action-btn lol-action-outline" type="button" disabled style="cursor:default;opacity:.6;">
                 <i class="fa-regular fa-bookmark"></i>Save Listing
             </button>
@@ -1731,10 +1748,24 @@
     <button type="button" class="lol-mobile-bar-btn" id="lolMobileShareBtn">
         <i class="fa-solid fa-share-nodes"></i><span>Share</span>
     </button>
+    <button type="button" class="lol-mobile-bar-btn"
+            data-bs-toggle="modal" data-bs-target="#lolHireAgentModal">
+        <i class="fa-solid fa-user-tie"></i><span>Agent</span>
+    </button>
     <a href="{{ route('offer.listing.landlord.searchListing') }}" class="lol-mobile-bar-btn">
         <i class="fa-solid fa-arrow-left"></i><span>Search</span>
     </a>
 </div>
+
+{{-- ===== HIRE AGENT MODAL ===== --}}
+<x-hire-agent-modal
+    listing-id="{{ $auction->id }}"
+    listing-type="landlord_offer"
+    listing-role="landlord"
+    :listing-title="($meta['listing_title'] ?? null) ?: ($auction->title ?? '')"
+    prefill-prop-type="{{ $meta['property_type'] ?? '' }}"
+    modal-id="lolHireAgentModal"
+/>
 
 @push('scripts')
 <script>

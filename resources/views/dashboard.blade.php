@@ -489,6 +489,83 @@
                                 </div>
 
                                 {{-- ═══════════════════════════════════════════════
+                                     HIRE AGENT LEADS  (agent only)
+                                ═══════════════════════════════════════════════ --}}
+                                @if(isset($hireAgentLeadSummary))
+                                <div class="mb-4">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="small text-uppercase text-muted fw-bold" style="letter-spacing:.06em;font-size:.7rem;">
+                                            Hire Agent Leads
+                                        </div>
+                                        <a href="{{ route('agent.hire-leads.index') }}"
+                                           class="small" style="font-size:.75rem;text-decoration:none;color:#049399;">
+                                            View All →
+                                        </a>
+                                    </div>
+
+                                    {{-- Summary counts --}}
+                                    <div class="row g-2 mb-3">
+                                        @foreach([
+                                            ['label'=>'New',      'key'=>'new',      'color'=>'#2563eb', 'bg'=>'#eff6ff'],
+                                            ['label'=>'Pending',  'key'=>'pending',  'color'=>'#d97706', 'bg'=>'#fffbeb'],
+                                            ['label'=>'Accepted', 'key'=>'accepted', 'color'=>'#059669', 'bg'=>'#f0fdf4'],
+                                            ['label'=>'Declined', 'key'=>'declined', 'color'=>'#94a3b8', 'bg'=>'#f8fafc'],
+                                        ] as $_lc)
+                                        <div class="col-3">
+                                            <a href="{{ route('agent.hire-leads.index', ['status' => $_lc['key']]) }}"
+                                               class="text-decoration-none d-block rounded-3 p-2 text-center"
+                                               style="background:{{ $_lc['bg'] }};">
+                                                <div style="font-size:1.35rem;font-weight:800;color:{{ $_lc['color'] }};">
+                                                    {{ $hireAgentLeadSummary[$_lc['key']] ?? 0 }}
+                                                </div>
+                                                <div style="font-size:.67rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">
+                                                    {{ $_lc['label'] }}
+                                                </div>
+                                            </a>
+                                        </div>
+                                        @endforeach
+                                    </div>
+
+                                    {{-- Recent leads --}}
+                                    @if($hireAgentLeadSummary['recent']->isNotEmpty())
+                                    <div class="d-flex flex-column gap-2">
+                                        @foreach($hireAgentLeadSummary['recent'] as $_lead)
+                                        <a href="{{ route('agent.hire-leads.show', $_lead->id) }}"
+                                           class="text-decoration-none">
+                                            <div class="card border-0 rounded-3 overflow-hidden"
+                                                 style="border-left:3px solid {{ $_lead->status === 'new' ? '#2563eb' : ($_lead->status === 'accepted' ? '#059669' : '#d97706') }} !important;box-shadow:0 1px 4px rgba(0,0,0,.06);transition:box-shadow .15s;"
+                                                 onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,.11)'"
+                                                 onmouseout="this.style.boxShadow='0 1px 4px rgba(0,0,0,.06)'">
+                                                <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between gap-2">
+                                                    <div>
+                                                        <div class="fw-semibold" style="font-size:.88rem;color:#1e293b;">
+                                                            {{ $_lead->requester_name ?? '' }}
+                                                            @if($_lead->status === 'new')
+                                                                <span class="badge bg-primary ms-1" style="font-size:.6rem;">New</span>
+                                                            @endif
+                                                        </div>
+                                                        <div style="font-size:.75rem;color:#64748b;">
+                                                            {{ $_lead->repTypeLabel() }} · {{ $_lead->propertyTypeLabel() }}
+                                                        </div>
+                                                    </div>
+                                                    <div style="font-size:.7rem;color:#94a3b8;white-space:nowrap;">
+                                                        {{ $_lead->created_at->diffForHumans() }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        @endforeach
+                                    </div>
+                                    @else
+                                    <div class="text-center py-3 text-muted" style="font-size:.82rem;">
+                                        <i class="fa-solid fa-user-tie opacity-25 me-1"></i>No leads yet.
+                                        Leads appear when visitors request an agent from a listing page.
+                                    </div>
+                                    @endif
+                                </div>
+                                @endif
+
+                                {{-- ═══════════════════════════════════════════════
                                      REFERRAL PARTNER LINK  (agent only)
                                 ═══════════════════════════════════════════════ --}}
                                 @if($referralLink)

@@ -811,7 +811,19 @@
                 </div>
             </div>
 
-            {{-- 6. Activity — hidden until live data is available --}}
+            {{-- 6. Hire an Agent --}}
+            <div class="tcl-interaction-card">
+                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="tcl-interaction-card-label">Hire an Agent</div>
+                <div class="tcl-interaction-card-helper">Need representation? Connect with a licensed real estate agent.</div>
+                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#tclHireAgentModal"
+                        aria-label="Find and hire a real estate agent">
+                    <i class="fa-solid fa-user-tie"></i>Find an Agent
+                </button>
+            </div>
+
+            {{-- Activity — hidden until live data is available --}}
             @if(false)
             <div class="tcl-interaction-card">
                 <div class="tcl-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
@@ -1616,6 +1628,11 @@
                 <button class="tcl-action-btn tcl-action-outline" id="tclShareBtnSidebar">
                     <i class="fa-solid fa-share-nodes"></i>Share Listing
                 </button>
+                <button type="button" class="tcl-action-btn tcl-action-outline"
+                        data-bs-toggle="modal" data-bs-target="#tclHireAgentModal"
+                        style="border-color:#0f766e;color:#0f766e;">
+                    <i class="fa-solid fa-user-tie"></i>Hire an Agent
+                </button>
                 <button class="tcl-action-btn tcl-action-outline" type="button" disabled style="cursor:default;opacity:.6;">
                     <i class="fa-regular fa-bookmark"></i>Save Listing
                 </button>
@@ -1735,6 +1752,11 @@
     <button class="tcl-mobile-bar-btn" id="tclShareBtnMobile">
         <i class="fa-solid fa-share-nodes"></i>
         <span>Share</span>
+    </button>
+    <button type="button" class="tcl-mobile-bar-btn"
+            data-bs-toggle="modal" data-bs-target="#tclHireAgentModal">
+        <i class="fa-solid fa-user-tie"></i>
+        <span>Agent</span>
     </button>
     @if(auth()->id() == $ownerId)
     <a href="{{ route('offer.listing.tenant.edit', ['auctionId' => $auction->id]) }}" class="tcl-mobile-bar-btn tcl-mobile-primary">
@@ -1919,6 +1941,16 @@
         </div>
     </div>
 </div>
+
+{{-- ===== HIRE AGENT MODAL ===== --}}
+<x-hire-agent-modal
+    listing-id="{{ $auction->id }}"
+    listing-type="tenant_offer"
+    listing-role="tenant"
+    :listing-title="$listingTitle ?? ''"
+    prefill-prop-type="{{ $meta['property_type'] ?? '' }}"
+    modal-id="tclHireAgentModal"
+/>
 
 @push('scripts')
 <script>

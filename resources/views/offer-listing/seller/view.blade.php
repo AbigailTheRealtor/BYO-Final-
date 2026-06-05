@@ -1146,7 +1146,19 @@
                 </div>
             </div>
 
-            {{-- 6. Activity — hidden until live data is available --}}
+            {{-- 6. Hire an Agent --}}
+            <div class="sol-interaction-card">
+                <div class="sol-interaction-card-icon"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="sol-interaction-card-label">Hire an Agent</div>
+                <div class="sol-interaction-card-helper">Need representation? Connect with a licensed real estate agent.</div>
+                <button type="button" class="sol-interaction-cta sol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#solHireAgentModal"
+                        aria-label="Find and hire a real estate agent">
+                    <i class="fa-solid fa-user-tie"></i>Find an Agent
+                </button>
+            </div>
+
+            {{-- Activity — hidden until live data is available --}}
             @if(false)
             <div class="sol-interaction-card">
                 <div class="sol-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
@@ -2324,6 +2336,11 @@
                 <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solQuestionModal">
                     <i class="fa-solid fa-circle-question"></i>Ask a Question
                 </button>
+                <button type="button" class="sol-action-btn sol-action-outline"
+                        data-bs-toggle="modal" data-bs-target="#solHireAgentModal"
+                        style="border-color:#0f766e;color:#0f766e;">
+                    <i class="fa-solid fa-user-tie"></i>Hire an Agent
+                </button>
                 <button class="sol-action-btn sol-action-outline" type="button" disabled style="cursor:default;opacity:.6;">
                     <i class="fa-regular fa-bookmark"></i>Save Listing
                 </button>
@@ -2557,11 +2574,26 @@
         <i class="fa-solid fa-share-nodes"></i>
         <span>Share</span>
     </button>
+    <button type="button" class="sol-mobile-bar-btn"
+            data-bs-toggle="modal" data-bs-target="#solHireAgentModal">
+        <i class="fa-solid fa-user-tie"></i>
+        <span>Agent</span>
+    </button>
     <a href="{{ route('offer.listing.seller.searchListing') }}" class="sol-mobile-bar-btn">
         <i class="fa-solid fa-arrow-left"></i>
         <span>Search</span>
     </a>
 </div>
+
+{{-- ===== HIRE AGENT MODAL ===== --}}
+<x-hire-agent-modal
+    listing-id="{{ $auction->id }}"
+    listing-type="seller_offer"
+    listing-role="seller"
+    :listing-title="($meta['listing_title'] ?? null) ?: ($auction->title ?? '')"
+    prefill-prop-type="{{ $meta['property_type'] ?? '' }}"
+    modal-id="solHireAgentModal"
+/>
 
 {{-- ===== REQUEST A SHOWING MODAL (authenticated users only) ===== --}}
 @auth

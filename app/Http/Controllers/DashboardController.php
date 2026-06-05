@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AgentService;
 use App\Models\AgentServiceAuctionBid;
+use App\Models\HireAgentLead;
 use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
 use App\Models\BuyerCriteriaAuction;
@@ -139,6 +140,27 @@ class DashboardController extends Controller
             $s->listingSnapshot = $listingCache[$s->listing_type][$s->listing_id] ?? null;
             return $s;
         });
+
+        // ── Hire Agent Leads summary (agents only) ────────────────────────────
+        if ($user->user_type === 'agent') {
+            try {
+                $page_data['hireAgentLeadSummary'] = [
+                    'new'      => HireAgentLead::forAgent($uid)->where('status', 'new')->count(),
+                    'pending'  => HireAgentLead::forAgent($uid)->where('status', 'pending')->count(),
+                    'accepted' => HireAgentLead::forAgent($uid)->where('status', 'accepted')->count(),
+                    'declined' => HireAgentLead::forAgent($uid)->where('status', 'declined')->count(),
+                    'recent'   => HireAgentLead::forAgent($uid)
+                        ->orderByDesc('created_at')
+                        ->limit(3)
+                        ->get(),
+                ];
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Dashboard: could not load hire agent leads', [
+                    'user_id' => $uid,
+                    'error'   => $e->getMessage(),
+                ]);
+            }
+        }
 
         // ── Referral partner link + recent activity (agents only) ─────────────
         $page_data['referralLink']    = null;
