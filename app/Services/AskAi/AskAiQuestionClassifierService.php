@@ -135,7 +135,8 @@ class AskAiQuestionClassifierService
             'strengths',
             'benefit',
             'benefits',
-            'bidding process',
+            'good about this listing',
+            'what is good about',
         ],
 
         'suited_audience' => [
@@ -167,6 +168,9 @@ class AskAiQuestionClassifierService
             'lifestyle',
             'who is this good for',
             'good for who',
+            'who would like this',
+            'best suited for',
+            'who would enjoy',
         ],
 
         'buyer_tenant_match' => [
@@ -192,13 +196,26 @@ class AskAiQuestionClassifierService
             'align with',
             'meet the buyer',
             'meet the tenant',
+            'does this tenant have pets',
+            'what does this tenant want',
+            'what does this buyer want',
             'rent budget',
             'rental budget',
             'within budget',
+            'purchase budget',
             'lease length',
             'lease term',
+            'what is the lease length',
+            'desired lease length',
+            'preferred lease length',
             'move-in date',
             'move in date',
+            'amenities required',
+            'parking preference',
+            'parking requirement',
+            'bedrooms',
+            'bathrooms',
+            'location preference',
         ],
 
         'missing_data' => [
@@ -221,6 +238,16 @@ class AskAiQuestionClassifierService
             'gap in',
             'what needs to be added',
             'what needs to be filled',
+            'how complete is this',
+            'what should be added',
+            'do we know',
+            'is there information about',
+            'is income listed',
+            'is credit score listed',
+            'is pet information listed',
+            'is budget listed',
+            'is parking listed',
+            'is lease length listed',
         ],
 
         'marketing_angles' => [
@@ -245,6 +272,9 @@ class AskAiQuestionClassifierService
             'ad copy',
             'marketing idea',
             'marketing ideas',
+            'listing description ideas',
+            'ad ideas',
+            'selling points',
         ],
 
         'educational' => [
@@ -284,6 +314,10 @@ class AskAiQuestionClassifierService
             'title insurance',
             'cap rate',
             'cash flow',
+            'auction process',
+            'bidding process',
+            'platform process',
+            'how does this platform',
         ],
     ];
 

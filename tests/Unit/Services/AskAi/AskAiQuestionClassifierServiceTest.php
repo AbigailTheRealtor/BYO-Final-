@@ -649,4 +649,268 @@ class AskAiQuestionClassifierServiceTest extends TestCase
             );
         }
     }
+
+    // =========================================================================
+    // Case L — New synonym / intent keyword expansions
+    // =========================================================================
+
+    // --- property_standout new keywords ---
+
+    public function test_case_L_strengths_classifies_as_property_standout(): void
+    {
+        $result = $this->makeService()->classify('What are the strengths of this listing?');
+        $this->assertSame('property_standout', $result['question_type']);
+    }
+
+    public function test_case_L_benefits_classifies_as_property_standout(): void
+    {
+        $result = $this->makeService()->classify('What are the benefits of this property?');
+        $this->assertSame('property_standout', $result['question_type']);
+    }
+
+    public function test_case_L_good_about_this_listing_classifies_as_property_standout(): void
+    {
+        $result = $this->makeService()->classify('What is good about this listing overall?');
+        $this->assertSame('property_standout', $result['question_type']);
+    }
+
+    public function test_case_L_what_is_good_about_classifies_as_property_standout(): void
+    {
+        $result = $this->makeService()->classify('What is good about this home compared to others?');
+        $this->assertSame('property_standout', $result['question_type']);
+    }
+
+    // --- suited_audience new keywords ---
+
+    public function test_case_L_who_is_this_good_for_classifies_as_suited_audience(): void
+    {
+        $result = $this->makeService()->classify('Who is this good for?');
+        $this->assertSame('suited_audience', $result['question_type']);
+    }
+
+    public function test_case_L_who_would_like_this_classifies_as_suited_audience(): void
+    {
+        $result = $this->makeService()->classify('Who would like this property?');
+        $this->assertSame('suited_audience', $result['question_type']);
+    }
+
+    public function test_case_L_best_suited_for_classifies_as_suited_audience(): void
+    {
+        $result = $this->makeService()->classify('Who is this listing best suited for?');
+        $this->assertSame('suited_audience', $result['question_type']);
+    }
+
+    public function test_case_L_who_would_enjoy_classifies_as_suited_audience(): void
+    {
+        $result = $this->makeService()->classify('Who would enjoy living here?');
+        $this->assertSame('suited_audience', $result['question_type']);
+    }
+
+    // --- buyer_tenant_match new keywords ---
+
+    public function test_case_L_does_this_tenant_have_pets_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('Does this tenant have pets?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_L_rent_budget_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What is their rent budget?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_L_purchase_budget_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What is the buyer\'s purchase budget?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_L_lease_length_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What is the lease length they are looking for?');
+        $this->assertSame('buyer_tenant_match', $result['question_type'],
+            '"what is the lease length" phrase must route to buyer_tenant_match');
+    }
+
+    public function test_case_L_is_lease_length_listed_classifies_as_missing_data(): void
+    {
+        $result = $this->makeService()->classify('Is lease length listed on this profile?');
+        $this->assertSame('missing_data', $result['question_type'],
+            '"is lease length listed" must route to missing_data, not buyer_tenant_match');
+    }
+
+    public function test_case_L_move_in_date_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What is their preferred move-in date?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_L_amenities_required_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What are the amenities required by this tenant?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_L_bedrooms_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('How many bedrooms does the buyer need?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_L_bathrooms_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('How many bathrooms are they looking for?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_L_location_preference_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What is their location preference?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_L_monthly_income_does_not_route_to_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What is the tenant\'s monthly income?');
+        $this->assertNotSame('buyer_tenant_match', $result['question_type'],
+            'Income is a compliance-sensitive screening field and must not auto-route as a match question');
+    }
+
+    public function test_case_L_credit_score_does_not_route_to_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What credit score does this buyer have?');
+        $this->assertNotSame('buyer_tenant_match', $result['question_type'],
+            'Credit score is a compliance-sensitive screening field and must not auto-route as a match question');
+    }
+
+    public function test_case_L_is_credit_score_listed_classifies_as_missing_data(): void
+    {
+        $result = $this->makeService()->classify('Is credit score listed for this applicant?');
+        $this->assertSame('missing_data', $result['question_type'],
+            '"is credit score listed" must route to missing_data, not buyer_tenant_match');
+    }
+
+    public function test_case_L_is_parking_listed_classifies_as_missing_data(): void
+    {
+        $result = $this->makeService()->classify('Is parking listed as a requirement?');
+        $this->assertSame('missing_data', $result['question_type'],
+            '"is parking listed" must route to missing_data, not buyer_tenant_match');
+    }
+
+    public function test_case_L_what_does_this_tenant_want_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What does this tenant want in a property?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_L_what_does_this_buyer_want_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What does this buyer want in a home?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_L_qualification_judgment_does_not_route_to_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('Does this buyer qualify for this listing?');
+        $this->assertNotSame('buyer_tenant_match', $result['question_type'],
+            'Qualification-judgment prompts must not be routed to buyer_tenant_match');
+    }
+
+    public function test_case_L_tenant_qualification_judgment_does_not_route_to_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('Is this tenant qualified?');
+        $this->assertNotSame('buyer_tenant_match', $result['question_type'],
+            'Qualification-judgment prompts must not be routed to buyer_tenant_match');
+    }
+
+    // --- missing_data new keywords ---
+
+    public function test_case_L_how_complete_is_this_classifies_as_missing_data(): void
+    {
+        $result = $this->makeService()->classify('How complete is this listing?');
+        $this->assertSame('missing_data', $result['question_type']);
+    }
+
+    public function test_case_L_what_should_be_added_classifies_as_missing_data(): void
+    {
+        $result = $this->makeService()->classify('What should be added to this listing?');
+        $this->assertSame('missing_data', $result['question_type']);
+    }
+
+    public function test_case_L_do_we_know_classifies_as_missing_data(): void
+    {
+        $result = $this->makeService()->classify('Do we know anything about the deposit amount?');
+        $this->assertSame('missing_data', $result['question_type']);
+    }
+
+    public function test_case_L_is_there_information_about_classifies_as_missing_data(): void
+    {
+        $result = $this->makeService()->classify('Is there information about the move-in fees?');
+        $this->assertSame('missing_data', $result['question_type']);
+    }
+
+    public function test_case_L_is_income_listed_classifies_as_missing_data(): void
+    {
+        $result = $this->makeService()->classify('Is income listed for this applicant?');
+        $this->assertSame('missing_data', $result['question_type']);
+    }
+
+    public function test_case_L_is_pet_information_listed_classifies_as_missing_data(): void
+    {
+        $result = $this->makeService()->classify('Is pet information listed on this profile?');
+        $this->assertSame('missing_data', $result['question_type']);
+    }
+
+    public function test_case_L_is_budget_listed_classifies_as_missing_data(): void
+    {
+        $result = $this->makeService()->classify('Is budget listed anywhere in this listing?');
+        $this->assertSame('missing_data', $result['question_type']);
+    }
+
+    // --- marketing_angles new keywords ---
+
+    public function test_case_L_marketing_ideas_classifies_as_marketing_angles(): void
+    {
+        $result = $this->makeService()->classify('What marketing ideas do you have for this listing?');
+        $this->assertSame('marketing_angles', $result['question_type']);
+    }
+
+    public function test_case_L_listing_description_ideas_classifies_as_marketing_angles(): void
+    {
+        $result = $this->makeService()->classify('Any listing description ideas for this home?');
+        $this->assertSame('marketing_angles', $result['question_type']);
+    }
+
+    public function test_case_L_ad_ideas_classifies_as_marketing_angles(): void
+    {
+        $result = $this->makeService()->classify('Do you have any ad ideas for this property?');
+        $this->assertSame('marketing_angles', $result['question_type']);
+    }
+
+    // --- educational new keywords ---
+
+    public function test_case_L_auction_process_classifies_as_educational(): void
+    {
+        $result = $this->makeService()->classify('Can you explain the auction process?');
+        $this->assertSame('educational', $result['question_type']);
+    }
+
+    public function test_case_L_bidding_process_classifies_as_educational(): void
+    {
+        $result = $this->makeService()->classify('How does the bidding process work?');
+        $this->assertSame('educational', $result['question_type']);
+    }
+
+    public function test_case_L_platform_process_classifies_as_educational(): void
+    {
+        $result = $this->makeService()->classify('What is the platform process for submitting an offer?');
+        $this->assertSame('educational', $result['question_type']);
+    }
+
+    public function test_case_L_how_does_this_platform_classifies_as_educational(): void
+    {
+        $result = $this->makeService()->classify('How does this platform handle offers?');
+        $this->assertSame('educational', $result['question_type']);
+    }
 }
