@@ -86,6 +86,24 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('property_standout', $result['question_type']);
     }
 
+    public function test_case_A_strengths_classifies_as_property_standout(): void
+    {
+        $result = $this->makeService()->classify('What are the strengths of this property?');
+        $this->assertSame('property_standout', $result['question_type']);
+    }
+
+    public function test_case_A_benefits_classifies_as_property_standout(): void
+    {
+        $result = $this->makeService()->classify('What are the benefits of choosing this listing?');
+        $this->assertSame('property_standout', $result['question_type']);
+    }
+
+    public function test_case_A_bidding_process_classifies_as_property_standout(): void
+    {
+        $result = $this->makeService()->classify('What is the bidding process for this property?');
+        $this->assertSame('property_standout', $result['question_type']);
+    }
+
     // =========================================================================
     // Case B — suited_audience
     // =========================================================================
@@ -123,6 +141,12 @@ class AskAiQuestionClassifierServiceTest extends TestCase
     public function test_case_B_appeal_to_classifies_as_suited_audience(): void
     {
         $result = $this->makeService()->classify('Who would this property appeal to the most?');
+        $this->assertSame('suited_audience', $result['question_type']);
+    }
+
+    public function test_case_B_who_is_this_good_for_classifies_as_suited_audience(): void
+    {
+        $result = $this->makeService()->classify('Who is this good for?');
         $this->assertSame('suited_audience', $result['question_type']);
     }
 
@@ -202,6 +226,66 @@ class AskAiQuestionClassifierServiceTest extends TestCase
     }
 
     // =========================================================================
+    // Case C2 — buyer_tenant_match synonym expansions (rent budget / lease terms / move-in)
+    // =========================================================================
+
+    public function test_case_C2_rent_budget_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('Does the rent budget align with this listing?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_C2_lease_length_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('Does the preferred lease length match this property?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_C2_move_in_date_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('Does the move-in date work for this listing?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    public function test_case_C2_move_in_date_no_hyphen_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('Does the move in date work for this unit?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    // =========================================================================
+    // Case C3 — Compliance regression: income and credit score must NOT route to buyer_tenant_match
+    // =========================================================================
+
+    public function test_case_C3_monthly_income_does_not_classify_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify("What is the tenant's monthly income?");
+        $this->assertNotSame('buyer_tenant_match', $result['question_type'],
+            'monthly income must not route to buyer_tenant_match — compliance-sensitive data');
+    }
+
+    public function test_case_C3_tenant_credit_score_does_not_classify_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify("What is the tenant's credit score?");
+        $this->assertNotSame('buyer_tenant_match', $result['question_type'],
+            'tenant credit score must not route to buyer_tenant_match — compliance-sensitive data');
+    }
+
+    public function test_case_C3_buyer_credit_score_does_not_classify_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify("What credit score does this buyer have?");
+        $this->assertNotSame('buyer_tenant_match', $result['question_type'],
+            'buyer credit score must not route to buyer_tenant_match — compliance-sensitive data');
+    }
+
+    public function test_case_C3_what_credit_score_does_not_classify_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What credit score is required for this listing?');
+        $this->assertNotSame('buyer_tenant_match', $result['question_type'],
+            'what credit score must not route to buyer_tenant_match — compliance-sensitive data');
+    }
+
+    // =========================================================================
     // Case E — missing_data
     // =========================================================================
 
@@ -260,6 +344,18 @@ class AskAiQuestionClassifierServiceTest extends TestCase
     public function test_case_F_listing_description_classifies_as_marketing_angles(): void
     {
         $result = $this->makeService()->classify('Can you write a listing description for this home?');
+        $this->assertSame('marketing_angles', $result['question_type']);
+    }
+
+    public function test_case_F_marketing_ideas_classifies_as_marketing_angles(): void
+    {
+        $result = $this->makeService()->classify('Do you have any marketing ideas for this property?');
+        $this->assertSame('marketing_angles', $result['question_type']);
+    }
+
+    public function test_case_F_marketing_idea_singular_classifies_as_marketing_angles(): void
+    {
+        $result = $this->makeService()->classify('Give me a marketing idea for this listing.');
         $this->assertSame('marketing_angles', $result['question_type']);
     }
 

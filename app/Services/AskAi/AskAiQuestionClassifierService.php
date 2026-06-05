@@ -131,6 +131,11 @@ class AskAiQuestionClassifierService
             'distinguish',
             'differentiator',
             'standout',
+            'strength',
+            'strengths',
+            'benefit',
+            'benefits',
+            'bidding process',
         ],
 
         'suited_audience' => [
@@ -160,6 +165,8 @@ class AskAiQuestionClassifierService
             'what kind of buyer',
             'what kind of tenant',
             'lifestyle',
+            'who is this good for',
+            'good for who',
         ],
 
         'buyer_tenant_match' => [
@@ -185,6 +192,13 @@ class AskAiQuestionClassifierService
             'align with',
             'meet the buyer',
             'meet the tenant',
+            'rent budget',
+            'rental budget',
+            'within budget',
+            'lease length',
+            'lease term',
+            'move-in date',
+            'move in date',
         ],
 
         'missing_data' => [
@@ -229,6 +243,8 @@ class AskAiQuestionClassifierService
             'property description',
             'tagline',
             'ad copy',
+            'marketing idea',
+            'marketing ideas',
         ],
 
         'educational' => [
