@@ -978,9 +978,14 @@
                     @endif
 
                     <div class="sol-hero-ctas">
-                        <button type="button" class="btn btn-primary sol-hero-cta-btn" data-sol-modal="#solOfferModal" aria-label="Submit an offer on this property">
-                            <i class="fa-solid fa-file-signature me-1"></i>Submit Offer
-                        </button>
+                        <form method="POST" action="{{ route('offers.store') }}" style="display:inline;">
+                            @csrf
+                            <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                            <input type="hidden" name="role" value="seller">
+                            <button type="submit" class="btn btn-primary sol-hero-cta-btn" aria-label="Submit an offer on this property">
+                                <i class="fa-solid fa-file-signature me-1"></i>Submit Offer
+                            </button>
+                        </form>
                         <button type="button" class="btn btn-outline-secondary sol-hero-cta-btn" data-sol-modal="#solShowingModal" aria-label="Schedule a showing">
                             <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
                         </button>
@@ -1025,11 +1030,15 @@
                 @else
                     <div class="sol-interaction-card-helper">Review listing terms and submit your offer.</div>
                 @endif
-                <button type="button" class="sol-interaction-cta sol-interaction-cta-primary"
-                        data-bs-toggle="modal" data-bs-target="#solOfferModal"
-                        aria-label="Submit an offer on this property">
-                    <i class="fa-solid fa-file-signature"></i>Submit Offer
-                </button>
+                <form method="POST" action="{{ route('offers.store') }}">
+                    @csrf
+                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                    <input type="hidden" name="role" value="seller">
+                    <button type="submit" class="sol-interaction-cta sol-interaction-cta-primary"
+                            aria-label="Submit an offer on this property">
+                        <i class="fa-solid fa-file-signature"></i>Submit Offer
+                    </button>
+                </form>
             </div>
 
             {{-- 2. Schedule Showing --}}
@@ -2253,9 +2262,14 @@
             <div class="sol-sticky-card">
                 <div class="sol-sticky-title">Quick Actions</div>
 
-                <button class="sol-action-btn sol-action-primary" data-bs-toggle="modal" data-bs-target="#solOfferModal">
-                    <i class="fa-solid fa-file-signature"></i>Submit Offer
-                </button>
+                <form method="POST" action="{{ route('offers.store') }}">
+                    @csrf
+                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                    <input type="hidden" name="role" value="seller">
+                    <button type="submit" class="sol-action-btn sol-action-primary">
+                        <i class="fa-solid fa-file-signature"></i>Submit Offer
+                    </button>
+                </form>
                 <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solShowingModal">
                     <i class="fa-solid fa-calendar-days"></i>Schedule Showing
                 </button>
@@ -2308,27 +2322,6 @@
     </div>{{-- /row --}}
 
     {{-- ===== THREE UI-ONLY MODALS ===== --}}
-
-    {{-- Modal: Submit Offer (placeholder) --}}
-    <div class="modal fade" id="solOfferModal" tabindex="-1" aria-labelledby="solOfferModalLabel" aria-modal="true" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
-                <div class="modal-header sol-modal-header">
-                    <h5 class="modal-title fw-bold" id="solOfferModalLabel"><i class="fa-solid fa-file-signature me-2"></i>Submit an Offer</h5>
-                    <button type="button" class="btn-close sol-modal-header" data-bs-dismiss="modal" style="filter:invert(1);"></button>
-                </div>
-                <div class="modal-body p-4 text-center">
-                    <div style="font-size:3rem;margin-bottom:1rem;">🏡</div>
-                    <h6 class="fw-bold mb-2">Online Offer Submission</h6>
-                    <p class="text-muted mb-3" style="font-size:.9rem;">Secure online offer submission is coming soon. In the meantime, please use the contact details in the listing to reach the agent directly.</p>
-                    <span class="badge bg-secondary px-3 py-2" style="font-size:.85rem;">Coming Soon</span>
-                </div>
-                <div class="modal-footer border-0 justify-content-center pb-4">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     {{-- Modal: Schedule a Showing --}}
     <div class="modal fade" id="solShowingModal" tabindex="-1" aria-labelledby="solShowingModalLabel" aria-modal="true" role="dialog">
@@ -2498,10 +2491,15 @@
 
 {{-- ===== MOBILE STICKY BOTTOM BAR ===== --}}
 <div class="sol-mobile-bar d-lg-none">
-    <button class="sol-mobile-bar-btn sol-mobile-bar-offer" data-bs-toggle="modal" data-bs-target="#solOfferModal">
-        <i class="fa-solid fa-file-signature"></i>
-        <span>Offer</span>
-    </button>
+    <form method="POST" action="{{ route('offers.store') }}">
+        @csrf
+        <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+        <input type="hidden" name="role" value="seller">
+        <button type="submit" class="sol-mobile-bar-btn sol-mobile-bar-offer">
+            <i class="fa-solid fa-file-signature"></i>
+            <span>Offer</span>
+        </button>
+    </form>
     <button class="sol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#solShowingModal">
         <i class="fa-solid fa-calendar-days"></i>
         <span>Showing</span>

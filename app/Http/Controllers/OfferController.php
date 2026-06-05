@@ -12,6 +12,7 @@ use App\Services\Offers\OfferAvailableActionsService;
 use App\Services\Offers\OfferTimelineBuilder;
 use App\Services\Offers\OfferWorkflowFacade;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
@@ -24,7 +25,7 @@ class OfferController extends Controller
         private readonly OfferTimelineBuilder $timelineBuilder,
     ) {}
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         $validated = $request->validate([
             'offer_auction_id' => 'required|integer',
@@ -41,6 +42,10 @@ class OfferController extends Controller
             'expires_at'       => $validated['expires_at'] ?? null,
             'status'           => 'draft',
         ]);
+
+        if (!$request->expectsJson()) {
+            return redirect()->route('offers.show', $offer);
+        }
 
         return response()->json([
             'message' => 'Offer draft created.',
