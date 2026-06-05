@@ -217,17 +217,56 @@ class OfferController extends Controller
         $typeRules = [];
         if ($offerType === 'sale') {
             $typeRules = [
-                'offer_price'                  => 'nullable|numeric|min:0',
-                'earnest_deposit'              => 'nullable|numeric|min:0',
-                'financing_type'               => 'nullable|in:cash,conventional,fha,va,other',
-                'financing_contingency'        => 'nullable|boolean',
-                'financing_contingency_days'   => 'nullable|integer|min:1|max:365',
-                'down_payment_percent'         => 'nullable|numeric|min:0|max:100',
-                'inspection_contingency'       => 'nullable|boolean',
-                'inspection_contingency_days'  => 'nullable|integer|min:1|max:365',
-                'appraisal_contingency'        => 'nullable|boolean',
-                'closing_date'                 => 'nullable|date',
-                'possession_date'              => 'nullable|date',
+                'offer_price'                          => 'nullable|numeric|min:0',
+                'earnest_deposit'                      => 'nullable|numeric|min:0',
+                'financing_type'                       => 'nullable|in:Assumable,Cash,Conventional,FHA,Jumbo,VA,No-Doc,Non-QM,USDA,Cryptocurrency,Exchange/Trade,Lease Option,Lease Purchase,Non-Fungible Token (NFT),Seller Financing,Other',
+                'financing_contingency'                => 'nullable|boolean',
+                'financing_contingency_days'           => 'nullable|integer|min:1|max:365',
+                'down_payment_percent'                 => 'nullable|numeric|min:0|max:100',
+                'inspection_contingency'               => 'nullable|boolean',
+                'inspection_contingency_days'          => 'nullable|integer|min:1|max:365',
+                'appraisal_contingency'                => 'nullable|boolean',
+                'closing_date'                         => 'nullable|date',
+                'possession_date'                      => 'nullable|date',
+                // Assumable sub-fields
+                'assumable_terms'                      => 'nullable|string|max:1000',
+                'assumable_loan_type'                  => 'nullable|in:FHA,VA,USDA',
+                'assumable_interest_rate'              => 'nullable|numeric|min:0|max:100',
+                'outstanding_balance'                  => 'nullable|numeric|min:0',
+                'assumable_loan_term_remaining'        => 'nullable|string|max:200',
+                // Cryptocurrency sub-fields
+                'cryptocurrency_type'                  => 'nullable|string|max:200',
+                'crypto_percentage'                    => 'nullable|numeric|min:0|max:100',
+                'crypto_exchange_method'               => 'nullable|string|max:500',
+                // Exchange/Trade sub-fields
+                'exchange_item'                        => 'nullable|string|max:500',
+                'exchange_item_value'                  => 'nullable|numeric|min:0',
+                // Seller Financing sub-fields
+                'seller_financing_amount'              => 'nullable|numeric|min:0',
+                'seller_financing_rate'                => 'nullable|numeric|min:0|max:100',
+                'seller_financing_term'                => 'nullable|string|max:200',
+                // Purchase Terms
+                'initial_deposit_amount'               => 'nullable|string|max:200',
+                'initial_deposit_timeframe'            => 'nullable|string|max:100',
+                'initial_deposit_timeframe_other'      => 'nullable|string|max:200',
+                'additional_deposit_amount'            => 'nullable|string|max:200',
+                'additional_deposit_timeframe'         => 'nullable|string|max:100',
+                'additional_deposit_timeframe_other'   => 'nullable|string|max:200',
+                'escrow_agent_preference'              => 'nullable|string|max:500',
+                'preferred_inspection_period'          => 'nullable|integer|min:0|max:365',
+                'appraisal_contingency_preference'     => 'nullable|in:Required,Preferred Waived,Negotiable,Not Applicable',
+                'financing_contingency_preference'     => 'nullable|in:Required,Preferred Waived,Negotiable,Not Applicable',
+                'sale_of_buyer_property_contingency'   => 'nullable|in:Accepted,Not Accepted,Negotiable',
+                'possession_preference'                => 'nullable|in:At Closing,Day After Closing,Seller Rent Back,Negotiable,Other',
+                'possession_details'                   => 'nullable|string|max:500',
+                'seller_contribution_requested'        => 'nullable|in:Yes,No',
+                'seller_contribution_details'          => 'nullable|string|max:1000',
+                'included_personal_property'           => 'nullable|string|max:1000',
+                'excluded_items'                       => 'nullable|string|max:1000',
+                'home_warranty_requested'              => 'nullable|in:Yes,No',
+                'home_warranty_details'                => 'nullable|string|max:1000',
+                'hoa_condo_association_terms'          => 'nullable|string|max:1000',
+                'additional_seller_sale_terms'         => 'nullable|string|max:5000',
             ];
         } elseif (in_array($offerType, ['rental', 'lease'])) {
             $typeRules = [
@@ -254,17 +293,56 @@ class OfferController extends Controller
         $offer->saveMeta('notes',        $validated['notes'] ?? null);
 
         if ($offerType === 'sale') {
-            $offer->saveMeta('offer_price',                 $validated['offer_price'] ?? null);
-            $offer->saveMeta('earnest_deposit',             $validated['earnest_deposit'] ?? null);
-            $offer->saveMeta('financing_type',              $validated['financing_type'] ?? null);
-            $offer->saveMeta('down_payment_percent',        $validated['down_payment_percent'] ?? null);
-            $offer->saveMeta('financing_contingency',       $request->boolean('financing_contingency') ? 1 : 0);
-            $offer->saveMeta('financing_contingency_days',  $validated['financing_contingency_days'] ?? null);
-            $offer->saveMeta('inspection_contingency',      $request->boolean('inspection_contingency') ? 1 : 0);
-            $offer->saveMeta('inspection_contingency_days', $validated['inspection_contingency_days'] ?? null);
-            $offer->saveMeta('appraisal_contingency',       $request->boolean('appraisal_contingency') ? 1 : 0);
-            $offer->saveMeta('closing_date',                $validated['closing_date'] ?? null);
-            $offer->saveMeta('possession_date',             $validated['possession_date'] ?? null);
+            $offer->saveMeta('offer_price',                         $validated['offer_price'] ?? null);
+            $offer->saveMeta('earnest_deposit',                     $validated['earnest_deposit'] ?? null);
+            $offer->saveMeta('financing_type',                      $validated['financing_type'] ?? null);
+            $offer->saveMeta('down_payment_percent',                $validated['down_payment_percent'] ?? null);
+            $offer->saveMeta('financing_contingency',               $request->boolean('financing_contingency') ? 1 : 0);
+            $offer->saveMeta('financing_contingency_days',          $validated['financing_contingency_days'] ?? null);
+            $offer->saveMeta('inspection_contingency',              $request->boolean('inspection_contingency') ? 1 : 0);
+            $offer->saveMeta('inspection_contingency_days',         $validated['inspection_contingency_days'] ?? null);
+            $offer->saveMeta('appraisal_contingency',               $request->boolean('appraisal_contingency') ? 1 : 0);
+            $offer->saveMeta('closing_date',                        $validated['closing_date'] ?? null);
+            $offer->saveMeta('possession_date',                     $validated['possession_date'] ?? null);
+            // Assumable sub-fields
+            $offer->saveMeta('assumable_terms',                     $validated['assumable_terms'] ?? null);
+            $offer->saveMeta('assumable_loan_type',                 $validated['assumable_loan_type'] ?? null);
+            $offer->saveMeta('assumable_interest_rate',             $validated['assumable_interest_rate'] ?? null);
+            $offer->saveMeta('outstanding_balance',                 $validated['outstanding_balance'] ?? null);
+            $offer->saveMeta('assumable_loan_term_remaining',       $validated['assumable_loan_term_remaining'] ?? null);
+            // Cryptocurrency sub-fields
+            $offer->saveMeta('cryptocurrency_type',                 $validated['cryptocurrency_type'] ?? null);
+            $offer->saveMeta('crypto_percentage',                   $validated['crypto_percentage'] ?? null);
+            $offer->saveMeta('crypto_exchange_method',              $validated['crypto_exchange_method'] ?? null);
+            // Exchange/Trade sub-fields
+            $offer->saveMeta('exchange_item',                       $validated['exchange_item'] ?? null);
+            $offer->saveMeta('exchange_item_value',                 $validated['exchange_item_value'] ?? null);
+            // Seller Financing sub-fields
+            $offer->saveMeta('seller_financing_amount',             $validated['seller_financing_amount'] ?? null);
+            $offer->saveMeta('seller_financing_rate',               $validated['seller_financing_rate'] ?? null);
+            $offer->saveMeta('seller_financing_term',               $validated['seller_financing_term'] ?? null);
+            // Purchase Terms
+            $offer->saveMeta('initial_deposit_amount',              $validated['initial_deposit_amount'] ?? null);
+            $offer->saveMeta('initial_deposit_timeframe',           $validated['initial_deposit_timeframe'] ?? null);
+            $offer->saveMeta('initial_deposit_timeframe_other',     $validated['initial_deposit_timeframe_other'] ?? null);
+            $offer->saveMeta('additional_deposit_amount',           $validated['additional_deposit_amount'] ?? null);
+            $offer->saveMeta('additional_deposit_timeframe',        $validated['additional_deposit_timeframe'] ?? null);
+            $offer->saveMeta('additional_deposit_timeframe_other',  $validated['additional_deposit_timeframe_other'] ?? null);
+            $offer->saveMeta('escrow_agent_preference',             $validated['escrow_agent_preference'] ?? null);
+            $offer->saveMeta('preferred_inspection_period',         $validated['preferred_inspection_period'] ?? null);
+            $offer->saveMeta('appraisal_contingency_preference',     $validated['appraisal_contingency_preference'] ?? null);
+            $offer->saveMeta('financing_contingency_preference',     $validated['financing_contingency_preference'] ?? null);
+            $offer->saveMeta('sale_of_buyer_property_contingency',  $validated['sale_of_buyer_property_contingency'] ?? null);
+            $offer->saveMeta('possession_preference',               $validated['possession_preference'] ?? null);
+            $offer->saveMeta('possession_details',                  $validated['possession_details'] ?? null);
+            $offer->saveMeta('seller_contribution_requested',       $validated['seller_contribution_requested'] ?? null);
+            $offer->saveMeta('seller_contribution_details',         $validated['seller_contribution_details'] ?? null);
+            $offer->saveMeta('included_personal_property',          $validated['included_personal_property'] ?? null);
+            $offer->saveMeta('excluded_items',                      $validated['excluded_items'] ?? null);
+            $offer->saveMeta('home_warranty_requested',             $validated['home_warranty_requested'] ?? null);
+            $offer->saveMeta('home_warranty_details',               $validated['home_warranty_details'] ?? null);
+            $offer->saveMeta('hoa_condo_association_terms',         $validated['hoa_condo_association_terms'] ?? null);
+            $offer->saveMeta('additional_seller_sale_terms',        $validated['additional_seller_sale_terms'] ?? null);
         } elseif (in_array($offerType, ['rental', 'lease'])) {
             $offer->saveMeta('monthly_rent',      $validated['monthly_rent'] ?? null);
             $offer->saveMeta('security_deposit',  $validated['security_deposit'] ?? null);

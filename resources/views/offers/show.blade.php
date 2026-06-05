@@ -103,6 +103,15 @@
 
                         {{-- Sale-specific fields --}}
                         @if($offerType === 'sale')
+                        @php $_ft = old('financing_type', $metas->get('financing_type') ?? ''); @endphp
+                        <div x-data="{
+                            finType: '{{ $_ft }}',
+                            finCont: {{ old('financing_contingency', $metas->get('financing_contingency')) ? 'true' : 'false' }},
+                            inspCont: {{ old('inspection_contingency', $metas->get('inspection_contingency')) ? 'true' : 'false' }},
+                            sellerContrib: '{{ old('seller_contribution_requested', $metas->get('seller_contribution_requested') ?? '') }}',
+                            homeWarranty: '{{ old('home_warranty_requested', $metas->get('home_warranty_requested') ?? '') }}'
+                        }">
+
                         <h6 class="fw-semibold text-muted mt-3 mb-2">Sale Terms</h6>
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
@@ -124,10 +133,27 @@
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold">Financing Type</label>
-                                <select name="financing_type" class="form-select">
+                                <select name="financing_type" class="form-select" x-model="finType">
                                     <option value="">— Select —</option>
-                                    @foreach(['cash' => 'All Cash', 'conventional' => 'Conventional', 'fha' => 'FHA', 'va' => 'VA', 'other' => 'Other'] as $val => $lbl)
-                                    <option value="{{ $val }}" {{ old('financing_type', $metas->get('financing_type')) === $val ? 'selected' : '' }}>{{ $lbl }}</option>
+                                    @foreach([
+                                        'Assumable',
+                                        'Cash',
+                                        'Conventional',
+                                        'FHA',
+                                        'Jumbo',
+                                        'VA',
+                                        'No-Doc',
+                                        'Non-QM',
+                                        'USDA',
+                                        'Cryptocurrency',
+                                        'Exchange/Trade',
+                                        'Lease Option',
+                                        'Lease Purchase',
+                                        'Non-Fungible Token (NFT)',
+                                        'Seller Financing',
+                                        'Other',
+                                    ] as $ftOpt)
+                                    <option value="{{ $ftOpt }}" {{ $_ft === $ftOpt ? 'selected' : '' }}>{{ $ftOpt }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -142,10 +168,118 @@
                                     value="{{ old('possession_date', ($v = $metas->get('possession_date')) ? $safeDate($v) : '') }}">
                             </div>
                         </div>
-                        <div class="row g-3 mb-3" x-data="{
-                            finCont: {{ old('financing_contingency', $metas->get('financing_contingency')) ? 'true' : 'false' }},
-                            inspCont: {{ old('inspection_contingency', $metas->get('inspection_contingency')) ? 'true' : 'false' }}
-                        }">
+
+                        {{-- Assumable conditional sub-fields --}}
+                        <div x-show="finType === 'Assumable'" class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="fw-semibold mb-3">Assumable Details</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Assumable Loan Terms</label>
+                                    <input type="text" name="assumable_terms" class="form-control"
+                                        placeholder="e.g., $250,000 remaining at 4.25% fixed for 20 years"
+                                        value="{{ old('assumable_terms', $metas->get('assumable_terms')) }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Loan Type</label>
+                                    <select name="assumable_loan_type" class="form-select">
+                                        <option value="">— Select —</option>
+                                        @foreach(['FHA', 'VA', 'USDA'] as $lt)
+                                        <option value="{{ $lt }}" {{ old('assumable_loan_type', $metas->get('assumable_loan_type')) === $lt ? 'selected' : '' }}>{{ $lt }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Interest Rate (%)</label>
+                                    <input type="number" name="assumable_interest_rate" class="form-control" min="0" max="100" step="0.01"
+                                        placeholder="e.g., 4.25"
+                                        value="{{ old('assumable_interest_rate', $metas->get('assumable_interest_rate')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Outstanding Balance ($)</label>
+                                    <input type="number" name="outstanding_balance" class="form-control" min="0"
+                                        placeholder="e.g., 250000"
+                                        value="{{ old('outstanding_balance', $metas->get('outstanding_balance')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Loan Term Remaining</label>
+                                    <input type="text" name="assumable_loan_term_remaining" class="form-control"
+                                        placeholder="e.g., 25 years"
+                                        value="{{ old('assumable_loan_term_remaining', $metas->get('assumable_loan_term_remaining')) }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Cryptocurrency conditional sub-fields --}}
+                        <div x-show="finType === 'Cryptocurrency'" class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="fw-semibold mb-3">Cryptocurrency Details</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Cryptocurrency Type</label>
+                                    <input type="text" name="cryptocurrency_type" class="form-control"
+                                        placeholder="e.g., Bitcoin, Ethereum"
+                                        value="{{ old('cryptocurrency_type', $metas->get('cryptocurrency_type')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">% of Price Paid with Crypto</label>
+                                    <input type="number" name="crypto_percentage" class="form-control" min="0" max="100" step="1"
+                                        placeholder="e.g., 50"
+                                        value="{{ old('crypto_percentage', $metas->get('crypto_percentage')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Exchange / Conversion Method</label>
+                                    <input type="text" name="crypto_exchange_method" class="form-control"
+                                        placeholder="e.g., Spot price at closing via Coinbase"
+                                        value="{{ old('crypto_exchange_method', $metas->get('crypto_exchange_method')) }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Exchange/Trade conditional sub-fields --}}
+                        <div x-show="finType === 'Exchange/Trade'" class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="fw-semibold mb-3">Exchange / Trade Details</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Item Offered for Exchange</label>
+                                    <input type="text" name="exchange_item" class="form-control"
+                                        placeholder="e.g., Another home, Vehicle, Boat"
+                                        value="{{ old('exchange_item', $metas->get('exchange_item')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Estimated Value ($)</label>
+                                    <input type="number" name="exchange_item_value" class="form-control" min="0"
+                                        placeholder="e.g., 75000"
+                                        value="{{ old('exchange_item_value', $metas->get('exchange_item_value')) }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Seller Financing conditional sub-fields --}}
+                        <div x-show="finType === 'Seller Financing'" class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="fw-semibold mb-3">Seller Financing Details</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Financed Amount ($)</label>
+                                    <input type="number" name="seller_financing_amount" class="form-control" min="0"
+                                        placeholder="e.g., 400000"
+                                        value="{{ old('seller_financing_amount', $metas->get('seller_financing_amount')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Proposed Interest Rate (%)</label>
+                                    <input type="number" name="seller_financing_rate" class="form-control" min="0" max="100" step="0.01"
+                                        placeholder="e.g., 6.5"
+                                        value="{{ old('seller_financing_rate', $metas->get('seller_financing_rate')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Loan Term</label>
+                                    <input type="text" name="seller_financing_term" class="form-control"
+                                        placeholder="e.g., 30 years"
+                                        value="{{ old('seller_financing_term', $metas->get('seller_financing_term')) }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Contingencies --}}
+                        <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <div class="form-check form-switch mb-2">
                                     <input class="form-check-input" type="checkbox" id="fin_cont_terms" name="financing_contingency"
@@ -181,6 +315,192 @@
                                 <label class="form-check-label fw-semibold" for="appr_cont_terms">Appraisal Contingency</label>
                             </div>
                         </div>
+
+                        {{-- Purchase Terms --}}
+                        <h6 class="fw-semibold text-muted mt-4 mb-2">Purchase Terms</h6>
+
+                        {{-- Initial Deposit --}}
+                        @php
+                            $_initTf  = old('initial_deposit_timeframe',      $metas->get('initial_deposit_timeframe') ?? '');
+                            $_addTf   = old('additional_deposit_timeframe',   $metas->get('additional_deposit_timeframe') ?? '');
+                        @endphp
+                        <div class="row g-3 mb-3" x-data="{ initTf: '{{ $_initTf }}' }">
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Initial Deposit Amount</label>
+                                <input type="text" name="initial_deposit_amount" class="form-control"
+                                    placeholder="e.g., 5000 or 3%"
+                                    value="{{ old('initial_deposit_amount', $metas->get('initial_deposit_amount')) }}">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Initial Deposit Timeframe</label>
+                                <select name="initial_deposit_timeframe" class="form-select" x-model="initTf">
+                                    <option value="">— Select —</option>
+                                    @foreach(['Within 1 Day','Within 3 Days','Within 5 Days','Within 7 Days','Within 10 Days','Within 14 Days','At Closing','Other'] as $opt)
+                                    <option value="{{ $opt }}" {{ $_initTf === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                    @endforeach
+                                </select>
+                                <div x-show="initTf === 'Other'" class="mt-2">
+                                    <input type="text" name="initial_deposit_timeframe_other" class="form-control"
+                                        placeholder="e.g., Within 21 Days"
+                                        value="{{ old('initial_deposit_timeframe_other', $metas->get('initial_deposit_timeframe_other')) }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Additional Deposit --}}
+                        <div class="row g-3 mb-3" x-data="{ addTf: '{{ $_addTf }}' }">
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Additional Deposit Amount</label>
+                                <input type="text" name="additional_deposit_amount" class="form-control"
+                                    placeholder="e.g., 10000 or 2%"
+                                    value="{{ old('additional_deposit_amount', $metas->get('additional_deposit_amount')) }}">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Additional Deposit Timeframe</label>
+                                <select name="additional_deposit_timeframe" class="form-select" x-model="addTf">
+                                    <option value="">— Select —</option>
+                                    @foreach(['Within 1 Day','Within 3 Days','Within 5 Days','Within 7 Days','Within 10 Days','Within 14 Days','At Closing','Other'] as $opt)
+                                    <option value="{{ $opt }}" {{ $_addTf === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                    @endforeach
+                                </select>
+                                <div x-show="addTf === 'Other'" class="mt-2">
+                                    <input type="text" name="additional_deposit_timeframe_other" class="form-control"
+                                        placeholder="e.g., Within 21 Days"
+                                        value="{{ old('additional_deposit_timeframe_other', $metas->get('additional_deposit_timeframe_other')) }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Escrow & Inspection --}}
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Escrow Agent Preference</label>
+                                <input type="text" name="escrow_agent_preference" class="form-control"
+                                    placeholder="e.g., First American Title, Local Attorney"
+                                    value="{{ old('escrow_agent_preference', $metas->get('escrow_agent_preference')) }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Preferred Inspection Period (days)</label>
+                                <input type="number" name="preferred_inspection_period" class="form-control" min="0" max="365"
+                                    placeholder="e.g., 10"
+                                    value="{{ old('preferred_inspection_period', $metas->get('preferred_inspection_period')) }}">
+                            </div>
+                        </div>
+
+                        {{-- Appraisal Contingency Preference --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Appraisal Contingency Preference</label>
+                            <select name="appraisal_contingency_preference" class="form-select w-auto">
+                                <option value="">— Select —</option>
+                                @foreach(['Required','Preferred Waived','Negotiable','Not Applicable'] as $opt)
+                                <option value="{{ $opt }}" {{ old('appraisal_contingency_preference', $metas->get('appraisal_contingency_preference')) === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Financing Contingency Preference --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Financing Contingency Preference</label>
+                            <select name="financing_contingency_preference" class="form-select w-auto">
+                                <option value="">— Select —</option>
+                                @foreach(['Required','Preferred Waived','Negotiable','Not Applicable'] as $opt)
+                                <option value="{{ $opt }}" {{ old('financing_contingency_preference', $metas->get('financing_contingency_preference')) === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Sale of Buyer Property Contingency --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Sale of Buyer's Property Contingency</label>
+                            <select name="sale_of_buyer_property_contingency" class="form-select w-auto">
+                                <option value="">— Select —</option>
+                                @foreach(['Accepted','Not Accepted','Negotiable'] as $opt)
+                                <option value="{{ $opt }}" {{ old('sale_of_buyer_property_contingency', $metas->get('sale_of_buyer_property_contingency')) === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Seller Contribution --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Seller Contribution Requested</label>
+                            <select name="seller_contribution_requested" class="form-select w-auto" x-model="sellerContrib">
+                                <option value="">— Select —</option>
+                                <option value="Yes" {{ old('seller_contribution_requested', $metas->get('seller_contribution_requested')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                <option value="No" {{ old('seller_contribution_requested', $metas->get('seller_contribution_requested')) === 'No' ? 'selected' : '' }}>No</option>
+                            </select>
+                            <div x-show="sellerContrib === 'Yes'" class="mt-2">
+                                <input type="text" name="seller_contribution_details" class="form-control"
+                                    placeholder="e.g., $5,000 toward buyer closing costs"
+                                    value="{{ old('seller_contribution_details', $metas->get('seller_contribution_details')) }}">
+                            </div>
+                        </div>
+
+                        {{-- Possession Preference --}}
+                        @php
+                            $_possPref = old('possession_preference', $metas->get('possession_preference') ?? '');
+                        @endphp
+                        <div class="mb-3" x-data="{ possPref: '{{ $_possPref }}' }">
+                            <label class="form-label fw-semibold">Possession Preference</label>
+                            <select name="possession_preference" class="form-select w-auto" x-model="possPref">
+                                <option value="">— Select —</option>
+                                @foreach(['At Closing','Day After Closing','Seller Rent Back','Negotiable','Other'] as $opt)
+                                <option value="{{ $opt }}" {{ $_possPref === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                @endforeach
+                            </select>
+                            <div x-show="possPref === 'Seller Rent Back' || possPref === 'Other'" class="mt-2">
+                                <input type="text" name="possession_details" class="form-control"
+                                    placeholder="e.g., Seller requests 30-day rent back at market rate"
+                                    value="{{ old('possession_details', $metas->get('possession_details')) }}">
+                            </div>
+                        </div>
+
+                        {{-- Included Personal Property --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Included Personal Property</label>
+                            <input type="text" name="included_personal_property" class="form-control"
+                                placeholder="e.g., Refrigerator, Washer/Dryer, Dining Room Chandelier"
+                                value="{{ old('included_personal_property', $metas->get('included_personal_property')) }}">
+                        </div>
+
+                        {{-- Excluded Items --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Excluded Items</label>
+                            <input type="text" name="excluded_items" class="form-control"
+                                placeholder="e.g., Antique light fixture in dining room, Detached storage shed"
+                                value="{{ old('excluded_items', $metas->get('excluded_items')) }}">
+                        </div>
+
+                        {{-- Home Warranty --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Home Warranty Requested</label>
+                            <select name="home_warranty_requested" class="form-select w-auto" x-model="homeWarranty">
+                                <option value="">— Select —</option>
+                                <option value="Yes" {{ old('home_warranty_requested', $metas->get('home_warranty_requested')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                <option value="No" {{ old('home_warranty_requested', $metas->get('home_warranty_requested')) === 'No' ? 'selected' : '' }}>No</option>
+                            </select>
+                            <div x-show="homeWarranty === 'Yes'" class="mt-2">
+                                <input type="text" name="home_warranty_details" class="form-control"
+                                    placeholder="e.g., $500 one-year home warranty through American Home Shield"
+                                    value="{{ old('home_warranty_details', $metas->get('home_warranty_details')) }}">
+                            </div>
+                        </div>
+
+                        {{-- HOA Notes --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Additional HOA / Association Notes</label>
+                            <input type="text" name="hoa_condo_association_terms" class="form-control"
+                                placeholder="e.g., $200 transfer fee, pending special assessment"
+                                value="{{ old('hoa_condo_association_terms', $metas->get('hoa_condo_association_terms')) }}">
+                        </div>
+
+                        {{-- Additional Sale Terms --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Additional Seller Sale Terms</label>
+                            <textarea name="additional_seller_sale_terms" class="form-control" rows="3"
+                                placeholder="Any additional sale terms or special conditions…">{{ old('additional_seller_sale_terms', $metas->get('additional_seller_sale_terms')) }}</textarea>
+                        </div>
+
+                        </div>{{-- end x-data --}}
                         @endif
 
                         {{-- Rental/Lease-specific fields --}}
@@ -236,6 +556,10 @@
                         <dd class="col-sm-9">{{ $safeDate($metas->get('expires_at')) }}</dd>
 
                         @if($offerType === 'sale')
+                        @php
+                            $ftRaw = $metas->get('financing_type');
+                            $ftLabel = $ftRaw ?: '—';
+                        @endphp
                         <dt class="col-sm-3">Offer Price</dt>
                         <dd class="col-sm-9">{{ $metas->get('offer_price') ? '$' . number_format($metas->get('offer_price')) : '—' }}</dd>
 
@@ -243,10 +567,48 @@
                         <dd class="col-sm-9">{{ $metas->get('earnest_deposit') ? '$' . number_format($metas->get('earnest_deposit')) : '—' }}</dd>
 
                         <dt class="col-sm-3">Financing Type</dt>
-                        <dd class="col-sm-9">{{ $metas->get('financing_type') ? ucfirst($metas->get('financing_type')) : '—' }}</dd>
+                        <dd class="col-sm-9">{{ $ftLabel }}</dd>
+
+                        @if($ftRaw === 'Assumable')
+                        <dt class="col-sm-3">Assumable Loan Terms</dt>
+                        <dd class="col-sm-9">{{ $metas->get('assumable_terms') ?: '—' }}</dd>
+                        <dt class="col-sm-3">Loan Type</dt>
+                        <dd class="col-sm-9">{{ $metas->get('assumable_loan_type') ?: '—' }}</dd>
+                        <dt class="col-sm-3">Interest Rate</dt>
+                        <dd class="col-sm-9">{{ $metas->get('assumable_interest_rate') !== null && $metas->get('assumable_interest_rate') !== '' ? $metas->get('assumable_interest_rate') . '%' : '—' }}</dd>
+                        <dt class="col-sm-3">Outstanding Balance</dt>
+                        <dd class="col-sm-9">{{ $metas->get('outstanding_balance') ? '$' . number_format($metas->get('outstanding_balance')) : '—' }}</dd>
+                        <dt class="col-sm-3">Loan Term Remaining</dt>
+                        <dd class="col-sm-9">{{ $metas->get('assumable_loan_term_remaining') ?: '—' }}</dd>
+                        @endif
+
+                        @if($ftRaw === 'Cryptocurrency')
+                        <dt class="col-sm-3">Cryptocurrency Type</dt>
+                        <dd class="col-sm-9">{{ $metas->get('cryptocurrency_type') ?: '—' }}</dd>
+                        <dt class="col-sm-3">% Paid with Crypto</dt>
+                        <dd class="col-sm-9">{{ $metas->get('crypto_percentage') !== null && $metas->get('crypto_percentage') !== '' ? $metas->get('crypto_percentage') . '%' : '—' }}</dd>
+                        <dt class="col-sm-3">Exchange/Conversion Method</dt>
+                        <dd class="col-sm-9">{{ $metas->get('crypto_exchange_method') ?: '—' }}</dd>
+                        @endif
+
+                        @if($ftRaw === 'Exchange/Trade')
+                        <dt class="col-sm-3">Exchange Item</dt>
+                        <dd class="col-sm-9">{{ $metas->get('exchange_item') ?: '—' }}</dd>
+                        <dt class="col-sm-3">Estimated Value</dt>
+                        <dd class="col-sm-9">{{ $metas->get('exchange_item_value') ? '$' . number_format($metas->get('exchange_item_value')) : '—' }}</dd>
+                        @endif
+
+                        @if($ftRaw === 'Seller Financing')
+                        <dt class="col-sm-3">Financed Amount</dt>
+                        <dd class="col-sm-9">{{ $metas->get('seller_financing_amount') ? '$' . number_format($metas->get('seller_financing_amount')) : '—' }}</dd>
+                        <dt class="col-sm-3">Interest Rate</dt>
+                        <dd class="col-sm-9">{{ $metas->get('seller_financing_rate') !== null && $metas->get('seller_financing_rate') !== '' ? $metas->get('seller_financing_rate') . '%' : '—' }}</dd>
+                        <dt class="col-sm-3">Loan Term</dt>
+                        <dd class="col-sm-9">{{ $metas->get('seller_financing_term') ?: '—' }}</dd>
+                        @endif
 
                         <dt class="col-sm-3">Down Payment %</dt>
-                        <dd class="col-sm-9">{{ $metas->get('down_payment_percent') !== null ? $metas->get('down_payment_percent') . '%' : '—' }}</dd>
+                        <dd class="col-sm-9">{{ $metas->get('down_payment_percent') !== null && $metas->get('down_payment_percent') !== '' ? $metas->get('down_payment_percent') . '%' : '—' }}</dd>
 
                         <dt class="col-sm-3">Financing Contingency</dt>
                         <dd class="col-sm-9">
@@ -272,6 +634,104 @@
 
                         <dt class="col-sm-3">Possession Date</dt>
                         <dd class="col-sm-9">{{ $safeDate($metas->get('possession_date')) }}</dd>
+
+                        {{-- Purchase Terms --}}
+                        @if($metas->get('initial_deposit_amount'))
+                        @php
+                            $_initTfDisplay = $metas->get('initial_deposit_timeframe');
+                            if ($_initTfDisplay === 'Other' && $metas->get('initial_deposit_timeframe_other')) {
+                                $_initTfDisplay = $metas->get('initial_deposit_timeframe_other');
+                            }
+                        @endphp
+                        <dt class="col-sm-3">Initial Deposit Amount</dt>
+                        <dd class="col-sm-9">{{ $metas->get('initial_deposit_amount') }}{{ $_initTfDisplay ? ' — ' . $_initTfDisplay : '' }}</dd>
+                        @endif
+
+                        @if($metas->get('additional_deposit_amount'))
+                        @php
+                            $_addTfDisplay = $metas->get('additional_deposit_timeframe');
+                            if ($_addTfDisplay === 'Other' && $metas->get('additional_deposit_timeframe_other')) {
+                                $_addTfDisplay = $metas->get('additional_deposit_timeframe_other');
+                            }
+                        @endphp
+                        <dt class="col-sm-3">Additional Deposit Amount</dt>
+                        <dd class="col-sm-9">{{ $metas->get('additional_deposit_amount') }}{{ $_addTfDisplay ? ' — ' . $_addTfDisplay : '' }}</dd>
+                        @endif
+
+                        @if($metas->get('escrow_agent_preference'))
+                        <dt class="col-sm-3">Escrow Agent Preference</dt>
+                        <dd class="col-sm-9">{{ $metas->get('escrow_agent_preference') }}</dd>
+                        @endif
+
+                        @if($metas->get('preferred_inspection_period') !== null && $metas->get('preferred_inspection_period') !== '')
+                        <dt class="col-sm-3">Preferred Inspection Period</dt>
+                        <dd class="col-sm-9">{{ $metas->get('preferred_inspection_period') }} days</dd>
+                        @endif
+
+                        @if($metas->get('appraisal_contingency_preference'))
+                        <dt class="col-sm-3">Appraisal Contingency Preference</dt>
+                        <dd class="col-sm-9">{{ $metas->get('appraisal_contingency_preference') }}</dd>
+                        @endif
+
+                        @if($metas->get('financing_contingency_preference'))
+                        <dt class="col-sm-3">Financing Contingency Preference</dt>
+                        <dd class="col-sm-9">{{ $metas->get('financing_contingency_preference') }}</dd>
+                        @endif
+
+                        @if($metas->get('sale_of_buyer_property_contingency'))
+                        <dt class="col-sm-3">Sale of Buyer's Property Contingency</dt>
+                        <dd class="col-sm-9">{{ $metas->get('sale_of_buyer_property_contingency') }}</dd>
+                        @endif
+
+                        @if($metas->get('possession_preference'))
+                        <dt class="col-sm-3">Possession Preference</dt>
+                        <dd class="col-sm-9">
+                            {{ $metas->get('possession_preference') }}
+                            @if(in_array($metas->get('possession_preference'), ['Seller Rent Back', 'Other']) && $metas->get('possession_details'))
+                                — {{ $metas->get('possession_details') }}
+                            @endif
+                        </dd>
+                        @endif
+
+                        @if($metas->get('seller_contribution_requested'))
+                        <dt class="col-sm-3">Seller Contribution Requested</dt>
+                        <dd class="col-sm-9">
+                            {{ $metas->get('seller_contribution_requested') }}
+                            @if($metas->get('seller_contribution_requested') === 'Yes' && $metas->get('seller_contribution_details'))
+                                — {{ $metas->get('seller_contribution_details') }}
+                            @endif
+                        </dd>
+                        @endif
+
+                        @if($metas->get('included_personal_property'))
+                        <dt class="col-sm-3">Included Personal Property</dt>
+                        <dd class="col-sm-9">{{ $metas->get('included_personal_property') }}</dd>
+                        @endif
+
+                        @if($metas->get('excluded_items'))
+                        <dt class="col-sm-3">Excluded Items</dt>
+                        <dd class="col-sm-9">{{ $metas->get('excluded_items') }}</dd>
+                        @endif
+
+                        @if($metas->get('home_warranty_requested'))
+                        <dt class="col-sm-3">Home Warranty Requested</dt>
+                        <dd class="col-sm-9">
+                            {{ $metas->get('home_warranty_requested') }}
+                            @if($metas->get('home_warranty_requested') === 'Yes' && $metas->get('home_warranty_details'))
+                                — {{ $metas->get('home_warranty_details') }}
+                            @endif
+                        </dd>
+                        @endif
+
+                        @if($metas->get('hoa_condo_association_terms'))
+                        <dt class="col-sm-3">HOA / Association Notes</dt>
+                        <dd class="col-sm-9">{{ $metas->get('hoa_condo_association_terms') }}</dd>
+                        @endif
+
+                        @if($metas->get('additional_seller_sale_terms'))
+                        <dt class="col-sm-3">Additional Sale Terms</dt>
+                        <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('additional_seller_sale_terms') }}</dd>
+                        @endif
                         @endif
 
                         @if(in_array($offerType, ['rental', 'lease']))
