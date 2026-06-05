@@ -653,6 +653,14 @@
                     @endif
 
                     <div class="tcl-hero-ctas">
+                        <form method="POST" action="{{ route('offers.store') }}" style="display:contents;">
+                            @csrf
+                            <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                            <input type="hidden" name="role" value="tenant">
+                            <button type="submit" class="btn btn-primary" aria-label="Respond to this Tenant Criteria listing">
+                                <i class="fa-solid fa-reply me-1"></i>Respond to Tenant Criteria
+                            </button>
+                        </form>
                         @if(auth()->id() != $ownerId)
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tclQuestionModal" aria-label="Ask a question about this listing">
                             <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
@@ -680,7 +688,23 @@
         <div class="tcl-interaction-hub-label"><i class="fa-solid fa-bolt me-1"></i>Quick Actions &amp; Listing Info</div>
         <div class="tcl-interaction-grid">
 
-            {{-- 1. Contact Tenant --}}
+            {{-- 1. Respond to Tenant Criteria --}}
+            <div class="tcl-interaction-card">
+                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-reply"></i></div>
+                <div class="tcl-interaction-card-label">Respond to Tenant Criteria</div>
+                <div class="tcl-interaction-card-helper">Submit a rental property that matches this tenant's criteria.</div>
+                <form method="POST" action="{{ route('offers.store') }}">
+                    @csrf
+                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                    <input type="hidden" name="role" value="tenant">
+                    <button type="submit" class="tcl-interaction-cta tcl-interaction-cta-primary"
+                            aria-label="Respond to this Tenant Criteria listing">
+                        <i class="fa-solid fa-reply"></i>Respond
+                    </button>
+                </form>
+            </div>
+
+            {{-- 2. Contact Tenant --}}
             <div class="tcl-interaction-card">
                 <div class="tcl-interaction-card-icon"><i class="fa-solid fa-envelope"></i></div>
                 <div class="tcl-interaction-card-label">Contact Tenant</div>
@@ -692,7 +716,7 @@
                 </button>
             </div>
 
-            {{-- 2. Schedule Showing --}}
+            {{-- 3. Schedule Showing --}}
             {{-- Route offer.listing.tenant.showing does not exist. Wiring pending. --}}
             <div class="tcl-interaction-card">
                 <div class="tcl-interaction-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
@@ -1546,6 +1570,14 @@
             <div class="tcl-sticky-card">
                 <div class="tcl-sticky-title">Quick Actions</div>
 
+                <form method="POST" action="{{ route('offers.store') }}">
+                    @csrf
+                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                    <input type="hidden" name="role" value="tenant">
+                    <button type="submit" class="tcl-action-btn tcl-action-primary">
+                        <i class="fa-solid fa-reply"></i>Respond to Tenant Criteria
+                    </button>
+                </form>
                 @if($ifFilled($str('email')))
                 <a href="mailto:{{ $str('email') }}" class="tcl-action-btn tcl-action-primary">
                     <i class="fa-solid fa-envelope"></i>Contact Tenant
@@ -1657,6 +1689,15 @@
         <i class="fa-solid fa-robot"></i>
         <span>Ask AI</span>
     </button>
+    <form method="POST" action="{{ route('offers.store') }}" style="display:contents;">
+        @csrf
+        <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+        <input type="hidden" name="role" value="tenant">
+        <button type="submit" class="tcl-mobile-bar-btn tcl-mobile-primary">
+            <i class="fa-solid fa-reply"></i>
+            <span>Respond</span>
+        </button>
+    </form>
     @if($ifFilled($str('email')) && auth()->id() != $ownerId)
     <a href="mailto:{{ $str('email') }}" class="tcl-mobile-bar-btn tcl-mobile-primary">
         <i class="fa-solid fa-envelope"></i>
