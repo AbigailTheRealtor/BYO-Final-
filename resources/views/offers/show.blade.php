@@ -61,8 +61,9 @@
 
             {{-- Offer Terms Card --}}
             @php
+                $offerStatus = $offer->status;
                 $isOwner    = Auth::id() === $offer->user_id;
-                $canEdit    = $isOwner && $offer->status === 'draft';
+                $canEdit    = $isOwner && $offerStatus === 'draft';
                 $safeDate   = function ($v) {
                     if (!$v) return '—';
                     try { return \Carbon\Carbon::parse($v)->format('Y-m-d'); }
