@@ -8,6 +8,7 @@ use App\Models\LandlordAgentAuction;
 use App\Models\SellerAgentAuction;
 use App\Models\TenantAgentAuction;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 /**
  * HireAgentLeadMatcherService
@@ -221,8 +222,21 @@ class HireAgentLeadMatcherService
     // ── Private ────────────────────────────────────────────────────────────
 
     /**
-     * Resolve the listing's hired_agent_id using the correct typed model.
-     * Each model uses EAV meta + info($key) accessor.
+     * Resolve the agent ID associated with this listing.
+     *
+     * Checks candidates in strict priority order, stopping at the first value
+     * that resolves to a user with user_type = 'agent':
+     *
+     *  1. hired_agent_id    (EAV meta)
+     *  2. accepted_agent_id (EAV meta)
+     *  3. winning_agent_id  (EAV meta)
+     *  4. selected_agent_id (EAV meta)
+     *  5. listing_agent_id  (EAV meta)
+     *  6. agent_id          (EAV meta)
+     *  7. created_by        (EAV meta)
+     *  8. listing.user_id   (native column — covers agent-created listings)
+     *
+     * Returns null if no agent can be resolved.
      */
     private function getListingHiredAgentId(string $sourceListingType, int $listingId): ?int
     {
@@ -232,10 +246,53 @@ class HireAgentLeadMatcherService
         }
         try {
             $listing = $modelClass::with('meta')->find($listingId);
-            $val     = $listing?->info('hired_agent_id');
-            return $val ? (int) $val : null;
+            if (! $listing) {
+                return null;
+            }
+
+            // Steps 1–7: EAV meta keys in priority order
+            $metaKeys = [
+                'hired_agent_id',
+                'accepted_agent_id',
+                'winning_agent_id',
+                'selected_agent_id',
+                'listing_agent_id',
+                'agent_id',
+                'created_by',
+            ];
+            foreach ($metaKeys as $key) {
+                $val = $listing->info($key);
+                if ($val) {
+                    $candidateId = (int) $val;
+                    if ($candidateId > 0 && $this->isAgentUser($candidateId)) {
+                        return $candidateId;
+                    }
+                }
+            }
+
+            // Step 8: listing.user_id — covers listings created directly by an agent
+            $listingOwnerId = $listing->user_id ?? null;
+            if ($listingOwnerId && $this->isAgentUser((int) $listingOwnerId)) {
+                return (int) $listingOwnerId;
+            }
+
+            return null;
         } catch (\Throwable $e) {
             return null;
+        }
+    }
+
+    /**
+     * Check whether a given user ID belongs to a user with user_type = 'agent'.
+     * Uses DB::table() directly to avoid Eloquent eager-load issues inside transactions.
+     */
+    private function isAgentUser(int $userId): bool
+    {
+        try {
+            $type = DB::table('users')->where('id', $userId)->value('user_type');
+            return $type === 'agent';
+        } catch (\Throwable $e) {
+            return false;
         }
     }
 
