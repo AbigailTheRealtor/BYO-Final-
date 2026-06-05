@@ -655,9 +655,14 @@
                     @endif
 
                     <div class="bol-hero-ctas">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bolRespondModal" aria-label="Respond to this Buyer Criteria listing">
-                            <i class="fa-solid fa-reply me-1"></i>Respond to Buyer Criteria
-                        </button>
+                        <form method="POST" action="{{ route('offers.store') }}" style="display:contents;">
+                            @csrf
+                            <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                            <input type="hidden" name="role" value="buyer">
+                            <button type="submit" class="btn btn-primary" aria-label="Respond to this Buyer Criteria listing">
+                                <i class="fa-solid fa-reply me-1"></i>Respond to Buyer Criteria
+                            </button>
+                        </form>
                         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#bolShowingModal" aria-label="Schedule a showing">
                             <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
                         </button>
@@ -680,11 +685,15 @@
                 <div class="bol-interaction-card-icon"><i class="fa-solid fa-reply"></i></div>
                 <div class="bol-interaction-card-label">Respond to Buyer Criteria</div>
                 <div class="bol-interaction-card-helper">Submit a property that matches this buyer's criteria.</div>
-                <button type="button" class="bol-interaction-cta bol-interaction-cta-primary"
-                        data-bs-toggle="modal" data-bs-target="#bolRespondModal"
-                        aria-label="Respond to this Buyer Criteria listing">
-                    <i class="fa-solid fa-reply"></i>Respond
-                </button>
+                <form method="POST" action="{{ route('offers.store') }}">
+                    @csrf
+                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                    <input type="hidden" name="role" value="buyer">
+                    <button type="submit" class="bol-interaction-cta bol-interaction-cta-primary"
+                            aria-label="Respond to this Buyer Criteria listing">
+                        <i class="fa-solid fa-reply"></i>Respond
+                    </button>
+                </form>
             </div>
 
             {{-- 2. Schedule Showing --}}
@@ -1466,9 +1475,14 @@
             <div class="bol-sticky-card">
                 <div class="bol-sticky-title"><i class="fa-solid fa-bolt me-1"></i>Quick Actions</div>
 
-                <button class="bol-action-btn bol-action-primary" data-bs-toggle="modal" data-bs-target="#bolRespondModal">
-                    <i class="fa-solid fa-reply"></i>Respond to Buyer Criteria
-                </button>
+                <form method="POST" action="{{ route('offers.store') }}">
+                    @csrf
+                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                    <input type="hidden" name="role" value="buyer">
+                    <button type="submit" class="bol-action-btn bol-action-primary">
+                        <i class="fa-solid fa-reply"></i>Respond to Buyer Criteria
+                    </button>
+                </form>
                 {{-- Option A: Ask AI added to sidebar to match Seller view --}}
                 <button class="bol-action-btn bol-action-outline" data-bs-toggle="modal" data-bs-target="#bolAiModal">
                     <i class="fa-solid fa-robot"></i>Ask AI About Criteria
@@ -1567,27 +1581,6 @@
     </div>{{-- /row --}}
 
     {{-- ===== MODALS ===== --}}
-
-    {{-- Modal: Respond to Buyer Criteria (placeholder) --}}
-    <div class="modal fade" id="bolRespondModal" tabindex="-1" aria-labelledby="bolRespondModalLabel" aria-modal="true" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
-                <div class="modal-header bol-modal-header">
-                    <h5 class="modal-title fw-bold" id="bolRespondModalLabel"><i class="fa-solid fa-reply me-2"></i>Respond to Buyer Criteria</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
-                </div>
-                <div class="modal-body p-4 text-center">
-                    <div style="font-size:3rem;margin-bottom:1rem;">🏡</div>
-                    <h6 class="fw-bold mb-2">Online Response Submission</h6>
-                    <p class="text-muted mb-3" style="font-size:.9rem;">Online response submission for Buyer Criteria listings is coming soon. In the meantime, please use the contact details in the listing to reach the listing owner directly.</p>
-                    <span class="badge bg-secondary px-3 py-2" style="font-size:.85rem;">Coming Soon</span>
-                </div>
-                <div class="modal-footer border-0 justify-content-center pb-4">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     {{-- Modal: Ask a Question --}}
     <div class="modal fade" id="bolQuestionModal" tabindex="-1" aria-labelledby="bolQuestionModalLabel" aria-modal="true" role="dialog">
@@ -1782,10 +1775,15 @@
         <i class="fa-solid fa-robot"></i>
         <span>Ask AI</span>
     </button>
-    <button class="bol-mobile-bar-btn bol-mobile-bar-respond" data-bs-toggle="modal" data-bs-target="#bolRespondModal">
-        <i class="fa-solid fa-reply"></i>
-        <span>Respond</span>
-    </button>
+    <form method="POST" action="{{ route('offers.store') }}" style="display:contents;">
+        @csrf
+        <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+        <input type="hidden" name="role" value="buyer">
+        <button type="submit" class="bol-mobile-bar-btn bol-mobile-bar-respond">
+            <i class="fa-solid fa-reply"></i>
+            <span>Respond</span>
+        </button>
+    </form>
     {{-- Option A: Ask AI added to mobile bar to match Seller view --}}
     <button class="bol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#bolAiModal">
         <i class="fa-solid fa-robot"></i>
