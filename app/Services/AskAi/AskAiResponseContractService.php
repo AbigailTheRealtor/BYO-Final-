@@ -219,6 +219,8 @@ class AskAiResponseContractService
                 'listing.county',
                 'listing.property_type',
                 'listing.description',
+                // Address
+                'listing.address',
                 // Price / cost (seller / buyer)
                 'listing.asking_price',
                 'listing.buy_now_price',
@@ -234,6 +236,8 @@ class AskAiResponseContractService
                 'listing.unit_size',
                 'listing.number_of_units',
                 'listing.condition_prop',
+                // Property sub-types (JSON decoded, landlord / tenant)
+                'listing.property_items',
                 // Outdoor / extras
                 'listing.pool',
                 'listing.pool_type',
@@ -250,8 +254,10 @@ class AskAiResponseContractService
                 'listing.hoa_acceptable',
                 'listing.max_hoa_fee',
                 'listing.has_hoa',
+                'listing.association_name',
                 'listing.association_fee_amount',
                 'listing.association_fee_frequency',
+                'listing.association_amenities',
                 'listing.condo_fee',
                 'listing.condo_fee_schedule',
                 // Pets
@@ -273,30 +279,39 @@ class AskAiResponseContractService
                 'listing.desired_lease_length',
                 'listing.renewal_option',
                 'listing.additional_lease_terms',
+                'listing.rental_restrictions',
+                'listing.rental_restrictions_description',
+                'listing.leasing_restrictions',
                 'listing.tenant_pays',
                 'listing.landlord_pays',
                 'listing.utilities',
+                'listing.utility_preference',
                 // Appliances
                 'listing.appliances',
                 // Policies
                 'listing.smoking_policy',
                 'listing.subletting_policy',
-                'listing.rental_restrictions',
                 'listing.number_of_occupants',
-                // Parking
+                // Parking / location
                 'listing.parking_terms',
                 'listing.parking_needed',
+                'listing.property_zip',
                 // Compliance-sensitive (carry disclosure requirement)
                 'listing.is_in_flood_zone',
                 'listing.flood_zone_code',
+                'listing.disclosure_flags',
                 // Availability / dates
                 'listing.available_date',
                 'listing.closing_date',
+                'listing.auction_length',
                 // Buyer criteria
                 'listing.loan_pre_approved',
+                'listing.financing_type',
                 'listing.inspection_period',
                 'listing.closing_days',
                 'listing.contingencies',
+                // Tenant status
+                'listing.current_status',
                 // Showing / MLS / service
                 'listing.showing_instructions',
                 'listing.mls_id',

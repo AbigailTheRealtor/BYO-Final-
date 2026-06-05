@@ -1886,4 +1886,683 @@ class AskAiContextBuilderServiceTest extends TestCase
         $this->assertIsArray($result['faq_answers'],
             "faq_answers must always be an array even when JSON is malformed");
     }
+
+    // =========================================================================
+    // Case T — Phase 2 Task B: Extended factual field coverage for all roles
+    //
+    // Verifies that the new fields added in Phase 2 Task B appear in the
+    // listing context block when the underlying stub property is populated.
+    // Excluded/PII fields are confirmed absent.
+    // =========================================================================
+
+    // --- Seller new fields ---
+
+    public function test_case_T_seller_address_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(['address' => '123 Main St'])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('address', $result['listing'],
+            "listing context must include 'address' for seller");
+        $this->assertSame('123 Main St', $result['listing']['address']);
+    }
+
+    public function test_case_T_seller_rental_restrictions_description_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(['rental_restrictions_desription' => 'No short-term rentals'])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('rental_restrictions_description', $result['listing'],
+            "listing context must include 'rental_restrictions_description' for seller");
+        $this->assertSame('No short-term rentals', $result['listing']['rental_restrictions_description']);
+    }
+
+    public function test_case_T_seller_auction_length_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(['auction_length' => '30'])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('auction_length', $result['listing'],
+            "listing context must include 'auction_length' for seller");
+        $this->assertSame('30', $result['listing']['auction_length']);
+    }
+
+    public function test_case_T_seller_disclosure_flags_is_array_with_flood_zone_true(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields()
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('disclosure_flags', $result['listing'],
+            "listing context must include 'disclosure_flags' for seller");
+        $this->assertIsArray($result['listing']['disclosure_flags']);
+        $this->assertArrayHasKey('flood_zone', $result['listing']['disclosure_flags']);
+        $this->assertTrue($result['listing']['disclosure_flags']['flood_zone'],
+            "disclosure_flags.flood_zone must be true for seller listings");
+    }
+
+    public function test_case_T_seller_disclosure_flags_absent_for_buyer_listing(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields()
+        );
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertArrayNotHasKey('disclosure_flags', $result['listing'],
+            "disclosure_flags must not appear in buyer listing context");
+    }
+
+    public function test_case_T_seller_pii_fields_absent_from_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([
+                'seller_name'  => 'John Doe',
+                'phone_number' => '555-0100',
+                'email'        => 'john@example.com',
+                'brokerage'    => 'Realty Co',
+            ])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayNotHasKey('seller_name', $result['listing'],
+            "PII 'seller_name' must not appear in listing context");
+        $this->assertArrayNotHasKey('phone_number', $result['listing'],
+            "PII 'phone_number' must not appear in listing context");
+        $this->assertArrayNotHasKey('email', $result['listing'],
+            "PII 'email' must not appear in listing context");
+        $this->assertArrayNotHasKey('brokerage', $result['listing'],
+            "Compliance-boundary 'brokerage' must not appear in listing context");
+    }
+
+    // --- Buyer new fields ---
+
+    public function test_case_T_buyer_financing_type_key_present_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(['financing_id' => '0'])
+        );
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertArrayHasKey('financing_type', $result['listing'],
+            "listing context must include 'financing_type' key for buyer");
+    }
+
+    public function test_case_T_buyer_financing_type_null_when_financing_id_absent(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields()
+        );
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertNull($result['listing']['financing_type'],
+            "financing_type must be null when financing_id is absent");
+    }
+
+    // --- Landlord new fields ---
+
+    public function test_case_T_landlord_property_zip_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_zip' => '33101'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertArrayHasKey('property_zip', $result['listing'],
+            "listing context must include 'property_zip' for landlord");
+        $this->assertSame('33101', $result['listing']['property_zip']);
+    }
+
+    public function test_case_T_landlord_property_items_json_decoded_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_items' => '["Single Family","Townhouse"]'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertArrayHasKey('property_items', $result['listing'],
+            "listing context must include 'property_items' for landlord");
+        $this->assertSame('Single Family, Townhouse', $result['listing']['property_items'],
+            "'property_items' must be decoded from JSON to a comma-separated string (Phase 1 pattern)");
+    }
+
+    public function test_case_T_landlord_association_name_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['association_name' => 'Sunset HOA'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertArrayHasKey('association_name', $result['listing'],
+            "listing context must include 'association_name' for landlord");
+        $this->assertSame('Sunset HOA', $result['listing']['association_name']);
+    }
+
+    public function test_case_T_landlord_association_amenities_json_decoded_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['association_amenities' => '["Pool","Gym","Tennis Court"]'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertArrayHasKey('association_amenities', $result['listing'],
+            "listing context must include 'association_amenities' for landlord");
+        $this->assertSame('Pool, Gym, Tennis Court', $result['listing']['association_amenities'],
+            "'association_amenities' must be decoded from JSON to a comma-separated string (Phase 1 pattern)");
+    }
+
+    public function test_case_T_landlord_leasing_restrictions_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['leasing_restrictions' => 'No subleasing'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertArrayHasKey('leasing_restrictions', $result['listing'],
+            "listing context must include 'leasing_restrictions' for landlord");
+        $this->assertSame('No subleasing', $result['listing']['leasing_restrictions']);
+    }
+
+    // --- Tenant new fields ---
+
+    public function test_case_T_tenant_property_items_json_decoded_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_items' => '["Apartment","Condo"]'])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertArrayHasKey('property_items', $result['listing'],
+            "listing context must include 'property_items' for tenant");
+        $this->assertSame('Apartment, Condo', $result['listing']['property_items'],
+            "'property_items' must be decoded from JSON to a comma-separated string (Phase 1 pattern)");
+    }
+
+    public function test_case_T_tenant_utility_preference_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['utility_preference' => 'All utilities included'])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertArrayHasKey('utility_preference', $result['listing'],
+            "listing context must include 'utility_preference' for tenant");
+        $this->assertSame('All utilities included', $result['listing']['utility_preference']);
+    }
+
+    public function test_case_T_tenant_current_status_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['current_status' => 'Month-to-month'])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertArrayHasKey('current_status', $result['listing'],
+            "listing context must include 'current_status' for tenant");
+        $this->assertSame('Month-to-month', $result['listing']['current_status']);
+    }
+
+    public function test_case_T_tenant_number_of_units_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['number_of_unit' => '2'])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertArrayHasKey('number_of_units', $result['listing'],
+            "listing context must include 'number_of_units' for tenant (sourced from number_of_unit EAV key)");
+        $this->assertSame('2', $result['listing']['number_of_units']);
+    }
+
+    public function test_case_T_tenant_pii_fields_absent_from_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'first_name'  => 'Jane',
+                'last_name'   => 'Smith',
+                'email'       => 'jane@example.com',
+                'phone_number' => '555-0200',
+            ])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertArrayNotHasKey('first_name', $result['listing'],
+            "PII 'first_name' must not appear in tenant listing context");
+        $this->assertArrayNotHasKey('last_name', $result['listing'],
+            "PII 'last_name' must not appear in tenant listing context");
+        $this->assertArrayNotHasKey('email', $result['listing'],
+            "PII 'email' must not appear in tenant listing context");
+        $this->assertArrayNotHasKey('phone_number', $result['listing'],
+            "PII 'phone_number' must not appear in tenant listing context");
+    }
+
+    public function test_case_T_contract_service_listing_facts_includes_all_new_field_paths(): void
+    {
+        $contract = new \App\Services\AskAi\AskAiResponseContractService();
+        $result   = $contract->buildContract('listing_facts', []);
+
+        $allowedContext = $result['allowed_context'];
+
+        $expectedNewPaths = [
+            'listing.address',
+            'listing.rental_restrictions_description',
+            'listing.auction_length',
+            'listing.disclosure_flags',
+            'listing.financing_type',
+            'listing.property_zip',
+            'listing.property_items',
+            'listing.association_name',
+            'listing.association_amenities',
+            'listing.leasing_restrictions',
+            'listing.utility_preference',
+            'listing.current_status',
+        ];
+
+        foreach ($expectedNewPaths as $path) {
+            $this->assertContains(
+                $path,
+                $allowedContext,
+                "listing_facts allowed_context must include '{$path}'"
+            );
+        }
+    }
+
+    // =========================================================================
+    // Case U — Comprehensive key-set completeness for all four roles
+    //
+    // Verifies that extractFactualFields() + extractListingFields() together
+    // produce EVERY expected context key for each role — not just the subset
+    // spot-checked in Cases R and T. A single test per role asserts the full
+    // expected key set is present in listing['listing'].
+    //
+    // Key-normalization notes documented inline:
+    //   - number_of_unit (EAV key) → number_of_units (context key): intentional
+    //     normalization for consistency with landlord arm and contract allowlist.
+    //   - rental_restrictions_desription (DB typo) → rental_restrictions_description:
+    //     documented legacy schema typo in property_auctions; see memory note.
+    // =========================================================================
+
+    public function test_case_U_seller_listing_context_contains_complete_factual_key_set(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(
+                [
+                    'address'                         => '100 Maple Ave',
+                    'description'                     => 'A lovely home',
+                    'starting_price'                  => '350000',
+                    'buy_now_price'                   => '390000',
+                    'bedroom_id'                      => '3',
+                    'bathroom_id'                     => '2',
+                    'heated_sqft'                     => '1800',
+                    'year_built'                      => '1995',
+                    'pool'                            => 'Yes',
+                    'pool_type'                       => 'Inground',
+                    'carport'                         => 'No',
+                    'garage'                          => 'Yes',
+                    'garage_spaces'                   => '2',
+                    'water_view'                      => 'No',
+                    'water_extras'                    => 'No',
+                    'hoa_association'                 => 'Yes',
+                    'hoa_fee'                         => '250',
+                    'hoa_fee_requirement'             => 'Mandatory',
+                    'hoa_payment_schedule'            => 'Monthly',
+                    'condo_fee'                       => '0',
+                    'condo_fee_schedule'              => '',
+                    'pets_allowed'                    => 'Yes',
+                    'number_of_pets_allowed'          => '2',
+                    'max_pet_weight'                  => '50',
+                    'pet_restrictions'                => 'No aggressive breeds',
+                    'rental_restrictions'             => 'Yes',
+                    'rental_restrictions_desription'  => 'No Airbnb',
+                    'is_in_flood_zone'                => 'No',
+                    'flood_zone_code'                 => 'X',
+                    'lease_terms'                     => '12 months',
+                    'tenant_pays'                     => 'Electric',
+                    'landlord_pays'                   => 'Water',
+                    'closing_date'                    => '2026-09-01',
+                    'auction_length'                  => '30',
+                    'mls_id'                          => 'MLS123',
+                    'sold'                            => '0',
+                ],
+                [
+                    'showing_instructions' => 'Call 24h ahead',
+                    'service_type'         => 'Full Service',
+                ]
+            )
+        );
+
+        $result = $service->buildForListing('seller', 1);
+        $listing = $result['listing'];
+
+        $expectedKeys = [
+            // Base metadata
+            'listing_type', 'listing_id', 'listing_title', 'city', 'state', 'county',
+            'property_type', 'listing_status',
+            // Factual — native columns
+            'address', 'description', 'asking_price', 'buy_now_price',
+            'bedrooms', 'bathrooms', 'square_feet', 'year_built',
+            'pool', 'pool_type', 'carport', 'garage', 'garage_spaces',
+            'water_view', 'water_extras',
+            'hoa_association', 'hoa_fee', 'hoa_fee_requirement', 'hoa_payment_schedule',
+            'condo_fee', 'condo_fee_schedule',
+            'pets_allowed', 'number_of_pets_allowed', 'max_pet_weight', 'pet_restrictions',
+            'rental_restrictions', 'rental_restrictions_description',
+            'is_in_flood_zone', 'flood_zone_code', 'disclosure_flags',
+            'lease_terms', 'tenant_pays', 'landlord_pays', 'closing_date',
+            'auction_length', 'mls_id', 'sold',
+            // Factual — EAV
+            'showing_instructions', 'service_type',
+        ];
+
+        foreach ($expectedKeys as $key) {
+            $this->assertArrayHasKey($key, $listing,
+                "Seller listing context is missing expected key: '{$key}'");
+        }
+    }
+
+    public function test_case_U_buyer_listing_context_contains_complete_factual_key_set(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([
+                'description'       => 'Looking for a 3-bed',
+                'max_price'         => '450000',
+                'bedrooms'          => '3',
+                'bathrooms'         => '2',
+                'sqft'              => '1500',
+                'pool'              => 'Yes',
+                'carport'           => 'No',
+                'garage'            => 'Yes',
+                'garage_spaces'     => '2',
+                'water_view'        => 'No',
+                'hoa'               => 'Yes',
+                'hoa_fee_requirement' => 'Flexible',
+                'max_hoa_fee'       => '300',
+                'pets_allowed'      => 'Yes',
+                'pets_detail'       => 'One dog',
+                'pets_breed'        => 'Labrador',
+                'pets_weight'       => '60',
+                'loan_pre_approved'  => 'Yes',
+                'financing_id'      => '0',
+                'inspection_period' => '10',
+                'closing_days'      => '45',
+                'contingencies'     => 'Inspection',
+            ])
+        );
+
+        $result  = $service->buildForListing('buyer', 1);
+        $listing = $result['listing'];
+
+        $expectedKeys = [
+            // Base metadata
+            'listing_type', 'listing_id', 'listing_title', 'city', 'state', 'county',
+            'property_type', 'listing_status',
+            // Factual — native columns
+            'description', 'max_price', 'bedrooms', 'bathrooms', 'square_feet',
+            'pool', 'carport', 'garage', 'garage_spaces', 'water_view',
+            'hoa_acceptable', 'hoa_fee_requirement', 'max_hoa_fee',
+            'pets_allowed', 'pets_detail', 'pets_breed', 'pets_weight',
+            'loan_pre_approved', 'financing_type',
+            'inspection_period', 'closing_days', 'contingencies',
+        ];
+
+        foreach ($expectedKeys as $key) {
+            $this->assertArrayHasKey($key, $listing,
+                "Buyer listing context is missing expected key: '{$key}'");
+        }
+    }
+
+    public function test_case_U_landlord_listing_context_contains_complete_factual_key_set(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'maximum_budget'               => '2500',
+                'bedrooms'                     => '2',
+                'bathrooms'                    => '1',
+                'minimum_heated_square'        => '900',
+                'unit_size'                    => 'Large',
+                'number_of_unit'               => '4',
+                'property_zip'                 => '33101',
+                'property_items'               => '["Single Family"]',
+                'condition_prop'               => 'Good',
+                'appliances'                   => '["Washer","Dryer"]',
+                'available_date'               => '2026-08-01',
+                'pet_policy'                   => 'Cats only',
+                'pet_deposit_fee_rent'         => '$200',
+                'pet_max_weight_lbs'           => '25',
+                'pet_species_allowed'          => '["Cats"]',
+                'parking_terms'               => '1 assigned spot',
+                'utilities'                    => 'Water included',
+                'smoking_policy'               => 'No smoking',
+                'subletting_policy'            => 'Not allowed',
+                'has_hoa'                      => 'Yes',
+                'association_name'             => 'Sunset HOA',
+                'association_fee_amount'       => '150',
+                'association_fee_frequency'    => 'Monthly',
+                'association_amenities'        => '["Pool","Gym"]',
+                'leasing_restrictions'         => 'No short-term',
+                'min_lease_period'             => '12',
+                'renewal_option_offered'       => 'Yes',
+                'number_of_occupants_allowed'  => '4',
+                'additional_landlord_lease_terms' => 'No parties',
+            ])
+        );
+
+        $result  = $service->buildForListing('landlord', 1);
+        $listing = $result['listing'];
+
+        $expectedKeys = [
+            // Base metadata
+            'listing_type', 'listing_id', 'listing_title', 'city', 'state', 'county',
+            'property_type', 'listing_status',
+            // Factual — EAV
+            'rent_amount', 'bedrooms', 'bathrooms', 'square_feet',
+            'unit_size', 'number_of_units', 'property_zip', 'property_items',
+            'condition_prop', 'appliances', 'available_date',
+            'pet_policy', 'pet_deposit_fee_rent', 'pet_max_weight_lbs', 'pet_species_allowed',
+            'parking_terms', 'utilities', 'smoking_policy', 'subletting_policy',
+            'has_hoa', 'association_name', 'association_fee_amount',
+            'association_fee_frequency', 'association_amenities', 'leasing_restrictions',
+            'lease_length', 'renewal_option', 'number_of_occupants', 'additional_lease_terms',
+        ];
+
+        foreach ($expectedKeys as $key) {
+            $this->assertArrayHasKey($key, $listing,
+                "Landlord listing context is missing expected key: '{$key}'");
+        }
+    }
+
+    public function test_case_U_tenant_listing_context_contains_complete_factual_key_set(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'maximum_budget'          => '2000',
+                'bedrooms'                => '2',
+                'bathrooms'               => '1',
+                'tenant_desired_lease_length' => '12',
+                'property_items'          => '["Apartment"]',
+                'appliances'              => '["Dishwasher"]',
+                'condition_prop'          => 'Good',
+                'pet_information'         => 'One cat',
+                'parking_needed'          => 'Yes',
+                'utilities'               => 'Water',
+                'utility_preference'      => 'All included',
+                'tenant_pays'             => '["Electric"]',
+                'current_status'          => 'Month-to-month',
+                'number_of_occupants'     => '2',
+                'number_of_unit'          => '1',
+            ])
+        );
+
+        $result  = $service->buildForListing('tenant', 1);
+        $listing = $result['listing'];
+
+        // number_of_unit (EAV key) is intentionally normalized to number_of_units
+        // (plural) in the context output. This matches the landlord arm's key name
+        // and the listing_facts contract allowlist (listing.number_of_units).
+        $expectedKeys = [
+            // Base metadata
+            'listing_type', 'listing_id', 'listing_title', 'city', 'state', 'county',
+            'property_type', 'listing_status',
+            // Factual — EAV
+            'max_rent', 'bedrooms', 'bathrooms', 'desired_lease_length',
+            'property_items', 'appliances', 'condition_prop',
+            'pet_information', 'parking_needed', 'utilities',
+            'utility_preference', 'tenant_pays', 'current_status',
+            'number_of_occupants', 'number_of_units',
+        ];
+
+        foreach ($expectedKeys as $key) {
+            $this->assertArrayHasKey($key, $listing,
+                "Tenant listing context is missing expected key: '{$key}'");
+        }
+    }
+
+    public function test_case_U_seller_source_has_no_duplicate_key_definitions(): void
+    {
+        // PHP silently keeps the LAST value when a key appears twice in an array
+        // literal, so a runtime array_keys() check can never detect source-level
+        // duplicates — the merge has already happened. This test reads the actual
+        // source file text, isolates the seller match-arm block, and asserts that
+        // no array key string is defined more than once within that text.
+        $sourceFile = realpath(__DIR__ . '/../../../../app/Services/AskAi/AskAiContextBuilderService.php');
+        $this->assertNotFalse($sourceFile, 'AskAiContextBuilderService.php must be readable');
+
+        $source = file_get_contents($sourceFile);
+
+        // Isolate seller match arm: starts at "'seller' => [" and ends at the
+        // closing bracket of that arm (immediately before "'buyer' => [").
+        $matched = preg_match(
+            "/'seller'\s*=>\s*\[(.*?)\n\s+\],\s*\n\s+\/\/.*Buyer/s",
+            $source,
+            $m
+        );
+        $this->assertSame(1, $matched,
+            'Could not isolate seller match arm from source — check regex if the arm structure changed');
+
+        $sellerArmText = $m[1];
+
+        // Extract all array key strings defined in the arm text.
+        preg_match_all("/^\s+'([a-z_]+)'\s*=>/m", $sellerArmText, $keys);
+
+        $allKeys   = $keys[1];
+        $counts    = array_count_values($allKeys);
+        $duplicates = array_keys(array_filter($counts, static fn (int $c) => $c > 1));
+
+        $this->assertEmpty(
+            $duplicates,
+            'Seller match arm in extractFactualFields() contains duplicate key definitions for: '
+            . implode(', ', $duplicates)
+            . '. PHP silently discards earlier values — remove the duplicate definitions.'
+        );
+    }
+
+    public function test_case_U_disclosure_flags_is_governance_marker_not_flood_status(): void
+    {
+        // disclosure_flags.flood_zone = true is a prompt-layer governance contract
+        // marker. It signals that flood-zone fields are present in this context and
+        // require the flood disclosure template — it does NOT mean the property is
+        // in a flood zone. The actual flood status comes from is_in_flood_zone.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([
+                'is_in_flood_zone' => 'No',
+                'flood_zone_code'  => 'X',
+            ])
+        );
+
+        $result  = $service->buildForListing('seller', 1);
+        $listing = $result['listing'];
+
+        // governance marker is always present regardless of is_in_flood_zone value
+        $this->assertArrayHasKey('disclosure_flags', $listing);
+        $this->assertSame(true, $listing['disclosure_flags']['flood_zone'],
+            "disclosure_flags.flood_zone must always be true for seller (governance marker, not property state)");
+
+        // actual flood status is carried separately
+        $this->assertSame('No', $listing['is_in_flood_zone'],
+            "is_in_flood_zone carries the actual property flood status, independent of disclosure_flags");
+
+        // the two fields must coexist in the same context
+        $this->assertArrayHasKey('is_in_flood_zone', $listing);
+        $this->assertArrayHasKey('flood_zone_code', $listing);
+    }
+
+    public function test_case_U_json_decoded_fields_produce_comma_separated_strings_not_arrays(): void
+    {
+        // Verifies that the decodeJsonField() helper (used for appliances,
+        // property_items, association_amenities, pet_species_allowed, tenant_pays)
+        // produces a comma-separated plain string — NOT a PHP array or JSON string.
+        // This matches the Phase 1 decode behavior established for the appliances field.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'appliances'           => '["Washer","Dryer","Dishwasher"]',
+                'pet_species_allowed'  => '["Cats","Small Dogs"]',
+                'association_amenities' => '["Pool","Gym"]',
+            ])
+        );
+
+        $result  = $service->buildForListing('landlord', 1);
+        $listing = $result['listing'];
+
+        $this->assertSame('Washer, Dryer, Dishwasher', $listing['appliances'],
+            "'appliances' must be a comma-separated string, not an array or JSON string");
+        $this->assertSame('Cats, Small Dogs', $listing['pet_species_allowed'],
+            "'pet_species_allowed' must be a comma-separated string, not an array or JSON string");
+        $this->assertSame('Pool, Gym', $listing['association_amenities'],
+            "'association_amenities' must be a comma-separated string, not an array or JSON string");
+
+        // Confirm none of them are PHP arrays or raw JSON
+        $this->assertIsString($listing['appliances']);
+        $this->assertIsString($listing['pet_species_allowed']);
+        $this->assertIsString($listing['association_amenities']);
+        $this->assertStringNotContainsString('[', $listing['appliances']);
+        $this->assertStringNotContainsString('[', $listing['pet_species_allowed']);
+    }
 }

@@ -296,41 +296,55 @@ class AskAiContextBuilderService
             // Seller — property_auctions (native columns) + property_auction_metas (EAV)
             // -----------------------------------------------------------------
             'seller' => [
-                'description'            => $nativeGet('description'),
-                'asking_price'           => $nativeGet('starting_price'),
-                'buy_now_price'          => $nativeGet('buy_now_price'),
-                'bedrooms'               => $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
-                'bathrooms'              => $infoGet('bathrooms') ?? $nativeGet('bathroom_id'),
-                'square_feet'            => $nativeGet('heated_sqft'),
-                'year_built'             => $nativeGet('year_built'),
-                'pool'                   => $nativeGet('pool'),
-                'pool_type'              => $nativeGet('pool_type'),
-                'carport'                => $nativeGet('carport'),
-                'garage'                 => $nativeGet('garage'),
-                'garage_spaces'          => $nativeGet('garage_spaces'),
-                'water_view'             => $nativeGet('water_view'),
-                'water_extras'           => $nativeGet('water_extras'),
-                'hoa_association'        => $nativeGet('hoa_association'),
-                'hoa_fee'                => $nativeGet('hoa_fee'),
-                'hoa_fee_requirement'    => $nativeGet('hoa_fee_requirement'),
-                'hoa_payment_schedule'   => $nativeGet('hoa_payment_schedule'),
-                'condo_fee'              => $nativeGet('condo_fee'),
-                'condo_fee_schedule'     => $nativeGet('condo_fee_schedule'),
-                'pets_allowed'           => $nativeGet('pets_allowed'),
-                'number_of_pets_allowed' => $nativeGet('number_of_pets_allowed'),
-                'max_pet_weight'         => $nativeGet('max_pet_weight'),
-                'pet_restrictions'       => $nativeGet('pet_restrictions'),
-                'rental_restrictions'    => $nativeGet('rental_restrictions'),
-                'is_in_flood_zone'       => $nativeGet('is_in_flood_zone'),
-                'flood_zone_code'        => $nativeGet('flood_zone_code'),
-                'lease_terms'            => $nativeGet('lease_terms'),
-                'tenant_pays'            => $nativeGet('tenant_pays'),
-                'landlord_pays'          => $nativeGet('landlord_pays'),
-                'closing_date'           => $nativeGet('closing_date'),
-                'mls_id'                 => $nativeGet('mls_id'),
-                'sold'                   => $nativeGet('sold'),
-                'showing_instructions'   => $infoGet('showing_instructions'),
-                'service_type'           => $infoGet('service_type'),
+                'address'                         => $nativeGet('address'),
+                'description'                     => $nativeGet('description'),
+                'asking_price'                    => $nativeGet('starting_price'),
+                'buy_now_price'                   => $nativeGet('buy_now_price'),
+                'bedrooms'                        => $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
+                'bathrooms'                       => $infoGet('bathrooms') ?? $nativeGet('bathroom_id'),
+                'square_feet'                     => $nativeGet('heated_sqft'),
+                'year_built'                      => $nativeGet('year_built'),
+                'pool'                            => $nativeGet('pool'),
+                'pool_type'                       => $nativeGet('pool_type'),
+                'carport'                         => $nativeGet('carport'),
+                'garage'                          => $nativeGet('garage'),
+                'garage_spaces'                   => $nativeGet('garage_spaces'),
+                'water_view'                      => $nativeGet('water_view'),
+                'water_extras'                    => $nativeGet('water_extras'),
+                'hoa_association'                 => $nativeGet('hoa_association'),
+                'hoa_fee'                         => $nativeGet('hoa_fee'),
+                'hoa_fee_requirement'             => $nativeGet('hoa_fee_requirement'),
+                'hoa_payment_schedule'            => $nativeGet('hoa_payment_schedule'),
+                'condo_fee'                       => $nativeGet('condo_fee'),
+                'condo_fee_schedule'              => $nativeGet('condo_fee_schedule'),
+                'pets_allowed'                    => $nativeGet('pets_allowed'),
+                'number_of_pets_allowed'          => $nativeGet('number_of_pets_allowed'),
+                'max_pet_weight'                  => $nativeGet('max_pet_weight'),
+                'pet_restrictions'                => $nativeGet('pet_restrictions'),
+                'rental_restrictions'             => $nativeGet('rental_restrictions'),
+                // NOTE: The DB column is intentionally misspelled 'rental_restrictions_desription'
+                // (missing 'c'). This is a legacy schema typo in property_auctions and must
+                // not be corrected here until a DB migration renames the column.
+                'rental_restrictions_description' => $nativeGet('rental_restrictions_desription'),
+                'is_in_flood_zone'                => $nativeGet('is_in_flood_zone'),
+                'flood_zone_code'                 => $nativeGet('flood_zone_code'),
+                // disclosure_flags is a governance contract marker for the prompt layer.
+                // flood_zone => true does NOT mean the property is in a flood zone — the
+                // is_in_flood_zone scalar carries that boolean. This flag tells the AI that
+                // flood-zone data (is_in_flood_zone + flood_zone_code) is present in this
+                // context and must be handled with the flood-zone disclosure template.
+                // It is always set for seller listings because these fields are always
+                // included regardless of the property's actual flood status.
+                'disclosure_flags'                => ['flood_zone' => true],
+                'lease_terms'                     => $nativeGet('lease_terms'),
+                'tenant_pays'                     => $nativeGet('tenant_pays'),
+                'landlord_pays'                   => $nativeGet('landlord_pays'),
+                'closing_date'                    => $nativeGet('closing_date'),
+                'auction_length'                  => $nativeGet('auction_length'),
+                'mls_id'                          => $nativeGet('mls_id'),
+                'sold'                            => $nativeGet('sold'),
+                'showing_instructions'            => $infoGet('showing_instructions'),
+                'service_type'                    => $infoGet('service_type'),
             ],
 
             // -----------------------------------------------------------------
@@ -355,6 +369,7 @@ class AskAiContextBuilderService
                 'pets_breed'          => $nativeGet('pets_breed'),
                 'pets_weight'         => $nativeGet('pets_weight'),
                 'loan_pre_approved'   => $nativeGet('loan_pre_approved'),
+                'financing_type'      => $this->resolveFinancingType($nativeGet('financing_id')),
                 'inspection_period'   => $nativeGet('inspection_period'),
                 'closing_days'        => $nativeGet('closing_days'),
                 'contingencies'       => $nativeGet('contingencies'),
@@ -370,6 +385,8 @@ class AskAiContextBuilderService
                 'square_feet'               => $infoGet('minimum_heated_square'),
                 'unit_size'                 => $infoGet('unit_size'),
                 'number_of_units'           => $infoGet('number_of_unit'),
+                'property_zip'              => $infoGet('property_zip'),
+                'property_items'            => $this->decodeJsonField($infoGet('property_items')),
                 'condition_prop'            => $infoGet('condition_prop'),
                 'appliances'                => $this->decodeJsonField($infoGet('appliances')),
                 'available_date'            => $infoGet('available_date'),
@@ -382,8 +399,11 @@ class AskAiContextBuilderService
                 'smoking_policy'            => $infoGet('smoking_policy'),
                 'subletting_policy'         => $infoGet('subletting_policy'),
                 'has_hoa'                   => $infoGet('has_hoa'),
+                'association_name'          => $infoGet('association_name'),
                 'association_fee_amount'    => $infoGet('association_fee_amount'),
                 'association_fee_frequency' => $infoGet('association_fee_frequency'),
+                'association_amenities'     => $this->decodeJsonField($infoGet('association_amenities')),
+                'leasing_restrictions'      => $infoGet('leasing_restrictions'),
                 'lease_length'              => $infoGet('min_lease_period') ?? $infoGet('minimum_lease_period'),
                 'renewal_option'            => $infoGet('renewal_option_offered'),
                 'number_of_occupants'       => $infoGet('number_of_occupants_allowed'),
@@ -398,13 +418,17 @@ class AskAiContextBuilderService
                 'bedrooms'             => $infoGet('bedrooms'),
                 'bathrooms'            => $infoGet('bathrooms'),
                 'desired_lease_length' => $infoGet('tenant_desired_lease_length'),
+                'property_items'       => $this->decodeJsonField($infoGet('property_items')),
+                'appliances'           => $this->decodeJsonField($infoGet('appliances')),
+                'condition_prop'       => $infoGet('condition_prop'),
                 'pet_information'      => $infoGet('pet_information'),
                 'parking_needed'       => $infoGet('parking_needed'),
                 'utilities'            => $infoGet('utilities'),
+                'utility_preference'   => $infoGet('utility_preference'),
                 'tenant_pays'          => $this->decodeJsonField($infoGet('tenant_pays')),
-                'appliances'           => $this->decodeJsonField($infoGet('appliances')),
-                'condition_prop'       => $infoGet('condition_prop'),
+                'current_status'       => $infoGet('current_status'),
                 'number_of_occupants'  => $infoGet('number_of_occupants'),
+                'number_of_units'      => $infoGet('number_of_unit'),
             ],
 
             default => [],
@@ -418,6 +442,14 @@ class AskAiContextBuilderService
      * pet_species_allowed, tenant_pays). This helper decodes them to a flat,
      * human-readable string. When the value is already a plain string or null,
      * it is returned as-is.
+     *
+     * OUTPUT FORMAT CONTRACT (established in Phase 1):
+     * JSON arrays are decoded to a comma-separated plain string, e.g.:
+     *   '["Washer","Dryer","Dishwasher"]'  →  'Washer, Dryer, Dishwasher'
+     *   '["Pool","Gym"]'                   →  'Pool, Gym'
+     * This string format is intentional — it is prompt-friendly and avoids
+     * embedding PHP arrays or raw JSON brackets in the AI context payload.
+     * All Ask AI tests assert this string shape (not a PHP array).
      *
      * @param  string|null $value  Raw meta value (JSON string or plain string).
      * @return string|null
@@ -436,6 +468,32 @@ class AskAiContextBuilderService
         }
 
         return $value;
+    }
+
+    /**
+     * Resolve a financing_id FK to its human-readable label from the financings table.
+     *
+     * Returns null when the id is absent, zero, or the DB record cannot be found.
+     * A try/catch guards against environments where the table may not be present
+     * (e.g. unit-test runs without a database connection).
+     *
+     * @param  string|null $financingIdRaw  Raw string value of the financing_id column.
+     * @return string|null
+     */
+    protected function resolveFinancingType(?string $financingIdRaw): ?string
+    {
+        if ($financingIdRaw === null || $financingIdRaw === '' || $financingIdRaw === '0') {
+            return null;
+        }
+
+        try {
+            $name = \Illuminate\Support\Facades\DB::table('financings')
+                ->where('id', (int) $financingIdRaw)
+                ->value('name');
+            return $name !== null ? (string) $name : null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     // =========================================================================
