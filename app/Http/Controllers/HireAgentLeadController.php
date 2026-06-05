@@ -41,11 +41,20 @@ class HireAgentLeadController extends Controller
         $listingId   = (int) ($validated['source_listing_id'] ?? 0);
 
         if ($listingType && $listingId) {
+            // Listing-agent-first: returns action='redirect' or action='contact_form'
             $result = $this->matcher->matchPresetsForAjax($listingType, $listingId, $repType, $propType);
         } else {
+            // No listing context — cannot determine a hired agent to redirect to.
+            // Fall back to the general inquiry contact form.
             $cnt    = $this->matcher->countMatches($repType, $propType);
             $status = match ($cnt) { 0 => 'no_match', 1 => 'matched', default => 'multiple_matches' };
-            $result = ['match_status' => $status, 'count' => $cnt, 'presets' => []];
+            $result = [
+                'action'       => 'contact_form',
+                'reason'       => 'no_listing',
+                'match_status' => $status,
+                'count'        => $cnt,
+                'presets'      => [],
+            ];
         }
 
         return response()->json($result);

@@ -139,100 +139,143 @@ $csrfToken              = csrf_token();
                         </div>
                     </div>
 
-                    {{-- ── STEP 3: Preset selection (if multiple) + Contact form ── --}}
+                    {{-- ── STEP 3: No-preset fallback OR Contact form ── --}}
                     <div x-show="step === 3" x-transition:enter="hal-fade-in">
 
-                        {{-- Match summary / preset selection --}}
-                        <template x-if="matchStatus === 'no_match'">
-                            <div class="alert alert-secondary mb-3 py-2 px-3" style="font-size:.82rem;border-radius:.6rem;">
-                                <i class="fa-solid fa-info-circle me-1"></i>
-                                No exact agent match found yet. Fill in your details and we'll connect you with an agent.
-                            </div>
-                        </template>
-
-                        <template x-if="matchStatus === 'matched'">
-                            <div class="alert alert-success mb-3 py-2 px-3" style="font-size:.82rem;border-radius:.6rem;">
-                                <i class="fa-solid fa-circle-check me-1"></i>
-                                We matched you with a <strong x-text="representationTypeLabel"></strong> agent
-                                specializing in <strong x-text="selectedPropertyTypeLabel"></strong>.
-                            </div>
-                        </template>
-
-                        <template x-if="matchStatus === 'multiple_matches'">
-                            <div class="mb-3">
-                                <p class="fw-semibold mb-2" style="font-size:.88rem;color:#1e293b;">
-                                    <i class="fa-solid fa-users me-1 text-primary"></i>
-                                    <span x-text="matchPresets.length"></span> agents available — choose one:
-                                </p>
-                                <div class="d-flex flex-column gap-2">
-                                    <template x-for="(preset, idx) in matchPresets" :key="preset.preset_id">
-                                        <label class="d-flex align-items-center gap-3 p-3 rounded-3 border"
-                                               style="cursor:pointer;transition:border-color .15s,background .15s;"
-                                               :class="selectedPresetId === preset.preset_id ? 'border-primary bg-primary bg-opacity-10' : 'border-light-subtle'">
-                                            <input type="radio" :name="'hal_preset_{{ $modalId }}'" :value="preset.preset_id"
-                                                   x-model.number="selectedPresetId"
-                                                   @change="selectedAgentId = preset.agent_id"
-                                                   class="form-check-input mt-0 flex-shrink-0">
-                                            <div style="flex:1;">
-                                                <div class="fw-semibold" style="font-size:.84rem;color:#1e293b;" x-text="preset.agent_name || 'Agent ' + (idx + 1)"></div>
-                                                <div style="font-size:.74rem;color:#64748b;">
-                                                    <span x-text="preset.match_type === 'exact' ? 'Exact match' : 'Broad match'"></span>
-                                                    <template x-if="preset.service_count > 0">
-                                                        <span> · <span x-text="preset.service_count"></span> services</span>
-                                                    </template>
-                                                </div>
-                                            </div>
-                                            <template x-if="preset.match_type === 'exact'">
-                                                <span class="badge bg-success" style="font-size:.6rem;">Exact</span>
-                                            </template>
-                                        </label>
-                                    </template>
+                        {{-- No-preset fallback: agent exists but hasn't configured a preset for this role/property type --}}
+                        <template x-if="noPresetMessage && !showContactForm">
+                            <div>
+                                <div class="alert alert-warning mb-3 py-3 px-3" style="font-size:.85rem;border-radius:.7rem;">
+                                    <div class="fw-semibold mb-1">
+                                        <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                                        No preset configured for this role
+                                    </div>
+                                    <div style="color:#6b5a00;">
+                                        The agent on this listing hasn't set up a
+                                        <strong x-text="representationTypeLabel"></strong> /
+                                        <strong x-text="selectedPropertyTypeLabel"></strong>
+                                        profile yet. You can still send them a general inquiry and they'll get back to you.
+                                    </div>
                                 </div>
-                                <div x-show="errors.selectedPreset" class="text-danger mt-1" style="font-size:.78rem;" x-text="errors.selectedPreset"></div>
+
+                                <div class="d-flex justify-content-between mt-2">
+                                    <button type="button" class="btn btn-outline-secondary px-3" @click="step = 2">
+                                        <i class="fa-solid fa-arrow-left me-1"></i> Back
+                                    </button>
+                                    <button type="button" class="btn btn-primary px-4 fw-semibold"
+                                            style="background:linear-gradient(135deg,#0f766e,#0369a1);border:none;"
+                                            @click="showContactForm = true">
+                                        <i class="fa-solid fa-envelope me-1"></i>Send General Inquiry
+                                    </button>
+                                </div>
                             </div>
                         </template>
 
-                        <div class="row g-2 mb-2">
-                            <div class="col-12">
-                                <label class="form-label" style="font-size:.78rem;font-weight:600;color:#475569;">Your Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-sm" x-model="form.name"
-                                       placeholder="Full name" maxlength="191"
-                                       :class="errors.name ? 'is-invalid' : ''">
-                                <div class="invalid-feedback" style="font-size:.75rem;" x-text="errors.name"></div>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="form-label" style="font-size:.78rem;font-weight:600;color:#475569;">Email <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control form-control-sm" x-model="form.email"
-                                       placeholder="your@email.com" maxlength="191"
-                                       :class="errors.email ? 'is-invalid' : ''">
-                                <div class="invalid-feedback" style="font-size:.75rem;" x-text="errors.email"></div>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="form-label" style="font-size:.78rem;font-weight:600;color:#475569;">Phone</label>
-                                <input type="tel" class="form-control form-control-sm" x-model="form.phone"
-                                       placeholder="Optional" maxlength="64">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" style="font-size:.78rem;font-weight:600;color:#475569;">Message</label>
-                                <textarea class="form-control form-control-sm" x-model="form.message"
-                                          rows="3" placeholder="Tell the agent about your needs…" maxlength="2000"></textarea>
-                            </div>
-                        </div>
+                        {{--
+                            Contact form: shown only when showContactForm is explicitly true.
+                            showContactForm is set true by goToStep3() for all non-redirect, non-no_preset
+                            fallback reasons (no_agent, no_listing, no_short_id, network error),
+                            and by the "Send General Inquiry" button in the no-preset block above.
+                        --}}
+                        <template x-if="showContactForm">
+                            <div>
+                                {{-- No-match context banner (no_agent / no_listing / error paths) --}}
+                                <template x-if="matchStatus === 'no_match'">
+                                    <div class="alert alert-secondary mb-3 py-2 px-3" style="font-size:.82rem;border-radius:.6rem;">
+                                        <i class="fa-solid fa-info-circle me-1"></i>
+                                        No exact agent match found yet. Fill in your details and we'll connect you with an agent.
+                                    </div>
+                                </template>
 
-                        <div x-show="submitError" class="alert alert-danger py-2 px-3 mb-2" style="font-size:.8rem;" x-text="submitError"></div>
+                                {{--
+                                    matchStatus === 'matched' banner removed:
+                                    A listing-context match (hired agent + preset) now always issues a redirect;
+                                    the contact form is never shown in the matched state for listing flows.
 
-                        <div class="d-flex justify-content-between mt-3">
-                            <button type="button" class="btn btn-outline-secondary px-3" @click="step = 2">
-                                <i class="fa-solid fa-arrow-left me-1"></i> Back
-                            </button>
-                            <button type="button" class="btn btn-primary px-4 fw-semibold"
-                                    style="background:linear-gradient(135deg,#0f766e,#0369a1);border:none;"
-                                    @click="submit()"
-                                    :disabled="submitting">
-                                <span x-show="!submitting"><i class="fa-solid fa-paper-plane me-1"></i>Send Request</span>
-                                <span x-show="submitting"><i class="fa-solid fa-spinner fa-spin me-1"></i>Sending…</span>
-                            </button>
-                        </div>
+                                    matchStatus === 'multiple_matches' is retained for forward-compatibility
+                                    with a future marketplace/global-search flow where a non-listing entry
+                                    point (no source_listing_id) could surface multiple available agents.
+                                    In listing-first routing this path is unreachable today because the
+                                    endpoint returns action='redirect' or action='contact_form' (never
+                                    multiple_matches as an action outcome).
+                                --}}
+                                <template x-if="matchStatus === 'multiple_matches'">
+                                    <div class="mb-3">
+                                        <p class="fw-semibold mb-2" style="font-size:.88rem;color:#1e293b;">
+                                            <i class="fa-solid fa-users me-1 text-primary"></i>
+                                            <span x-text="matchPresets.length"></span> agents available — choose one:
+                                        </p>
+                                        <div class="d-flex flex-column gap-2">
+                                            <template x-for="(preset, idx) in matchPresets" :key="preset.preset_id">
+                                                <label class="d-flex align-items-center gap-3 p-3 rounded-3 border"
+                                                       style="cursor:pointer;transition:border-color .15s,background .15s;"
+                                                       :class="selectedPresetId === preset.preset_id ? 'border-primary bg-primary bg-opacity-10' : 'border-light-subtle'">
+                                                    <input type="radio" :name="'hal_preset_{{ $modalId }}'" :value="preset.preset_id"
+                                                           x-model.number="selectedPresetId"
+                                                           @change="selectedAgentId = preset.agent_id"
+                                                           class="form-check-input mt-0 flex-shrink-0">
+                                                    <div style="flex:1;">
+                                                        <div class="fw-semibold" style="font-size:.84rem;color:#1e293b;" x-text="preset.agent_name || 'Agent ' + (idx + 1)"></div>
+                                                        <div style="font-size:.74rem;color:#64748b;">
+                                                            <span x-text="preset.match_type === 'exact' ? 'Exact match' : 'Broad match'"></span>
+                                                            <template x-if="preset.service_count > 0">
+                                                                <span> · <span x-text="preset.service_count"></span> services</span>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                    <template x-if="preset.match_type === 'exact'">
+                                                        <span class="badge bg-success" style="font-size:.6rem;">Exact</span>
+                                                    </template>
+                                                </label>
+                                            </template>
+                                        </div>
+                                        <div x-show="errors.selectedPreset" class="text-danger mt-1" style="font-size:.78rem;" x-text="errors.selectedPreset"></div>
+                                    </div>
+                                </template>
+
+                                <div class="row g-2 mb-2">
+                                    <div class="col-12">
+                                        <label class="form-label" style="font-size:.78rem;font-weight:600;color:#475569;">Your Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control form-control-sm" x-model="form.name"
+                                               placeholder="Full name" maxlength="191"
+                                               :class="errors.name ? 'is-invalid' : ''">
+                                        <div class="invalid-feedback" style="font-size:.75rem;" x-text="errors.name"></div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label" style="font-size:.78rem;font-weight:600;color:#475569;">Email <span class="text-danger">*</span></label>
+                                        <input type="email" class="form-control form-control-sm" x-model="form.email"
+                                               placeholder="your@email.com" maxlength="191"
+                                               :class="errors.email ? 'is-invalid' : ''">
+                                        <div class="invalid-feedback" style="font-size:.75rem;" x-text="errors.email"></div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label" style="font-size:.78rem;font-weight:600;color:#475569;">Phone</label>
+                                        <input type="tel" class="form-control form-control-sm" x-model="form.phone"
+                                               placeholder="Optional" maxlength="64">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label" style="font-size:.78rem;font-weight:600;color:#475569;">Message</label>
+                                        <textarea class="form-control form-control-sm" x-model="form.message"
+                                                  rows="3" placeholder="Tell the agent about your needs…" maxlength="2000"></textarea>
+                                    </div>
+                                </div>
+
+                                <div x-show="submitError" class="alert alert-danger py-2 px-3 mb-2" style="font-size:.8rem;" x-text="submitError"></div>
+
+                                <div class="d-flex justify-content-between mt-3">
+                                    <button type="button" class="btn btn-outline-secondary px-3" @click="step = 2">
+                                        <i class="fa-solid fa-arrow-left me-1"></i> Back
+                                    </button>
+                                    <button type="button" class="btn btn-primary px-4 fw-semibold"
+                                            style="background:linear-gradient(135deg,#0f766e,#0369a1);border:none;"
+                                            @click="submit()"
+                                            :disabled="submitting">
+                                        <span x-show="!submitting"><i class="fa-solid fa-paper-plane me-1"></i>Send Request</span>
+                                        <span x-show="submitting"><i class="fa-solid fa-spinner fa-spin me-1"></i>Sending…</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
                     </div>
 
                     {{-- ── STEP 4: Success ──────────────────────────────── --}}
@@ -273,6 +316,8 @@ function hireAgentWizard_{{ $modalId }}() {
         matching: false,
         selectedPresetId: null,
         selectedAgentId: null,
+        noPresetMessage: false,    // true when agent exists but has no preset for chosen role/type
+        showContactForm: false,    // true when user explicitly opens contact form from no-preset state
         form: { name: '', email: '', phone: '', message: '' },
         errors: {},
         submitError: '',
@@ -321,10 +366,12 @@ function hireAgentWizard_{{ $modalId }}() {
             if (!this.selectedPropertyType) { this.errors.selectedPropertyType = 'Please select a property type.'; return; }
 
             this.matching = true;
-            this.matchPresets  = [];
-            this.matchStatus   = 'no_match';
+            this.matchPresets     = [];
+            this.matchStatus      = 'no_match';
             this.selectedPresetId = null;
             this.selectedAgentId  = null;
+            this.noPresetMessage  = false;
+            this.showContactForm  = false;
 
             try {
                 const res = await fetch(this.matchUrl, {
@@ -342,17 +389,43 @@ function hireAgentWizard_{{ $modalId }}() {
                     }),
                 });
                 const data = await res.json();
-                this.matchStatus  = data.match_status || 'no_match';
-                this.matchPresets = data.presets || [];
 
-                // Auto-select if single match
-                if (this.matchStatus === 'matched' && this.matchPresets.length === 1) {
+                // ── Primary branch: redirect to the agent's preset review page ──
+                if (data.action === 'redirect' && data.url) {
+                    // No lead created, no contact form — go straight to the preset review page.
+                    window.location.href = data.url;
+                    return; // matching spinner stays visible during navigation
+                }
+
+                // ── Agent exists but has no matching preset ──
+                if (data.action === 'contact_form' && data.reason === 'no_preset') {
+                    this.noPresetMessage = true;
+                    this.showContactForm  = false;
+                    this.matchStatus      = data.match_status || 'no_match';
+                    this.matchPresets     = [];
+                    this.matching = false;
+                    this.step = 3;
+                    return;
+                }
+
+                // ── Fallback: no_agent, no_listing, no_short_id, or other contact_form reason ──
+                // Explicitly open the contact form — no implicit condition tricks.
+                this.matchStatus     = data.match_status || 'no_match';
+                this.matchPresets    = data.presets || [];
+                this.noPresetMessage = false;
+                this.showContactForm = true;
+
+                // Auto-select preset when multiple presets are surfaced (future marketplace path).
+                if (this.matchStatus === 'multiple_matches' && this.matchPresets.length === 1) {
                     this.selectedPresetId = this.matchPresets[0].preset_id;
                     this.selectedAgentId  = this.matchPresets[0].agent_id;
                 }
             } catch (e) {
-                this.matchStatus  = 'no_match';
-                this.matchPresets = [];
+                // Network / parse error — fall through to general inquiry form.
+                this.matchStatus     = 'no_match';
+                this.matchPresets    = [];
+                this.noPresetMessage = false;
+                this.showContactForm = true;
             }
 
             this.matching = false;
