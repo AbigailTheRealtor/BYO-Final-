@@ -36,6 +36,22 @@ class HireAgentLeadMatcherService
         'tenant_offer'   => TenantAgentAuction::class,
     ];
 
+    /**
+     * Map source_listing_type → listing_type value used in accepted_bid_summaries.
+     *
+     * accepted_bid_summaries is the canonical accepted-bid source across all four
+     * listing types and avoids per-table column-type incompatibilities:
+     *  - buyer/seller/tenant bid tables store accepted as varchar('accepted')
+     *  - landlord bid table stores accepted as integer (the model ignores it and
+     *    uses acceptedBidSummary()->exists() instead)
+     */
+    private const ACCEPTED_SUMMARY_TYPE_MAP = [
+        'seller_offer'   => 'seller',
+        'buyer_offer'    => 'buyer',
+        'landlord_offer' => 'landlord',
+        'tenant_offer'   => 'tenant',
+    ];
+
     // ── Public API ─────────────────────────────────────────────────────────
 
     /**
@@ -227,14 +243,18 @@ class HireAgentLeadMatcherService
      * Checks candidates in strict priority order, stopping at the first value
      * that resolves to a user with user_type = 'agent':
      *
-     *  1. hired_agent_id    (EAV meta)
-     *  2. accepted_agent_id (EAV meta)
-     *  3. winning_agent_id  (EAV meta)
-     *  4. selected_agent_id (EAV meta)
-     *  5. listing_agent_id  (EAV meta)
-     *  6. agent_id          (EAV meta)
-     *  7. created_by        (EAV meta)
-     *  8. listing.user_id   (native column — covers agent-created listings)
+     *  1. Accepted/winning bid record — query the listing's bid table for a
+     *     row with accepted = 'accepted'. This is the authoritative source
+     *     and matches what bid detail views display via $bid->user->short_id.
+     *  2. hired_agent_id    (EAV meta)
+     *  3. accepted_agent_id (EAV meta)
+     *  4. winning_agent_id  (EAV meta)
+     *  5. selected_agent_id (EAV meta)
+     *  6. listing_agent_id  (EAV meta)
+     *  7. agent_id          (EAV meta)
+     *  8. created_by        (EAV meta)
+     *  9. listing.user_id   (native column — covers agent-created listings,
+     *     only when that user has user_type = 'agent')
      *
      * Returns null if no agent can be resolved.
      */
@@ -250,7 +270,13 @@ class HireAgentLeadMatcherService
                 return null;
             }
 
-            // Steps 1–7: EAV meta keys in priority order
+            // Step 1: accepted bid record — highest priority, matches bid detail views
+            $acceptedBidAgentId = $this->getAcceptedBidAgentId($sourceListingType, $listingId);
+            if ($acceptedBidAgentId) {
+                return $acceptedBidAgentId;
+            }
+
+            // Steps 2–8: EAV meta keys in priority order
             $metaKeys = [
                 'hired_agent_id',
                 'accepted_agent_id',
@@ -270,10 +296,58 @@ class HireAgentLeadMatcherService
                 }
             }
 
-            // Step 8: listing.user_id — covers listings created directly by an agent
+            // Step 9: listing.user_id — covers listings created directly by an agent
             $listingOwnerId = $listing->user_id ?? null;
             if ($listingOwnerId && $this->isAgentUser((int) $listingOwnerId)) {
                 return (int) $listingOwnerId;
+            }
+
+            return null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Look up the accepted bid's agent via the accepted_bid_summaries table.
+     *
+     * accepted_bid_summaries is the canonical accepted-bid source used by every
+     * per-role AcceptedBidSummaryService and by the model's getBidStatusAttribute()
+     * (e.g. LandlordAgentAuctionBid uses acceptedBidSummary()->exists()). Querying
+     * this table instead of the raw bid table avoids column-type incompatibilities
+     * (landlord stores accepted as integer; buyer/seller/tenant as varchar).
+     *
+     * agent_user_id is stored directly on the summary row, so no secondary lookup
+     * into the bid table itself is required.
+     *
+     * Uses DB::table() directly to avoid Eloquent eager-load issues inside
+     * transactions and to keep the query lightweight.
+     *
+     * Returns null when no mapping exists, no accepted summary is found for the
+     * listing, or the resolved user is not an agent.
+     */
+    private function getAcceptedBidAgentId(string $sourceListingType, int $listingId): ?int
+    {
+        $summaryListingType = self::ACCEPTED_SUMMARY_TYPE_MAP[$sourceListingType] ?? null;
+        if (! $summaryListingType) {
+            return null;
+        }
+
+        try {
+            $agentUserId = DB::table('accepted_bid_summaries')
+                ->where('listing_type', $summaryListingType)
+                ->where('listing_id', $listingId)
+                ->whereNotNull('agent_user_id')
+                ->orderByDesc('id')
+                ->value('agent_user_id');
+
+            if (! $agentUserId) {
+                return null;
+            }
+
+            $candidateId = (int) $agentUserId;
+            if ($candidateId > 0 && $this->isAgentUser($candidateId)) {
+                return $candidateId;
             }
 
             return null;
