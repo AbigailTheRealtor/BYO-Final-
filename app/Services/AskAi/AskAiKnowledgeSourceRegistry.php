@@ -63,12 +63,13 @@ class AskAiKnowledgeSourceRegistry
         'location_intelligence' => [
             'key'         => 'location_intelligence',
             'label'       => 'Location Intelligence',
-            'description' => 'Location DNA data including lifestyle scores, lifestyle categories, location narrative, and geocode status.',
+            'description' => 'Location DNA data including lifestyle scores, lifestyle categories, location narrative, geocode status, nearest highlights (beach, marina, grocery, park, transit distances), thematic blocks (coastal_features, daily_convenience, outdoor_recreation, transportation), available/missing categories, and marketing context.',
             'version_key' => 'LIFESTYLE_V1',
             'allowed_for_question_types' => [
                 'property_standout',
                 'suited_audience',
                 'marketing_angles',
+                'educational',
             ],
         ],
 

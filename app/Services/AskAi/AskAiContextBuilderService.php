@@ -12,6 +12,8 @@ use App\Models\PropertyDnaProfile;
 use App\Models\PropertyLocationDna;
 use App\Models\TenantCriteriaAuction;
 use App\Services\Dna\PropertyIntelligenceProfileService;
+use App\Services\LocationDna\LocationDnaIntelligenceContextService;
+use App\Services\LocationDna\LocationDnaMarketingContextService;
 
 /**
  * AskAiContextBuilderService — Phase 1 Read-Only Context Assembly
@@ -41,10 +43,17 @@ class AskAiContextBuilderService
     public const CONTEXT_VERSION = 'ASK_AI_CONTEXT_V1';
 
     private PropertyIntelligenceProfileService $propertyIntelligenceService;
+    private LocationDnaIntelligenceContextService $locationDnaIntelligenceService;
+    private LocationDnaMarketingContextService $locationDnaMarketingService;
 
-    public function __construct(PropertyIntelligenceProfileService $propertyIntelligenceService)
-    {
-        $this->propertyIntelligenceService = $propertyIntelligenceService;
+    public function __construct(
+        PropertyIntelligenceProfileService $propertyIntelligenceService,
+        LocationDnaIntelligenceContextService $locationDnaIntelligenceService,
+        LocationDnaMarketingContextService $locationDnaMarketingService
+    ) {
+        $this->propertyIntelligenceService    = $propertyIntelligenceService;
+        $this->locationDnaIntelligenceService = $locationDnaIntelligenceService;
+        $this->locationDnaMarketingService    = $locationDnaMarketingService;
     }
 
     /**
@@ -118,7 +127,7 @@ class AskAiContextBuilderService
             }
 
             $locationIntelligence = $this->buildLocationIntelligence(
-                $canonical, $listingId, $missingSources
+                $canonical, $listingId, $missingSources, $warnings
             );
 
             $buyerAvatar = null;
@@ -313,6 +322,20 @@ class AskAiContextBuilderService
 
     // =========================================================================
     // Location Intelligence Context (all listing types)
+    //
+    // Assembles three layers of location data:
+    //   1. lifestyle_json sub-fields (scores, categories, narrative, version)
+    //      sourced directly from PropertyLocationDna.
+    //   2. Structured POI/amenity data (nearest_highlights, thematic blocks,
+    //      available_categories, missing_categories) from
+    //      LocationDnaIntelligenceContextService — merged when status=available.
+    //   3. Marketing-framed thematic context (marketing_context sub-key) from
+    //      LocationDnaMarketingContextService — merged when status=available.
+    //
+    // When the intelligence or marketing services return non-available status,
+    // a warning is appended to $warnings. The overall location_intelligence
+    // section is still returned (from lifestyle_json) — missing POI data is
+    // NOT added to $missingSources because it is optional for all question types.
     // =========================================================================
 
     /**
@@ -328,16 +351,29 @@ class AskAiContextBuilderService
 
     /**
      * Assemble the location intelligence context section.
-     * Returns null and appends 'location_intelligence' to $missingSources on failure.
+     * Returns null and appends 'location_intelligence' to $missingSources when no DNA record exists.
      *
      * lifestyle_scores, lifestyle_categories, and location_narrative are extracted
      * from sub-keys within lifestyle_json when available.
      * lifestyle_version is extracted from lifestyle_json['version'] when present.
+     *
+     * When LocationDnaIntelligenceContextService returns status=available, the
+     * following keys are merged into the returned array:
+     *   nearest_highlights, available_categories, missing_categories,
+     *   coastal_features, daily_convenience, outdoor_recreation, transportation.
+     *
+     * When LocationDnaMarketingContextService returns status=available, the
+     * marketing_context sub-key is added containing the four thematic blocks
+     * plus available/missing categories in marketing framing.
+     *
+     * Non-available status from either service appends a warning to $warnings
+     * but does not affect $missingSources (both are optional for all question types).
      */
     protected function buildLocationIntelligence(
         string $canonicalType,
         int $listingId,
-        array &$missingSources
+        array &$missingSources,
+        array &$warnings
     ): ?array {
         $locationDna = $this->findPropertyLocationDna($canonicalType, $listingId);
 
@@ -349,17 +385,44 @@ class AskAiContextBuilderService
         $lifestyleJson = $locationDna->lifestyle_json;
         $lifestyleArr  = is_array($lifestyleJson) ? $lifestyleJson : [];
 
-        return [
-            'lifestyle_json'         => $lifestyleJson,
-            'lifestyle_scores'       => $lifestyleArr['scores'] ?? null,
-            'lifestyle_categories'   => $lifestyleArr['categories'] ?? null,
-            'location_narrative'     => $lifestyleArr['narrative'] ?? null,
-            'lifestyle_version'      => $lifestyleArr['version'] ?? null,
-            'geocode_status'         => $locationDna->geocode_status ?? null,
-            'generated_at'           => isset($locationDna->generated_at)
+        $context = [
+            'lifestyle_json'       => $lifestyleJson,
+            'lifestyle_scores'     => $lifestyleArr['scores'] ?? null,
+            'lifestyle_categories' => $lifestyleArr['categories'] ?? null,
+            'location_narrative'   => $lifestyleArr['narrative'] ?? null,
+            'lifestyle_version'    => $lifestyleArr['version'] ?? null,
+            'geocode_status'       => $locationDna->geocode_status ?? null,
+            'generated_at'         => isset($locationDna->generated_at)
                 ? (string) $locationDna->generated_at
                 : null,
         ];
+
+        $intelligenceResult = $this->locationDnaIntelligenceService->getForListing($canonicalType, $listingId);
+
+        if ($intelligenceResult['status'] === 'available') {
+            $lic = $intelligenceResult['location_intelligence_context'];
+            $context['nearest_highlights']   = $lic['nearest_highlights'] ?? null;
+            $context['available_categories'] = $lic['available_categories'] ?? null;
+            $context['missing_categories']   = $lic['missing_categories'] ?? null;
+            $context['coastal_features']     = $lic['coastal_features'] ?? null;
+            $context['daily_convenience']    = $lic['daily_convenience'] ?? null;
+            $context['outdoor_recreation']   = $lic['outdoor_recreation'] ?? null;
+            $context['transportation']       = $lic['transportation'] ?? null;
+        } else {
+            $warnings[] = 'location_intelligence_context not available: '
+                . ($intelligenceResult['error'] ?? $intelligenceResult['status']);
+        }
+
+        $marketingResult = $this->locationDnaMarketingService->getForListing($canonicalType, $listingId);
+
+        if ($marketingResult['status'] === 'available') {
+            $context['marketing_context'] = $marketingResult['marketing_location_context'];
+        } else {
+            $warnings[] = 'location_marketing_context not available: '
+                . ($marketingResult['error'] ?? $marketingResult['status']);
+        }
+
+        return $context;
     }
 
     // =========================================================================

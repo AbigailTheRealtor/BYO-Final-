@@ -46,6 +46,8 @@ class AskAiResponseContractService
                 'listing.listing_title',
                 'listing.property_type',
                 'location_intelligence.location_narrative',
+                'location_intelligence.nearest_highlights',
+                'location_intelligence.available_categories',
             ],
             'required_sources' => ['property_intelligence'],
             'response_rules' => [
@@ -165,6 +167,8 @@ class AskAiResponseContractService
                 'property_intelligence.property_highlights',
                 'location_intelligence.location_narrative',
                 'location_intelligence.lifestyle_categories',
+                'location_intelligence.marketing_context',
+                'location_intelligence.available_categories',
                 'listing.listing_title',
                 'listing.property_type',
             ],
@@ -182,7 +186,10 @@ class AskAiResponseContractService
         ],
 
         'educational' => [
-            'allowed_context' => [],
+            'allowed_context' => [
+                'location_intelligence.location_narrative',
+                'location_intelligence.available_categories',
+            ],
             'required_sources' => [],
             'response_rules' => [
                 'Provide only general real estate educational information.',

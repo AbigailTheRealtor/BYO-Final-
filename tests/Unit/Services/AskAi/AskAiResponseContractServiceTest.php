@@ -722,4 +722,110 @@ class AskAiResponseContractServiceTest extends TestCase
             "buyer_tenant_match allowed_context must include compatibility.compatibility_summary_json"
         );
     }
+
+    // =========================================================================
+    // Case L — Location DNA context paths are included in allowed_context for the
+    //           correct question types (property_standout, marketing_angles, educational)
+    // =========================================================================
+
+    public function test_case_L_property_standout_allowed_context_includes_nearest_highlights(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('property_standout', $this->makeContextFor('property_standout'));
+
+        $this->assertContains(
+            'location_intelligence.nearest_highlights',
+            $result['allowed_context'],
+            "property_standout allowed_context must include location_intelligence.nearest_highlights"
+        );
+    }
+
+    public function test_case_L_property_standout_allowed_context_includes_available_categories(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('property_standout', $this->makeContextFor('property_standout'));
+
+        $this->assertContains(
+            'location_intelligence.available_categories',
+            $result['allowed_context'],
+            "property_standout allowed_context must include location_intelligence.available_categories"
+        );
+    }
+
+    public function test_case_L_marketing_angles_allowed_context_includes_marketing_context(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('marketing_angles', $this->makeContextFor('marketing_angles'));
+
+        $this->assertContains(
+            'location_intelligence.marketing_context',
+            $result['allowed_context'],
+            "marketing_angles allowed_context must include location_intelligence.marketing_context"
+        );
+    }
+
+    public function test_case_L_marketing_angles_allowed_context_includes_available_categories(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('marketing_angles', $this->makeContextFor('marketing_angles'));
+
+        $this->assertContains(
+            'location_intelligence.available_categories',
+            $result['allowed_context'],
+            "marketing_angles allowed_context must include location_intelligence.available_categories"
+        );
+    }
+
+    public function test_case_L_educational_allowed_context_includes_location_narrative(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('educational', []);
+
+        $this->assertContains(
+            'location_intelligence.location_narrative',
+            $result['allowed_context'],
+            "educational allowed_context must include location_intelligence.location_narrative"
+        );
+    }
+
+    public function test_case_L_educational_allowed_context_includes_available_categories(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('educational', []);
+
+        $this->assertContains(
+            'location_intelligence.available_categories',
+            $result['allowed_context'],
+            "educational allowed_context must include location_intelligence.available_categories"
+        );
+    }
+
+    public function test_case_L_location_intelligence_paths_not_in_buyer_tenant_match(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('buyer_tenant_match', $this->makeContextFor('buyer_tenant_match'));
+
+        $locationPaths = array_filter(
+            $result['allowed_context'],
+            static fn (string $p): bool => str_starts_with($p, 'location_intelligence.')
+        );
+
+        $this->assertEmpty(
+            $locationPaths,
+            "buyer_tenant_match must not include location_intelligence paths in allowed_context"
+        );
+    }
+
+    public function test_case_L_location_intelligence_registry_allows_educational_type(): void
+    {
+        $registry = new \App\Services\AskAi\AskAiKnowledgeSourceRegistry();
+        $source   = $registry->getSource('location_intelligence');
+
+        $this->assertNotNull($source);
+        $this->assertContains(
+            'educational',
+            $source['allowed_for_question_types'],
+            "location_intelligence registry entry must allow educational question type"
+        );
+    }
 }

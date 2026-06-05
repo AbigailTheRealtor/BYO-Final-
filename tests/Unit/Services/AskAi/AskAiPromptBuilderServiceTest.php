@@ -776,7 +776,87 @@ class AskAiPromptBuilderServiceTest extends TestCase
     }
 
     // =========================================================================
-    // Case N — No OpenAI or HTTP calls exist in the service file
+    // Case N — source_attribution includes location_intelligence when location
+    //           data is present in allowed_context paths AND in context
+    // =========================================================================
+
+    public function test_case_N_source_attribution_includes_location_intelligence_when_used(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady([
+            'allowed_context'  => [
+                'property_intelligence.property_highlights',
+                'location_intelligence.marketing_context',
+                'location_intelligence.available_categories',
+            ],
+            'required_sources' => ['property_intelligence'],
+        ]);
+        $context  = $this->makeContext();
+        $result   = $service->buildPromptPackage('q', $context, $contract);
+
+        $this->assertContains(
+            'location_intelligence',
+            $result['source_attribution']['required_sources'],
+            'source_attribution required_sources must include location_intelligence when it appears ' .
+            'in allowed_context paths and is non-null in context'
+        );
+    }
+
+    public function test_case_N_source_attribution_does_not_include_location_intelligence_when_context_null(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady([
+            'allowed_context'  => [
+                'property_intelligence.property_highlights',
+                'location_intelligence.marketing_context',
+            ],
+            'required_sources' => ['property_intelligence'],
+        ]);
+        $context  = $this->makeContext(['location_intelligence' => null]);
+        $result   = $service->buildPromptPackage('q', $context, $contract);
+
+        $this->assertNotContains(
+            'location_intelligence',
+            $result['source_attribution']['required_sources'],
+            'source_attribution must not include location_intelligence when it is null in context'
+        );
+    }
+
+    public function test_case_N_source_attribution_does_not_include_location_intelligence_when_not_in_allowed_context(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady([
+            'allowed_context'  => [
+                'property_intelligence.property_highlights',
+            ],
+            'required_sources' => ['property_intelligence'],
+        ]);
+        $context  = $this->makeContext();
+        $result   = $service->buildPromptPackage('q', $context, $contract);
+
+        $this->assertNotContains(
+            'location_intelligence',
+            $result['source_attribution']['required_sources'],
+            'source_attribution must not include location_intelligence when it is absent from allowed_context'
+        );
+    }
+
+    public function test_case_N_required_sources_still_matches_contract_required_when_no_optional_used(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['required_sources' => ['property_intelligence', 'listing']]);
+        $context  = $this->makeContext(['location_intelligence' => null]);
+        $result   = $service->buildPromptPackage('q', $context, $contract);
+
+        $this->assertSame(
+            ['property_intelligence', 'listing'],
+            $result['source_attribution']['required_sources'],
+            'required_sources must equal contract required_sources when no optional sources are used'
+        );
+    }
+
+    // =========================================================================
+    // Case O — No OpenAI or HTTP calls exist in the service file
     // =========================================================================
 
     public function test_case_N_service_file_contains_no_openai_or_http_calls(): void

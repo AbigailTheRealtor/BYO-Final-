@@ -78,7 +78,7 @@ class AskAiPromptBuilderService
      *   system_instructions      string[]    — 12 deterministic governance strings
      *   developer_instructions   array       — assembled from contract governance fields
      *   allowed_context          array       — context filtered to only contract-approved dot-notation paths
-     *   source_attribution       array       — required_sources + versions sub-array
+     *   source_attribution       array       — required_sources + optional used sources + versions sub-array
      *   required_disclosures     string[]    — from contract; augmented on insufficient_context
      *   refusal_template         string|null — from contract['refusal_template']; non-null on blocked
      *   missing_required_sources string[]    — from contract['missing_required_sources']
@@ -333,21 +333,48 @@ class AskAiPromptBuilderService
     /**
      * Build the source_attribution array from required_sources and context version metadata.
      *
+     * required_sources starts with the contract-declared required sources, then is augmented
+     * with any optional top-level source keys that appear in the contract's allowed_context
+     * paths AND exist as non-null values in the assembled context. This ensures that
+     * location_intelligence (and other optional sources) are attributed whenever they
+     * contribute data to the prompt package.
+     *
      * Versions sub-array always contains:
      *   property_intelligence_version — from context['source_versions']['property_intelligence_version']
      *   ask_ai_context                — from context['source_versions']['ask_ai_context']
      *   compatibility_version         — from context['source_versions']['compatibility_version']
      *   contract_version              — from contract['contract_version']
      *
-     * Dynamic avatar sources: when context['buyer_avatar'] is non-null, 'buyer_avatar' is appended
-     * to required_sources. Likewise for 'tenant_avatar'. This ensures source_attribution reflects
-     * which avatar sources were actually present and used, without hallucinating absent sources.
+     * Optional source attribution uses two complementary mechanisms:
+     *   1. allowed_context path loop — any top-level source key present in the contract's
+     *      allowed_context paths AND non-null in context is appended (covers location_intelligence
+     *      and any future optional sources declared per question type).
+     *   2. Explicit avatar attribution — buyer_avatar and tenant_avatar are appended when
+     *      non-null in context regardless of allowed_context, ensuring attribution is complete
+     *      even when avatar paths are not enumerated in a contract.
      */
     private function buildSourceAttribution(array $context, array $contract): array
     {
         $sourceVersions  = $context['source_versions'] ?? [];
         $requiredSources = $contract['required_sources'] ?? [];
 
+        // Add any optional source whose top-level key appears in allowed_context paths
+        // AND exists as non-null in the assembled context (covers location_intelligence
+        // and any other optional source declared in a question-type contract).
+        $allowedPaths = $contract['allowed_context'] ?? [];
+        foreach ($allowedPaths as $path) {
+            $topKey = explode('.', $path)[0];
+            if (
+                !in_array($topKey, $requiredSources, true)
+                && isset($context[$topKey])
+                && $context[$topKey] !== null
+            ) {
+                $requiredSources[] = $topKey;
+            }
+        }
+
+        // Explicit avatar attribution: append avatar sources when non-null in context
+        // even when not listed in allowed_context, ensuring attribution is complete.
         if (isset($context['buyer_avatar']) && $context['buyer_avatar'] !== null) {
             if (!in_array('buyer_avatar', $requiredSources, true)) {
                 $requiredSources[] = 'buyer_avatar';

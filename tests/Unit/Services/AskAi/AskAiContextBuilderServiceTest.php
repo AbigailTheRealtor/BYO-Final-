@@ -9,6 +9,8 @@ use App\Models\PropertyDnaProfile;
 use App\Models\PropertyLocationDna;
 use App\Services\AskAi\AskAiContextBuilderService;
 use App\Services\Dna\PropertyIntelligenceProfileService;
+use App\Services\LocationDna\LocationDnaIntelligenceContextService;
+use App\Services\LocationDna\LocationDnaMarketingContextService;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,7 +24,7 @@ use PHPUnit\Framework\TestCase;
  * PropertyIntelligenceProfileService is constructor-injected and mocked so
  * buildPayloadReadOnly() returns controlled data without touching the DB.
  *
- * Test coverage (cases A–M):
+ * Test coverage (cases A–Q):
  *   A. not_found status when listing is absent
  *   B. Exact top-level output contract shape is always present (including 'error' key)
  *   C. CONTEXT_VERSION constant equals 'ASK_AI_CONTEXT_V1'
@@ -37,6 +39,12 @@ use PHPUnit\Framework\TestCase;
  *   K. offer_analysis includes all AcceptedBidSummary columns; null when absent
  *   L. source_versions contains available version values including lifestyle_version
  *   M. status is 'partial' when expected sources are missing; 'assembled' when all present
+ *   N. location_intelligence includes nearest_highlights and thematic blocks when intelligence
+ *      service returns available; optional fields absent when service returns missing
+ *   O. marketing_context sub-key present in location_intelligence when marketing service available
+ *   P. Non-available status from intelligence/marketing services adds warning; no missing_source
+ *   Q. Governance scan — no fair housing, crime, demographic, or protected-class language
+ *      introduced by the new Location DNA context paths
  */
 class AskAiContextBuilderServiceTest extends TestCase
 {
@@ -110,6 +118,109 @@ class AskAiContextBuilderServiceTest extends TestCase
     }
 
     /**
+     * Build a mock LocationDnaIntelligenceContextService.
+     * Default return value is a 'missing' status response (no merge happens).
+     *
+     * @return LocationDnaIntelligenceContextService&\PHPUnit\Framework\MockObject\MockObject
+     */
+    private function makeLocationDnaIntelligenceServiceMock(
+        ?array $returnValue = null
+    ): LocationDnaIntelligenceContextService {
+        $mock = $this->getMockBuilder(LocationDnaIntelligenceContextService::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getForListing'])
+            ->getMock();
+
+        $mock->method('getForListing')->willReturn($returnValue ?? [
+            'success'                       => false,
+            'status'                        => 'missing',
+            'listing_type'                  => 'seller',
+            'listing_id'                    => 1,
+            'location_intelligence_context' => null,
+            'error'                         => 'No property_location_dna record found for this listing',
+        ]);
+
+        return $mock;
+    }
+
+    /**
+     * Build a mock LocationDnaMarketingContextService.
+     * Default return value is a 'missing' status response (no merge happens).
+     *
+     * @return LocationDnaMarketingContextService&\PHPUnit\Framework\MockObject\MockObject
+     */
+    private function makeLocationDnaMarketingServiceMock(
+        ?array $returnValue = null
+    ): LocationDnaMarketingContextService {
+        $mock = $this->getMockBuilder(LocationDnaMarketingContextService::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getForListing'])
+            ->getMock();
+
+        $mock->method('getForListing')->willReturn($returnValue ?? [
+            'success'                    => false,
+            'status'                     => 'missing',
+            'listing_type'               => 'seller',
+            'listing_id'                 => 1,
+            'marketing_location_context' => null,
+            'error'                      => 'No property_location_dna record found for this listing',
+        ]);
+
+        return $mock;
+    }
+
+    /**
+     * Build a canonical available response for LocationDnaIntelligenceContextService.
+     */
+    private function makeIntelligenceContextAvailable(array $overrides = []): array
+    {
+        return array_merge([
+            'success'                       => true,
+            'status'                        => 'available',
+            'listing_type'                  => 'seller',
+            'listing_id'                    => 1,
+            'location_intelligence_context' => [
+                'coastal_features'    => ['nearest_beach_miles' => 2.3, 'nearest_marina_miles' => 1.1],
+                'daily_convenience'   => ['nearest_grocery_miles' => 0.4],
+                'outdoor_recreation'  => ['nearest_park_miles' => 0.7],
+                'transportation'      => ['nearest_transit_miles' => 0.2],
+                'nearest_highlights'  => [
+                    'nearest_beach_miles'   => 2.3,
+                    'nearest_marina_miles'  => 1.1,
+                    'nearest_grocery_miles' => 0.4,
+                    'nearest_park_miles'    => 0.7,
+                    'nearest_transit_miles' => 0.2,
+                ],
+                'available_categories' => ['coastal_features', 'daily_convenience', 'outdoor_recreation', 'transportation'],
+                'missing_categories'   => [],
+            ],
+            'error' => null,
+        ], $overrides);
+    }
+
+    /**
+     * Build a canonical available response for LocationDnaMarketingContextService.
+     */
+    private function makeMarketingContextAvailable(array $overrides = []): array
+    {
+        return array_merge([
+            'success'                    => true,
+            'status'                     => 'available',
+            'listing_type'               => 'seller',
+            'listing_id'                 => 1,
+            'marketing_location_context' => [
+                'coastal_features'    => ['nearest_beach_miles' => 2.3, 'nearest_marina_miles' => 1.1],
+                'daily_convenience'   => ['nearest_grocery_miles' => 0.4],
+                'outdoor_recreation'  => ['nearest_park_miles' => 0.7],
+                'transportation'      => ['nearest_transit_miles' => 0.2],
+                'available_categories' => ['coastal_features', 'daily_convenience', 'outdoor_recreation', 'transportation'],
+                'missing_categories'   => [],
+            ],
+            'error' => null,
+        ], $overrides);
+    }
+
+    /**
      * A successful buildPayloadReadOnly() return value carrying the approved fields.
      */
     private function makeIntelligencePayload(array $overrides = []): array
@@ -133,18 +244,27 @@ class AskAiContextBuilderServiceTest extends TestCase
 
     /**
      * Build a partial mock of AskAiContextBuilderService that stubs only the
-     * protected finder methods. The PropertyIntelligenceProfileService mock is
-     * passed in as a constructor argument.
+     * protected finder methods. All three constructor services are passed in;
+     * the Location DNA services default to 'missing' return values so that
+     * existing tests are unaffected (no merging happens, only warnings added).
      *
      * @return AskAiContextBuilderService&\PHPUnit\Framework\MockObject\MockObject
      */
     private function makeService(
-        ?PropertyIntelligenceProfileService $intelligenceService = null
+        ?PropertyIntelligenceProfileService $intelligenceService = null,
+        ?LocationDnaIntelligenceContextService $locationDnaIntelligenceService = null,
+        ?LocationDnaMarketingContextService $locationDnaMarketingService = null
     ): AskAiContextBuilderService {
-        $intelligenceService ??= $this->makeIntelligenceServiceMock();
+        $intelligenceService          ??= $this->makeIntelligenceServiceMock();
+        $locationDnaIntelligenceService ??= $this->makeLocationDnaIntelligenceServiceMock();
+        $locationDnaMarketingService    ??= $this->makeLocationDnaMarketingServiceMock();
 
         return $this->getMockBuilder(AskAiContextBuilderService::class)
-            ->setConstructorArgs([$intelligenceService])
+            ->setConstructorArgs([
+                $intelligenceService,
+                $locationDnaIntelligenceService,
+                $locationDnaMarketingService,
+            ])
             ->onlyMethods([
                 'findListing',
                 'findPropertyDnaProfile',
@@ -352,9 +472,11 @@ class AskAiContextBuilderServiceTest extends TestCase
 
     public function test_case_B_error_key_is_populated_on_failed_path(): void
     {
-        $intellService = $this->makeIntelligenceServiceMock();
+        $intellService       = $this->makeIntelligenceServiceMock();
+        $locationDnaIntSvc   = $this->makeLocationDnaIntelligenceServiceMock();
+        $locationDnaMktSvc   = $this->makeLocationDnaMarketingServiceMock();
         $service = $this->getMockBuilder(AskAiContextBuilderService::class)
-            ->setConstructorArgs([$intellService])
+            ->setConstructorArgs([$intellService, $locationDnaIntSvc, $locationDnaMktSvc])
             ->onlyMethods(['findListing'])
             ->getMock();
 
@@ -973,5 +1095,351 @@ class AskAiContextBuilderServiceTest extends TestCase
         $result = $service->buildForListing('seller', 999);
 
         $this->assertSame('not_found', $result['status']);
+    }
+
+    // =========================================================================
+    // Case N — location_intelligence includes nearest_highlights and thematic blocks
+    //           when LocationDnaIntelligenceContextService returns available
+    // =========================================================================
+
+    public function test_case_N_location_intelligence_includes_nearest_highlights_when_service_available(): void
+    {
+        $dnaIntelligenceMock = $this->makeLocationDnaIntelligenceServiceMock(
+            $this->makeIntelligenceContextAvailable()
+        );
+
+        $service = $this->makeService(null, $dnaIntelligenceMock);
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertNotNull($result['location_intelligence']);
+        $li = $result['location_intelligence'];
+        $this->assertArrayHasKey('nearest_highlights', $li);
+        $this->assertArrayHasKey('available_categories', $li);
+        $this->assertArrayHasKey('missing_categories', $li);
+        $this->assertNotEmpty($li['nearest_highlights']);
+        $this->assertNotEmpty($li['available_categories']);
+    }
+
+    public function test_case_N_location_intelligence_includes_all_four_thematic_blocks_when_available(): void
+    {
+        $dnaIntelligenceMock = $this->makeLocationDnaIntelligenceServiceMock(
+            $this->makeIntelligenceContextAvailable()
+        );
+
+        $service = $this->makeService(null, $dnaIntelligenceMock);
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $li = $result['location_intelligence'];
+        $this->assertArrayHasKey('coastal_features', $li);
+        $this->assertArrayHasKey('daily_convenience', $li);
+        $this->assertArrayHasKey('outdoor_recreation', $li);
+        $this->assertArrayHasKey('transportation', $li);
+    }
+
+    public function test_case_N_thematic_blocks_absent_when_intelligence_service_returns_missing(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $li = $result['location_intelligence'];
+        $this->assertNotNull($li, 'location_intelligence should still be populated from lifestyle_json');
+        $this->assertArrayNotHasKey('nearest_highlights', $li);
+        $this->assertArrayNotHasKey('coastal_features', $li);
+        $this->assertArrayNotHasKey('daily_convenience', $li);
+        $this->assertArrayNotHasKey('outdoor_recreation', $li);
+        $this->assertArrayNotHasKey('transportation', $li);
+    }
+
+    public function test_case_N_lifestyle_json_fields_always_present_regardless_of_intelligence_service(): void
+    {
+        $lifestyleJson = [
+            'scores'     => ['walkability' => 90],
+            'categories' => ['walkable'],
+            'narrative'  => 'Very walkable area.',
+            'version'    => 'LIFESTYLE_V3',
+        ];
+
+        $locationDna = $this->makeLocationDna(['lifestyle_json' => $lifestyleJson]);
+
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($locationDna);
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $li = $result['location_intelligence'];
+        $this->assertSame($lifestyleJson, $li['lifestyle_json']);
+        $this->assertSame('Very walkable area.', $li['location_narrative']);
+        $this->assertSame(['walkability' => 90], $li['lifestyle_scores']);
+        $this->assertSame(['walkable'], $li['lifestyle_categories']);
+        $this->assertSame('LIFESTYLE_V3', $li['lifestyle_version']);
+    }
+
+    // =========================================================================
+    // Case O — marketing_context sub-key present in location_intelligence
+    //           when LocationDnaMarketingContextService returns available
+    // =========================================================================
+
+    public function test_case_O_marketing_context_present_when_marketing_service_available(): void
+    {
+        $marketingMock = $this->makeLocationDnaMarketingServiceMock(
+            $this->makeMarketingContextAvailable()
+        );
+
+        $service = $this->makeService(null, null, $marketingMock);
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $li = $result['location_intelligence'];
+        $this->assertNotNull($li);
+        $this->assertArrayHasKey('marketing_context', $li);
+        $this->assertIsArray($li['marketing_context']);
+        $this->assertArrayHasKey('coastal_features', $li['marketing_context']);
+        $this->assertArrayHasKey('daily_convenience', $li['marketing_context']);
+        $this->assertArrayHasKey('outdoor_recreation', $li['marketing_context']);
+        $this->assertArrayHasKey('transportation', $li['marketing_context']);
+    }
+
+    public function test_case_O_marketing_context_absent_when_marketing_service_returns_missing(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $li = $result['location_intelligence'];
+        $this->assertNotNull($li);
+        $this->assertArrayNotHasKey('marketing_context', $li);
+    }
+
+    public function test_case_O_marketing_context_available_categories_present(): void
+    {
+        $marketingMock = $this->makeLocationDnaMarketingServiceMock(
+            $this->makeMarketingContextAvailable()
+        );
+
+        $service = $this->makeService(null, null, $marketingMock);
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertArrayHasKey('available_categories', $result['location_intelligence']['marketing_context']);
+        $this->assertNotEmpty($result['location_intelligence']['marketing_context']['available_categories']);
+    }
+
+    // =========================================================================
+    // Case P — Non-available status from intelligence/marketing services
+    //           adds warning; does not add to missing_sources;
+    //           lifestyle_json-derived fields still present
+    // =========================================================================
+
+    public function test_case_P_missing_intelligence_service_adds_warning_not_missing_source(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertNotContains('location_intelligence', $result['missing_sources'],
+            'location_intelligence must not be in missing_sources when lifestyle_json record exists');
+        $this->assertNotEmpty($result['warnings'],
+            'A warning should be recorded when intelligence service returns non-available');
+    }
+
+    public function test_case_P_missing_marketing_service_adds_warning_not_missing_source(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertNotContains('location_intelligence', $result['missing_sources'],
+            'location_intelligence must not be in missing_sources when marketing service is missing');
+        $warningsText = implode(' ', $result['warnings']);
+        $this->assertStringContainsString('location', strtolower($warningsText),
+            'Warnings should mention location context availability');
+    }
+
+    public function test_case_P_location_intelligence_still_populated_when_both_sub_services_missing(): void
+    {
+        $locationDna = $this->makeLocationDna([
+            'lifestyle_json' => [
+                'scores'     => ['walkability' => 75],
+                'categories' => ['walkable'],
+                'narrative'  => 'Walkable neighborhood.',
+                'version'    => 'V5',
+            ],
+        ]);
+
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($locationDna);
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertNotNull($result['location_intelligence'],
+            'location_intelligence must still be populated from lifestyle_json even when sub-services are missing');
+        $this->assertSame('Walkable neighborhood.', $result['location_intelligence']['location_narrative']);
+        $this->assertSame(['walkability' => 75], $result['location_intelligence']['lifestyle_scores']);
+    }
+
+    public function test_case_P_no_missing_sources_when_dna_record_exists_but_sub_services_missing(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertNotContains(
+            'location_intelligence',
+            $result['missing_sources'],
+            'location_intelligence must not be in missing_sources when the base PropertyLocationDna record exists'
+        );
+    }
+
+    // =========================================================================
+    // Case Q — Governance scan: no fair housing, crime, demographic, or
+    //           protected-class language in new Location DNA context paths
+    // =========================================================================
+
+    public function test_case_Q_governance_no_protected_class_language_in_nearest_highlights(): void
+    {
+        $dnaIntelligenceMock = $this->makeLocationDnaIntelligenceServiceMock(
+            $this->makeIntelligenceContextAvailable()
+        );
+
+        $service = $this->makeService(null, $dnaIntelligenceMock);
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $nearestHighlights = $result['location_intelligence']['nearest_highlights'] ?? [];
+        $asText            = json_encode($nearestHighlights);
+
+        $prohibited = [
+            'race', 'color', 'religion', 'sex', 'national origin',
+            'familial status', 'disability', 'crime', 'criminal',
+            'demographic', 'minority', 'ethnic', 'school district rating',
+        ];
+
+        foreach ($prohibited as $term) {
+            $this->assertStringNotContainsStringIgnoringCase(
+                $term,
+                $asText,
+                "nearest_highlights must not contain protected-class language: '{$term}'"
+            );
+        }
+    }
+
+    public function test_case_Q_governance_no_protected_class_language_in_thematic_blocks(): void
+    {
+        $dnaIntelligenceMock = $this->makeLocationDnaIntelligenceServiceMock(
+            $this->makeIntelligenceContextAvailable()
+        );
+
+        $service = $this->makeService(null, $dnaIntelligenceMock);
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $li      = $result['location_intelligence'];
+        $blocks  = array_filter([
+            $li['coastal_features']   ?? null,
+            $li['daily_convenience']  ?? null,
+            $li['outdoor_recreation'] ?? null,
+            $li['transportation']     ?? null,
+        ]);
+        $asText = json_encode($blocks);
+
+        $prohibited = [
+            'race', 'color', 'religion', 'sex', 'national origin',
+            'familial status', 'disability', 'crime', 'criminal',
+            'demographic', 'minority', 'ethnic',
+        ];
+
+        foreach ($prohibited as $term) {
+            $this->assertStringNotContainsStringIgnoringCase(
+                $term,
+                $asText,
+                "Thematic blocks must not contain protected-class language: '{$term}'"
+            );
+        }
+    }
+
+    public function test_case_Q_governance_no_protected_class_language_in_marketing_context(): void
+    {
+        $marketingMock = $this->makeLocationDnaMarketingServiceMock(
+            $this->makeMarketingContextAvailable()
+        );
+
+        $service = $this->makeService(null, null, $marketingMock);
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($this->makeLocationDna());
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $marketingContext = $result['location_intelligence']['marketing_context'] ?? [];
+        $asText           = json_encode($marketingContext);
+
+        $prohibited = [
+            'race', 'color', 'religion', 'sex', 'national origin',
+            'familial status', 'disability', 'crime', 'criminal',
+            'demographic', 'minority', 'ethnic', 'school district rating',
+        ];
+
+        foreach ($prohibited as $term) {
+            $this->assertStringNotContainsStringIgnoringCase(
+                $term,
+                $asText,
+                "marketing_context must not contain protected-class language: '{$term}'"
+            );
+        }
+    }
+
+    public function test_case_Q_service_file_contains_no_protected_class_language_in_location_intelligence_method(): void
+    {
+        $path    = $this->serviceFilePath();
+        $content = file_get_contents($path);
+
+        $codeLines = implode("\n", array_filter(
+            explode("\n", $content),
+            static function (string $line): bool {
+                $trimmed = ltrim($line);
+                return !str_starts_with($trimmed, '*') && !str_starts_with($trimmed, '//');
+            }
+        ));
+
+        $prohibited = [
+            'crime',
+            'criminal',
+            'demographic',
+            'school district rating',
+        ];
+
+        foreach ($prohibited as $term) {
+            $this->assertStringNotContainsStringIgnoringCase(
+                $term,
+                $codeLines,
+                "Service file must not reference prohibited governance term: '{$term}'"
+            );
+        }
     }
 }
