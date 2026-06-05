@@ -94,19 +94,68 @@ class SellerOfferEntryTest extends TestCase
         );
     }
 
-    // ── Test 4: POST to offers.store redirects to offers.show ────────────────
+    // ── Test 3b: The rendered form's offer_auction_id belongs to offer_auctions ──
+
+    public function test_seller_listing_view_offer_auction_id_exists_in_offer_auctions_table(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get(route('offer.listing.seller.view', $this->auction->id));
+
+        $response->assertStatus(200);
+
+        $body = $response->getContent();
+
+        // Extract all offer_auction_id hidden input values from the page
+        preg_match_all(
+            '/<input[^>]+name="offer_auction_id"[^>]+value="(\d+)"/i',
+            $body,
+            $matches
+        );
+
+        $this->assertNotEmpty($matches[1], 'At least one offer_auction_id hidden input must be present.');
+
+        foreach ($matches[1] as $extractedId) {
+            $this->assertTrue(
+                OfferAuction::where('id', (int) $extractedId)->exists(),
+                "offer_auction_id value {$extractedId} found in the form must exist in offer_auctions table, not just seller_agent_auctions."
+            );
+        }
+    }
+
+    // ── Test 4: POST to offers.store using resolved offer_auction_id redirects to offers.show ──
 
     public function test_post_to_offers_store_redirects_to_offers_show(): void
     {
-        $offerAuction = OfferAuction::factory()->create(['user_id' => $this->user->id]);
+        // Load the view to trigger the find-or-create of the linked OfferAuction
+        $viewResponse = $this->actingAsAllowedUser()
+            ->get(route('offer.listing.seller.view', $this->auction->id));
+
+        $viewResponse->assertStatus(200);
+
+        // Extract the offer_auction_id the view actually rendered
+        preg_match(
+            '/<input[^>]+name="offer_auction_id"[^>]+value="(\d+)"/i',
+            $viewResponse->getContent(),
+            $match
+        );
+
+        $this->assertNotEmpty($match, 'offer_auction_id hidden input must be present in the seller listing view.');
+
+        $resolvedOfferAuctionId = (int) $match[1];
+
+        // Confirm it resolves to an offer_auctions row (not a seller_agent_auctions row)
+        $this->assertTrue(
+            OfferAuction::where('id', $resolvedOfferAuctionId)->exists(),
+            "The offer_auction_id ({$resolvedOfferAuctionId}) rendered by the view must exist in offer_auctions."
+        );
 
         $response = $this->actingAsAllowedUser()
             ->post(route('offers.store'), [
-                'offer_auction_id' => $offerAuction->id,
+                'offer_auction_id' => $resolvedOfferAuctionId,
                 'role'             => 'seller',
             ]);
 
-        $offer = Offer::where('offer_auction_id', $offerAuction->id)
+        $offer = Offer::where('offer_auction_id', $resolvedOfferAuctionId)
             ->where('role', 'seller')
             ->where('user_id', $this->user->id)
             ->latest()

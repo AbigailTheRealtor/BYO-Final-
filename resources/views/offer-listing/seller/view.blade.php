@@ -980,7 +980,7 @@
                     <div class="sol-hero-ctas">
                         <form method="POST" action="{{ route('offers.store') }}" style="display:inline;">
                             @csrf
-                            <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                            <input type="hidden" name="offer_auction_id" value="{{ $offerAuction->id }}">
                             <input type="hidden" name="role" value="seller">
                             <button type="submit" class="btn btn-primary sol-hero-cta-btn" aria-label="Submit an offer on this property">
                                 <i class="fa-solid fa-file-signature me-1"></i>Submit Offer
@@ -1046,7 +1046,7 @@
                 @endif
                 <form method="POST" action="{{ route('offers.store') }}">
                     @csrf
-                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                    <input type="hidden" name="offer_auction_id" value="{{ $offerAuction->id }}">
                     <input type="hidden" name="role" value="seller">
                     <button type="submit" class="sol-interaction-cta sol-interaction-cta-primary"
                             aria-label="Submit an offer on this property">
@@ -2278,7 +2278,7 @@
 
                 <form method="POST" action="{{ route('offers.store') }}">
                     @csrf
-                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                    <input type="hidden" name="offer_auction_id" value="{{ $offerAuction->id }}">
                     <input type="hidden" name="role" value="seller">
                     <button type="submit" class="sol-action-btn sol-action-primary">
                         <i class="fa-solid fa-file-signature"></i>Submit Offer
@@ -2519,7 +2519,7 @@
 <div class="sol-mobile-bar d-lg-none">
     <form method="POST" action="{{ route('offers.store') }}">
         @csrf
-        <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+        <input type="hidden" name="offer_auction_id" value="{{ $offerAuction->id }}">
         <input type="hidden" name="role" value="seller">
         <button type="submit" class="sol-mobile-bar-btn sol-mobile-bar-offer">
             <i class="fa-solid fa-file-signature"></i>

@@ -10,6 +10,15 @@ class OfferAuction extends Model
 {
     use HasFactory, HasListingId;
 
+    protected $fillable = [
+        'user_id',
+        'listing_id',
+        'title',
+        'is_draft',
+        'is_approved',
+        'is_sold',
+    ];
+
     protected $casts = [
         'is_approved' => 'boolean',
         'is_draft'    => 'boolean',

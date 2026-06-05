@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\SellerListingInquiryMail;
+use App\Models\OfferAuction;
 use App\Models\SellerAgentAuction;
 use App\Models\SellerListingInquiry;
 use Illuminate\Http\Request;
@@ -87,13 +88,40 @@ class SellerOfferListingController extends Controller
                 : $row->meta_value;
         }
 
+        $offerAuction = $this->resolveOfferAuction($auction);
+
         $page_data = [
             'title'   => $auction->address ?? ($meta['listing_title'] ?? 'Seller Offer Listing'),
             'id'      => $id,
             'auth_id' => auth()->id(),
         ];
 
-        return view('offer-listing.seller.view', compact('auction', 'meta') + $page_data);
+        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction') + $page_data);
+    }
+
+    /**
+     * Find or create the OfferAuction record linked to this SellerAgentAuction.
+     * The link is persisted as the meta key `linked_offer_auction_id` on the seller
+     * auction so the same OfferAuction is reused on every subsequent visit.
+     */
+    private function resolveOfferAuction(SellerAgentAuction $auction): OfferAuction
+    {
+        $linkedId = $auction->info('linked_offer_auction_id');
+
+        if ($linkedId) {
+            $offerAuction = OfferAuction::find((int) $linkedId);
+            if ($offerAuction) {
+                return $offerAuction;
+            }
+        }
+
+        $offerAuction = OfferAuction::create([
+            'user_id' => $auction->user_id,
+        ]);
+
+        $auction->saveMeta('linked_offer_auction_id', $offerAuction->id);
+
+        return $offerAuction;
     }
 
     public function submitQuestion(Request $request, $auctionId)
