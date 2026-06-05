@@ -21,8 +21,63 @@
     }
 
     #bidding_history_data p {
-
       flex-wrap: wrap;
+    }
+
+    /* Section headings — bold, high-contrast */
+    .listingDescription .card-body h4 {
+      color: #0f172a !important;
+      font-weight: 700 !important;
+      font-size: 1.15rem;
+      margin-top: 0.75rem;
+      margin-bottom: 0.35rem;
+    }
+
+    /* Field row separators — subtle ruled lines between rows (mt-2 rows only) */
+    .listingDescription .card-body .col-md-12.col-12.mt-2,
+    .listingDescription .card-body .col-md-12.mt-2 {
+      border-bottom: 1px solid #e5e7eb;
+      padding-top: 0.45rem;
+      padding-bottom: 0.45rem;
+    }
+
+    /* Field labels — scoped to field-row column context only */
+    .listingDescription .card-body .col-md-12 strong,
+    .listingDescription .card-body .col-md-12 .fw-bold {
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    /* Field values (text in mt-2 rows) — dark, semi-bold */
+    .listingDescription .card-body .col-md-12.col-12.mt-2,
+    .listingDescription .card-body .col-md-12.mt-2 {
+      color: #111827;
+      font-weight: 600;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Icon color — keep teal accent on small check icons only */
+    .listingDescription .card-body .fa-check-square,
+    .listingDescription .card-body .fa-square-check {
+      color: #049399;
+    }
+
+    /* Secondary action buttons (Message, View Profile) — white fill, visible border */
+    .listingDescription .right button:not(.btn-success):not(.btn-danger):not(.btn-primary):not(.btn-secondary) {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #334155 !important;
+      font-weight: 600 !important;
+    }
+    .listingDescription .right button:not(.btn-success):not(.btn-danger):not(.btn-primary):not(.btn-secondary):hover {
+      background: #f8fafc !important;
+    }
+
+    /* Primary CTA "Bid Now" / "Login for Bid" button — prominent */
+    .listingDescription .rightCol > button.btn,
+    .listingDescription .rightCol > a > button.btn {
+      font-weight: 600 !important;
     }
   </style>
 @endpush

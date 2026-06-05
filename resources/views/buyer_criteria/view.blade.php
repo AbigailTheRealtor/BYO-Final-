@@ -45,7 +45,7 @@
             font-weight: 700 !important;
             margin-top: 1.5rem;
             margin-bottom: 0.75rem;
-            color: #0f1a24;
+            color: #0f172a;
         }
 
         /* SECTION HEADER BAR — shorter + true vertical centering */
@@ -56,6 +56,7 @@
             padding: 12px 18px !important;
             min-height: 0 !important;
             margin-top: 1.25rem;
+            background-color: #f8fafc !important;
         }
 
         /* SECTION TITLE TEXT — remove default heading spacing */
@@ -66,7 +67,14 @@
             display: block;
             font-size: 1.5rem !important;
             font-weight: 700 !important;
-            color: #0f1a24;
+            color: #0f172a;
+        }
+
+        /* h4/h5 section headings in main content area */
+        .listingDescription .card-body h4,
+        .listingDescription .card-body h5 {
+            color: #0f172a !important;
+            font-weight: 700 !important;
         }
 
         /* Services section - extra breathing room before header */
@@ -79,7 +87,7 @@
             margin-bottom: 0.5rem;
         }
 
-        /* Field row styling - improved line-height for scan-readability */
+        /* Field row styling - improved line-height, separator, scan-readability */
         .col-md-12.col-12.pt-2.fw-bold {
             line-height: 1.6;
             padding-top: 0.6rem !important;
@@ -90,16 +98,42 @@
             padding: 0.5rem 0;
             font-size: 0.95rem;
             line-height: 1.6;
+            border-bottom: 1px solid #e5e7eb;
         }
 
+        /* Field row separators for snapshot sections */
+        .listingDescription .card-body .col-md-12.fw-bold,
+        .listingDescription .card-body .col-md-12.col-12.fw-bold {
+            border-bottom: 1px solid #e5e7eb;
+            padding-top: 0.45rem;
+            padding-bottom: 0.45rem;
+        }
+
+        /* Field labels and values — improved contrast */
         .field-label {
-            font-weight: 600;
-            color: #34465c;
+            font-weight: 500;
+            color: #64748b;
         }
 
         .field-value {
-            font-weight: normal;
-            color: #34465c;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        /* Inline fw-bold label text — scoped to field-row column divs only */
+        .listingDescription .card-body .col-md-12.fw-bold,
+        .listingDescription .card-body .col-md-12.col-12.fw-bold,
+        .listingDescription .card-body .col-md-9.fw-bold {
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* Values inside fw-bold field-row divs use darker, semi-bold treatment */
+        .listingDescription .card-body .col-md-12.fw-bold .removeBold,
+        .listingDescription .card-body .col-md-12.col-12.fw-bold .removeBold,
+        .listingDescription .card-body .col-md-9.fw-bold .removeBold {
+            color: #111827;
+            font-weight: 600;
         }
 
         /* Broker Compensation subsection headers - breathing room */
@@ -117,12 +151,12 @@
             margin-top: 0 !important;
         }
 
-        /* Broker Compensation section text - match other section text color */
+        /* Broker Compensation section text - legible label color */
         .broker-compensation-section,
         .broker-compensation-section p,
         .broker-compensation-section .col-md-12,
         .broker-compensation-section .fw-bold {
-            color: #34465c !important;
+            color: #64748b !important;
         }
 
         ul {
@@ -133,7 +167,7 @@
 
         ul li {
             padding-left: var(--gutter);
-            color: #34465c;
+            color: #374151;
         }
 
         ul:not(.services) li::marker {
@@ -141,8 +175,7 @@
             /* FontAwesome Unicode */
             font-family: FontAwesome;
             font-size: var(--icon-size);
-            /* color: #006e9f; */
-            color: #11b7cf;
+            color: #006e9f;
         }
 
         /* Services section - Tighter spacing and indentation */
@@ -155,7 +188,7 @@
 
         ul.services li {
             padding: 0.15rem 0;
-            color: #34465c;
+            color: #374151;
             position: relative;
             padding-left: 0;
             list-style: none !important;
@@ -170,8 +203,25 @@
             content: "•";
             position: absolute;
             left: -0.9em;
-            color: #34465c;
+            color: #374151;
             font-size: 1.1em;
+        }
+
+        /* Secondary action buttons (Message, View Profile) — white fill, visible border */
+        .listingDescription .right button:not(.btn-success):not(.btn-danger):not(.btn-primary):not(.btn-secondary) {
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #334155 !important;
+            font-weight: 600 !important;
+        }
+        .listingDescription .right button:not(.btn-success):not(.btn-danger):not(.btn-primary):not(.btn-secondary):hover {
+            background: #f8fafc !important;
+        }
+
+        /* Primary CTA "Bid Now" button — prominent, bold */
+        .listingDescription .rightCol > button.btn,
+        .listingDescription .rightCol > a > button.btn {
+            font-weight: 600 !important;
         }
 
         .removeBold {
