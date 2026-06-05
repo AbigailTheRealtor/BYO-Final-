@@ -98,10 +98,10 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('property_standout', $result['question_type']);
     }
 
-    public function test_case_A_bidding_process_classifies_as_property_standout(): void
+    public function test_case_A_bidding_process_classifies_as_educational(): void
     {
         $result = $this->makeService()->classify('What is the bidding process for this property?');
-        $this->assertSame('property_standout', $result['question_type']);
+        $this->assertSame('educational', $result['question_type']);
     }
 
     // =========================================================================
@@ -745,6 +745,9 @@ class AskAiQuestionClassifierServiceTest extends TestCase
 
     public function test_case_L_move_in_date_classifies_as_buyer_tenant_match(): void
     {
+        // "What is their preferred move-in date?" uses the bare 'move-in date' keyword which
+        // stays in buyer_tenant_match. Only specific factual-retrieval phrases like
+        // "what is the move-in date" and "when is the move-in date" route to listing_facts.
         $result = $this->makeService()->classify('What is their preferred move-in date?');
         $this->assertSame('buyer_tenant_match', $result['question_type']);
     }
@@ -770,12 +773,12 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('listing_facts', $result['question_type']);
     }
 
-    public function test_case_L_location_preference_now_classifies_as_unsupported(): void
+    public function test_case_L_location_preference_now_classifies_as_listing_facts(): void
     {
-        // 'location preference' was removed from buyer_tenant_match and is not in any
-        // other keyword bucket; bare location-preference questions are unsupported.
+        // 'location preference' has been added to listing_facts so that buyer/tenant
+        // preferred-area questions route to the factual data path.
         $result = $this->makeService()->classify('What is their location preference?');
-        $this->assertSame('unsupported', $result['question_type']);
+        $this->assertSame('listing_facts', $result['question_type']);
     }
 
     public function test_case_L_monthly_income_does_not_route_to_buyer_tenant_match(): void
@@ -1100,11 +1103,11 @@ class AskAiQuestionClassifierServiceTest extends TestCase
             "'preferred lease length' must remain in buyer_tenant_match');");
     }
 
-    public function test_case_M_move_in_date_still_classifies_as_buyer_tenant_match(): void
+    public function test_case_M_move_in_date_now_classifies_as_listing_facts(): void
     {
         $result = $this->makeService()->classify('What is the move-in date for this tenant?');
-        $this->assertSame('buyer_tenant_match', $result['question_type'],
-            "'move-in date' must remain in buyer_tenant_match');");
+        $this->assertSame('listing_facts', $result['question_type'],
+            "'move-in date' was migrated from buyer_tenant_match to listing_facts');");
     }
 
     public function test_case_M_buyer_match_phrases_still_classify_as_buyer_tenant_match(): void
@@ -1128,5 +1131,179 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $result = $this->makeService()->classify('What is the asking price?');
         $this->assertGreaterThanOrEqual(0.0, $result['confidence']);
         $this->assertLessThanOrEqual(1.0, $result['confidence']);
+    }
+
+    // =========================================================================
+    // Case N — Phase 1 QA defect remediation: garage, move-in, preferred area
+    // =========================================================================
+
+    // --- Garage keywords (listing_facts) ---
+
+    public function test_case_N_garage_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Does this property have a garage?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_is_there_a_garage_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Is there a garage?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_does_it_have_a_garage_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Does it have a garage?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_does_the_property_have_a_garage_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Does the property have a garage?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_attached_garage_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Does this home have an attached garage?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_detached_garage_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Is there a detached garage on the property?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_garage_parking_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Is garage parking available with this unit?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_how_many_garage_spaces_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('How many garage spaces does this property have?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    // --- Move-in date / timeframe migrated to listing_facts ---
+
+    public function test_case_N_move_in_date_hyphen_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('When is the move-in date for this unit?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_move_in_date_no_hyphen_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the move in date for this property?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_move_in_timeframe_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the move-in timeframe for this listing?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_move_in_timeframe_no_hyphen_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Can you tell me the move in timeframe?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_move_in_schedule_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the move-in schedule for this rental?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_available_move_in_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('When is the available move-in for this unit?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    // --- Move-in timeframe synonyms (listing_facts) ---
+
+    public function test_case_N_when_do_they_want_to_move_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('When do they want to move into the property?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_when_can_they_move_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('When can they move?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_target_move_date_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the target move date for this tenant?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_desired_move_date_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the desired move date?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_move_in_timeline_hyphen_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the move-in timeline for this applicant?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_move_in_timeline_no_hyphen_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the move in timeline they are expecting?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    // --- Buyer preferred-area keywords (listing_facts) ---
+
+    public function test_case_N_preferred_areas_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What are the preferred areas for this buyer?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_preferred_neighborhoods_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What preferred neighborhoods has the buyer listed?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_preferred_cities_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What are the preferred cities for this buyer?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_preferred_locations_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What preferred locations has the buyer specified?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_where_does_the_buyer_want_to_live_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Where does the buyer want to live?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_location_preferences_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What are the buyer\'s location preferences?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_N_location_preference_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is their location preference?');
+        $this->assertSame('listing_facts', $result['question_type']);
     }
 }

@@ -169,6 +169,13 @@ class AskAiQuestionClassifierService
             'how many garages',
             'how many garage',
             'parking available',
+            'garage',
+            'is there a garage',
+            'does it have a garage',
+            'does the property have a garage',
+            'attached garage',
+            'detached garage',
+            'garage parking',
             // Appliances
             'appliances included',
             'what appliances',
@@ -232,6 +239,33 @@ class AskAiQuestionClassifierService
             'when is it available',
             'when does it become available',
             'available for rent',
+            // Move-in date / timeframe — factual retrieval phrases only.
+            // Bare 'move-in date' / 'move in date' stay in buyer_tenant_match so that
+            // compatibility-framed questions ("does the move-in date work for this tenant?")
+            // are not swallowed here.
+            'what is the move-in date',
+            'when is the move-in date',
+            'what is the move in date',
+            'when is the move in date',
+            'move-in timeframe',
+            'move in timeframe',
+            'move-in schedule',
+            'available move-in',
+            // Buyer / tenant preferred area
+            'preferred areas',
+            'preferred neighborhoods',
+            'preferred cities',
+            'preferred locations',
+            'where does the buyer want to live',
+            'location preferences',
+            'location preference',
+            // Move-in timeframe synonyms
+            'when do they want to move',
+            'when can they move',
+            'target move date',
+            'desired move date',
+            'move-in timeline',
+            'move in timeline',
             // Condo / additional fees
             'condo fee',
             // Smoking
