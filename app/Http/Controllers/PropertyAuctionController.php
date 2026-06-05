@@ -1426,8 +1426,79 @@ class PropertyAuctionController extends Controller
             // Resource not found, handle the error
             return redirect('/login');
         } else {
-            return view('seller_property.view', compact('data', 'auction', 'bids'));
+            $calcData = $this->buildCalcData($auction);
+            return view('seller_property.view', compact('data', 'auction', 'bids', 'calcData'));
         }
+    }
+
+    private function buildCalcData(PropertyAuction $auction): array
+    {
+        $meta = $auction->get;
+
+        // --- Price: starting_price first, then buy_now_price, then price ---
+        $price       = null;
+        $priceSource = 'estimated';
+        $rawPrice    = $meta->starting_price ?? $meta->buy_now_price ?? $meta->price ?? null;
+        if ($rawPrice && (float) $rawPrice > 0) {
+            $price       = (float) $rawPrice;
+            $priceSource = 'from listing';
+        }
+
+        // --- HOA: normalize from hoaFeeAmount + paymentSchedules ---
+        $hoaMonthly  = 0.0;
+        $hoaSource   = 'estimated';
+        $hoaAssumed  = false;
+        $hoaRaw      = $meta->hoaFeeAmount ?? $meta->hoaFeeAmount_vac ?? null;
+        if ($hoaRaw && (float) $hoaRaw > 0) {
+            $schedule = strtolower($meta->paymentSchedules ?? $meta->assocSchedule ?? '');
+            $hoaAmt   = (float) $hoaRaw;
+            if (str_contains($schedule, 'quarter')) {
+                $hoaMonthly = $hoaAmt / 3;
+            } elseif (str_contains($schedule, 'annual') || str_contains($schedule, 'year')) {
+                $hoaMonthly = $hoaAmt / 12;
+            } elseif (str_contains($schedule, 'month')) {
+                $hoaMonthly = $hoaAmt;
+            } else {
+                // Unknown schedule — treat as monthly but flag it
+                $hoaMonthly = $hoaAmt;
+                $hoaAssumed = true;
+            }
+            $hoaSource = 'from listing';
+        }
+
+        // --- Taxes ---
+        $taxesAnnual = 0.0;
+        $taxesSource = 'estimated';
+        $taxRaw      = $meta->taxes_annual_amount ?? $meta->taxes_annual_amount_com ?? null;
+        if ($taxRaw && (float) $taxRaw > 0) {
+            $taxesAnnual = (float) $taxRaw;
+            $taxesSource = 'from listing';
+        }
+
+        // --- Admin defaults (with hardcoded emergency fallbacks) ---
+        $interestRate  = (float) (get_setting('calc_interest_rate')    ?: 7.0);
+        $downPct       = (float) (get_setting('calc_down_payment_pct') ?: 10);
+        $loanTerm      = (int)   (get_setting('calc_loan_term')        ?: 30);
+        $taxRate       = (float) (get_setting('calc_tax_rate')         ?: 1.1);
+        $insuranceRate = (float) (get_setting('calc_insurance_rate')   ?: 0.5);
+        $pmiRate       = (float) (get_setting('calc_pmi_rate')         ?: 0.85);
+
+        return [
+            'price'             => $price,
+            'price_source'      => $priceSource,
+            'hoa_monthly'       => round($hoaMonthly, 2),
+            'hoa_source'        => $hoaSource,
+            'hoa_assumed'       => $hoaAssumed,
+            'taxes_annual'      => $taxesAnnual,
+            'taxes_source'      => $taxesSource,
+            'insurance_source'  => 'estimated',
+            'interest_rate'     => $interestRate,
+            'down_pct'          => $downPct,
+            'loan_term'         => $loanTerm,
+            'tax_rate'          => $taxRate,
+            'insurance_rate'    => $insuranceRate,
+            'pmi_rate'          => $pmiRate,
+        ];
     }
 
     public function endAuction($id)

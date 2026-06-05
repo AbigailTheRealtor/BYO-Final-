@@ -74,6 +74,26 @@ class SettingController extends Controller
             }
         }
 
+        $calcKeys = [
+            'calc_interest_rate',
+            'calc_down_payment_pct',
+            'calc_loan_term',
+            'calc_tax_rate',
+            'calc_insurance_rate',
+            'calc_pmi_rate',
+        ];
+        foreach ($calcKeys as $key) {
+            if ($request->has($key)) {
+                $setting = new Setting();
+                if (Setting::where('key', $key)->count() > 0) {
+                    $setting = Setting::where('key', $key)->first();
+                }
+                $setting->key   = $key;
+                $setting->value = $request->input($key);
+                $setting->save();
+            }
+        }
+
         return redirect()->back()->with('success', 'Settings saved successfully!');
 
     }

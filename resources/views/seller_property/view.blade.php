@@ -1219,6 +1219,7 @@
               @endif
             @endif
             {{-- Price & Terms end --}}
+            @include('seller_property._mortgage_calculator', compact('calcData'))
             <hr>
             {{-- Listing Information start --}}
             <h4>Listing Information:</h4>
