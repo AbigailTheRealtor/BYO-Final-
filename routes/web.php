@@ -1103,6 +1103,7 @@ Route::middleware(['auth', 'offerPlayoffAccess'])->group(function () {
     Route::post('/offers/{offer}/reject',   [\App\Http\Controllers\OfferController::class, 'reject'])->name('offers.reject');
     Route::post('/offers/{offer}/withdraw', [\App\Http\Controllers\OfferController::class, 'withdraw'])->name('offers.withdraw');
     Route::post('/offers/{offer}/counter',  [\App\Http\Controllers\OfferController::class, 'counter'])->name('offers.counter');
+    Route::post('/offers/{offer}/terms',    [\App\Http\Controllers\OfferController::class, 'saveTerms'])->name('offers.terms');
 });
 // ===========================================================================
 // END Offer Workflow action endpoints

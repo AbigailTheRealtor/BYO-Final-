@@ -55,4 +55,18 @@ class Offer extends Model
     {
         return $this->hasMany(OfferEventLog::class);
     }
+
+    public function saveMeta(string $key, mixed $value): void
+    {
+        if (is_array($value) || is_object($value)) {
+            $value = json_encode($value);
+        }
+        $this->metas()->updateOrCreate(['meta_key' => $key], ['meta_value' => $value]);
+    }
+
+    public function getMeta(string $key, mixed $default = null): mixed
+    {
+        $meta = $this->metas->where('meta_key', $key)->first();
+        return $meta ? $meta->meta_value : $default;
+    }
 }
