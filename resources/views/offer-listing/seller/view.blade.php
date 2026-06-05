@@ -579,7 +579,7 @@
 }
 .sol-view-page .sol-interaction-card {
     background: #fff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #CBD5E1;
     border-radius: 0.75rem;
     padding: 1rem 0.85rem 0.9rem;
     display: flex;
@@ -587,6 +587,28 @@
     gap: 0.4rem;
     transition: box-shadow .15s, border-color .15s, transform .15s;
     min-height: 0;
+}
+.sol-view-page .sol-interaction-cta-hire {
+    background: #fff;
+    color: #2563eb;
+    border: 1px solid #2563eb;
+    font-weight: 700;
+}
+.sol-view-page .sol-interaction-cta-hire:hover {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #2563eb;
+}
+.sol-view-page .sol-action-hire {
+    border-color: #2563eb !important;
+    color: #2563eb !important;
+    font-weight: 700;
+    background: #fff;
+}
+.sol-view-page .sol-action-hire:hover {
+    background: #eff6ff !important;
+    border-color: #2563eb !important;
+    color: #1d4ed8 !important;
 }
 .sol-view-page .sol-interaction-card:hover {
     box-shadow: 0 4px 18px rgba(37,99,235,.12);
@@ -1151,7 +1173,7 @@
                 <div class="sol-interaction-card-icon"><i class="fa-solid fa-user-tie"></i></div>
                 <div class="sol-interaction-card-label">Hire an Agent</div>
                 <div class="sol-interaction-card-helper">Need representation? Connect with a licensed real estate agent.</div>
-                <button type="button" class="sol-interaction-cta sol-interaction-cta-outline"
+                <button type="button" class="sol-interaction-cta sol-interaction-cta-hire"
                         data-bs-toggle="modal" data-bs-target="#solHireAgentModal"
                         aria-label="Find and hire a real estate agent">
                     <i class="fa-solid fa-user-tie"></i>Find an Agent
@@ -2336,9 +2358,8 @@
                 <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solQuestionModal">
                     <i class="fa-solid fa-circle-question"></i>Ask a Question
                 </button>
-                <button type="button" class="sol-action-btn sol-action-outline"
-                        data-bs-toggle="modal" data-bs-target="#solHireAgentModal"
-                        style="border-color:#0f766e;color:#0f766e;">
+                <button type="button" class="sol-action-btn sol-action-outline sol-action-hire"
+                        data-bs-toggle="modal" data-bs-target="#solHireAgentModal">
                     <i class="fa-solid fa-user-tie"></i>Hire an Agent
                 </button>
                 <button class="sol-action-btn sol-action-outline" type="button" disabled style="cursor:default;opacity:.6;">

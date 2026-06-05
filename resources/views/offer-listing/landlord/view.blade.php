@@ -242,10 +242,14 @@
 @media (max-width: 767.98px)  { .lol-view-page .lol-interaction-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 479.98px)  { .lol-view-page .lol-interaction-grid { grid-template-columns: 1fr; } }
 .lol-view-page .lol-interaction-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 0.75rem;
+    background: #fff; border: 1px solid #CBD5E1; border-radius: 0.75rem;
     padding: 1rem 0.85rem 0.9rem; display: flex; flex-direction: column;
     gap: 0.4rem; transition: box-shadow .15s, border-color .15s, transform .15s; min-height: 0;
 }
+.lol-view-page .lol-interaction-cta-hire { background: #fff; color: #2563eb; border: 1px solid #2563eb; font-weight: 700; }
+.lol-view-page .lol-interaction-cta-hire:hover { background: #eff6ff; color: #1d4ed8; border-color: #2563eb; }
+.lol-view-page .lol-action-hire { border-color: #2563eb !important; color: #2563eb !important; font-weight: 700; background: #fff; }
+.lol-view-page .lol-action-hire:hover { background: #eff6ff !important; border-color: #2563eb !important; color: #1d4ed8 !important; }
 .lol-view-page .lol-interaction-card:hover {
     box-shadow: 0 4px 18px rgba(15,118,110,.12); border-color: #99f6e4; transform: translateY(-2px);
 }
@@ -701,7 +705,7 @@
                 <div class="lol-interaction-card-icon"><i class="fa-solid fa-user-tie"></i></div>
                 <div class="lol-interaction-card-label">Hire an Agent</div>
                 <div class="lol-interaction-card-helper">Need representation? Connect with a licensed real estate agent.</div>
-                <button type="button" class="lol-interaction-cta lol-interaction-cta-outline"
+                <button type="button" class="lol-interaction-cta lol-interaction-cta-hire"
                         data-bs-toggle="modal" data-bs-target="#lolHireAgentModal"
                         aria-label="Find and hire a real estate agent">
                     <i class="fa-solid fa-user-tie"></i>Find an Agent
@@ -1481,9 +1485,8 @@
             <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolAiModal">
                 <i class="fa-solid fa-robot"></i>Ask AI About Property
             </button>
-            <button type="button" class="lol-action-btn lol-action-outline"
-                    data-bs-toggle="modal" data-bs-target="#lolHireAgentModal"
-                    style="border-color:#0f766e;color:#0f766e;">
+            <button type="button" class="lol-action-btn lol-action-outline lol-action-hire"
+                    data-bs-toggle="modal" data-bs-target="#lolHireAgentModal">
                 <i class="fa-solid fa-user-tie"></i>Hire an Agent
             </button>
             <button class="lol-action-btn lol-action-outline" type="button" disabled style="cursor:default;opacity:.6;">

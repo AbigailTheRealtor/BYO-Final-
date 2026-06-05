@@ -288,10 +288,14 @@
 @media (max-width: 767.98px)  { .bol-view-page .bol-interaction-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 479.98px)  { .bol-view-page .bol-interaction-grid { grid-template-columns: 1fr; } }
 .bol-view-page .bol-interaction-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 0.75rem;
+    background: #fff; border: 1px solid #CBD5E1; border-radius: 0.75rem;
     padding: 1rem 0.85rem 0.9rem; display: flex; flex-direction: column;
     gap: 0.4rem; transition: box-shadow .15s, border-color .15s, transform .15s; min-height: 0;
 }
+.bol-view-page .bol-interaction-cta-hire { background: #fff; color: #2563eb; border: 1px solid #2563eb; font-weight: 700; }
+.bol-view-page .bol-interaction-cta-hire:hover { background: #eff6ff; color: #1d4ed8; border-color: #2563eb; }
+.bol-view-page .bol-action-hire { border-color: #2563eb !important; color: #2563eb !important; font-weight: 700; background: #fff; }
+.bol-view-page .bol-action-hire:hover { background: #eff6ff !important; border-color: #2563eb !important; color: #1d4ed8 !important; }
 .bol-view-page .bol-interaction-card:hover {
     box-shadow: 0 4px 18px rgba(37,99,235,.12); border-color: #bfdbfe; transform: translateY(-2px);
 }
@@ -554,7 +558,7 @@
                         if ($heroStatus) $_bSnapRows[] = ['icon'=>'fa-solid fa-circle','label'=>'Status','val'=>$heroStatus];
                     @endphp
                     <div style="height:100%;min-height:280px;padding:1.5rem 1.25rem;background:#ffffff;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:center;">
-                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:.5rem;">Buyer Criteria Snapshot</div>
+                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#2563EB;font-weight:700;margin-bottom:.5rem;">Buyer Criteria Snapshot</div>
                         @foreach($_bSnapRows as $_bsr)
                         <div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid #f1f5f9;">
                             <i class="{{ $_bsr['icon'] }}" style="font-size:.68rem;color:#2563eb;min-width:13px;text-align:center;"></i>
@@ -791,7 +795,7 @@
                 <div class="bol-interaction-card-icon"><i class="fa-solid fa-user-tie"></i></div>
                 <div class="bol-interaction-card-label">Hire an Agent</div>
                 <div class="bol-interaction-card-helper">Need representation? Connect with a licensed real estate agent.</div>
-                <button type="button" class="bol-interaction-cta bol-interaction-cta-outline"
+                <button type="button" class="bol-interaction-cta bol-interaction-cta-hire"
                         data-bs-toggle="modal" data-bs-target="#bolHireAgentModal"
                         aria-label="Find and hire a real estate agent">
                     <i class="fa-solid fa-user-tie"></i>Find an Agent
@@ -1524,9 +1528,8 @@
                 <button type="button" class="bol-action-btn bol-action-outline" id="bolShareBtn">
                     <i class="fa-solid fa-share-nodes"></i>Share Listing
                 </button>
-                <button type="button" class="bol-action-btn bol-action-outline"
-                        data-bs-toggle="modal" data-bs-target="#bolHireAgentModal"
-                        style="border-color:#0f766e;color:#0f766e;">
+                <button type="button" class="bol-action-btn bol-action-outline bol-action-hire"
+                        data-bs-toggle="modal" data-bs-target="#bolHireAgentModal">
                     <i class="fa-solid fa-user-tie"></i>Hire an Agent
                 </button>
                 <button type="button" class="bol-action-btn bol-action-outline" disabled style="cursor:default;opacity:.6;">

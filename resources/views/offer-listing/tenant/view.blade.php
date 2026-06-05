@@ -309,10 +309,14 @@
 @media (max-width: 767.98px)  { .tcl-view-page .tcl-interaction-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 479.98px)  { .tcl-view-page .tcl-interaction-grid { grid-template-columns: 1fr; } }
 .tcl-view-page .tcl-interaction-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 0.75rem;
+    background: #fff; border: 1px solid #CBD5E1; border-radius: 0.75rem;
     padding: 1rem 0.85rem 0.9rem; display: flex; flex-direction: column;
     gap: 0.4rem; transition: box-shadow .15s, border-color .15s, transform .15s; min-height: 0;
 }
+.tcl-view-page .tcl-interaction-cta-hire { background: #fff; color: #2563eb; border: 1px solid #2563eb; font-weight: 700; }
+.tcl-view-page .tcl-interaction-cta-hire:hover { background: #eff6ff; color: #1d4ed8; border-color: #2563eb; }
+.tcl-view-page .tcl-action-hire { border-color: #2563eb !important; color: #2563eb !important; font-weight: 700; background: #fff; }
+.tcl-view-page .tcl-action-hire:hover { background: #eff6ff !important; border-color: #2563eb !important; color: #1d4ed8 !important; }
 .tcl-view-page .tcl-interaction-card:hover {
     box-shadow: 0 4px 18px rgba(13,148,136,.12); border-color: #99f6e4; transform: translateY(-2px);
 }
@@ -571,7 +575,7 @@
                         if ($heroStatus) $_tSnapRows[] = ['icon'=>'fa-solid fa-circle','label'=>'Status','val'=>$heroStatus];
                     @endphp
                     <div style="height:100%;min-height:280px;padding:1.5rem 1.25rem;background:#ffffff;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:center;">
-                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:.5rem;">Tenant Criteria Snapshot</div>
+                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#2563EB;font-weight:700;margin-bottom:.5rem;">Tenant Criteria Snapshot</div>
                         @foreach($_tSnapRows as $_tsr)
                         <div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid #f1f5f9;">
                             <i class="{{ $_tsr['icon'] }}" style="font-size:.68rem;color:#2563eb;min-width:13px;text-align:center;"></i>
@@ -816,7 +820,7 @@
                 <div class="tcl-interaction-card-icon"><i class="fa-solid fa-user-tie"></i></div>
                 <div class="tcl-interaction-card-label">Hire an Agent</div>
                 <div class="tcl-interaction-card-helper">Need representation? Connect with a licensed real estate agent.</div>
-                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline"
+                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-hire"
                         data-bs-toggle="modal" data-bs-target="#tclHireAgentModal"
                         aria-label="Find and hire a real estate agent">
                     <i class="fa-solid fa-user-tie"></i>Find an Agent
@@ -1628,9 +1632,8 @@
                 <button class="tcl-action-btn tcl-action-outline" id="tclShareBtnSidebar">
                     <i class="fa-solid fa-share-nodes"></i>Share Listing
                 </button>
-                <button type="button" class="tcl-action-btn tcl-action-outline"
-                        data-bs-toggle="modal" data-bs-target="#tclHireAgentModal"
-                        style="border-color:#0f766e;color:#0f766e;">
+                <button type="button" class="tcl-action-btn tcl-action-outline tcl-action-hire"
+                        data-bs-toggle="modal" data-bs-target="#tclHireAgentModal">
                     <i class="fa-solid fa-user-tie"></i>Hire an Agent
                 </button>
                 <button class="tcl-action-btn tcl-action-outline" type="button" disabled style="cursor:default;opacity:.6;">
