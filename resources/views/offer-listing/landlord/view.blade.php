@@ -186,6 +186,9 @@
 .lol-mobile-bar-btn.lol-mobile-primary { background:#0f766e !important;color:#fff !important;border-radius:10px; }
 .lol-mobile-bar-btn.lol-mobile-primary i { color:#fff !important; }
 .lol-mobile-bar-btn.lol-mobile-primary:hover { background:#0d5c56 !important; }
+.lol-mobile-bar-btn.lol-mobile-bar-offer { background:#0f766e !important;color:#fff !important;border-radius:10px; }
+.lol-mobile-bar-btn.lol-mobile-bar-offer i { color:#fff !important; }
+.lol-mobile-bar-btn.lol-mobile-bar-offer:hover,.lol-mobile-bar-btn.lol-mobile-bar-offer:active { background:#0d5c56 !important;color:#fff !important; }
 @media (max-width:991.98px) {
     .lol-mobile-bar { display:flex; }
     .lol-main-content-wrap { padding-bottom:calc(80px + env(safe-area-inset-bottom)); }
@@ -543,7 +546,15 @@
                     @endif
 
                     <div class="lol-hero-ctas">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
+                        <form method="POST" action="{{ route('offers.store') }}" style="display:inline;">
+                            @csrf
+                            <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                            <input type="hidden" name="role" value="landlord">
+                            <button type="submit" class="btn btn-primary" aria-label="Submit an application for this rental">
+                                <i class="fa-solid fa-file-signature me-1"></i>Submit Application
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
                             <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
                         </button>
                         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
@@ -563,7 +574,23 @@
         <div class="lol-interaction-hub-label"><i class="fa-solid fa-bolt me-1"></i>Quick Actions &amp; Listing Info</div>
         <div class="lol-interaction-grid">
 
-            {{-- 1. Schedule Showing (reuses existing lolShowingModal — no new modal created) --}}
+            {{-- 1. Submit Application --}}
+            <div class="lol-interaction-card">
+                <div class="lol-interaction-card-icon"><i class="fa-solid fa-file-signature"></i></div>
+                <div class="lol-interaction-card-label">Submit Application</div>
+                <div class="lol-interaction-card-helper">Review rental terms and submit your application.</div>
+                <form method="POST" action="{{ route('offers.store') }}">
+                    @csrf
+                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                    <input type="hidden" name="role" value="landlord">
+                    <button type="submit" class="lol-interaction-cta lol-interaction-cta-primary"
+                            aria-label="Submit an application for this rental">
+                        <i class="fa-solid fa-file-signature"></i>Submit Application
+                    </button>
+                </form>
+            </div>
+
+            {{-- 2. Schedule Showing (reuses existing lolShowingModal — no new modal created) --}}
             <div class="lol-interaction-card">
                 <div class="lol-interaction-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
                 <div class="lol-interaction-card-label">Schedule Showing</div>
@@ -1377,7 +1404,15 @@
     <div class="col-lg-3 d-none d-lg-block">
         <div class="lol-sticky-card">
             <div class="lol-sticky-title">Quick Actions</div>
-            <button class="lol-action-btn lol-action-primary" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
+            <form method="POST" action="{{ route('offers.store') }}">
+                @csrf
+                <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                <input type="hidden" name="role" value="landlord">
+                <button type="submit" class="lol-action-btn lol-action-primary">
+                    <i class="fa-solid fa-file-signature"></i>Submit Application
+                </button>
+            </form>
+            <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
                 <i class="fa-solid fa-circle-question"></i>Ask a Question
             </button>
             <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
@@ -1626,16 +1661,18 @@
 
 {{-- ===== MOBILE STICKY BOTTOM BAR ===== --}}
 <div class="lol-mobile-bar d-lg-none">
-    <button type="button" class="lol-mobile-bar-btn lol-mobile-primary" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
-        <i class="fa-solid fa-circle-question"></i><span>Ask</span>
-    </button>
-    <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolAiModal">
-        <i class="fa-solid fa-robot"></i><span>Ask AI</span>
-    </button>
+    <form method="POST" action="{{ route('offers.store') }}">
+        @csrf
+        <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+        <input type="hidden" name="role" value="landlord">
+        <button type="submit" class="lol-mobile-bar-btn lol-mobile-bar-offer">
+            <i class="fa-solid fa-file-signature"></i>
+            <span>Apply</span>
+        </button>
+    </form>
     <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
         <i class="fa-solid fa-calendar-days"></i><span>Showing</span>
     </button>
-    {{-- Option A: Ask AI added to mobile bar to match Seller view --}}
     <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolAiModal">
         <i class="fa-solid fa-robot"></i><span>Ask AI</span>
     </button>
