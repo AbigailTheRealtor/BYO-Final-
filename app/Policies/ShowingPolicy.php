@@ -40,6 +40,18 @@ class ShowingPolicy
     }
 
     /**
+     * The requester, listing owner, or assigned agent may view a showing detail.
+     */
+    public function view(User $user, Showing $showing): bool
+    {
+        if ((int) $showing->requester_id === (int) $user->id) {
+            return true;
+        }
+
+        return $this->isOwnerOrAgent($user, $showing);
+    }
+
+    /**
      * Only the listing owner or assigned agent may approve.
      */
     public function approve(User $user, Showing $showing): bool

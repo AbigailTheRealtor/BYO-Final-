@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ShowingStatus;
+use App\Events\ShowingStatusChanged;
 use App\Exceptions\ShowingTransitionException;
 use App\Http\Requests\StoreShowingRequest;
 use App\Models\OfferAuction;
@@ -39,7 +40,7 @@ class ShowingController extends Controller
             abort(403, 'Assigned agents cannot request a showing on a listing they are managing.');
         }
 
-        Showing::create([
+        $showing = Showing::create([
             'offer_auction_id'     => $listing->id,
             'requester_id'         => Auth::id(),
             'requested_date'       => $request->requested_date,
@@ -49,7 +50,22 @@ class ShowingController extends Controller
             'status'               => ShowingStatus::REQUESTED,
         ]);
 
+        event(new ShowingStatusChanged($showing, '', Auth::user()));
+
         return redirect()->back()->with('success', 'Your showing request has been submitted. The listing owner will be in touch to confirm.');
+    }
+
+    /**
+     * Show the detail page for a single showing.
+     * GET /showings/{showing}
+     */
+    public function show(Showing $showing)
+    {
+        $this->authorize('view', $showing);
+
+        $showing->load(['offerAuction.metas', 'requester']);
+
+        return view('showings.show', compact('showing'));
     }
 
     /**

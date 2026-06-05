@@ -5,9 +5,11 @@ namespace App\Providers;
 use App\Events\SellerPropertyAuctionBid;
 use App\Events\SellerPropertyAuctionCreated;
 use App\Events\SellerPropertyAuctionUpdated;
+use App\Events\ShowingStatusChanged;
 use App\Listeners\SendSellerPropertyAuctionBidEmail;
 use App\Listeners\SendSellerPropertyAuctionEmail;
 use App\Listeners\SendSellerPropertyAuctionUpdateEmail;
+use App\Listeners\ShowingNotificationListener;
 use App\Models\User;
 use App\Observers\UserObserver;
 use Illuminate\Auth\Events\Registered;
@@ -25,6 +27,9 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Registered::class => [
             SendEmailVerificationNotification::class,
+        ],
+        ShowingStatusChanged::class => [
+            ShowingNotificationListener::class,
         ],
     ];
 

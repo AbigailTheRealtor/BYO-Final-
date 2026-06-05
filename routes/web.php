@@ -201,6 +201,9 @@ Route::middleware('auth')->group(function () {
     // Showing management — owner dashboard
     Route::get('/my-showings/manage', [\App\Http\Controllers\ShowingController::class, 'manage'])->name('showings.manage');
 
+    // Showing detail page
+    Route::get('/showings/{showing}', [\App\Http\Controllers\ShowingController::class, 'show'])->name('showings.show');
+
     // Showing status transitions
     Route::patch('/showings/{showing}/approve',  [\App\Http\Controllers\ShowingController::class, 'approve'])->name('showings.approve');
     Route::patch('/showings/{showing}/decline',  [\App\Http\Controllers\ShowingController::class, 'decline'])->name('showings.decline');

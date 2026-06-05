@@ -147,7 +147,8 @@
             @endphp
 
             <div class="showing-card">
-                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <a href="{{ route('showings.show', $showing) }}" class="stretched-link" style="text-decoration:none;"></a>
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2" style="position:relative;z-index:1;">
                     <div>
                         <div class="showing-address">
                             <i class="fa-solid fa-location-dot me-1" style="color:#2563eb;font-size:.85rem;"></i>
