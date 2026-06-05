@@ -51,6 +51,25 @@
 @push('styles')
 <style>
 /* ============================================================
+   Design tokens — shared across all offer-listing view pages
+   ============================================================ */
+:root {
+    --viho-primary:       #2563EB;
+    --viho-primary-hover: #1D4ED8;
+    --viho-page-bg:       #F8FAFC;
+    --viho-card-bg:       #FFFFFF;
+    --viho-heading:       #0F172A;
+    --viho-text:          #334155;
+    --viho-label:         #64748B;
+    --viho-border:        #E2E8F0;
+    --viho-success:       #16A34A;
+    --viho-seller:        #2563EB;
+    --viho-buyer:         #7C3AED;
+    --viho-landlord:      #0F766E;
+    --viho-tenant:        #0891B2;
+}
+
+/* ============================================================
    bol-view-page — Buyer Offer Listing view page styles
    ============================================================ */
 .bol-view-page .section-card {
@@ -179,7 +198,7 @@
 .bol-view-page .bol-sticky-card .bol-action-btn i { width: 18px; text-align: center; flex-shrink: 0; }
 .bol-view-page .bol-action-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
 .bol-view-page .bol-action-primary:hover { background: #1d4ed8; color: #fff; }
-.bol-view-page .bol-action-outline { background: #fff; color: #334155; border-color: #e2e8f0; }
+.bol-view-page .bol-action-outline { background: #fff; color: #334155; border-color: #cbd5e1; }
 .bol-view-page .bol-action-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
 
 /* Mobile bar */
@@ -214,11 +233,11 @@
     white-space: nowrap; flex-shrink: 0;
 }
 .bol-view-page .bol-hero-ctas .btn-primary {
-    background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important;
+    background-color: #2563eb !important; border-color: #2563eb !important; color: #fff !important;
 }
 .bol-view-page .bol-hero-ctas .btn-primary:hover,
 .bol-view-page .bol-hero-ctas .btn-primary:focus {
-    background-color: #0b5ed7 !important; border-color: #0a58ca !important; color: #fff !important;
+    background-color: #1d4ed8 !important; border-color: #1d4ed8 !important; color: #fff !important;
 }
 
 /* Contact CTA row */
@@ -251,11 +270,11 @@
    ============================================================ */
 .bol-view-page .bol-interaction-hub {
     margin-bottom: 1.75rem;
-    background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 1rem;
     padding: 1.25rem 1rem;
-    box-shadow: 0 2px 12px rgba(37,99,235,.07);
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
 }
 .bol-view-page .bol-interaction-hub-label {
     font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
@@ -288,8 +307,8 @@
 .bol-view-page .bol-interaction-cta:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 .bol-view-page .bol-interaction-cta-primary { background: #2563eb; color: #fff; }
 .bol-view-page .bol-interaction-cta-primary:hover { background: #1d4ed8; color: #fff; }
-.bol-view-page .bol-interaction-cta-outline { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-.bol-view-page .bol-interaction-cta-outline:hover { background: #dbeafe; color: #1e40af; }
+.bol-view-page .bol-interaction-cta-outline { background: #fff; color: #334155; border: 1px solid #cbd5e1; }
+.bol-view-page .bol-interaction-cta-outline:hover { background: #f8fafc; color: #1e293b; border-color: #94a3b8; }
 .bol-view-page .bol-interaction-cta-muted { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; cursor: default; font-weight: 600; opacity: .75; }
 .bol-view-page .bol-interaction-share-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; }
 .bol-view-page .bol-interaction-activity-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; padding: 0.18rem 0; border-bottom: 1px solid #f1f5f9; }
@@ -534,13 +553,13 @@
                         if (count($heroOfFin)) $_bSnapRows[] = ['icon'=>'fa-solid fa-hand-holding-dollar','label'=>'Financing','val'=>implode(', ', array_slice($heroOfFin, 0, 2))];
                         if ($heroStatus) $_bSnapRows[] = ['icon'=>'fa-solid fa-circle','label'=>'Status','val'=>$heroStatus];
                     @endphp
-                    <div style="height:100%;min-height:280px;padding:1.5rem 1.25rem;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);display:flex;flex-direction:column;justify-content:center;">
-                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#93c5fd;margin-bottom:.5rem;">Buyer Criteria Snapshot</div>
+                    <div style="height:100%;min-height:280px;padding:1.5rem 1.25rem;background:#ffffff;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:center;">
+                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:.5rem;">Buyer Criteria Snapshot</div>
                         @foreach($_bSnapRows as $_bsr)
-                        <div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.4);">
-                            <i class="{{ $_bsr['icon'] }}" style="font-size:.68rem;color:#60a5fa;min-width:13px;text-align:center;"></i>
-                            <span style="font-size:.7rem;color:#93c5fd;white-space:nowrap;">{{ $_bsr['label'] }}</span>
-                            <span style="font-size:.78rem;font-weight:700;color:#1e3a8a;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ $_bsr['val'] }}">{{ $_bsr['val'] }}</span>
+                        <div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid #f1f5f9;">
+                            <i class="{{ $_bsr['icon'] }}" style="font-size:.68rem;color:#2563eb;min-width:13px;text-align:center;"></i>
+                            <span style="font-size:.7rem;color:#64748b;white-space:nowrap;">{{ $_bsr['label'] }}</span>
+                            <span style="font-size:.78rem;font-weight:700;color:#0f172a;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ $_bsr['val'] }}">{{ $_bsr['val'] }}</span>
                         </div>
                         @endforeach
                     </div>

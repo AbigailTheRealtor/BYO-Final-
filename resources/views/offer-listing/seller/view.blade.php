@@ -51,6 +51,25 @@
 @push('styles')
 <style>
 /* ============================================================
+   Design tokens — shared across all offer-listing view pages
+   ============================================================ */
+:root {
+    --viho-primary:       #2563EB;
+    --viho-primary-hover: #1D4ED8;
+    --viho-page-bg:       #F8FAFC;
+    --viho-card-bg:       #FFFFFF;
+    --viho-heading:       #0F172A;
+    --viho-text:          #334155;
+    --viho-label:         #64748B;
+    --viho-border:        #E2E8F0;
+    --viho-success:       #16A34A;
+    --viho-seller:        #2563EB;
+    --viho-buyer:         #7C3AED;
+    --viho-landlord:      #0F766E;
+    --viho-tenant:        #0891B2;
+}
+
+/* ============================================================
    sol-view-page — namespaced to this page only
    ============================================================ */
 
@@ -239,8 +258,8 @@
 }
 .sol-view-page .sol-hero-ctas .btn-primary,
 .sol-view-page button.btn.btn-primary.sol-hero-cta-btn {
-    background-color: #0d6efd !important;
-    border-color: #0d6efd !important;
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
     color: #fff !important;
 }
 .sol-view-page .sol-hero-ctas .btn-primary i,
@@ -251,8 +270,8 @@
 .sol-view-page .sol-hero-ctas .btn-primary:focus,
 .sol-view-page button.btn.btn-primary.sol-hero-cta-btn:hover,
 .sol-view-page button.btn.btn-primary.sol-hero-cta-btn:focus {
-    background-color: #0b5ed7 !important;
-    border-color: #0a58ca !important;
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
     color: #fff !important;
 }
 
@@ -336,7 +355,7 @@
 }
 .sol-view-page .sol-action-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
 .sol-view-page .sol-action-primary:hover { background: #1d4ed8; color: #fff; }
-.sol-view-page .sol-action-outline { background: #fff; color: #334155; border-color: #e2e8f0; }
+.sol-view-page .sol-action-outline { background: #fff; color: #334155; border-color: #cbd5e1; }
 .sol-view-page .sol-action-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
 
 /* ---- Mobile sticky bottom bar ---- */
@@ -522,11 +541,11 @@
    ============================================================ */
 .sol-view-page .sol-interaction-hub {
     margin-bottom: 1.75rem;
-    background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 1rem;
     padding: 1.25rem 1rem;
-    box-shadow: 0 2px 12px rgba(37,99,235,.07);
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
 }
 .sol-view-page .sol-interaction-hub-label {
     font-size: 0.72rem;
@@ -629,11 +648,11 @@
 }
 .sol-view-page .sol-interaction-cta-primary:hover { background: #1d4ed8; color: #fff; }
 .sol-view-page .sol-interaction-cta-outline {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+    background: #fff;
+    color: #334155;
+    border: 1px solid #cbd5e1;
 }
-.sol-view-page .sol-interaction-cta-outline:hover { background: #dbeafe; color: #1e40af; }
+.sol-view-page .sol-interaction-cta-outline:hover { background: #f8fafc; color: #1e293b; border-color: #94a3b8; }
 .sol-view-page .sol-interaction-cta-muted {
     background: #f1f5f9;
     color: #475569;

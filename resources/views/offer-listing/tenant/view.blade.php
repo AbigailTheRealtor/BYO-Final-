@@ -100,6 +100,25 @@
 @push('styles')
 <style>
 /* ============================================================
+   Design tokens — shared across all offer-listing view pages
+   ============================================================ */
+:root {
+    --viho-primary:       #2563EB;
+    --viho-primary-hover: #1D4ED8;
+    --viho-page-bg:       #F8FAFC;
+    --viho-card-bg:       #FFFFFF;
+    --viho-heading:       #0F172A;
+    --viho-text:          #334155;
+    --viho-label:         #64748B;
+    --viho-border:        #E2E8F0;
+    --viho-success:       #16A34A;
+    --viho-seller:        #2563EB;
+    --viho-buyer:         #7C3AED;
+    --viho-landlord:      #0F766E;
+    --viho-tenant:        #0891B2;
+}
+
+/* ============================================================
    tcl-view-page — namespaced to Tenant Criteria Listing view only
    ============================================================ */
 .tcl-view-page .section-card {
@@ -191,6 +210,10 @@
     padding-top: 0.9rem; border-top: 1px solid #f1f5f9;
 }
 .tcl-view-page .tcl-hero-ctas .btn { font-size: 0.8rem; font-weight: 600; padding: 0.42rem 0.75rem; border-radius: 8px; white-space: nowrap; flex-shrink: 0; }
+.tcl-view-page .tcl-hero-ctas .btn-primary { background-color: #2563eb !important; border-color: #2563eb !important; color: #fff !important; }
+.tcl-view-page .tcl-hero-ctas .btn-primary:hover, .tcl-view-page .tcl-hero-ctas .btn-primary:focus { background-color: #1d4ed8 !important; border-color: #1d4ed8 !important; color: #fff !important; }
+.tcl-view-page .tcl-hero-ctas .respond-criteria-btn { background: #2563eb !important; border-color: #2563eb !important; color: #fff !important; }
+.tcl-view-page .tcl-hero-ctas .respond-criteria-btn:hover, .tcl-view-page .tcl-hero-ctas .respond-criteria-btn:focus { background: #1d4ed8 !important; border-color: #1d4ed8 !important; color: #fff !important; }
 
 /* Smooth-scroll nav tabs */
 .tcl-view-page .tcl-nav-tabs-wrap { background: #fff; border-bottom: 2px solid #e2e8f0; margin-bottom: 1.75rem; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
@@ -224,9 +247,9 @@
     transition: background .15s, border-color .15s; text-decoration: none;
 }
 .tcl-view-page .tcl-sticky-card .tcl-action-btn i { width: 18px; text-align: center; flex-shrink: 0; }
-.tcl-view-page .tcl-action-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
-.tcl-view-page .tcl-action-primary:hover { background: #0f766e; color: #fff; }
-.tcl-view-page .tcl-action-outline { background: #fff; color: #334155; border-color: #e2e8f0; }
+.tcl-view-page .tcl-action-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.tcl-view-page .tcl-action-primary:hover { background: #1d4ed8; color: #fff; }
+.tcl-view-page .tcl-action-outline { background: #fff; color: #334155; border-color: #cbd5e1; }
 .tcl-view-page .tcl-action-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
 
 /* Mobile sticky bottom bar */
@@ -245,9 +268,9 @@
 }
 .tcl-mobile-bar-btn i { font-size: 1.15rem; color: #0d9488; }
 .tcl-mobile-bar-btn:hover, .tcl-mobile-bar-btn:active { background: #f0fdfa; color: #1e293b; }
-.tcl-mobile-bar-btn.tcl-mobile-primary { background: #0d9488 !important; color: #fff !important; border-radius: 10px; }
+.tcl-mobile-bar-btn.tcl-mobile-primary { background: #2563eb !important; color: #fff !important; border-radius: 10px; }
 .tcl-mobile-bar-btn.tcl-mobile-primary i { color: #fff !important; }
-.tcl-mobile-bar-btn.tcl-mobile-primary:hover { background: #0f766e !important; }
+.tcl-mobile-bar-btn.tcl-mobile-primary:hover { background: #1d4ed8 !important; }
 @media (max-width: 991.98px) {
     .tcl-mobile-bar { display: flex; }
     .tcl-main-content-wrap { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
@@ -270,9 +293,9 @@
    ============================================================ */
 .tcl-view-page .tcl-interaction-hub {
     margin-bottom: 1.75rem;
-    background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%);
+    background: #ffffff;
     border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1.25rem 1rem;
-    box-shadow: 0 2px 12px rgba(13,148,136,.07);
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
 }
 .tcl-view-page .tcl-interaction-hub-label {
     font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
@@ -302,11 +325,11 @@
     transition: background .15s, color .15s; white-space: nowrap;
     margin-top: 0.25rem; align-self: flex-start; text-decoration: none;
 }
-.tcl-view-page .tcl-interaction-cta:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
-.tcl-view-page .tcl-interaction-cta-primary { background: #0d9488; color: #fff; }
-.tcl-view-page .tcl-interaction-cta-primary:hover { background: #0f766e; color: #fff; }
-.tcl-view-page .tcl-interaction-cta-outline { background: #f0fdfa; color: #0d9488; border: 1px solid #99f6e4; }
-.tcl-view-page .tcl-interaction-cta-outline:hover { background: #ccfbf1; color: #0f766e; }
+.tcl-view-page .tcl-interaction-cta:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.tcl-view-page .tcl-interaction-cta-primary { background: #2563eb; color: #fff; }
+.tcl-view-page .tcl-interaction-cta-primary:hover { background: #1d4ed8; color: #fff; }
+.tcl-view-page .tcl-interaction-cta-outline { background: #fff; color: #334155; border: 1px solid #cbd5e1; }
+.tcl-view-page .tcl-interaction-cta-outline:hover { background: #f8fafc; color: #1e293b; border-color: #94a3b8; }
 .tcl-view-page .tcl-interaction-cta-muted { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; cursor: default; font-weight: 600; opacity: .75; }
 .tcl-view-page .tcl-interaction-share-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; }
 .tcl-view-page .tcl-interaction-activity-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; padding: 0.18rem 0; border-bottom: 1px solid #f1f5f9; }
@@ -547,13 +570,13 @@
                         if ($_tLease) $_tSnapRows[] = ['icon'=>'fa-solid fa-file-signature','label'=>'Lease Pref.','val'=>$_tLease];
                         if ($heroStatus) $_tSnapRows[] = ['icon'=>'fa-solid fa-circle','label'=>'Status','val'=>$heroStatus];
                     @endphp
-                    <div style="height:100%;min-height:280px;padding:1.5rem 1.25rem;background:linear-gradient(135deg,#f0fdfa 0%,#ccfbf1 100%);display:flex;flex-direction:column;justify-content:center;">
-                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#5eead4;margin-bottom:.5rem;">Tenant Criteria Snapshot</div>
+                    <div style="height:100%;min-height:280px;padding:1.5rem 1.25rem;background:#ffffff;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:center;">
+                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:.5rem;">Tenant Criteria Snapshot</div>
                         @foreach($_tSnapRows as $_tsr)
-                        <div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.4);">
-                            <i class="{{ $_tsr['icon'] }}" style="font-size:.68rem;color:#2dd4bf;min-width:13px;text-align:center;"></i>
-                            <span style="font-size:.7rem;color:#5eead4;white-space:nowrap;">{{ $_tsr['label'] }}</span>
-                            <span style="font-size:.78rem;font-weight:700;color:#134e4a;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ $_tsr['val'] }}">{{ $_tsr['val'] }}</span>
+                        <div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid #f1f5f9;">
+                            <i class="{{ $_tsr['icon'] }}" style="font-size:.68rem;color:#2563eb;min-width:13px;text-align:center;"></i>
+                            <span style="font-size:.7rem;color:#64748b;white-space:nowrap;">{{ $_tsr['label'] }}</span>
+                            <span style="font-size:.78rem;font-weight:700;color:#0f172a;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ $_tsr['val'] }}">{{ $_tsr['val'] }}</span>
                         </div>
                         @endforeach
                     </div>
@@ -657,7 +680,7 @@
                             @csrf
                             <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
                             <input type="hidden" name="role" value="tenant">
-                            <button type="submit" class="btn btn-primary" aria-label="Respond to this Tenant Criteria listing">
+                            <button type="submit" class="btn btn-primary respond-criteria-btn" aria-label="Respond to this Tenant Criteria listing">
                                 <i class="fa-solid fa-reply me-1"></i>Respond to Tenant Criteria
                             </button>
                         </form>

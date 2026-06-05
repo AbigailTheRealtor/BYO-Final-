@@ -106,6 +106,25 @@
 @push('styles')
 <style>
 /* ============================================================
+   Design tokens — shared across all offer-listing view pages
+   ============================================================ */
+:root {
+    --viho-primary:       #2563EB;
+    --viho-primary-hover: #1D4ED8;
+    --viho-page-bg:       #F8FAFC;
+    --viho-card-bg:       #FFFFFF;
+    --viho-heading:       #0F172A;
+    --viho-text:          #334155;
+    --viho-label:         #64748B;
+    --viho-border:        #E2E8F0;
+    --viho-success:       #16A34A;
+    --viho-seller:        #2563EB;
+    --viho-buyer:         #7C3AED;
+    --viho-landlord:      #0F766E;
+    --viho-tenant:        #0891B2;
+}
+
+/* ============================================================
    lol-view-page — Landlord Offer Listing detail page styles
    ============================================================ */
 .lol-view-page .section-card {
@@ -149,6 +168,8 @@
 .lol-view-page .lol-hero-dates { font-size:.76rem;color:#94a3b8;margin-top:.4rem; }
 .lol-view-page .lol-hero-ctas { display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.9rem;padding-top:.9rem;border-top:1px solid #f1f5f9; }
 .lol-view-page .lol-hero-ctas .btn { font-size:.8rem;font-weight:600;padding:.42rem .75rem;border-radius:8px;white-space:nowrap;flex-shrink:0; }
+.lol-view-page .lol-hero-ctas .btn-primary { background-color:#2563eb !important;border-color:#2563eb !important;color:#fff !important; }
+.lol-view-page .lol-hero-ctas .btn-primary:hover,.lol-view-page .lol-hero-ctas .btn-primary:focus { background-color:#1d4ed8 !important;border-color:#1d4ed8 !important;color:#fff !important; }
 .lol-view-page .lol-hero-arrow { position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.55rem;line-height:1;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;transition:background .15s;padding:0;flex-shrink:0; }
 .lol-view-page .lol-hero-arrow:hover { background:rgba(0,0,0,.72); }
 .lol-view-page .lol-hero-arrow-prev { left:12px; }
@@ -173,9 +194,9 @@
 .lol-view-page .lol-sticky-card .lol-sticky-title { font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid #f1f5f9; }
 .lol-view-page .lol-sticky-card .lol-action-btn { display:flex;align-items:center;gap:.6rem;width:100%;padding:.6rem .75rem;font-size:.83rem;font-weight:600;border-radius:8px;margin-bottom:.4rem;text-align:left;border:1px solid transparent;cursor:pointer;transition:background .15s;text-decoration:none; }
 .lol-view-page .lol-sticky-card .lol-action-btn i { width:18px;text-align:center;flex-shrink:0; }
-.lol-view-page .lol-action-primary { background:#0f766e;color:#fff;border-color:#0f766e; }
-.lol-view-page .lol-action-primary:hover { background:#115e59;color:#fff; }
-.lol-view-page .lol-action-outline { background:#fff;color:#334155;border-color:#e2e8f0; }
+.lol-view-page .lol-action-primary { background:#2563eb;color:#fff;border-color:#2563eb; }
+.lol-view-page .lol-action-primary:hover { background:#1d4ed8;color:#fff; }
+.lol-view-page .lol-action-outline { background:#fff;color:#334155;border-color:#cbd5e1; }
 .lol-view-page .lol-action-outline:hover { background:#f8fafc;border-color:#cbd5e1; }
 
 /* Mobile sticky bar */
@@ -183,12 +204,12 @@
 .lol-mobile-bar-btn { display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;font-size:.65rem;font-weight:700;color:#334155;text-decoration:none;padding:.4rem .25rem;border-radius:8px;border:none;background:transparent;cursor:pointer;transition:background .15s;min-height:52px;justify-content:center; }
 .lol-mobile-bar-btn i { font-size:1.15rem;color:#0f766e; }
 .lol-mobile-bar-btn:hover,.lol-mobile-bar-btn:active { background:#f1f5f9;color:#1e293b; }
-.lol-mobile-bar-btn.lol-mobile-primary { background:#0f766e !important;color:#fff !important;border-radius:10px; }
+.lol-mobile-bar-btn.lol-mobile-primary { background:#2563eb !important;color:#fff !important;border-radius:10px; }
 .lol-mobile-bar-btn.lol-mobile-primary i { color:#fff !important; }
-.lol-mobile-bar-btn.lol-mobile-primary:hover { background:#0d5c56 !important; }
-.lol-mobile-bar-btn.lol-mobile-bar-offer { background:#0f766e !important;color:#fff !important;border-radius:10px; }
+.lol-mobile-bar-btn.lol-mobile-primary:hover { background:#1d4ed8 !important; }
+.lol-mobile-bar-btn.lol-mobile-bar-offer { background:#2563eb !important;color:#fff !important;border-radius:10px; }
 .lol-mobile-bar-btn.lol-mobile-bar-offer i { color:#fff !important; }
-.lol-mobile-bar-btn.lol-mobile-bar-offer:hover,.lol-mobile-bar-btn.lol-mobile-bar-offer:active { background:#0d5c56 !important;color:#fff !important; }
+.lol-mobile-bar-btn.lol-mobile-bar-offer:hover,.lol-mobile-bar-btn.lol-mobile-bar-offer:active { background:#1d4ed8 !important;color:#fff !important; }
 @media (max-width:991.98px) {
     .lol-mobile-bar { display:flex; }
     .lol-main-content-wrap { padding-bottom:calc(80px + env(safe-area-inset-bottom)); }
@@ -205,9 +226,9 @@
    ============================================================ */
 .lol-view-page .lol-interaction-hub {
     margin-bottom: 1.75rem;
-    background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%);
+    background: #ffffff;
     border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1.25rem 1rem;
-    box-shadow: 0 2px 12px rgba(15,118,110,.07);
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
 }
 .lol-view-page .lol-interaction-hub-label {
     font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
@@ -237,11 +258,11 @@
     transition: background .15s, color .15s; white-space: nowrap;
     margin-top: 0.25rem; align-self: flex-start; text-decoration: none;
 }
-.lol-view-page .lol-interaction-cta:focus-visible { outline: 2px solid #0f766e; outline-offset: 2px; }
-.lol-view-page .lol-interaction-cta-primary { background: #0f766e; color: #fff; }
-.lol-view-page .lol-interaction-cta-primary:hover { background: #115e59; color: #fff; }
-.lol-view-page .lol-interaction-cta-outline { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; }
-.lol-view-page .lol-interaction-cta-outline:hover { background: #ccfbf1; color: #115e59; }
+.lol-view-page .lol-interaction-cta:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.lol-view-page .lol-interaction-cta-primary { background: #2563eb; color: #fff; }
+.lol-view-page .lol-interaction-cta-primary:hover { background: #1d4ed8; color: #fff; }
+.lol-view-page .lol-interaction-cta-outline { background: #fff; color: #334155; border: 1px solid #cbd5e1; }
+.lol-view-page .lol-interaction-cta-outline:hover { background: #f8fafc; color: #1e293b; border-color: #94a3b8; }
 .lol-view-page .lol-interaction-cta-muted { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; cursor: default; font-weight: 600; opacity: .75; }
 .lol-view-page .lol-interaction-share-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; }
 .lol-view-page .lol-interaction-activity-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; padding: 0.18rem 0; border-bottom: 1px solid #f1f5f9; }
