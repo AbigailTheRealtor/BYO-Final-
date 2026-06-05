@@ -347,8 +347,213 @@ class MortgageCalculatorTest extends TestCase
     }
 
     // =========================================================================
+    // §11 — SellerOfferListingController: $calcData in view data
+    // =========================================================================
+
+    public function test_seller_offer_listing_view_includes_calc_data(): void
+    {
+        $this->seedCalcSettings();
+        $auction = $this->makeSellerOfferListing(['desired_sale_price' => '500000']);
+
+        $controller = app(\App\Http\Controllers\SellerOfferListingController::class);
+        $response   = $controller->view($auction->id);
+
+        $this->assertInstanceOf(\Illuminate\View\View::class, $response);
+        $this->assertArrayHasKey('calcData', $response->getData());
+        $calcData = $response->getData()['calcData'];
+        $this->assertNotNull($calcData);
+    }
+
+    // =========================================================================
+    // §12 — Price resolves from desired_sale_price with 'from listing' source
+    // =========================================================================
+
+    public function test_seller_offer_listing_price_from_desired_sale_price(): void
+    {
+        $this->seedCalcSettings();
+        $auction = $this->makeSellerOfferListing(['desired_sale_price' => '425000']);
+
+        $calcData = $this->getSellerOfferCalcData($auction);
+
+        $this->assertEquals(425000.0, (float) $calcData['price']);
+        $this->assertSame('from listing', $calcData['price_source']);
+    }
+
+    public function test_seller_offer_listing_price_falls_back_through_priority(): void
+    {
+        $this->seedCalcSettings();
+        $auction = $this->makeSellerOfferListing([
+            'desired_sale_price' => '',
+            'purchase_price'     => '',
+            'buy_now_price'      => '390000',
+        ]);
+
+        $calcData = $this->getSellerOfferCalcData($auction);
+
+        $this->assertEquals(390000.0, (float) $calcData['price']);
+        $this->assertSame('from listing', $calcData['price_source']);
+    }
+
+    public function test_seller_offer_listing_price_null_when_none_set(): void
+    {
+        $this->seedCalcSettings();
+        $auction = $this->makeSellerOfferListing([]);
+
+        $calcData = $this->getSellerOfferCalcData($auction);
+
+        $this->assertNull($calcData['price']);
+        $this->assertSame('estimated', $calcData['price_source']);
+    }
+
+    // =========================================================================
+    // §13 — Taxes resolve from annual_property_taxes meta key
+    // =========================================================================
+
+    public function test_seller_offer_listing_taxes_from_meta(): void
+    {
+        $this->seedCalcSettings();
+        $auction = $this->makeSellerOfferListing([
+            'desired_sale_price'   => '500000',
+            'annual_property_taxes' => '7200',
+        ]);
+
+        $calcData = $this->getSellerOfferCalcData($auction);
+
+        $this->assertEquals(7200.0, (float) $calcData['taxes_annual']);
+        $this->assertSame('from listing', $calcData['taxes_source']);
+    }
+
+    public function test_seller_offer_listing_taxes_estimated_when_absent(): void
+    {
+        $this->seedCalcSettings();
+        $auction = $this->makeSellerOfferListing(['desired_sale_price' => '300000']);
+
+        $calcData = $this->getSellerOfferCalcData($auction);
+
+        $this->assertEquals(0.0, (float) $calcData['taxes_annual']);
+        $this->assertSame('estimated', $calcData['taxes_source']);
+    }
+
+    // =========================================================================
+    // §14 — HOA normalizes for monthly and quarterly schedules
+    // =========================================================================
+
+    public function test_seller_offer_listing_hoa_monthly_schedule(): void
+    {
+        $this->seedCalcSettings();
+        $auction = $this->makeSellerOfferListing([
+            'desired_sale_price'       => '400000',
+            'association_fee_amount'   => '300',
+            'association_fee_frequency' => 'Monthly',
+        ]);
+
+        $calcData = $this->getSellerOfferCalcData($auction);
+
+        $this->assertEquals(300.0, (float) $calcData['hoa_monthly']);
+        $this->assertSame('from listing', $calcData['hoa_source']);
+        $this->assertFalse((bool) $calcData['hoa_assumed']);
+    }
+
+    public function test_seller_offer_listing_hoa_quarterly_schedule(): void
+    {
+        $this->seedCalcSettings();
+        $auction = $this->makeSellerOfferListing([
+            'desired_sale_price'       => '400000',
+            'association_fee_amount'   => '600',
+            'association_fee_frequency' => 'Quarterly',
+        ]);
+
+        $calcData = $this->getSellerOfferCalcData($auction);
+
+        $this->assertEquals(200.0, (float) $calcData['hoa_monthly']);
+        $this->assertSame('from listing', $calcData['hoa_source']);
+        $this->assertFalse((bool) $calcData['hoa_assumed']);
+    }
+
+    public function test_seller_offer_listing_hoa_annual_schedule(): void
+    {
+        $this->seedCalcSettings();
+        $auction = $this->makeSellerOfferListing([
+            'desired_sale_price'       => '400000',
+            'association_fee_amount'   => '1200',
+            'association_fee_frequency' => 'Annually',
+        ]);
+
+        $calcData = $this->getSellerOfferCalcData($auction);
+
+        $this->assertEquals(100.0, (float) $calcData['hoa_monthly']);
+        $this->assertSame('from listing', $calcData['hoa_source']);
+    }
+
+    public function test_seller_offer_listing_hoa_assumed_when_frequency_unknown(): void
+    {
+        $this->seedCalcSettings();
+        $auction = $this->makeSellerOfferListing([
+            'desired_sale_price'       => '400000',
+            'association_fee_amount'   => '250',
+            'association_fee_frequency' => '',
+        ]);
+
+        $calcData = $this->getSellerOfferCalcData($auction);
+
+        $this->assertEquals(250.0, (float) $calcData['hoa_monthly']);
+        $this->assertTrue((bool) $calcData['hoa_assumed']);
+    }
+
+    // =========================================================================
+    // §15 — Admin defaults pass through to calcData
+    // =========================================================================
+
+    public function test_seller_offer_listing_admin_defaults_passed_through(): void
+    {
+        $this->seedCalcSettings();
+        $auction = $this->makeSellerOfferListing(['desired_sale_price' => '300000']);
+
+        $calcData = $this->getSellerOfferCalcData($auction);
+
+        $this->assertEquals(7.0,  (float) $calcData['interest_rate']);
+        $this->assertEquals(10.0, (float) $calcData['down_pct']);
+        $this->assertEquals(30,   (int)   $calcData['loan_term']);
+        $this->assertEquals(1.1,  (float) $calcData['tax_rate']);
+        $this->assertEquals(0.5,  (float) $calcData['insurance_rate']);
+        $this->assertEquals(0.85, (float) $calcData['pmi_rate']);
+        $this->assertSame('estimated', $calcData['insurance_source']);
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
+
+    /** Create a SellerAgentAuction stamped as an offer listing with given meta. */
+    private function makeSellerOfferListing(array $metaOverrides = []): \App\Models\SellerAgentAuction
+    {
+        $user = User::factory()->create();
+
+        $auction = \App\Models\SellerAgentAuction::create([
+            'user_id'     => $user->id,
+            'is_approved' => true,
+            'is_draft'    => false,
+            'address'     => '99 Offer Listing Lane',
+        ]);
+
+        $auction->saveMeta('workflow_type', 'offer_listing');
+
+        foreach ($metaOverrides as $key => $value) {
+            if ($value !== null) {
+                $auction->saveMeta($key, $value);
+            }
+        }
+
+        return $auction;
+    }
+
+    /** Call SellerOfferListingController::view() and return $calcData from view data. */
+    private function getSellerOfferCalcData(\App\Models\SellerAgentAuction $auction): array
+    {
+        $controller = app(\App\Http\Controllers\SellerOfferListingController::class);
+        $response   = $controller->view($auction->id);
+        return $response->getData()['calcData'];
+    }
 
     private function normalizeHoa(?float $amount, ?string $schedule): float
     {

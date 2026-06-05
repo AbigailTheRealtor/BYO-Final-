@@ -1053,6 +1053,9 @@
         </div>
     </div>
 
+    {{-- ===== ESTIMATED MONTHLY PAYMENT CALCULATOR ===== --}}
+    @include('seller_property._mortgage_calculator', compact('calcData'))
+
     {{-- ===== INTERACTION HUB ===== --}}
     @php
         $hubAuctionType  = strtolower($str('auction_type'));

@@ -89,6 +89,7 @@ class SellerOfferListingController extends Controller
         }
 
         $offerAuction = $this->resolveOfferAuction($auction);
+        $calcData     = $this->buildCalcData($meta);
 
         $page_data = [
             'title'   => $auction->address ?? ($meta['listing_title'] ?? 'Seller Offer Listing'),
@@ -96,7 +97,87 @@ class SellerOfferListingController extends Controller
             'auth_id' => auth()->id(),
         ];
 
-        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction') + $page_data);
+        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction', 'calcData') + $page_data);
+    }
+
+    /**
+     * Build the $calcData array expected by seller_property._mortgage_calculator.
+     *
+     * Price priority: desired_sale_price → purchase_price → buy_now_price → starting_price → reserve_price
+     * HOA normalized from association_fee_amount + association_fee_frequency.
+     * Taxes from annual_property_taxes meta key.
+     * Admin rate defaults via get_setting() with hardcoded fallbacks.
+     *
+     * @param  array  $meta  Flat meta array keyed by meta_key (already decoded by view()).
+     */
+    private function buildCalcData(array $meta): array
+    {
+        // --- Price ---
+        $price       = null;
+        $priceSource = 'estimated';
+        foreach (['desired_sale_price', 'purchase_price', 'buy_now_price', 'starting_price', 'reserve_price'] as $pk) {
+            $pv = $meta[$pk] ?? null;
+            if ($pv !== null && $pv !== '' && (float) $pv > 0) {
+                $price       = (float) $pv;
+                $priceSource = 'from listing';
+                break;
+            }
+        }
+
+        // --- HOA ---
+        $hoaMonthly = 0.0;
+        $hoaSource  = 'estimated';
+        $hoaAssumed = false;
+        $hoaRaw     = $meta['association_fee_amount'] ?? null;
+        if ($hoaRaw && (float) $hoaRaw > 0) {
+            $hoaAmt   = (float) $hoaRaw;
+            $schedule = strtolower((string) ($meta['association_fee_frequency'] ?? ''));
+            if (str_contains($schedule, 'quarter')) {
+                $hoaMonthly = $hoaAmt / 3;
+            } elseif (str_contains($schedule, 'annual') || str_contains($schedule, 'year')) {
+                $hoaMonthly = $hoaAmt / 12;
+            } elseif (str_contains($schedule, 'month')) {
+                $hoaMonthly = $hoaAmt;
+            } else {
+                $hoaMonthly = $hoaAmt;
+                $hoaAssumed = true;
+            }
+            $hoaSource = 'from listing';
+        }
+
+        // --- Taxes ---
+        $taxesAnnual = 0.0;
+        $taxesSource = 'estimated';
+        $taxRaw      = $meta['annual_property_taxes'] ?? null;
+        if ($taxRaw && (float) $taxRaw > 0) {
+            $taxesAnnual = (float) $taxRaw;
+            $taxesSource = 'from listing';
+        }
+
+        // --- Admin defaults ---
+        $interestRate  = (float) (get_setting('calc_interest_rate')    ?: 7.0);
+        $downPct       = (float) (get_setting('calc_down_payment_pct') ?: 10);
+        $loanTerm      = (int)   (get_setting('calc_loan_term')        ?: 30);
+        $taxRate       = (float) (get_setting('calc_tax_rate')         ?: 1.1);
+        $insuranceRate = (float) (get_setting('calc_insurance_rate')   ?: 0.5);
+        $pmiRate       = (float) (get_setting('calc_pmi_rate')         ?: 0.85);
+
+        return [
+            'price'            => $price,
+            'price_source'     => $priceSource,
+            'hoa_monthly'      => round($hoaMonthly, 2),
+            'hoa_source'       => $hoaSource,
+            'hoa_assumed'      => $hoaAssumed,
+            'taxes_annual'     => $taxesAnnual,
+            'taxes_source'     => $taxesSource,
+            'insurance_source' => 'estimated',
+            'interest_rate'    => $interestRate,
+            'down_pct'         => $downPct,
+            'loan_term'        => $loanTerm,
+            'tax_rate'         => $taxRate,
+            'insurance_rate'   => $insuranceRate,
+            'pmi_rate'         => $pmiRate,
+        ];
     }
 
     /**
