@@ -563,6 +563,20 @@
                         <button type="button" class="btn btn-outline-secondary" id="lolShareHeroBtn">
                             <i class="fa-solid fa-share-nodes me-1"></i>Share
                         </button>
+                        @auth
+                            @if(auth()->id() != $auction->user_id && !(isset($meta['hired_agent_id']) && (int)$meta['hired_agent_id'] === (int)auth()->id()))
+                            <button type="button" class="btn btn-outline-success"
+                                    data-bs-toggle="modal" data-bs-target="#lolShowingRequestModal"
+                                    aria-label="Request a showing for this rental property">
+                                <i class="fa-solid fa-calendar-plus me-1"></i>Request a Showing
+                            </button>
+                            @endif
+                        @else
+                        <a href="{{ route('login') }}" class="btn btn-outline-secondary"
+                           aria-label="Log in to request a showing">
+                            <i class="fa-solid fa-lock me-1"></i>Log in to Request a Showing
+                        </a>
+                        @endauth
                     </div>
                 </div>
             </div>
@@ -1418,6 +1432,18 @@
             <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
                 <i class="fa-solid fa-calendar-days"></i>Schedule Showing
             </button>
+            @auth
+                @if(auth()->id() != $auction->user_id && !(isset($meta['hired_agent_id']) && (int)$meta['hired_agent_id'] === (int)auth()->id()))
+                <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolShowingRequestModal"
+                        style="border-color:#16a34a;color:#15803d;">
+                    <i class="fa-solid fa-calendar-plus"></i>Request a Showing
+                </button>
+                @endif
+            @else
+            <a href="{{ route('login') }}" class="lol-action-btn lol-action-outline">
+                <i class="fa-solid fa-lock"></i>Log in to Request a Showing
+            </a>
+            @endauth
             {{-- Option A: Ask AI added to sidebar to match Seller view --}}
             <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolAiModal">
                 <i class="fa-solid fa-robot"></i>Ask AI About Property
@@ -2013,4 +2039,24 @@
 })();
 </script>
 @endpush
+
+{{-- ===== REQUEST A SHOWING MODAL (authenticated users only) ===== --}}
+@auth
+@if(auth()->id() != $auction->user_id && !(isset($meta['hired_agent_id']) && (int)$meta['hired_agent_id'] === (int)auth()->id()))
+<div class="modal fade" id="lolShowingRequestModal" tabindex="-1" aria-labelledby="lolShowingRequestModalLabel" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+            <div class="modal-header lol-modal-header">
+                <h5 class="modal-title fw-bold" id="lolShowingRequestModalLabel">
+                    <i class="fa-solid fa-calendar-plus me-2"></i>Request a Showing
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+            </div>
+            @include('showings._request-form', ['auctionId' => $auction->id])
+        </div>
+    </div>
+</div>
+@endif
+@endauth
+
 @endsection

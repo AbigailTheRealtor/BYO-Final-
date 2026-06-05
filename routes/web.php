@@ -155,6 +155,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::post('/showings', [\App\Http\Controllers\ShowingController::class, 'store'])->name('showings.store');
+    Route::get('/my-showings', [\App\Http\Controllers\ShowingController::class, 'index'])->name('showings.index');
+
     Route::get('/agent/hire-listings', [AgentController::class, 'hireListings'])->name('agent.hire-listings');
     Route::get('/agent/offer-listings', [AgentController::class, 'offerListings'])->name('agent.offer-listings')->middleware('offerPlayoffAccess');
 

@@ -992,6 +992,20 @@
                         <button type="button" class="btn btn-outline-secondary sol-hero-cta-btn" data-sol-modal="#solQuestionModal" aria-label="Ask a question about this listing">
                             <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
                         </button>
+                        @auth
+                            @if(auth()->id() != $auction->user_id && !(isset($meta['hired_agent_id']) && (int)$meta['hired_agent_id'] === (int)auth()->id()))
+                            <button type="button" class="btn btn-outline-success sol-hero-cta-btn"
+                                    data-bs-toggle="modal" data-bs-target="#solShowingRequestModal"
+                                    aria-label="Request a showing for this property">
+                                <i class="fa-solid fa-calendar-plus me-1"></i>Request a Showing
+                            </button>
+                            @endif
+                        @else
+                        <a href="{{ route('login') }}" class="btn btn-outline-secondary sol-hero-cta-btn"
+                           aria-label="Log in to request a showing">
+                            <i class="fa-solid fa-lock me-1"></i>Log in to Request a Showing
+                        </a>
+                        @endauth
                     </div>
                 </div>
             </div>
@@ -2273,6 +2287,18 @@
                 <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solShowingModal">
                     <i class="fa-solid fa-calendar-days"></i>Schedule Showing
                 </button>
+                @auth
+                    @if(auth()->id() != $auction->user_id && !(isset($meta['hired_agent_id']) && (int)$meta['hired_agent_id'] === (int)auth()->id()))
+                    <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solShowingRequestModal"
+                            style="border-color:#16a34a;color:#15803d;">
+                        <i class="fa-solid fa-calendar-plus"></i>Request a Showing
+                    </button>
+                    @endif
+                @else
+                <a href="{{ route('login') }}" class="sol-action-btn sol-action-outline">
+                    <i class="fa-solid fa-lock"></i>Log in to Request a Showing
+                </a>
+                @endauth
                 <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solAiModal">
                     <i class="fa-solid fa-robot"></i>Ask AI About Property
                 </button>
@@ -2517,6 +2543,25 @@
         <span>Search</span>
     </a>
 </div>
+
+{{-- ===== REQUEST A SHOWING MODAL (authenticated users only) ===== --}}
+@auth
+@if(auth()->id() != $auction->user_id && !(isset($meta['hired_agent_id']) && (int)$meta['hired_agent_id'] === (int)auth()->id()))
+<div class="modal fade" id="solShowingRequestModal" tabindex="-1" aria-labelledby="solShowingRequestModalLabel" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+            <div class="modal-header sol-modal-header">
+                <h5 class="modal-title fw-bold" id="solShowingRequestModalLabel">
+                    <i class="fa-solid fa-calendar-plus me-2"></i>Request a Showing
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+            </div>
+            @include('showings._request-form', ['auctionId' => $auction->id])
+        </div>
+    </div>
+</div>
+@endif
+@endauth
 
 @endsection
 
