@@ -117,7 +117,7 @@ class AskAiAvatarIntegrationTest extends TestCase
 
     private function makePromptBuilder(): AskAiPromptBuilderService
     {
-        return new AskAiPromptBuilderService();
+        return new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
     }
 
     /**

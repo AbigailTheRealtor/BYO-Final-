@@ -6,6 +6,7 @@ use App\Models\BuyerTenantDnaProfile;
 use App\Models\ListingCompatibilityScore;
 use App\Models\PropertyLocationDna;
 use App\Services\AskAi\AskAiContextBuilderService;
+use App\Services\AskAi\AskAiKnowledgeSourceRegistry;
 use App\Services\AskAi\AskAiPromptBuilderService;
 use App\Services\AskAi\AskAiResponseContractService;
 use App\Services\Dna\PropertyIntelligenceProfileService;
@@ -361,7 +362,7 @@ class AskAiCompatibilityIntegrationTest extends TestCase
 
     public function test_source_attribution_versions_includes_compatibility_version_when_present(): void
     {
-        $promptService   = new AskAiPromptBuilderService();
+        $promptService   = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $contractService = new AskAiResponseContractService();
 
         $context = [
@@ -417,7 +418,7 @@ class AskAiCompatibilityIntegrationTest extends TestCase
 
     public function test_source_attribution_versions_compatibility_version_null_when_no_compatibility(): void
     {
-        $promptService   = new AskAiPromptBuilderService();
+        $promptService   = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $contractService = new AskAiResponseContractService();
 
         $context = [

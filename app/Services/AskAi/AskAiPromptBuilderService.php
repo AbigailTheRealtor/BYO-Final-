@@ -26,6 +26,10 @@ class AskAiPromptBuilderService
 {
     public const PROMPT_PACKAGE_VERSION = 'ASK_AI_PROMPT_PACKAGE_V1';
 
+    public function __construct(private AskAiKnowledgeSourceRegistry $registry)
+    {
+    }
+
     /**
      * Twelve deterministic system-instruction strings included in every non-failed
      * prompt package. These are governance directives for the LLM layer and must
@@ -250,7 +254,7 @@ class AskAiPromptBuilderService
             'system_instructions'      => [],
             'developer_instructions'   => [],
             'allowed_context'          => [],
-            'source_attribution'       => ['required_sources' => [], 'versions' => []],
+            'source_attribution'       => ['sources' => [], 'required_sources' => [], 'versions' => []],
             'required_disclosures'     => [],
             'refusal_template'         => null,
             'missing_required_sources' => [],
@@ -387,7 +391,24 @@ class AskAiPromptBuilderService
             }
         }
 
+        // Build structured sources array from registry lookup.
+        // Unknown keys fall back to null label/version rather than throwing.
+        $sources = [];
+        foreach ($requiredSources as $key) {
+            $sourceDef = $this->registry->getSource($key);
+            if ($sourceDef === null) {
+                $sources[] = ['key' => $key, 'label' => null, 'version' => null];
+            } else {
+                $sources[] = [
+                    'key'     => $key,
+                    'label'   => $sourceDef['label'],
+                    'version' => $sourceDef['version_key'],
+                ];
+            }
+        }
+
         return [
+            'sources'          => $sources,
             'required_sources' => $requiredSources,
             'versions'         => [
                 'property_intelligence_version' => $sourceVersions['property_intelligence_version'] ?? null,

@@ -411,6 +411,109 @@ class AskAiListingQuestionTest extends TestCase
     }
 
     /**
+     * (I) source_attribution with structured sources array is exposed in public JSON.
+     */
+    public function test_source_attribution_with_sources_array_is_exposed_in_public_response(): void
+    {
+        $structuredAttribution = [
+            'sources'          => [
+                ['key' => 'property_intelligence', 'label' => 'Property Intelligence', 'version' => 'PROPERTY_INTELLIGENCE_V1'],
+                ['key' => 'location_intelligence',  'label' => 'Location Intelligence',  'version' => 'LIFESTYLE_V1'],
+            ],
+            'required_sources' => ['property_intelligence', 'location_intelligence'],
+            'versions'         => [
+                'property_intelligence_version' => 'PROPERTY_INTELLIGENCE_V1',
+                'ask_ai_context'                => 'ASK_AI_CONTEXT_V1',
+                'contract_version'              => 'ASK_AI_RESPONSE_CONTRACT_V1',
+            ],
+        ];
+
+        $result = $this->makeReadyResult([
+            'final_response' => [
+                'success'            => true,
+                'status'             => 'ready',
+                'answer'             => 'This property has great intelligence coverage.',
+                'refusal_message'    => null,
+                'disclosures'        => 'AI-generated. Verify independently.',
+                'source_attribution' => $structuredAttribution,
+                'error'              => null,
+            ],
+        ]);
+
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->method('run')->willReturn($result);
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
+
+        $response = $this->postJson('/ask-ai/listing-question', [
+            'listing_type' => 'seller',
+            'listing_id'   => 1,
+            'question'     => 'What makes this property stand out?',
+        ]);
+
+        $response->assertOk();
+        $data = $response->json();
+
+        $this->assertArrayHasKey('source_attribution', $data);
+        $attribution = $data['source_attribution'];
+        $this->assertIsArray($attribution);
+        $this->assertArrayHasKey('sources', $attribution);
+        $this->assertCount(2, $attribution['sources']);
+
+        $firstSource = $attribution['sources'][0];
+        $this->assertSame('property_intelligence', $firstSource['key']);
+        $this->assertSame('Property Intelligence', $firstSource['label']);
+        $this->assertSame('PROPERTY_INTELLIGENCE_V1', $firstSource['version']);
+
+        $secondSource = $attribution['sources'][1];
+        $this->assertSame('location_intelligence', $secondSource['key']);
+        $this->assertSame('Location Intelligence', $secondSource['label']);
+        $this->assertSame('LIFESTYLE_V1', $secondSource['version']);
+    }
+
+    /**
+     * (I) Internal fields never leak regardless of source_attribution shape.
+     */
+    public function test_internal_fields_never_leak_with_structured_source_attribution(): void
+    {
+        $result = $this->makeReadyResult([
+            'final_response' => [
+                'success'            => true,
+                'status'             => 'ready',
+                'answer'             => 'Detailed answer here.',
+                'refusal_message'    => null,
+                'disclosures'        => 'AI-generated.',
+                'source_attribution' => [
+                    'sources'          => [
+                        ['key' => 'property_intelligence', 'label' => 'Property Intelligence', 'version' => 'PROPERTY_INTELLIGENCE_V1'],
+                    ],
+                    'required_sources' => ['property_intelligence'],
+                    'versions'         => ['property_intelligence_version' => 'PROPERTY_INTELLIGENCE_V1'],
+                ],
+                'error'              => null,
+            ],
+        ]);
+
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->method('run')->willReturn($result);
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
+
+        $response = $this->postJson('/ask-ai/listing-question', [
+            'listing_type' => 'seller',
+            'listing_id'   => 1,
+            'question'     => 'What is the listing price?',
+        ]);
+
+        $data = $response->json();
+
+        $this->assertArrayNotHasKey('prompt_package',  $data);
+        $this->assertArrayNotHasKey('raw_response',    $data);
+        $this->assertArrayNotHasKey('context',         $data);
+        $this->assertArrayNotHasKey('contract',        $data);
+        $this->assertArrayNotHasKey('classification',  $data);
+        $this->assertArrayNotHasKey('adapter_result',  $data);
+    }
+
+    /**
      * Throwable from service returns generic public error, not internal message.
      */
     public function test_service_exception_returns_generic_public_error(): void

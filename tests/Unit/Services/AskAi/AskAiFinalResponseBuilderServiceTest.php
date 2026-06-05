@@ -65,6 +65,9 @@ class AskAiFinalResponseBuilderServiceTest extends TestCase
             'developer_instructions'   => [],
             'allowed_context'          => [],
             'source_attribution'       => [
+                'sources'          => [
+                    ['key' => 'property_intelligence', 'label' => 'Property Intelligence', 'version' => 'PROPERTY_INTELLIGENCE_V1'],
+                ],
                 'required_sources' => ['property_intelligence'],
                 'versions'         => [
                     'property_intelligence_version' => 'PROPERTY_INTELLIGENCE_V1',

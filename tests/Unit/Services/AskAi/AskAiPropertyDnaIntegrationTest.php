@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\AskAi;
 use App\Models\PropertyDnaProfile;
 use App\Models\PropertyLocationDna;
 use App\Services\AskAi\AskAiContextBuilderService;
+use App\Services\AskAi\AskAiKnowledgeSourceRegistry;
 use App\Services\AskAi\AskAiPromptBuilderService;
 use App\Services\AskAi\AskAiResponseContractService;
 use App\Services\Dna\PropertyIntelligenceProfileService;
@@ -515,7 +516,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
     public function test_step4G_prompt_layer_contract_ready_property_standout_produces_prompt_ready(): void
     {
-        $service  = new AskAiPromptBuilderService();
+        $service  = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $context  = $this->makeAssembledSellerContext();
         $contract = (new AskAiResponseContractService())->buildContract('property_standout', $context);
 
@@ -531,7 +532,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
     public function test_step4H_prompt_layer_source_attribution_required_sources_includes_property_intelligence(): void
     {
-        $service  = new AskAiPromptBuilderService();
+        $service  = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $context  = $this->makeAssembledSellerContext();
         $contract = (new AskAiResponseContractService())->buildContract('property_standout', $context);
 
@@ -548,7 +549,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
     public function test_step4H_prompt_layer_source_attribution_required_sources_includes_pi_for_marketing_angles(): void
     {
-        $service  = new AskAiPromptBuilderService();
+        $service  = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $context  = $this->makeAssembledSellerContext();
         $contract = (new AskAiResponseContractService())->buildContract('marketing_angles', $context);
 
@@ -567,7 +568,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
     public function test_step4I_prompt_layer_source_attribution_versions_carries_property_intelligence_version_key(): void
     {
-        $service  = new AskAiPromptBuilderService();
+        $service  = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $context  = $this->makeAssembledSellerContext();
         $contract = (new AskAiResponseContractService())->buildContract('property_standout', $context);
 
@@ -583,7 +584,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
     public function test_step4I_prompt_layer_source_attribution_versions_property_intelligence_version_is_populated(): void
     {
-        $service  = new AskAiPromptBuilderService();
+        $service  = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $context  = $this->makeAssembledSellerContext();
         $contract = (new AskAiResponseContractService())->buildContract('property_standout', $context);
 
@@ -601,7 +602,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
     public function test_step4J_prompt_layer_insufficient_context_contract_produces_non_prompt_ready_status(): void
     {
-        $service  = new AskAiPromptBuilderService();
+        $service  = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $context  = $this->makeContextWithoutPropertyIntelligence();
         $contract = (new AskAiResponseContractService())->buildContract('property_standout', $context);
 
@@ -615,7 +616,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
     public function test_step4J_prompt_layer_insufficient_context_status_propagates_correctly(): void
     {
-        $service  = new AskAiPromptBuilderService();
+        $service  = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $context  = $this->makeContextWithoutPropertyIntelligence();
         $contract = (new AskAiResponseContractService())->buildContract('marketing_angles', $context);
 
@@ -630,7 +631,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
     public function test_step4K_prompt_layer_allowed_context_contains_only_pi_dot_paths_from_contract(): void
     {
-        $service  = new AskAiPromptBuilderService();
+        $service  = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $context  = $this->makeAssembledSellerContext();
         $contract = (new AskAiResponseContractService())->buildContract('property_standout', $context);
 
@@ -658,7 +659,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
     public function test_step4K_prompt_layer_allowed_context_does_not_bleed_through_buyer_avatar_or_tenant_avatar(): void
     {
-        $service  = new AskAiPromptBuilderService();
+        $service  = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $context  = $this->makeAssembledSellerContext();
         $contract = (new AskAiResponseContractService())->buildContract('property_standout', $context);
 
@@ -672,7 +673,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
     public function test_step4K_prompt_layer_allowed_context_for_property_standout_includes_pi_subkeys(): void
     {
-        $service  = new AskAiPromptBuilderService();
+        $service  = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $context  = $this->makeAssembledSellerContext();
         $contract = (new AskAiResponseContractService())->buildContract('property_standout', $context);
 
@@ -713,7 +714,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
         $this->assertSame('contract_ready', $contract['status'], 'Contract must be contract_ready');
 
         // Phase 3: build prompt package.
-        $promptService = new AskAiPromptBuilderService();
+        $promptService = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $prompt        = $promptService->buildPromptPackage(
             'What makes this property stand out?',
             $context,
@@ -742,7 +743,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
         $context  = $contextBuilder->buildForListing('seller', 1);
         $contract = (new AskAiResponseContractService())->buildContract('property_standout', $context);
-        $prompt   = (new AskAiPromptBuilderService())->buildPromptPackage('q', $context, $contract);
+        $prompt   = (new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry()))->buildPromptPackage('q', $context, $contract);
 
         $this->assertSame('ASK_AI_CONTEXT_V1', $prompt['context_versions']['ask_ai_context']);
         $this->assertSame('PROPERTY_INTELLIGENCE_V1', $prompt['context_versions']['property_intelligence_version']);
@@ -781,7 +782,7 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
 
     public function test_missing_data_prompt_package_surfaces_pi_as_missing_context(): void
     {
-        $service  = new AskAiPromptBuilderService();
+        $service  = new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
         $context  = $this->makeContextWithoutPropertyIntelligence();
         $contract = (new AskAiResponseContractService())->buildContract('missing_data', $context);
 

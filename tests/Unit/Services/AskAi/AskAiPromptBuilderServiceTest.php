@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services\AskAi;
 
+use App\Services\AskAi\AskAiKnowledgeSourceRegistry;
 use App\Services\AskAi\AskAiPromptBuilderService;
 use PHPUnit\Framework\TestCase;
 
@@ -55,6 +56,7 @@ class AskAiPromptBuilderServiceTest extends TestCase
      * Required keys inside every source_attribution array.
      */
     private const SOURCE_ATTRIBUTION_KEYS = [
+        'sources',
         'required_sources',
         'versions',
     ];
@@ -93,7 +95,7 @@ class AskAiPromptBuilderServiceTest extends TestCase
 
     private function makeService(): AskAiPromptBuilderService
     {
-        return new AskAiPromptBuilderService();
+        return new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
     }
 
     /**
@@ -906,6 +908,150 @@ class AskAiPromptBuilderServiceTest extends TestCase
                 "Service file must not contain HTTP call '{$term}'"
             );
         }
+    }
+
+    // =========================================================================
+    // Case P — sources array in source_attribution (new structured entries)
+    // =========================================================================
+
+    public function test_case_P_source_attribution_includes_sources_array(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildPromptPackage('q', $this->makeContext(), $this->makeContractReady());
+
+        $this->assertArrayHasKey('sources', $result['source_attribution']);
+        $this->assertIsArray($result['source_attribution']['sources']);
+    }
+
+    public function test_case_P_sources_entry_for_property_intelligence_has_label_and_version(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['required_sources' => ['property_intelligence']]);
+        $result   = $service->buildPromptPackage('q', $this->makeContext(), $contract);
+
+        $sources = $result['source_attribution']['sources'];
+        $found   = array_filter($sources, fn($s) => $s['key'] === 'property_intelligence');
+        $this->assertNotEmpty($found, 'sources must contain an entry for property_intelligence');
+
+        $entry = array_values($found)[0];
+        $this->assertSame('property_intelligence', $entry['key']);
+        $this->assertSame('Property Intelligence', $entry['label']);
+        $this->assertSame('PROPERTY_INTELLIGENCE_V1', $entry['version']);
+    }
+
+    public function test_case_P_sources_entry_for_location_intelligence_appears_when_used(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady([
+            'allowed_context'  => [
+                'property_intelligence.property_highlights',
+                'location_intelligence.marketing_context',
+            ],
+            'required_sources' => ['property_intelligence'],
+        ]);
+        $result = $service->buildPromptPackage('q', $this->makeContext(), $contract);
+
+        $sources = $result['source_attribution']['sources'];
+        $found   = array_filter($sources, fn($s) => $s['key'] === 'location_intelligence');
+        $this->assertNotEmpty($found, 'sources must contain an entry for location_intelligence when used');
+
+        $entry = array_values($found)[0];
+        $this->assertSame('Location Intelligence', $entry['label']);
+        $this->assertSame('LIFESTYLE_V1', $entry['version']);
+    }
+
+    public function test_case_P_sources_entry_for_buyer_avatar_appears_when_non_null(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['required_sources' => []]);
+        $context  = $this->makeContext(['buyer_avatar' => ['avatar_type' => 'move_up_buyer']]);
+        $result   = $service->buildPromptPackage('q', $context, $contract);
+
+        $sources = $result['source_attribution']['sources'];
+        $found   = array_filter($sources, fn($s) => $s['key'] === 'buyer_avatar');
+        $this->assertNotEmpty($found, 'sources must contain an entry for buyer_avatar when non-null');
+
+        $entry = array_values($found)[0];
+        $this->assertSame('Buyer Avatar', $entry['label']);
+        $this->assertSame('BUYER_AVATAR_V1', $entry['version']);
+    }
+
+    public function test_case_P_sources_entry_for_tenant_avatar_appears_when_non_null(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['required_sources' => []]);
+        $context  = $this->makeContext(['tenant_avatar' => ['avatar_type' => 'urban_renter']]);
+        $result   = $service->buildPromptPackage('q', $context, $contract);
+
+        $sources = $result['source_attribution']['sources'];
+        $found   = array_filter($sources, fn($s) => $s['key'] === 'tenant_avatar');
+        $this->assertNotEmpty($found, 'sources must contain an entry for tenant_avatar when non-null');
+
+        $entry = array_values($found)[0];
+        $this->assertSame('Tenant Avatar', $entry['label']);
+        $this->assertSame('TENANT_AVATAR_V1', $entry['version']);
+    }
+
+    public function test_case_P_sources_entry_for_compatibility_has_correct_label_and_version(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['required_sources' => ['compatibility']]);
+        $result   = $service->buildPromptPackage('q', $this->makeContext(), $contract);
+
+        $sources = $result['source_attribution']['sources'];
+        $found   = array_filter($sources, fn($s) => $s['key'] === 'compatibility');
+        $this->assertNotEmpty($found, 'sources must contain an entry for compatibility when required');
+
+        $entry = array_values($found)[0];
+        $this->assertSame('Compatibility', $entry['label']);
+        $this->assertSame('BYA_COMPAT_V1', $entry['version']);
+    }
+
+    public function test_case_P_unknown_source_key_falls_back_with_null_label_and_version(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['required_sources' => ['unknown_mystery_source']]);
+        $result   = $service->buildPromptPackage('q', $this->makeContext(), $contract);
+
+        $sources = $result['source_attribution']['sources'];
+        $found   = array_filter($sources, fn($s) => $s['key'] === 'unknown_mystery_source');
+        $this->assertNotEmpty($found, 'unknown source key must still appear in sources array with null label/version');
+
+        $entry = array_values($found)[0];
+        $this->assertSame('unknown_mystery_source', $entry['key']);
+        $this->assertNull($entry['label']);
+        $this->assertNull($entry['version']);
+    }
+
+    public function test_case_P_unknown_source_key_does_not_throw_exception(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['required_sources' => ['completely_unknown_source']]);
+
+        $result = $service->buildPromptPackage('q', $this->makeContext(), $contract);
+
+        $this->assertSame('prompt_ready', $result['status']);
+        $this->assertTrue($result['success']);
+    }
+
+    public function test_case_P_required_sources_still_present_alongside_sources(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildPromptPackage('q', $this->makeContext(), $this->makeContractReady());
+
+        $attribution = $result['source_attribution'];
+        $this->assertArrayHasKey('required_sources', $attribution);
+        $this->assertArrayHasKey('versions', $attribution);
+        $this->assertArrayHasKey('sources', $attribution);
+    }
+
+    public function test_case_P_sources_array_empty_on_failed_path(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildPromptPackage('q', $this->makeContext(), $this->makeContractReady(['status' => 'mystery_status']));
+
+        $this->assertArrayHasKey('sources', $result['source_attribution']);
+        $this->assertSame([], $result['source_attribution']['sources']);
     }
 
     // =========================================================================
