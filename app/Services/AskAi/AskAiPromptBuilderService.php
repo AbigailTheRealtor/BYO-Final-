@@ -338,13 +338,30 @@ class AskAiPromptBuilderService
      *   ask_ai_context                — from context['source_versions']['ask_ai_context']
      *   compatibility_version         — from context['source_versions']['compatibility_version']
      *   contract_version              — from contract['contract_version']
+     *
+     * Dynamic avatar sources: when context['buyer_avatar'] is non-null, 'buyer_avatar' is appended
+     * to required_sources. Likewise for 'tenant_avatar'. This ensures source_attribution reflects
+     * which avatar sources were actually present and used, without hallucinating absent sources.
      */
     private function buildSourceAttribution(array $context, array $contract): array
     {
-        $sourceVersions = $context['source_versions'] ?? [];
+        $sourceVersions  = $context['source_versions'] ?? [];
+        $requiredSources = $contract['required_sources'] ?? [];
+
+        if (isset($context['buyer_avatar']) && $context['buyer_avatar'] !== null) {
+            if (!in_array('buyer_avatar', $requiredSources, true)) {
+                $requiredSources[] = 'buyer_avatar';
+            }
+        }
+
+        if (isset($context['tenant_avatar']) && $context['tenant_avatar'] !== null) {
+            if (!in_array('tenant_avatar', $requiredSources, true)) {
+                $requiredSources[] = 'tenant_avatar';
+            }
+        }
 
         return [
-            'required_sources' => $contract['required_sources'] ?? [],
+            'required_sources' => $requiredSources,
             'versions'         => [
                 'property_intelligence_version' => $sourceVersions['property_intelligence_version'] ?? null,
                 'ask_ai_context'                => $sourceVersions['ask_ai_context'] ?? null,

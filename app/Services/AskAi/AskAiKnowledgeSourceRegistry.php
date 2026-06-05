@@ -79,6 +79,7 @@ class AskAiKnowledgeSourceRegistry
             'version_key' => 'BUYER_AVATAR_V1',
             'allowed_for_question_types' => [
                 'buyer_tenant_match',
+                'suited_audience',
             ],
         ],
 
@@ -89,6 +90,7 @@ class AskAiKnowledgeSourceRegistry
             'version_key' => 'TENANT_AVATAR_V1',
             'allowed_for_question_types' => [
                 'buyer_tenant_match',
+                'suited_audience',
             ],
         ],
 
