@@ -15,19 +15,24 @@ class AskAiListingQuestionTest extends TestCase
         return array_merge([
             'success'        => true,
             'status'         => 'ready',
-            'classification' => ['question_type' => 'factual'],
+            'classification' => ['question_type' => 'property_standout'],
             'context'        => ['listing' => []],
             'contract'       => ['rules' => []],
             'prompt_package' => ['prompt' => 'test'],
             'adapter_result' => ['raw' => 'ok'],
             'final_response' => [
-                'success'            => true,
-                'status'             => 'ready',
-                'answer'             => 'The HOA fee is $250/month.',
-                'refusal_message'    => null,
-                'disclosures'        => 'AI-generated. Verify independently.',
-                'source_attribution' => 'Listing data only.',
-                'error'              => null,
+                'success'             => true,
+                'status'              => 'ready',
+                'answer'              => 'The HOA fee is $250/month.',
+                'refusal_message'     => null,
+                'disclosures'         => 'AI-generated. Verify independently.',
+                'source_attribution'  => 'Listing data only.',
+                'error'               => null,
+                'follow_up_questions' => [
+                    ['label' => 'Who would find this listing a practical fit?', 'question' => 'Who would find this listing a practical fit?', 'question_type' => 'suited_audience'],
+                    ['label' => 'How does this listing compare to what a typical buyer or tenant seeks?', 'question' => 'How does this listing compare to what a typical buyer or tenant seeks?', 'question_type' => 'buyer_tenant_match'],
+                    ['label' => 'What are the strongest marketing angles for this listing?', 'question' => 'What are the strongest marketing angles for this listing?', 'question_type' => 'marketing_angles'],
+                ],
             ],
             'error'          => null,
         ], $overrides);
@@ -44,13 +49,14 @@ class AskAiListingQuestionTest extends TestCase
             'prompt_package' => null,
             'adapter_result' => null,
             'final_response' => [
-                'success'            => false,
-                'status'             => 'blocked',
-                'answer'             => null,
-                'refusal_message'    => 'That question cannot be answered.',
-                'disclosures'        => null,
-                'source_attribution' => null,
-                'error'              => null,
+                'success'             => false,
+                'status'              => 'blocked',
+                'answer'              => null,
+                'refusal_message'     => 'That question cannot be answered.',
+                'disclosures'         => null,
+                'source_attribution'  => null,
+                'error'               => null,
+                'follow_up_questions' => [],
             ],
             'error'          => null,
         ];
@@ -92,7 +98,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response->assertOk()->assertJsonStructure([
             'success', 'status', 'answer', 'refusal_message',
-            'disclosures', 'source_attribution', 'error',
+            'disclosures', 'source_attribution', 'error', 'follow_up_questions',
         ]);
     }
 
@@ -147,7 +153,61 @@ class AskAiListingQuestionTest extends TestCase
     }
 
     /**
-     * (D) status=blocked returns refusal_message.
+     * (C2) status=ready includes follow_up_questions key as an array.
+     */
+    public function test_ready_status_includes_follow_up_questions_key(): void
+    {
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->method('run')->willReturn($this->makeReadyResult());
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
+
+        $response = $this->postJson('/ask-ai/listing-question', [
+            'listing_type' => 'seller',
+            'listing_id'   => 1,
+            'question'     => 'What are the key features?',
+        ]);
+
+        $response->assertOk();
+        $data = $response->json();
+
+        $this->assertArrayHasKey('follow_up_questions', $data);
+        $this->assertIsArray($data['follow_up_questions']);
+    }
+
+    /**
+     * (C3) status=ready with a recognised question_type returns populated follow_up_questions.
+     */
+    public function test_ready_status_with_recognised_type_returns_populated_follow_ups(): void
+    {
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->method('run')->willReturn($this->makeReadyResult([
+            'classification' => ['question_type' => 'property_standout'],
+        ]));
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
+
+        $response = $this->postJson('/ask-ai/listing-question', [
+            'listing_type' => 'seller',
+            'listing_id'   => 5,
+            'question'     => 'What are the standout features?',
+        ]);
+
+        $response->assertOk();
+        $data = $response->json();
+
+        $this->assertArrayHasKey('follow_up_questions', $data);
+        $this->assertIsArray($data['follow_up_questions']);
+        $this->assertNotEmpty($data['follow_up_questions'], 'follow_up_questions should be populated for ready status with a recognised question_type');
+        $this->assertLessThanOrEqual(3, count($data['follow_up_questions']));
+
+        foreach ($data['follow_up_questions'] as $item) {
+            $this->assertArrayHasKey('label',         $item);
+            $this->assertArrayHasKey('question',      $item);
+            $this->assertArrayHasKey('question_type', $item);
+        }
+    }
+
+    /**
+     * (D) status=blocked returns refusal_message and empty follow_up_questions.
      */
     public function test_blocked_status_returns_refusal_message(): void
     {
@@ -167,10 +227,16 @@ class AskAiListingQuestionTest extends TestCase
             'answer'          => null,
             'refusal_message' => 'That question cannot be answered.',
         ]);
+
+        $data = $response->json();
+        $this->assertArrayHasKey('follow_up_questions', $data);
+        $this->assertIsArray($data['follow_up_questions']);
+        $this->assertEmpty($data['follow_up_questions'], 'blocked status must return empty follow_up_questions');
     }
 
     /**
      * (E) status=failed returns generic public error message, never internal details.
+     *     follow_up_questions must be [] on failed status.
      */
     public function test_failed_status_returns_generic_public_error(): void
     {
@@ -195,6 +261,9 @@ class AskAiListingQuestionTest extends TestCase
         );
         $this->assertStringNotContainsString('prompt_package', $data['error'] ?? '');
         $this->assertStringNotContainsString('Internal runner', $data['error'] ?? '');
+        $this->assertArrayHasKey('follow_up_questions', $data);
+        $this->assertIsArray($data['follow_up_questions']);
+        $this->assertEmpty($data['follow_up_questions'], 'failed status must return empty follow_up_questions');
     }
 
     /**
@@ -291,6 +360,9 @@ class AskAiListingQuestionTest extends TestCase
         $data = $response->json();
         $this->assertArrayNotHasKey('prompt_package', $data);
         $this->assertArrayNotHasKey('classification',  $data);
+        $this->assertArrayHasKey('follow_up_questions', $data);
+        $this->assertIsArray($data['follow_up_questions']);
+        $this->assertEmpty($data['follow_up_questions'], 'unsupported status must return empty follow_up_questions');
     }
 
     /**
@@ -333,6 +405,9 @@ class AskAiListingQuestionTest extends TestCase
         $data = $response->json();
         $this->assertArrayNotHasKey('prompt_package', $data);
         $this->assertArrayNotHasKey('context',        $data);
+        $this->assertArrayHasKey('follow_up_questions', $data);
+        $this->assertIsArray($data['follow_up_questions']);
+        $this->assertEmpty($data['follow_up_questions'], 'insufficient_context status must return empty follow_up_questions');
     }
 
     /**
@@ -359,5 +434,8 @@ class AskAiListingQuestionTest extends TestCase
             'Ask AI could not generate a response right now. Please try again later.',
             $data['error']
         );
+        $this->assertArrayHasKey('follow_up_questions', $data);
+        $this->assertIsArray($data['follow_up_questions']);
+        $this->assertEmpty($data['follow_up_questions'], 'exception path must return empty follow_up_questions');
     }
 }

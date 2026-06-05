@@ -123,26 +123,29 @@ class AskAiListingQuestionController extends Controller
 
             if ($status === 'failed') {
                 return response()->json([
-                    'success'           => false,
-                    'status'            => 'failed',
-                    'answer'            => null,
-                    'refusal_message'   => null,
-                    'disclosures'       => null,
-                    'source_attribution'=> null,
-                    'error'             => 'Ask AI could not generate a response right now. Please try again later.',
+                    'success'            => false,
+                    'status'             => 'failed',
+                    'answer'             => null,
+                    'refusal_message'    => null,
+                    'disclosures'        => null,
+                    'source_attribution' => null,
+                    'error'              => 'Ask AI could not generate a response right now. Please try again later.',
+                    'follow_up_questions'=> [],
                 ]);
             }
 
-            $final = $result['final_response'] ?? [];
+            $final             = $result['final_response'] ?? [];
+            $followUpQuestions = $final['follow_up_questions'] ?? [];
 
             return response()->json([
-                'success'            => $result['success'] ?? false,
-                'status'             => $status,
-                'answer'             => $final['answer']             ?? null,
-                'refusal_message'    => $final['refusal_message']    ?? null,
-                'disclosures'        => $final['disclosures']        ?? null,
-                'source_attribution' => $final['source_attribution'] ?? null,
-                'error'              => null,
+                'success'             => $result['success'] ?? false,
+                'status'              => $status,
+                'answer'              => $final['answer']             ?? null,
+                'refusal_message'     => $final['refusal_message']    ?? null,
+                'disclosures'         => $final['disclosures']        ?? null,
+                'source_attribution'  => $final['source_attribution'] ?? null,
+                'error'               => null,
+                'follow_up_questions' => $followUpQuestions,
             ]);
 
         } catch (\Throwable $e) {
@@ -170,13 +173,14 @@ class AskAiListingQuestionController extends Controller
             }
 
             return response()->json([
-                'success'            => false,
-                'status'             => 'failed',
-                'answer'             => null,
-                'refusal_message'    => null,
-                'disclosures'        => null,
-                'source_attribution' => null,
-                'error'              => 'Ask AI could not generate a response right now. Please try again later.',
+                'success'             => false,
+                'status'              => 'failed',
+                'answer'              => null,
+                'refusal_message'     => null,
+                'disclosures'         => null,
+                'source_attribution'  => null,
+                'error'               => 'Ask AI could not generate a response right now. Please try again later.',
+                'follow_up_questions' => [],
             ]);
         }
     }

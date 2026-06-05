@@ -1768,6 +1768,15 @@
                 if (resultDiv) { resultDiv.style.display = 'none'; resultDiv.innerHTML = ''; }
             }
 
+            if (resultDiv) {
+                resultDiv.addEventListener('click', function (e) {
+                    var chip = e.target.closest ? e.target.closest('.ask-ai-chip') : (e.target.classList && e.target.classList.contains('ask-ai-chip') ? e.target : null);
+                    if (!chip) return;
+                    var q = chip.getAttribute('data-question');
+                    if (q && textarea) { textarea.value = q; textarea.focus(); }
+                });
+            }
+
             if (modalEl) {
                 modalEl.addEventListener('hidden.bs.modal', function () {
                     if (textarea) textarea.value = '';
@@ -1799,6 +1808,15 @@
                         if (src.trim()) {
                             html += '<div style="font-size:.72rem;color:#94a3b8;margin-top:.3rem;">Source: ' + escHtml(src) + '</div>';
                         }
+                    }
+                    if (Array.isArray(data.follow_up_questions) && data.follow_up_questions.length > 0) {
+                        html += '<div style="margin-top:.75rem;padding-top:.6rem;border-top:1px solid #e2e8f0;">';
+                        html += '<div style="font-size:.72rem;font-weight:700;color:#64748b;margin-bottom:.45rem;text-transform:uppercase;letter-spacing:.04em;">Follow-up questions</div>';
+                        html += '<div class="ask-ai-chip-wrap" id="lolAiFollowUpChips">';
+                        data.follow_up_questions.forEach(function (chip) {
+                            html += '<button type="button" class="ask-ai-chip" data-question="' + escHtml(chip.question) + '">' + escHtml(chip.label) + '</button>';
+                        });
+                        html += '</div></div>';
                     }
                 } else if (status === 'blocked' && data.refusal_message) {
                     html += '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:.5rem;padding:.9rem 1rem;">';

@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\AskAi;
 
 use App\Services\AskAi\AskAiFinalResponseBuilderService;
+use App\Services\AskAi\AskAiFollowUpQuestionService;
 use App\Services\AskAi\AskAiInternalRunnerService;
 use App\Services\AskAi\AskAiOpenAiAdapterService;
 use App\Services\AskAi\AskAiQuestionClassifierService;
@@ -57,15 +58,19 @@ class AskAiRunnerV2ServiceTest extends TestCase
     }
 
     /**
-     * Build createMock instances for all four dependencies.
+     * Build createMock instances for all five dependencies.
      */
     private function makeMocks(): array
     {
+        $followUpMock = $this->createMock(AskAiFollowUpQuestionService::class);
+        $followUpMock->method('forResult')->willReturn([]);
+
         return [
-            'classifier'    => $this->createMock(AskAiQuestionClassifierService::class),
-            'internalRunner'=> $this->createMock(AskAiInternalRunnerService::class),
-            'adapter'       => $this->createMock(AskAiOpenAiAdapterService::class),
-            'finalBuilder'  => $this->createMock(AskAiFinalResponseBuilderService::class),
+            'classifier'     => $this->createMock(AskAiQuestionClassifierService::class),
+            'internalRunner' => $this->createMock(AskAiInternalRunnerService::class),
+            'adapter'        => $this->createMock(AskAiOpenAiAdapterService::class),
+            'finalBuilder'   => $this->createMock(AskAiFinalResponseBuilderService::class),
+            'followUpService'=> $followUpMock,
         ];
     }
 
@@ -75,7 +80,8 @@ class AskAiRunnerV2ServiceTest extends TestCase
             $mocks['classifier'],
             $mocks['internalRunner'],
             $mocks['adapter'],
-            $mocks['finalBuilder']
+            $mocks['finalBuilder'],
+            $mocks['followUpService']
         );
     }
 
@@ -219,7 +225,31 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $this->assertSame($internalResult['contract'],       $result['contract']);
         $this->assertSame($internalResult['prompt_package'], $result['prompt_package']);
         $this->assertSame($adapterResult,                    $result['adapter_result']);
-        $this->assertSame($finalResponse,                    $result['final_response']);
+
+        // The runner appends follow_up_questions to final_response after the builder runs;
+        // assert all original builder keys are preserved and the new key is present.
+        foreach ($finalResponse as $key => $value) {
+            $this->assertArrayHasKey($key, $result['final_response'], "final_response missing builder key '{$key}'");
+            $this->assertSame($value, $result['final_response'][$key], "final_response key '{$key}' does not match builder output");
+        }
+        $this->assertArrayHasKey('follow_up_questions', $result['final_response']);
+        $this->assertIsArray($result['final_response']['follow_up_questions']);
+    }
+
+    public function test_case_A_happy_path_final_response_contains_follow_up_questions(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertArrayHasKey('follow_up_questions', $result['final_response']);
+        $this->assertIsArray($result['final_response']['follow_up_questions']);
     }
 
     // =========================================================================

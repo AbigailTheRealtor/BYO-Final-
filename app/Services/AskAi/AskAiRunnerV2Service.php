@@ -13,6 +13,7 @@ namespace App\Services\AskAi;
  *   2. AskAiInternalRunnerService      — build context, contract, and prompt package
  *   3. AskAiOpenAiAdapterService       — call OpenAI with the prompt package
  *   4. AskAiFinalResponseBuilderService — normalise the raw adapter output
+ *   5. AskAiFollowUpQuestionService    — append follow-up chips to the final response
  *
  * This service MUST NEVER:
  *   - Call any external LLM, language model, or external HTTP service directly.
@@ -31,17 +32,20 @@ class AskAiRunnerV2Service
     private AskAiInternalRunnerService $internalRunner;
     private AskAiOpenAiAdapterService $adapter;
     private AskAiFinalResponseBuilderService $finalResponseBuilder;
+    private AskAiFollowUpQuestionService $followUpService;
 
     public function __construct(
         AskAiQuestionClassifierService $classifier,
         AskAiInternalRunnerService $internalRunner,
         AskAiOpenAiAdapterService $adapter,
-        AskAiFinalResponseBuilderService $finalResponseBuilder
+        AskAiFinalResponseBuilderService $finalResponseBuilder,
+        AskAiFollowUpQuestionService $followUpService
     ) {
         $this->classifier           = $classifier;
         $this->internalRunner       = $internalRunner;
         $this->adapter              = $adapter;
         $this->finalResponseBuilder = $finalResponseBuilder;
+        $this->followUpService      = $followUpService;
     }
 
     /**
@@ -53,6 +57,7 @@ class AskAiRunnerV2Service
      *   3. Guard: if no prompt_package returned, skip OpenAI and return safe failed result
      *   4. Generate via OpenAI adapter
      *   5. Build the final normalised response
+     *   6. Append follow-up question chips to final_response['follow_up_questions']
      *
      * Output contract — always returns exactly these nine keys:
      *   success        bool        — mirrors final_response['success']; false on guard/exception paths
@@ -62,7 +67,8 @@ class AskAiRunnerV2Service
      *   contract       array|null  — output of AskAiInternalRunnerService contract stage
      *   prompt_package array|null  — output of AskAiInternalRunnerService prompt stage
      *   adapter_result array|null  — output of AskAiOpenAiAdapterService::generate(); null if skipped
-     *   final_response array|null  — output of AskAiFinalResponseBuilderService::build(); null if skipped
+     *   final_response array|null  — output of AskAiFinalResponseBuilderService::build() plus
+     *                                follow_up_questions key from AskAiFollowUpQuestionService; null if skipped
      *   error          string|null — null unless final_response['error'] is set or a Throwable is caught
      *
      * @param  string $listingType  Canonical or aliased listing type string.
@@ -106,6 +112,11 @@ class AskAiRunnerV2Service
             $adapterResult = $this->adapter->generate($promptPackage);
 
             $finalResponse = $this->finalResponseBuilder->build($promptPackage, $adapterResult);
+
+            $finalResponse['follow_up_questions'] = $this->followUpService->forResult(
+                $finalResponse,
+                $classification
+            );
 
             $error = ($finalResponse['error'] ?? null) ?: null;
 
