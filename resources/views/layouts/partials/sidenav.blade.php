@@ -250,6 +250,26 @@
     </a>
     @endif
 
+    {{-- ===== SHOWING REQUESTS (seller and landlord only) ===== --}}
+    @if (in_array(auth()->user()->user_type, ['seller', 'landlord']))
+    <a href="{{ route('showings.manage') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa-regular fa-calendar-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>Showing Requests</b>
+                    @php
+                        $pending_showings_count = \App\Models\Showing::whereHas('offerAuction', function($q) {
+                            $q->where('user_id', auth()->id());
+                        })->where('status', \App\Enums\ShowingStatus::REQUESTED)->count();
+                    @endphp
+                    @if ($pending_showings_count)<span class="badge bg-danger ms-2">{{ $pending_showings_count }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">Review and manage showing requests for your listings.</div>
+            </div>
+        </div>
+    </a>
+    @endif
+
     {{-- ===== MY BIDS (agents only — non-agents access bids via their listing pages) ===== --}}
     @if (auth()->user()->user_type === 'agent')
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Bids</div>

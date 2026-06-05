@@ -197,6 +197,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/bid/{bidId}/summary', [AcceptedBidSummaryController::class, 'getByBid'])->name('accepted-bid-summary.by-bid');
 
     Route::get('/offers', [\App\Http\Controllers\MyOffersController::class, 'index'])->name('offers.index');
+
+    // Showing management — owner dashboard
+    Route::get('/my-showings/manage', [\App\Http\Controllers\ShowingController::class, 'manage'])->name('showings.manage');
+
+    // Showing status transitions
+    Route::patch('/showings/{showing}/approve',  [\App\Http\Controllers\ShowingController::class, 'approve'])->name('showings.approve');
+    Route::patch('/showings/{showing}/decline',  [\App\Http\Controllers\ShowingController::class, 'decline'])->name('showings.decline');
+    Route::patch('/showings/{showing}/cancel',   [\App\Http\Controllers\ShowingController::class, 'cancel'])->name('showings.cancel');
+    Route::patch('/showings/{showing}/complete', [\App\Http\Controllers\ShowingController::class, 'complete'])->name('showings.complete');
 });
 
 // Public agent profile — generic fallback only. No auth required.
