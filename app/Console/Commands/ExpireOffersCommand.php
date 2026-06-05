@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Offer;
+use App\Notifications\Offers\OfferExpiredNotification;
 use App\Services\Offers\OfferWorkflowFacade;
 use Illuminate\Console\Command;
 
@@ -25,6 +26,7 @@ class ExpireOffersCommand extends Command
 
             if ($result['allowed'] === true) {
                 $count++;
+                $offer->user->notify(new OfferExpiredNotification($offer));
             }
         }
 
