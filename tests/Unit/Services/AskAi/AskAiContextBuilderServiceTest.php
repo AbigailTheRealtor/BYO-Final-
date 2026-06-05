@@ -55,6 +55,7 @@ class AskAiContextBuilderServiceTest extends TestCase
         'context_version',
         'status',
         'listing',
+        'faq_answers',
         'property_intelligence',
         'location_intelligence',
         'buyer_avatar',
@@ -1441,5 +1442,392 @@ class AskAiContextBuilderServiceTest extends TestCase
                 "Service file must not reference prohibited governance term: '{$term}'"
             );
         }
+    }
+
+    // =========================================================================
+    // Helpers for Cases R / S (factual fields + FAQ wiring)
+    // =========================================================================
+
+    /**
+     * Build a listing stub with arbitrary native column values.
+     * Optionally, an EAV meta store can be provided via the $meta array.
+     * When $meta is non-empty, the stub gains an info() method.
+     *
+     * @param  array $native  Associative array of native column values.
+     * @param  array $meta    Associative array of EAV meta values (optional).
+     * @return object
+     */
+    private function makeListingStubWithFields(array $native = [], array $meta = []): object
+    {
+        return new class($native, $meta) {
+            public int    $id          = 1;
+            public bool   $is_approved = true;
+            public string $created_at  = '2026-01-01 00:00:00';
+            public string $updated_at  = '2026-01-01 00:00:00';
+            private array $metaStore;
+            private array $dynamicProps = [];
+
+            public function __construct(array $native, array $meta)
+            {
+                $this->metaStore = $meta;
+                foreach ($native as $key => $value) {
+                    $this->dynamicProps[$key] = $value;
+                }
+            }
+
+            public function __set(string $name, mixed $value): void
+            {
+                $this->dynamicProps[$name] = $value;
+            }
+
+            public function __get(string $name): mixed
+            {
+                return $this->dynamicProps[$name] ?? null;
+            }
+
+            public function __isset(string $name): bool
+            {
+                return isset($this->dynamicProps[$name]);
+            }
+
+            public function info(string $key): mixed
+            {
+                return $this->metaStore[$key] ?? null;
+            }
+        };
+    }
+
+    // =========================================================================
+    // Case R — Factual fields are extracted into listing context per role
+    //
+    // Each test verifies that the expected field key appears in the returned
+    // listing context when the underlying stub property is populated.
+    // =========================================================================
+
+    public function test_case_R_seller_asking_price_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(['starting_price' => '450000'])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('asking_price', $result['listing'],
+            "listing context must include 'asking_price' for seller");
+        $this->assertSame('450000', $result['listing']['asking_price']);
+    }
+
+    public function test_case_R_seller_bedrooms_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['bedrooms' => '3'])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('bedrooms', $result['listing'],
+            "listing context must include 'bedrooms' for seller");
+        $this->assertSame('3', $result['listing']['bedrooms']);
+    }
+
+    public function test_case_R_seller_year_built_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(['year_built' => '2005'])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('year_built', $result['listing'],
+            "listing context must include 'year_built' for seller");
+        $this->assertSame('2005', $result['listing']['year_built']);
+    }
+
+    public function test_case_R_seller_hoa_fee_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(['hoa_fee' => '200'])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('hoa_fee', $result['listing'],
+            "listing context must include 'hoa_fee' for seller");
+    }
+
+    public function test_case_R_seller_pets_allowed_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(['pets_allowed' => '1'])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('pets_allowed', $result['listing'],
+            "listing context must include 'pets_allowed' for seller");
+    }
+
+    public function test_case_R_seller_showing_instructions_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['showing_instructions' => 'Call agent at 555-0100'])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('showing_instructions', $result['listing'],
+            "listing context must include 'showing_instructions' (EAV) for seller");
+        $this->assertSame('Call agent at 555-0100', $result['listing']['showing_instructions']);
+    }
+
+    public function test_case_R_buyer_max_price_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(['max_price' => '500000'])
+        );
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertArrayHasKey('max_price', $result['listing'],
+            "listing context must include 'max_price' for buyer");
+        $this->assertSame('500000', $result['listing']['max_price']);
+    }
+
+    public function test_case_R_buyer_bedrooms_native_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(['bedrooms' => '3'])
+        );
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertArrayHasKey('bedrooms', $result['listing'],
+            "listing context must include 'bedrooms' for buyer");
+        $this->assertSame('3', $result['listing']['bedrooms']);
+    }
+
+    public function test_case_R_landlord_rent_amount_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['maximum_budget' => '1800'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertArrayHasKey('rent_amount', $result['listing'],
+            "listing context must include 'rent_amount' for landlord");
+        $this->assertSame('1800', $result['listing']['rent_amount']);
+    }
+
+    public function test_case_R_landlord_pet_policy_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['pet_policy' => 'No pets'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertArrayHasKey('pet_policy', $result['listing'],
+            "listing context must include 'pet_policy' for landlord");
+        $this->assertSame('No pets', $result['listing']['pet_policy']);
+    }
+
+    public function test_case_R_landlord_appliances_json_decoded_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['appliances' => '["Washer","Dryer","Dishwasher"]'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertArrayHasKey('appliances', $result['listing'],
+            "listing context must include 'appliances' for landlord");
+        $this->assertStringContainsString('Washer', (string) $result['listing']['appliances'],
+            "'appliances' must be decoded from JSON to a readable string");
+        $this->assertStringContainsString('Dryer', (string) $result['listing']['appliances']);
+    }
+
+    public function test_case_R_tenant_max_rent_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['maximum_budget' => '1500'])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertArrayHasKey('max_rent', $result['listing'],
+            "listing context must include 'max_rent' for tenant");
+        $this->assertSame('1500', $result['listing']['max_rent']);
+    }
+
+    public function test_case_R_tenant_desired_lease_length_from_eav_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['tenant_desired_lease_length' => '12 months'])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertArrayHasKey('desired_lease_length', $result['listing'],
+            "listing context must include 'desired_lease_length' for tenant");
+        $this->assertSame('12 months', $result['listing']['desired_lease_length']);
+    }
+
+    public function test_case_R_null_factual_fields_are_preserved_as_null_not_dropped(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields()
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('asking_price', $result['listing'],
+            "listing context must always include 'asking_price' key even when value is null");
+        $this->assertNull($result['listing']['asking_price'],
+            "'asking_price' must be null, not absent, when not set on the listing");
+    }
+
+    // =========================================================================
+    // Case S — faq_answers key is present and wired correctly
+    // =========================================================================
+
+    public function test_case_S_faq_answers_key_present_in_buildForListing_result(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('faq_answers', $result,
+            "buildForListing must return a top-level 'faq_answers' key");
+    }
+
+    public function test_case_S_faq_answers_is_array(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertIsArray($result['faq_answers'],
+            "'faq_answers' must always be an array, never null");
+    }
+
+    public function test_case_S_faq_answers_empty_when_listing_has_no_faq_data(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertIsArray($result['faq_answers']);
+    }
+
+    public function test_case_S_faq_answers_populated_from_seller_eav_json(): void
+    {
+        $faqData = ['roof_age' => 'Replaced in 2020', 'hvac' => 'Serviced in 2024'];
+
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['listing_ai_faq' => json_encode($faqData)])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertIsArray($result['faq_answers']);
+        $this->assertArrayHasKey('roof_age', $result['faq_answers'],
+            "faq_answers must include 'roof_age' from EAV listing_ai_faq JSON");
+        $this->assertSame('Replaced in 2020', $result['faq_answers']['roof_age']);
+    }
+
+    public function test_case_S_faq_answers_populated_from_landlord_eav_json(): void
+    {
+        $faqData = ['parking_details' => 'One assigned spot in garage', 'laundry' => 'In-unit washer/dryer'];
+
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['listing_ai_faq' => json_encode($faqData)])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertIsArray($result['faq_answers']);
+        $this->assertArrayHasKey('parking_details', $result['faq_answers']);
+        $this->assertSame('One assigned spot in garage', $result['faq_answers']['parking_details']);
+    }
+
+    public function test_case_S_faq_answers_populated_from_tenant_native_column(): void
+    {
+        $faqData = ['move_in_flexibility' => 'Can move in within 30 days'];
+
+        $stub                   = $this->makeListingStub();
+        $stub->listing_ai_faq   = json_encode($faqData);
+
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($stub);
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertIsArray($result['faq_answers']);
+        $this->assertArrayHasKey('move_in_flexibility', $result['faq_answers']);
+        $this->assertSame('Can move in within 30 days', $result['faq_answers']['move_in_flexibility']);
+    }
+
+    public function test_case_S_faq_answers_skips_null_and_empty_values(): void
+    {
+        $faqData = ['good_key' => 'Has value', 'empty_key' => '', 'null_key' => null];
+
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['listing_ai_faq' => json_encode($faqData)])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('good_key', $result['faq_answers']);
+        $this->assertArrayNotHasKey('empty_key', $result['faq_answers'],
+            "faq_answers must exclude keys with empty string values");
+        $this->assertArrayNotHasKey('null_key', $result['faq_answers'],
+            "faq_answers must exclude keys with null values");
+    }
+
+    public function test_case_S_faq_answers_present_in_empty_payload_and_is_array(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(null);
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('faq_answers', $result,
+            "'faq_answers' must be present even in not_found payload");
+        $this->assertIsArray($result['faq_answers'],
+            "'faq_answers' must be an empty array in not_found payload");
+    }
+
+    public function test_case_S_faq_answers_survives_malformed_json_gracefully(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['listing_ai_faq' => 'this is not json {{{'])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertIsArray($result['faq_answers'],
+            "faq_answers must always be an array even when JSON is malformed");
     }
 }

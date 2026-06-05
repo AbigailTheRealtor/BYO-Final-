@@ -89,6 +89,173 @@ class AskAiQuestionClassifierService
             'families with children',
         ],
 
+        // -----------------------------------------------------------------------
+        // listing_facts — Deterministic factual lookup for listing fields and
+        // seller/landlord FAQ answers. Routes before buyer_tenant_match so that
+        // structural listing questions (bedrooms, price, lease length) are answered
+        // from listing data rather than incorrectly trapped as match criteria.
+        // -----------------------------------------------------------------------
+        'listing_facts' => [
+            // Bedrooms / Bathrooms
+            'how many bedrooms',
+            'how many bathrooms',
+            'number of bedrooms',
+            'number of bathrooms',
+            'bedrooms does',
+            'bathrooms does',
+            'bedroom count',
+            'bathroom count',
+            'bedrooms',
+            'bathrooms',
+            // Asking price / sale price
+            'asking price',
+            'starting price',
+            'list price',
+            'listed price',
+            'buy now price',
+            'sale price',
+            'how much does it cost',
+            'what is the price',
+            'what is the cost',
+            'purchase price',
+            // Rent amount
+            'monthly rent',
+            'rent amount',
+            'rental price',
+            'how much is the rent',
+            'how much does it rent',
+            'what is the rent',
+            'rent per month',
+            // Lease length — note: bare 'lease length' is intentionally excluded here
+            // so 'desired lease length' and 'preferred lease length' in buyer_tenant_match
+            // are not swallowed. 'what is the lease', 'lease term', 'how long is the lease'
+            // cover the factual case without conflicting with match-criteria phrases.
+            'lease term',
+            'what is the lease',
+            'how long is the lease',
+            'length of lease',
+            'lease duration',
+            // Pets
+            'pets allowed',
+            'pet policy',
+            'allow pets',
+            'allows pets',
+            'are pets allowed',
+            'pet restrictions',
+            'pet deposit',
+            'is the property pet',
+            // HOA
+            'hoa fee',
+            'monthly hoa',
+            'homeowners association fee',
+            'homeowners association',
+            'association fee',
+            'is there an hoa',
+            'does it have an hoa',
+            'hoa amount',
+            'hoa cost',
+            'hoa',
+            // Pool
+            'is there a pool',
+            'does it have a pool',
+            'pool included',
+            'has a pool',
+            'have a pool',
+            // Parking / Garage
+            'parking spaces',
+            'parking space',
+            'how many parking',
+            'garage spaces',
+            'how many garages',
+            'how many garage',
+            'parking available',
+            // Appliances
+            'appliances included',
+            'what appliances',
+            'which appliances',
+            'appliances come with',
+            'appliances are included',
+            'does it include appliances',
+            // Utilities
+            'utilities included',
+            'what utilities',
+            'which utilities',
+            'utilities are included',
+            'who pays utilities',
+            'does it include utilities',
+            'what is included in rent',
+            // Showing instructions
+            'showing instructions',
+            'how to schedule a showing',
+            'schedule a showing',
+            'how do i view this',
+            'how do i tour',
+            // Square footage
+            'square feet',
+            'square footage',
+            'sq ft',
+            'sqft',
+            'heated sqft',
+            'how big is the',
+            'how large is the',
+            'size of the property',
+            'size of the home',
+            'size of the unit',
+            // Year built / age
+            'year built',
+            'when was it built',
+            'when was the home built',
+            'when was this home built',
+            'when was the property built',
+            'when was this property built',
+            'how old is the home',
+            'how old is the property',
+            'how old is this home',
+            'age of the home',
+            'age of the property',
+            // Roof / HVAC / mechanical
+            'roof age',
+            'roof condition',
+            'when was the roof',
+            'how old is the roof',
+            'hvac',
+            'air conditioning',
+            'heating system',
+            'cooling system',
+            'water heater',
+            // Flood zone
+            'flood zone',
+            'is it in a flood zone',
+            'in a flood zone',
+            // Availability / move-in date for the listing
+            'available date',
+            'when is it available',
+            'when does it become available',
+            'available for rent',
+            // Condo / additional fees
+            'condo fee',
+            // Smoking
+            'smoking policy',
+            'smoking allowed',
+            'is smoking allowed',
+            // Subletting
+            'subletting allowed',
+            'can i sublet',
+            // Closing date
+            'closing date',
+            'preferred closing',
+            // Lot size / acreage
+            'lot size',
+            'acreage',
+            'how many acres',
+            // Unit count
+            'number of units',
+            'how many units',
+            // MLS
+            'mls number',
+            'mls id',
+        ],
+
         'compatibility_signals' => [
             'compatibility',
             'compatible',
@@ -203,19 +370,12 @@ class AskAiQuestionClassifierService
             'rental budget',
             'within budget',
             'purchase budget',
-            'lease length',
-            'lease term',
-            'what is the lease length',
             'desired lease length',
             'preferred lease length',
             'move-in date',
             'move in date',
             'amenities required',
-            'parking preference',
             'parking requirement',
-            'bedrooms',
-            'bathrooms',
-            'location preference',
         ],
 
         'missing_data' => [
@@ -389,6 +549,7 @@ class AskAiQuestionClassifierService
     {
         return match ($type) {
             'prohibited'            => 1.0,
+            'listing_facts'         => 0.90,
             'compatibility_signals' => 0.85,
             'property_standout'     => 0.85,
             'suited_audience'       => 0.80,

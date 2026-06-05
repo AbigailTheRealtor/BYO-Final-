@@ -3,6 +3,7 @@
 namespace App\Services\AskAi;
 
 use App\Models\AcceptedBidSummary;
+use App\Models\AiFaqAnswer;
 use App\Models\BuyerCriteriaAuction;
 use App\Models\BuyerTenantDnaProfile;
 use App\Models\LandlordAuction;
@@ -118,6 +119,7 @@ class AskAiContextBuilderService
             $warnings       = [];
 
             $listingFields = $this->extractListingFields($listing, $canonical, $listingId);
+            $faqAnswers    = $this->buildFaqAnswers($listing, $canonical);
 
             $propertyIntelligence = null;
             if (in_array($canonical, ['seller', 'landlord'], true)) {
@@ -166,6 +168,7 @@ class AskAiContextBuilderService
                 'context_version'       => self::CONTEXT_VERSION,
                 'status'                => $status,
                 'listing'               => $listingFields,
+                'faq_answers'           => $faqAnswers,
                 'property_intelligence' => $propertyIntelligence,
                 'location_intelligence' => $locationIntelligence,
                 'buyer_avatar'          => $buyerAvatar,
@@ -214,8 +217,15 @@ class AskAiContextBuilderService
     /**
      * Extract the approved listing fields from the resolved model.
      *
-     * Fields: listing_type, listing_id, listing_title, city, state, county,
-     * property_type, listing_status, created_at, updated_at.
+     * Returns the base metadata fields (present for all roles) merged with
+     * role-specific public-factual fields sourced from native columns and EAV meta.
+     *
+     * Base fields (all roles): listing_type, listing_id, listing_title, city, state,
+     * county, property_type, listing_status, created_at, updated_at.
+     *
+     * Factual fields (role-specific): bedrooms, bathrooms, asking_price, rent_amount,
+     * lease_length, pets_allowed, hoa_fee, pool, parking_spaces, square_feet,
+     * year_built, and additional role-appropriate fields. See extractFactualFields().
      */
     protected function extractListingFields(object $listing, string $canonicalType, int $listingId): array
     {
@@ -235,7 +245,7 @@ class AskAiContextBuilderService
             return $nativeGet($key) ?? $infoGet($key);
         };
 
-        return [
+        $base = [
             'listing_type'   => $canonicalType,
             'listing_id'     => $listingId,
             'listing_title'  => $infoGet('listing_title') ?? $infoGet('title') ?? $nativeGet('title'),
@@ -249,6 +259,183 @@ class AskAiContextBuilderService
             'created_at'     => isset($listing->created_at) ? (string) $listing->created_at : null,
             'updated_at'     => isset($listing->updated_at) ? (string) $listing->updated_at : null,
         ];
+
+        $factual = $this->extractFactualFields($listing, $canonicalType, $infoGet, $nativeGet);
+
+        return array_merge($base, $factual);
+    }
+
+    /**
+     * Extract role-specific public-factual listing fields.
+     *
+     * DATA GOVERNANCE: Only fields classified as Public-Factual in
+     * ASK_AI_FULL_CONTEXT_MAP.md are included. PII fields (names, phone,
+     * email, brokerage), internal workflow fields, and protected-class-adjacent
+     * fields are explicitly excluded. Compliance-Sensitive fields (flood zone code,
+     * security deposit, income requirement) are included where they carry the
+     * listing_facts contract disclosure requirement.
+     *
+     * JSON meta values (appliances, pet_species_allowed, tenant_pays) are decoded
+     * and flattened to a comma-separated string for prompt-friendly consumption.
+     *
+     * @param  object    $listing       The resolved listing model instance.
+     * @param  string    $canonicalType One of 'seller', 'buyer', 'landlord', 'tenant'.
+     * @param  callable  $infoGet       EAV meta accessor: info($key) → ?string.
+     * @param  callable  $nativeGet     Native column accessor: $listing->{$key} → ?string.
+     * @return array
+     */
+    protected function extractFactualFields(
+        object $listing,
+        string $canonicalType,
+        callable $infoGet,
+        callable $nativeGet
+    ): array {
+        return match ($canonicalType) {
+
+            // -----------------------------------------------------------------
+            // Seller — property_auctions (native columns) + property_auction_metas (EAV)
+            // -----------------------------------------------------------------
+            'seller' => [
+                'description'            => $nativeGet('description'),
+                'asking_price'           => $nativeGet('starting_price'),
+                'buy_now_price'          => $nativeGet('buy_now_price'),
+                'bedrooms'               => $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
+                'bathrooms'              => $infoGet('bathrooms') ?? $nativeGet('bathroom_id'),
+                'square_feet'            => $nativeGet('heated_sqft'),
+                'year_built'             => $nativeGet('year_built'),
+                'pool'                   => $nativeGet('pool'),
+                'pool_type'              => $nativeGet('pool_type'),
+                'carport'                => $nativeGet('carport'),
+                'garage'                 => $nativeGet('garage'),
+                'garage_spaces'          => $nativeGet('garage_spaces'),
+                'water_view'             => $nativeGet('water_view'),
+                'water_extras'           => $nativeGet('water_extras'),
+                'hoa_association'        => $nativeGet('hoa_association'),
+                'hoa_fee'                => $nativeGet('hoa_fee'),
+                'hoa_fee_requirement'    => $nativeGet('hoa_fee_requirement'),
+                'hoa_payment_schedule'   => $nativeGet('hoa_payment_schedule'),
+                'condo_fee'              => $nativeGet('condo_fee'),
+                'condo_fee_schedule'     => $nativeGet('condo_fee_schedule'),
+                'pets_allowed'           => $nativeGet('pets_allowed'),
+                'number_of_pets_allowed' => $nativeGet('number_of_pets_allowed'),
+                'max_pet_weight'         => $nativeGet('max_pet_weight'),
+                'pet_restrictions'       => $nativeGet('pet_restrictions'),
+                'rental_restrictions'    => $nativeGet('rental_restrictions'),
+                'is_in_flood_zone'       => $nativeGet('is_in_flood_zone'),
+                'flood_zone_code'        => $nativeGet('flood_zone_code'),
+                'lease_terms'            => $nativeGet('lease_terms'),
+                'tenant_pays'            => $nativeGet('tenant_pays'),
+                'landlord_pays'          => $nativeGet('landlord_pays'),
+                'closing_date'           => $nativeGet('closing_date'),
+                'mls_id'                 => $nativeGet('mls_id'),
+                'sold'                   => $nativeGet('sold'),
+                'showing_instructions'   => $infoGet('showing_instructions'),
+                'service_type'           => $infoGet('service_type'),
+            ],
+
+            // -----------------------------------------------------------------
+            // Buyer — buyer_criteria_auctions (native columns) + EAV
+            // -----------------------------------------------------------------
+            'buyer' => [
+                'description'         => $nativeGet('description'),
+                'max_price'           => $nativeGet('max_price'),
+                'bedrooms'            => $nativeGet('bedrooms'),
+                'bathrooms'           => $nativeGet('bathrooms'),
+                'square_feet'         => $nativeGet('sqft'),
+                'pool'                => $nativeGet('pool'),
+                'carport'             => $nativeGet('carport'),
+                'garage'              => $nativeGet('garage'),
+                'garage_spaces'       => $nativeGet('garage_spaces'),
+                'water_view'          => $nativeGet('water_view'),
+                'hoa_acceptable'      => $nativeGet('hoa'),
+                'hoa_fee_requirement' => $nativeGet('hoa_fee_requirement'),
+                'max_hoa_fee'         => $nativeGet('max_hoa_fee'),
+                'pets_allowed'        => $nativeGet('pets_allowed'),
+                'pets_detail'         => $nativeGet('pets_detail'),
+                'pets_breed'          => $nativeGet('pets_breed'),
+                'pets_weight'         => $nativeGet('pets_weight'),
+                'loan_pre_approved'   => $nativeGet('loan_pre_approved'),
+                'inspection_period'   => $nativeGet('inspection_period'),
+                'closing_days'        => $nativeGet('closing_days'),
+                'contingencies'       => $nativeGet('contingencies'),
+            ],
+
+            // -----------------------------------------------------------------
+            // Landlord — landlord_auction_metas (EAV only via info())
+            // -----------------------------------------------------------------
+            'landlord' => [
+                'rent_amount'               => $infoGet('maximum_budget'),
+                'bedrooms'                  => $infoGet('bedrooms'),
+                'bathrooms'                 => $infoGet('bathrooms'),
+                'square_feet'               => $infoGet('minimum_heated_square'),
+                'unit_size'                 => $infoGet('unit_size'),
+                'number_of_units'           => $infoGet('number_of_unit'),
+                'condition_prop'            => $infoGet('condition_prop'),
+                'appliances'                => $this->decodeJsonField($infoGet('appliances')),
+                'available_date'            => $infoGet('available_date'),
+                'pet_policy'                => $infoGet('pet_policy'),
+                'pet_deposit_fee_rent'      => $infoGet('pet_deposit_fee_rent'),
+                'pet_max_weight_lbs'        => $infoGet('pet_max_weight_lbs'),
+                'pet_species_allowed'       => $this->decodeJsonField($infoGet('pet_species_allowed')),
+                'parking_terms'             => $infoGet('parking_terms'),
+                'utilities'                 => $infoGet('utilities'),
+                'smoking_policy'            => $infoGet('smoking_policy'),
+                'subletting_policy'         => $infoGet('subletting_policy'),
+                'has_hoa'                   => $infoGet('has_hoa'),
+                'association_fee_amount'    => $infoGet('association_fee_amount'),
+                'association_fee_frequency' => $infoGet('association_fee_frequency'),
+                'lease_length'              => $infoGet('min_lease_period') ?? $infoGet('minimum_lease_period'),
+                'renewal_option'            => $infoGet('renewal_option_offered'),
+                'number_of_occupants'       => $infoGet('number_of_occupants_allowed'),
+                'additional_lease_terms'    => $infoGet('additional_landlord_lease_terms'),
+            ],
+
+            // -----------------------------------------------------------------
+            // Tenant — tenant_criteria_auction_metas (EAV via info())
+            // -----------------------------------------------------------------
+            'tenant' => [
+                'max_rent'             => $infoGet('maximum_budget'),
+                'bedrooms'             => $infoGet('bedrooms'),
+                'bathrooms'            => $infoGet('bathrooms'),
+                'desired_lease_length' => $infoGet('tenant_desired_lease_length'),
+                'pet_information'      => $infoGet('pet_information'),
+                'parking_needed'       => $infoGet('parking_needed'),
+                'utilities'            => $infoGet('utilities'),
+                'tenant_pays'          => $this->decodeJsonField($infoGet('tenant_pays')),
+                'appliances'           => $this->decodeJsonField($infoGet('appliances')),
+                'condition_prop'       => $infoGet('condition_prop'),
+                'number_of_occupants'  => $infoGet('number_of_occupants'),
+            ],
+
+            default => [],
+        };
+    }
+
+    /**
+     * Decode a JSON meta value to a comma-separated string for prompt consumption.
+     *
+     * Many EAV meta fields store multi-select arrays as JSON (e.g. appliances,
+     * pet_species_allowed, tenant_pays). This helper decodes them to a flat,
+     * human-readable string. When the value is already a plain string or null,
+     * it is returned as-is.
+     *
+     * @param  string|null $value  Raw meta value (JSON string or plain string).
+     * @return string|null
+     */
+    private function decodeJsonField(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $decoded = json_decode($value, true);
+
+        if (is_array($decoded)) {
+            $items = array_filter(array_map('strval', $decoded), static fn ($v) => $v !== '');
+            return !empty($items) ? implode(', ', array_values($items)) : null;
+        }
+
+        return $value;
     }
 
     // =========================================================================
@@ -318,6 +505,78 @@ class AskAiContextBuilderService
                 ? (string) $profile->computed_at
                 : null,
         ];
+    }
+
+    // =========================================================================
+    // FAQ Answers Context (all listing types)
+    // =========================================================================
+
+    /**
+     * Build the faq_answers map for the listing.
+     *
+     * Resolution order:
+     *   1. Inline JSON stored in the native `listing_ai_faq` column (tenant) or
+     *      the `listing_ai_faq` EAV meta key (seller, buyer, landlord).
+     *      Expected shape: {"question_key": "answer text", ...}
+     *   2. Fallback: rows in `ai_faq_answers` matching listing_type + listing_id.
+     *
+     * Returns a flat string-keyed array of non-empty answer strings, or an empty
+     * array when no FAQ answers are available. Exceptions are caught and silenced
+     * so a missing or malformed FAQ record never interrupts context assembly.
+     *
+     * @param  object $listing       Resolved listing model instance.
+     * @param  string $canonicalType One of 'seller', 'buyer', 'landlord', 'tenant'.
+     * @return array<string, string>
+     */
+    protected function buildFaqAnswers(object $listing, string $canonicalType): array
+    {
+        try {
+            $raw = null;
+
+            if ($canonicalType === 'tenant') {
+                // tenant_criteria_auctions has a native listing_ai_faq column
+                $col = $listing->listing_ai_faq ?? null;
+                if ($col !== null) {
+                    $raw = is_array($col) ? $col : json_decode((string) $col, true);
+                }
+            } else {
+                // All other roles store the FAQ as EAV meta
+                if (method_exists($listing, 'info')) {
+                    $meta = $listing->info('listing_ai_faq');
+                    if ($meta !== null && $meta !== false && $meta !== '') {
+                        $raw = is_array($meta) ? $meta : json_decode((string) $meta, true);
+                    }
+                }
+            }
+
+            $answers = [];
+
+            if (is_array($raw)) {
+                foreach ($raw as $qKey => $answerText) {
+                    if ($answerText !== null && $answerText !== '' && $answerText !== false) {
+                        $answers[(string) $qKey] = (string) $answerText;
+                    }
+                }
+            }
+
+            // Fallback: query ai_faq_answers table when no inline answers were found
+            if (empty($answers)) {
+                $dbRows = AiFaqAnswer::where('listing_type', $canonicalType)
+                    ->where('listing_id', $listing->id)
+                    ->get();
+
+                foreach ($dbRows as $row) {
+                    $text = $row->answer_text ?? null;
+                    if (!empty($text)) {
+                        $answers[(string) $row->question_key] = (string) $text;
+                    }
+                }
+            }
+
+            return $answers;
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     // =========================================================================
@@ -735,6 +994,7 @@ class AskAiContextBuilderService
             'context_version'       => self::CONTEXT_VERSION,
             'status'                => $status,
             'listing'               => null,
+            'faq_answers'           => [],
             'property_intelligence' => null,
             'location_intelligence' => null,
             'buyer_avatar'          => null,

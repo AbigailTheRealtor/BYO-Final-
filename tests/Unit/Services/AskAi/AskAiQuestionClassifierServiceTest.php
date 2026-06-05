@@ -726,11 +726,14 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('buyer_tenant_match', $result['question_type']);
     }
 
-    public function test_case_L_lease_length_classifies_as_buyer_tenant_match(): void
+    public function test_case_L_lease_length_now_classifies_as_listing_facts(): void
     {
+        // "lease length" questions are factual queries about the listing — migrated from
+        // buyer_tenant_match to listing_facts. Retained buyer-criteria phrases
+        // ('desired lease length', 'preferred lease length') remain in buyer_tenant_match.
         $result = $this->makeService()->classify('What is the lease length they are looking for?');
-        $this->assertSame('buyer_tenant_match', $result['question_type'],
-            '"what is the lease length" phrase must route to buyer_tenant_match');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"what is the lease" phrase must now route to listing_facts');
     }
 
     public function test_case_L_is_lease_length_listed_classifies_as_missing_data(): void
@@ -752,22 +755,27 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('buyer_tenant_match', $result['question_type']);
     }
 
-    public function test_case_L_bedrooms_classifies_as_buyer_tenant_match(): void
+    public function test_case_L_bedrooms_now_classifies_as_listing_facts(): void
     {
+        // 'bedrooms' was migrated from buyer_tenant_match to listing_facts so that
+        // structural listing questions route to the factual data path.
         $result = $this->makeService()->classify('How many bedrooms does the buyer need?');
-        $this->assertSame('buyer_tenant_match', $result['question_type']);
+        $this->assertSame('listing_facts', $result['question_type']);
     }
 
-    public function test_case_L_bathrooms_classifies_as_buyer_tenant_match(): void
+    public function test_case_L_bathrooms_now_classifies_as_listing_facts(): void
     {
+        // 'bathrooms' was migrated from buyer_tenant_match to listing_facts.
         $result = $this->makeService()->classify('How many bathrooms are they looking for?');
-        $this->assertSame('buyer_tenant_match', $result['question_type']);
+        $this->assertSame('listing_facts', $result['question_type']);
     }
 
-    public function test_case_L_location_preference_classifies_as_buyer_tenant_match(): void
+    public function test_case_L_location_preference_now_classifies_as_unsupported(): void
     {
+        // 'location preference' was removed from buyer_tenant_match and is not in any
+        // other keyword bucket; bare location-preference questions are unsupported.
         $result = $this->makeService()->classify('What is their location preference?');
-        $this->assertSame('buyer_tenant_match', $result['question_type']);
+        $this->assertSame('unsupported', $result['question_type']);
     }
 
     public function test_case_L_monthly_income_does_not_route_to_buyer_tenant_match(): void
@@ -912,5 +920,213 @@ class AskAiQuestionClassifierServiceTest extends TestCase
     {
         $result = $this->makeService()->classify('How does this platform handle offers?');
         $this->assertSame('educational', $result['question_type']);
+    }
+
+    // =========================================================================
+    // Case M — listing_facts: keyword routing, confidence, and migration tests
+    //
+    // Covers: (1) listing_facts keyword set routes correctly,
+    //         (2) keywords migrated from buyer_tenant_match now route to listing_facts,
+    //         (3) non-migrated buyer_tenant_match keywords are unaffected,
+    //         (4) confidence is 0.90.
+    // =========================================================================
+
+    // --- Core listing_facts questions ---
+
+    public function test_case_M_how_many_bedrooms_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('How many bedrooms does this listing have?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_how_many_bathrooms_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('How many bathrooms does this property have?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_asking_price_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the asking price for this home?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_monthly_rent_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the monthly rent?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_rent_amount_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the rent amount for this unit?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_are_pets_allowed_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Are pets allowed in this property?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_pet_policy_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the pet policy for this unit?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_hoa_fee_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the HOA fee for this property?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_is_there_an_hoa_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Is there an HOA for this home?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_is_there_a_pool_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Is there a pool at this property?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_parking_spaces_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('How many parking spaces does this unit have?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_appliances_included_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What appliances are included with this rental?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_utilities_included_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What utilities are included in the rent?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_showing_instructions_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What are the showing instructions for this listing?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_square_footage_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the square footage of this home?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_year_built_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('When was this home built?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_flood_zone_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Is it in a flood zone?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_available_date_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the available date for this unit?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_smoking_policy_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the smoking policy for this rental?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_M_listing_facts_is_case_insensitive(): void
+    {
+        $service = $this->makeService();
+        $this->assertSame('listing_facts', $service->classify('HOW MANY BEDROOMS?')['question_type']);
+        $this->assertSame('listing_facts', $service->classify('What Is The Asking Price?')['question_type']);
+    }
+
+    // --- Keywords migrated out of buyer_tenant_match → now listing_facts ---
+
+    public function test_case_M_bare_bedrooms_now_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('bedrooms');
+        $this->assertSame('listing_facts', $result['question_type'],
+            "'bedrooms' must route to listing_facts, not buyer_tenant_match');");
+    }
+
+    public function test_case_M_bare_bathrooms_now_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('bathrooms');
+        $this->assertSame('listing_facts', $result['question_type'],
+            "'bathrooms' must route to listing_facts, not buyer_tenant_match';");
+    }
+
+    public function test_case_M_lease_length_now_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the lease length for this property?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            "'lease length' must route to listing_facts, not buyer_tenant_match');");
+    }
+
+    public function test_case_M_lease_term_now_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the lease term for this rental?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            "'lease term' must route to listing_facts, not buyer_tenant_match');");
+    }
+
+    // --- Non-migrated buyer_tenant_match phrases must remain in buyer_tenant_match ---
+
+    public function test_case_M_desired_lease_length_still_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What is the desired lease length for this buyer?');
+        $this->assertSame('buyer_tenant_match', $result['question_type'],
+            "'desired lease length' must remain in buyer_tenant_match');");
+    }
+
+    public function test_case_M_preferred_lease_length_still_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What is the preferred lease length for this tenant?');
+        $this->assertSame('buyer_tenant_match', $result['question_type'],
+            "'preferred lease length' must remain in buyer_tenant_match');");
+    }
+
+    public function test_case_M_move_in_date_still_classifies_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What is the move-in date for this tenant?');
+        $this->assertSame('buyer_tenant_match', $result['question_type'],
+            "'move-in date' must remain in buyer_tenant_match');");
+    }
+
+    public function test_case_M_buyer_match_phrases_still_classify_as_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('Is this a good match for a buyer?');
+        $this->assertSame('buyer_tenant_match', $result['question_type']);
+    }
+
+    // --- listing_facts confidence ---
+
+    public function test_case_M_listing_facts_confidence_is_0_90(): void
+    {
+        $result = $this->makeService()->classify('How many bedrooms does this listing have?');
+        $this->assertSame('listing_facts', $result['question_type']);
+        $this->assertEqualsWithDelta(0.90, $result['confidence'], 0.001,
+            "listing_facts confidence must be 0.90");
+    }
+
+    public function test_case_M_listing_facts_confidence_within_valid_range(): void
+    {
+        $result = $this->makeService()->classify('What is the asking price?');
+        $this->assertGreaterThanOrEqual(0.0, $result['confidence']);
+        $this->assertLessThanOrEqual(1.0, $result['confidence']);
     }
 }

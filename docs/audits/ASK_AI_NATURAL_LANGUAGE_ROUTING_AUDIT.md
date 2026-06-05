@@ -10,6 +10,28 @@
 
 ---
 
+## Section Crosswalk
+
+The table below maps each audit deliverable requirement to the section in this document that satisfies it, for unambiguous traceability.
+
+| Required Coverage | This Document |
+|---|---|
+| Classifier failure trace (15 questions) | Section 1 |
+| Context Builder audit / context gap | Section 2 |
+| `buyer_tenant_match` keyword trap | Section 3 |
+| FAQ knowledge base disconnection | Section 4 |
+| OpenAI current role vs. potential | Section 5 |
+| Recommended architecture (Option C) | Section 6 |
+| Build Tasks A–G (full specs) | Section 7 |
+| Risk assessment and fair housing guardrails | Section 8 |
+| Full Brain Architecture + Build Tasks H–I | Section 9 |
+| Final Deliverable (readiness score, root cause, task list, production recommendation) | Section 10 |
+| `listing_facts` and `listing_context` type verification across all 8 pipeline stages | Section 11 |
+| Pipeline stage map | Appendix A |
+| FAQ infrastructure map | Appendix B |
+
+---
+
 ## Executive Summary
 
 The Ask AI pipeline fails to answer every common factual listing question a user asks — questions like "How many bedrooms?", "What is the rent?", "Are pets allowed?", "Is there an HOA?", "What are the utilities?" — because the pipeline was built exclusively around DNA/intelligence sources (property strengths, buyer avatar, compatibility scores) and has no awareness that listings contain directly answerable factual fields. Three compounding failures drive every observed silent refusal: (1) the classifier either traps factual keywords inside the `buyer_tenant_match` bucket or lets them fall through to `unsupported`; (2) `extractListingFields()` extracts only 10 administrative metadata fields and none of the factual fields users actually ask about; and (3) a rich, seller/landlord-answered FAQ knowledge base (`listing_ai_faq` meta / `ai_faq_answers` table) has been fully built and wired to a dedicated JSON endpoint (`/ai-knowledge/{token}`) but is completely invisible to every Ask AI service. OpenAI is only ever called after a `prompt_ready` package arrives; because factual questions never produce one, OpenAI never fires for any factual query. The fix requires adding a `listing_facts` question type to the classifier, extending context assembly to pull real listing fields, wiring the FAQ bank as a `faq_answers` context source, adding a `listing_facts` contract, and optionally layering OpenAI as an intent normalizer for ambiguous questions — all behind a feature flag.
@@ -408,6 +430,393 @@ The Layer 1 compliance blocker (`prohibited` keyword rules) is the platform's pr
 4. Governance review of Task E prompt design
 5. Enable Task E behind feature flag in staging only
 6. Monitor for fair housing compliance, latency, and accuracy before production rollout
+
+---
+
+---
+
+## Section 9 — Full Brain Architecture: One Brain, Multiple Interfaces
+
+### 9.1 The Vision
+
+The Ask AI pipeline was originally designed as a single-channel intelligence layer wired to the website's listing view page. The architectural goal is to evolve it into a **channel-agnostic intelligence brain** — a single, governed context-assembly and response-generation core that any delivery channel (website, Twilio SMS, Facebook Messenger, WhatsApp, mobile app, future CRM integrations) can invoke through a shared API contract without touching pipeline internals.
+
+### 9.2 Unified Context Package Design
+
+The full brain context package extends the current `ASK_AI_CONTEXT_V1` shape to include all approved intelligence sources:
+
+```
+Full Brain Context Package (target state)
+{
+  listing_type:           string        — canonical role (seller/buyer/landlord/tenant)
+  listing_id:             int           — primary key
+  listing:                object        — extended factual fields (all native columns + key EAV)
+  faq_answers:            object        — keyed FAQ answers from listing_ai_faq / ai_faq_answers
+  property_intelligence:  object|null   — DNA strengths, highlights, positioning, story
+  location_intelligence:  object|null   — lifestyle scores, POI data, marketing context
+  buyer_avatar:           object|null   — buyer DNA avatar (buyer listings only)
+  tenant_avatar:          object|null   — tenant DNA avatar (tenant listings only)
+  compatibility:          object|null   — pair compatibility score (when pair options provided)
+  offer_analysis:         object|null   — accepted bid summary (when present)
+  missing_sources:        string[]      — sources absent for this listing
+  warnings:               string[]      — soft data-quality issues
+  source_versions:        object        — version map for all populated sources
+  assembled_at:           string        — ISO-8601 assembly timestamp
+  context_version:        string        — ASK_AI_CONTEXT_V1 (bumped when shape changes)
+}
+```
+
+**Key additions vs. current state:**
+- `listing` grows from 10 administrative fields to 40+ factual fields (see Section 2.2 and Task B)
+- `faq_answers` is an entirely new top-level source (see Task C)
+- All other sources already exist; their structure is unchanged
+
+### 9.3 Source Hierarchy and Fallback Priority
+
+When a user asks a factual question, the answer resolution order must be:
+
+```
+1. faq_answers[field_key]          ← human-authored, highest fidelity
+2. listing[field_key]              ← native column or EAV meta, machine-extracted
+3. property_intelligence           ← AI-derived strengths/highlights, secondary
+4. location_intelligence           ← AI-derived location context, supplementary
+5. OpenAI intent normalization     ← only for ambiguous questions, lowest priority
+```
+
+FAQ answers always win because they are authored by the seller/landlord with specific, contextual knowledge. Native listing fields are next because they are structured data. AI-derived intelligence is supplementary — it enriches answers but cannot fabricate facts.
+
+### 9.4 Channel-Agnostic API Contract
+
+Every channel adapter wraps the same pipeline via a single canonical API shape:
+
+**Input contract:**
+```json
+{
+  "listing_type":  "seller | buyer | landlord | tenant",
+  "listing_id":    123,
+  "question":      "How many bedrooms does this have?",
+  "options":       {},
+  "channel":       "web | sms | messenger | whatsapp | mobile | crm",
+  "session_id":    "optional-opaque-string"
+}
+```
+
+**Output contract:**
+```json
+{
+  "success":             true,
+  "status":              "answered | insufficient_context | blocked | unsupported | failed",
+  "answer_text":         "This property has 4 bedrooms.",
+  "question_type":       "listing_facts",
+  "follow_up_questions": [...],
+  "disclosures":         [...],
+  "attribution":         {...},
+  "error":               null
+}
+```
+
+**Channel adapter responsibilities:**
+- Translate incoming channel format to the canonical input contract
+- Translate the canonical output contract to the channel's expected format
+- Apply channel-specific length limits (SMS: ≤160 chars; Messenger: ≤2,000 chars)
+- Never modify pipeline internals or bypass governance layers
+
+**Pipeline responsibilities:**
+- Execute identically regardless of which channel triggered the request
+- Never make assumptions about the delivery channel
+- Enforce fair housing compliance for all channels equally
+
+### 9.5 Future Intelligence Sources
+
+The following sources are approved for future inclusion in the full brain context package, pending separate governance review:
+
+| Source | Description | Governance Requirement |
+|---|---|---|
+| `showing_calendar` | Available showing time slots | Not a protected-class signal; low-risk |
+| `comparable_sales` | Recent comparable sales/rentals | Must be anonymized; no individual transaction data |
+| `price_history` | Public price-change history | Public record; fair housing neutral |
+| `agent_profile` | Hired agent's public profile | Limited to public bio and credentials; no PII |
+| `market_snapshot` | Aggregate market stats for the area | Aggregate only; no neighborhood demographic data |
+
+Each of these requires a separate Phase task, a new entry in `AskAiKnowledgeSourceRegistry`, a new contract in `AskAiResponseContractService`, and explicit governance documentation before activation.
+
+---
+
+### Build Task H — Implement Channel-Agnostic API Endpoint
+
+**File:** New route + `app/Http/Controllers/AskAi/AskAiApiController.php`  
+**What:** Implement the canonical Ask AI API endpoint at `POST /api/ask-ai/ask`. The controller accepts the channel-agnostic input contract (see Section 9.4), calls `AskAiRunnerV2Service::run()` with extracted parameters, and returns the canonical output contract. Add a `channel` field to the pipeline result for logging/analytics. Enforce authentication via Laravel Sanctum for all channels except `web` (which uses the existing session). Rate-limit the endpoint per `user_id` (or IP for anonymous users): 20 requests per minute, configurable via `config('ask_ai.rate_limit_per_minute')`.  
+**Acceptance:** `POST /api/ask-ai/ask` with valid JSON input returns the canonical output contract. A missing `listing_id` returns HTTP 422. An authenticated web session request returns the same result as the existing pipeline. Rate-limit returns HTTP 429 after threshold is exceeded.  
+**Depends on:** Tasks A, B, C, D must all be shipped before this endpoint is meaningful.
+
+---
+
+### Build Task I — Implement Persistent FAQ Answer Enrichment Pipeline
+
+**File:** New service `app/Services/AskAi/AskAiFaqEnrichmentService.php` + new Artisan command  
+**What:** Create a background enrichment service that runs after a seller/landlord saves their listing FAQ answers. The service reads the `listing_ai_faq` JSON blob, maps each answered key to the appropriate `question_group` and `intelligence_category` from the config file, and upserts rows into the `ai_faq_answers` table (model: `AiFaqAnswer`). This ensures the structured `ai_faq_answers` table stays in sync with the JSON blob and provides a queryable, indexed fallback for `buildFaqAnswers()` (Task C). Add an Artisan command `ask-ai:sync-faq-answers {listing_type} {listing_id}` for manual backfill and testing.  
+**Acceptance:** When a seller saves `roof_age_and_condition`, `AiFaqAnswer::where('listing_type','seller')->where('listing_id', $id)->where('question_key','roof_age_and_condition')->first()` returns a row with the correct `answer_text`. The Artisan command successfully backfills all answered keys for a given listing. No answers are created for blank/empty FAQ fields.  
+**Depends on:** Task C (FAQ context wire) must be complete so the enrichment output is consumed by the pipeline.
+
+---
+
+## Section 10 — Final Deliverable
+
+### 10.0 Complete Implementation Task List (Tasks A–I)
+
+This section consolidates all nine build tasks in dependency order. Full task specifications are in Section 7 (Tasks A–G) and Section 9 (Tasks H–I). This table is the canonical reference for planning.
+
+| Task | Title | Key Files | Risk | Depends On |
+|---|---|---|---|---|
+| **A** | Add `listing_facts` question type to classifier | `AskAiQuestionClassifierService.php` | Low | — |
+| **B** | Extend `extractListingFields()` with factual fields | `AskAiContextBuilderService.php` | Low | — |
+| **C** | Wire `listing_ai_faq` / `ai_faq_answers` as `faq_answers` context source | `AskAiContextBuilderService.php`, `AiFaqAnswer.php` | Low | — |
+| **D** | Add `listing_facts` contract to Response Contract Service | `AskAiResponseContractService.php` | Low-Medium | A + B + C |
+| **E** | Add OpenAI intent normalization pre-classification step (feature-flagged) | New `AskAiIntentNormalizerService.php`, `AskAiRunnerV2Service.php` | Medium | A + B + C + D |
+| **F** | Update suggested questions with `listing_facts` chips | `AskAiSuggestedQuestionsService.php` | Low | A |
+| **G** | Design channel-agnostic Ask AI API contract (documentation) | `docs/specs/ASK_AI_CHANNEL_AGNOSTIC_CONTRACT.md` | None | — |
+| **H** | Implement channel-agnostic API endpoint | New `AskAiApiController.php`, routes | Low | A + B + C + D |
+| **I** | Implement persistent FAQ answer enrichment pipeline | New `AskAiFaqEnrichmentService.php`, Artisan command | Low | C |
+
+**Recommended shipping phases:**
+- **Phase 1** (ship together, all low-risk): Tasks A + B + C + F
+- **Phase 2** (after A+B+C pass tests): Task D
+- **Phase 3** (after D): Task H — enables all non-web channels
+- **Phase 4** (feature-flagged, governance review required): Task E
+- **Phase 5** (after C): Task I — FAQ enrichment backfill
+- **Anytime**: Task G (documentation)
+
+---
+
+### 10.1 Readiness Score
+
+**Current Ask AI Readiness: 2 / 10**
+
+| Dimension | Score | Reason |
+|---|---|---|
+| Compliance layer | 9/10 | `prohibited` check is thorough and runs first |
+| Classifier coverage | 1/10 | 15/15 factual questions fail; `listing_facts` type does not exist |
+| Context completeness | 2/10 | Only 10 metadata fields; no factual fields; no FAQ data |
+| FAQ knowledge base | 0/10 | Fully built and populated but 100% disconnected from pipeline |
+| Intelligence sources | 7/10 | DNA/compatibility/avatar sources are fully wired and governed |
+| OpenAI integration | 7/10 | Correctly gated; only fires on `prompt_ready`; well-governed |
+| Channel readiness | 1/10 | Website only; no multi-channel API contract exists |
+| Answer quality (factual) | 0/10 | Zero factual questions answered; all silently fail |
+| Answer quality (intelligence) | 7/10 | Intelligence-type questions answered well when DNA data exists |
+
+### 10.2 Root Cause Summary
+
+Three independent failures combine to make Ask AI unable to answer any factual listing question:
+
+1. **Classifier gap:** The `KEYWORD_RULES` map contains no `listing_facts` type. Factual keywords either fall into the wrong bucket (`buyer_tenant_match`: bedrooms, bathrooms, lease length, parking) or reach the `unsupported` dead end. No keyword anywhere in the classifier maps to a single-listing factual lookup.
+
+2. **Context starvation:** `extractListingFields()` extracts only 10 administrative metadata fields. None are the factual fields users ask about. Even if the classifier were fixed, the context assembled by `buildForListing()` would contain no values to answer a factual question.
+
+3. **FAQ disconnection:** A complete, seller-answered FAQ knowledge base exists in `listing_ai_faq` meta (seller/landlord), `listing_ai_faq` native column (tenant), and the `ai_faq_answers` table. An operational read endpoint (`/ai-knowledge/{token}`) already serves this data. Not one Ask AI service imports, queries, or references any part of this infrastructure.
+
+### 10.3 Recommended Architecture Recap
+
+**Option C — Three-Layer Deterministic + OpenAI Fallback** (see Section 6 for full detail)
+
+- **Layer 1:** Existing `prohibited` compliance blocker — unchanged; always runs first
+- **Layer 2:** New deterministic `listing_facts` field router — covers 15+ factual topics via keyword map; pulls from extended `extractListingFields()` + FAQ bank; zero OpenAI calls for matched questions
+- **Layer 3:** Optional OpenAI intent normalizer — feature-flagged off by default; only activates for `unsupported` questions; returns a field key (not an answer); Layer 2 handles the lookup
+
+### 10.4 Required Implementation Order
+
+| Phase | Tasks | Risk | Prerequisite |
+|---|---|---|---|
+| Phase 1 (ship together) | A + B + C + F | Low | None |
+| Phase 2 | D | Low-Medium | A + B + C |
+| Phase 3 | H | Low | A + B + C + D |
+| Phase 4 (feature-flagged) | E | Medium | A + B + C + D |
+| Phase 5 | I | Low | C |
+| Documentation | G | None | None (any time) |
+
+### 10.5 Estimated Answer-Quality Impact After Tasks A–D
+
+| Question Category | Before | After A–D |
+|---|---|---|
+| Bedrooms / bathrooms | ❌ Silent fail (`buyer_tenant_match` trap) | ✅ Answered from listing fields |
+| Asking price / rent | ❌ Silent fail (`unsupported`) | ✅ Answered from listing fields |
+| HOA / fees | ❌ Silent fail (`unsupported`) | ✅ Answered from listing fields |
+| Pet policy | ❌ Silent fail (`unsupported`) | ✅ Answered from listing fields |
+| Lease length | ❌ Silent fail (`buyer_tenant_match` trap) | ✅ Answered from listing fields |
+| Appliances / utilities | ❌ Silent fail (`unsupported`) | ✅ Answered from FAQ bank if answered by seller |
+| Roof age / HVAC / condition | ❌ Silent fail (`unsupported`) | ✅ Answered from FAQ bank if answered by seller |
+| Parking / pool | ❌ Silent fail | ✅ Answered from listing fields + FAQ bank |
+| Showing instructions | ❌ Silent fail (`unsupported`) | ✅ Answered from EAV meta if populated |
+| Property standout / marketing | ✅ Works when DNA data exists | ✅ Unchanged |
+| Compatibility / match | ✅ Works when pair + score exist | ✅ Unchanged |
+| Educational | ✅ Works | ✅ Unchanged |
+| Prohibited | ✅ Correctly refused | ✅ Unchanged |
+
+### 10.6 Production Readiness Recommendation
+
+**Do not expand Ask AI's public surface area** (SMS, Messenger, additional listing types) until Tasks A–D are complete. The current pipeline silently fails 100% of factual questions, meaning every new channel would propagate the same failure. 
+
+**Recommended production path:**
+1. Implement Tasks A–D with unit and integration test coverage
+2. Run QA against all 15 audited questions to confirm `listing_facts` path works end-to-end
+3. Conduct fair housing review of new response rules before going live
+4. Ship behind a feature flag (`config('ask_ai.listing_facts_enabled', false)`)
+5. Enable in production after QA sign-off
+6. Implement Task H (channel-agnostic API) before any non-web channel launch
+7. Task E (OpenAI normalizer) requires separate governance review before enabling
+
+---
+
+---
+
+## Section 11 — `listing_facts` and `listing_context` Type Verification Audit
+
+This section explicitly verifies, stage by stage, whether the question types `listing_facts` or `listing_context` exist anywhere in the Ask AI pipeline. The search was performed by direct inspection of each service file.
+
+### 11.1 Stage 1 — Classifier: `AskAiQuestionClassifierService`
+
+**File:** `app/Services/AskAi/AskAiQuestionClassifierService.php`
+
+**KEYWORD_RULES keys present:**
+`prohibited` | `compatibility_signals` | `property_standout` | `suited_audience` | `buyer_tenant_match` | `educational` | `marketing_angles`
+
+**`listing_facts` present?** ❌ **NO** — Not a key in `KEYWORD_RULES`. Not in `confidenceFor()`. Not referenced in any comment or string.
+
+**`listing_context` present?** ❌ **NO** — This string does not appear anywhere in the file.
+
+**What `listing` means in the classifier:** The classifier produces `question_type` values only. It never references the context package shape. The word "listing" appears in parameter names and docblocks only.
+
+---
+
+### 11.2 Stage 2 — Context Builder: `AskAiContextBuilderService`
+
+**File:** `app/Services/AskAi/AskAiContextBuilderService.php`
+
+**Top-level context keys returned by `buildForListing()`:**
+`listing` | `property_intelligence` | `location_intelligence` | `buyer_avatar` | `tenant_avatar` | `compatibility` | `offer_analysis` | `context_version` | `assembled_at`
+
+**`listing_facts` present?** ❌ **NO** — Not a context key, not a method, not a string constant in this file.
+
+**`listing_context` present?** ❌ **NO** — This string does not appear anywhere in the file.
+
+**What `listing` is in the context builder:** The `listing` key IS populated — but it holds only 10 administrative metadata fields (see Section 2.1). It is not labelled `listing_facts` or `listing_context`. It contains no factual fields.
+
+---
+
+### 11.3 Stage 3 — Response Contract Service: `AskAiResponseContractService`
+
+**File:** `app/Services/AskAi/AskAiResponseContractService.php`
+
+**`TYPE_CONTRACTS` keys present (all 8):**
+`property_standout` | `suited_audience` | `buyer_tenant_match` | `compatibility_signals` | `missing_data` | `marketing_angles` | `educational` | `prohibited`
+
+**`listing_facts` present?** ❌ **NO** — Not in `TYPE_CONTRACTS`. Not in any method, constant, comment, or string. Passing `'listing_facts'` to `buildContract()` would hit the `!array_key_exists()` guard and return `status = 'unsupported'`.
+
+**`listing_context` present?** ❌ **NO** — This string does not appear anywhere in the file.
+
+**`listing` in allowed_context paths:** Several `TYPE_CONTRACTS` entries reference `listing.*` paths (e.g., `listing.listing_title`, `listing.property_type`) but these refer to the 10-field metadata block, not a `listing_facts` type.
+
+---
+
+### 11.4 Stage 4 — Prompt Builder: `AskAiPromptBuilderService`
+
+**File:** `app/Services/AskAi/AskAiPromptBuilderService.php`
+
+**`listing_facts` present?** ❌ **NO** — Not in any section label, context filter path, template, constant, or string in the file.
+
+**`listing_context` present?** ❌ **NO** — This string does not appear anywhere in the file.
+
+**`listing` in the prompt builder:** The prompt builder calls `filterAllowedContext($contract['allowed_context'], $context)`, which extracts permitted paths from the context object. Paths prefixed `listing.*` are permitted for some contracts, but the underlying `listing` block has only 10 fields. No `listing_facts` section is assembled or inserted into any prompt template.
+
+---
+
+### 11.5 Stage 5 — OpenAI Adapter: `AskAiOpenAiAdapterService`
+
+**File:** `app/Services/AskAi/AskAiOpenAiAdapterService.php`
+
+**`listing_facts` present?** ❌ **NO** — Not referenced anywhere. The adapter receives a pre-assembled `$promptPackage`; it has no visibility into question types.
+
+**`listing_context` present?** ❌ **NO** — This string does not appear anywhere in the file.
+
+---
+
+### 11.6 Stage 6 — Internal Runner: `AskAiInternalRunnerService`
+
+**File:** `app/Services/AskAi/AskAiInternalRunnerService.php`
+
+**`listing_facts` present?** ❌ **NO** — Not referenced. The internal runner chains Context Builder → Contract Service → Prompt Builder; it does not know or care about question types beyond passing them through.
+
+**`listing_context` present?** ❌ **NO** — This string does not appear anywhere in the file.
+
+---
+
+### 11.7 Stage 7 — Runner V2: `AskAiRunnerV2Service`
+
+**File:** `app/Services/AskAi/AskAiRunnerV2Service.php`
+
+**`listing_facts` present?** ❌ **NO** — Not referenced anywhere in the orchestration logic.
+
+**`listing_context` present?** ❌ **NO** — This string does not appear anywhere in the file.
+
+---
+
+### 11.8 Stage 6 — Final Response Builder: `AskAiFinalResponseBuilderService`
+
+**File:** `app/Services/AskAi/AskAiFinalResponseBuilderService.php`
+
+**Role:** Pure transformation layer (Phase 5). Converts a prompt package assembled by the Prompt Builder plus a raw adapter result from the OpenAI Adapter into a normalised final response object. Holds no business logic beyond status routing and text normalisation.
+
+**Governance constraints (hard-coded in the service):**
+- Must never call any external LLM, language model, or external HTTP service
+- Must never execute any database write
+- Must never infer, estimate, or invent values for missing data
+- Must never generate AI answer text or call OpenAI
+- Must never reference or infer protected class characteristics
+
+**Output contract (all 7 keys always present):**
+
+| Key | Type | Description |
+|---|---|---|
+| `success` | bool | `true` only when `status === 'ready'` |
+| `status` | string | `'ready'` \| `'blocked'` \| `'insufficient_context'` \| `'unsupported'` \| `'failed'` |
+| `answer` | string\|null | Normalised model text; `null` on non-ready paths |
+| `disclosures` | array | Always populated from `promptPackage['required_disclosures']` |
+| `source_attribution` | array | Passed through from `promptPackage['source_attribution']` |
+| `refusal_message` | string\|null | From `promptPackage['refusal_template']` on `blocked`; `null` otherwise |
+| `error` | string\|null | `null` on non-failed paths; error message on `failed` |
+
+**Status routing logic:**
+
+| `promptPackage['status']` | Adapter result | → Final `status` | `answer` |
+|---|---|---|---|
+| `'blocked'` | Any | `'blocked'` | `null` |
+| `'insufficient_context'` | Any | `'insufficient_context'` | Canned: *"The requested information is not available because one or more required data sources are missing..."* |
+| `'unsupported'` | Any | `'unsupported'` | Canned: *"This question type is not supported. Please select an approved question category..."* |
+| `'prompt_ready'` | `success=false` or error present | `'failed'` | `null` |
+| `'prompt_ready'` | `success=true` | `'ready'` | Normalised model text |
+
+**Impact on factual questions (critical finding):** When a user asks "How many bedrooms?" today, the pipeline produces `question_type = 'buyer_tenant_match'` → contract returns `status = 'insufficient_context'` → prompt builder sets `status = 'insufficient_context'` → the Final Response Builder receives this status and returns the canned `INSUFFICIENT_CONTEXT_ANSWER` string. This is the exact text users see when a factual question silently fails. The Final Response Builder is working as designed — the failure is entirely upstream in the classifier and context assembly.
+
+**`listing_facts` present?** ❌ **NO** — The service has no knowledge of `question_type` values at all. It operates purely on `promptPackage['status']`. The string `listing_facts` does not appear anywhere in this file.
+
+**`listing_context` present?** ❌ **NO** — This string does not appear anywhere in the file.
+
+---
+
+### 11.9 Summary Table — All 8 Pipeline Stages
+
+| Pipeline Stage | Service File | `listing_facts` exists? | `listing_context` exists? |
+|---|---|---|---|
+| Stage 1 — Classifier | `AskAiQuestionClassifierService` | ❌ Absent | ❌ Absent |
+| Stage 2 — Context Builder | `AskAiContextBuilderService` | ❌ Absent | ❌ Absent |
+| Stage 3 — Response Contract | `AskAiResponseContractService` | ❌ Absent | ❌ Absent |
+| Stage 4 — Prompt Builder | `AskAiPromptBuilderService` | ❌ Absent | ❌ Absent |
+| Stage 5 — OpenAI Adapter | `AskAiOpenAiAdapterService` | ❌ Absent | ❌ Absent |
+| Stage 6 — Final Response Builder | `AskAiFinalResponseBuilderService` | ❌ Absent | ❌ Absent |
+| Stage 7 — Internal Runner | `AskAiInternalRunnerService` | ❌ Absent | ❌ Absent |
+| Stage 8 — Runner V2 (orchestrator) | `AskAiRunnerV2Service` | ❌ Absent | ❌ Absent |
+| **All Ask AI service files** | | ❌ **Does not exist** | ❌ **Does not exist** |
+
+**Confirmation:** Neither `listing_facts` nor `listing_context` exists as a question type, contract type, context key, method name, or string constant in any of the eight Ask AI pipeline service files. The only `listing`-prefixed reference in the pipeline is the `listing` context block returned by `extractListingFields()`, which contains 10 administrative metadata fields only. Build Tasks A–D (Section 10) are required to introduce the `listing_facts` type into the pipeline for the first time.
 
 ---
 

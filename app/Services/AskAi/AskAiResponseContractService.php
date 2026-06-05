@@ -203,6 +203,123 @@ class AskAiResponseContractService
             'refusal_template' => null,
         ],
 
+        // -----------------------------------------------------------------------
+        // listing_facts — Deterministic read of public-factual listing fields
+        // and seller/landlord FAQ answers. Requires listing context; all fields
+        // must be sourced verbatim from the listing data — no inference allowed.
+        // -----------------------------------------------------------------------
+        'listing_facts' => [
+            'allowed_context' => [
+                // Base metadata (all roles)
+                'listing.listing_type',
+                'listing.listing_id',
+                'listing.listing_title',
+                'listing.city',
+                'listing.state',
+                'listing.county',
+                'listing.property_type',
+                'listing.description',
+                // Price / cost (seller / buyer)
+                'listing.asking_price',
+                'listing.buy_now_price',
+                'listing.max_price',
+                // Rental price (landlord / tenant)
+                'listing.rent_amount',
+                'listing.max_rent',
+                // Structure
+                'listing.bedrooms',
+                'listing.bathrooms',
+                'listing.square_feet',
+                'listing.year_built',
+                'listing.unit_size',
+                'listing.number_of_units',
+                'listing.condition_prop',
+                // Outdoor / extras
+                'listing.pool',
+                'listing.pool_type',
+                'listing.carport',
+                'listing.garage',
+                'listing.garage_spaces',
+                'listing.water_view',
+                'listing.water_extras',
+                // HOA / fees
+                'listing.hoa_association',
+                'listing.hoa_fee',
+                'listing.hoa_fee_requirement',
+                'listing.hoa_payment_schedule',
+                'listing.hoa_acceptable',
+                'listing.max_hoa_fee',
+                'listing.has_hoa',
+                'listing.association_fee_amount',
+                'listing.association_fee_frequency',
+                'listing.condo_fee',
+                'listing.condo_fee_schedule',
+                // Pets
+                'listing.pets_allowed',
+                'listing.number_of_pets_allowed',
+                'listing.max_pet_weight',
+                'listing.pet_restrictions',
+                'listing.pets_detail',
+                'listing.pets_breed',
+                'listing.pets_weight',
+                'listing.pet_policy',
+                'listing.pet_deposit_fee_rent',
+                'listing.pet_max_weight_lbs',
+                'listing.pet_species_allowed',
+                'listing.pet_information',
+                // Lease / rental terms
+                'listing.lease_terms',
+                'listing.lease_length',
+                'listing.desired_lease_length',
+                'listing.renewal_option',
+                'listing.additional_lease_terms',
+                'listing.tenant_pays',
+                'listing.landlord_pays',
+                'listing.utilities',
+                // Appliances
+                'listing.appliances',
+                // Policies
+                'listing.smoking_policy',
+                'listing.subletting_policy',
+                'listing.rental_restrictions',
+                'listing.number_of_occupants',
+                // Parking
+                'listing.parking_terms',
+                'listing.parking_needed',
+                // Compliance-sensitive (carry disclosure requirement)
+                'listing.is_in_flood_zone',
+                'listing.flood_zone_code',
+                // Availability / dates
+                'listing.available_date',
+                'listing.closing_date',
+                // Buyer criteria
+                'listing.loan_pre_approved',
+                'listing.inspection_period',
+                'listing.closing_days',
+                'listing.contingencies',
+                // Showing / MLS / service
+                'listing.showing_instructions',
+                'listing.mls_id',
+                'listing.sold',
+                'listing.service_type',
+                // FAQ answers — seller/landlord-provided answers to common questions
+                'faq_answers',
+            ],
+            'required_sources' => ['listing'],
+            'response_rules' => [
+                'Base the response only on field values explicitly present in the listing context and faq_answers.',
+                'If a field value is null, absent, or unavailable, state clearly that the information is not available — do not estimate, infer, speculate, or use placeholder values.',
+                'Do not reference protected class characteristics.',
+                'Attribute all factual data to the listing source provided by the seller, buyer, landlord, or tenant.',
+                'Do not generate marketing copy, price predictions, investment recommendations, or legal interpretations — answer only what was explicitly asked.',
+                'When flood zone, HOA, or financial field values are present, include the required disclosure.',
+            ],
+            'required_disclosures' => [
+                'Information is sourced directly from the listing data provided by the seller or landlord. Verify all details independently before making any financial or legal decision.',
+            ],
+            'refusal_template' => null,
+        ],
+
         'prohibited' => [
             'allowed_context' => [],
             'required_sources' => [],

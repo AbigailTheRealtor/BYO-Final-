@@ -41,7 +41,7 @@ class AskAiResponseContractServiceTest extends TestCase
     ];
 
     /**
-     * All eight supported question types defined by the spec.
+     * All nine supported question types defined by the spec.
      */
     private const ALL_QUESTION_TYPES = [
         'property_standout',
@@ -51,6 +51,7 @@ class AskAiResponseContractServiceTest extends TestCase
         'missing_data',
         'marketing_angles',
         'educational',
+        'listing_facts',
         'prohibited',
     ];
 
@@ -64,6 +65,7 @@ class AskAiResponseContractServiceTest extends TestCase
         'compatibility_signals',
         'missing_data',
         'marketing_angles',
+        'listing_facts',
     ];
 
     /**
@@ -122,6 +124,25 @@ class AskAiResponseContractServiceTest extends TestCase
                     'listing_status' => 'approved',
                 ],
                 'missing_sources' => ['property_intelligence'],
+            ],
+            'listing_facts' => [
+                'listing' => [
+                    'listing_id'    => 1,
+                    'listing_type'  => 'seller',
+                    'property_type' => 'Single Family',
+                    'bedrooms'      => '4',
+                    'bathrooms'     => '2',
+                    'asking_price'  => '450000',
+                    'square_feet'   => '2200',
+                    'year_built'    => '2005',
+                    'pool'          => '1',
+                    'hoa_fee'       => '200',
+                    'pets_allowed'  => '1',
+                ],
+                'faq_answers' => [
+                    'roof_age'   => 'The roof was replaced in 2020.',
+                    'hvac_notes' => 'HVAC was serviced in 2024.',
+                ],
             ],
             'educational' => [],
             default => [],
@@ -196,6 +217,16 @@ class AskAiResponseContractServiceTest extends TestCase
         $this->assertEmpty($result['missing_required_sources']);
     }
 
+    public function test_case_A_listing_facts_returns_contract_ready_with_listing_context(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $this->assertSame('contract_ready', $result['status']);
+        $this->assertSame('listing_facts', $result['question_type']);
+        $this->assertEmpty($result['missing_required_sources']);
+    }
+
     // =========================================================================
     // Case B — missing required context returns 'insufficient_context'
     // =========================================================================
@@ -252,6 +283,24 @@ class AskAiResponseContractServiceTest extends TestCase
 
         $this->assertSame('insufficient_context', $result['status']);
         $this->assertContains('property_intelligence', $result['missing_required_sources']);
+    }
+
+    public function test_case_B_listing_facts_returns_insufficient_context_when_listing_absent(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', []);
+
+        $this->assertSame('insufficient_context', $result['status']);
+        $this->assertContains('listing', $result['missing_required_sources']);
+    }
+
+    public function test_case_B_listing_facts_returns_insufficient_context_when_listing_null(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', ['listing' => null]);
+
+        $this->assertSame('insufficient_context', $result['status']);
+        $this->assertContains('listing', $result['missing_required_sources']);
     }
 
     public function test_case_B_insufficient_context_carries_all_required_contract_keys(): void
@@ -827,5 +876,159 @@ class AskAiResponseContractServiceTest extends TestCase
             $source['allowed_for_question_types'],
             "location_intelligence registry entry must allow educational question type"
         );
+    }
+
+    // =========================================================================
+    // Case M — listing_facts contract: required sources, allowed context,
+    //          disclosures, governance, and response rules
+    // =========================================================================
+
+    public function test_case_M_listing_facts_required_source_is_listing_only(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $this->assertContains('listing', $result['required_sources'],
+            "listing_facts required_sources must include 'listing'");
+        $this->assertCount(1, $result['required_sources'],
+            "listing_facts must require exactly one source: 'listing'");
+    }
+
+    public function test_case_M_listing_facts_allowed_context_includes_core_structural_fields(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $expectedFields = [
+            'listing.bedrooms',
+            'listing.bathrooms',
+            'listing.asking_price',
+            'listing.rent_amount',
+            'listing.max_rent',
+            'listing.square_feet',
+            'listing.year_built',
+        ];
+
+        foreach ($expectedFields as $field) {
+            $this->assertContains($field, $result['allowed_context'],
+                "listing_facts allowed_context must include '{$field}'");
+        }
+    }
+
+    public function test_case_M_listing_facts_allowed_context_includes_amenity_fields(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $expectedFields = [
+            'listing.pool',
+            'listing.pets_allowed',
+            'listing.hoa_fee',
+            'listing.showing_instructions',
+            'listing.appliances',
+            'listing.utilities',
+        ];
+
+        foreach ($expectedFields as $field) {
+            $this->assertContains($field, $result['allowed_context'],
+                "listing_facts allowed_context must include amenity field '{$field}'");
+        }
+    }
+
+    public function test_case_M_listing_facts_allowed_context_includes_faq_answers(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $this->assertContains('faq_answers', $result['allowed_context'],
+            "listing_facts allowed_context must include 'faq_answers'");
+    }
+
+    public function test_case_M_listing_facts_has_source_attribution_disclosure(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $this->assertNotEmpty($result['required_disclosures'],
+            "listing_facts must have at least one required_disclosure");
+
+        $disclosureText = implode(' ', $result['required_disclosures']);
+        $this->assertStringContainsStringIgnoringCase('listing data', $disclosureText,
+            "listing_facts disclosure must reference 'listing data'");
+        $this->assertStringContainsStringIgnoringCase('independently', $disclosureText,
+            "listing_facts disclosure must advise independent verification");
+    }
+
+    public function test_case_M_listing_facts_refusal_template_is_null(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $this->assertNull($result['refusal_template'],
+            "listing_facts must not have a refusal_template");
+    }
+
+    public function test_case_M_listing_facts_response_rules_address_null_field_behavior(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $this->assertNotEmpty($result['response_rules']);
+        $rulesText = strtolower(implode(' ', $result['response_rules']));
+
+        $this->assertTrue(
+            str_contains($rulesText, 'null') || str_contains($rulesText, 'absent') || str_contains($rulesText, 'unavailable'),
+            "listing_facts response_rules must address null/missing field behavior"
+        );
+    }
+
+    public function test_case_M_listing_facts_response_rules_prohibit_protected_class_references(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $rulesText = strtolower(implode(' ', $result['response_rules']));
+        $this->assertStringContainsString('protected class', $rulesText,
+            "listing_facts response_rules must explicitly prohibit protected class references");
+    }
+
+    public function test_case_M_listing_facts_allowed_context_does_not_include_protected_class_paths(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $contextText = strtolower(implode(' ', $result['allowed_context']));
+
+        foreach (['race', 'religion', 'national_origin', 'familial_status', 'disability'] as $term) {
+            $this->assertStringNotContainsString($term, $contextText,
+                "listing_facts allowed_context must not include protected-class path: '{$term}'");
+        }
+    }
+
+    public function test_case_M_listing_facts_carries_all_required_contract_keys(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        foreach (self::REQUIRED_CONTRACT_KEYS as $key) {
+            $this->assertArrayHasKey($key, $result,
+                "listing_facts contract missing required key '{$key}'");
+        }
+    }
+
+    public function test_case_M_listing_facts_success_is_true_when_contract_ready(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $this->assertTrue($result['success']);
+    }
+
+    public function test_case_M_listing_facts_success_is_false_when_insufficient_context(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->buildContract('listing_facts', []);
+
+        $this->assertFalse($result['success']);
     }
 }
