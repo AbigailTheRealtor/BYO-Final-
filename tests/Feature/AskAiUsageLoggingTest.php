@@ -215,7 +215,7 @@ class AskAiUsageLoggingTest extends TestCase
 
         $this->postQuestion(['question' => $question])->assertOk();
 
-        $log = AskAiUsageLog::first();
+        $log = AskAiUsageLog::latest('id')->first();
 
         $this->assertNotNull($log->question_hash);
         $this->assertSame(64, strlen($log->question_hash));

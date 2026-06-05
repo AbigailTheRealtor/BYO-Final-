@@ -7,6 +7,7 @@ use App\Models\ListingCompatibilityScore;
 use App\Models\PropertyDnaProfile;
 use App\Models\PropertyLocationDna;
 use App\Services\AskAi\AskAiContextBuilderService;
+use App\Services\AskAi\AskAiKnowledgeSourceRegistry;
 use App\Services\AskAi\AskAiPromptBuilderService;
 use App\Services\AskAi\AskAiResponseContractService;
 use App\Services\Dna\PropertyIntelligenceProfileService;
@@ -215,16 +216,12 @@ class AskAiIntelligenceIntegrationSmokeTest extends TestCase
     /**
      * Factory for AskAiPromptBuilderService.
      *
-     * Centralised so that when task #2060 (Source Attribution Enhancements) adds
-     * AskAiKnowledgeSourceRegistry as a constructor dependency, only this one method
-     * needs updating — no other test code changes required.
-     *
-     * Once #2060 merges, update to:
-     *   return new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
+     * Centralised so that if a constructor dependency is added in a future task,
+     * only this one method needs updating.
      */
     private function makePromptBuilder(): AskAiPromptBuilderService
     {
-        return new AskAiPromptBuilderService();
+        return new AskAiPromptBuilderService(new AskAiKnowledgeSourceRegistry());
     }
 
     /**

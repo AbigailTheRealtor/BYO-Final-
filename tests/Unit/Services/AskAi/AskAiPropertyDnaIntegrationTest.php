@@ -9,6 +9,8 @@ use App\Services\AskAi\AskAiKnowledgeSourceRegistry;
 use App\Services\AskAi\AskAiPromptBuilderService;
 use App\Services\AskAi\AskAiResponseContractService;
 use App\Services\Dna\PropertyIntelligenceProfileService;
+use App\Services\LocationDna\LocationDnaIntelligenceContextService;
+use App\Services\LocationDna\LocationDnaMarketingContextService;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -168,6 +170,44 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
         return $stub;
     }
 
+    private function makeLocationDnaIntelligenceServiceMock(): LocationDnaIntelligenceContextService
+    {
+        $mock = $this->getMockBuilder(LocationDnaIntelligenceContextService::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getForListing'])
+            ->getMock();
+
+        $mock->method('getForListing')->willReturn([
+            'success'                       => false,
+            'status'                        => 'missing',
+            'listing_type'                  => 'seller',
+            'listing_id'                    => 1,
+            'location_intelligence_context' => null,
+            'error'                         => 'No property_location_dna record found for this listing',
+        ]);
+
+        return $mock;
+    }
+
+    private function makeLocationDnaMarketingServiceMock(): LocationDnaMarketingContextService
+    {
+        $mock = $this->getMockBuilder(LocationDnaMarketingContextService::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getForListing'])
+            ->getMock();
+
+        $mock->method('getForListing')->willReturn([
+            'success'                    => false,
+            'status'                     => 'missing',
+            'listing_type'               => 'seller',
+            'listing_id'                 => 1,
+            'marketing_location_context' => null,
+            'error'                      => 'No property_location_dna record found for this listing',
+        ]);
+
+        return $mock;
+    }
+
     /**
      * Build a partial mock of AskAiContextBuilderService that stubs all finder
      * methods, mirroring the pattern in AskAiContextBuilderServiceTest.
@@ -180,7 +220,11 @@ class AskAiPropertyDnaIntegrationTest extends TestCase
         $intelligenceService ??= $this->makeIntelligenceServiceMock();
 
         return $this->getMockBuilder(AskAiContextBuilderService::class)
-            ->setConstructorArgs([$intelligenceService])
+            ->setConstructorArgs([
+                $intelligenceService,
+                $this->makeLocationDnaIntelligenceServiceMock(),
+                $this->makeLocationDnaMarketingServiceMock(),
+            ])
             ->onlyMethods([
                 'findListing',
                 'findPropertyDnaProfile',
