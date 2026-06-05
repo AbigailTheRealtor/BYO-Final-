@@ -336,6 +336,7 @@ class AskAiPromptBuilderService
      * Versions sub-array always contains:
      *   property_intelligence_version — from context['source_versions']['property_intelligence_version']
      *   ask_ai_context                — from context['source_versions']['ask_ai_context']
+     *   compatibility_version         — from context['source_versions']['compatibility_version']
      *   contract_version              — from contract['contract_version']
      */
     private function buildSourceAttribution(array $context, array $contract): array
@@ -347,6 +348,7 @@ class AskAiPromptBuilderService
             'versions'         => [
                 'property_intelligence_version' => $sourceVersions['property_intelligence_version'] ?? null,
                 'ask_ai_context'                => $sourceVersions['ask_ai_context'] ?? null,
+                'compatibility_version'         => $sourceVersions['compatibility_version'] ?? null,
                 'contract_version'              => $contract['contract_version'] ?? null,
             ],
         ];

@@ -488,7 +488,7 @@ class AskAiContextBuilderService
             return null;
         }
 
-        return [
+        $result = [
             'overall_score'                 => $score->overall_score ?? null,
             'physical_match_score'          => $score->physical_match_score ?? null,
             'financial_match_score'         => $score->financial_match_score ?? null,
@@ -505,6 +505,12 @@ class AskAiContextBuilderService
                 ? (string) $score->computed_at
                 : null,
         ];
+
+        if ($score->compatibility_trait_results !== null) {
+            $result['compatibility_trait_results'] = $score->compatibility_trait_results;
+        }
+
+        return $result;
     }
 
     // =========================================================================
