@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Offer;
 use App\Notifications\Offers\OfferAcceptedNotification;
 use App\Notifications\Offers\OfferCounteredNotification;
+use App\Notifications\Offers\OfferRejectedNotification;
 use App\Notifications\Offers\OfferSubmittedNotification;
 use App\Services\Offers\OfferAvailableActionsService;
 use App\Services\Offers\OfferTimelineBuilder;
@@ -112,6 +113,8 @@ class OfferController extends Controller
         if ($result['allowed'] === false) {
             return response()->json(['message' => $result['reason']], 422);
         }
+
+        $offer->user->notify(new OfferRejectedNotification($offer));
 
         return response()->json([
             'message' => 'Offer rejected.',
