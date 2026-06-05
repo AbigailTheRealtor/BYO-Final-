@@ -67,4 +67,24 @@ class OfferAuction extends Model
         }
         return $metaStatus ?: 'Active';
     }
+
+    public function showingAvailabilities()
+    {
+        return $this->hasMany(ShowingAvailability::class);
+    }
+
+    public function showings()
+    {
+        return $this->hasMany(Showing::class);
+    }
+
+    public function scopeShowingEligible($query)
+    {
+        return $query->whereExists(function ($sub) {
+            $sub->from('offer_auction_metas')
+                ->whereColumn('offer_auction_metas.offer_auction_id', 'offer_auctions.id')
+                ->where('offer_auction_metas.meta_key', 'user_type')
+                ->whereIn('offer_auction_metas.meta_value', ['seller', 'landlord']);
+        });
+    }
 }
