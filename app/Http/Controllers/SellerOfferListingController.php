@@ -181,28 +181,20 @@ class SellerOfferListingController extends Controller
     }
 
     /**
-     * Find or create the OfferAuction record linked to this SellerAgentAuction.
-     * The link is persisted as the meta key `linked_offer_auction_id` on the seller
-     * auction so the same OfferAuction is reused on every subsequent visit.
+     * Read the OfferAuction record linked to this SellerAgentAuction.
+     * Returns the linked OfferAuction or null when none is present.
+     * Never writes to the database — creation is the responsibility of the
+     * Livewire save/submit flow (ensureLinkedOfferAuction).
      */
-    private function resolveOfferAuction(SellerAgentAuction $auction): OfferAuction
+    private function resolveOfferAuction(SellerAgentAuction $auction): ?OfferAuction
     {
         $linkedId = $auction->info('linked_offer_auction_id');
 
         if ($linkedId) {
-            $offerAuction = OfferAuction::find((int) $linkedId);
-            if ($offerAuction) {
-                return $offerAuction;
-            }
+            return OfferAuction::find((int) $linkedId) ?: null;
         }
 
-        $offerAuction = OfferAuction::create([
-            'user_id' => $auction->user_id,
-        ]);
-
-        $auction->saveMeta('linked_offer_auction_id', $offerAuction->id);
-
-        return $offerAuction;
+        return null;
     }
 
     public function submitQuestion(Request $request, $auctionId)

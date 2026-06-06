@@ -36,6 +36,15 @@ class SellerOfferEntryTest extends TestCase
             'meta_key'                => 'workflow_type',
             'meta_value'              => 'offer_listing',
         ]);
+
+        // Pre-seed the linked OfferAuction so the view page renders offer_auction_id inputs.
+        // (Linking now happens at save/submit time, not on page view.)
+        $offerAuction = OfferAuction::create(['user_id' => $this->user->id]);
+        SellerAgentAuctionMeta::create([
+            'seller_agent_auction_id' => $this->auction->id,
+            'meta_key'                => 'linked_offer_auction_id',
+            'meta_value'              => (string) $offerAuction->id,
+        ]);
     }
 
     private function actingAsAllowedUser(): static

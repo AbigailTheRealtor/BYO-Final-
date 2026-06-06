@@ -4,6 +4,7 @@ namespace App\Http\Livewire\OfferListing\Seller;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Models\OfferAuction;
 use App\Models\SellerAgentAuction as SellerAgentAuctionModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -3703,6 +3704,18 @@ class SellerOfferListingEdit extends Component
         } elseif ($this->listingDocuments && is_string($this->listingDocuments)) {
             $auction->saveMeta('listing_documents', $this->listingDocuments);
         }
+
+        $this->ensureLinkedOfferAuction($auction);
+    }
+
+    private function ensureLinkedOfferAuction(SellerAgentAuctionModel $auction): void
+    {
+        $linkedId = $auction->info('linked_offer_auction_id');
+        if ($linkedId && OfferAuction::where('id', (int) $linkedId)->exists()) {
+            return;
+        }
+        $offerAuction = OfferAuction::create(['user_id' => $auction->user_id]);
+        $auction->saveMeta('linked_offer_auction_id', $offerAuction->id);
     }
 
     public function update()

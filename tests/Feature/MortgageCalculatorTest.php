@@ -544,6 +544,10 @@ class MortgageCalculatorTest extends TestCase
             }
         }
 
+        // Pre-seed a linked OfferAuction so the controller view() is purely read-only.
+        $offerAuction = \App\Models\OfferAuction::create(['user_id' => $user->id]);
+        $auction->saveMeta('linked_offer_auction_id', $offerAuction->id);
+
         return $auction;
     }
 
