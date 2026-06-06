@@ -2,6 +2,8 @@
 
 namespace App\Services\AskAi;
 
+use Illuminate\Support\Facades\Log;
+
 /**
  * AskAiRunnerV2Service — End-to-End Ask AI Pipeline Runner
  *
@@ -62,6 +64,26 @@ class AskAiRunnerV2Service
             'what is the roof situation',
             'tell me about the roof',
             'roof condition',
+        ],
+        'faq_answers.heating_cooling_system' => [
+            'heating and cooling system',
+            'heat and air',
+            'heating/cooling',
+            'what type of heating',
+            'what kind of heating',
+            'heating or cooling system',
+            'cooling system type',
+            'hvac type',
+            'hvac system type',
+        ],
+        'faq_answers.laundry_situation' => [
+            'in-unit laundry',
+            'in unit laundry',
+            'laundry situation',
+            'laundry in unit',
+            'washer and dryer in',
+            'washer/dryer in',
+            'laundry facilities',
         ],
     ];
 
@@ -128,6 +150,17 @@ class AskAiRunnerV2Service
             $classification = $this->classifier->classify($question);
             $questionType   = $classification['question_type'];
 
+            $trace = [
+                'question'             => $question,
+                'classifier_result'    => $questionType,
+                'normalizer_called'    => 'N',
+                'normalized_field_key' => null,
+                'faq_key_detected'     => null,
+                'final_question_type'  => $questionType,
+                'final_status'         => null,
+                'source_attribution'   => null,
+            ];
+
             // ----------------------------------------------------------------
             // Step 1a — Optional intent normalization (feature-flagged).
             // Fires only when:
@@ -144,10 +177,12 @@ class AskAiRunnerV2Service
                 && $this->normalizer !== null
                 && $this->normalizer->isEnabled()
             ) {
+                $trace['normalizer_called'] = 'Y';
                 $knownFieldKeys = $this->normalizer->buildKnownFieldKeys();
                 $normalizedKey  = $this->normalizer->normalize($question, $knownFieldKeys);
 
                 if ($normalizedKey !== null) {
+                    $trace['normalized_field_key'] = $normalizedKey;
                     $classification = [
                         'question_type'        => 'listing_facts',
                         'confidence'           => 0.70,
@@ -179,10 +214,13 @@ class AskAiRunnerV2Service
             if ($questionType === 'listing_facts' && !isset($options['normalized_field_key'])) {
                 $detectedKey = $this->detectFaqFieldKey($question);
                 if ($detectedKey !== null) {
+                    $trace['faq_key_detected'] = $detectedKey;
                     $classification['normalized_field_key'] = $detectedKey;
                     $options = array_merge($options, ['normalized_field_key' => $detectedKey]);
                 }
             }
+
+            $trace['final_question_type'] = $questionType;
 
             $internalResult = $this->internalRunner->run(
                 $listingType,
@@ -197,6 +235,8 @@ class AskAiRunnerV2Service
             $promptPackage = $internalResult['prompt_package'] ?? null;
 
             if ($promptPackage === null) {
+                $trace['final_status'] = 'failed';
+                $this->emitTrace($trace);
                 return [
                     'success'        => false,
                     'status'         => 'failed',
@@ -207,6 +247,7 @@ class AskAiRunnerV2Service
                     'adapter_result' => null,
                     'final_response' => null,
                     'error'          => 'Internal runner returned no prompt_package; OpenAI call skipped.',
+                    'trace'          => $trace,
                 ];
             }
 
@@ -248,6 +289,10 @@ class AskAiRunnerV2Service
                     $classification
                 );
 
+                $trace['final_status']       = 'insufficient_context';
+                $trace['source_attribution'] = $missingFinalResponse['source_attribution'] ?? null;
+                $this->emitTrace($trace);
+
                 return [
                     'success'        => false,
                     'status'         => 'insufficient_context',
@@ -258,6 +303,7 @@ class AskAiRunnerV2Service
                     'adapter_result' => null,
                     'final_response' => $missingFinalResponse,
                     'error'          => null,
+                    'trace'          => $trace,
                 ];
             }
 
@@ -272,6 +318,10 @@ class AskAiRunnerV2Service
 
             $error = ($finalResponse['error'] ?? null) ?: null;
 
+            $trace['final_status']       = $finalResponse['status'];
+            $trace['source_attribution'] = $finalResponse['source_attribution'] ?? null;
+            $this->emitTrace($trace);
+
             return [
                 'success'        => $finalResponse['success'],
                 'status'         => $finalResponse['status'],
@@ -282,9 +332,21 @@ class AskAiRunnerV2Service
                 'adapter_result' => $adapterResult,
                 'final_response' => $finalResponse,
                 'error'          => $error,
+                'trace'          => $trace,
             ];
 
         } catch (\Throwable $e) {
+            $exceptionTrace = [
+                'question'             => $question ?? null,
+                'classifier_result'    => null,
+                'normalizer_called'    => null,
+                'normalized_field_key' => null,
+                'faq_key_detected'     => null,
+                'final_question_type'  => null,
+                'final_status'         => 'failed',
+                'source_attribution'   => null,
+            ];
+            $this->emitTrace($exceptionTrace);
             return [
                 'success'        => false,
                 'status'         => 'failed',
@@ -295,7 +357,23 @@ class AskAiRunnerV2Service
                 'adapter_result' => null,
                 'final_response' => null,
                 'error'          => $e->getMessage(),
+                'trace'          => $exceptionTrace,
             ];
+        }
+    }
+
+    /**
+     * Emit a debug trace log entry. Silently skips when the Log facade is
+     * unavailable (e.g. pure PHPUnit tests without a booted Laravel app).
+     *
+     * @param  array<string, mixed> $trace
+     */
+    private function emitTrace(array $trace): void
+    {
+        try {
+            Log::debug('AskAiRunnerV2 trace', $trace);
+        } catch (\Throwable $ignored) {
+            // Log facade unavailable in unit test contexts without a booted app.
         }
     }
 
@@ -346,6 +424,8 @@ class AskAiRunnerV2Service
         $labelMap = [
             'faq_answers.roof_age_and_condition'      => 'Roof information',
             'faq_answers.hvac_system_age'             => 'HVAC system information',
+            'faq_answers.heating_cooling_system'      => 'Heating and cooling system information',
+            'faq_answers.laundry_situation'           => 'Laundry information',
             'faq_answers.water_heater_age_type'       => 'Water heater information',
             'faq_answers.average_utility_costs'       => 'Utility cost information',
             'faq_answers.known_defects_issues'        => 'Known defects/issues information',

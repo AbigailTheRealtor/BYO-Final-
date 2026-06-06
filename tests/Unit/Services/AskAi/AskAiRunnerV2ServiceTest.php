@@ -1125,4 +1125,278 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $this->assertFalse($result['success']);
         $this->assertSame('blocked', $result['status']);
     }
+
+    // =========================================================================
+    // Case K — Trace key is present and correct on every run() exit path
+    // =========================================================================
+
+    // ── K1 ── Happy path: trace key present with correct final_status ─────────
+
+    public function test_case_K1_happy_path_result_contains_trace_key(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertArrayHasKey('trace', $result);
+        $this->assertIsArray($result['trace']);
+    }
+
+    public function test_case_K1_happy_path_trace_final_status_is_ready(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertSame('ready', $result['trace']['final_status']);
+    }
+
+    public function test_case_K1_happy_path_trace_classifier_result_is_populated(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('property_standout'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertSame('property_standout', $result['trace']['classifier_result']);
+    }
+
+    // ── K2 ── Missing prompt_package path: trace key present with correct status ──
+
+    public function test_case_K2_missing_prompt_package_result_contains_trace_key(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'failed',
+            'prompt_package' => null,
+        ]));
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $this->assertArrayHasKey('trace', $result);
+        $this->assertIsArray($result['trace']);
+    }
+
+    public function test_case_K2_missing_prompt_package_trace_final_status_is_failed(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'failed',
+            'prompt_package' => null,
+        ]));
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $this->assertSame('failed', $result['trace']['final_status']);
+    }
+
+    // ── K3 ── Exception path: trace key present with correct status ───────────
+
+    public function test_case_K3_throwable_result_contains_trace_key(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willThrowException(new \RuntimeException('classifier exploded'));
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertArrayHasKey('trace', $result);
+        $this->assertIsArray($result['trace']);
+    }
+
+    public function test_case_K3_throwable_trace_final_status_is_failed(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willThrowException(new \RuntimeException('classifier exploded'));
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertSame('failed', $result['trace']['final_status']);
+    }
+
+    // ── K4 ── Missing-data guard path: trace key present with correct status ──
+
+    public function test_case_K4_missing_data_guard_result_contains_trace_key(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackageWithEmptyFaq = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackageWithEmptyFaq,
+        ]));
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'Tell me about the roof',
+            ['normalized_field_key' => 'faq_answers.roof_age_and_condition']
+        );
+
+        $this->assertArrayHasKey('trace', $result);
+        $this->assertIsArray($result['trace']);
+    }
+
+    public function test_case_K4_missing_data_guard_trace_final_status_is_insufficient_context(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackageWithEmptyFaq = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackageWithEmptyFaq,
+        ]));
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'Tell me about the roof',
+            ['normalized_field_key' => 'faq_answers.roof_age_and_condition']
+        );
+
+        $this->assertSame('insufficient_context', $result['trace']['final_status']);
+    }
+
+    // ── K5 ── FAQ key detection sets trace.faq_key_detected ──────────────────
+
+    public function test_case_K5_faq_key_detected_set_in_trace_when_keyword_matches(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => ['required_sources' => ['property_intelligence']],
+            'allowed_context'      => ['faq_answers' => ['roof_age_and_condition' => ['answer_text' => 'New roof 2022']]],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackage,
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Tell me about the roof condition here');
+
+        $this->assertSame('faq_answers.roof_age_and_condition', $result['trace']['faq_key_detected']);
+    }
+
+    public function test_case_K5_faq_key_detected_null_when_no_keyword_matches(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('property_standout'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertNull($result['trace']['faq_key_detected']);
+    }
+
+    // =========================================================================
+    // Case L — Contract governance: listing.address in listing_facts allowed_context
+    // =========================================================================
+
+    public function test_case_L_contract_service_listing_facts_includes_listing_address(): void
+    {
+        $contractServicePath = dirname(__DIR__, 4) . '/app/Services/AskAi/AskAiResponseContractService.php';
+        $this->assertFileExists($contractServicePath);
+        $content = file_get_contents($contractServicePath);
+        $this->assertStringContainsString(
+            "'listing.address'",
+            $content,
+            "AskAiResponseContractService must include 'listing.address' in listing_facts allowed_context."
+        );
+    }
+
+    public function test_case_L_address_keyword_in_classifier_listing_facts(): void
+    {
+        $classifierPath = dirname(__DIR__, 4) . '/app/Services/AskAi/AskAiQuestionClassifierService.php';
+        $this->assertFileExists($classifierPath);
+        $content = file_get_contents($classifierPath);
+        $this->assertStringContainsString(
+            "'address'",
+            $content,
+            "AskAiQuestionClassifierService must include 'address' keyword in the listing_facts block."
+        );
+        $this->assertStringContainsString(
+            "'property address'",
+            $content,
+            "AskAiQuestionClassifierService must include 'property address' keyword in the listing_facts block."
+        );
+    }
+
+    public function test_case_L_context_builder_extracts_address_field(): void
+    {
+        $contextBuilderPath = dirname(__DIR__, 4) . '/app/Services/AskAi/AskAiContextBuilderService.php';
+        $this->assertFileExists($contextBuilderPath);
+        $content = file_get_contents($contextBuilderPath);
+        $this->assertStringContainsString(
+            "'address'",
+            $content,
+            "AskAiContextBuilderService must extract the 'address' field for seller listings."
+        );
+    }
 }

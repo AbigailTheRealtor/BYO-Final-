@@ -289,6 +289,22 @@ class AskAiQuestionClassifierService
             // Unit count
             'number of units',
             'how many units',
+            // Address / location of the listing
+            'address',
+            'property address',
+            'what is the address',
+            "what's the address",
+            'where is this property',
+            'where is the property',
+            'property location',
+            'location of this property',
+            'location of the property',
+            // In-unit laundry
+            'laundry',
+            'in-unit laundry',
+            'in unit laundry',
+            'washer dryer',
+            'washer and dryer',
             // MLS
             'mls number',
             'mls id',

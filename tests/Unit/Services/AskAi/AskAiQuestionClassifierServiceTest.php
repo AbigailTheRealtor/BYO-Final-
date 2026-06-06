@@ -1306,4 +1306,102 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $result = $this->makeService()->classify('What is their location preference?');
         $this->assertSame('listing_facts', $result['question_type']);
     }
+
+    // =========================================================================
+    // Case O — Address and laundry keywords must route to listing_facts
+    // =========================================================================
+
+    // --- Property address keywords ---
+
+    public function test_case_O_address_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the address of this property?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_bare_address_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('address');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_property_address_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('property address');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_what_is_the_address_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the address?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_whats_the_address_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify("What's the address?");
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_where_is_this_property_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Where is this property located?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_where_is_the_property_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Where is the property?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_property_location_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the property location?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_location_of_this_property_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Tell me the location of this property.');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_location_of_the_property_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the location of the property?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    // --- In-unit laundry keywords ---
+
+    public function test_case_O_laundry_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Is there laundry available?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_in_unit_laundry_hyphen_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Is there in-unit laundry at this rental property?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_in_unit_laundry_no_hyphen_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Does the unit have in unit laundry?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_washer_dryer_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Is there a washer dryer in the unit?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
+
+    public function test_case_O_washer_and_dryer_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Does the property have a washer and dryer?');
+        $this->assertSame('listing_facts', $result['question_type']);
+    }
 }
