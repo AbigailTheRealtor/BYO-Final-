@@ -274,19 +274,21 @@ class OfferTermsEntryTest extends TestCase
         $response->assertSee('name="cryptocurrency_type"', false);
         $response->assertSee('name="exchange_item"', false);
         $response->assertSee('name="seller_financing_amount"', false);
-        // Contingencies section (includes moved field)
+        // Contingencies section — sale_of_buyer_property_contingency now a toggle + days
         $response->assertSee('name="sale_of_buyer_property_contingency"', false);
+        $response->assertSee('name="sale_of_buyer_property_contingency_days"', false);
         // Purchase terms
         $response->assertSee('name="initial_deposit_amount"', false);
         $response->assertSee('name="additional_deposit_amount"', false);
-        $response->assertSee('name="preferred_inspection_period"', false);
-        $response->assertSee('name="possession_preference"', false);
-        $response->assertSee('name="possession_details"', false);
+        $response->assertSee('name="possession_notes"', false);
         $response->assertSee('name="seller_contribution_requested"', false);
         $response->assertSee('name="included_personal_property"', false);
         $response->assertSee('name="excluded_items"', false);
         $response->assertSee('name="home_warranty_requested"', false);
         // Removed fields must not appear
+        $response->assertDontSee('name="preferred_inspection_period"', false);
+        $response->assertDontSee('name="possession_preference"', false);
+        $response->assertDontSee('name="possession_details"', false);
         $response->assertDontSee('name="escrow_agent_preference"', false);
         $response->assertDontSee('name="appraisal_contingency_preference"', false);
         $response->assertDontSee('name="financing_contingency_preference"', false);
@@ -302,49 +304,50 @@ class OfferTermsEntryTest extends TestCase
         $this->allowPlayoffAccess($owner);
 
         $payload = [
-            'financing_type'                       => 'Assumable',
-            'assumable_terms'                      => '$200,000 at 3.5% fixed for 25 years',
-            'assumable_loan_type'                  => 'FHA',
-            'assumable_interest_rate'              => '3.5',
-            'outstanding_balance'                  => '200000',
-            'assumable_loan_term_remaining'        => '25 years',
-            'initial_deposit_amount'               => '5000',
-            'initial_deposit_timeframe'            => 'Within 3 Days',
-            'additional_deposit_amount'            => '10000',
-            'additional_deposit_timeframe'         => 'Within 10 Days',
-            'preferred_inspection_period'          => '10',
-            'sale_of_buyer_property_contingency'   => 'Accepted',
-            'possession_preference'                => 'Seller Rent Back',
-            'possession_details'                   => 'Seller requests 30-day rent back at market rate',
-            'seller_contribution_requested'        => 'Yes',
-            'seller_contribution_details'          => '$5,000 toward closing costs',
-            'included_personal_property'           => 'Refrigerator, Washer/Dryer',
-            'excluded_items'                       => 'Antique chandelier',
-            'home_warranty_requested'              => 'Yes',
-            'home_warranty_details'                => '$500 one-year warranty',
+            'financing_type'                          => 'Assumable',
+            'assumable_terms'                         => '$200,000 at 3.5% fixed for 25 years',
+            'assumable_loan_type'                     => 'FHA',
+            'assumable_interest_rate'                 => '3.5',
+            'outstanding_balance'                     => '200000',
+            'assumable_loan_term_remaining'           => '25 years',
+            'initial_deposit_amount'                  => '5000',
+            'initial_deposit_timeframe'               => 'Within 3 Days',
+            'additional_deposit_amount'               => '10000',
+            'additional_deposit_timeframe'            => 'Within 10 Days',
+            'sale_of_buyer_property_contingency'      => '1',
+            'sale_of_buyer_property_contingency_days' => '14',
+            'possession_notes'                        => 'Possession at closing preferred.',
+            'seller_contribution_requested'           => 'Yes',
+            'seller_contribution_details'             => '$5,000 toward closing costs',
+            'included_personal_property'              => 'Refrigerator, Washer/Dryer',
+            'excluded_items'                          => 'Antique chandelier',
+            'home_warranty_requested'                 => 'Yes',
+            'home_warranty_details'                   => '$500 one-year warranty',
         ];
 
         $response = $this->actingAs($owner)->post(route('offers.terms', $offer), $payload);
         $response->assertRedirect(route('offers.show', $offer));
 
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'financing_type',                     'meta_value' => 'Assumable']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'assumable_terms',                    'meta_value' => '$200,000 at 3.5% fixed for 25 years']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'assumable_loan_type',                'meta_value' => 'FHA']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'outstanding_balance',                'meta_value' => '200000']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'initial_deposit_amount',             'meta_value' => '5000']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'initial_deposit_timeframe',          'meta_value' => 'Within 3 Days']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'additional_deposit_amount',          'meta_value' => '10000']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'preferred_inspection_period',        'meta_value' => '10']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'sale_of_buyer_property_contingency', 'meta_value' => 'Accepted']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'possession_preference',              'meta_value' => 'Seller Rent Back']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'possession_details',                 'meta_value' => 'Seller requests 30-day rent back at market rate']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_contribution_requested',      'meta_value' => 'Yes']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_contribution_details',        'meta_value' => '$5,000 toward closing costs']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'included_personal_property',         'meta_value' => 'Refrigerator, Washer/Dryer']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'excluded_items',                     'meta_value' => 'Antique chandelier']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'home_warranty_requested',            'meta_value' => 'Yes']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'home_warranty_details',              'meta_value' => '$500 one-year warranty']);
-        // Removed fields must not be written to offer_metas
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'financing_type',                          'meta_value' => 'Assumable']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'assumable_terms',                         'meta_value' => '$200,000 at 3.5% fixed for 25 years']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'assumable_loan_type',                     'meta_value' => 'FHA']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'outstanding_balance',                     'meta_value' => '200000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'initial_deposit_amount',                  'meta_value' => '5000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'initial_deposit_timeframe',               'meta_value' => 'Within 3 Days']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'additional_deposit_amount',               'meta_value' => '10000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'sale_of_buyer_property_contingency',      'meta_value' => '1']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'sale_of_buyer_property_contingency_days', 'meta_value' => '14']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'possession_notes',                        'meta_value' => 'Possession at closing preferred.']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_contribution_requested',           'meta_value' => 'Yes']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_contribution_details',             'meta_value' => '$5,000 toward closing costs']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'included_personal_property',              'meta_value' => 'Refrigerator, Washer/Dryer']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'excluded_items',                          'meta_value' => 'Antique chandelier']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'home_warranty_requested',                 'meta_value' => 'Yes']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'home_warranty_details',                   'meta_value' => '$500 one-year warranty']);
+        // Removed fields must never be written to offer_metas
+        $this->assertDatabaseMissing('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'preferred_inspection_period']);
+        $this->assertDatabaseMissing('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'possession_preference']);
+        $this->assertDatabaseMissing('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'possession_details']);
         $this->assertDatabaseMissing('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'escrow_agent_preference']);
         $this->assertDatabaseMissing('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'appraisal_contingency_preference']);
         $this->assertDatabaseMissing('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'financing_contingency_preference']);
@@ -360,11 +363,12 @@ class OfferTermsEntryTest extends TestCase
         $this->allowPlayoffAccess($owner);
 
         $this->actingAs($owner)->post(route('offers.terms', $offer), [
-            'financing_type'                     => 'Cryptocurrency',
-            'cryptocurrency_type'                => 'Bitcoin',
-            'crypto_percentage'                  => '50',
-            'included_personal_property'         => 'Pool table, Wine fridge',
-            'sale_of_buyer_property_contingency' => 'Negotiable',
+            'financing_type'                          => 'Cryptocurrency',
+            'cryptocurrency_type'                     => 'Bitcoin',
+            'crypto_percentage'                       => '50',
+            'included_personal_property'              => 'Pool table, Wine fridge',
+            'sale_of_buyer_property_contingency'      => '1',
+            'sale_of_buyer_property_contingency_days' => '21',
         ]);
 
         $response = $this->actingAs($owner)->get(route('offers.show', $offer));
@@ -374,7 +378,7 @@ class OfferTermsEntryTest extends TestCase
         $response->assertSee('Bitcoin');
         $response->assertSee('50');
         $response->assertSee('Pool table, Wine fridge');
-        $response->assertSee('Negotiable');
+        $response->assertSee('21');
     }
 
     // ── Test 13: Read-only view displays all new sale fields ──────────────────
@@ -383,22 +387,21 @@ class OfferTermsEntryTest extends TestCase
     {
         ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'submitted');
 
-        $offer->saveMeta('financing_type',                     'Seller Financing');
-        $offer->saveMeta('seller_financing_amount',            '350000');
-        $offer->saveMeta('seller_financing_rate',              '6.5');
-        $offer->saveMeta('seller_financing_term',              '30 years');
-        $offer->saveMeta('initial_deposit_amount',             '7500');
-        $offer->saveMeta('initial_deposit_timeframe',          'Within 5 Days');
-        $offer->saveMeta('preferred_inspection_period',        '15');
-        $offer->saveMeta('sale_of_buyer_property_contingency', 'Negotiable');
-        $offer->saveMeta('possession_preference',              'Seller Rent Back');
-        $offer->saveMeta('possession_details',                 'Seller requests 30-day rent back');
-        $offer->saveMeta('seller_contribution_requested',      'Yes');
-        $offer->saveMeta('seller_contribution_details',        '$3,000 toward closing costs');
-        $offer->saveMeta('included_personal_property',         'Stainless fridge');
-        $offer->saveMeta('excluded_items',                     'Garden shed');
-        $offer->saveMeta('home_warranty_requested',            'Yes');
-        $offer->saveMeta('home_warranty_details',              '$600 AHS warranty');
+        $offer->saveMeta('financing_type',                          'Seller Financing');
+        $offer->saveMeta('seller_financing_amount',                 '350000');
+        $offer->saveMeta('seller_financing_rate',                   '6.5');
+        $offer->saveMeta('seller_financing_term',                   '30 years');
+        $offer->saveMeta('initial_deposit_amount',                  '7500');
+        $offer->saveMeta('initial_deposit_timeframe',               'Within 5 Days');
+        $offer->saveMeta('sale_of_buyer_property_contingency',      '1');
+        $offer->saveMeta('sale_of_buyer_property_contingency_days', '10');
+        $offer->saveMeta('possession_notes',                        'Seller requests 30-day rent back');
+        $offer->saveMeta('seller_contribution_requested',           'Yes');
+        $offer->saveMeta('seller_contribution_details',             '$3,000 toward closing costs');
+        $offer->saveMeta('included_personal_property',              'Stainless fridge');
+        $offer->saveMeta('excluded_items',                          'Garden shed');
+        $offer->saveMeta('home_warranty_requested',                 'Yes');
+        $offer->saveMeta('home_warranty_details',                   '$600 AHS warranty');
 
         $response = $this->actingAs($owner)->get(route('offers.show', $offer));
 
@@ -410,9 +413,8 @@ class OfferTermsEntryTest extends TestCase
         $response->assertSee('30 years');
         $response->assertSee('7500');
         $response->assertSee('Within 5 Days');
-        $response->assertSee('15 days');
-        $response->assertSee('Negotiable');
-        $response->assertSee('Seller Rent Back');
+        $response->assertSee('Yes');
+        $response->assertSee('10 days');
         $response->assertSee('Seller requests 30-day rent back');
         $response->assertSee('$3,000 toward closing costs');
         $response->assertSee('Stainless fridge');
@@ -512,5 +514,99 @@ class OfferTermsEntryTest extends TestCase
         $response->assertSee('Within 21 Days');
         $response->assertSee('Within 28 Days');
         $response->assertDontSee('Other — Other');
+    }
+
+    // ── Test 17: Sale-of-buyer-property toggle ON saves 1 ────────────────────
+
+    public function test_sale_of_buyer_property_contingency_toggle_on_saves_one(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), [
+            'sale_of_buyer_property_contingency'      => '1',
+            'sale_of_buyer_property_contingency_days' => '30',
+        ]);
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'sale_of_buyer_property_contingency',      'meta_value' => '1']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'sale_of_buyer_property_contingency_days', 'meta_value' => '30']);
+    }
+
+    // ── Test 18: Sale-of-buyer-property toggle OFF saves 0 ───────────────────
+
+    public function test_sale_of_buyer_property_contingency_toggle_off_saves_zero(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), []);
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'sale_of_buyer_property_contingency', 'meta_value' => '0']);
+    }
+
+    // ── Test 19: possession_notes saves, repopulates, and displays read-only ──
+
+    public function test_possession_notes_saves_repopulates_and_displays_read_only(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), [
+            'possession_notes' => 'Buyer prefers possession at closing.',
+        ]);
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'possession_notes', 'meta_value' => 'Buyer prefers possession at closing.']);
+
+        $formResponse = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $formResponse->assertStatus(200);
+        $formResponse->assertSee('Buyer prefers possession at closing.');
+
+        $offer->update(['status' => 'submitted']);
+        $readOnlyResponse = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $readOnlyResponse->assertStatus(200);
+        $readOnlyResponse->assertSee('Possession Notes');
+        $readOnlyResponse->assertSee('Buyer prefers possession at closing.');
+    }
+
+    // ── Test 20: possession_notes row hidden when empty in read-only view ─────
+
+    public function test_possession_notes_row_hidden_when_empty_in_read_only(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'submitted');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertDontSee('Possession Notes');
+    }
+
+    // ── Test 21: preferred_inspection_period absent from form and never written
+
+    public function test_preferred_inspection_period_absent_from_form_and_never_written(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $formResponse = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $formResponse->assertDontSee('name="preferred_inspection_period"', false);
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), [
+            'preferred_inspection_period' => '10',
+        ]);
+
+        $this->assertDatabaseMissing('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'preferred_inspection_period']);
+    }
+
+    // ── Test 22: Submit button has visible primary styling ────────────────────
+
+    public function test_submit_button_has_visible_primary_styling(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('save-offer-terms-btn', false);
+        $response->assertSee('#2563eb', false);
     }
 }

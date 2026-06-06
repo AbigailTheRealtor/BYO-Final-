@@ -108,6 +108,7 @@
                             finType: '{{ $_ft }}',
                             finCont: {{ old('financing_contingency', $metas->get('financing_contingency')) ? 'true' : 'false' }},
                             inspCont: {{ old('inspection_contingency', $metas->get('inspection_contingency')) ? 'true' : 'false' }},
+                            saleCont: {{ old('sale_of_buyer_property_contingency', $metas->get('sale_of_buyer_property_contingency')) ? 'true' : 'false' }},
                             sellerContrib: '{{ old('seller_contribution_requested', $metas->get('seller_contribution_requested') ?? '') }}',
                             homeWarranty: '{{ old('home_warranty_requested', $metas->get('home_warranty_requested') ?? '') }}'
                         }">
@@ -318,13 +319,17 @@
 
                         {{-- Sale of Buyer Property Contingency --}}
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Sale of Buyer's Property Contingency</label>
-                            <select name="sale_of_buyer_property_contingency" class="form-select w-auto">
-                                <option value="">— Select —</option>
-                                @foreach(['Accepted','Not Accepted','Negotiable'] as $opt)
-                                <option value="{{ $opt }}" {{ old('sale_of_buyer_property_contingency', $metas->get('sale_of_buyer_property_contingency')) === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                                @endforeach
-                            </select>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="sale_cont_terms" name="sale_of_buyer_property_contingency"
+                                    value="1" x-model="saleCont"
+                                    {{ old('sale_of_buyer_property_contingency', $metas->get('sale_of_buyer_property_contingency')) ? 'checked' : '' }}>
+                                <label class="form-check-label fw-semibold" for="sale_cont_terms">Sale of Buyer's Property Contingency</label>
+                            </div>
+                            <div x-show="saleCont" class="mt-1">
+                                <label class="form-label small">Contingency Period (days)</label>
+                                <input type="number" name="sale_of_buyer_property_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
+                                    value="{{ old('sale_of_buyer_property_contingency_days', $metas->get('sale_of_buyer_property_contingency_days')) }}">
+                            </div>
                         </div>
 
                         {{-- Purchase Terms --}}
@@ -382,14 +387,6 @@
                             </div>
                         </div>
 
-                        {{-- Inspection Period --}}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Preferred Inspection Period (days)</label>
-                            <input type="number" name="preferred_inspection_period" class="form-control w-auto" min="0" max="365"
-                                placeholder="e.g., 10"
-                                value="{{ old('preferred_inspection_period', $metas->get('preferred_inspection_period')) }}">
-                        </div>
-
                         {{-- Seller Contribution --}}
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Seller Contribution Requested</label>
@@ -405,23 +402,11 @@
                             </div>
                         </div>
 
-                        {{-- Possession Preference --}}
-                        @php
-                            $_possPref = old('possession_preference', $metas->get('possession_preference') ?? '');
-                        @endphp
-                        <div class="mb-3" x-data="{ possPref: '{{ $_possPref }}' }">
-                            <label class="form-label fw-semibold">Possession Preference</label>
-                            <select name="possession_preference" class="form-select w-auto" x-model="possPref">
-                                <option value="">— Select —</option>
-                                @foreach(['At Closing','Day After Closing','Seller Rent Back','Negotiable','Other'] as $opt)
-                                <option value="{{ $opt }}" {{ $_possPref === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                                @endforeach
-                            </select>
-                            <div x-show="possPref === 'Seller Rent Back' || possPref === 'Other'" class="mt-2">
-                                <input type="text" name="possession_details" class="form-control"
-                                    placeholder="e.g., Seller requests 30-day rent back at market rate"
-                                    value="{{ old('possession_details', $metas->get('possession_details')) }}">
-                            </div>
+                        {{-- Possession Notes --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Possession Notes <span class="text-muted small">(optional)</span></label>
+                            <textarea name="possession_notes" class="form-control" rows="3"
+                                placeholder="e.g., Requesting possession at closing, or seller may need up to 7 days post-close">{{ old('possession_notes', $metas->get('possession_notes')) }}</textarea>
                         </div>
 
                         {{-- Included Personal Property --}}
@@ -500,8 +485,12 @@
                                 placeholder="Private notes for your reference…">{{ old('notes', $metas->get('notes')) }}</textarea>
                         </div>
 
+                        <style>
+                            #save-offer-terms-btn { background:#2563eb; border-color:#2563eb; color:#fff; font-weight:600; }
+                            #save-offer-terms-btn:hover { background:#1d4ed8; border-color:#1d4ed8; }
+                        </style>
                         <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-primary">Save Offer Terms</button>
+                            <button type="submit" id="save-offer-terms-btn" class="btn btn-primary">Save Offer Terms</button>
                         </div>
                     </form>
                     @else
@@ -613,24 +602,17 @@
                         <dd class="col-sm-9">{{ $metas->get('additional_deposit_amount') }}{{ $_addTfDisplay ? ' — ' . $_addTfDisplay : '' }}</dd>
                         @endif
 
-                        @if($metas->get('preferred_inspection_period') !== null && $metas->get('preferred_inspection_period') !== '')
-                        <dt class="col-sm-3">Preferred Inspection Period</dt>
-                        <dd class="col-sm-9">{{ $metas->get('preferred_inspection_period') }} days</dd>
-                        @endif
-
-                        @if($metas->get('sale_of_buyer_property_contingency'))
                         <dt class="col-sm-3">Sale of Buyer's Property Contingency</dt>
-                        <dd class="col-sm-9">{{ $metas->get('sale_of_buyer_property_contingency') }}</dd>
-                        @endif
-
-                        @if($metas->get('possession_preference'))
-                        <dt class="col-sm-3">Possession Preference</dt>
                         <dd class="col-sm-9">
-                            {{ $metas->get('possession_preference') }}
-                            @if(in_array($metas->get('possession_preference'), ['Seller Rent Back', 'Other']) && $metas->get('possession_details'))
-                                — {{ $metas->get('possession_details') }}
+                            {{ $metas->get('sale_of_buyer_property_contingency') ? 'Yes' : 'No' }}
+                            @if($metas->get('sale_of_buyer_property_contingency') && $metas->get('sale_of_buyer_property_contingency_days'))
+                                ({{ $metas->get('sale_of_buyer_property_contingency_days') }} days)
                             @endif
                         </dd>
+
+                        @if($metas->get('possession_notes'))
+                        <dt class="col-sm-3">Possession Notes</dt>
+                        <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('possession_notes') }}</dd>
                         @endif
 
                         @if($metas->get('seller_contribution_requested'))

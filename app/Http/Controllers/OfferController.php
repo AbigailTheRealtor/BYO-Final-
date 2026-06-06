@@ -252,10 +252,9 @@ class OfferController extends Controller
                 'additional_deposit_amount'            => 'nullable|string|max:200',
                 'additional_deposit_timeframe'         => 'nullable|string|max:100',
                 'additional_deposit_timeframe_other'   => 'nullable|string|max:200',
-                'preferred_inspection_period'          => 'nullable|integer|min:0|max:365',
-                'sale_of_buyer_property_contingency'   => 'nullable|in:Accepted,Not Accepted,Negotiable',
-                'possession_preference'                => 'nullable|in:At Closing,Day After Closing,Seller Rent Back,Negotiable,Other',
-                'possession_details'                   => 'nullable|string|max:500',
+                'sale_of_buyer_property_contingency'        => 'nullable|boolean',
+                'sale_of_buyer_property_contingency_days'   => 'nullable|integer|min:1|max:365',
+                'possession_notes'                          => 'nullable|string|max:2000',
                 'seller_contribution_requested'        => 'nullable|in:Yes,No',
                 'seller_contribution_details'          => 'nullable|string|max:1000',
                 'included_personal_property'           => 'nullable|string|max:1000',
@@ -323,10 +322,9 @@ class OfferController extends Controller
             $offer->saveMeta('additional_deposit_amount',           $validated['additional_deposit_amount'] ?? null);
             $offer->saveMeta('additional_deposit_timeframe',        $validated['additional_deposit_timeframe'] ?? null);
             $offer->saveMeta('additional_deposit_timeframe_other',  $validated['additional_deposit_timeframe_other'] ?? null);
-            $offer->saveMeta('preferred_inspection_period',         $validated['preferred_inspection_period'] ?? null);
-            $offer->saveMeta('sale_of_buyer_property_contingency',  $validated['sale_of_buyer_property_contingency'] ?? null);
-            $offer->saveMeta('possession_preference',               $validated['possession_preference'] ?? null);
-            $offer->saveMeta('possession_details',                  $validated['possession_details'] ?? null);
+            $offer->saveMeta('sale_of_buyer_property_contingency',      $request->boolean('sale_of_buyer_property_contingency') ? 1 : 0);
+            $offer->saveMeta('sale_of_buyer_property_contingency_days', $validated['sale_of_buyer_property_contingency_days'] ?? null);
+            $offer->saveMeta('possession_notes',                        $validated['possession_notes'] ?? null);
             $offer->saveMeta('seller_contribution_requested',       $validated['seller_contribution_requested'] ?? null);
             $offer->saveMeta('seller_contribution_details',         $validated['seller_contribution_details'] ?? null);
             $offer->saveMeta('included_personal_property',          $validated['included_personal_property'] ?? null);
