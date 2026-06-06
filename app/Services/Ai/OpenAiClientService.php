@@ -80,11 +80,15 @@ class OpenAiClientService
      *
      * The client is not cached in a property so that API key rotation takes effect
      * without requiring an application restart (Phase XA Section 3.2).
+     *
+     * @param  int|null $timeoutOverride  If provided, overrides the global ai.timeout_seconds config
+     *                                    for this call only. Callers that require a short-lived call
+     *                                    (e.g. intent normalization) should pass a small value (e.g. 10).
      */
-    private function makeClient(): Client
+    private function makeClient(?int $timeoutOverride = null): Client
     {
         $apiKey  = (string) config('ai.api_key', '');
-        $timeout = (int)    config('ai.timeout_seconds', 90);
+        $timeout = $timeoutOverride ?? (int) config('ai.timeout_seconds', 90);
 
         return OpenAI::factory()
             ->withApiKey($apiKey)
@@ -236,17 +240,28 @@ class OpenAiClientService
      *   - 'requested_at'   => string   — UTC ISO 8601 timestamp when the call was initiated.
      *   - 'completed_at'   => string   — UTC ISO 8601 timestamp when the call completed.
      *
-     * @param  array $payload  Associative array of approved Phase R/U/P context values.
+     * @param  array $payload      Associative array of approved Phase R/U/P context values.
+     * @param  array $callOptions  Optional per-call overrides (do not affect other callers):
+     *                               'timeout_seconds' (int)  — overrides ai.timeout_seconds for this call only.
+     *                               'max_tokens'      (int)  — caps completion tokens for this call only.
      * @return array
      * @throws Exception  On non-retryable failure, exhausted retries, or invalid JSON response.
      */
-    public function send(array $payload): array
+    public function send(array $payload, array $callOptions = []): array
     {
         $this->validateRequest($payload);
 
         $model         = (string) config('ai.model', '');
         $promptVersion = (string) config('ai.prompt_version', '');
         $maxRetries    = (int)    config('ai.max_retries', 3);
+
+        $timeoutOverride = isset($callOptions['timeout_seconds'])
+            ? (int) $callOptions['timeout_seconds']
+            : null;
+
+        $maxTokensOverride = isset($callOptions['max_tokens'])
+            ? (int) $callOptions['max_tokens']
+            : null;
 
         $requestedAt   = now()->utc()->toIso8601String();
         $attemptCount  = 0;
@@ -256,9 +271,9 @@ class OpenAiClientService
             $attemptCount++;
 
             try {
-                $client = $this->makeClient();
+                $client = $this->makeClient($timeoutOverride);
 
-                $response = $client->chat()->create([
+                $chatParams = [
                     'model'           => $model,
                     'response_format' => ['type' => 'json_object'],
                     'messages'        => [
@@ -267,7 +282,13 @@ class OpenAiClientService
                             'content' => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                         ],
                     ],
-                ]);
+                ];
+
+                if ($maxTokensOverride !== null) {
+                    $chatParams['max_tokens'] = $maxTokensOverride;
+                }
+
+                $response = $client->chat()->create($chatParams);
 
                 $rawContent = $response->choices[0]->message->content ?? '';
 

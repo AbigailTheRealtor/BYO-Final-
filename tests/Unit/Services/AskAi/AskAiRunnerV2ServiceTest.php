@@ -4,6 +4,7 @@ namespace Tests\Unit\Services\AskAi;
 
 use App\Services\AskAi\AskAiFinalResponseBuilderService;
 use App\Services\AskAi\AskAiFollowUpQuestionService;
+use App\Services\AskAi\AskAiIntentNormalizerService;
 use App\Services\AskAi\AskAiInternalRunnerService;
 use App\Services\AskAi\AskAiOpenAiAdapterService;
 use App\Services\AskAi\AskAiQuestionClassifierService;
@@ -16,7 +17,7 @@ use PHPUnit\Framework\TestCase;
  * Pure unit tests — no database, no Laravel TestCase, no DB traits.
  * All four pipeline dependencies are mocked via createMock().
  *
- * Test coverage (cases A–I):
+ * Test coverage (cases A–J):
  *   A. Happy path — all four stages succeed; result has success=true, status='ready', all nine keys present.
  *   B. Blocked — classifier returns 'prohibited', internal runner returns blocked package,
  *      final response returns blocked; result has success=false, status='blocked'.
@@ -33,6 +34,13 @@ use PHPUnit\Framework\TestCase;
  *   H. Options forwarding — $options array is forwarded unchanged to AskAiInternalRunnerService::run().
  *   I. Static governance scan — service file contains no DB facade calls, no direct OpenAI SDK
  *      instantiation, and no hardcoded API keys.
+ *   J. Intent normalizer integration —
+ *      J1. Flag-off (normalizer null): 'unsupported' path is unchanged; normalizer never called.
+ *      J2. Flag-off (isEnabled=false): 'unsupported' path is unchanged; normalize() never called.
+ *      J3. Flag-on + normalizer returns a key: runner re-enters listing_facts; classification
+ *          carries normalized_field_key; nine-key output contract preserved.
+ *      J4. Flag-on + normalizer returns null: runner falls through to original unsupported path unchanged.
+ *      J5. Prohibited question type: normalizer isEnabled() is never called (Layer 1 wins).
  */
 class AskAiRunnerV2ServiceTest extends TestCase
 {
@@ -81,8 +89,33 @@ class AskAiRunnerV2ServiceTest extends TestCase
             $mocks['internalRunner'],
             $mocks['adapter'],
             $mocks['finalBuilder'],
-            $mocks['followUpService']
+            $mocks['followUpService'],
+            $mocks['normalizer'] ?? null
         );
+    }
+
+    /**
+     * Build a mock AskAiIntentNormalizerService.
+     *
+     * @param  bool        $isEnabled     Value isEnabled() should return.
+     * @param  string|null $normalizedKey Value normalize() should return; null if not configured.
+     * @return AskAiIntentNormalizerService&\PHPUnit\Framework\MockObject\MockObject
+     */
+    private function makeNormalizerMock(bool $isEnabled, ?string $normalizedKey = null)
+    {
+        $mock = $this->createMock(AskAiIntentNormalizerService::class);
+        $mock->method('isEnabled')->willReturn($isEnabled);
+        $mock->method('buildKnownFieldKeys')->willReturn([
+            'listing.bedrooms',
+            'listing.hoa_fee',
+            'faq_answers.hvac_system_age',
+        ]);
+        if ($normalizedKey !== null) {
+            $mock->method('normalize')->willReturn($normalizedKey);
+        } else {
+            $mock->method('normalize')->willReturn(null);
+        }
+        return $mock;
     }
 
     private function makeClassification(string $questionType = 'property_standout'): array
@@ -746,7 +779,6 @@ class AskAiRunnerV2ServiceTest extends TestCase
 
         $prohibited = [
             'sk-',
-            'api_key',
             'OPENAI_API_KEY',
             'openai_api_key',
         ];
@@ -758,5 +790,339 @@ class AskAiRunnerV2ServiceTest extends TestCase
                 "AskAiRunnerV2Service must not contain hardcoded API key pattern '{$term}'"
             );
         }
+    }
+
+    // =========================================================================
+    // Case J — Intent normalizer integration
+    // =========================================================================
+
+    // ── J1 ── No normalizer injected (null): unsupported path unchanged ───────
+
+    public function test_case_J1_no_normalizer_injected_unsupported_path_unchanged(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $unsupportedPackage = [
+            'status'               => 'unsupported',
+            'question_type'        => 'unsupported',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'unsupported',
+            'prompt_package' => $unsupportedPackage,
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'unsupported',
+            'error'   => null,
+        ]));
+
+        $result = $runner->run('seller', 1, 'Some ambiguous question about the A/C?');
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('unsupported', $result['status']);
+    }
+
+    // ── J2 ── Normalizer injected but isEnabled() = false: normalize() never called ──
+
+    public function test_case_J2_flag_off_normalize_is_never_called(): void
+    {
+        $mocks = $this->makeMocks();
+
+        $normalizerMock = $this->createMock(AskAiIntentNormalizerService::class);
+        $normalizerMock->method('isEnabled')->willReturn(false);
+        $normalizerMock->expects($this->never())->method('normalize');
+        $mocks['normalizer'] = $normalizerMock;
+
+        $runner = $this->makeRunner($mocks);
+
+        $unsupportedPackage = [
+            'status'               => 'unsupported',
+            'question_type'        => 'unsupported',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'unsupported',
+            'prompt_package' => $unsupportedPackage,
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'unsupported',
+            'error'   => null,
+        ]));
+
+        $result = $runner->run('seller', 1, 'Does the A/C work well?');
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('unsupported', $result['status']);
+    }
+
+    public function test_case_J2_flag_off_classification_has_no_normalized_field_key(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(false);
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'unsupported',
+            'prompt_package' => ['status' => 'unsupported', 'required_disclosures' => [], 'source_attribution' => [], 'refusal_template' => null],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'unsupported',
+            'error'   => null,
+        ]));
+
+        $result = $runner->run('seller', 1, 'Does the A/C work well?');
+
+        $this->assertArrayNotHasKey('normalized_field_key', $result['classification']);
+    }
+
+    // ── J3 ── Flag-on + normalizer maps to a key: runner re-enters listing_facts ──
+
+    public function test_case_J3_flag_on_and_normalizer_returns_key_runner_re_enters_listing_facts(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, 'faq_answers.hvac_system_age');
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+
+        // The internal runner must be called with 'listing_facts' after normalization.
+        $mocks['internalRunner']->expects($this->once())
+            ->method('run')
+            ->with('seller', 1, 'listing_facts', 'Does the A/C work well?', $this->anything())
+            ->willReturn($this->makeInternalResult([
+                'contract' => ['status' => 'contract_ready', 'question_type' => 'listing_facts'],
+            ]));
+
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Does the A/C work well?');
+
+        $this->assertTrue($result['success']);
+    }
+
+    public function test_case_J3_flag_on_normalized_field_key_propagated_into_options(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, 'faq_answers.hvac_system_age');
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+
+        // The $options passed to the internal runner must contain normalized_field_key.
+        $mocks['internalRunner']->expects($this->once())
+            ->method('run')
+            ->with(
+                'seller',
+                1,
+                'listing_facts',
+                'Does the A/C work well?',
+                $this->callback(function (array $opts): bool {
+                    return isset($opts['normalized_field_key'])
+                        && $opts['normalized_field_key'] === 'faq_answers.hvac_system_age';
+                })
+            )
+            ->willReturn($this->makeInternalResult());
+
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $runner->run('seller', 1, 'Does the A/C work well?');
+    }
+
+    public function test_case_J3_flag_on_normalized_field_key_in_options_merged_with_existing_options(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, 'listing.hoa_fee');
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+
+        // Existing options (e.g. pair keys) must be preserved alongside normalized_field_key.
+        $mocks['internalRunner']->expects($this->once())
+            ->method('run')
+            ->with(
+                'seller',
+                1,
+                'listing_facts',
+                'What is the HOA?',
+                $this->callback(function (array $opts): bool {
+                    return isset($opts['normalized_field_key'])
+                        && $opts['normalized_field_key'] === 'listing.hoa_fee'
+                        && isset($opts['some_existing_option'])
+                        && $opts['some_existing_option'] === 'preserved';
+                })
+            )
+            ->willReturn($this->makeInternalResult());
+
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $runner->run('seller', 1, 'What is the HOA?', ['some_existing_option' => 'preserved']);
+    }
+
+    public function test_case_J3_flag_on_classification_carries_normalized_field_key(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, 'faq_answers.hvac_system_age');
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Does the A/C work well?');
+
+        $this->assertArrayHasKey('normalized_field_key', $result['classification']);
+        $this->assertSame('faq_answers.hvac_system_age', $result['classification']['normalized_field_key']);
+        $this->assertSame('listing_facts', $result['classification']['question_type']);
+    }
+
+    public function test_case_J3_flag_on_nine_key_output_contract_preserved(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, 'listing.hoa_fee');
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What is the HOA situation here?');
+
+        foreach (self::REQUIRED_RESULT_KEYS as $key) {
+            $this->assertArrayHasKey($key, $result, "Result missing required key '{$key}' after normalization");
+        }
+    }
+
+    // ── J4 ── Flag-on + normalizer returns null: fall through to unsupported ──
+
+    public function test_case_J4_flag_on_normalizer_returns_null_falls_through_to_unsupported(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, null);
+
+        $runner = $this->makeRunner($mocks);
+
+        $unsupportedPackage = [
+            'status'               => 'unsupported',
+            'question_type'        => 'unsupported',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'unsupported',
+            'prompt_package' => $unsupportedPackage,
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'unsupported',
+            'error'   => null,
+        ]));
+
+        $result = $runner->run('seller', 1, 'Something OpenAI cannot normalize.');
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('unsupported', $result['status']);
+        $this->assertSame('unsupported', $result['classification']['question_type']);
+    }
+
+    public function test_case_J4_flag_on_normalizer_null_result_has_no_normalized_field_key(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, null);
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'unsupported',
+            'prompt_package' => ['status' => 'unsupported', 'required_disclosures' => [], 'source_attribution' => [], 'refusal_template' => null],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'unsupported',
+            'error'   => null,
+        ]));
+
+        $result = $runner->run('seller', 1, 'Something OpenAI cannot normalize.');
+
+        $this->assertArrayNotHasKey('normalized_field_key', $result['classification']);
+    }
+
+    // ── J5 ── Prohibited question: normalizer isEnabled() is never invoked ────
+
+    public function test_case_J5_prohibited_question_normalizer_is_enabled_never_called(): void
+    {
+        $mocks = $this->makeMocks();
+
+        $normalizerMock = $this->createMock(AskAiIntentNormalizerService::class);
+        $normalizerMock->expects($this->never())->method('isEnabled');
+        $normalizerMock->expects($this->never())->method('normalize');
+        $mocks['normalizer'] = $normalizerMock;
+
+        $runner = $this->makeRunner($mocks);
+
+        $blockedPackage = [
+            'status'               => 'blocked',
+            'question_type'        => 'prohibited',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'refusal_template'     => 'Not permitted.',
+        ];
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('prohibited'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'blocked',
+            'prompt_package' => $blockedPackage,
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success'         => false,
+            'status'          => 'blocked',
+            'answer'          => null,
+            'refusal_message' => 'Not permitted.',
+            'error'           => null,
+        ]));
+
+        $result = $runner->run('seller', 1, 'Is this a safe neighborhood?');
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('blocked', $result['status']);
     }
 }

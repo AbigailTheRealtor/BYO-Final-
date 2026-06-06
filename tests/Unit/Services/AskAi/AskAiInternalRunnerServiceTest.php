@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  * Pure unit tests — no database, no Laravel TestCase, no DB traits.
  * All three Phase 1–3 dependencies are mocked via getMockBuilder.
  *
- * Test coverage (cases A–E):
+ * Test coverage (cases A–F):
  *   A. Successful chain: buildForListing returns assembled context, buildContract returns
  *      contract_ready, buildPromptPackage returns prompt_ready; runner returns success=true
  *      with all three payloads populated.
@@ -27,6 +27,14 @@ use PHPUnit\Framework\TestCase;
  *      runner returns success=false, status='blocked'.
  *   E. Governance static grep: no OpenAI, HTTP, or write calls in the runner service file
  *      (strip comment lines before checking).
+ *   F. Normalized field key narrowing:
+ *      F1. Exact match — key is explicitly listed in allowed_context; narrowing fires.
+ *      F1b. Prefix match (production path) — 'faq_answers' umbrella in allowed_context covers
+ *           'faq_answers.hvac_system_age'; narrowing fires (this is the real listing_facts scenario).
+ *      F2. Key absent from options: allowed_context passed through unchanged.
+ *      F3. Key present but NOT matched (no exact match, no prefix match): safety guard fires,
+ *          allowed_context unchanged.
+ *      F4. Contract not contract_ready: narrowing skipped, allowed_context unchanged.
  */
 class AskAiInternalRunnerServiceTest extends TestCase
 {
@@ -623,5 +631,266 @@ class AskAiInternalRunnerServiceTest extends TestCase
                 "Runner service file must not contain write call '{$term}'"
             );
         }
+    }
+
+    // =========================================================================
+    // Case F — Normalized field key narrowing
+    // =========================================================================
+
+    // ── F1 ── Key present and in allowed_context: buildPromptPackage receives narrowed contract ──
+
+    public function test_case_F1_normalized_key_in_allowed_context_narrows_contract_to_that_key(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $context  = $this->makeAssembledContext();
+        $contract = $this->makeContractReady([
+            'question_type'   => 'listing_facts',
+            'allowed_context' => [
+                'listing.bedrooms',
+                'listing.hoa_fee',
+                'faq_answers.hvac_system_age',
+            ],
+        ]);
+
+        $mocks['context']->method('buildForListing')->willReturn($context);
+        $mocks['contract']->method('buildContract')->willReturn($contract);
+
+        // The prompt builder must receive a contract whose allowed_context is narrowed
+        // to only the normalized key.
+        $mocks['prompt']->expects($this->once())
+            ->method('buildPromptPackage')
+            ->with(
+                $this->anything(),
+                $this->anything(),
+                $this->callback(function (array $receivedContract): bool {
+                    return $receivedContract['allowed_context'] === ['faq_answers.hvac_system_age'];
+                })
+            )
+            ->willReturn($this->makePromptReadyPackage());
+
+        $result = $runner->run(
+            'seller', 1, 'listing_facts', 'Does the A/C work well?',
+            ['normalized_field_key' => 'faq_answers.hvac_system_age']
+        );
+
+        $this->assertTrue($result['success']);
+    }
+
+    public function test_case_F1_narrowed_contract_contains_only_the_normalized_key(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $context  = $this->makeAssembledContext();
+        $contract = $this->makeContractReady([
+            'allowed_context' => ['listing.bedrooms', 'listing.hoa_fee', 'listing.asking_price'],
+        ]);
+
+        $mocks['context']->method('buildForListing')->willReturn($context);
+        $mocks['contract']->method('buildContract')->willReturn($contract);
+
+        $capturedContract = null;
+        $mocks['prompt']->method('buildPromptPackage')
+            ->willReturnCallback(function (string $q, array $ctx, array $c) use (&$capturedContract) {
+                $capturedContract = $c;
+                return $this->makePromptReadyPackage();
+            });
+
+        $runner->run(
+            'seller', 1, 'listing_facts', 'What is the asking price?',
+            ['normalized_field_key' => 'listing.asking_price']
+        );
+
+        $this->assertSame(['listing.asking_price'], $capturedContract['allowed_context']);
+    }
+
+    // ── F1b ── Prefix match (production path): bare 'faq_answers' umbrella covers leaf paths ──
+
+    public function test_case_F1b_bare_faq_answers_umbrella_in_allowed_context_narrows_leaf_path(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $context  = $this->makeAssembledContext();
+        // This mirrors the REAL listing_facts contract: 'faq_answers' is listed as a bare
+        // umbrella, not individual leaf paths. The normalizer returns leaf paths like
+        // 'faq_answers.hvac_system_age'. Without prefix matching the guard always blocks.
+        $contract = $this->makeContractReady([
+            'allowed_context' => [
+                'listing.bedrooms',
+                'listing.asking_price',
+                'faq_answers',
+            ],
+        ]);
+
+        $mocks['context']->method('buildForListing')->willReturn($context);
+        $mocks['contract']->method('buildContract')->willReturn($contract);
+
+        $capturedContract = null;
+        $mocks['prompt']->method('buildPromptPackage')
+            ->willReturnCallback(function (string $q, array $ctx, array $c) use (&$capturedContract) {
+                $capturedContract = $c;
+                return $this->makePromptReadyPackage();
+            });
+
+        $runner->run(
+            'seller', 1, 'listing_facts', 'How old is the HVAC system?',
+            ['normalized_field_key' => 'faq_answers.hvac_system_age']
+        );
+
+        // Prefix match: 'faq_answers.hvac_system_age' starts with 'faq_answers.' →
+        // narrowing fires and allowed_context is replaced with just the leaf path.
+        $this->assertSame(['faq_answers.hvac_system_age'], $capturedContract['allowed_context']);
+    }
+
+    public function test_case_F1b_different_faq_leaf_path_also_narrows_via_prefix(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $context  = $this->makeAssembledContext();
+        $contract = $this->makeContractReady([
+            'allowed_context' => ['listing.bedrooms', 'faq_answers'],
+        ]);
+
+        $mocks['context']->method('buildForListing')->willReturn($context);
+        $mocks['contract']->method('buildContract')->willReturn($contract);
+
+        $capturedContract = null;
+        $mocks['prompt']->method('buildPromptPackage')
+            ->willReturnCallback(function (string $q, array $ctx, array $c) use (&$capturedContract) {
+                $capturedContract = $c;
+                return $this->makePromptReadyPackage();
+            });
+
+        $runner->run(
+            'landlord', 1, 'listing_facts', 'Tell me about the roof.',
+            ['normalized_field_key' => 'faq_answers.roof_age_and_condition']
+        );
+
+        $this->assertSame(['faq_answers.roof_age_and_condition'], $capturedContract['allowed_context']);
+    }
+
+    public function test_case_F1b_listing_exact_path_still_narrows_alongside_umbrella(): void
+    {
+        // Verify exact-match path still works when allowed_context has both styles.
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $context  = $this->makeAssembledContext();
+        $contract = $this->makeContractReady([
+            'allowed_context' => ['listing.asking_price', 'listing.bedrooms', 'faq_answers'],
+        ]);
+
+        $mocks['context']->method('buildForListing')->willReturn($context);
+        $mocks['contract']->method('buildContract')->willReturn($contract);
+
+        $capturedContract = null;
+        $mocks['prompt']->method('buildPromptPackage')
+            ->willReturnCallback(function (string $q, array $ctx, array $c) use (&$capturedContract) {
+                $capturedContract = $c;
+                return $this->makePromptReadyPackage();
+            });
+
+        $runner->run(
+            'seller', 1, 'listing_facts', 'What is the asking price?',
+            ['normalized_field_key' => 'listing.asking_price']  // exact match
+        );
+
+        $this->assertSame(['listing.asking_price'], $capturedContract['allowed_context']);
+    }
+
+    // ── F2 ── Key absent in options: allowed_context passed through unchanged ──
+
+    public function test_case_F2_no_normalized_key_in_options_allowed_context_unchanged(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $originalPaths = ['listing.bedrooms', 'listing.hoa_fee', 'listing.asking_price'];
+        $context  = $this->makeAssembledContext();
+        $contract = $this->makeContractReady(['allowed_context' => $originalPaths]);
+
+        $mocks['context']->method('buildForListing')->willReturn($context);
+        $mocks['contract']->method('buildContract')->willReturn($contract);
+
+        $capturedContract = null;
+        $mocks['prompt']->method('buildPromptPackage')
+            ->willReturnCallback(function (string $q, array $ctx, array $c) use (&$capturedContract) {
+                $capturedContract = $c;
+                return $this->makePromptReadyPackage();
+            });
+
+        $runner->run('seller', 1, 'listing_facts', 'Tell me about the property.');
+
+        $this->assertSame($originalPaths, $capturedContract['allowed_context']);
+    }
+
+    // ── F3 ── Key present but NOT in allowed_context: safety guard, unchanged ──
+
+    public function test_case_F3_normalized_key_not_in_allowed_context_guard_prevents_narrowing(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $originalPaths = ['listing.bedrooms', 'listing.hoa_fee'];
+        $context  = $this->makeAssembledContext();
+        $contract = $this->makeContractReady(['allowed_context' => $originalPaths]);
+
+        $mocks['context']->method('buildForListing')->willReturn($context);
+        $mocks['contract']->method('buildContract')->willReturn($contract);
+
+        $capturedContract = null;
+        $mocks['prompt']->method('buildPromptPackage')
+            ->willReturnCallback(function (string $q, array $ctx, array $c) use (&$capturedContract) {
+                $capturedContract = $c;
+                return $this->makePromptReadyPackage();
+            });
+
+        // 'faq_answers.hvac_system_age' is NOT in the contract's allowed_context — guard fires.
+        $runner->run(
+            'seller', 1, 'listing_facts', 'Does the A/C work well?',
+            ['normalized_field_key' => 'faq_answers.hvac_system_age']
+        );
+
+        $this->assertSame($originalPaths, $capturedContract['allowed_context']);
+    }
+
+    // ── F4 ── Contract not contract_ready: narrowing skipped ──
+
+    public function test_case_F4_narrowing_skipped_when_contract_not_ready(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $originalPaths = ['listing.bedrooms', 'faq_answers.hvac_system_age'];
+        $context  = $this->makeAssembledContext();
+
+        $insufficientContract = $this->makeContractReady([
+            'status'          => 'insufficient_context',
+            'allowed_context' => $originalPaths,
+        ]);
+
+        $mocks['context']->method('buildForListing')->willReturn($context);
+        $mocks['contract']->method('buildContract')->willReturn($insufficientContract);
+
+        $capturedContract = null;
+        $mocks['prompt']->method('buildPromptPackage')
+            ->willReturnCallback(function (string $q, array $ctx, array $c) use (&$capturedContract) {
+                $capturedContract = $c;
+                return array_merge($this->makePromptReadyPackage(), [
+                    'status'  => 'insufficient_context',
+                    'success' => false,
+                ]);
+            });
+
+        $runner->run(
+            'seller', 1, 'listing_facts', 'Does the A/C work well?',
+            ['normalized_field_key' => 'faq_answers.hvac_system_age']
+        );
+
+        $this->assertSame($originalPaths, $capturedContract['allowed_context']);
     }
 }

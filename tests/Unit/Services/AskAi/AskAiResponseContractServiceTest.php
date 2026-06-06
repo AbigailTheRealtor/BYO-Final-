@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
  * Pure unit tests — no database, no Laravel TestCase, no DB traits.
  * AskAiResponseContractService is stateless and requires no mocking.
  *
- * Test coverage (cases A–N):
+ * Test coverage (cases A–O):
  *   A. Each supported type returns 'contract_ready' when required context is present
  *   B. Missing required context returns 'insufficient_context' with missing_required_sources populated
  *   C. 'prohibited' type always returns 'refusal_required'
@@ -24,6 +24,10 @@ use PHPUnit\Framework\TestCase;
  *   M. listing_facts — full coverage (allowed_context, response_rules, disclosures, shape)
  *   N. FAQ shape compatibility — contract service handles both legacy raw-string and enriched object
  *      shape faq_answers entries without error; it never reads individual entry values
+ *   O. Normalizer–contract path compatibility — real listing_facts contract contains the umbrella
+ *      or leaf paths required by AskAiIntentNormalizerService; narrowing guard can match them.
+ *      Proves end-to-end that faq_answers leaf paths returned by the normalizer are permissible
+ *      under the real contract without mocking AskAiResponseContractService.
  */
 class AskAiResponseContractServiceTest extends TestCase
 {
@@ -1218,5 +1222,117 @@ class AskAiResponseContractServiceTest extends TestCase
 
         $this->assertNotContains('faq_answers', $result['required_sources'],
             "'faq_answers' must not be a required_source — it is optional supplemental data");
+    }
+
+    // =========================================================================
+    // Case O — Normalizer–contract path compatibility (real contract, no mocks)
+    // =========================================================================
+
+    // ── O1 ── Real listing_facts contract contains 'faq_answers' umbrella ─────
+
+    public function test_case_O1_real_listing_facts_contract_contains_faq_answers_umbrella(): void
+    {
+        $service = new AskAiResponseContractService();
+        $paths   = $service->getListingFactsAllowedPaths();
+
+        $this->assertContains(
+            'faq_answers',
+            $paths,
+            "The real listing_facts allowed_context must contain the 'faq_answers' umbrella entry. "
+            . "AskAiIntentNormalizerService resolves FAQ questions to 'faq_answers.<key>' leaf paths; "
+            . "the umbrella is required for the prefix-match guard in AskAiInternalRunnerService to fire."
+        );
+    }
+
+    // ── O2 ── Prefix-match guard accepts FAQ leaf paths against real contract ──
+
+    public function test_case_O2_faq_leaf_path_is_permitted_by_real_contract_via_prefix(): void
+    {
+        // This test uses the REAL AskAiResponseContractService (not mocked) to prove that
+        // a FAQ leaf path returned by the normalizer would actually pass the narrowing guard.
+        // The guard accepts 'faq_answers.hvac_system_age' if 'faq_answers' is in allowed_context.
+        $service = new AskAiResponseContractService();
+        $paths   = $service->getListingFactsAllowedPaths();
+
+        // Replicate the normalizedKeyIsPermitted() logic here to prove the real contract paths
+        // satisfy it for a representative FAQ leaf key.
+        $leafKey = 'faq_answers.hvac_system_age';
+
+        $exactMatch = in_array($leafKey, $paths, true);
+
+        $prefixMatch = false;
+        foreach ($paths as $entry) {
+            if (str_starts_with($leafKey, $entry . '.')) {
+                $prefixMatch = true;
+                break;
+            }
+        }
+
+        $this->assertTrue(
+            $exactMatch || $prefixMatch,
+            "The leaf key '{$leafKey}' must be permitted by the real listing_facts allowed_context "
+            . "via either exact match or prefix match. "
+            . "Current allowed_context paths: " . implode(', ', $paths)
+        );
+    }
+
+    public function test_case_O2_different_faq_leaf_path_also_permitted_by_real_contract(): void
+    {
+        $service = new AskAiResponseContractService();
+        $paths   = $service->getListingFactsAllowedPaths();
+
+        $leafKey = 'faq_answers.roof_age_and_condition';
+
+        $permitted = in_array($leafKey, $paths, true)
+            || array_reduce($paths, function (bool $carry, string $entry) use ($leafKey): bool {
+                return $carry || str_starts_with($leafKey, $entry . '.');
+            }, false);
+
+        $this->assertTrue(
+            $permitted,
+            "The leaf key '{$leafKey}' must be permitted by the real listing_facts allowed_context."
+        );
+    }
+
+    // ── O3 ── listing.* exact paths are permitted by real contract ────────────
+
+    public function test_case_O3_listing_dot_bedrooms_is_permitted_by_real_contract(): void
+    {
+        $service = new AskAiResponseContractService();
+        $paths   = $service->getListingFactsAllowedPaths();
+
+        $this->assertContains(
+            'listing.bedrooms',
+            $paths,
+            "'listing.bedrooms' must be in the real listing_facts allowed_context for exact-match narrowing to work"
+        );
+    }
+
+    public function test_case_O3_listing_dot_asking_price_is_permitted_by_real_contract(): void
+    {
+        $service = new AskAiResponseContractService();
+        $paths   = $service->getListingFactsAllowedPaths();
+
+        $this->assertContains(
+            'listing.asking_price',
+            $paths,
+            "'listing.asking_price' must be in the real listing_facts allowed_context"
+        );
+    }
+
+    // ── O4 ── getListingFactsAllowedPaths() is consistent with buildContract() ─
+
+    public function test_case_O4_get_listing_facts_allowed_paths_matches_build_contract_output(): void
+    {
+        $service  = new AskAiResponseContractService();
+        $direct   = $service->getListingFactsAllowedPaths();
+        $contract = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $this->assertSame(
+            $direct,
+            $contract['allowed_context'],
+            "getListingFactsAllowedPaths() must return the same array as buildContract()['allowed_context'] "
+            . "for listing_facts — the normalizer reads the former; the guard checks the latter."
+        );
     }
 }

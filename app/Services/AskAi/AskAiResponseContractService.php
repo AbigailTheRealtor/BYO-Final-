@@ -345,6 +345,20 @@ class AskAiResponseContractService
     ];
 
     /**
+     * Return the approved context paths for the listing_facts question type.
+     *
+     * Exposes the listing_facts allowed_context list without making TYPE_CONTRACTS public.
+     * Used by AskAiIntentNormalizerService to build its canonical field-key registry so
+     * the normalizer can only resolve questions to paths the prompt builder already allows.
+     *
+     * @return string[]
+     */
+    public function getListingFactsAllowedPaths(): array
+    {
+        return self::TYPE_CONTRACTS['listing_facts']['allowed_context'];
+    }
+
+    /**
      * Build a deterministic response contract for the given question type and assembled context.
      *
      * Output contract — always returns exactly these keys:
