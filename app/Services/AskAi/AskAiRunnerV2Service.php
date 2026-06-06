@@ -15,12 +15,19 @@ namespace App\Services\AskAi;
  *   4. AskAiFinalResponseBuilderService — normalise the raw adapter output
  *   5. AskAiFollowUpQuestionService    — append follow-up chips to the final response
  *
- * Optional normalizer step (feature-flagged):
+ * Optional normalizer step (feature-flagged, step 1a):
  *   When the classifier returns 'unsupported' and AskAiIntentNormalizerService
  *   is injected and its flag is enabled, the normalizer maps the question to a
  *   canonical listing_facts field key. The pipeline then re-enters listing_facts
  *   through the normal contract and prompt-builder governance — no facts are invented.
  *   Layer 1 'prohibited' questions always block before the normalizer is reached.
+ *
+ * Deterministic FAQ key detection (always runs, step 1b):
+ *   When the classifier routes to listing_facts, a keyword-based detector maps
+ *   the question to a specific faq_answers.* path (e.g. roof-related phrases →
+ *   faq_answers.roof_age_and_condition). This pins the allowed context to that
+ *   field so the missing-data guard fires correctly if the listing has no answer.
+ *   No external I/O; runs regardless of the normalizer feature flag.
  *
  * This service MUST NEVER:
  *   - Call any external LLM, language model, or external HTTP service directly.
@@ -35,6 +42,29 @@ namespace App\Services\AskAi;
  */
 class AskAiRunnerV2Service
 {
+    /**
+     * Keyword → canonical faq_answers.* path map used by detectFaqFieldKey().
+     *
+     * Each entry maps a set of lower-case sub-string keywords to the canonical
+     * FAQ field path they address. The detector iterates entries in order and
+     * returns the FIRST matching path.
+     *
+     * Must be kept in sync with the FAQ config files (config/ai_faq_*.php).
+     * Only include keys whose intent is unambiguously one specific FAQ field.
+     */
+    private const FAQ_KEY_KEYWORD_MAP = [
+        'faq_answers.roof_age_and_condition' => [
+            'roof age',
+            'age of roof',
+            'when was the roof',
+            'how old is the roof',
+            "what's the roof situation",
+            'what is the roof situation',
+            'tell me about the roof',
+            'roof condition',
+        ],
+    ];
+
     private AskAiQuestionClassifierService $classifier;
     private AskAiInternalRunnerService $internalRunner;
     private AskAiOpenAiAdapterService $adapter;
@@ -133,6 +163,27 @@ class AskAiRunnerV2Service
                 }
             }
 
+            // ----------------------------------------------------------------
+            // Step 1b — Deterministic FAQ key detection for listing_facts.
+            // Runs when the classifier (or step 1a normalization) routed the
+            // question to listing_facts AND no normalized_field_key has been
+            // set yet. A keyword lookup maps well-known factual intents to
+            // their canonical faq_answers.* path — e.g. all six roof-condition
+            // phrasings resolve to faq_answers.roof_age_and_condition.
+            //
+            // Runs regardless of the OpenAI normalizer flag because it is purely
+            // deterministic (no external I/O). When a key is detected the prompt
+            // package is narrowed to that field alone, and the missing-data guard
+            // below fires correctly when the listing has no answer for that key.
+            // ----------------------------------------------------------------
+            if ($questionType === 'listing_facts' && !isset($options['normalized_field_key'])) {
+                $detectedKey = $this->detectFaqFieldKey($question);
+                if ($detectedKey !== null) {
+                    $classification['normalized_field_key'] = $detectedKey;
+                    $options = array_merge($options, ['normalized_field_key' => $detectedKey]);
+                }
+            }
+
             $internalResult = $this->internalRunner->run(
                 $listingType,
                 $listingId,
@@ -156,6 +207,57 @@ class AskAiRunnerV2Service
                     'adapter_result' => null,
                     'final_response' => null,
                     'error'          => 'Internal runner returned no prompt_package; OpenAI call skipped.',
+                ];
+            }
+
+            // ----------------------------------------------------------------
+            // Field-specific missing-data guard.
+            // Fires when the normalizer resolved a faq_answers.* key but the
+            // listing has no answer for that key — i.e. filterAllowedContext()
+            // returned an empty array because the FAQ entry is absent.
+            // Without this guard, OpenAI would be called with zero context and
+            // could hallucinate an answer. Instead we return a clear, grounded
+            // message that the specific information was not provided.
+            // Only applies to faq_answers.* keys; listing.* null values are
+            // passed through normally (they appear as null in allowed_context
+            // and the response rules direct the LLM to state they are absent).
+            // ----------------------------------------------------------------
+            $normalizedFieldKey = $options['normalized_field_key'] ?? null;
+
+            if (
+                $normalizedFieldKey !== null
+                && str_starts_with($normalizedFieldKey, 'faq_answers.')
+                && ($promptPackage['status'] ?? '') === 'prompt_ready'
+                && array_key_exists('allowed_context', $promptPackage)
+                && empty($promptPackage['allowed_context'])
+            ) {
+                $fieldLabel        = $this->deriveFieldLabel($normalizedFieldKey);
+                $missingDataAnswer = $fieldLabel . ' has not been provided for this listing.';
+
+                $missingFinalResponse = [
+                    'success'            => false,
+                    'status'             => 'insufficient_context',
+                    'answer'             => $missingDataAnswer,
+                    'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                    'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                    'refusal_message'    => null,
+                    'error'              => null,
+                ];
+                $missingFinalResponse['follow_up_questions'] = $this->followUpService->forResult(
+                    $missingFinalResponse,
+                    $classification
+                );
+
+                return [
+                    'success'        => false,
+                    'status'         => 'insufficient_context',
+                    'classification' => $classification,
+                    'context'        => $context,
+                    'contract'       => $contract,
+                    'prompt_package' => $promptPackage,
+                    'adapter_result' => null,
+                    'final_response' => $missingFinalResponse,
+                    'error'          => null,
                 ];
             }
 
@@ -195,5 +297,73 @@ class AskAiRunnerV2Service
                 'error'          => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Deterministically detect a specific faq_answers.* field key from the
+     * question text.
+     *
+     * Iterates FAQ_KEY_KEYWORD_MAP and returns the canonical path for the first
+     * matching keyword. The check is case-insensitive sub-string matching,
+     * consistent with AskAiQuestionClassifierService::findFirstMatch().
+     *
+     * Returns null when no keyword matches — the caller leaves allowed_context
+     * unnarrowed and the full listing_facts data set is available to the LLM.
+     *
+     * @param  string $question  Raw user question string.
+     * @return string|null       Canonical faq_answers.* path, or null.
+     */
+    private function detectFaqFieldKey(string $question): ?string
+    {
+        $lower = mb_strtolower(trim($question));
+
+        foreach (self::FAQ_KEY_KEYWORD_MAP as $faqKey => $keywords) {
+            foreach ($keywords as $keyword) {
+                if (str_contains($lower, mb_strtolower($keyword))) {
+                    return $faqKey;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Derive a human-readable field label from a normalized faq_answers.* key.
+     *
+     * Used to compose field-specific missing-data messages such as
+     * "Roof information has not been provided for this listing."
+     *
+     * Known FAQ keys are mapped to their subject-area label. Any key that
+     * falls outside the known set gets the safe generic label "The requested
+     * information" so the message remains grammatically correct and grounded.
+     *
+     * @param  string $normalizedFieldKey  Canonical path e.g. 'faq_answers.roof_age_and_condition'.
+     * @return string
+     */
+    private function deriveFieldLabel(string $normalizedFieldKey): string
+    {
+        $labelMap = [
+            'faq_answers.roof_age_and_condition'      => 'Roof information',
+            'faq_answers.hvac_system_age'             => 'HVAC system information',
+            'faq_answers.water_heater_age_type'       => 'Water heater information',
+            'faq_answers.average_utility_costs'       => 'Utility cost information',
+            'faq_answers.known_defects_issues'        => 'Known defects/issues information',
+            'faq_answers.recent_renovations'          => 'Recent renovation information',
+            'faq_answers.appliances_included'         => 'Appliance information',
+            'faq_answers.pest_treatment_history'      => 'Pest treatment information',
+            'faq_answers.hoa_rules_restrictions'      => 'HOA rules information',
+            'faq_answers.neighborhood_highlights'     => 'Neighborhood information',
+            'faq_answers.showing_tips_seller'         => 'Showing information',
+            'faq_answers.property_unique_features'    => 'Unique feature information',
+            'faq_answers.landlord_responsibilities'   => 'Landlord responsibility information',
+            'faq_answers.tenant_rules_regulations'    => 'Tenant rules information',
+            'faq_answers.lease_renewal_terms'         => 'Lease renewal information',
+            'faq_answers.utility_setup_instructions'  => 'Utility setup information',
+            'faq_answers.pet_policy_details'          => 'Pet policy information',
+            'faq_answers.parking_instructions'        => 'Parking information',
+        ];
+
+        return $labelMap[$normalizedFieldKey] ?? 'The requested information';
     }
 }

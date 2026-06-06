@@ -33,8 +33,10 @@ return [
      * contract and prompt-builder governance — no facts are invented.
      *
      * GOVERNANCE REVIEW REQUIRED before enabling in production.
-     * This flag must remain false until the governance review described in
-     * the Ask AI Phase 2 Task C design document has been completed and approved.
+     * This flag must remain false in production until the governance review
+     * described in the Ask AI Phase 2 Task C design document has been completed
+     * and approved. Dev/staging environments may set
+     * ASK_AI_ENABLE_OPENAI_INTENT_NORMALIZATION=true in their .env file.
      */
-    'enable_openai_intent_normalization' => false,
+    'enable_openai_intent_normalization' => env('ASK_AI_ENABLE_OPENAI_INTENT_NORMALIZATION', false),
 ];

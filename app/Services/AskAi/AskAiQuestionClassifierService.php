@@ -223,8 +223,12 @@ class AskAiQuestionClassifierService
             // Roof / HVAC / mechanical
             'roof age',
             'roof condition',
+            'age of roof',
             'when was the roof',
             'how old is the roof',
+            "what's the roof situation",
+            'what is the roof situation',
+            'tell me about the roof',
             'hvac',
             'air conditioning',
             'heating system',

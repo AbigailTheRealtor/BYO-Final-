@@ -19,6 +19,13 @@ use App\Observers\Dna\LandlordAuctionDnaObserver;
 use App\Observers\Dna\PropertyAuctionDnaObserver;
 use App\Observers\Dna\PropertyDnaProfileCompatibilityObserver;
 use App\Observers\Dna\TenantCriteriaAuctionDnaObserver;
+use App\Services\AskAi\AskAiRunnerV2Service;
+use App\Services\AskAi\AskAiQuestionClassifierService;
+use App\Services\AskAi\AskAiInternalRunnerService;
+use App\Services\AskAi\AskAiOpenAiAdapterService;
+use App\Services\AskAi\AskAiFinalResponseBuilderService;
+use App\Services\AskAi\AskAiFollowUpQuestionService;
+use App\Services\AskAi\AskAiIntentNormalizerService;
 
 
 
@@ -32,7 +39,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        // Explicit binding for AskAiRunnerV2Service to ensure AskAiIntentNormalizerService
+        // is always injected as a concrete non-null instance. Laravel's auto-wiring would
+        // also resolve this correctly today (both of the normalizer's deps — OpenAiClientService
+        // and AskAiResponseContractService — have no constructor parameters and auto-resolve),
+        // but explicit DI is safer: it is immune to future constructor changes in those
+        // dependencies and makes the intent clear to anyone reading the service graph.
+        $this->app->bind(AskAiRunnerV2Service::class, function ($app) {
+            return new AskAiRunnerV2Service(
+                $app->make(AskAiQuestionClassifierService::class),
+                $app->make(AskAiInternalRunnerService::class),
+                $app->make(AskAiOpenAiAdapterService::class),
+                $app->make(AskAiFinalResponseBuilderService::class),
+                $app->make(AskAiFollowUpQuestionService::class),
+                $app->make(AskAiIntentNormalizerService::class),
+            );
+        });
     }
 
     /**
