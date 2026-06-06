@@ -105,10 +105,10 @@ class HireAgentLeadMatcherService
      * Uses listing-agent-first routing when listing context is provided.
      *
      * When a hired agent + matching preset is found, returns:
-     *   { action: 'redirect', url: '/hire/{short_id}/{role}/{propertyType}', ... }
+     *   { action: 'redirect', url: '/hire/agent/direct/{agentId}/{role}/{propertyType}', ... }
      *
      * When no agent exists or the agent has no matching preset, returns:
-     *   { action: 'contact_form', reason: 'no_agent'|'no_preset'|'no_short_id', ... }
+     *   { action: 'contact_form', reason: 'no_agent'|'no_preset', ... }
      *
      * @return array{action: 'redirect'|'contact_form', url?: string, reason?: string, match_status: string, count: int, presets: list<mixed>}
      */
@@ -146,34 +146,16 @@ class HireAgentLeadMatcherService
             ];
         }
 
-        // Resolve agent's short_id to build the clean public Hire Me URL.
-        // Guard against missing short_id — fall back to contact form rather than 500.
         try {
-            $agentUser = User::select('id', 'short_id')->find($hiredAgentId);
-        } catch (\Throwable $e) {
-            $agentUser = null;
-        }
-
-        if (! $agentUser || ! $agentUser->short_id) {
-            return [
-                'action'       => 'contact_form',
-                'reason'       => 'no_short_id',
-                'match_status' => 'no_match',
-                'count'        => 0,
-                'presets'      => [],
-            ];
-        }
-
-        try {
-            $redirectUrl = route('hire.agent.public', [
-                'agentShortId' => $agentUser->short_id,
+            $redirectUrl = route('hire.agent.direct.preview', [
+                'agentId'      => $hiredAgentId,
                 'role'         => $representationType,
                 'propertyType' => $selectedPropertyType,
             ]);
         } catch (\Throwable $e) {
             return [
                 'action'       => 'contact_form',
-                'reason'       => 'no_short_id',
+                'reason'       => 'no_preset',
                 'match_status' => 'no_match',
                 'count'        => 0,
                 'presets'      => [],
