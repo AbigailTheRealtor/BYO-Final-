@@ -971,8 +971,8 @@
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Property Type', $str('property_type')) !!}
-                    {!! $row('Bedrooms', $orOther($str('bedrooms'), $str('other_bedrooms'))) !!}
-                    {!! $row('Bathrooms', $orOther($str('bathrooms'), $str('other_bathrooms'))) !!}
+                    {!! $row('Bedrooms', $orOther($str('bedrooms'), $str('other_bedrooms') ?: $str('custom_bedrooms'))) !!}
+                    {!! $row('Bathrooms', $orOther($str('bathrooms'), $str('other_bathrooms') ?: $str('custom_bathrooms'))) !!}
                     {!! $row('Min. Heated Sq Ft', $str('minimum_heated_square') ?: $str('minimum_heated_sqft')) !!}
                     {!! $row('Min. Leaseable Sq Ft', $str('minimum_leaseable')) !!}
                     {!! $row('Min. Acreage', $str('min_acreage') ?: $str('total_acreage')) !!}

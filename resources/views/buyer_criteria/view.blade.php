@@ -694,14 +694,14 @@
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Minimum
                                     Bedrooms Needed:
                                     <span
-                                        class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->bedrooms }}</span>
+                                        class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->bedrooms !== 'Other' ? @$auction->get->bedrooms : (@$auction->get->other_bedrooms ?: @$auction->get->custom_bedrooms ?: 'Other') }}</span>
                                 </div>
                             @endif
                             @if (@$auction->get->bathrooms && ($auction->get->bathrooms ?? $auction->get->bathroomsRes) != null && $auction->get->property_type !== 'Vacant Land')
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Minimum
                                     Bathrooms Needed:
                                     @if (@$auction->get->bathrooms != null)
-                                        <span class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->bathrooms }}</span>
+                                        <span class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->bathrooms !== 'Other' ? @$auction->get->bathrooms : (@$auction->get->other_bathrooms ?: @$auction->get->custom_bathrooms ?: 'Other') }}</span>
                                     @elseif (@$auction->get->bathroomsRes != null)    
                                         <span class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->bathroomsRes }}</span>
                                     @endif
@@ -1658,12 +1658,12 @@
                                                         @endif
                                                         @if (isset($bid->get->bedrooms) && $bid->get->bedrooms != '')
                                                             <p class="d-flex justify-content-between small">Bedrooms:
-                                                                <span>{{ $bid->get->custom_bedrooms == '' ? $bid->get->bedrooms : $bid->get->custom_bedrooms }}</span>
+                                                                <span>{{ $bid->get->bedrooms !== 'Other' ? $bid->get->bedrooms : ($bid->get->other_bedrooms ?: $bid->get->custom_bedrooms ?: 'Other') }}</span>
                                                             </p>
                                                         @endif
                                                         @if (isset($bid->get->bathrooms) && $bid->get->bathrooms != '')
                                                             <p class="d-flex justify-content-between small">Bathrooms:
-                                                                <span>{{ $bid->get->custom_bathrooms == '' ? $bid->get->bathrooms : $bid->get->custom_bathrooms }}</span>
+                                                                <span>{{ $bid->get->bathrooms !== 'Other' ? $bid->get->bathrooms : ($bid->get->other_bathrooms ?: $bid->get->custom_bathrooms ?: 'Other') }}</span>
                                                             </p>
                                                         @endif
                                                         @if (isset($bid->get->county) && $bid->get->county != '')

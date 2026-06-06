@@ -34,9 +34,9 @@
                 <div class="houseDetails mb-1">
                   <span>
                     <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
-                        src="{{asset('assets/fontawesome/svgs/thin/bed-front.svg')}}" alt="bed icon" width="15"><b> {{@$auction->get->bedrooms}}</b></span>
+                        src="{{asset('assets/fontawesome/svgs/thin/bed-front.svg')}}" alt="bed icon" width="15"><b> {{@$auction->get->bedrooms !== 'Other' ? @$auction->get->bedrooms : (@$auction->get->other_bedrooms ?: @$auction->get->custom_bedrooms ?: 'Other')}}</b></span>
                     <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
-                        src="{{asset('assets/fontawesome/svgs/thin/bath.svg')}}" alt="bed icon" width="15"><b> {{@$auction->get->bathrooms}}</b></span>
+                        src="{{asset('assets/fontawesome/svgs/thin/bath.svg')}}" alt="bed icon" width="15"><b> {{@$auction->get->bathrooms !== 'Other' ? @$auction->get->bathrooms : (@$auction->get->other_bathrooms ?: @$auction->get->custom_bathrooms ?: 'Other')}}</b></span>
                     <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
                         src="{{asset("assets/fontawesome/svgs/thin/ruler-triangle.svg")}}" alt="bed icon" width="15"><b> {{number_format(@$auction->get->heated_sqft,0,"",",")}}
                       </b>Sq Ft</span>
@@ -118,9 +118,9 @@
     $(function () {
         $('.timer-{{@$auction->id}}').timer({
             countdown: true,
-            duration: '{{$dt}}',    	// This will start the countdown from 3 mins 40 seconds
+            duration: '{{$dt}}',        // This will start the countdown from 3 mins 40 seconds
             format: '%dd %H:%M:%S',
-            callback: function() {	// This will execute after the duration has elapsed
+            callback: function() {      // This will execute after the duration has elapsed
                 console.log('Time up!');
             }
         });

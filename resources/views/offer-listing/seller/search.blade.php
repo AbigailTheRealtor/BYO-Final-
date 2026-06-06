@@ -185,8 +185,8 @@
                         }
                         $propertyStyleDisplay = implode(', ', $allStyleItems);
 
-                        $bedsDisplay = $resolveOther(@$auction->get->bedrooms, @$auction->get->other_bedrooms);
-                        $bathsDisplay = $resolveOther(@$auction->get->bathrooms, @$auction->get->other_bathrooms);
+                        $bedsDisplay = $resolveOther(@$auction->get->bedrooms, @$auction->get->other_bedrooms ?: @$auction->get->custom_bedrooms);
+                        $bathsDisplay = $resolveOther(@$auction->get->bathrooms, @$auction->get->other_bathrooms ?: @$auction->get->custom_bathrooms);
                         $sqftDisplay = @$auction->get->minimum_heated_square ?? '';
 
                         $countyDisplay = '';

@@ -1611,14 +1611,14 @@
               <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa-regular fa-check-square"></i>
                 Bedrooms:
                 <span
-                  class="removeBold">{{ @$auction->get->bedrooms != 'Other' ? @$auction->get->bedrooms : @$auction->get->custom_bedrooms }}</span>
+                  class="removeBold">{{ @$auction->get->bedrooms != 'Other' ? @$auction->get->bedrooms : (@$auction->get->other_bedrooms ?: @$auction->get->custom_bedrooms ?: 'Other') }}</span>
               </div>
               @endif
               @if (@$auction->get->bathrooms != null)
                 <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa-regular fa-check-square"></i>
                   Bathrooms:
                   @if ($auction->get->bathrooms != null)
-                    <span class="removeBold">{{ @$auction->get->bathrooms != 'Other' ? @$auction->get->bathrooms : @$auction->get->custom_bathrooms }}</span>
+                    <span class="removeBold">{{ @$auction->get->bathrooms != 'Other' ? @$auction->get->bathrooms : (@$auction->get->other_bathrooms ?: @$auction->get->custom_bathrooms ?: 'Other') }}</span>
                   {{-- @elseif ($auction->get->bathroomsCom != null)
                     <span class="removeBold">{{ @$auction->get->bathroomsCom != 'Other' ? @$auction->get->bathroomsCom : @$auction->get->custom_bathrooms_com }}</span> --}}
                   @endif

@@ -1125,8 +1125,8 @@
                     @if(count($propTypes)) {!! $row('Property Type', implode(', ', $propTypes)) !!} @endif
                     @if(count($conditionList)) {!! $row('Condition', implode(', ', $conditionList)) !!} @endif
                     @if(count($leasingSpaces)) {!! $row('Leasing Spaces', implode(', ', $leasingSpaces)) !!} @endif
-                    {!! $row('Bedrooms', $resolveOtherField($str('bedrooms'), $str('other_bedrooms'))) !!}
-                    {!! $row('Bathrooms', $resolveOtherField($str('bathrooms'), $str('other_bathrooms'))) !!}
+                    {!! $row('Bedrooms', $resolveOtherField($str('bedrooms'), $str('other_bedrooms') ?: $str('custom_bedrooms') ?: 'Other')) !!}
+                    {!! $row('Bathrooms', $resolveOtherField($str('bathrooms'), $str('other_bathrooms') ?: $str('custom_bathrooms') ?: 'Other')) !!}
                     {!! $row('Minimum Heated Sq Ft', $str('minimum_heated_square')) !!}
                     {!! $row('Minimum Leaseable Sq Ft', $str('minimum_leaseable')) !!}
                     {!! $row('Min Acreage', $str('min_acreage')) !!}

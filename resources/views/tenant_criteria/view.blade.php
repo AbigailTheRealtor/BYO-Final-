@@ -274,12 +274,12 @@
               @endif
               @if (@$auction->get->bedrooms != null)
                 <div class="col-md-12 col-12  mt-2"><i class="fa-regular fa-check-square"></i> <strong>Minimum Bedrooms Needed:</strong>
-                  {{ !empty($auction->get->bedrooms) ? ($auction->get->bedrooms != 'Other' ? $auction->get->bedrooms : $auction->get->custom_bedrooms) : '' }}
+                  {{ !empty($auction->get->bedrooms) ? ($auction->get->bedrooms != 'Other' ? $auction->get->bedrooms : ($auction->get->other_bedrooms ?: $auction->get->custom_bedrooms ?: 'Other')) : '' }}
                 </div>
               @endif
               @if (@$auction->get->bathrooms != null)
                 <div class="col-md-12 col-12  mt-2"><i class="fa-regular fa-check-square"></i> <strong>Minimum Bathrooms Needed:</strong>
-                  {{ !empty($auction->get->bathrooms) ? ($auction->get->bathrooms != 'Other' ? $auction->get->bathrooms : $auction->get->custom_bathrooms) : '' }}
+                  {{ !empty($auction->get->bathrooms) ? ($auction->get->bathrooms != 'Other' ? $auction->get->bathrooms : ($auction->get->other_bathrooms ?: $auction->get->custom_bathrooms ?: 'Other')) : '' }}
                 </div>
               @endif
               @if (@$auction->get->minimum_sqft_needed != null)

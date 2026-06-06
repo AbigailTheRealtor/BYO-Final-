@@ -22,12 +22,12 @@
                                 <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
                                         src="{{ asset('assets/fontawesome/svgs/thin/bed-front.svg') }}" alt="bed icon"
                                         width="15"><b>
-                                        {{ @$auction->get->custom_bedrooms == '' ? @$auction->get->bedrooms : @$auction->get->custom_bedrooms }}
+                                        {{ @$auction->get->bedrooms !== 'Other' ? @$auction->get->bedrooms : (@$auction->get->other_bedrooms ?: @$auction->get->custom_bedrooms ?: 'Other') }}
                                     </b></span>
                                 <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
                                         src="{{ asset('assets/fontawesome/svgs/thin/bath.svg') }}" alt="bed icon"
                                         width="15"><b>
-                                        {{ @$auction->get->custom_bathrooms == '' ? @$auction->get->bathrooms : @$auction->get->custom_bathrooms }}</b></span>
+                                        {{ @$auction->get->bathrooms !== 'Other' ? @$auction->get->bathrooms : (@$auction->get->other_bathrooms ?: @$auction->get->custom_bathrooms ?: 'Other') }}</b></span>
                                 {{-- <span class="d-inline-flex justify-content-center align-items-center gap-1">
                             Criteria Needed
                         </span> --}}

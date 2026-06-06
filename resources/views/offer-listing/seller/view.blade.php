@@ -1532,8 +1532,8 @@
                     {!! $row('County', $str('property_county')) !!}
                     {!! $row('State', $str('property_state')) !!}
                     {!! $row('ZIP Code', $str('property_zip') ?: $str('zip_code')) !!}
-                    {!! $row('Bedrooms', $orOther($str('bedrooms'), $str('other_bedrooms'))) !!}
-                    {!! $row('Bathrooms', $orOther($str('bathrooms'), $str('other_bathrooms'))) !!}
+                    {!! $row('Bedrooms', $orOther($str('bedrooms'), $str('other_bedrooms') ?: $str('custom_bedrooms'))) !!}
+                    {!! $row('Bathrooms', $orOther($str('bathrooms'), $str('other_bathrooms') ?: $str('custom_bathrooms'))) !!}
                 </div>
                 <div class="col-md-6">
                     {!! $row('Heated Sq Ft', $str('minimum_heated_square') ?: null) !!}
