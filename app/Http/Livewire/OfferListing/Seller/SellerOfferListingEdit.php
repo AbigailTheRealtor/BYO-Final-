@@ -304,6 +304,17 @@ class SellerOfferListingEdit extends Component
     public $hoa_condo_association_terms = '';
     public $additional_seller_sale_terms = '';
 
+    // Estimated Payment Assumptions (agent-editable calculator defaults)
+    public $payment_down_payment_pct = '';
+    public $payment_interest_rate = '';
+    public $payment_loan_term = '';
+    public $payment_annual_property_taxes = '';
+    public $payment_monthly_insurance = '';
+    public $payment_hoa_fee_amount = '';
+    public $payment_hoa_fee_frequency = '';
+    public $payment_pmi_rate = '';
+    public $payment_show_buydown_options = true;
+
     // Property Showings
     public $schedule_showings = false;
     public $number_of_showings_to_schedule = 0;
@@ -2468,6 +2479,18 @@ class SellerOfferListingEdit extends Component
             $this->hoa_condo_association_terms = $auction->get->hoa_condo_association_terms ?? '';
             $this->additional_seller_sale_terms = $auction->get->additional_seller_sale_terms ?? '';
 
+            // Estimated Payment Assumptions
+            $this->payment_down_payment_pct         = $auction->get->payment_down_payment_pct ?? '';
+            $this->payment_interest_rate            = $auction->get->payment_interest_rate ?? '';
+            $this->payment_loan_term                = $auction->get->payment_loan_term ?? '';
+            $this->payment_annual_property_taxes    = $auction->get->payment_annual_property_taxes ?? '';
+            $this->payment_monthly_insurance        = $auction->get->payment_monthly_insurance ?? '';
+            $this->payment_hoa_fee_amount           = $auction->get->payment_hoa_fee_amount ?? '';
+            $this->payment_hoa_fee_frequency        = $auction->get->payment_hoa_fee_frequency ?? '';
+            $this->payment_pmi_rate                 = $auction->get->payment_pmi_rate ?? '';
+            $rawBuydown = $auction->get->payment_show_buydown_options;
+            $this->payment_show_buydown_options = ($rawBuydown === null) ? true : ($rawBuydown !== '0' && $rawBuydown !== 'false');
+
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);
             // foreach ($enableFields as $field => $value) {
@@ -3561,6 +3584,17 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('home_warranty_amount_details', $this->home_warranty_amount_details);
         $auction->saveMeta('hoa_condo_association_terms', $this->hoa_condo_association_terms);
         $auction->saveMeta('additional_seller_sale_terms', $this->additional_seller_sale_terms);
+
+        // Estimated Payment Assumptions
+        $auction->saveMeta('payment_down_payment_pct',      $this->stripCommas($this->payment_down_payment_pct));
+        $auction->saveMeta('payment_interest_rate',         $this->stripCommas($this->payment_interest_rate));
+        $auction->saveMeta('payment_loan_term',             $this->stripCommas($this->payment_loan_term));
+        $auction->saveMeta('payment_annual_property_taxes', $this->stripCommas($this->payment_annual_property_taxes));
+        $auction->saveMeta('payment_monthly_insurance',     $this->stripCommas($this->payment_monthly_insurance));
+        $auction->saveMeta('payment_hoa_fee_amount',        $this->stripCommas($this->payment_hoa_fee_amount));
+        $auction->saveMeta('payment_hoa_fee_frequency',     $this->payment_hoa_fee_frequency);
+        $auction->saveMeta('payment_pmi_rate',              $this->stripCommas($this->payment_pmi_rate));
+        $auction->saveMeta('payment_show_buydown_options',  $this->payment_show_buydown_options ? '1' : '0');
 
         // Tax, Legal, HOA & Disclosures tab
         $auction->saveMeta('parcel_id', $this->parcel_id);

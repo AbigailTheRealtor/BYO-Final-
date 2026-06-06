@@ -2068,3 +2068,177 @@
     </div>
 </div>
 
+{{-- 20. Estimated Payment Assumptions --}}
+<div class="card border mt-4">
+    <div class="card-header bg-light d-flex align-items-center" id="payment-assumptions-heading">
+        <button class="btn btn-link text-start fw-bold text-decoration-none p-0 w-100"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#payment-assumptions-body"
+                aria-expanded="false"
+                aria-controls="payment-assumptions-body">
+            <i class="fa-solid fa-calculator me-2 text-primary"></i>
+            Estimated Payment Assumptions
+            <span class="text-muted fw-normal ms-2" style="font-size:0.85rem;">
+                (Optional — customize the mortgage calculator defaults shown on the public listing)
+            </span>
+        </button>
+    </div>
+    <div id="payment-assumptions-body" class="collapse">
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                These values pre-fill the estimated monthly payment calculator on the public listing page.
+                Leave fields blank to use the platform defaults. Buyers can still adjust any value on the public page.
+            </p>
+            <div class="row g-3">
+
+                {{-- Down Payment % --}}
+                <div class="col-md-4">
+                    <label class="form-label fw-bold mb-1" style="font-size:0.9rem;">
+                        Default Down Payment %
+                        <span class="ms-1" data-bs-toggle="tooltip" title="Percentage of purchase price the buyer puts down. Leave blank to use the platform default.">
+                            <i class="fa-solid fa-circle-info text-secondary" style="font-size:0.8rem;"></i>
+                        </span>
+                    </label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" wire:model="payment_down_payment_pct" class="form-control"
+                               min="0" max="100" step="0.5"
+                               placeholder="e.g. 10">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+
+                {{-- Interest Rate % --}}
+                <div class="col-md-4">
+                    <label class="form-label fw-bold mb-1" style="font-size:0.9rem;">
+                        Default Interest Rate %
+                        <span class="ms-1" data-bs-toggle="tooltip" title="Annual mortgage interest rate. Leave blank to use the platform default.">
+                            <i class="fa-solid fa-circle-info text-secondary" style="font-size:0.8rem;"></i>
+                        </span>
+                    </label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" wire:model="payment_interest_rate" class="form-control"
+                               min="0" max="30" step="0.125"
+                               placeholder="e.g. 7.0">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+
+                {{-- Loan Term (years) --}}
+                <div class="col-md-4">
+                    <label class="form-label fw-bold mb-1" style="font-size:0.9rem;">
+                        Loan Term (years)
+                        <span class="ms-1" data-bs-toggle="tooltip" title="Amortization period in years. Leave blank to use the platform default.">
+                            <i class="fa-solid fa-circle-info text-secondary" style="font-size:0.8rem;"></i>
+                        </span>
+                    </label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" wire:model="payment_loan_term" class="form-control"
+                               min="1" max="50" step="1"
+                               placeholder="e.g. 30">
+                        <span class="input-group-text">yrs</span>
+                    </div>
+                </div>
+
+                {{-- Annual Property Taxes Override --}}
+                <div class="col-md-4">
+                    <label class="form-label fw-bold mb-1" style="font-size:0.9rem;">
+                        Annual Property Taxes Override
+                        <span class="ms-1" data-bs-toggle="tooltip" title="Override the annual taxes shown in the calculator. Overrides both the Tax/Legal tab value and the admin default.">
+                            <i class="fa-solid fa-circle-info text-secondary" style="font-size:0.8rem;"></i>
+                        </span>
+                    </label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">$</span>
+                        <input type="text" wire:model="payment_annual_property_taxes" class="form-control"
+                               placeholder="e.g. 4800"
+                               oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    </div>
+                </div>
+
+                {{-- Monthly Insurance Estimate --}}
+                <div class="col-md-4">
+                    <label class="form-label fw-bold mb-1" style="font-size:0.9rem;">
+                        Monthly Insurance Estimate
+                        <span class="ms-1" data-bs-toggle="tooltip" title="Set a specific monthly homeowners insurance amount. Overrides the rate-based estimate.">
+                            <i class="fa-solid fa-circle-info text-secondary" style="font-size:0.8rem;"></i>
+                        </span>
+                    </label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">$</span>
+                        <input type="text" wire:model="payment_monthly_insurance" class="form-control"
+                               placeholder="e.g. 120"
+                               oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                        <span class="input-group-text">/mo</span>
+                    </div>
+                </div>
+
+                {{-- PMI Rate % --}}
+                <div class="col-md-4">
+                    <label class="form-label fw-bold mb-1" style="font-size:0.9rem;">
+                        PMI Rate %
+                        <span class="ms-1" data-bs-toggle="tooltip" title="Annual PMI rate as a percentage of purchase price. The calculator uses: purchase price × rate ÷ 12 for the monthly PMI estimate. Leave blank to use the platform default. PMI is waived when down payment ≥ 20%.">
+                            <i class="fa-solid fa-circle-info text-secondary" style="font-size:0.8rem;"></i>
+                        </span>
+                    </label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" wire:model="payment_pmi_rate" class="form-control"
+                               min="0" max="5" step="0.01"
+                               placeholder="e.g. 0.85">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+
+                {{-- HOA Fee Amount --}}
+                <div class="col-md-4">
+                    <label class="form-label fw-bold mb-1" style="font-size:0.9rem;">
+                        HOA Fee Amount Override
+                        <span class="ms-1" data-bs-toggle="tooltip" title="Override the HOA fee used in the calculator. Pair with the frequency below.">
+                            <i class="fa-solid fa-circle-info text-secondary" style="font-size:0.8rem;"></i>
+                        </span>
+                    </label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">$</span>
+                        <input type="text" wire:model="payment_hoa_fee_amount" class="form-control"
+                               placeholder="e.g. 250"
+                               oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    </div>
+                </div>
+
+                {{-- HOA Fee Frequency --}}
+                <div class="col-md-4">
+                    <label class="form-label fw-bold mb-1" style="font-size:0.9rem;">
+                        HOA Fee Frequency
+                        <span class="ms-1" data-bs-toggle="tooltip" title="How often the HOA fee above is charged.">
+                            <i class="fa-solid fa-circle-info text-secondary" style="font-size:0.8rem;"></i>
+                        </span>
+                    </label>
+                    <select wire:model="payment_hoa_fee_frequency" class="form-select form-select-sm">
+                        <option value="">Select frequency</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Annually">Annually</option>
+                    </select>
+                </div>
+
+                {{-- Show Buydown Options Toggle --}}
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox"
+                               wire:model="payment_show_buydown_options"
+                               id="payment_show_buydown_options"
+                               role="switch">
+                        <label class="form-check-label fw-bold" for="payment_show_buydown_options" style="font-size:0.9rem;">
+                            Show Rate Buydown Options
+                            <span class="ms-1" data-bs-toggle="tooltip" title="When enabled, buyers will see the Advanced Options (Rate Buydown) section on the public listing calculator. Uncheck to hide it.">
+                                <i class="fa-solid fa-circle-info text-secondary" style="font-size:0.8rem;"></i>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+            </div>{{-- .row --}}
+        </div>{{-- .card-body --}}
+    </div>{{-- #payment-assumptions-body --}}
+</div>{{-- .card --}}
+

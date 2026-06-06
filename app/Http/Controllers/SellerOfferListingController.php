@@ -131,10 +131,13 @@ class SellerOfferListingController extends Controller
         $hoaMonthly = 0.0;
         $hoaSource  = 'estimated';
         $hoaAssumed = false;
-        $hoaRaw     = $meta['association_fee_amount'] ?? null;
-        if ($hoaRaw && (float) $hoaRaw > 0) {
-            $hoaAmt   = (float) $hoaRaw;
-            $schedule = strtolower((string) ($meta['association_fee_frequency'] ?? ''));
+
+        // Agent payment_hoa override takes priority over association_fee fields
+        $paymentHoaAmt  = $meta['payment_hoa_fee_amount'] ?? null;
+        $paymentHoaFreq = $meta['payment_hoa_fee_frequency'] ?? null;
+        if ($paymentHoaAmt !== null && $paymentHoaAmt !== '' && (float) $paymentHoaAmt > 0) {
+            $hoaAmt   = (float) $paymentHoaAmt;
+            $schedule = strtolower((string) $paymentHoaFreq);
             if (str_contains($schedule, 'quarter')) {
                 $hoaMonthly = $hoaAmt / 3;
             } elseif (str_contains($schedule, 'annual') || str_contains($schedule, 'year')) {
@@ -145,16 +148,41 @@ class SellerOfferListingController extends Controller
                 $hoaMonthly = $hoaAmt;
                 $hoaAssumed = true;
             }
-            $hoaSource = 'from listing';
+            $hoaSource = 'agent override';
+        } else {
+            $hoaRaw = $meta['association_fee_amount'] ?? null;
+            if ($hoaRaw && (float) $hoaRaw > 0) {
+                $hoaAmt   = (float) $hoaRaw;
+                $schedule = strtolower((string) ($meta['association_fee_frequency'] ?? ''));
+                if (str_contains($schedule, 'quarter')) {
+                    $hoaMonthly = $hoaAmt / 3;
+                } elseif (str_contains($schedule, 'annual') || str_contains($schedule, 'year')) {
+                    $hoaMonthly = $hoaAmt / 12;
+                } elseif (str_contains($schedule, 'month')) {
+                    $hoaMonthly = $hoaAmt;
+                } else {
+                    $hoaMonthly = $hoaAmt;
+                    $hoaAssumed = true;
+                }
+                $hoaSource = 'from listing';
+            }
         }
 
         // --- Taxes ---
         $taxesAnnual = 0.0;
         $taxesSource = 'estimated';
-        $taxRaw      = $meta['annual_property_taxes'] ?? null;
-        if ($taxRaw && (float) $taxRaw > 0) {
-            $taxesAnnual = (float) $taxRaw;
-            $taxesSource = 'from listing';
+
+        // Agent payment_annual_property_taxes override takes priority
+        $paymentTaxes = $meta['payment_annual_property_taxes'] ?? null;
+        if ($paymentTaxes !== null && $paymentTaxes !== '' && (float) $paymentTaxes > 0) {
+            $taxesAnnual = (float) $paymentTaxes;
+            $taxesSource = 'agent override';
+        } else {
+            $taxRaw = $meta['annual_property_taxes'] ?? null;
+            if ($taxRaw && (float) $taxRaw > 0) {
+                $taxesAnnual = (float) $taxRaw;
+                $taxesSource = 'from listing';
+            }
         }
 
         // --- Admin defaults ---
@@ -165,21 +193,62 @@ class SellerOfferListingController extends Controller
         $insuranceRate = (float) (get_setting('calc_insurance_rate')   ?: 0.5);
         $pmiRate       = (float) (get_setting('calc_pmi_rate')         ?: 0.85);
 
+        // --- Agent payment_* overrides (take priority over admin defaults) ---
+        $paymentDownPct = $meta['payment_down_payment_pct'] ?? null;
+        if ($paymentDownPct !== null && $paymentDownPct !== '') {
+            $downPct = (float) $paymentDownPct;
+        }
+
+        $paymentRate = $meta['payment_interest_rate'] ?? null;
+        if ($paymentRate !== null && $paymentRate !== '') {
+            $interestRate = (float) $paymentRate;
+        }
+
+        $paymentTerm = $meta['payment_loan_term'] ?? null;
+        if ($paymentTerm !== null && $paymentTerm !== '') {
+            $loanTerm = (int) $paymentTerm;
+        }
+
+        $paymentPmi = $meta['payment_pmi_rate'] ?? null;
+        if ($paymentPmi !== null && $paymentPmi !== '') {
+            $pmiRate = (float) $paymentPmi;
+        }
+
+        // PMI zeroes automatically when down payment >= 20%
+        if ($downPct >= 20) {
+            $pmiRate = 0.0;
+        }
+
+        // Agent monthly insurance override
+        $insuranceMonthlyOverride = null;
+        $insuranceSource          = 'estimated';
+        $paymentIns = $meta['payment_monthly_insurance'] ?? null;
+        if ($paymentIns !== null && $paymentIns !== '' && (float) $paymentIns > 0) {
+            $insuranceMonthlyOverride = (float) $paymentIns;
+            $insuranceSource          = 'agent override';
+        }
+
+        // --- show_buydown_options ---
+        $showBuydownRaw  = $meta['payment_show_buydown_options'] ?? null;
+        $showBuydownOpts = ($showBuydownRaw === null) || ($showBuydownRaw !== '0' && $showBuydownRaw !== 'false');
+
         return [
-            'price'            => $price,
-            'price_source'     => $priceSource,
-            'hoa_monthly'      => round($hoaMonthly, 2),
-            'hoa_source'       => $hoaSource,
-            'hoa_assumed'      => $hoaAssumed,
-            'taxes_annual'     => $taxesAnnual,
-            'taxes_source'     => $taxesSource,
-            'insurance_source' => 'estimated',
-            'interest_rate'    => $interestRate,
-            'down_pct'         => $downPct,
-            'loan_term'        => $loanTerm,
-            'tax_rate'         => $taxRate,
-            'insurance_rate'   => $insuranceRate,
-            'pmi_rate'         => $pmiRate,
+            'price'                      => $price,
+            'price_source'               => $priceSource,
+            'hoa_monthly'                => round($hoaMonthly, 2),
+            'hoa_source'                 => $hoaSource,
+            'hoa_assumed'                => $hoaAssumed,
+            'taxes_annual'               => $taxesAnnual,
+            'taxes_source'               => $taxesSource,
+            'insurance_source'           => $insuranceSource,
+            'interest_rate'              => $interestRate,
+            'down_pct'                   => $downPct,
+            'loan_term'                  => $loanTerm,
+            'tax_rate'                   => $taxRate,
+            'insurance_rate'             => $insuranceRate,
+            'pmi_rate'                   => $pmiRate,
+            'insurance_monthly_override' => $insuranceMonthlyOverride,
+            'show_buydown_options'       => $showBuydownOpts,
         ];
     }
 

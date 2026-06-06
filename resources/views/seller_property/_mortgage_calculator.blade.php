@@ -14,6 +14,14 @@
     $insuranceRate  = isset($calcData['insurance_rate']) ? (float) $calcData['insurance_rate'] : 0.5;
     $pmiRate        = isset($calcData['pmi_rate'])       ? (float) $calcData['pmi_rate']       : 0.85;
 
+    // Agent monthly insurance override — when set, used instead of rate-based calculation
+    $insuranceMonthlyOverride = isset($calcData['insurance_monthly_override']) && $calcData['insurance_monthly_override'] !== null
+        ? (float) $calcData['insurance_monthly_override']
+        : null;
+
+    // show_buydown_options defaults to true; false hides the Advanced Options section entirely
+    $showBuydownOptions = isset($calcData['show_buydown_options']) ? (bool) $calcData['show_buydown_options'] : true;
+
     $priceSource       = $calcData['price_source']      ?? 'estimated';
     $hoaSource         = $calcData['hoa_source']        ?? 'estimated';
     $hoaAssumed        = $calcData['hoa_assumed']       ?? false;
@@ -159,7 +167,8 @@
             </ul>
         </div>
 
-        {{-- Advanced Options Accordion --}}
+        {{-- Advanced Options Accordion — hidden when agent sets show_buydown_options = false --}}
+        @if ($showBuydownOptions)
         <div class="mt-3">
             <button type="button"
                     id="calc-adv-toggle"
@@ -213,6 +222,7 @@
 
             </div>{{-- #calc-adv-panel --}}
         </div>{{-- Advanced Options --}}
+        @endif
 
     </div>{{-- #calc-expand-panel --}}
 
@@ -234,8 +244,10 @@
     var TAX_RATE          = {{ $taxRate }};
     var INS_RATE          = {{ $insuranceRate }};
     var PMI_RATE          = {{ $pmiRate }};
+    var INS_MONTHLY_OVERRIDE = {{ $insuranceMonthlyOverride !== null ? (int) round($insuranceMonthlyOverride) : 'null' }};
+    var SHOW_BUYDOWN      = {{ $showBuydownOptions ? 'true' : 'false' }};
 
-    // True when taxes came from the listing — don't recalculate on price change in that case
+    // True when taxes came from the listing or agent override — don't recalculate on price change
     var TAXES_FROM_LISTING = {{ $taxesAnnual > 0 ? 'true' : 'false' }};
 
     function clamp(val, min, max) {
@@ -284,7 +296,9 @@
         get('calc-total').textContent               = fmtMoney(total) + '/mo';
         get('calc-summary-amount').textContent      = fmtMoney(total) + '/mo';
 
-        recalcBuydown(principal, rate, term);
+        if (SHOW_BUYDOWN) {
+            recalcBuydown(principal, rate, term);
+        }
     }
 
     function recalcBuydown(principal, baseRate, term) {
@@ -366,6 +380,8 @@
     }
 
     function syncInsurance() {
+        // When an agent-level monthly insurance override is set, don't recalculate on price change
+        if (INS_MONTHLY_OVERRIDE !== null) return;
         var price = clamp(val('calc-price'), 1);
         get('calc-insurance').value = Math.round(price * (INS_RATE / 100) / 12);
     }
@@ -391,7 +407,12 @@
             : (price > 0 ? Math.round(price * (TAX_RATE / 100) / 12) : 0);
         get('calc-taxes').value = taxesMonthly;
 
-        var insMonthly = price > 0 ? Math.round(price * (INS_RATE / 100) / 12) : 0;
+        var insMonthly;
+        if (INS_MONTHLY_OVERRIDE !== null) {
+            insMonthly = INS_MONTHLY_OVERRIDE;
+        } else {
+            insMonthly = price > 0 ? Math.round(price * (INS_RATE / 100) / 12) : 0;
+        }
         get('calc-insurance').value = insMonthly;
 
         get('calc-hoa').value = HOA_MONTHLY_INIT;
@@ -415,6 +436,7 @@
             this.textContent = expanded ? 'Customize Payment ▾' : 'Customize Payment ▴';
         });
 
+        @if ($showBuydownOptions)
         get('calc-adv-toggle').addEventListener('click', function () {
             var panel = get('calc-adv-panel');
             var expanded = panel.style.display !== 'none';
@@ -424,6 +446,9 @@
                 ? '▶ Advanced Options (Rate Buydown)'
                 : '▼ Advanced Options (Rate Buydown)';
         });
+        get('calc-buydown-type').addEventListener('change', recalc);
+        get('calc-perm-rate').addEventListener('input', recalc);
+        @endif
 
         get('calc-down-pct').addEventListener('input', function () {
             syncDownPctToDollar();
@@ -439,8 +464,6 @@
             syncTaxes();
             recalc();
         });
-        get('calc-buydown-type').addEventListener('change', recalc);
-        get('calc-perm-rate').addEventListener('input', recalc);
 
         ['calc-rate', 'calc-term', 'calc-taxes', 'calc-insurance', 'calc-hoa', 'calc-pmi'].forEach(function (id) {
             get(id).addEventListener('input', recalc);
