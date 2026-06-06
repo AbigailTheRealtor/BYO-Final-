@@ -208,6 +208,23 @@ class OfferController extends Controller
             $offerType = 'sale';
         }
 
+        // Strip commas from comma-formatted money fields before validation
+        $moneyFields = [
+            'offer_price', 'earnest_deposit', 'down_payment_value',
+            'outstanding_balance', 'additional_cash', 'exchange_item_value',
+            'sf_purchase_price', 'sf_down_payment_amount', 'seller_financing_amount',
+            'seller_financing_balloon_amount', 'prepayment_penalty_amount',
+            'option_fee_amount', 'lease_option_price', 'lease_option_payment',
+            'lease_purchase_price', 'lease_purchase_payment', 'lease_purchase_deposit',
+            'lease_purchase_rent_credit_amount', 'initial_deposit_amount',
+            'additional_deposit_amount',
+        ];
+        foreach ($moneyFields as $field) {
+            if ($request->has($field) && $request->input($field) !== null && $request->input($field) !== '') {
+                $request->merge([$field => str_replace(',', '', (string) $request->input($field))]);
+            }
+        }
+
         $commonRules = [
             'expires_at'   => 'nullable|date',
             'custom_terms' => 'nullable|string|max:5000',

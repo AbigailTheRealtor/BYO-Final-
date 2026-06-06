@@ -119,8 +119,18 @@
                             $_addTf  = old('additional_deposit_timeframe',$metas->get('additional_deposit_timeframe') ?? '');
                         @endphp
                         @php
-                            $_downPayVal  = old('down_payment_value',  $metas->get('down_payment_value')  ?? $metas->get('down_payment_percent') ?? '');
-                            $_downPayUnit = old('down_payment_unit',   $metas->get('down_payment_unit')   ?? ($metas->get('down_payment_percent') !== null ? '%' : '$'));
+                            $_downPayVal      = old('down_payment_value',  $metas->get('down_payment_value')  ?? $metas->get('down_payment_percent') ?? '');
+                            $_downPayUnit     = old('down_payment_unit',   $metas->get('down_payment_unit')   ?? ($metas->get('down_payment_percent') !== null ? '%' : '$'));
+                            $_earnestDepUnit  = old('earnest_deposit_unit',         $metas->get('earnest_deposit_unit')         ?? '$');
+                            $_initDepUnit     = old('initial_deposit_amount_unit',  $metas->get('initial_deposit_amount_unit')  ?? '$');
+                            $_addDepUnit      = old('additional_deposit_amount_unit',$metas->get('additional_deposit_amount_unit') ?? '$');
+                            $_sfDpType        = old('sf_down_payment_type',         $metas->get('sf_down_payment_type')         ?? '$');
+                            $_sfAmountType    = old('seller_financing_amount_type', $metas->get('seller_financing_amount_type') ?? '$');
+                            $fmtMoney = function($v) {
+                                if ($v === null || $v === '') return '';
+                                $clean = str_replace(',', '', (string) $v);
+                                return is_numeric($clean) ? number_format((int) $clean) : (string) $v;
+                            };
                         @endphp
                         <div x-data="{
                             finType: '{{ $_ft }}',
@@ -161,9 +171,9 @@
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                    <input type="number" name="offer_price" class="form-control" min="0" step="1000"
-                                        placeholder="Enter offer price (e.g., 450000)"
-                                        value="{{ old('offer_price', $metas->get('offer_price')) }}">
+                                    <input type="text" inputmode="numeric" name="offer_price" class="form-control" data-money-input="true"
+                                        placeholder="Enter offer price (e.g., 450,000)"
+                                        value="{{ $fmtMoney(old('offer_price', $metas->get('offer_price'))) }}">
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -179,9 +189,9 @@
                                         <option value="$">$</option>
                                         <option value="%">%</option>
                                     </select>
-                                    <input type="number" name="earnest_deposit" class="form-control" min="0" step="any"
-                                        :placeholder="earnestDepUnit === '%' ? 'Enter earnest deposit % (e.g., 1.5)' : 'Enter earnest deposit (e.g., 5000)'"
-                                        value="{{ old('earnest_deposit', $metas->get('earnest_deposit')) }}">
+                                    <input type="text" inputmode="numeric" name="earnest_deposit" class="form-control" data-money-input="true" data-unit-select="earnest_deposit_unit"
+                                        :placeholder="earnestDepUnit === '%' ? 'Enter earnest deposit % (e.g., 1.5)' : 'Enter earnest deposit (e.g., 5,000)'"
+                                        value="{{ $_earnestDepUnit !== '%' ? $fmtMoney(old('earnest_deposit', $metas->get('earnest_deposit'))) : old('earnest_deposit', $metas->get('earnest_deposit')) }}">
                                     <span class="input-group-text" x-show="earnestDepUnit === '%'">%</span>
                                 </div>
                             </div>
@@ -198,9 +208,9 @@
                                         <option value="$">$</option>
                                         <option value="%">%</option>
                                     </select>
-                                    <input type="number" name="down_payment_value" class="form-control" min="0" step="any"
-                                        :placeholder="downPayUnit === '%' ? 'Enter down payment % (e.g., 20)' : 'Enter down payment amount (e.g., 90000)'"
-                                        value="{{ old('down_payment_value', $_downPayVal) }}">
+                                    <input type="text" inputmode="numeric" name="down_payment_value" class="form-control" data-money-input="true" data-unit-select="down_payment_unit"
+                                        :placeholder="downPayUnit === '%' ? 'Enter down payment % (e.g., 20)' : 'Enter down payment amount (e.g., 90,000)'"
+                                        value="{{ $_downPayUnit !== '%' ? $fmtMoney(old('down_payment_value', $_downPayVal)) : old('down_payment_value', $_downPayVal) }}">
                                     <span class="input-group-text" x-show="downPayUnit === '%'">%</span>
                                 </div>
                             </div>
@@ -215,9 +225,9 @@
                                         <option value="$">$</option>
                                         <option value="%">%</option>
                                     </select>
-                                    <input type="number" name="initial_deposit_amount" class="form-control" min="0" step="any"
-                                        :placeholder="initDepUnit === '%' ? 'Enter initial deposit % (e.g., 1)' : 'Enter initial deposit (e.g., 5000)'"
-                                        value="{{ old('initial_deposit_amount', $metas->get('initial_deposit_amount')) }}">
+                                    <input type="text" inputmode="numeric" name="initial_deposit_amount" class="form-control" data-money-input="true" data-unit-select="initial_deposit_amount_unit"
+                                        :placeholder="initDepUnit === '%' ? 'Enter initial deposit % (e.g., 1)' : 'Enter initial deposit (e.g., 5,000)'"
+                                        value="{{ $_initDepUnit !== '%' ? $fmtMoney(old('initial_deposit_amount', $metas->get('initial_deposit_amount'))) : old('initial_deposit_amount', $metas->get('initial_deposit_amount')) }}">
                                     <span class="input-group-text" x-show="initDepUnit === '%'">%</span>
                                 </div>
                             </div>
@@ -246,9 +256,9 @@
                                         <option value="$">$</option>
                                         <option value="%">%</option>
                                     </select>
-                                    <input type="number" name="additional_deposit_amount" class="form-control" min="0" step="any"
-                                        :placeholder="addDepUnit === '%' ? 'Enter additional deposit % (e.g., 2)' : 'Enter additional deposit (e.g., 10000)'"
-                                        value="{{ old('additional_deposit_amount', $metas->get('additional_deposit_amount')) }}">
+                                    <input type="text" inputmode="numeric" name="additional_deposit_amount" class="form-control" data-money-input="true" data-unit-select="additional_deposit_amount_unit"
+                                        :placeholder="addDepUnit === '%' ? 'Enter additional deposit % (e.g., 2)' : 'Enter additional deposit (e.g., 10,000)'"
+                                        value="{{ $_addDepUnit !== '%' ? $fmtMoney(old('additional_deposit_amount', $metas->get('additional_deposit_amount'))) : old('additional_deposit_amount', $metas->get('additional_deposit_amount')) }}">
                                     <span class="input-group-text" x-show="addDepUnit === '%'">%</span>
                                 </div>
                             </div>
@@ -340,9 +350,9 @@
                                     <label class="form-label fw-semibold">Outstanding Balance ($)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                        <input type="number" name="outstanding_balance" class="form-control" min="0"
-                                            placeholder="Enter balance (e.g., 250000)"
-                                            value="{{ old('outstanding_balance', $metas->get('outstanding_balance')) }}">
+                                        <input type="text" inputmode="numeric" name="outstanding_balance" class="form-control" data-money-input="true"
+                                            placeholder="Enter balance (e.g., 250,000)"
+                                            value="{{ $fmtMoney(old('outstanding_balance', $metas->get('outstanding_balance'))) }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -404,9 +414,9 @@
                                     <label class="form-label fw-semibold">Estimated Value ($)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                        <input type="number" name="exchange_item_value" class="form-control" min="0"
-                                            placeholder="Enter value (e.g., 75000)"
-                                            value="{{ old('exchange_item_value', $metas->get('exchange_item_value')) }}">
+                                        <input type="text" inputmode="numeric" name="exchange_item_value" class="form-control" data-money-input="true"
+                                            placeholder="Enter value (e.g., 75,000)"
+                                            value="{{ $fmtMoney(old('exchange_item_value', $metas->get('exchange_item_value'))) }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -422,21 +432,21 @@
                                     <label class="form-label fw-semibold">Additional Cash Offered ($)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                        <input type="number" name="additional_cash" class="form-control" min="0"
-                                            placeholder="e.g., 25000"
-                                            value="{{ old('additional_cash', $metas->get('additional_cash')) }}">
+                                        <input type="text" inputmode="numeric" name="additional_cash" class="form-control" data-money-input="true"
+                                            placeholder="Enter additional cash offered (e.g., 25,000)"
+                                            value="{{ $fmtMoney(old('additional_cash', $metas->get('additional_cash'))) }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Value Determined By</label>
                                     <input type="text" name="value_determination" class="form-control"
-                                        placeholder="e.g., Licensed Appraisal, Online Valuation"
+                                        placeholder="Enter valuation method (e.g., Licensed Appraisal, Online Valuation)"
                                         value="{{ old('value_determination', $metas->get('value_determination')) }}">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Transfer Method / Logistics</label>
                                     <input type="text" name="exchange_transfer_method" class="form-control"
-                                        placeholder="e.g., Title transfer, Bill of Sale, Delivery at closing"
+                                        placeholder="Enter transfer method (e.g., Title transfer, Bill of Sale, Delivery at closing)"
                                         value="{{ old('exchange_transfer_method', $metas->get('exchange_transfer_method')) }}">
                                 </div>
                                 <div class="col-md-4">
@@ -448,7 +458,7 @@
                                     </select>
                                     <div x-show="exchangeLiens === 'Yes'" class="mt-2">
                                         <input type="text" name="exchange_liens_details" class="form-control"
-                                            placeholder="e.g., Auto loan balance, UCC filing"
+                                            placeholder="Enter lien details (e.g., Auto loan balance, UCC filing)"
                                             value="{{ old('exchange_liens_details', $metas->get('exchange_liens_details')) }}">
                                     </div>
                                 </div>
@@ -471,9 +481,9 @@
                                     <label class="form-label fw-semibold">Desired Purchase Price ($)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                        <input type="number" name="sf_purchase_price" class="form-control" min="0"
-                                            placeholder="e.g., 500000"
-                                            value="{{ old('sf_purchase_price', $metas->get('sf_purchase_price')) }}">
+                                        <input type="text" inputmode="numeric" name="sf_purchase_price" class="form-control" data-money-input="true"
+                                            placeholder="Enter purchase price (e.g., 500,000)"
+                                            value="{{ $fmtMoney(old('sf_purchase_price', $metas->get('sf_purchase_price'))) }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -483,9 +493,9 @@
                                             <option value="$">$</option>
                                             <option value="%">%</option>
                                         </select>
-                                        <input type="number" name="sf_down_payment_amount" class="form-control" min="0" step="any"
-                                            :placeholder="sfDpType === '%' ? 'e.g., 20' : 'e.g., 100000'"
-                                            value="{{ old('sf_down_payment_amount', $metas->get('sf_down_payment_amount')) }}">
+                                        <input type="text" inputmode="numeric" name="sf_down_payment_amount" class="form-control" data-money-input="true" data-unit-select="sf_down_payment_type"
+                                            :placeholder="sfDpType === '%' ? 'Enter down payment % (e.g., 20)' : 'Enter down payment amount (e.g., 100,000)'"
+                                            value="{{ $_sfDpType !== '%' ? $fmtMoney(old('sf_down_payment_amount', $metas->get('sf_down_payment_amount'))) : old('sf_down_payment_amount', $metas->get('sf_down_payment_amount')) }}">
                                         <span class="input-group-text" x-show="sfDpType === '%'">%</span>
                                     </div>
                                 </div>
@@ -496,9 +506,9 @@
                                             <option value="$">$</option>
                                             <option value="%">%</option>
                                         </select>
-                                        <input type="number" name="seller_financing_amount" class="form-control" min="0" step="any"
-                                            :placeholder="sfAmountType === '%' ? 'e.g., 80' : 'e.g., 400000'"
-                                            value="{{ old('seller_financing_amount', $metas->get('seller_financing_amount')) }}">
+                                        <input type="text" inputmode="numeric" name="seller_financing_amount" class="form-control" data-money-input="true" data-unit-select="seller_financing_amount_type"
+                                            :placeholder="sfAmountType === '%' ? 'Enter financing amount % (e.g., 80)' : 'Enter financing amount (e.g., 400,000)'"
+                                            value="{{ $_sfAmountType !== '%' ? $fmtMoney(old('seller_financing_amount', $metas->get('seller_financing_amount'))) : old('seller_financing_amount', $metas->get('seller_financing_amount')) }}">
                                         <span class="input-group-text" x-show="sfAmountType === '%'">%</span>
                                     </div>
                                 </div>
@@ -553,11 +563,14 @@
                                         <option value="No" {{ old('seller_financing_balloon', $metas->get('seller_financing_balloon')) === 'No' ? 'selected' : '' }}>No</option>
                                     </select>
                                     <div x-show="sfBalloon === 'Yes'" class="mt-2">
-                                        <input type="number" name="seller_financing_balloon_amount" class="form-control mb-1" min="0"
-                                            placeholder="Balloon amount (e.g., 100000)"
-                                            value="{{ old('seller_financing_balloon_amount', $metas->get('seller_financing_balloon_amount')) }}">
+                                        <div class="input-group mb-1">
+                                            <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                            <input type="text" inputmode="numeric" name="seller_financing_balloon_amount" class="form-control" data-money-input="true"
+                                                placeholder="Enter balloon amount (e.g., 100,000)"
+                                                value="{{ $fmtMoney(old('seller_financing_balloon_amount', $metas->get('seller_financing_balloon_amount'))) }}">
+                                        </div>
                                         <input type="text" name="seller_financing_balloon_date" class="form-control"
-                                            placeholder="Due date (e.g., 5 Years)"
+                                            placeholder="Enter due date (e.g., 5 Years)"
                                             value="{{ old('seller_financing_balloon_date', $metas->get('seller_financing_balloon_date')) }}">
                                     </div>
                                 </div>
@@ -569,15 +582,18 @@
                                         <option value="No" {{ old('prepayment_penalty', $metas->get('prepayment_penalty')) === 'No' ? 'selected' : '' }}>No</option>
                                     </select>
                                     <div x-show="sfPrePayPenalty === 'Yes'" class="mt-2">
-                                        <input type="number" name="prepayment_penalty_amount" class="form-control" min="0"
-                                            placeholder="Penalty amount (e.g., 5000)"
-                                            value="{{ old('prepayment_penalty_amount', $metas->get('prepayment_penalty_amount')) }}">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                            <input type="text" inputmode="numeric" name="prepayment_penalty_amount" class="form-control" data-money-input="true"
+                                                placeholder="Enter penalty amount (e.g., 5,000)"
+                                                value="{{ $fmtMoney(old('prepayment_penalty_amount', $metas->get('prepayment_penalty_amount'))) }}">
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Late Payment Fee</label>
                                     <input type="text" name="seller_late_fee_amount" class="form-control"
-                                        placeholder="e.g., $100 after 10 days, or 5% after 15 days"
+                                        placeholder="Enter late payment fee (e.g., $100 after 10 days, or 5% after 15 days)"
                                         value="{{ old('seller_late_fee_amount', $metas->get('seller_late_fee_amount')) }}">
                                 </div>
                             </div>
@@ -591,24 +607,24 @@
                                     <label class="form-label fw-semibold">Offering Price ($)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                        <input type="number" name="lease_option_price" class="form-control" min="0"
-                                            placeholder="e.g., 500000"
-                                            value="{{ old('lease_option_price', $metas->get('lease_option_price')) }}">
+                                        <input type="text" inputmode="numeric" name="lease_option_price" class="form-control" data-money-input="true"
+                                            placeholder="Enter offering price (e.g., 500,000)"
+                                            value="{{ $fmtMoney(old('lease_option_price', $metas->get('lease_option_price'))) }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Monthly Payment ($)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                        <input type="number" name="lease_option_payment" class="form-control" min="0"
-                                            placeholder="e.g., 2500"
-                                            value="{{ old('lease_option_payment', $metas->get('lease_option_payment')) }}">
+                                        <input type="text" inputmode="numeric" name="lease_option_payment" class="form-control" data-money-input="true"
+                                            placeholder="Enter monthly payment (e.g., 2,500)"
+                                            value="{{ $fmtMoney(old('lease_option_payment', $metas->get('lease_option_payment'))) }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Lease Duration (Months)</label>
                                     <input type="number" name="lease_option_duration" class="form-control" min="1"
-                                        placeholder="e.g., 12"
+                                        placeholder="Enter duration in months (e.g., 12)"
                                         value="{{ old('lease_option_duration', $metas->get('lease_option_duration')) }}">
                                 </div>
                                 <div class="col-md-4">
@@ -619,9 +635,12 @@
                                         <option value="No" {{ old('has_option_fee', $metas->get('has_option_fee')) === 'No' ? 'selected' : '' }}>No</option>
                                     </select>
                                     <div x-show="leaseOptFee === 'Yes'" class="mt-2">
-                                        <input type="number" name="option_fee_amount" class="form-control" min="0"
-                                            placeholder="Option fee amount (e.g., 15000)"
-                                            value="{{ old('option_fee_amount', $metas->get('option_fee_amount')) }}">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                            <input type="text" inputmode="numeric" name="option_fee_amount" class="form-control" data-money-input="true"
+                                                placeholder="Enter option fee amount (e.g., 15,000)"
+                                                value="{{ $fmtMoney(old('option_fee_amount', $metas->get('option_fee_amount'))) }}">
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -650,19 +669,19 @@
                                 <div class="col-12">
                                     <label class="form-label fw-semibold">Conditions / Requirements</label>
                                     <input type="text" name="lease_option_conditions" class="form-control"
-                                        placeholder="e.g., Option exercisable after 12 months, Property must pass inspection"
+                                        placeholder="Enter conditions (e.g., Option exercisable after 12 months, Property must pass inspection)"
                                         value="{{ old('lease_option_conditions', $metas->get('lease_option_conditions')) }}">
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-semibold">Specific Terms</label>
                                     <input type="text" name="lease_option_terms" class="form-control"
-                                        placeholder="e.g., Buyer may conduct inspections during lease term"
+                                        placeholder="Enter specific terms (e.g., Buyer may conduct inspections during lease term)"
                                         value="{{ old('lease_option_terms', $metas->get('lease_option_terms')) }}">
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-semibold">Extension Terms</label>
                                     <input type="text" name="lease_option_extension_terms" class="form-control"
-                                        placeholder="e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee"
+                                        placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)"
                                         value="{{ old('lease_option_extension_terms', $metas->get('lease_option_extension_terms')) }}">
                                 </div>
                             </div>
@@ -676,24 +695,24 @@
                                     <label class="form-label fw-semibold">Purchase Price ($)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                        <input type="number" name="lease_purchase_price" class="form-control" min="0"
-                                            placeholder="e.g., 800000"
-                                            value="{{ old('lease_purchase_price', $metas->get('lease_purchase_price')) }}">
+                                        <input type="text" inputmode="numeric" name="lease_purchase_price" class="form-control" data-money-input="true"
+                                            placeholder="Enter purchase price (e.g., 800,000)"
+                                            value="{{ $fmtMoney(old('lease_purchase_price', $metas->get('lease_purchase_price'))) }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Monthly Payment ($)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                        <input type="number" name="lease_purchase_payment" class="form-control" min="0"
-                                            placeholder="e.g., 5000"
-                                            value="{{ old('lease_purchase_payment', $metas->get('lease_purchase_payment')) }}">
+                                        <input type="text" inputmode="numeric" name="lease_purchase_payment" class="form-control" data-money-input="true"
+                                            placeholder="Enter monthly payment (e.g., 5,000)"
+                                            value="{{ $fmtMoney(old('lease_purchase_payment', $metas->get('lease_purchase_payment'))) }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Lease Duration (Months)</label>
                                     <input type="number" name="lease_purchase_duration" class="form-control" min="1"
-                                        placeholder="e.g., 12"
+                                        placeholder="Enter duration in months (e.g., 12)"
                                         value="{{ old('lease_purchase_duration', $metas->get('lease_purchase_duration')) }}">
                                 </div>
                                 <div class="col-md-4">
@@ -714,9 +733,9 @@
                                     <label class="form-label fw-semibold">Non-Refundable Deposit ($)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                        <input type="number" name="lease_purchase_deposit" class="form-control" min="0"
-                                            placeholder="e.g., 10000"
-                                            value="{{ old('lease_purchase_deposit', $metas->get('lease_purchase_deposit')) }}">
+                                        <input type="text" inputmode="numeric" name="lease_purchase_deposit" class="form-control" data-money-input="true"
+                                            placeholder="Enter deposit amount (e.g., 10,000)"
+                                            value="{{ $fmtMoney(old('lease_purchase_deposit', $metas->get('lease_purchase_deposit'))) }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -731,19 +750,19 @@
                                 <div class="col-12">
                                     <label class="form-label fw-semibold">Conditions / Requirements</label>
                                     <input type="text" name="lease_purchase_conditions" class="form-control"
-                                        placeholder="e.g., Buyer must secure financing by lease end, Property must appraise at agreed value"
+                                        placeholder="Enter conditions (e.g., Buyer must secure financing by lease end, Property must appraise at agreed value)"
                                         value="{{ old('lease_purchase_conditions', $metas->get('lease_purchase_conditions')) }}">
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-semibold">Specific Terms</label>
                                     <input type="text" name="lease_purchase_terms" class="form-control"
-                                        placeholder="e.g., Rent credits apply toward purchase, Option to buy after 12 months"
+                                        placeholder="Enter specific terms (e.g., Rent credits apply toward purchase, Option to buy after 12 months)"
                                         value="{{ old('lease_purchase_terms', $metas->get('lease_purchase_terms')) }}">
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-semibold">Extension Terms</label>
                                     <input type="text" name="lease_purchase_extension_terms" class="form-control"
-                                        placeholder="e.g., Lease may be extended 6 months with adjusted purchase price"
+                                        placeholder="Enter extension terms (e.g., Lease may be extended 6 months with adjusted purchase price)"
                                         value="{{ old('lease_purchase_extension_terms', $metas->get('lease_purchase_extension_terms')) }}">
                                 </div>
                             </div>
@@ -763,7 +782,7 @@
                                     <label class="form-label fw-semibold">% of Price Paid with NFT</label>
                                     <div class="input-group">
                                         <input type="number" name="nft_percentage" class="form-control" min="0" max="100" step="1"
-                                            placeholder="e.g., 40"
+                                            placeholder="Enter NFT percentage (e.g., 40)"
                                             value="{{ old('nft_percentage', $metas->get('nft_percentage')) }}">
                                         <span class="input-group-text">%</span>
                                     </div>
@@ -772,7 +791,7 @@
                                     <label class="form-label fw-semibold">% to be Paid with Cash</label>
                                     <div class="input-group">
                                         <input type="number" name="cash_percentage_nft" class="form-control" min="0" max="100" step="1"
-                                            placeholder="e.g., 60"
+                                            placeholder="Enter cash percentage (e.g., 60)"
                                             value="{{ old('cash_percentage_nft', $metas->get('cash_percentage_nft')) }}">
                                         <span class="input-group-text">%</span>
                                     </div>
@@ -780,13 +799,13 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">NFT Valuation Method</label>
                                     <input type="text" name="nft_valuation_method" class="form-control"
-                                        placeholder="e.g., Floor price on OpenSea, Independent appraisal"
+                                        placeholder="Enter valuation method (e.g., Floor price on OpenSea, Independent appraisal)"
                                         value="{{ old('nft_valuation_method', $metas->get('nft_valuation_method')) }}">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">NFT Transfer Method</label>
                                     <input type="text" name="nft_transfer_method" class="form-control"
-                                        placeholder="e.g., MetaMask, OpenSea, Propy Title, Escrow Smart Contract"
+                                        placeholder="Enter transfer method (e.g., MetaMask, OpenSea, Propy Title, Escrow Smart Contract)"
                                         value="{{ old('nft_transfer_method', $metas->get('nft_transfer_method')) }}">
                                 </div>
                                 <div class="col-md-4">
@@ -1068,6 +1087,90 @@
                             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
                                 new bootstrap.Tooltip(el, { trigger: 'hover focus', container: 'body' });
                             });
+                        });
+                    </script>
+                    <script>
+                        // Money input helpers — matching project-standard pattern
+                        function offerTermsIsPercentMode(input) {
+                            var selName = input.getAttribute('data-unit-select');
+                            if (!selName) return false;
+                            var sel = document.querySelector('select[name="' + selName + '"]');
+                            return sel && sel.value === '%';
+                        }
+
+                        function formatWithCommas(input) {
+                            if (offerTermsIsPercentMode(input)) return;
+                            var value = input.value.replace(/[^\d.]/g, '');
+                            var parts = value.split('.');
+                            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                            input.value = parts.length > 1 ? parts[0] + '.' + parts[1].substring(0, 2) : parts[0];
+                        }
+
+                        function validateInput(input) {
+                            if (offerTermsIsPercentMode(input)) return;
+                            var v = input.value;
+                            v = v.replace(/[^0-9.,]/g, '');
+                            var firstDot = v.indexOf('.');
+                            if (firstDot !== -1) {
+                                v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
+                            }
+                            input.value = v;
+                        }
+
+                        function reformatNumber(input) {
+                            if (offerTermsIsPercentMode(input)) return;
+                            var v = input.value.replace(/,/g, '');
+                            var parts = v.split('.');
+                            var intPart = parts[0] || '';
+                            var decPart = parts[1] || '';
+                            if (decPart) decPart = decPart.slice(0, 2);
+                            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                            input.value = decPart ? (intPart + '.' + decPart) : intPart;
+                        }
+
+                        function handlePaste(event) {
+                            if (offerTermsIsPercentMode(event.target)) return;
+                            event.preventDefault();
+                            var paste = (event.clipboardData || window.clipboardData).getData('text');
+                            var clean = paste.replace(/[^0-9.]/g, '');
+                            var parts = clean.split('.');
+                            if (parts.length > 2) {
+                                clean = parts[0] + '.' + parts.slice(1).join('');
+                            }
+                            var intPart = parts[0] || '';
+                            var decPart = parts[1] || '';
+                            if (decPart) decPart = decPart.slice(0, 2);
+                            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                            event.target.value = decPart ? (intPart + '.' + decPart) : intPart;
+                            event.target.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+
+                        function initOfferTermsMoneyInputs() {
+                            document.querySelectorAll('[data-money-input="true"]').forEach(function (inp) {
+                                if (!inp.dataset.moneyBound) {
+                                    inp.dataset.moneyBound = '1';
+                                    // formatWithCommas on input = live comma insertion while typing
+                                    inp.addEventListener('input', function () { formatWithCommas(this); });
+                                    inp.addEventListener('blur', function () { reformatNumber(this); });
+                                    inp.addEventListener('paste', handlePaste);
+                                }
+                                if (inp.value && !offerTermsIsPercentMode(inp)) { reformatNumber(inp); }
+                            });
+                        }
+
+                        document.addEventListener('DOMContentLoaded', function () {
+                            initOfferTermsMoneyInputs();
+
+                            var form = document.querySelector('form[action*="terms"]');
+                            if (form) {
+                                form.addEventListener('submit', function () {
+                                    form.querySelectorAll('[data-money-input="true"]').forEach(function (inp) {
+                                        if (!offerTermsIsPercentMode(inp)) {
+                                            inp.value = inp.value.replace(/,/g, '');
+                                        }
+                                    });
+                                });
+                            }
                         });
                     </script>
                     @else

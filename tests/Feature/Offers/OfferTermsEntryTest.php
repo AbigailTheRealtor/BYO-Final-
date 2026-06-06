@@ -129,7 +129,7 @@ class OfferTermsEntryTest extends TestCase
         $response = $this->actingAs($owner)->get(route('offers.show', $offer));
 
         $response->assertStatus(200);
-        $response->assertSee('450000');
+        $response->assertSee('450,000');
         $response->assertSee('conventional');
         $response->assertSee('Seller to leave appliances.');
     }
@@ -720,8 +720,8 @@ class OfferTermsEntryTest extends TestCase
         $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_option_maintenance','meta_value' => 'Tenant-Buyer']);
 
         $reload = $this->actingAs($owner)->get(route('offers.show', $offer));
-        $reload->assertSee('500000');
-        $reload->assertSee('2500');
+        $reload->assertSee('500,000');
+        $reload->assertSee('2,500');
         $reload->assertSee('12');
         $reload->assertSee('Option exercisable after 12 months');
     }
@@ -759,8 +759,8 @@ class OfferTermsEntryTest extends TestCase
         $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_purchase_conditions',      'meta_value' => 'Buyer must secure financing by lease end']);
 
         $reload = $this->actingAs($owner)->get(route('offers.show', $offer));
-        $reload->assertSee('800000');
-        $reload->assertSee('5000');
+        $reload->assertSee('800,000');
+        $reload->assertSee('5,000');
         $reload->assertSee('Buyer must secure financing by lease end');
     }
 
@@ -940,5 +940,161 @@ class OfferTermsEntryTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Partial');
         $response->assertSee('50%');
+    }
+
+    // ── Test 35: Financing section placeholders follow Enter … (e.g., …) format ─
+
+    public function test_financing_section_placeholders_follow_enter_eg_format(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        // Placeholders must start with "Enter" — not bare "e.g.,"
+        $response->assertSee('Enter additional cash offered (e.g., 25,000)', false);
+        $response->assertSee('Enter valuation method (e.g., Licensed Appraisal, Online Valuation)', false);
+        $response->assertSee('Enter transfer method (e.g., Title transfer, Bill of Sale, Delivery at closing)', false);
+        $response->assertSee('Enter lien details (e.g., Auto loan balance, UCC filing)', false);
+        $response->assertSee('Enter purchase price (e.g., 500,000)', false);
+        $response->assertSee('Enter balloon amount (e.g., 100,000)', false);
+        $response->assertSee('Enter due date (e.g., 5 Years)', false);
+        $response->assertSee('Enter penalty amount (e.g., 5,000)', false);
+        $response->assertSee('Enter offering price (e.g., 500,000)', false);
+        $response->assertSee('Enter monthly payment (e.g., 2,500)', false);
+        $response->assertSee('Enter duration in months (e.g., 12)', false);
+        $response->assertSee('Enter option fee amount (e.g., 15,000)', false);
+        $response->assertSee('Enter valuation method (e.g., Floor price on OpenSea, Independent appraisal)', false);
+        $response->assertSee('Enter transfer method (e.g., MetaMask, OpenSea, Propy Title, Escrow Smart Contract)', false);
+
+        // No bare "e.g.," placeholders should remain in money/text financing fields
+        $html = $response->getContent();
+        $this->assertStringNotContainsString('placeholder="e.g.,', $html,
+            'No input should have a bare e.g., placeholder without an "Enter" prefix');
+    }
+
+    // ── Test 36: Balloon Amount and Prepayment Penalty inputs have $ prefix ────
+
+    public function test_balloon_amount_and_prepayment_penalty_have_dollar_prefix(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $html = $response->getContent();
+
+        // Balloon amount: $ prefix span must appear before the balloon amount input
+        $balloonInputPos   = strpos($html, 'name="seller_financing_balloon_amount"');
+        $dollarBeforeBalloon = strrpos(substr($html, 0, $balloonInputPos), 'fa-dollar-sign');
+        $this->assertNotFalse($dollarBeforeBalloon,
+            'Balloon Payment Amount input must be preceded by a $ input-group prefix');
+
+        // Prepayment penalty amount: $ prefix span must appear before the input
+        $penaltyInputPos     = strpos($html, 'name="prepayment_penalty_amount"');
+        $dollarBeforePenalty = strrpos(substr($html, 0, $penaltyInputPos), 'fa-dollar-sign');
+        $this->assertNotFalse($dollarBeforePenalty,
+            'Prepayment Penalty Amount input must be preceded by a $ input-group prefix');
+
+        // Option fee amount: $ prefix span must appear before the input
+        $optionFeeInputPos  = strpos($html, 'name="option_fee_amount"');
+        $dollarBeforeOption = strrpos(substr($html, 0, $optionFeeInputPos), 'fa-dollar-sign');
+        $this->assertNotFalse($dollarBeforeOption,
+            'Option Fee Amount input must be preceded by a $ input-group prefix');
+    }
+
+    // ── Test 37: Comma-formatted money input is saved as clean numeric string ──
+
+    public function test_comma_formatted_money_input_is_saved_as_clean_number(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $payload = [
+            'offer_price'                    => '450,000',
+            'earnest_deposit'                => '5,000',
+            'earnest_deposit_unit'           => '$',
+            'seller_financing_balloon_amount'=> '100,000',
+            'prepayment_penalty_amount'      => '5,000',
+            'financing_type'                 => 'Seller Financing',
+            'seller_financing_balloon'       => 'Yes',
+            'prepayment_penalty'             => 'Yes',
+        ];
+
+        $response = $this->actingAs($owner)->post(route('offers.terms', $offer), $payload);
+        $response->assertRedirect(route('offers.show', $offer));
+
+        $this->assertDatabaseHas('offer_metas', [
+            'offer_id'   => $offer->id,
+            'meta_key'   => 'offer_price',
+            'meta_value' => '450000',
+        ]);
+        $this->assertDatabaseHas('offer_metas', [
+            'offer_id'   => $offer->id,
+            'meta_key'   => 'earnest_deposit',
+            'meta_value' => '5000',
+        ]);
+        $this->assertDatabaseHas('offer_metas', [
+            'offer_id'   => $offer->id,
+            'meta_key'   => 'seller_financing_balloon_amount',
+            'meta_value' => '100000',
+        ]);
+        $this->assertDatabaseHas('offer_metas', [
+            'offer_id'   => $offer->id,
+            'meta_key'   => 'prepayment_penalty_amount',
+            'meta_value' => '5000',
+        ]);
+    }
+
+    // ── Test 38: Percent-unit mixed fields persist decimal values unchanged ────
+
+    public function test_percent_unit_mixed_fields_persist_decimal_values_unchanged(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $payload = [
+            'earnest_deposit'                => '1.5',
+            'earnest_deposit_unit'           => '%',
+            'down_payment_value'             => '20',
+            'down_payment_unit'              => '%',
+            'initial_deposit_amount'         => '2',
+            'initial_deposit_amount_unit'    => '%',
+            'additional_deposit_amount'      => '1',
+            'additional_deposit_amount_unit' => '%',
+            'sf_down_payment_amount'         => '20',
+            'sf_down_payment_type'           => '%',
+            'seller_financing_amount'        => '80',
+            'seller_financing_amount_type'   => '%',
+            'financing_type'                 => 'Seller Financing',
+        ];
+
+        $response = $this->actingAs($owner)->post(route('offers.terms', $offer), $payload);
+        $response->assertRedirect(route('offers.show', $offer));
+
+        // Decimal percent value must be stored exactly — not comma-stripped to integer
+        $this->assertDatabaseHas('offer_metas', [
+            'offer_id'   => $offer->id,
+            'meta_key'   => 'earnest_deposit',
+            'meta_value' => '1.5',
+        ]);
+        $this->assertDatabaseHas('offer_metas', [
+            'offer_id'   => $offer->id,
+            'meta_key'   => 'sf_down_payment_amount',
+            'meta_value' => '20',
+        ]);
+        $this->assertDatabaseHas('offer_metas', [
+            'offer_id'   => $offer->id,
+            'meta_key'   => 'seller_financing_amount',
+            'meta_value' => '80',
+        ]);
+
+        // Reload page — percent-mode fields must not display comma-formatted values
+        $reload = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $reload->assertStatus(200);
+        // The value "1.5" must appear as-is in the form (not formatted to "2" or "1")
+        $reload->assertSee('value="1.5"', false);
+        // The earnest deposit unit selector must render with % selected
+        $reload->assertSee('data-unit-select="earnest_deposit_unit"', false);
     }
 }
