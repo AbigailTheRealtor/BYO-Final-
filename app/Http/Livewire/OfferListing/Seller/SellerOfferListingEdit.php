@@ -3755,11 +3755,13 @@ class SellerOfferListingEdit extends Component
     public function update()
     {
         try {
+            $auction = SellerAgentAuctionModel::find($this->auctionId);
+
+            // Capture draft state before we overwrite it so we can show the right message
+            $wasDraft = $auction ? (bool) $auction->is_draft : false;
+
             $this->isDraft = 0;
 
-            $auction =$this->auctionId
-                ? SellerAgentAuctionModel::find($this->auctionId)
-                : new SellerAgentAuctionModel();
             $auction->title = $this->listing_title;
             $auction->is_draft = 0;
             $auction->save();
@@ -3768,10 +3770,12 @@ class SellerOfferListingEdit extends Component
 
             $this->saveAllMetadata($auction);
 
-            session()->flash('success', 'Listing updated successfully!');
+            if ($wasDraft) {
+                session()->flash('success', 'Listing submitted successfully.');
+                return redirect()->route('offer.listing.seller.view', ['id' => $auction->id]);
+            }
 
-            // Optionally redirect to a success page
-            // return redirect()->route('listings.success');
+            session()->flash('success', 'Listing updated successfully!');
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());

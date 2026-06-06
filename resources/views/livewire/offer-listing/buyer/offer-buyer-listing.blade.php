@@ -1516,26 +1516,27 @@
                     width: '100%',
                     closeOnSelect: false,
                 });
-
-                $('#view_preference').on('change', function() {
-                    let selectedValues = $(this).val() || [];
-                    
-                    if (selectedValues.includes('All') && selectedValues.length > 1) {
-                        selectedValues = ['All'];
-                        $(this).val(selectedValues).trigger('change.select2');
-                    }
-                    
-                    selectedValues = [...new Set(selectedValues)];
-                    
-                    debouncedSet('view_preference', selectedValues);
-
-                    if (selectedValues.includes('Other')) {
-                        $('#other_preferences').show();
-                    } else {
-                        $('#other_preferences').hide();
-                    }
-                });
             }
+            // Handler is outside the init guard so it is re-attached (idempotently via off/on)
+            // after every initializeFullService() call without accumulating duplicates.
+            $('#view_preference').off('change.vpSync').on('change.vpSync', function() {
+                let selectedValues = $(this).val() || [];
+
+                if (selectedValues.includes('All') && selectedValues.length > 1) {
+                    selectedValues = ['All'];
+                    $(this).val(selectedValues).trigger('change.select2');
+                }
+
+                selectedValues = [...new Set(selectedValues)];
+
+                debouncedSet('view_preference', selectedValues);
+
+                if (selectedValues.includes('Other')) {
+                    $('#other_preferences').show();
+                } else {
+                    $('#other_preferences').hide();
+                }
+            });
 
             // Global Helpers: immediately update section visibility via Alpine events
             window.updateAssignmentContractSection = function(selectedValues) {
@@ -2918,10 +2919,7 @@
                 var $el = $(this);
 
                 if ($el.hasClass('select2-hidden-accessible')) {
-                    var _s2Open = false;
-                    try { _s2Open = !!($el.data('select2') && $el.data('select2').isOpen()); } catch(e) {}
-                    if (_s2Open) return;
-                    $el.select2('destroy');
+                    return; // already initialized — skip to preserve existing selections
                 }
 
                 var placeholder = $el.attr('data-placeholder') || 'Select';
