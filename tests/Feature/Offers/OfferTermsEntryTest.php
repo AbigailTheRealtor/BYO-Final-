@@ -411,7 +411,7 @@ class OfferTermsEntryTest extends TestCase
         $response->assertSee('350,000');
         $response->assertSee('6.5%');
         $response->assertSee('30 years');
-        $response->assertSee('7500');
+        $response->assertSee('7,500');
         $response->assertSee('Within 5 Days');
         $response->assertSee('Yes');
         $response->assertSee('10 days');
@@ -453,14 +453,14 @@ class OfferTermsEntryTest extends TestCase
 
         $payload = [
             'financing_type'      => 'Exchange/Trade',
-            'exchange_item'       => 'Another Home in Tampa',
+            'exchange_item'       => 'Another Home',
             'exchange_item_value' => '350000',
         ];
 
         $response = $this->actingAs($owner)->post(route('offers.terms', $offer), $payload);
         $response->assertRedirect(route('offers.show', $offer));
 
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'exchange_item',       'meta_value' => 'Another Home in Tampa']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'exchange_item',       'meta_value' => 'Another Home']);
         $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'exchange_item_value', 'meta_value' => '350000']);
     }
 
@@ -608,5 +608,337 @@ class OfferTermsEntryTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('save-offer-terms-btn', false);
         $response->assertSee('#2563eb', false);
+    }
+
+    // ── Test 23: Exactly one Save Offer Terms button in draft mode ─────────────
+
+    public function test_exactly_one_save_offer_terms_button_in_draft(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $html = $response->getContent();
+
+        $this->assertSame(1, substr_count($html, 'id="save-offer-terms-btn"'),
+            'Expected exactly one element with id="save-offer-terms-btn"');
+        $this->assertSame(1, substr_count($html, 'Save Offer Terms'),
+            'Expected exactly one Save Offer Terms button text');
+    }
+
+    // ── Test 24: Unit selectors render for all four deposit fields ─────────────
+
+    public function test_unit_selectors_render_for_all_four_deposit_fields(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('name="earnest_deposit_unit"', false);
+        $response->assertSee('name="initial_deposit_amount_unit"', false);
+        $response->assertSee('name="additional_deposit_amount_unit"', false);
+        $response->assertSee('name="down_payment_unit"', false);
+        $response->assertSee('name="earnest_deposit"', false);
+        $response->assertSee('name="initial_deposit_amount"', false);
+        $response->assertSee('name="additional_deposit_amount"', false);
+        $response->assertSee('name="down_payment_value"', false);
+    }
+
+    // ── Test 25: Earnest deposit % unit persists and shows as percentage ───────
+
+    public function test_earnest_deposit_percent_unit_persists_and_displays(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), [
+            'earnest_deposit'      => '1.5',
+            'earnest_deposit_unit' => '%',
+        ]);
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'earnest_deposit',      'meta_value' => '1.5']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'earnest_deposit_unit', 'meta_value' => '%']);
+
+        $offer->update(['status' => 'submitted']);
+        $readOnly = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $readOnly->assertSee('1.5%');
+        $readOnly->assertDontSee('$1');
+    }
+
+    // ── Test 26: Down payment $ unit persists and shows as dollar amount ───────
+
+    public function test_down_payment_dollar_unit_persists_and_displays(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), [
+            'down_payment_value' => '90000',
+            'down_payment_unit'  => '$',
+        ]);
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'down_payment_value', 'meta_value' => '90000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'down_payment_unit',  'meta_value' => '$']);
+
+        $offer->update(['status' => 'submitted']);
+        $readOnly = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $readOnly->assertSee('$90,000');
+    }
+
+    // ── Test 27: Lease Option fields save and persist ─────────────────────────
+
+    public function test_lease_option_fields_save_and_persist(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $payload = [
+            'financing_type'               => 'Lease Option',
+            'lease_option_price'           => '500000',
+            'lease_option_payment'         => '2500',
+            'lease_option_duration'        => '12',
+            'has_option_fee'               => 'Yes',
+            'option_fee_amount'            => '15000',
+            'lease_option_fee_credit'      => 'Partial',
+            'lease_option_fee_credit_pct'  => '50',
+            'lease_option_maintenance'     => 'Tenant-Buyer',
+            'lease_option_conditions'      => 'Option exercisable after 12 months',
+            'lease_option_terms'           => 'Buyer may inspect during lease term',
+            'lease_option_extension_terms' => 'May extend 6 months with $5,000 fee',
+        ];
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), $payload)->assertRedirect();
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'financing_type',          'meta_value' => 'Lease Option']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_option_price',      'meta_value' => '500000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_option_payment',    'meta_value' => '2500']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_option_duration',   'meta_value' => '12']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'has_option_fee',          'meta_value' => 'Yes']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'option_fee_amount',       'meta_value' => '15000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_option_fee_credit', 'meta_value' => 'Partial']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_option_conditions', 'meta_value' => 'Option exercisable after 12 months']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_option_maintenance','meta_value' => 'Tenant-Buyer']);
+
+        $reload = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $reload->assertSee('500000');
+        $reload->assertSee('2500');
+        $reload->assertSee('12');
+        $reload->assertSee('Option exercisable after 12 months');
+    }
+
+    // ── Test 28: Lease Purchase fields save and persist ───────────────────────
+
+    public function test_lease_purchase_fields_save_and_persist(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $payload = [
+            'financing_type'                    => 'Lease Purchase',
+            'lease_purchase_price'              => '800000',
+            'lease_purchase_payment'            => '5000',
+            'lease_purchase_duration'           => '24',
+            'lease_purchase_rent_credit'        => 'Yes',
+            'lease_purchase_rent_credit_amount' => '500',
+            'lease_purchase_deposit'            => '10000',
+            'lease_purchase_maintenance'        => 'Shared',
+            'lease_purchase_conditions'         => 'Buyer must secure financing by lease end',
+            'lease_purchase_terms'              => 'Rent credits apply toward purchase',
+            'lease_purchase_extension_terms'    => 'Lease may extend 6 months',
+        ];
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), $payload)->assertRedirect();
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'financing_type',                 'meta_value' => 'Lease Purchase']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_purchase_price',           'meta_value' => '800000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_purchase_payment',         'meta_value' => '5000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_purchase_duration',        'meta_value' => '24']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_purchase_rent_credit',     'meta_value' => 'Yes']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_purchase_rent_credit_amount', 'meta_value' => '500']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_purchase_deposit',         'meta_value' => '10000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'lease_purchase_conditions',      'meta_value' => 'Buyer must secure financing by lease end']);
+
+        $reload = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $reload->assertSee('800000');
+        $reload->assertSee('5000');
+        $reload->assertSee('Buyer must secure financing by lease end');
+    }
+
+    // ── Test 29: NFT fields save and persist ──────────────────────────────────
+
+    public function test_nft_fields_save_and_persist(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $payload = [
+            'financing_type'        => 'Non-Fungible Token (NFT)',
+            'nft_description'       => 'Tokenized Real Estate',
+            'nft_percentage'        => '40',
+            'cash_percentage_nft'   => '60',
+            'nft_valuation_method'  => 'Floor price on OpenSea',
+            'nft_transfer_method'   => 'MetaMask',
+            'nft_gas_fees'          => 'Buyer',
+        ];
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), $payload)->assertRedirect();
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'financing_type',       'meta_value' => 'Non-Fungible Token (NFT)']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'nft_description',      'meta_value' => 'Tokenized Real Estate']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'nft_percentage',       'meta_value' => '40']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'cash_percentage_nft',  'meta_value' => '60']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'nft_valuation_method', 'meta_value' => 'Floor price on OpenSea']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'nft_transfer_method',  'meta_value' => 'MetaMask']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'nft_gas_fees',         'meta_value' => 'Buyer']);
+
+        $reload = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $reload->assertSee('Tokenized Real Estate');
+        $reload->assertSee('40');
+        $reload->assertSee('60');
+    }
+
+    // ── Test 30: Other financing details save and persist ─────────────────────
+
+    public function test_other_financing_details_save_and_persist(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $payload = [
+            'financing_type'          => 'Other',
+            'other_financing_details' => 'Gold Bullion exchange at current spot price',
+        ];
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), $payload)->assertRedirect();
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'financing_type',          'meta_value' => 'Other']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'other_financing_details', 'meta_value' => 'Gold Bullion exchange at current spot price']);
+
+        $reload = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $reload->assertSee('Gold Bullion exchange at current spot price');
+    }
+
+    // ── Test 31: Seller financing balloon + amortization save and persist ─────
+
+    public function test_seller_financing_expanded_fields_save_and_persist(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $payload = [
+            'financing_type'                         => 'Seller Financing',
+            'seller_financing_amount'                => '400000',
+            'seller_financing_rate'                  => '6.5',
+            'seller_financing_term'                  => '30 years',
+            'seller_financing_amortization'          => 'Fully Amortizing',
+            'seller_financing_payment_frequency'     => 'Monthly',
+            'seller_financing_balloon'               => 'Yes',
+            'seller_financing_balloon_amount'        => '100000',
+            'seller_financing_balloon_date'          => '5 Years',
+        ];
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), $payload)->assertRedirect();
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_financing_amortization',      'meta_value' => 'Fully Amortizing']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_financing_payment_frequency', 'meta_value' => 'Monthly']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_financing_balloon',           'meta_value' => 'Yes']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_financing_balloon_amount',    'meta_value' => '100000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_financing_balloon_date',      'meta_value' => '5 Years']);
+
+        $reload = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $reload->assertSee('Fully Amortizing');
+        $reload->assertSee('Monthly');
+    }
+
+    // ── Test 32: Exchange/Trade full field set saves and persists ─────────────
+
+    public function test_exchange_trade_full_fields_save_and_persist(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $payload = [
+            'financing_type'            => 'Exchange/Trade',
+            'exchange_item'             => 'Another Home',
+            'exchange_item_value'       => '350000',
+            'exchange_item_condition'   => 'Good',
+            'additional_cash'           => '25000',
+            'value_determination'       => 'Licensed Appraisal',
+            'exchange_transfer_method'  => 'Title transfer at closing',
+            'exchange_liens'            => 'Yes',
+            'exchange_liens_details'    => 'Auto loan balance $8,500',
+            'exchange_inspection_rights'=> 'Yes',
+        ];
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), $payload)->assertRedirect();
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'exchange_item',              'meta_value' => 'Another Home']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'exchange_item_condition',    'meta_value' => 'Good']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'additional_cash',           'meta_value' => '25000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'value_determination',       'meta_value' => 'Licensed Appraisal']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'exchange_transfer_method',  'meta_value' => 'Title transfer at closing']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'exchange_liens',            'meta_value' => 'Yes']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'exchange_liens_details',    'meta_value' => 'Auto loan balance $8,500']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'exchange_inspection_rights','meta_value' => 'Yes']);
+
+        $reload = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $reload->assertSee('Another Home');
+        $reload->assertSee('Licensed Appraisal');
+    }
+
+    // ── Test 33: Seller Financing expanded fields (SF-specific) save/persist ──
+
+    public function test_seller_financing_sf_specific_fields_save_and_persist(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $payload = [
+            'financing_type'               => 'Seller Financing',
+            'sf_purchase_price'            => '500000',
+            'sf_down_payment_type'         => '%',
+            'sf_down_payment_amount'       => '20',
+            'seller_financing_amount_type' => '%',
+            'seller_financing_amount'      => '80',
+            'seller_financing_rate'        => '6.5',
+            'seller_financing_term'        => '30 Years',
+            'prepayment_penalty'           => 'Yes',
+            'prepayment_penalty_amount'    => '5000',
+            'seller_late_fee_amount'       => '$100 after 10 days',
+        ];
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), $payload)->assertRedirect();
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'sf_purchase_price',          'meta_value' => '500000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'sf_down_payment_type',        'meta_value' => '%']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'sf_down_payment_amount',      'meta_value' => '20']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_financing_amount_type','meta_value' => '%']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_financing_amount',     'meta_value' => '80']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'prepayment_penalty',          'meta_value' => 'Yes']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'prepayment_penalty_amount',   'meta_value' => '5000']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'seller_late_fee_amount',      'meta_value' => '$100 after 10 days']);
+
+        $offer->update(['status' => 'submitted']);
+        $reload = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $reload->assertSee('Desired Purchase Price');
+        $reload->assertSee('80%');
+        $reload->assertSee('Late Payment Fee');
+    }
+
+    // ── Test 34: Lease Option fee credit Partial shows pct in read-only ───────
+
+    public function test_lease_option_fee_credit_partial_shows_pct_in_read_only(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+
+        $offer->saveMeta('financing_type',          'Lease Option');
+        $offer->saveMeta('lease_option_fee_credit', 'Partial');
+        $offer->saveMeta('lease_option_fee_credit_pct', '50');
+        $offer->update(['status' => 'submitted']);
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+        $response->assertSee('Partial');
+        $response->assertSee('50%');
     }
 }

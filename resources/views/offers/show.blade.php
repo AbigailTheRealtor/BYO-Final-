@@ -118,6 +118,10 @@
                             $_initTf = old('initial_deposit_timeframe',   $metas->get('initial_deposit_timeframe') ?? '');
                             $_addTf  = old('additional_deposit_timeframe',$metas->get('additional_deposit_timeframe') ?? '');
                         @endphp
+                        @php
+                            $_downPayVal  = old('down_payment_value',  $metas->get('down_payment_value')  ?? $metas->get('down_payment_percent') ?? '');
+                            $_downPayUnit = old('down_payment_unit',   $metas->get('down_payment_unit')   ?? ($metas->get('down_payment_percent') !== null ? '%' : '$'));
+                        @endphp
                         <div x-data="{
                             finType: '{{ $_ft }}',
                             finCont: {{ old('financing_contingency', $metas->get('financing_contingency')) ? 'true' : 'false' }},
@@ -126,7 +130,22 @@
                             sellerContrib: '{{ old('seller_contribution_requested', $metas->get('seller_contribution_requested') ?? '') }}',
                             homeWarranty: '{{ old('home_warranty_requested', $metas->get('home_warranty_requested') ?? '') }}',
                             initTf: '{{ $_initTf }}',
-                            addTf: '{{ $_addTf }}'
+                            addTf: '{{ $_addTf }}',
+                            earnestDepUnit: '{{ old('earnest_deposit_unit', $metas->get('earnest_deposit_unit') ?? '$') }}',
+                            initDepUnit: '{{ old('initial_deposit_amount_unit', $metas->get('initial_deposit_amount_unit') ?? '$') }}',
+                            addDepUnit: '{{ old('additional_deposit_amount_unit', $metas->get('additional_deposit_amount_unit') ?? '$') }}',
+                            downPayUnit: '{{ $_downPayUnit }}',
+                            sfBalloon: '{{ old('seller_financing_balloon', $metas->get('seller_financing_balloon') ?? '') }}',
+                            sfAmortType: '{{ old('seller_financing_amortization', $metas->get('seller_financing_amortization') ?? '') }}',
+                            sfPayFreq: '{{ old('seller_financing_payment_frequency', $metas->get('seller_financing_payment_frequency') ?? '') }}',
+                            sfAmountType: '{{ old('seller_financing_amount_type', $metas->get('seller_financing_amount_type') ?? '$') }}',
+                            sfDpType: '{{ old('sf_down_payment_type', $metas->get('sf_down_payment_type') ?? '$') }}',
+                            sfPrePayPenalty: '{{ old('prepayment_penalty', $metas->get('prepayment_penalty') ?? '') }}',
+                            exchangeItemType: '{{ old('exchange_item', $metas->get('exchange_item') ?? '') }}',
+                            exchangeLiens: '{{ old('exchange_liens', $metas->get('exchange_liens') ?? '') }}',
+                            leaseOptFee: '{{ old('has_option_fee', $metas->get('has_option_fee') ?? '') }}',
+                            leaseOptFeeCredit: '{{ old('lease_option_fee_credit', $metas->get('lease_option_fee_credit') ?? '') }}',
+                            leasePurchRentCredit: '{{ old('lease_purchase_rent_credit', $metas->get('lease_purchase_rent_credit') ?? '') }}'
                         }">
 
                         {{-- ── Section 1: Purchase Price & Deposits ── --}}
@@ -149,32 +168,40 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold">
-                                    Earnest Deposit ($)
+                                    Earnest Deposit
                                     <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
                                         title="The good-faith deposit accompanying your offer, typically held in escrow until closing.">
                                         <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
                                     </span>
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                    <input type="number" name="earnest_deposit" class="form-control" min="0" step="100"
-                                        placeholder="Enter earnest deposit (e.g., 5000)"
+                                    <select name="earnest_deposit_unit" class="form-select" style="max-width:70px;" x-model="earnestDepUnit">
+                                        <option value="$">$</option>
+                                        <option value="%">%</option>
+                                    </select>
+                                    <input type="number" name="earnest_deposit" class="form-control" min="0" step="any"
+                                        :placeholder="earnestDepUnit === '%' ? 'Enter earnest deposit % (e.g., 1.5)' : 'Enter earnest deposit (e.g., 5000)'"
                                         value="{{ old('earnest_deposit', $metas->get('earnest_deposit')) }}">
+                                    <span class="input-group-text" x-show="earnestDepUnit === '%'">%</span>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold">
-                                    Down Payment (%)
+                                    Down Payment
                                     <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
-                                        title="The percentage of the purchase price you plan to pay upfront, outside of any financed amount.">
+                                        title="The amount or percentage of the purchase price you plan to pay upfront, outside of any financed amount.">
                                         <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
                                     </span>
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-percent"></i></span>
-                                    <input type="number" name="down_payment_percent" class="form-control" min="0" max="100" step="0.5"
-                                        placeholder="Enter down payment % (e.g., 20)"
-                                        value="{{ old('down_payment_percent', $metas->get('down_payment_percent')) }}">
+                                    <select name="down_payment_unit" class="form-select" style="max-width:70px;" x-model="downPayUnit">
+                                        <option value="$">$</option>
+                                        <option value="%">%</option>
+                                    </select>
+                                    <input type="number" name="down_payment_value" class="form-control" min="0" step="any"
+                                        :placeholder="downPayUnit === '%' ? 'Enter down payment % (e.g., 20)' : 'Enter down payment amount (e.g., 90000)'"
+                                        value="{{ old('down_payment_value', $_downPayVal) }}">
+                                    <span class="input-group-text" x-show="downPayUnit === '%'">%</span>
                                 </div>
                             </div>
                         </div>
@@ -183,9 +210,16 @@
                         <div class="row g-3 mb-3">
                             <div class="col-md-5">
                                 <label class="form-label fw-semibold">Initial Deposit Amount</label>
-                                <input type="text" name="initial_deposit_amount" class="form-control"
-                                    placeholder="Enter initial deposit amount (e.g., 5000 or 3%)"
-                                    value="{{ old('initial_deposit_amount', $metas->get('initial_deposit_amount')) }}">
+                                <div class="input-group">
+                                    <select name="initial_deposit_amount_unit" class="form-select" style="max-width:70px;" x-model="initDepUnit">
+                                        <option value="$">$</option>
+                                        <option value="%">%</option>
+                                    </select>
+                                    <input type="number" name="initial_deposit_amount" class="form-control" min="0" step="any"
+                                        :placeholder="initDepUnit === '%' ? 'Enter initial deposit % (e.g., 1)' : 'Enter initial deposit (e.g., 5000)'"
+                                        value="{{ old('initial_deposit_amount', $metas->get('initial_deposit_amount')) }}">
+                                    <span class="input-group-text" x-show="initDepUnit === '%'">%</span>
+                                </div>
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label fw-semibold">Initial Deposit Timeframe</label>
@@ -207,9 +241,16 @@
                         <div class="row g-3 mb-3">
                             <div class="col-md-5">
                                 <label class="form-label fw-semibold">Additional Deposit Amount</label>
-                                <input type="text" name="additional_deposit_amount" class="form-control"
-                                    placeholder="Enter additional deposit (e.g., 10000 or 2%)"
-                                    value="{{ old('additional_deposit_amount', $metas->get('additional_deposit_amount')) }}">
+                                <div class="input-group">
+                                    <select name="additional_deposit_amount_unit" class="form-select" style="max-width:70px;" x-model="addDepUnit">
+                                        <option value="$">$</option>
+                                        <option value="%">%</option>
+                                    </select>
+                                    <input type="number" name="additional_deposit_amount" class="form-control" min="0" step="any"
+                                        :placeholder="addDepUnit === '%' ? 'Enter additional deposit % (e.g., 2)' : 'Enter additional deposit (e.g., 10000)'"
+                                        value="{{ old('additional_deposit_amount', $metas->get('additional_deposit_amount')) }}">
+                                    <span class="input-group-text" x-show="addDepUnit === '%'">%</span>
+                                </div>
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label fw-semibold">Additional Deposit Timeframe</label>
@@ -345,11 +386,19 @@
                         <div x-show="finType === 'Exchange/Trade'" class="border rounded p-3 mb-3 bg-light">
                             <h6 class="fw-semibold mb-3">Exchange / Trade Details</h6>
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label fw-semibold">Item Offered for Exchange</label>
-                                    <input type="text" name="exchange_item" class="form-control"
-                                        placeholder="Enter item offered (e.g., Another home, Vehicle, Boat)"
-                                        value="{{ old('exchange_item', $metas->get('exchange_item')) }}">
+                                    <select name="exchange_item" class="form-select" x-model="exchangeItemType">
+                                        <option value="">Select</option>
+                                        @foreach(['Another Home','Artwork','Boat','Jewelry','Motorhome','Vehicle','Other'] as $ei)
+                                        <option value="{{ $ei }}" {{ old('exchange_item', $metas->get('exchange_item')) === $ei ? 'selected' : '' }}>{{ $ei }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div x-show="exchangeItemType === 'Other'" class="mt-2">
+                                        <input type="text" name="other_exchange_item" class="form-control"
+                                            placeholder="Enter item (e.g., Private Jet, Yacht)"
+                                            value="{{ old('other_exchange_item', $metas->get('other_exchange_item')) }}">
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Estimated Value ($)</label>
@@ -360,6 +409,57 @@
                                             value="{{ old('exchange_item_value', $metas->get('exchange_item_value')) }}">
                                     </div>
                                 </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Condition of Item</label>
+                                    <select name="exchange_item_condition" class="form-select">
+                                        <option value="">Select</option>
+                                        @foreach(['New','Like New','Excellent','Very Good','Good','Fair','Repair','Salvage Condition'] as $cond)
+                                        <option value="{{ $cond }}" {{ old('exchange_item_condition', $metas->get('exchange_item_condition')) === $cond ? 'selected' : '' }}>{{ $cond }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Additional Cash Offered ($)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                        <input type="number" name="additional_cash" class="form-control" min="0"
+                                            placeholder="e.g., 25000"
+                                            value="{{ old('additional_cash', $metas->get('additional_cash')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Value Determined By</label>
+                                    <input type="text" name="value_determination" class="form-control"
+                                        placeholder="e.g., Licensed Appraisal, Online Valuation"
+                                        value="{{ old('value_determination', $metas->get('value_determination')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Transfer Method / Logistics</label>
+                                    <input type="text" name="exchange_transfer_method" class="form-control"
+                                        placeholder="e.g., Title transfer, Bill of Sale, Delivery at closing"
+                                        value="{{ old('exchange_transfer_method', $metas->get('exchange_transfer_method')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Liens / Encumbrances?</label>
+                                    <select name="exchange_liens" class="form-select" x-model="exchangeLiens">
+                                        <option value="">Select</option>
+                                        <option value="Yes" {{ old('exchange_liens', $metas->get('exchange_liens')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                        <option value="No" {{ old('exchange_liens', $metas->get('exchange_liens')) === 'No' ? 'selected' : '' }}>No</option>
+                                    </select>
+                                    <div x-show="exchangeLiens === 'Yes'" class="mt-2">
+                                        <input type="text" name="exchange_liens_details" class="form-control"
+                                            placeholder="e.g., Auto loan balance, UCC filing"
+                                            value="{{ old('exchange_liens_details', $metas->get('exchange_liens_details')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Inspection / Verification Rights</label>
+                                    <select name="exchange_inspection_rights" class="form-select">
+                                        <option value="">Select</option>
+                                        <option value="Yes" {{ old('exchange_inspection_rights', $metas->get('exchange_inspection_rights')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                        <option value="No" {{ old('exchange_inspection_rights', $metas->get('exchange_inspection_rights')) === 'No' ? 'selected' : '' }}>No</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
@@ -368,12 +468,38 @@
                             <h6 class="fw-semibold mb-3">Seller Financing Details</h6>
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Financed Amount ($)</label>
+                                    <label class="form-label fw-semibold">Desired Purchase Price ($)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                        <input type="number" name="seller_financing_amount" class="form-control" min="0"
-                                            placeholder="Enter financed amount (e.g., 400000)"
+                                        <input type="number" name="sf_purchase_price" class="form-control" min="0"
+                                            placeholder="e.g., 500000"
+                                            value="{{ old('sf_purchase_price', $metas->get('sf_purchase_price')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Desired Down Payment</label>
+                                    <div class="input-group">
+                                        <select name="sf_down_payment_type" class="form-select" style="max-width:70px;" x-model="sfDpType">
+                                            <option value="$">$</option>
+                                            <option value="%">%</option>
+                                        </select>
+                                        <input type="number" name="sf_down_payment_amount" class="form-control" min="0" step="any"
+                                            :placeholder="sfDpType === '%' ? 'e.g., 20' : 'e.g., 100000'"
+                                            value="{{ old('sf_down_payment_amount', $metas->get('sf_down_payment_amount')) }}">
+                                        <span class="input-group-text" x-show="sfDpType === '%'">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Desired Financing Amount</label>
+                                    <div class="input-group">
+                                        <select name="seller_financing_amount_type" class="form-select" style="max-width:70px;" x-model="sfAmountType">
+                                            <option value="$">$</option>
+                                            <option value="%">%</option>
+                                        </select>
+                                        <input type="number" name="seller_financing_amount" class="form-control" min="0" step="any"
+                                            :placeholder="sfAmountType === '%' ? 'e.g., 80' : 'e.g., 400000'"
                                             value="{{ old('seller_financing_amount', $metas->get('seller_financing_amount')) }}">
+                                        <span class="input-group-text" x-show="sfAmountType === '%'">%</span>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -391,6 +517,297 @@
                                         placeholder="Enter loan term (e.g., 30 years)"
                                         value="{{ old('seller_financing_term', $metas->get('seller_financing_term')) }}">
                                 </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Amortization Type</label>
+                                    <select name="seller_financing_amortization" class="form-select" x-model="sfAmortType">
+                                        <option value="">Select</option>
+                                        <option value="Fully Amortizing" {{ old('seller_financing_amortization', $metas->get('seller_financing_amortization')) === 'Fully Amortizing' ? 'selected' : '' }}>Fully Amortizing</option>
+                                        <option value="Interest-Only" {{ old('seller_financing_amortization', $metas->get('seller_financing_amortization')) === 'Interest-Only' ? 'selected' : '' }}>Interest-Only</option>
+                                        <option value="Other" {{ old('seller_financing_amortization', $metas->get('seller_financing_amortization')) === 'Other' ? 'selected' : '' }}>Other</option>
+                                    </select>
+                                    <div x-show="sfAmortType === 'Other'" class="mt-2">
+                                        <input type="text" name="seller_financing_amortization_other" class="form-control"
+                                            placeholder="Enter custom amortization type (e.g., Graduated Payments)"
+                                            value="{{ old('seller_financing_amortization_other', $metas->get('seller_financing_amortization_other')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Payment Frequency</label>
+                                    <select name="seller_financing_payment_frequency" class="form-select" x-model="sfPayFreq">
+                                        <option value="">Select</option>
+                                        @foreach(['Monthly','Bi-Weekly','Quarterly','Annually','Other'] as $pf)
+                                        <option value="{{ $pf }}" {{ old('seller_financing_payment_frequency', $metas->get('seller_financing_payment_frequency')) === $pf ? 'selected' : '' }}>{{ $pf }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div x-show="sfPayFreq === 'Other'" class="mt-2">
+                                        <input type="text" name="seller_financing_payment_frequency_other" class="form-control"
+                                            placeholder="Enter payment schedule (e.g., Semi-Annual)"
+                                            value="{{ old('seller_financing_payment_frequency_other', $metas->get('seller_financing_payment_frequency_other')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Balloon Payment</label>
+                                    <select name="seller_financing_balloon" class="form-select" x-model="sfBalloon">
+                                        <option value="">Select</option>
+                                        <option value="Yes" {{ old('seller_financing_balloon', $metas->get('seller_financing_balloon')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                        <option value="No" {{ old('seller_financing_balloon', $metas->get('seller_financing_balloon')) === 'No' ? 'selected' : '' }}>No</option>
+                                    </select>
+                                    <div x-show="sfBalloon === 'Yes'" class="mt-2">
+                                        <input type="number" name="seller_financing_balloon_amount" class="form-control mb-1" min="0"
+                                            placeholder="Balloon amount (e.g., 100000)"
+                                            value="{{ old('seller_financing_balloon_amount', $metas->get('seller_financing_balloon_amount')) }}">
+                                        <input type="text" name="seller_financing_balloon_date" class="form-control"
+                                            placeholder="Due date (e.g., 5 Years)"
+                                            value="{{ old('seller_financing_balloon_date', $metas->get('seller_financing_balloon_date')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Prepayment Penalty</label>
+                                    <select name="prepayment_penalty" class="form-select" x-model="sfPrePayPenalty">
+                                        <option value="">Select</option>
+                                        <option value="Yes" {{ old('prepayment_penalty', $metas->get('prepayment_penalty')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                        <option value="No" {{ old('prepayment_penalty', $metas->get('prepayment_penalty')) === 'No' ? 'selected' : '' }}>No</option>
+                                    </select>
+                                    <div x-show="sfPrePayPenalty === 'Yes'" class="mt-2">
+                                        <input type="number" name="prepayment_penalty_amount" class="form-control" min="0"
+                                            placeholder="Penalty amount (e.g., 5000)"
+                                            value="{{ old('prepayment_penalty_amount', $metas->get('prepayment_penalty_amount')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Late Payment Fee</label>
+                                    <input type="text" name="seller_late_fee_amount" class="form-control"
+                                        placeholder="e.g., $100 after 10 days, or 5% after 15 days"
+                                        value="{{ old('seller_late_fee_amount', $metas->get('seller_late_fee_amount')) }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Lease Option conditional sub-fields --}}
+                        <div x-show="finType === 'Lease Option'" class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="fw-semibold mb-3">Lease Option Details</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Offering Price ($)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                        <input type="number" name="lease_option_price" class="form-control" min="0"
+                                            placeholder="e.g., 500000"
+                                            value="{{ old('lease_option_price', $metas->get('lease_option_price')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Monthly Payment ($)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                        <input type="number" name="lease_option_payment" class="form-control" min="0"
+                                            placeholder="e.g., 2500"
+                                            value="{{ old('lease_option_payment', $metas->get('lease_option_payment')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Lease Duration (Months)</label>
+                                    <input type="number" name="lease_option_duration" class="form-control" min="1"
+                                        placeholder="e.g., 12"
+                                        value="{{ old('lease_option_duration', $metas->get('lease_option_duration')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Option Fee Offered?</label>
+                                    <select name="has_option_fee" class="form-select" x-model="leaseOptFee">
+                                        <option value="">Select</option>
+                                        <option value="Yes" {{ old('has_option_fee', $metas->get('has_option_fee')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                        <option value="No" {{ old('has_option_fee', $metas->get('has_option_fee')) === 'No' ? 'selected' : '' }}>No</option>
+                                    </select>
+                                    <div x-show="leaseOptFee === 'Yes'" class="mt-2">
+                                        <input type="number" name="option_fee_amount" class="form-control" min="0"
+                                            placeholder="Option fee amount (e.g., 15000)"
+                                            value="{{ old('option_fee_amount', $metas->get('option_fee_amount')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Fee Credit Toward Price?</label>
+                                    <select name="lease_option_fee_credit" class="form-select" x-model="leaseOptFeeCredit">
+                                        <option value="">Select</option>
+                                        <option value="Yes" {{ old('lease_option_fee_credit', $metas->get('lease_option_fee_credit')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                        <option value="No" {{ old('lease_option_fee_credit', $metas->get('lease_option_fee_credit')) === 'No' ? 'selected' : '' }}>No</option>
+                                        <option value="Partial" {{ old('lease_option_fee_credit', $metas->get('lease_option_fee_credit')) === 'Partial' ? 'selected' : '' }}>Partial</option>
+                                    </select>
+                                    <div x-show="leaseOptFeeCredit === 'Partial'" class="mt-2">
+                                        <input type="number" name="lease_option_fee_credit_pct" class="form-control" min="0" max="100"
+                                            placeholder="Credit percentage (e.g., 50)"
+                                            value="{{ old('lease_option_fee_credit_pct', $metas->get('lease_option_fee_credit_pct')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Maintenance Responsibility</label>
+                                    <select name="lease_option_maintenance" class="form-select">
+                                        <option value="">Select</option>
+                                        @foreach(['Seller','Tenant-Buyer','Shared'] as $mr)
+                                        <option value="{{ $mr }}" {{ old('lease_option_maintenance', $metas->get('lease_option_maintenance')) === $mr ? 'selected' : '' }}>{{ $mr }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Conditions / Requirements</label>
+                                    <input type="text" name="lease_option_conditions" class="form-control"
+                                        placeholder="e.g., Option exercisable after 12 months, Property must pass inspection"
+                                        value="{{ old('lease_option_conditions', $metas->get('lease_option_conditions')) }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Specific Terms</label>
+                                    <input type="text" name="lease_option_terms" class="form-control"
+                                        placeholder="e.g., Buyer may conduct inspections during lease term"
+                                        value="{{ old('lease_option_terms', $metas->get('lease_option_terms')) }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Extension Terms</label>
+                                    <input type="text" name="lease_option_extension_terms" class="form-control"
+                                        placeholder="e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee"
+                                        value="{{ old('lease_option_extension_terms', $metas->get('lease_option_extension_terms')) }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Lease Purchase conditional sub-fields --}}
+                        <div x-show="finType === 'Lease Purchase'" class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="fw-semibold mb-3">Lease Purchase Details</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Purchase Price ($)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                        <input type="number" name="lease_purchase_price" class="form-control" min="0"
+                                            placeholder="e.g., 800000"
+                                            value="{{ old('lease_purchase_price', $metas->get('lease_purchase_price')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Monthly Payment ($)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                        <input type="number" name="lease_purchase_payment" class="form-control" min="0"
+                                            placeholder="e.g., 5000"
+                                            value="{{ old('lease_purchase_payment', $metas->get('lease_purchase_payment')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Lease Duration (Months)</label>
+                                    <input type="number" name="lease_purchase_duration" class="form-control" min="1"
+                                        placeholder="e.g., 12"
+                                        value="{{ old('lease_purchase_duration', $metas->get('lease_purchase_duration')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Rent Credit Toward Price?</label>
+                                    <select name="lease_purchase_rent_credit" class="form-select" x-model="leasePurchRentCredit">
+                                        <option value="">Select</option>
+                                        <option value="Yes" {{ old('lease_purchase_rent_credit', $metas->get('lease_purchase_rent_credit')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                        <option value="No" {{ old('lease_purchase_rent_credit', $metas->get('lease_purchase_rent_credit')) === 'No' ? 'selected' : '' }}>No</option>
+                                        <option value="Partial" {{ old('lease_purchase_rent_credit', $metas->get('lease_purchase_rent_credit')) === 'Partial' ? 'selected' : '' }}>Partial</option>
+                                    </select>
+                                    <div x-show="leasePurchRentCredit === 'Yes' || leasePurchRentCredit === 'Partial'" class="mt-2">
+                                        <input type="number" name="lease_purchase_rent_credit_amount" class="form-control" min="0"
+                                            placeholder="Rent credit amount per month (e.g., 500)"
+                                            value="{{ old('lease_purchase_rent_credit_amount', $metas->get('lease_purchase_rent_credit_amount')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Non-Refundable Deposit ($)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                        <input type="number" name="lease_purchase_deposit" class="form-control" min="0"
+                                            placeholder="e.g., 10000"
+                                            value="{{ old('lease_purchase_deposit', $metas->get('lease_purchase_deposit')) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Maintenance Responsibility</label>
+                                    <select name="lease_purchase_maintenance" class="form-select">
+                                        <option value="">Select</option>
+                                        @foreach(['Seller','Tenant-Buyer','Shared'] as $mr)
+                                        <option value="{{ $mr }}" {{ old('lease_purchase_maintenance', $metas->get('lease_purchase_maintenance')) === $mr ? 'selected' : '' }}>{{ $mr }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Conditions / Requirements</label>
+                                    <input type="text" name="lease_purchase_conditions" class="form-control"
+                                        placeholder="e.g., Buyer must secure financing by lease end, Property must appraise at agreed value"
+                                        value="{{ old('lease_purchase_conditions', $metas->get('lease_purchase_conditions')) }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Specific Terms</label>
+                                    <input type="text" name="lease_purchase_terms" class="form-control"
+                                        placeholder="e.g., Rent credits apply toward purchase, Option to buy after 12 months"
+                                        value="{{ old('lease_purchase_terms', $metas->get('lease_purchase_terms')) }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Extension Terms</label>
+                                    <input type="text" name="lease_purchase_extension_terms" class="form-control"
+                                        placeholder="e.g., Lease may be extended 6 months with adjusted purchase price"
+                                        value="{{ old('lease_purchase_extension_terms', $metas->get('lease_purchase_extension_terms')) }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- NFT conditional sub-fields --}}
+                        <div x-show="finType === 'Non-Fungible Token (NFT)'" class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="fw-semibold mb-3">Non-Fungible Token (NFT) Details</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">NFT Description / Type</label>
+                                    <input type="text" name="nft_description" class="form-control"
+                                        placeholder="Enter NFT type (e.g., Tokenized Real Estate, Digital Artwork)"
+                                        value="{{ old('nft_description', $metas->get('nft_description')) }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">% of Price Paid with NFT</label>
+                                    <div class="input-group">
+                                        <input type="number" name="nft_percentage" class="form-control" min="0" max="100" step="1"
+                                            placeholder="e.g., 40"
+                                            value="{{ old('nft_percentage', $metas->get('nft_percentage')) }}">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">% to be Paid with Cash</label>
+                                    <div class="input-group">
+                                        <input type="number" name="cash_percentage_nft" class="form-control" min="0" max="100" step="1"
+                                            placeholder="e.g., 60"
+                                            value="{{ old('cash_percentage_nft', $metas->get('cash_percentage_nft')) }}">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">NFT Valuation Method</label>
+                                    <input type="text" name="nft_valuation_method" class="form-control"
+                                        placeholder="e.g., Floor price on OpenSea, Independent appraisal"
+                                        value="{{ old('nft_valuation_method', $metas->get('nft_valuation_method')) }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">NFT Transfer Method</label>
+                                    <input type="text" name="nft_transfer_method" class="form-control"
+                                        placeholder="e.g., MetaMask, OpenSea, Propy Title, Escrow Smart Contract"
+                                        value="{{ old('nft_transfer_method', $metas->get('nft_transfer_method')) }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Gas Fees Responsibility</label>
+                                    <select name="nft_gas_fees" class="form-select">
+                                        <option value="">Select</option>
+                                        @foreach(['Buyer','Seller','Split'] as $gf)
+                                        <option value="{{ $gf }}" {{ old('nft_gas_fees', $metas->get('nft_gas_fees')) === $gf ? 'selected' : '' }}>{{ $gf }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Other Financing conditional sub-fields --}}
+                        <div x-show="finType === 'Other'" class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="fw-semibold mb-3">Other Financing Details</h6>
+                            <div class="mb-2">
+                                <label class="form-label fw-semibold">Other Financing Details</label>
+                                <textarea name="other_financing_details" class="form-control" rows="3"
+                                    placeholder="Describe the financing method or arrangement (e.g., Gold Bullion, Stock Transfer, Private Investment Agreement)">{{ old('other_financing_details', $metas->get('other_financing_details')) }}</textarea>
                             </div>
                         </div>
 
@@ -668,7 +1085,13 @@
                         <dd class="col-sm-9">{{ $metas->get('offer_price') ? '$' . number_format($metas->get('offer_price')) : '—' }}</dd>
 
                         <dt class="col-sm-3">Earnest Deposit</dt>
-                        <dd class="col-sm-9">{{ $metas->get('earnest_deposit') ? '$' . number_format($metas->get('earnest_deposit')) : '—' }}</dd>
+                        <dd class="col-sm-9">
+                        @php
+                            $_edVal  = $metas->get('earnest_deposit');
+                            $_edUnit = $metas->get('earnest_deposit_unit') ?? '$';
+                        @endphp
+                        {{ $_edVal !== null && $_edVal !== '' ? ($_edUnit === '%' ? $_edVal . '%' : '$' . number_format($_edVal)) : '—' }}
+                        </dd>
 
                         <dt class="col-sm-3">Financing Type</dt>
                         <dd class="col-sm-9">{{ $ftLabel }}</dd>
@@ -696,23 +1119,101 @@
                         @endif
 
                         @if($ftRaw === 'Exchange/Trade')
-                        <dt class="col-sm-3">Exchange Item</dt>
-                        <dd class="col-sm-9">{{ $metas->get('exchange_item') ?: '—' }}</dd>
-                        <dt class="col-sm-3">Estimated Value</dt>
-                        <dd class="col-sm-9">{{ $metas->get('exchange_item_value') ? '$' . number_format($metas->get('exchange_item_value')) : '—' }}</dd>
+                        @php
+                            $_exItem = $metas->get('exchange_item');
+                            $_exItemLabel = ($_exItem === 'Other' && $metas->get('other_exchange_item')) ? 'Other — ' . $metas->get('other_exchange_item') : $_exItem;
+                        @endphp
+                        @if($_exItem) <dt class="col-sm-3">Exchange Item</dt><dd class="col-sm-9">{{ $_exItemLabel }}</dd> @endif
+                        @if($metas->get('exchange_item_value')) <dt class="col-sm-3">Estimated Value</dt><dd class="col-sm-9">${{ number_format($metas->get('exchange_item_value')) }}</dd> @endif
+                        @if($metas->get('exchange_item_condition')) <dt class="col-sm-3">Condition</dt><dd class="col-sm-9">{{ $metas->get('exchange_item_condition') }}</dd> @endif
+                        @if($metas->get('additional_cash')) <dt class="col-sm-3">Additional Cash</dt><dd class="col-sm-9">${{ number_format($metas->get('additional_cash')) }}</dd> @endif
+                        @if($metas->get('value_determination')) <dt class="col-sm-3">Value Determined By</dt><dd class="col-sm-9">{{ $metas->get('value_determination') }}</dd> @endif
+                        @if($metas->get('exchange_transfer_method')) <dt class="col-sm-3">Transfer Method</dt><dd class="col-sm-9">{{ $metas->get('exchange_transfer_method') }}</dd> @endif
+                        @if($metas->get('exchange_liens')) <dt class="col-sm-3">Liens / Encumbrances</dt><dd class="col-sm-9">{{ $metas->get('exchange_liens') }}{{ $metas->get('exchange_liens') === 'Yes' && $metas->get('exchange_liens_details') ? ' — ' . $metas->get('exchange_liens_details') : '' }}</dd> @endif
+                        @if($metas->get('exchange_inspection_rights')) <dt class="col-sm-3">Inspection Rights</dt><dd class="col-sm-9">{{ $metas->get('exchange_inspection_rights') }}</dd> @endif
                         @endif
 
                         @if($ftRaw === 'Seller Financing')
-                        <dt class="col-sm-3">Financed Amount</dt>
-                        <dd class="col-sm-9">{{ $metas->get('seller_financing_amount') ? '$' . number_format($metas->get('seller_financing_amount')) : '—' }}</dd>
-                        <dt class="col-sm-3">Interest Rate</dt>
-                        <dd class="col-sm-9">{{ $metas->get('seller_financing_rate') !== null && $metas->get('seller_financing_rate') !== '' ? $metas->get('seller_financing_rate') . '%' : '—' }}</dd>
-                        <dt class="col-sm-3">Loan Term</dt>
-                        <dd class="col-sm-9">{{ $metas->get('seller_financing_term') ?: '—' }}</dd>
+                        @php
+                            $_sfAmt     = $metas->get('seller_financing_amount');
+                            $_sfAmtType = $metas->get('seller_financing_amount_type') ?? '$';
+                            $_sfAmtFmt  = $_sfAmt !== null && $_sfAmt !== ''
+                                ? ($_sfAmtType === '%' ? $_sfAmt . '%' : '$' . number_format($_sfAmt))
+                                : null;
+                            $_sfDpAmt  = $metas->get('sf_down_payment_amount');
+                            $_sfDpType = $metas->get('sf_down_payment_type') ?? '$';
+                            $_sfDpFmt  = $_sfDpAmt !== null && $_sfDpAmt !== ''
+                                ? ($_sfDpType === '%' ? $_sfDpAmt . '%' : '$' . number_format($_sfDpAmt))
+                                : null;
+                        @endphp
+                        @if($metas->get('sf_purchase_price')) <dt class="col-sm-3">Desired Purchase Price</dt><dd class="col-sm-9">${{ number_format($metas->get('sf_purchase_price')) }}</dd> @endif
+                        @if($_sfDpFmt) <dt class="col-sm-3">Desired Down Payment</dt><dd class="col-sm-9">{{ $_sfDpFmt }}</dd> @endif
+                        @if($_sfAmtFmt) <dt class="col-sm-3">Financing Amount</dt><dd class="col-sm-9">{{ $_sfAmtFmt }}</dd> @endif
+                        @if($metas->get('seller_financing_rate') !== null && $metas->get('seller_financing_rate') !== '') <dt class="col-sm-3">Interest Rate</dt><dd class="col-sm-9">{{ $metas->get('seller_financing_rate') }}%</dd> @endif
+                        @if($metas->get('seller_financing_term')) <dt class="col-sm-3">Loan Term</dt><dd class="col-sm-9">{{ $metas->get('seller_financing_term') }}</dd> @endif
+                        @if($metas->get('seller_financing_amortization'))
+                        <dt class="col-sm-3">Amortization Type</dt>
+                        <dd class="col-sm-9">{{ $metas->get('seller_financing_amortization') === 'Other' ? ($metas->get('seller_financing_amortization_other') ?: 'Other') : $metas->get('seller_financing_amortization') }}</dd>
+                        @endif
+                        @if($metas->get('seller_financing_payment_frequency'))
+                        <dt class="col-sm-3">Payment Frequency</dt>
+                        <dd class="col-sm-9">{{ $metas->get('seller_financing_payment_frequency') === 'Other' ? ($metas->get('seller_financing_payment_frequency_other') ?: 'Other') : $metas->get('seller_financing_payment_frequency') }}</dd>
+                        @endif
+                        @if($metas->get('seller_financing_balloon') === 'Yes')
+                        <dt class="col-sm-3">Balloon Payment</dt>
+                        <dd class="col-sm-9">Yes{{ $metas->get('seller_financing_balloon_amount') ? ' — $' . number_format($metas->get('seller_financing_balloon_amount')) : '' }}{{ $metas->get('seller_financing_balloon_date') ? ' due ' . $metas->get('seller_financing_balloon_date') : '' }}</dd>
+                        @endif
+                        @if($metas->get('prepayment_penalty'))
+                        <dt class="col-sm-3">Prepayment Penalty</dt>
+                        <dd class="col-sm-9">{{ $metas->get('prepayment_penalty') }}{{ $metas->get('prepayment_penalty') === 'Yes' && $metas->get('prepayment_penalty_amount') ? ' — $' . number_format($metas->get('prepayment_penalty_amount')) : '' }}</dd>
+                        @endif
+                        @if($metas->get('seller_late_fee_amount')) <dt class="col-sm-3">Late Payment Fee</dt><dd class="col-sm-9">{{ $metas->get('seller_late_fee_amount') }}</dd> @endif
                         @endif
 
-                        <dt class="col-sm-3">Down Payment %</dt>
-                        <dd class="col-sm-9">{{ $metas->get('down_payment_percent') !== null && $metas->get('down_payment_percent') !== '' ? $metas->get('down_payment_percent') . '%' : '—' }}</dd>
+                        @if($ftRaw === 'Lease Option')
+                        @if($metas->get('lease_option_price')) <dt class="col-sm-3">Lease Option Price</dt><dd class="col-sm-9">${{ number_format($metas->get('lease_option_price')) }}</dd> @endif
+                        @if($metas->get('lease_option_payment')) <dt class="col-sm-3">Monthly Payment</dt><dd class="col-sm-9">${{ number_format($metas->get('lease_option_payment')) }}</dd> @endif
+                        @if($metas->get('lease_option_duration')) <dt class="col-sm-3">Lease Duration</dt><dd class="col-sm-9">{{ $metas->get('lease_option_duration') }} months</dd> @endif
+                        @if($metas->get('has_option_fee')) <dt class="col-sm-3">Option Fee</dt><dd class="col-sm-9">{{ $metas->get('has_option_fee') }}{{ $metas->get('has_option_fee') === 'Yes' && $metas->get('option_fee_amount') ? ' — $' . number_format($metas->get('option_fee_amount')) : '' }}</dd> @endif
+                        @if($metas->get('lease_option_fee_credit')) <dt class="col-sm-3">Fee Credit Toward Price</dt><dd class="col-sm-9">{{ $metas->get('lease_option_fee_credit') }}{{ $metas->get('lease_option_fee_credit') === 'Partial' && $metas->get('lease_option_fee_credit_pct') !== null && $metas->get('lease_option_fee_credit_pct') !== '' ? ' — ' . $metas->get('lease_option_fee_credit_pct') . '%' : '' }}</dd> @endif
+                        @if($metas->get('lease_option_maintenance')) <dt class="col-sm-3">Maintenance</dt><dd class="col-sm-9">{{ $metas->get('lease_option_maintenance') }}</dd> @endif
+                        @if($metas->get('lease_option_conditions')) <dt class="col-sm-3">Conditions</dt><dd class="col-sm-9">{{ $metas->get('lease_option_conditions') }}</dd> @endif
+                        @if($metas->get('lease_option_terms')) <dt class="col-sm-3">Specific Terms</dt><dd class="col-sm-9">{{ $metas->get('lease_option_terms') }}</dd> @endif
+                        @if($metas->get('lease_option_extension_terms')) <dt class="col-sm-3">Extension Terms</dt><dd class="col-sm-9">{{ $metas->get('lease_option_extension_terms') }}</dd> @endif
+                        @endif
+
+                        @if($ftRaw === 'Lease Purchase')
+                        @if($metas->get('lease_purchase_price')) <dt class="col-sm-3">Lease Purchase Price</dt><dd class="col-sm-9">${{ number_format($metas->get('lease_purchase_price')) }}</dd> @endif
+                        @if($metas->get('lease_purchase_payment')) <dt class="col-sm-3">Monthly Payment</dt><dd class="col-sm-9">${{ number_format($metas->get('lease_purchase_payment')) }}</dd> @endif
+                        @if($metas->get('lease_purchase_duration')) <dt class="col-sm-3">Lease Duration</dt><dd class="col-sm-9">{{ $metas->get('lease_purchase_duration') }} months</dd> @endif
+                        @if($metas->get('lease_purchase_rent_credit')) <dt class="col-sm-3">Rent Credit</dt><dd class="col-sm-9">{{ $metas->get('lease_purchase_rent_credit') }}{{ in_array($metas->get('lease_purchase_rent_credit'), ['Yes','Partial']) && $metas->get('lease_purchase_rent_credit_amount') ? ' — $' . number_format($metas->get('lease_purchase_rent_credit_amount')) . '/mo' : '' }}</dd> @endif
+                        @if($metas->get('lease_purchase_deposit')) <dt class="col-sm-3">Non-Refundable Deposit</dt><dd class="col-sm-9">${{ number_format($metas->get('lease_purchase_deposit')) }}</dd> @endif
+                        @if($metas->get('lease_purchase_maintenance')) <dt class="col-sm-3">Maintenance</dt><dd class="col-sm-9">{{ $metas->get('lease_purchase_maintenance') }}</dd> @endif
+                        @if($metas->get('lease_purchase_conditions')) <dt class="col-sm-3">Conditions</dt><dd class="col-sm-9">{{ $metas->get('lease_purchase_conditions') }}</dd> @endif
+                        @if($metas->get('lease_purchase_terms')) <dt class="col-sm-3">Specific Terms</dt><dd class="col-sm-9">{{ $metas->get('lease_purchase_terms') }}</dd> @endif
+                        @if($metas->get('lease_purchase_extension_terms')) <dt class="col-sm-3">Extension Terms</dt><dd class="col-sm-9">{{ $metas->get('lease_purchase_extension_terms') }}</dd> @endif
+                        @endif
+
+                        @if($ftRaw === 'Non-Fungible Token (NFT)')
+                        @if($metas->get('nft_description')) <dt class="col-sm-3">NFT Description</dt><dd class="col-sm-9">{{ $metas->get('nft_description') }}</dd> @endif
+                        @if($metas->get('nft_percentage') !== null && $metas->get('nft_percentage') !== '') <dt class="col-sm-3">% Paid with NFT</dt><dd class="col-sm-9">{{ $metas->get('nft_percentage') }}%</dd> @endif
+                        @if($metas->get('cash_percentage_nft') !== null && $metas->get('cash_percentage_nft') !== '') <dt class="col-sm-3">% Paid with Cash</dt><dd class="col-sm-9">{{ $metas->get('cash_percentage_nft') }}%</dd> @endif
+                        @if($metas->get('nft_valuation_method')) <dt class="col-sm-3">NFT Valuation Method</dt><dd class="col-sm-9">{{ $metas->get('nft_valuation_method') }}</dd> @endif
+                        @if($metas->get('nft_transfer_method')) <dt class="col-sm-3">NFT Transfer Method</dt><dd class="col-sm-9">{{ $metas->get('nft_transfer_method') }}</dd> @endif
+                        @if($metas->get('nft_gas_fees')) <dt class="col-sm-3">Gas Fees</dt><dd class="col-sm-9">{{ $metas->get('nft_gas_fees') }}</dd> @endif
+                        @endif
+
+                        @if($ftRaw === 'Other' && $metas->get('other_financing_details'))
+                        <dt class="col-sm-3">Other Financing Details</dt>
+                        <dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('other_financing_details') }}</dd>
+                        @endif
+
+                        @php
+                            $_dpRoVal  = $metas->get('down_payment_value') ?? $metas->get('down_payment_percent');
+                            $_dpRoUnit = $metas->get('down_payment_unit') ?? ($metas->get('down_payment_percent') !== null ? '%' : '$');
+                        @endphp
+                        <dt class="col-sm-3">Down Payment</dt>
+                        <dd class="col-sm-9">{{ $_dpRoVal !== null && $_dpRoVal !== '' ? ($_dpRoUnit === '%' ? $_dpRoVal . '%' : '$' . number_format($_dpRoVal)) : '—' }}</dd>
 
                         <dt class="col-sm-3">Financing Contingency</dt>
                         <dd class="col-sm-9">
@@ -740,26 +1241,34 @@
                         <dd class="col-sm-9">{{ $safeDate($metas->get('possession_date')) }}</dd>
 
                         {{-- Purchase Terms --}}
-                        @if($metas->get('initial_deposit_amount'))
+                        @if($metas->get('initial_deposit_amount') !== null && $metas->get('initial_deposit_amount') !== '')
                         @php
-                            $_initTfDisplay = $metas->get('initial_deposit_timeframe');
+                            $_initTfDisplay  = $metas->get('initial_deposit_timeframe');
                             if ($_initTfDisplay === 'Other' && $metas->get('initial_deposit_timeframe_other')) {
                                 $_initTfDisplay = $metas->get('initial_deposit_timeframe_other');
                             }
+                            $_initDepUnit = $metas->get('initial_deposit_amount_unit') ?? '$';
+                            $_initDepFmt  = $_initDepUnit === '%'
+                                ? $metas->get('initial_deposit_amount') . '%'
+                                : '$' . number_format($metas->get('initial_deposit_amount'));
                         @endphp
                         <dt class="col-sm-3">Initial Deposit Amount</dt>
-                        <dd class="col-sm-9">{{ $metas->get('initial_deposit_amount') }}{{ $_initTfDisplay ? ' — ' . $_initTfDisplay : '' }}</dd>
+                        <dd class="col-sm-9">{{ $_initDepFmt }}{{ $_initTfDisplay ? ' — ' . $_initTfDisplay : '' }}</dd>
                         @endif
 
-                        @if($metas->get('additional_deposit_amount'))
+                        @if($metas->get('additional_deposit_amount') !== null && $metas->get('additional_deposit_amount') !== '')
                         @php
                             $_addTfDisplay = $metas->get('additional_deposit_timeframe');
                             if ($_addTfDisplay === 'Other' && $metas->get('additional_deposit_timeframe_other')) {
                                 $_addTfDisplay = $metas->get('additional_deposit_timeframe_other');
                             }
+                            $_addDepUnit = $metas->get('additional_deposit_amount_unit') ?? '$';
+                            $_addDepFmt  = $_addDepUnit === '%'
+                                ? $metas->get('additional_deposit_amount') . '%'
+                                : '$' . number_format($metas->get('additional_deposit_amount'));
                         @endphp
                         <dt class="col-sm-3">Additional Deposit Amount</dt>
-                        <dd class="col-sm-9">{{ $metas->get('additional_deposit_amount') }}{{ $_addTfDisplay ? ' — ' . $_addTfDisplay : '' }}</dd>
+                        <dd class="col-sm-9">{{ $_addDepFmt }}{{ $_addTfDisplay ? ' — ' . $_addTfDisplay : '' }}</dd>
                         @endif
 
                         <dt class="col-sm-3">Sale of Buyer's Property Contingency</dt>
