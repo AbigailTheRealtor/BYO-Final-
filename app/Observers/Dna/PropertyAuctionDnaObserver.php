@@ -2,6 +2,7 @@
 
 namespace App\Observers\Dna;
 
+use App\Jobs\ComputeLocationDna;
 use App\Jobs\ComputePropertyDnaProfile;
 use App\Models\PropertyAuction;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +15,15 @@ class PropertyAuctionDnaObserver
             ComputePropertyDnaProfile::dispatch('seller', $listing->id);
         } catch (\Throwable $e) {
             Log::warning('PropertyAuctionDnaObserver: failed to dispatch ComputePropertyDnaProfile', [
+                'listing_id' => $listing->id,
+                'error'      => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            ComputeLocationDna::dispatch('seller', $listing->id);
+        } catch (\Throwable $e) {
+            Log::warning('PropertyAuctionDnaObserver: failed to dispatch ComputeLocationDna', [
                 'listing_id' => $listing->id,
                 'error'      => $e->getMessage(),
             ]);
