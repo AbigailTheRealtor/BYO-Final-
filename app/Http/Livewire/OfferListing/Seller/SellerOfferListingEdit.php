@@ -305,6 +305,7 @@ class SellerOfferListingEdit extends Component
     public $additional_seller_sale_terms = '';
 
     // Estimated Payment Assumptions (agent-editable calculator defaults)
+    public $showPaymentAssumptions = false;
     public $payment_down_payment_pct = '';
     public $payment_interest_rate = '';
     public $payment_loan_term = '';

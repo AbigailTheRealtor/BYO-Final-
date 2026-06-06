@@ -207,6 +207,7 @@ class SellerOfferListing extends Component
     public $other_appliances = '';
     public $showOtherAppliances = false;
     public $showEnhancements = false;
+    public $showPaymentAssumptions = false;
     public $showCustomEnhancement = false;
     public $showOpenHouseInput = false;
     public $is_other_visible = false;

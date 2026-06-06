@@ -2070,21 +2070,19 @@
 
 {{-- 20. Estimated Payment Assumptions --}}
 <div class="card border mt-4">
-    <div class="card-header bg-light d-flex align-items-center" id="payment-assumptions-heading">
-        <button class="btn btn-link text-start fw-bold text-decoration-none p-0 w-100"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#payment-assumptions-body"
-                aria-expanded="false"
-                aria-controls="payment-assumptions-body">
+    <div class="card-header bg-light d-flex align-items-center">
+        <button type="button"
+                wire:click="$toggle('showPaymentAssumptions')"
+                class="btn btn-link text-start fw-bold text-decoration-none p-0 w-100">
             <i class="fa-solid fa-calculator me-2 text-primary"></i>
             Estimated Payment Assumptions
             <span class="text-muted fw-normal ms-2" style="font-size:0.85rem;">
                 (Optional — customize the mortgage calculator defaults shown on the public listing)
             </span>
+            <span class="ms-2">@if($showPaymentAssumptions)&#9650;@else&#9660;@endif</span>
         </button>
     </div>
-    <div id="payment-assumptions-body" class="collapse">
+    @if($showPaymentAssumptions)
         <div class="card-body">
             <p class="text-muted small mb-3">
                 These values pre-fill the estimated monthly payment calculator on the public listing page.
@@ -2239,6 +2237,6 @@
 
             </div>{{-- .row --}}
         </div>{{-- .card-body --}}
-    </div>{{-- #payment-assumptions-body --}}
+    @endif
 </div>{{-- .card --}}
 
