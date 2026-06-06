@@ -81,6 +81,25 @@
                 </div>
                 <div class="card-body">
                     @if($canEdit)
+                    <style>
+                        #save-offer-terms-btn { background:#2563eb; border-color:#2563eb; color:#fff; font-weight:600; }
+                        #save-offer-terms-btn:hover { background:#1d4ed8; border-color:#1d4ed8; }
+                        .offer-section-header {
+                            font-size: 0.9rem;
+                            font-weight: 600;
+                            color: #6c757d;
+                            text-transform: uppercase;
+                            letter-spacing: 0.04em;
+                            border-bottom: 1px solid #dee2e6;
+                            padding-bottom: 0.4rem;
+                            margin-top: 1.5rem;
+                            margin-bottom: 1rem;
+                        }
+                        .offer-section-header:first-child { margin-top: 0; }
+                        .contingency-group { display: flex; flex-direction: column; gap: 0.5rem; }
+                        .contingency-item { padding: 0.5rem 0.75rem; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 0.375rem; }
+                        .contingency-days { margin-top: 0.35rem; padding-left: 2.25rem; }
+                    </style>
                     <form method="POST" action="{{ route('offers.terms', $offer) }}">
                         @csrf
 
@@ -92,81 +111,159 @@
                         </div>
                         @endif
 
-                        {{-- Common fields --}}
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Offer Expires At</label>
-                                <input type="date" name="expires_at" class="form-control"
-                                    value="{{ old('expires_at', ($v = $metas->get('expires_at')) ? $safeDate($v) : '') }}">
-                            </div>
-                        </div>
-
                         {{-- Sale-specific fields --}}
                         @if($offerType === 'sale')
-                        @php $_ft = old('financing_type', $metas->get('financing_type') ?? ''); @endphp
+                        @php
+                            $_ft     = old('financing_type',              $metas->get('financing_type') ?? '');
+                            $_initTf = old('initial_deposit_timeframe',   $metas->get('initial_deposit_timeframe') ?? '');
+                            $_addTf  = old('additional_deposit_timeframe',$metas->get('additional_deposit_timeframe') ?? '');
+                        @endphp
                         <div x-data="{
                             finType: '{{ $_ft }}',
                             finCont: {{ old('financing_contingency', $metas->get('financing_contingency')) ? 'true' : 'false' }},
                             inspCont: {{ old('inspection_contingency', $metas->get('inspection_contingency')) ? 'true' : 'false' }},
                             saleCont: {{ old('sale_of_buyer_property_contingency', $metas->get('sale_of_buyer_property_contingency')) ? 'true' : 'false' }},
                             sellerContrib: '{{ old('seller_contribution_requested', $metas->get('seller_contribution_requested') ?? '') }}',
-                            homeWarranty: '{{ old('home_warranty_requested', $metas->get('home_warranty_requested') ?? '') }}'
+                            homeWarranty: '{{ old('home_warranty_requested', $metas->get('home_warranty_requested') ?? '') }}',
+                            initTf: '{{ $_initTf }}',
+                            addTf: '{{ $_addTf }}'
                         }">
 
-                        <h6 class="fw-semibold text-muted mt-3 mb-2">Sale Terms</h6>
+                        {{-- ── Section 1: Purchase Price & Deposits ── --}}
+                        <h6 class="offer-section-header">Purchase Price &amp; Deposits</h6>
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Offer Price ($)</label>
-                                <input type="number" name="offer_price" class="form-control" min="0" step="1000"
-                                    value="{{ old('offer_price', $metas->get('offer_price')) }}">
+                                <label class="form-label fw-semibold">
+                                    Offer Price ($)
+                                    <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                        title="The total purchase price you are offering for the property.">
+                                        <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
+                                    </span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                    <input type="number" name="offer_price" class="form-control" min="0" step="1000"
+                                        placeholder="Enter offer price (e.g., 450000)"
+                                        value="{{ old('offer_price', $metas->get('offer_price')) }}">
+                                </div>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Earnest Deposit ($)</label>
-                                <input type="number" name="earnest_deposit" class="form-control" min="0" step="100"
-                                    value="{{ old('earnest_deposit', $metas->get('earnest_deposit')) }}">
+                                <label class="form-label fw-semibold">
+                                    Earnest Deposit ($)
+                                    <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                        title="The good-faith deposit accompanying your offer, typically held in escrow until closing.">
+                                        <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
+                                    </span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                    <input type="number" name="earnest_deposit" class="form-control" min="0" step="100"
+                                        placeholder="Enter earnest deposit (e.g., 5000)"
+                                        value="{{ old('earnest_deposit', $metas->get('earnest_deposit')) }}">
+                                </div>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Down Payment (%)</label>
-                                <input type="number" name="down_payment_percent" class="form-control" min="0" max="100" step="0.5"
-                                    value="{{ old('down_payment_percent', $metas->get('down_payment_percent')) }}">
+                                <label class="form-label fw-semibold">
+                                    Down Payment (%)
+                                    <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                        title="The percentage of the purchase price you plan to pay upfront, outside of any financed amount.">
+                                        <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
+                                    </span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-percent"></i></span>
+                                    <input type="number" name="down_payment_percent" class="form-control" min="0" max="100" step="0.5"
+                                        placeholder="Enter down payment % (e.g., 20)"
+                                        value="{{ old('down_payment_percent', $metas->get('down_payment_percent')) }}">
+                                </div>
                             </div>
                         </div>
+
+                        {{-- Initial Deposit --}}
                         <div class="row g-3 mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Financing Type</label>
-                                <select name="financing_type" class="form-select" x-model="finType">
-                                    <option value="">— Select —</option>
-                                    @foreach([
-                                        'Assumable',
-                                        'Cash',
-                                        'Conventional',
-                                        'FHA',
-                                        'Jumbo',
-                                        'VA',
-                                        'No-Doc',
-                                        'Non-QM',
-                                        'USDA',
-                                        'Cryptocurrency',
-                                        'Exchange/Trade',
-                                        'Lease Option',
-                                        'Lease Purchase',
-                                        'Non-Fungible Token (NFT)',
-                                        'Seller Financing',
-                                        'Other',
-                                    ] as $ftOpt)
-                                    <option value="{{ $ftOpt }}" {{ $_ft === $ftOpt ? 'selected' : '' }}>{{ $ftOpt }}</option>
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Initial Deposit Amount</label>
+                                <input type="text" name="initial_deposit_amount" class="form-control"
+                                    placeholder="Enter initial deposit amount (e.g., 5000 or 3%)"
+                                    value="{{ old('initial_deposit_amount', $metas->get('initial_deposit_amount')) }}">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Initial Deposit Timeframe</label>
+                                <select name="initial_deposit_timeframe" class="form-select" x-model="initTf">
+                                    <option value="">Select</option>
+                                    @foreach(['Within 1 Day','Within 3 Days','Within 5 Days','Within 7 Days','Within 10 Days','Within 14 Days','At Closing','Other'] as $opt)
+                                    <option value="{{ $opt }}" {{ $_initTf === $opt ? 'selected' : '' }}>{{ $opt }}</option>
                                     @endforeach
                                 </select>
+                                <div x-show="initTf === 'Other'" class="mt-2">
+                                    <input type="text" name="initial_deposit_timeframe_other" class="form-control"
+                                        placeholder="Enter timeframe (e.g., Within 21 Days)"
+                                        value="{{ old('initial_deposit_timeframe_other', $metas->get('initial_deposit_timeframe_other')) }}">
+                                </div>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Closing Date</label>
-                                <input type="date" name="closing_date" class="form-control"
-                                    value="{{ old('closing_date', ($v = $metas->get('closing_date')) ? $safeDate($v) : '') }}">
+                        </div>
+
+                        {{-- Additional Deposit --}}
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Additional Deposit Amount</label>
+                                <input type="text" name="additional_deposit_amount" class="form-control"
+                                    placeholder="Enter additional deposit (e.g., 10000 or 2%)"
+                                    value="{{ old('additional_deposit_amount', $metas->get('additional_deposit_amount')) }}">
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Possession Date</label>
-                                <input type="date" name="possession_date" class="form-control"
-                                    value="{{ old('possession_date', ($v = $metas->get('possession_date')) ? $safeDate($v) : '') }}">
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Additional Deposit Timeframe</label>
+                                <select name="additional_deposit_timeframe" class="form-select" x-model="addTf">
+                                    <option value="">Select</option>
+                                    @foreach(['Within 1 Day','Within 3 Days','Within 5 Days','Within 7 Days','Within 10 Days','Within 14 Days','At Closing','Other'] as $opt)
+                                    <option value="{{ $opt }}" {{ $_addTf === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                    @endforeach
+                                </select>
+                                <div x-show="addTf === 'Other'" class="mt-2">
+                                    <input type="text" name="additional_deposit_timeframe_other" class="form-control"
+                                        placeholder="Enter timeframe (e.g., Within 21 Days)"
+                                        value="{{ old('additional_deposit_timeframe_other', $metas->get('additional_deposit_timeframe_other')) }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ── Section 2: Financing ── --}}
+                        <h6 class="offer-section-header">Financing</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">
+                                    Financing Type
+                                    <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                        title="The method you plan to use to fund this purchase. Select one that best describes how the transaction will be financed.">
+                                        <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
+                                    </span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-landmark"></i></span>
+                                    <select name="financing_type" class="form-select" x-model="finType">
+                                        <option value="">Select</option>
+                                        @foreach([
+                                            'Assumable',
+                                            'Cash',
+                                            'Conventional',
+                                            'FHA',
+                                            'Jumbo',
+                                            'VA',
+                                            'No-Doc',
+                                            'Non-QM',
+                                            'USDA',
+                                            'Cryptocurrency',
+                                            'Exchange/Trade',
+                                            'Lease Option',
+                                            'Lease Purchase',
+                                            'Non-Fungible Token (NFT)',
+                                            'Seller Financing',
+                                            'Other',
+                                        ] as $ftOpt)
+                                        <option value="{{ $ftOpt }}" {{ $_ft === $ftOpt ? 'selected' : '' }}>{{ $ftOpt }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
@@ -177,13 +274,13 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Assumable Loan Terms</label>
                                     <input type="text" name="assumable_terms" class="form-control"
-                                        placeholder="e.g., $250,000 remaining at 4.25% fixed for 20 years"
+                                        placeholder="Enter loan terms (e.g., $250,000 remaining at 4.25% fixed for 20 years)"
                                         value="{{ old('assumable_terms', $metas->get('assumable_terms')) }}">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold">Loan Type</label>
                                     <select name="assumable_loan_type" class="form-select">
-                                        <option value="">— Select —</option>
+                                        <option value="">Select</option>
                                         @foreach(['FHA', 'VA', 'USDA'] as $lt)
                                         <option value="{{ $lt }}" {{ old('assumable_loan_type', $metas->get('assumable_loan_type')) === $lt ? 'selected' : '' }}>{{ $lt }}</option>
                                         @endforeach
@@ -191,20 +288,26 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold">Interest Rate (%)</label>
-                                    <input type="number" name="assumable_interest_rate" class="form-control" min="0" max="100" step="0.01"
-                                        placeholder="e.g., 4.25"
-                                        value="{{ old('assumable_interest_rate', $metas->get('assumable_interest_rate')) }}">
+                                    <div class="input-group">
+                                        <input type="number" name="assumable_interest_rate" class="form-control" min="0" max="100" step="0.01"
+                                            placeholder="Enter rate (e.g., 4.25)"
+                                            value="{{ old('assumable_interest_rate', $metas->get('assumable_interest_rate')) }}">
+                                        <span class="input-group-text">%</span>
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Outstanding Balance ($)</label>
-                                    <input type="number" name="outstanding_balance" class="form-control" min="0"
-                                        placeholder="e.g., 250000"
-                                        value="{{ old('outstanding_balance', $metas->get('outstanding_balance')) }}">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                        <input type="number" name="outstanding_balance" class="form-control" min="0"
+                                            placeholder="Enter balance (e.g., 250000)"
+                                            value="{{ old('outstanding_balance', $metas->get('outstanding_balance')) }}">
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Loan Term Remaining</label>
                                     <input type="text" name="assumable_loan_term_remaining" class="form-control"
-                                        placeholder="e.g., 25 years"
+                                        placeholder="Enter term remaining (e.g., 25 years)"
                                         value="{{ old('assumable_loan_term_remaining', $metas->get('assumable_loan_term_remaining')) }}">
                                 </div>
                             </div>
@@ -217,19 +320,22 @@
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Cryptocurrency Type</label>
                                     <input type="text" name="cryptocurrency_type" class="form-control"
-                                        placeholder="e.g., Bitcoin, Ethereum"
+                                        placeholder="Enter currency type (e.g., Bitcoin, Ethereum)"
                                         value="{{ old('cryptocurrency_type', $metas->get('cryptocurrency_type')) }}">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">% of Price Paid with Crypto</label>
-                                    <input type="number" name="crypto_percentage" class="form-control" min="0" max="100" step="1"
-                                        placeholder="e.g., 50"
-                                        value="{{ old('crypto_percentage', $metas->get('crypto_percentage')) }}">
+                                    <div class="input-group">
+                                        <input type="number" name="crypto_percentage" class="form-control" min="0" max="100" step="1"
+                                            placeholder="Enter percentage (e.g., 50)"
+                                            value="{{ old('crypto_percentage', $metas->get('crypto_percentage')) }}">
+                                        <span class="input-group-text">%</span>
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Exchange / Conversion Method</label>
                                     <input type="text" name="crypto_exchange_method" class="form-control"
-                                        placeholder="e.g., Spot price at closing via Coinbase"
+                                        placeholder="Enter method (e.g., Spot price at closing via Coinbase)"
                                         value="{{ old('crypto_exchange_method', $metas->get('crypto_exchange_method')) }}">
                                 </div>
                             </div>
@@ -242,14 +348,17 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Item Offered for Exchange</label>
                                     <input type="text" name="exchange_item" class="form-control"
-                                        placeholder="e.g., Another home, Vehicle, Boat"
+                                        placeholder="Enter item offered (e.g., Another home, Vehicle, Boat)"
                                         value="{{ old('exchange_item', $metas->get('exchange_item')) }}">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Estimated Value ($)</label>
-                                    <input type="number" name="exchange_item_value" class="form-control" min="0"
-                                        placeholder="e.g., 75000"
-                                        value="{{ old('exchange_item_value', $metas->get('exchange_item_value')) }}">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                        <input type="number" name="exchange_item_value" class="form-control" min="0"
+                                            placeholder="Enter value (e.g., 75000)"
+                                            value="{{ old('exchange_item_value', $metas->get('exchange_item_value')) }}">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -260,145 +369,147 @@
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Financed Amount ($)</label>
-                                    <input type="number" name="seller_financing_amount" class="form-control" min="0"
-                                        placeholder="e.g., 400000"
-                                        value="{{ old('seller_financing_amount', $metas->get('seller_financing_amount')) }}">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                        <input type="number" name="seller_financing_amount" class="form-control" min="0"
+                                            placeholder="Enter financed amount (e.g., 400000)"
+                                            value="{{ old('seller_financing_amount', $metas->get('seller_financing_amount')) }}">
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Proposed Interest Rate (%)</label>
-                                    <input type="number" name="seller_financing_rate" class="form-control" min="0" max="100" step="0.01"
-                                        placeholder="e.g., 6.5"
-                                        value="{{ old('seller_financing_rate', $metas->get('seller_financing_rate')) }}">
+                                    <div class="input-group">
+                                        <input type="number" name="seller_financing_rate" class="form-control" min="0" max="100" step="0.01"
+                                            placeholder="Enter rate (e.g., 6.5)"
+                                            value="{{ old('seller_financing_rate', $metas->get('seller_financing_rate')) }}">
+                                        <span class="input-group-text">%</span>
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Loan Term</label>
                                     <input type="text" name="seller_financing_term" class="form-control"
-                                        placeholder="e.g., 30 years"
+                                        placeholder="Enter loan term (e.g., 30 years)"
                                         value="{{ old('seller_financing_term', $metas->get('seller_financing_term')) }}">
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Contingencies --}}
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <div class="form-check form-switch mb-2">
+                        {{-- ── Section 3: Contingencies ── --}}
+                        <h6 class="offer-section-header">Contingencies</h6>
+                        <div class="contingency-group mb-3">
+                            {{-- Financing Contingency --}}
+                            <div class="contingency-item">
+                                <div class="form-check form-switch mb-0">
                                     <input class="form-check-input" type="checkbox" id="fin_cont_terms" name="financing_contingency"
                                         value="1" x-model="finCont"
                                         {{ old('financing_contingency', $metas->get('financing_contingency')) ? 'checked' : '' }}>
-                                    <label class="form-check-label fw-semibold" for="fin_cont_terms">Financing Contingency</label>
+                                    <label class="form-check-label fw-semibold" for="fin_cont_terms">
+                                        Financing Contingency
+                                        <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                            title="Makes your offer contingent on obtaining mortgage financing. Protects you if your loan approval falls through within the stated period.">
+                                            <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.8rem;"></i>
+                                        </span>
+                                    </label>
                                 </div>
-                                <div x-show="finCont" class="mt-1">
-                                    <label class="form-label small">Contingency Period (days)</label>
+                                <div x-show="finCont" class="contingency-days">
+                                    <label class="form-label small mb-1">Contingency Period (days)</label>
                                     <input type="number" name="financing_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
+                                        placeholder="Enter days (e.g., 21)"
                                         value="{{ old('financing_contingency_days', $metas->get('financing_contingency_days')) }}">
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-check form-switch mb-2">
+
+                            {{-- Inspection Contingency --}}
+                            <div class="contingency-item">
+                                <div class="form-check form-switch mb-0">
                                     <input class="form-check-input" type="checkbox" id="insp_cont_terms" name="inspection_contingency"
                                         value="1" x-model="inspCont"
                                         {{ old('inspection_contingency', $metas->get('inspection_contingency')) ? 'checked' : '' }}>
-                                    <label class="form-check-label fw-semibold" for="insp_cont_terms">Inspection Contingency</label>
+                                    <label class="form-check-label fw-semibold" for="insp_cont_terms">
+                                        Inspection Contingency
+                                        <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                            title="Allows you to negotiate repairs or withdraw your offer based on inspection findings within the stated period.">
+                                            <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.8rem;"></i>
+                                        </span>
+                                    </label>
                                 </div>
-                                <div x-show="inspCont" class="mt-1">
-                                    <label class="form-label small">Inspection Period (days)</label>
+                                <div x-show="inspCont" class="contingency-days">
+                                    <label class="form-label small mb-1">Inspection Period (days)</label>
                                     <input type="number" name="inspection_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
+                                        placeholder="Enter days (e.g., 10)"
                                         value="{{ old('inspection_contingency_days', $metas->get('inspection_contingency_days')) }}">
                                 </div>
                             </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="appr_cont_terms" name="appraisal_contingency"
-                                    value="1"
-                                    {{ old('appraisal_contingency', $metas->get('appraisal_contingency')) ? 'checked' : '' }}>
-                                <label class="form-check-label fw-semibold" for="appr_cont_terms">Appraisal Contingency</label>
-                            </div>
-                        </div>
 
-                        {{-- Sale of Buyer Property Contingency --}}
-                        <div class="mb-3">
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="sale_cont_terms" name="sale_of_buyer_property_contingency"
-                                    value="1" x-model="saleCont"
-                                    {{ old('sale_of_buyer_property_contingency', $metas->get('sale_of_buyer_property_contingency')) ? 'checked' : '' }}>
-                                <label class="form-check-label fw-semibold" for="sale_cont_terms">Sale of Buyer's Property Contingency</label>
+                            {{-- Appraisal Contingency --}}
+                            <div class="contingency-item">
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" id="appr_cont_terms" name="appraisal_contingency"
+                                        value="1"
+                                        {{ old('appraisal_contingency', $metas->get('appraisal_contingency')) ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-semibold" for="appr_cont_terms">
+                                        Appraisal Contingency
+                                        <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                            title="Protects you if the property appraises below the agreed purchase price, allowing you to renegotiate or withdraw.">
+                                            <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.8rem;"></i>
+                                        </span>
+                                    </label>
+                                </div>
                             </div>
-                            <div x-show="saleCont" class="mt-1">
-                                <label class="form-label small">Contingency Period (days)</label>
-                                <input type="number" name="sale_of_buyer_property_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
-                                    value="{{ old('sale_of_buyer_property_contingency_days', $metas->get('sale_of_buyer_property_contingency_days')) }}">
-                            </div>
-                        </div>
 
-                        {{-- Purchase Terms --}}
-                        <h6 class="fw-semibold text-muted mt-4 mb-2">Purchase Terms</h6>
-
-                        {{-- Initial Deposit --}}
-                        @php
-                            $_initTf  = old('initial_deposit_timeframe',      $metas->get('initial_deposit_timeframe') ?? '');
-                            $_addTf   = old('additional_deposit_timeframe',   $metas->get('additional_deposit_timeframe') ?? '');
-                        @endphp
-                        <div class="row g-3 mb-3" x-data="{ initTf: '{{ $_initTf }}' }">
-                            <div class="col-md-5">
-                                <label class="form-label fw-semibold">Initial Deposit Amount</label>
-                                <input type="text" name="initial_deposit_amount" class="form-control"
-                                    placeholder="e.g., 5000 or 3%"
-                                    value="{{ old('initial_deposit_amount', $metas->get('initial_deposit_amount')) }}">
-                            </div>
-                            <div class="col-md-5">
-                                <label class="form-label fw-semibold">Initial Deposit Timeframe</label>
-                                <select name="initial_deposit_timeframe" class="form-select" x-model="initTf">
-                                    <option value="">— Select —</option>
-                                    @foreach(['Within 1 Day','Within 3 Days','Within 5 Days','Within 7 Days','Within 10 Days','Within 14 Days','At Closing','Other'] as $opt)
-                                    <option value="{{ $opt }}" {{ $_initTf === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                                    @endforeach
-                                </select>
-                                <div x-show="initTf === 'Other'" class="mt-2">
-                                    <input type="text" name="initial_deposit_timeframe_other" class="form-control"
-                                        placeholder="e.g., Within 21 Days"
-                                        value="{{ old('initial_deposit_timeframe_other', $metas->get('initial_deposit_timeframe_other')) }}">
+                            {{-- Sale of Buyer Property Contingency --}}
+                            <div class="contingency-item">
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" id="sale_cont_terms" name="sale_of_buyer_property_contingency"
+                                        value="1" x-model="saleCont"
+                                        {{ old('sale_of_buyer_property_contingency', $metas->get('sale_of_buyer_property_contingency')) ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-semibold" for="sale_cont_terms">
+                                        Sale of Buyer's Property Contingency
+                                        <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                            title="Makes your offer contingent on the successful sale of your current home within the stated period.">
+                                            <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.8rem;"></i>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div x-show="saleCont" class="contingency-days">
+                                    <label class="form-label small mb-1">Contingency Period (days)</label>
+                                    <input type="number" name="sale_of_buyer_property_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
+                                        placeholder="Enter days (e.g., 30)"
+                                        value="{{ old('sale_of_buyer_property_contingency_days', $metas->get('sale_of_buyer_property_contingency_days')) }}">
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Additional Deposit --}}
-                        <div class="row g-3 mb-3" x-data="{ addTf: '{{ $_addTf }}' }">
-                            <div class="col-md-5">
-                                <label class="form-label fw-semibold">Additional Deposit Amount</label>
-                                <input type="text" name="additional_deposit_amount" class="form-control"
-                                    placeholder="e.g., 10000 or 2%"
-                                    value="{{ old('additional_deposit_amount', $metas->get('additional_deposit_amount')) }}">
-                            </div>
-                            <div class="col-md-5">
-                                <label class="form-label fw-semibold">Additional Deposit Timeframe</label>
-                                <select name="additional_deposit_timeframe" class="form-select" x-model="addTf">
-                                    <option value="">— Select —</option>
-                                    @foreach(['Within 1 Day','Within 3 Days','Within 5 Days','Within 7 Days','Within 10 Days','Within 14 Days','At Closing','Other'] as $opt)
-                                    <option value="{{ $opt }}" {{ $_addTf === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                                    @endforeach
-                                </select>
-                                <div x-show="addTf === 'Other'" class="mt-2">
-                                    <input type="text" name="additional_deposit_timeframe_other" class="form-control"
-                                        placeholder="e.g., Within 21 Days"
-                                        value="{{ old('additional_deposit_timeframe_other', $metas->get('additional_deposit_timeframe_other')) }}">
+                        {{-- ── Section 4: Closing & Possession ── --}}
+                        <h6 class="offer-section-header">Closing &amp; Possession</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">
+                                    Closing Date
+                                    <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                        title="The target date to complete the transaction and transfer ownership of the property.">
+                                        <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
+                                    </span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
+                                    <input type="date" name="closing_date" class="form-control"
+                                        value="{{ old('closing_date', ($v = $metas->get('closing_date')) ? $safeDate($v) : '') }}">
                                 </div>
                             </div>
-                        </div>
-
-                        {{-- Seller Contribution --}}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Seller Contribution Requested</label>
-                            <select name="seller_contribution_requested" class="form-select w-auto" x-model="sellerContrib">
-                                <option value="">— Select —</option>
-                                <option value="Yes" {{ old('seller_contribution_requested', $metas->get('seller_contribution_requested')) === 'Yes' ? 'selected' : '' }}>Yes</option>
-                                <option value="No" {{ old('seller_contribution_requested', $metas->get('seller_contribution_requested')) === 'No' ? 'selected' : '' }}>No</option>
-                            </select>
-                            <div x-show="sellerContrib === 'Yes'" class="mt-2">
-                                <input type="text" name="seller_contribution_details" class="form-control"
-                                    placeholder="e.g., $5,000 toward buyer closing costs"
-                                    value="{{ old('seller_contribution_details', $metas->get('seller_contribution_details')) }}">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">
+                                    Possession Date
+                                    <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                        title="The date you expect to take physical possession of the property.">
+                                        <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
+                                    </span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
+                                    <input type="date" name="possession_date" class="form-control"
+                                        value="{{ old('possession_date', ($v = $metas->get('possession_date')) ? $safeDate($v) : '') }}">
+                                </div>
                             </div>
                         </div>
 
@@ -406,14 +517,59 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Possession Notes <span class="text-muted small">(optional)</span></label>
                             <textarea name="possession_notes" class="form-control" rows="3"
-                                placeholder="e.g., Requesting possession at closing, or seller may need up to 7 days post-close">{{ old('possession_notes', $metas->get('possession_notes')) }}</textarea>
+                                placeholder="Enter possession notes (e.g., Requesting possession at closing, or seller may need up to 7 days post-close)">{{ old('possession_notes', $metas->get('possession_notes')) }}</textarea>
+                        </div>
+
+                        {{-- ── Section 5: Additional Terms ── --}}
+                        <h6 class="offer-section-header">Additional Terms</h6>
+
+                        {{-- Seller Contribution --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Seller Contribution Requested
+                                <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                    title="Request the seller to contribute toward your closing costs or other buyer expenses as part of the offer.">
+                                    <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
+                                </span>
+                            </label>
+                            <select name="seller_contribution_requested" class="form-select w-auto" x-model="sellerContrib">
+                                <option value="">Select</option>
+                                <option value="Yes" {{ old('seller_contribution_requested', $metas->get('seller_contribution_requested')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                <option value="No" {{ old('seller_contribution_requested', $metas->get('seller_contribution_requested')) === 'No' ? 'selected' : '' }}>No</option>
+                            </select>
+                            <div x-show="sellerContrib === 'Yes'" class="mt-2">
+                                <input type="text" name="seller_contribution_details" class="form-control"
+                                    placeholder="Enter contribution details (e.g., $5,000 toward buyer closing costs)"
+                                    value="{{ old('seller_contribution_details', $metas->get('seller_contribution_details')) }}">
+                            </div>
+                        </div>
+
+                        {{-- Home Warranty --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Home Warranty Requested
+                                <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                    title="Request a home warranty policy to cover appliances and systems for a period after closing.">
+                                    <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
+                                </span>
+                            </label>
+                            <select name="home_warranty_requested" class="form-select w-auto" x-model="homeWarranty">
+                                <option value="">Select</option>
+                                <option value="Yes" {{ old('home_warranty_requested', $metas->get('home_warranty_requested')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                <option value="No" {{ old('home_warranty_requested', $metas->get('home_warranty_requested')) === 'No' ? 'selected' : '' }}>No</option>
+                            </select>
+                            <div x-show="homeWarranty === 'Yes'" class="mt-2">
+                                <input type="text" name="home_warranty_details" class="form-control"
+                                    placeholder="Enter warranty details (e.g., $500 one-year home warranty through American Home Shield)"
+                                    value="{{ old('home_warranty_details', $metas->get('home_warranty_details')) }}">
+                            </div>
                         </div>
 
                         {{-- Included Personal Property --}}
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Included Personal Property</label>
                             <input type="text" name="included_personal_property" class="form-control"
-                                placeholder="e.g., Refrigerator, Washer/Dryer, Dining Room Chandelier"
+                                placeholder="Enter included items (e.g., Refrigerator, Washer/Dryer, Dining Room Chandelier)"
                                 value="{{ old('included_personal_property', $metas->get('included_personal_property')) }}">
                         </div>
 
@@ -421,23 +577,8 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Excluded Items</label>
                             <input type="text" name="excluded_items" class="form-control"
-                                placeholder="e.g., Antique light fixture in dining room, Detached storage shed"
+                                placeholder="Enter excluded items (e.g., Antique light fixture in dining room, Detached storage shed)"
                                 value="{{ old('excluded_items', $metas->get('excluded_items')) }}">
-                        </div>
-
-                        {{-- Home Warranty --}}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Home Warranty Requested</label>
-                            <select name="home_warranty_requested" class="form-select w-auto" x-model="homeWarranty">
-                                <option value="">— Select —</option>
-                                <option value="Yes" {{ old('home_warranty_requested', $metas->get('home_warranty_requested')) === 'Yes' ? 'selected' : '' }}>Yes</option>
-                                <option value="No" {{ old('home_warranty_requested', $metas->get('home_warranty_requested')) === 'No' ? 'selected' : '' }}>No</option>
-                            </select>
-                            <div x-show="homeWarranty === 'Yes'" class="mt-2">
-                                <input type="text" name="home_warranty_details" class="form-control"
-                                    placeholder="e.g., $500 one-year home warranty through American Home Shield"
-                                    value="{{ old('home_warranty_details', $metas->get('home_warranty_details')) }}">
-                            </div>
                         </div>
 
                         </div>{{-- end x-data --}}
@@ -472,27 +613,46 @@
                         @endif
                         @endif
 
-                        {{-- Common: Custom Terms & Notes --}}
-                        <hr class="my-3">
+                        {{-- ── Section 6: Internal Notes & Expiration ── --}}
+                        <h6 class="offer-section-header">Internal Notes &amp; Expiration</h6>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Custom Terms / Special Conditions</label>
                             <textarea name="custom_terms" class="form-control" rows="4"
-                                placeholder="Any special conditions, addendums, or custom terms…">{{ old('custom_terms', $metas->get('custom_terms')) }}</textarea>
+                                placeholder="Enter any special conditions, addendums, or custom terms">{{ old('custom_terms', $metas->get('custom_terms')) }}</textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Private Notes <span class="text-muted small">(not shown to the other party)</span></label>
                             <textarea name="notes" class="form-control" rows="3"
-                                placeholder="Private notes for your reference…">{{ old('notes', $metas->get('notes')) }}</textarea>
+                                placeholder="Enter private notes for your reference">{{ old('notes', $metas->get('notes')) }}</textarea>
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">
+                                    Offer Expires At
+                                    <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                                        title="The deadline by which the seller must respond to this offer. After this date the offer will be considered withdrawn.">
+                                        <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
+                                    </span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
+                                    <input type="date" name="expires_at" class="form-control"
+                                        value="{{ old('expires_at', ($v = $metas->get('expires_at')) ? $safeDate($v) : '') }}">
+                                </div>
+                            </div>
                         </div>
 
-                        <style>
-                            #save-offer-terms-btn { background:#2563eb; border-color:#2563eb; color:#fff; font-weight:600; }
-                            #save-offer-terms-btn:hover { background:#1d4ed8; border-color:#1d4ed8; }
-                        </style>
                         <div class="d-flex justify-content-end">
-                            <button type="submit" id="save-offer-terms-btn" class="btn btn-primary">Save Offer Terms</button>
+                            <button type="submit" id="save-offer-terms-btn" class="btn btn-primary px-4">Save Offer Terms</button>
                         </div>
                     </form>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+                                new bootstrap.Tooltip(el, { trigger: 'hover focus', container: 'body' });
+                            });
+                        });
+                    </script>
                     @else
                     {{-- Read-only display --}}
                     <dl class="row mb-0">
