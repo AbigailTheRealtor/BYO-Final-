@@ -2531,7 +2531,7 @@
                     <div id="solAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
                         <span class="text-muted fst-italic" style="font-size:.875rem;" id="solAiExampleText"></span>
                     </div>
-                    @php $__solAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('seller'); @endphp
+                    @php $__solAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('seller', $askAiChipContext ?? []); @endphp
                     @if(!empty($__solAiSuggestions))
                     <div id="solAiSuggestions"
                          aria-label="Suggested questions for this listing"

@@ -6,6 +6,7 @@ use App\Mail\SellerListingInquiryMail;
 use App\Models\OfferAuction;
 use App\Models\SellerAgentAuction;
 use App\Models\SellerListingInquiry;
+use App\Services\AskAi\AskAiContextBuilderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -91,13 +92,15 @@ class SellerOfferListingController extends Controller
         $offerAuction = $this->resolveOfferAuction($auction);
         $calcData     = $this->buildCalcData($meta);
 
+        $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'seller');
+
         $page_data = [
             'title'   => $auction->address ?? ($meta['listing_title'] ?? 'Seller Offer Listing'),
             'id'      => $id,
             'auth_id' => auth()->id(),
         ];
 
-        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction', 'calcData') + $page_data);
+        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction', 'calcData', 'askAiChipContext') + $page_data);
     }
 
     /**

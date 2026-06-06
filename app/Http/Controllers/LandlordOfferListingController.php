@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LandlordAgentAuction;
 use App\Models\SellerListingInquiry;
+use App\Services\AskAi\AskAiContextBuilderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -94,11 +95,13 @@ class LandlordOfferListingController extends Controller
                 : $row->meta_value;
         }
 
+        $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'landlord');
+
         $page_data = [
             'title' => $auction->title ?? ($meta['listing_title'] ?? 'Rental Property Listing'),
         ];
 
-        return view('offer-listing.landlord.view', compact('auction', 'meta') + $page_data);
+        return view('offer-listing.landlord.view', compact('auction', 'meta', 'askAiChipContext') + $page_data);
     }
 
     public function submitQuestion(Request $request, $auction)

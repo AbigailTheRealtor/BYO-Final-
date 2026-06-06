@@ -1903,7 +1903,7 @@
                 <div id="tclAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
                     <span class="text-muted fst-italic" style="font-size:.875rem;" id="tclAiExampleText"></span>
                 </div>
-                @php $__tclAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('tenant'); @endphp
+                @php $__tclAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('tenant', $askAiChipContext ?? []); @endphp
                 @if(!empty($__tclAiSuggestions))
                 <div id="tclAiSuggestions"
                      aria-label="Suggested questions for this listing"

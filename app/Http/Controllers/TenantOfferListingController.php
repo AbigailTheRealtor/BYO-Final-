@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TenantAgentAuction;
 use App\Models\SellerListingInquiry;
+use App\Services\AskAi\AskAiContextBuilderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -84,10 +85,13 @@ class TenantOfferListingController extends Controller
     {
         [$auction, $meta] = $this->resolveOfferListing($id);
 
+        $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'tenant');
+
         return view('offer-listing.tenant.view', [
-            'auction' => $auction,
-            'meta'    => $meta,
-            'ownerId' => $auction->user_id,
+            'auction'          => $auction,
+            'meta'             => $meta,
+            'ownerId'          => $auction->user_id,
+            'askAiChipContext' => $askAiChipContext,
         ]);
     }
 

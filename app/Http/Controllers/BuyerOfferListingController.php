@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BuyerAgentAuction;
 use App\Models\SellerListingInquiry; // TODO: replace with a neutral OfferListingInquiry model/table when buyer-specific inquiry tracking is needed
+use App\Services\AskAi\AskAiContextBuilderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -81,13 +82,15 @@ class BuyerOfferListingController extends Controller
                 : $row->meta_value;
         }
 
+        $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'buyer');
+
         $page_data = [
             'title'   => $meta['listing_title'] ?? ($auction->title ?? 'Buyer Criteria Listing'),
             'id'      => $id,
             'auth_id' => auth()->id(),
         ];
 
-        return view('offer-listing.buyer.view', compact('auction', 'meta') + $page_data);
+        return view('offer-listing.buyer.view', compact('auction', 'meta', 'askAiChipContext') + $page_data);
     }
 
     public function submitQuestion(Request $request, $auction)

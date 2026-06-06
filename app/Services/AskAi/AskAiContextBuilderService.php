@@ -76,6 +76,41 @@ class AskAiContextBuilderService
     ];
 
     /**
+     * Assemble a lightweight chip context for the listing view suggested-questions chips.
+     *
+     * Returns only the two keys consumed by AskAiSuggestedQuestionsService::forListing():
+     *   'listing'     — array produced by extractListingFields() for the given listing.
+     *   'faq_answers' — array produced by buildFaqAnswers() for the given listing.
+     *
+     * No DNA, no compatibility, no location intelligence, no OpenAI calls are made.
+     * This method is deliberately cheap so it can be called during a normal page render.
+     *
+     * When any exception is thrown (e.g. listing has no `id` property, EAV meta
+     * unavailable), an empty array is returned so forListing() falls back to the
+     * static pool without surfacing a page error.
+     *
+     * @param  object  $listing        Resolved listing model instance (already loaded by the controller).
+     * @param  string  $canonicalType  One of: 'seller', 'buyer', 'landlord', 'tenant'.
+     * @return array{listing: array, faq_answers: array}|array{}
+     */
+    public function buildChipContext(object $listing, string $canonicalType): array
+    {
+        try {
+            $canonical  = $this->normalizeListingType($canonicalType);
+            $listingId  = (int) ($listing->id ?? 0);
+            $fields     = $this->extractListingFields($listing, $canonical, $listingId);
+            $faqAnswers = $this->buildFaqAnswers($listing, $canonical);
+
+            return [
+                'listing'     => $fields,
+                'faq_answers' => $faqAnswers,
+            ];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * Assemble a read-only Ask AI context object for the given listing.
      *
      * Output contract — always returns exactly these top-level keys:

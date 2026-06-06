@@ -1756,7 +1756,7 @@
                     <div id="bolAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
                         <span class="text-muted fst-italic" style="font-size:.875rem;" id="bolAiExampleText"></span>
                     </div>
-                    @php $__bolAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('buyer'); @endphp
+                    @php $__bolAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('buyer', $askAiChipContext ?? []); @endphp
                     @if(!empty($__bolAiSuggestions))
                     <div id="bolAiSuggestions"
                          aria-label="Suggested questions for this listing"

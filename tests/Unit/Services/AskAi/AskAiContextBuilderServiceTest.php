@@ -2565,4 +2565,200 @@ class AskAiContextBuilderServiceTest extends TestCase
         $this->assertStringNotContainsString('[', $listing['appliances']);
         $this->assertStringNotContainsString('[', $listing['pet_species_allowed']);
     }
+
+    // =========================================================================
+    // Case V — buildChipContext()
+    //
+    // Covers the lightweight chip-context method added in Phase 2.
+    // Tests confirm:
+    //   V1. Returns 'listing' and 'faq_answers' keys for a populated listing.
+    //   V2. 'listing' contains role-appropriate factual fields.
+    //   V3. Returns an empty array (graceful failure) when an exception occurs.
+    //   V4. Chip output from AskAiSuggestedQuestionsService changes when a
+    //       listing_facts field is present vs. absent in the context.
+    // =========================================================================
+
+    public function test_case_V1_buildChipContext_returns_listing_and_faq_answers_keys(): void
+    {
+        $service = $this->makeService();
+
+        $listing = $this->makeListingStubWithFields(
+            ['starting_price' => '350000'],
+            ['bedrooms' => '3']
+        );
+
+        $result = $service->buildChipContext($listing, 'seller');
+
+        $this->assertIsArray($result, 'buildChipContext() must return an array');
+        $this->assertArrayHasKey('listing', $result,
+            "'listing' key must be present in buildChipContext() output");
+        $this->assertArrayHasKey('faq_answers', $result,
+            "'faq_answers' key must be present in buildChipContext() output");
+        $this->assertIsArray($result['listing'],
+            "'listing' value must be an array");
+        $this->assertIsArray($result['faq_answers'],
+            "'faq_answers' value must be an array");
+    }
+
+    public function test_case_V2_buildChipContext_listing_contains_role_appropriate_fields(): void
+    {
+        $service = $this->makeService();
+
+        // Seller listing with a populated asking_price (native) and bedrooms (meta)
+        $listing = $this->makeListingStubWithFields(
+            ['starting_price' => '450000'],
+            ['bedrooms' => '3', 'city' => 'Tampa']
+        );
+
+        $result  = $service->buildChipContext($listing, 'seller');
+        $fields  = $result['listing'];
+
+        $this->assertArrayHasKey('asking_price', $fields,
+            "Seller chip context must contain 'asking_price' (mapped from starting_price)");
+        $this->assertSame('450000', $fields['asking_price'],
+            "asking_price must carry the starting_price value");
+        $this->assertArrayHasKey('bedrooms', $fields,
+            "Seller chip context must contain 'bedrooms'");
+        $this->assertSame('seller', $fields['listing_type'],
+            "listing_type must be the normalised canonical type");
+    }
+
+    public function test_case_V2b_buildChipContext_landlord_returns_rent_amount_field(): void
+    {
+        $service = $this->makeService();
+
+        $listing = $this->makeListingStubWithFields(
+            [],
+            ['maximum_budget' => '1800', 'pet_policy' => 'No pets']
+        );
+
+        $result = $service->buildChipContext($listing, 'landlord');
+        $fields = $result['listing'];
+
+        $this->assertArrayHasKey('rent_amount', $fields,
+            "Landlord chip context must map maximum_budget → rent_amount");
+        $this->assertSame('1800', $fields['rent_amount']);
+        $this->assertArrayHasKey('pet_policy', $fields);
+        $this->assertSame('No pets', $fields['pet_policy']);
+    }
+
+    public function test_case_V3_buildChipContext_returns_empty_array_on_exception(): void
+    {
+        $service = $this->makeService();
+
+        // A listing stub that throws from info(), simulating a broken EAV accessor.
+        $brokenListing = new class {
+            public int $id = 42;
+            public function info(string $key): mixed
+            {
+                throw new \RuntimeException('Simulated EAV failure');
+            }
+            public function __get(string $name): mixed { return null; }
+            public function __isset(string $name): bool { return false; }
+        };
+
+        $result = $service->buildChipContext($brokenListing, 'seller');
+
+        $this->assertSame([], $result,
+            'buildChipContext() must return [] and not throw when an exception occurs');
+    }
+
+    public function test_case_V4_chips_include_listing_facts_chip_when_field_is_present(): void
+    {
+        // Verify AskAiSuggestedQuestionsService::forListing() surfaces a listing_facts
+        // chip when the required context field is present, and suppresses it when absent.
+        $suggestionsService = new \App\Services\AskAi\AskAiSuggestedQuestionsService();
+
+        // Context with asking_price populated → "What is the asking price?" chip should appear
+        $contextWithPrice = [
+            'listing'     => ['asking_price' => '350000'],
+            'faq_answers' => [],
+        ];
+
+        $chipsWithPrice = $suggestionsService->forListing('seller', $contextWithPrice);
+        $labels         = array_column($chipsWithPrice, 'label');
+
+        $this->assertContains(
+            'What is the asking price?',
+            $labels,
+            'When asking_price is present in context, its chip should be included'
+        );
+
+        // Context with asking_price absent → chip should be suppressed
+        $contextWithoutPrice = [
+            'listing'     => [],
+            'faq_answers' => [],
+        ];
+
+        $chipsWithoutPrice = $suggestionsService->forListing('seller', $contextWithoutPrice);
+        $labelsWithout     = array_column($chipsWithoutPrice, 'label');
+
+        $this->assertNotContains(
+            'What is the asking price?',
+            $labelsWithout,
+            'When asking_price is absent from context, its chip must be suppressed'
+        );
+    }
+
+    public function test_case_V4b_chips_include_listing_facts_chip_for_landlord_rent_amount(): void
+    {
+        $suggestionsService = new \App\Services\AskAi\AskAiSuggestedQuestionsService();
+
+        $contextWithRent = [
+            'listing'     => ['rent_amount' => '1800'],
+            'faq_answers' => [],
+        ];
+
+        $chips  = $suggestionsService->forListing('landlord', $contextWithRent);
+        $labels = array_column($chips, 'label');
+
+        $this->assertContains('What is the asking rent?', $labels,
+            'rent_amount chip should appear when rent_amount is in context');
+
+        $contextNoRent = [
+            'listing'     => [],
+            'faq_answers' => [],
+        ];
+
+        $chipsNoRent  = $suggestionsService->forListing('landlord', $contextNoRent);
+        $labelsNoRent = array_column($chipsNoRent, 'label');
+
+        $this->assertNotContains('What is the asking rent?', $labelsNoRent,
+            'rent_amount chip must be suppressed when rent_amount is absent from context');
+    }
+
+    public function test_case_V4c_faq_chip_appears_when_faq_answer_is_present(): void
+    {
+        $suggestionsService = new \App\Services\AskAi\AskAiSuggestedQuestionsService();
+
+        // Seller listing with roof_age_and_condition FAQ answered
+        $contextWithFaq = [
+            'listing'     => [],
+            'faq_answers' => [
+                'roof_age_and_condition' => [
+                    'config_key'   => 'roof_age_and_condition',
+                    'answer_text'  => '5 years old, good condition',
+                    'question_label' => 'Roof age and condition',
+                ],
+            ],
+        ];
+
+        $chips  = $suggestionsService->forListing('seller', $contextWithFaq);
+        $labels = array_column($chips, 'label');
+
+        $this->assertContains('How old is the roof?', $labels,
+            'FAQ-gated chip must appear when faq_answers entry has a non-empty answer_text');
+
+        // Without the FAQ answer, the chip must be suppressed
+        $contextNoFaq = [
+            'listing'     => [],
+            'faq_answers' => [],
+        ];
+
+        $chipsNoFaq  = $suggestionsService->forListing('seller', $contextNoFaq);
+        $labelsNoFaq = array_column($chipsNoFaq, 'label');
+
+        $this->assertNotContains('How old is the roof?', $labelsNoFaq,
+            'FAQ-gated chip must be suppressed when faq_answers entry is absent');
+    }
 }
