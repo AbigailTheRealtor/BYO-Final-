@@ -244,6 +244,12 @@ Route::get('/widget/hire/{agentShortId}/{role}/{propertyType?}', [\App\Http\Cont
 Route::post('/ask-ai/listing-question', [\App\Http\Controllers\AskAiListingQuestionController::class, 'run'])
     ->name('ask-ai.listing-question');
 
+// Ask AI — channel-agnostic canonical API endpoint (web channel).
+// Sits alongside the existing listing-question route; does not replace it.
+Route::post('/ask-ai/ask', [\App\Http\Controllers\AskAi\AskAiApiController::class, 'ask'])
+    ->middleware('throttle:ask-ai-api')
+    ->name('ask-ai.ask');
+
 
 // Route::post('/notification', [NotificationController::class, 'notification']);
 

@@ -59,5 +59,18 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
         });
+
+        RateLimiter::for('ask-ai-api', function (Request $request) {
+            $limit = config('ask_ai.rate_limit_per_minute', 20);
+            return Limit::perMinute($limit)
+                ->by(optional($request->user())->id ?: $request->ip())
+                ->response(function ($request, $headers) {
+                    return response()->json([
+                        'success' => false,
+                        'status'  => 'failed',
+                        'error'   => 'Too many requests. Please slow down and try again.',
+                    ], 429, $headers);
+                });
+        });
     }
 }
