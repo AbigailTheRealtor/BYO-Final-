@@ -898,6 +898,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('scores', [DnaInspectorController::class, 'scoresIndex'])->name('scores.index');
             Route::get('scores/{id}', [DnaInspectorController::class, 'scoresShow'])->name('scores.show');
 
+            // Location DNA Inspector (read-only, admin-only)
+            Route::get('location', [DnaInspectorController::class, 'locationIndex'])->name('location.index');
+            Route::get('location/{listingType}/{listingId}', [DnaInspectorController::class, 'locationShow'])->name('location.show');
+
             // Phase D (Display Layer) — role-scoped DNA profile views (read-only, admin-only)
             Route::prefix('profiles')->name('profiles.')->group(function () {
                 Route::get('seller/{listingId}', [DnaProfileController::class, 'seller'])->name('seller');

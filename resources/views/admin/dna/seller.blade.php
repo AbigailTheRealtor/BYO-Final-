@@ -313,4 +313,10 @@
 </div>
 
 @endif
+
+{{-- Location DNA Card --}}
+@include('admin.dna.partials.location-dna-card', [
+    'dna'  => $locationDna ?? null,
+    'pois' => $locationPois ?? collect(),
+])
 @endsection

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PropertyDnaProfile;
 use App\Models\BuyerTenantDnaProfile;
+use App\Models\PropertyLocationDna;
+use App\Models\PropertyLocationPoi;
 use App\Services\Dna\PropertyDnaExplanationService;
 use App\Services\Dna\PropertyPersonalityService;
 use App\Services\Dna\BuyerTenantDnaExplanationService;
@@ -32,8 +34,20 @@ class DnaProfileController extends Controller
         $explanations      = $profile ? $explanationService->generate($profile) : null;
         $personalityResult = $profile ? $propertyPersonalityService->generate($profile) : null;
 
+        $locationDna = PropertyLocationDna::where('listing_type', 'seller')
+            ->where('listing_id', $listingId)
+            ->first();
+
+        $locationPois = $locationDna
+            ? PropertyLocationPoi::where('listing_type', 'seller')
+                ->where('listing_id', $listingId)
+                ->orderBy('poi_category')
+                ->orderBy('distance_miles')
+                ->get()
+            : collect();
+
         return response()
-            ->view('admin.dna.seller', compact('profile', 'explanations', 'personalityResult', 'listingId'))
+            ->view('admin.dna.seller', compact('profile', 'explanations', 'personalityResult', 'listingId', 'locationDna', 'locationPois'))
             ->header('Cache-Control', 'no-store');
     }
 

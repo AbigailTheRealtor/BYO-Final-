@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\PropertyDnaProfile;
 use App\Models\BuyerTenantDnaProfile;
 use App\Models\ListingCompatibilityScore;
+use App\Models\PropertyLocationDna;
+use App\Models\PropertyLocationPoi;
 use App\Services\Dna\PropertyMarketingBriefService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -355,6 +357,77 @@ class DnaInspectorController extends Controller
 
         return response()
             ->view('admin.dna.marketing-brief-preview', compact('profile', 'brief', 'hasExistingReport'))
+            ->header('Cache-Control', 'no-store');
+    }
+
+    public function locationIndex(Request $request)
+    {
+        $filters = $request->only([
+            'listing_type',
+            'listing_id',
+            'generated_at_from',
+            'generated_at_to',
+        ]);
+
+        $activeFilters = array_filter($filters, fn($v) => $v !== null && $v !== '');
+        Log::info('DNA Inspector: property_location_dna index accessed', [
+            'admin_user_id' => Auth::id(),
+            'filters'       => $activeFilters,
+        ]);
+
+        $query = PropertyLocationDna::select([
+            'id',
+            'listing_type',
+            'listing_id',
+            'geocode_status',
+            'geocoded_lat',
+            'geocoded_lng',
+            'generated_at',
+            'created_at',
+        ]);
+
+        if (!empty($filters['listing_type'])) {
+            $query->where('listing_type', $filters['listing_type']);
+        }
+        if (!empty($filters['listing_id'])) {
+            $query->where('listing_id', $filters['listing_id']);
+        }
+        if (!empty($filters['generated_at_from'])) {
+            $query->where('generated_at', '>=', $filters['generated_at_from']);
+        }
+        if (!empty($filters['generated_at_to'])) {
+            $query->where('generated_at', '<=', $filters['generated_at_to']);
+        }
+
+        $rows = $query->orderByDesc('generated_at')->paginate(25)->withQueryString();
+
+        return response()
+            ->view('admin.dna.location.index', compact('rows', 'filters'))
+            ->header('Cache-Control', 'no-store');
+    }
+
+    public function locationShow(Request $request, $listingType, $listingId)
+    {
+        Log::info('DNA Inspector: property_location_dna record accessed', [
+            'admin_user_id' => Auth::id(),
+            'listing_type'  => $listingType,
+            'listing_id'    => $listingId,
+        ]);
+
+        $dna = PropertyLocationDna::where('listing_type', $listingType)
+            ->where('listing_id', $listingId)
+            ->first();
+
+        $pois = $dna
+            ? PropertyLocationPoi::where('listing_type', $listingType)
+                ->where('listing_id', $listingId)
+                ->orderBy('poi_category')
+                ->orderBy('distance_miles')
+                ->get()
+            : collect();
+
+        return response()
+            ->view('admin.dna.location.show', compact('dna', 'pois', 'listingType', 'listingId'))
             ->header('Cache-Control', 'no-store');
     }
 
