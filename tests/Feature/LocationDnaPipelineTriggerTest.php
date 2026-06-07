@@ -14,6 +14,7 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
@@ -200,6 +201,57 @@ class LocationDnaPipelineTriggerTest extends TestCase
         \Illuminate\Support\Facades\Queue::assertPushed(ComputeLocationDna::class, function ($job) use ($listing) {
             return $job->listingType === 'seller' && $job->listingId === $listing->id;
         });
+    }
+
+    // =========================================================================
+    // §9 — Landlord graceful skip when landlord_auctions table is missing
+    // =========================================================================
+
+    public function test_landlord_pipeline_skips_gracefully_when_table_missing(): void
+    {
+        // Note: Schema::shouldReceive() cannot be used here because this version of
+        // Laravel's Schema facade returns a PostgresBuilder object (not a string) from
+        // getFacadeAccessor(), making Mockery unable to key the resolved-instance map.
+        //
+        // Instead we use PostgreSQL's transactional DDL: renaming a table inside the
+        // DatabaseTransactions wrapper is isolated to this test's transaction and is
+        // rolled back automatically in tearDown, making it safe for parallel test runs.
+        // The try/finally also restores the name immediately so assertion failures don't
+        // leave the table renamed between tests in the same process.
+        $tableExists = Schema::hasTable('landlord_auctions');
+
+        if ($tableExists) {
+            DB::statement('ALTER TABLE landlord_auctions RENAME TO _ldna_test_hidden');
+        }
+
+        try {
+            $runner = $this->makeRunner();
+            $result = $runner->run('landlord', 999999);
+        } finally {
+            if ($tableExists) {
+                DB::statement('ALTER TABLE _ldna_test_hidden RENAME TO landlord_auctions');
+            }
+        }
+
+        $this->assertSame('skipped', $result['status'], 'Pipeline should return skipped (not failed) when landlord_auctions is absent');
+        $this->assertArrayHasKey('geocode', $result['steps']);
+        $this->assertArrayNotHasKey('error', $result, 'No raw exception message should appear at the top level');
+    }
+
+    // =========================================================================
+    // §10 — Landlord graceful "not found" when table exists but ID is missing
+    // =========================================================================
+
+    public function test_landlord_pipeline_skips_gracefully_when_id_not_found(): void
+    {
+        // ID 999999 is guaranteed not to exist.  Whether landlord_auctions is
+        // present or not, the pipeline must return 'skipped' and never throw.
+        $runner = $this->makeRunner();
+        $result = $runner->run('landlord', 999999);
+
+        $this->assertSame('skipped', $result['status'], 'Pipeline should skip when landlord record does not exist');
+        $this->assertArrayHasKey('geocode', $result['steps']);
+        $this->assertArrayNotHasKey('error', $result, 'No exception should propagate');
     }
 
     // =========================================================================

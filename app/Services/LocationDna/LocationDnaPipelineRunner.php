@@ -7,6 +7,7 @@ use App\Models\PropertyAuction;
 use App\Models\UsCity;
 use App\Models\UsCounty;
 use App\Models\UsState;
+use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 /**
@@ -206,6 +207,10 @@ class LocationDnaPipelineRunner
 
     private function resolveLandlordAddress(int $listingId): array
     {
+        if (! Schema::hasTable('landlord_auctions')) {
+            return ['address' => '', 'city' => '', 'state' => ''];
+        }
+
         $listing = LandlordAuction::find($listingId);
 
         if ($listing === null) {

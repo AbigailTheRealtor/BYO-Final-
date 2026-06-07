@@ -6,6 +6,8 @@ use App\Models\LandlordAuction;
 use App\Models\PropertyAuction;
 use App\Services\LocationDna\LocationDnaPipelineRunner;
 use Illuminate\Console\Command;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Schema;
 
 class GenerateLocationDna extends Command
 {
@@ -23,10 +25,21 @@ class GenerateLocationDna extends Command
             return Command::FAILURE;
         }
 
-        $listing = match ($listingType) {
-            'seller'   => PropertyAuction::find($listingId),
-            'landlord' => LandlordAuction::find($listingId),
-        };
+        if ($listingType === 'landlord') {
+            if (! Schema::hasTable('landlord_auctions')) {
+                $this->error('Landlord listing table not available in this environment.');
+                return Command::FAILURE;
+            }
+
+            try {
+                $listing = LandlordAuction::find($listingId);
+            } catch (QueryException $e) {
+                $this->error('Could not query landlord listing: ' . $e->getMessage());
+                return Command::FAILURE;
+            }
+        } else {
+            $listing = PropertyAuction::find($listingId);
+        }
 
         if ($listing === null) {
             $this->error("No {$listingType} listing found with ID {$listingId}.");
