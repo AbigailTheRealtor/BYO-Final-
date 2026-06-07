@@ -79,7 +79,7 @@ class MortgageCalculatorTest extends TestCase
     private function seedCalcSettings(): void
     {
         $defaults = [
-            'calc_interest_rate'    => '7.0',
+            'calc_interest_rate'    => '6.5',
             'calc_down_payment_pct' => '10',
             'calc_loan_term'        => '30',
             'calc_tax_rate'         => '1.1',
@@ -186,7 +186,7 @@ class MortgageCalculatorTest extends TestCase
         $calcData = $this->getCalcData($auction);
 
         $this->assertNotNull($calcData, '$calcData must be passed to the view');
-        $this->assertEquals(7.0,  (float) $calcData['interest_rate']);
+        $this->assertEquals(6.5,  (float) $calcData['interest_rate']);
         $this->assertEquals(10,   (float) $calcData['down_pct']);
         $this->assertEquals(30,   (int)   $calcData['loan_term']);
         $this->assertEquals(1.1,  (float) $calcData['tax_rate']);
@@ -579,7 +579,7 @@ class MortgageCalculatorTest extends TestCase
 
         $calcData = $this->getSellerOfferCalcData($auction);
 
-        $this->assertEquals(7.0,  (float) $calcData['interest_rate']);
+        $this->assertEquals(6.5,  (float) $calcData['interest_rate']);
         $this->assertEquals(10.0, (float) $calcData['down_pct']);
         $this->assertEquals(30,   (int)   $calcData['loan_term']);
         $this->assertEquals(1.1,  (float) $calcData['tax_rate']);
@@ -969,7 +969,7 @@ class MortgageCalculatorTest extends TestCase
     //
     // When get_setting() returns false (key absent), the ?: operator in
     // buildCalcData() must fall back to the hardcoded PHP defaults:
-    //   interest_rate=7.0, down_pct=10, loan_term=30,
+    //   interest_rate=6.5, down_pct=10, loan_term=30,
     //   tax_rate=1.1, insurance_rate=0.5, pmi_rate=0.85
     // =========================================================================
 
@@ -988,8 +988,8 @@ class MortgageCalculatorTest extends TestCase
         $auction  = $this->makeApprovedListing(['price' => '350000']);
         $calcData = $this->getCalcData($auction);
 
-        $this->assertEquals(7.0,  (float) $calcData['interest_rate'],
-            'interest_rate must fall back to 7.0 when calc_interest_rate setting is absent');
+        $this->assertEquals(6.5,  (float) $calcData['interest_rate'],
+            'interest_rate must fall back to 6.5 when calc_interest_rate setting is absent');
         $this->assertEquals(10.0, (float) $calcData['down_pct'],
             'down_pct must fall back to 10 when calc_down_payment_pct setting is absent');
         $this->assertEquals(30,   (int)   $calcData['loan_term'],

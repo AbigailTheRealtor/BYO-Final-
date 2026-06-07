@@ -8,7 +8,7 @@ class SeedCalculatorSettings extends Migration
     public function up()
     {
         $defaults = [
-            ['key' => 'calc_interest_rate',    'value' => '7.0'],
+            ['key' => 'calc_interest_rate',    'value' => '6.5'],
             ['key' => 'calc_down_payment_pct', 'value' => '10'],
             ['key' => 'calc_loan_term',        'value' => '30'],
             ['key' => 'calc_tax_rate',         'value' => '1.1'],

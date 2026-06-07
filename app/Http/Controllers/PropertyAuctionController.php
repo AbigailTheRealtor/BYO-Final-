@@ -1476,7 +1476,7 @@ class PropertyAuctionController extends Controller
         }
 
         // --- Admin defaults (with hardcoded emergency fallbacks) ---
-        $interestRate  = (float) (get_setting('calc_interest_rate')    ?: 7.0);
+        $interestRate  = (float) (get_setting('calc_interest_rate')    ?: 6.5);
         $downPct       = (float) (get_setting('calc_down_payment_pct') ?: 10);
         $loanTerm      = (int)   (get_setting('calc_loan_term')        ?: 30);
         $taxRate       = (float) (get_setting('calc_tax_rate')         ?: 1.1);

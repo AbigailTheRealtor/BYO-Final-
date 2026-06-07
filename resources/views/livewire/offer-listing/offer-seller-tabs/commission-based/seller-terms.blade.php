@@ -2117,7 +2117,7 @@
                     <div class="input-group input-group-sm">
                         <input type="number" wire:model="payment_interest_rate" class="form-control"
                                min="0" max="30" step="0.125"
-                               placeholder="e.g. 7.0">
+                               placeholder="e.g. 6.5">
                         <span class="input-group-text">%</span>
                     </div>
                 </div>

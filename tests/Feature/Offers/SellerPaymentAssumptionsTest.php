@@ -94,7 +94,7 @@ class SellerPaymentAssumptionsTest extends TestCase
 
     public function test_admin_interest_rate_applies_when_no_override(): void
     {
-        // When no override, fallback is admin get_setting() or 7.0
+        // When no override, fallback is admin get_setting() or 6.5
         $calcData = $this->callBuildCalcData([]);
 
         $this->assertIsFloat($calcData['interest_rate']);

@@ -7,7 +7,7 @@
     $hoaMonthly     = isset($calcData['hoa_monthly'])    && $calcData['hoa_monthly']    ? (float) $calcData['hoa_monthly']    : 0;
     $taxesAnnual    = isset($calcData['taxes_annual'])   && $calcData['taxes_annual']   ? (float) $calcData['taxes_annual']   : 0;
 
-    $interestRate   = isset($calcData['interest_rate'])  ? (float) $calcData['interest_rate']  : 7.0;
+    $interestRate   = isset($calcData['interest_rate'])  ? (float) $calcData['interest_rate']  : 6.5;
     $downPct        = isset($calcData['down_pct'])       ? (float) $calcData['down_pct']       : 10;
     $loanTerm       = isset($calcData['loan_term'])      ? (int)   $calcData['loan_term']      : 30;
     $taxRate        = isset($calcData['tax_rate'])       ? (float) $calcData['tax_rate']       : 1.1;

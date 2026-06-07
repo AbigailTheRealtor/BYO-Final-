@@ -52,9 +52,9 @@
                     <div class="form-group col-md-4">
                         <label>Default Interest Rate (%)</label>
                         <input type="number" name="calc_interest_rate" class="form-control"
-                               value="{{ get_setting('calc_interest_rate') ?: '7.0' }}"
+                               value="{{ get_setting('calc_interest_rate') ?: '6.5' }}"
                                min="0" max="30" step="0.125">
-                        <small class="text-muted">e.g. 7.0</small>
+                        <small class="text-muted">e.g. 6.5</small>
                     </div>
                     <div class="form-group col-md-4">
                         <label>Default Down Payment (%)</label>
