@@ -245,6 +245,7 @@ class OfferController extends Controller
                 'inspection_contingency'               => 'nullable|boolean',
                 'inspection_contingency_days'          => 'nullable|integer|min:1|max:365',
                 'appraisal_contingency'                => 'nullable|boolean',
+                'appraisal_contingency_days'           => 'nullable|integer|min:1|max:365',
                 'closing_date'                         => 'nullable|date',
                 'possession_date'                      => 'nullable|date',
                 // Assumable sub-fields
@@ -367,12 +368,13 @@ class OfferController extends Controller
             $offer->saveMeta('earnest_deposit_unit',                $validated['earnest_deposit_unit'] ?? '$');
             $offer->saveMeta('financing_type',                      $validated['financing_type'] ?? null);
             $offer->saveMeta('down_payment_value',                  $validated['down_payment_value'] ?? null);
-            $offer->saveMeta('down_payment_unit',                   $validated['down_payment_unit'] ?? '$');
+            $offer->saveMeta('down_payment_unit',                   $validated['down_payment_unit'] ?? '%');
             $offer->saveMeta('financing_contingency',               $request->boolean('financing_contingency') ? 1 : 0);
             $offer->saveMeta('financing_contingency_days',          $validated['financing_contingency_days'] ?? null);
             $offer->saveMeta('inspection_contingency',              $request->boolean('inspection_contingency') ? 1 : 0);
             $offer->saveMeta('inspection_contingency_days',         $validated['inspection_contingency_days'] ?? null);
             $offer->saveMeta('appraisal_contingency',               $request->boolean('appraisal_contingency') ? 1 : 0);
+            $offer->saveMeta('appraisal_contingency_days',          $validated['appraisal_contingency_days'] ?? null);
             $offer->saveMeta('closing_date',                        $validated['closing_date'] ?? null);
             $offer->saveMeta('possession_date',                     $validated['possession_date'] ?? null);
             // Assumable sub-fields

@@ -1097,4 +1097,111 @@ class OfferTermsEntryTest extends TestCase
         // The earnest deposit unit selector must render with % selected
         $reload->assertSee('data-unit-select="earnest_deposit_unit"', false);
     }
+
+    // ── Test 39: Appraisal contingency days saves to offer_metas ─────────────
+
+    public function test_appraisal_contingency_days_saves_to_offer_metas(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), [
+            'appraisal_contingency'      => '1',
+            'appraisal_contingency_days' => '14',
+        ]);
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'appraisal_contingency',      'meta_value' => '1']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'appraisal_contingency_days', 'meta_value' => '14']);
+    }
+
+    // ── Test 40: Appraisal contingency days field renders in form and repopulates
+
+    public function test_appraisal_contingency_days_renders_and_repopulates(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), [
+            'appraisal_contingency'      => '1',
+            'appraisal_contingency_days' => '21',
+        ]);
+
+        $formResponse = $this->actingAs($owner)->get(route('offers.show', $offer));
+        $formResponse->assertStatus(200);
+        $formResponse->assertSee('name="appraisal_contingency_days"', false);
+        $formResponse->assertSee('value="21"', false);
+    }
+
+    // ── Test 41: Read-only view displays appraisal contingency days ───────────
+
+    public function test_read_only_view_displays_appraisal_contingency_days(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'submitted');
+
+        $offer->saveMeta('appraisal_contingency',      '1');
+        $offer->saveMeta('appraisal_contingency_days', '10');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('Appraisal Contingency');
+        $response->assertSee('10 days');
+    }
+
+    // ── Test 42: New offer down payment unit defaults to percent ──────────────
+
+    public function test_new_offer_down_payment_unit_defaults_to_percent(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('downPayUnit: \'%\'', false);
+    }
+
+    // ── Test 43: Saving down payment without explicit unit persists % default ──
+
+    public function test_saving_down_payment_without_unit_persists_percent_default(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+        $this->allowPlayoffAccess($owner);
+
+        $this->actingAs($owner)->post(route('offers.terms', $offer), [
+            'down_payment_value' => '20',
+        ]);
+
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'down_payment_unit', 'meta_value' => '%']);
+    }
+
+    // ── Test 44: Included personal property placeholder uses sentence case ────
+
+    public function test_included_personal_property_placeholder_uses_sentence_case(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('Washer/dryer', false);
+        $response->assertSee('Dining room chandelier', false);
+        $response->assertDontSee('Washer/Dryer', false);
+        $response->assertDontSee('Dining Room Chandelier', false);
+    }
+
+    // ── Test 45: Submit Offer action button has visible primary CTA styling ───
+
+    public function test_submit_offer_action_button_has_visible_primary_cta_styling(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'draft');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('submit-offer-action-btn', false);
+        $response->assertSee('Submit Offer');
+        $html = $response->getContent();
+        $this->assertStringContainsString('#2563eb', $html,
+            'Available Actions section must include blue CTA styling for the Submit Offer button');
+    }
 }

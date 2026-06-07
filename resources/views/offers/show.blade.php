@@ -120,7 +120,7 @@
                         @endphp
                         @php
                             $_downPayVal      = old('down_payment_value',  $metas->get('down_payment_value')  ?? $metas->get('down_payment_percent') ?? '');
-                            $_downPayUnit     = old('down_payment_unit',   $metas->get('down_payment_unit')   ?? ($metas->get('down_payment_percent') !== null ? '%' : '$'));
+                            $_downPayUnit     = old('down_payment_unit',   $metas->get('down_payment_unit')   ?? '%');
                             $_earnestDepUnit  = old('earnest_deposit_unit',         $metas->get('earnest_deposit_unit')         ?? '$');
                             $_initDepUnit     = old('initial_deposit_amount_unit',  $metas->get('initial_deposit_amount_unit')  ?? '$');
                             $_addDepUnit      = old('additional_deposit_amount_unit',$metas->get('additional_deposit_amount_unit') ?? '$');
@@ -136,6 +136,7 @@
                             finType: '{{ $_ft }}',
                             finCont: {{ old('financing_contingency', $metas->get('financing_contingency')) ? 'true' : 'false' }},
                             inspCont: {{ old('inspection_contingency', $metas->get('inspection_contingency')) ? 'true' : 'false' }},
+                            apprCont: {{ old('appraisal_contingency', $metas->get('appraisal_contingency')) ? 'true' : 'false' }},
                             saleCont: {{ old('sale_of_buyer_property_contingency', $metas->get('sale_of_buyer_property_contingency')) ? 'true' : 'false' }},
                             sellerContrib: '{{ old('seller_contribution_requested', $metas->get('seller_contribution_requested') ?? '') }}',
                             homeWarranty: '{{ old('home_warranty_requested', $metas->get('home_warranty_requested') ?? '') }}',
@@ -881,7 +882,7 @@
                             <div class="contingency-item">
                                 <div class="form-check form-switch mb-0">
                                     <input class="form-check-input" type="checkbox" id="appr_cont_terms" name="appraisal_contingency"
-                                        value="1"
+                                        value="1" x-model="apprCont"
                                         {{ old('appraisal_contingency', $metas->get('appraisal_contingency')) ? 'checked' : '' }}>
                                     <label class="form-check-label fw-semibold" for="appr_cont_terms">
                                         Appraisal Contingency
@@ -890,6 +891,12 @@
                                             <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.8rem;"></i>
                                         </span>
                                     </label>
+                                </div>
+                                <div x-show="apprCont" class="contingency-days">
+                                    <label class="form-label small mb-1">Appraisal Period (days)</label>
+                                    <input type="number" name="appraisal_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
+                                        placeholder="Enter days"
+                                        value="{{ old('appraisal_contingency_days', $metas->get('appraisal_contingency_days')) }}">
                                 </div>
                             </div>
 
@@ -1005,7 +1012,7 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Included Personal Property</label>
                             <input type="text" name="included_personal_property" class="form-control"
-                                placeholder="Enter included items (e.g., Refrigerator, Washer/Dryer, Dining Room Chandelier)"
+                                placeholder="Enter included items (e.g., Refrigerator, Washer/dryer, Dining room chandelier)"
                                 value="{{ old('included_personal_property', $metas->get('included_personal_property')) }}">
                         </div>
 
@@ -1335,7 +1342,12 @@
                         </dd>
 
                         <dt class="col-sm-3">Appraisal Contingency</dt>
-                        <dd class="col-sm-9">{{ $metas->get('appraisal_contingency') ? 'Yes' : 'No' }}</dd>
+                        <dd class="col-sm-9">
+                            {{ $metas->get('appraisal_contingency') ? 'Yes' : 'No' }}
+                            @if($metas->get('appraisal_contingency') && $metas->get('appraisal_contingency_days'))
+                                ({{ $metas->get('appraisal_contingency_days') }} days)
+                            @endif
+                        </dd>
 
                         <dt class="col-sm-3">Closing Date</dt>
                         <dd class="col-sm-9">{{ $safeDate($metas->get('closing_date')) }}</dd>
@@ -1496,6 +1508,11 @@
             {{-- Available Actions --}}
             {{-- can_expire is intentionally not shown. Submit/Accept/Reject/Withdraw POST via named routes when enabled. --}}
             {{-- Counter has dedicated three-branch logic below the shared loop. Disabled actions render as bare disabled buttons. --}}
+            <style>
+                #submit-offer-action-btn { background:#2563eb; border-color:#2563eb; color:#fff; font-weight:600; }
+                #submit-offer-action-btn:hover { background:#1d4ed8; border-color:#1d4ed8; }
+                #submit-offer-action-btn:disabled { background:#93c5fd; border-color:#93c5fd; color:#fff; }
+            </style>
             <div class="card mb-4">
                 <div class="card-header">
                     <strong>Available Actions</strong>
@@ -1522,14 +1539,14 @@
                                     {{-- Enabled action with a route: POST form --}}
                                     <form method="POST" action="{{ route($cfg['route'], $offer) }}">
                                         @csrf
-                                        <button type="submit" class="btn {{ $cfg['btn'] }} btn-sm">{{ $cfg['label'] }}</button>
+                                        <button type="submit" class="btn {{ $cfg['btn'] }} btn-sm"@if($flag === 'can_submit') id="submit-offer-action-btn"@endif>{{ $cfg['label'] }}</button>
                                     </form>
                                 @elseif($allowed)
                                     {{-- Enabled action with no route (e.g. View Timeline): plain enabled button --}}
                                     <button type="button" class="btn {{ $cfg['btn'] }} btn-sm">{{ $cfg['label'] }}</button>
                                 @else
                                     {{-- Disabled action: bare button, no form --}}
-                                    <button type="button" class="btn {{ $cfg['btn'] }} btn-sm" disabled title="{{ $reason }}" aria-disabled="true" tabindex="-1">{{ $cfg['label'] }}</button>
+                                    <button type="button" class="btn {{ $cfg['btn'] }} btn-sm"@if($flag === 'can_submit') id="submit-offer-action-btn"@endif disabled title="{{ $reason }}" aria-disabled="true" tabindex="-1">{{ $cfg['label'] }}</button>
                                     @if($reason)
                                         <small class="text-muted mt-1 px-1" style="font-size: 0.75rem; line-height: 1.3;">{{ $reason }}</small>
                                     @endif
