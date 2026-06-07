@@ -2761,4 +2761,121 @@ class AskAiContextBuilderServiceTest extends TestCase
         $this->assertNotContains('How old is the roof?', $labelsNoFaq,
             'FAQ-gated chip must be suppressed when faq_answers entry is absent');
     }
+
+    // =========================================================================
+    // Case R — Live model resolution: findListing() uses live agent auction models
+    //
+    // Static code scans confirming that findListing() resolves all four roles
+    // through their live agent auction models, not the legacy criteria models.
+    // These tests pin the model-to-role mapping so a future refactor cannot
+    // silently regress to querying empty legacy tables.
+    // =========================================================================
+
+    public function test_case_R_find_listing_uses_seller_agent_auction_for_seller_role(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            'SellerAgentAuction::find',
+            $content,
+            'findListing() must resolve seller role through SellerAgentAuction'
+        );
+    }
+
+    public function test_case_R_find_listing_uses_buyer_agent_auction_for_buyer_role(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            'BuyerAgentAuction::find',
+            $content,
+            'findListing() must resolve buyer role through BuyerAgentAuction'
+        );
+    }
+
+    public function test_case_R_find_listing_uses_landlord_agent_auction_for_landlord_role(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            'LandlordAgentAuction::find',
+            $content,
+            'findListing() must resolve landlord role through LandlordAgentAuction'
+        );
+    }
+
+    public function test_case_R_find_listing_uses_tenant_agent_auction_for_tenant_role(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            'TenantAgentAuction::find',
+            $content,
+            'findListing() must resolve tenant role through TenantAgentAuction'
+        );
+    }
+
+    public function test_case_R_find_listing_does_not_reference_legacy_property_auction(): void
+    {
+        $content          = file_get_contents($this->serviceFilePath());
+        $nonCommentLines  = array_filter(
+            explode("\n", $content),
+            static function (string $line): bool {
+                $trimmed = ltrim($line);
+                return !str_starts_with($trimmed, '*') && !str_starts_with($trimmed, '//');
+            }
+        );
+        $nonCommentContent = implode("\n", $nonCommentLines);
+
+        $this->assertStringNotContainsString(
+            'PropertyAuction::find',
+            $nonCommentContent,
+            'findListing() must not use legacy PropertyAuction::find — use SellerAgentAuction::find'
+        );
+        $this->assertStringNotContainsString(
+            'BuyerCriteriaAuction::find',
+            $nonCommentContent,
+            'findListing() must not use legacy BuyerCriteriaAuction::find — use BuyerAgentAuction::find'
+        );
+        $this->assertStringNotContainsString(
+            'LandlordAuction::find',
+            $nonCommentContent,
+            'findListing() must not use legacy LandlordAuction::find — use LandlordAgentAuction::find'
+        );
+        $this->assertStringNotContainsString(
+            'TenantCriteriaAuction::find',
+            $nonCommentContent,
+            'findListing() must not use legacy TenantCriteriaAuction::find — use TenantAgentAuction::find'
+        );
+    }
+
+    public function test_case_R_live_model_classes_are_imported_not_legacy_models(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+
+        $this->assertStringContainsString('use App\\Models\\SellerAgentAuction;', $content,
+            'SellerAgentAuction must be imported in AskAiContextBuilderService');
+        $this->assertStringContainsString('use App\\Models\\BuyerAgentAuction;', $content,
+            'BuyerAgentAuction must be imported in AskAiContextBuilderService');
+        $this->assertStringContainsString('use App\\Models\\LandlordAgentAuction;', $content,
+            'LandlordAgentAuction must be imported in AskAiContextBuilderService');
+        $this->assertStringContainsString('use App\\Models\\TenantAgentAuction;', $content,
+            'TenantAgentAuction must be imported in AskAiContextBuilderService');
+
+        $this->assertStringNotContainsString('use App\\Models\\PropertyAuction;', $content,
+            'Legacy PropertyAuction must not be imported — replaced by SellerAgentAuction');
+        $this->assertStringNotContainsString('use App\\Models\\BuyerCriteriaAuction;', $content,
+            'Legacy BuyerCriteriaAuction must not be imported — replaced by BuyerAgentAuction');
+        $this->assertStringNotContainsString('use App\\Models\\LandlordAuction;', $content,
+            'Legacy LandlordAuction must not be imported — replaced by LandlordAgentAuction');
+        $this->assertStringNotContainsString('use App\\Models\\TenantCriteriaAuction;', $content,
+            'Legacy TenantCriteriaAuction must not be imported — replaced by TenantAgentAuction');
+    }
+
+    public function test_case_R_tenant_faq_branch_tries_eav_meta_when_native_column_absent(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+
+        $this->assertStringContainsString(
+            "info('listing_ai_faq')",
+            $content,
+            'buildFaqAnswers() must call info(\'listing_ai_faq\') inside the tenant branch for live TenantAgentAuction'
+        );
+    }
 }

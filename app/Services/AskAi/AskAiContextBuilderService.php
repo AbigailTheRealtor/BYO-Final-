@@ -4,14 +4,14 @@ namespace App\Services\AskAi;
 
 use App\Models\AcceptedBidSummary;
 use App\Models\AiFaqAnswer;
-use App\Models\BuyerCriteriaAuction;
+use App\Models\BuyerAgentAuction;
 use App\Models\BuyerTenantDnaProfile;
-use App\Models\LandlordAuction;
+use App\Models\LandlordAgentAuction;
 use App\Models\ListingCompatibilityScore;
-use App\Models\PropertyAuction;
 use App\Models\PropertyDnaProfile;
 use App\Models\PropertyLocationDna;
-use App\Models\TenantCriteriaAuction;
+use App\Models\SellerAgentAuction;
+use App\Models\TenantAgentAuction;
 use App\Services\Dna\PropertyIntelligenceProfileService;
 use App\Services\LocationDna\LocationDnaIntelligenceContextService;
 use App\Services\LocationDna\LocationDnaMarketingContextService;
@@ -237,14 +237,20 @@ class AskAiContextBuilderService
     /**
      * Resolve the primary listing model for the given canonical type and ID.
      * Returns null when no record exists.
+     *
+     * Model-to-table mapping:
+     *   seller   → SellerAgentAuction   → seller_agent_auctions
+     *   buyer    → BuyerAgentAuction    → buyer_agent_auctions
+     *   landlord → LandlordAgentAuction → landlord_agent_auctions
+     *   tenant   → TenantAgentAuction   → tenant_agent_auctions
      */
     protected function findListing(string $canonicalType, int $listingId): ?object
     {
         return match ($canonicalType) {
-            'seller'   => PropertyAuction::find($listingId),
-            'buyer'    => BuyerCriteriaAuction::find($listingId),
-            'landlord' => LandlordAuction::find($listingId),
-            'tenant'   => TenantCriteriaAuction::find($listingId),
+            'seller'   => SellerAgentAuction::find($listingId),
+            'buyer'    => BuyerAgentAuction::find($listingId),
+            'landlord' => LandlordAgentAuction::find($listingId),
+            'tenant'   => TenantAgentAuction::find($listingId),
             default    => null,
         };
     }
@@ -639,10 +645,17 @@ class AskAiContextBuilderService
             $raw = null;
 
             if ($canonicalType === 'tenant') {
-                // tenant_criteria_auctions has a native listing_ai_faq column
+                // Try native listing_ai_faq column first (legacy tenant_criteria_auctions has it).
+                // Live TenantAgentAuction stores FAQ as EAV meta — fall back to info() when absent.
                 $col = $listing->listing_ai_faq ?? null;
                 if ($col !== null) {
                     $raw = is_array($col) ? $col : json_decode((string) $col, true);
+                }
+                if ($raw === null && method_exists($listing, 'info')) {
+                    $meta = $listing->info('listing_ai_faq');
+                    if ($meta !== null && $meta !== false && $meta !== '') {
+                        $raw = is_array($meta) ? $meta : json_decode((string) $meta, true);
+                    }
                 }
             } else {
                 // All other roles store the FAQ as EAV meta
