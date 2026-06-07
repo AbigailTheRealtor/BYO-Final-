@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
  * Pure unit tests — no database, no Laravel TestCase, no DB traits, no HTTP calls.
  * OpenAiClientService and AskAiResponseContractService are mocked via createMock().
  *
- * Test coverage (cases A–J):
+ * Test coverage (cases A–K):
  *   A. normalize() returns the correct canonical key when OpenAI matches a known paraphrase.
  *   B. normalize() returns null when OpenAI returns 'unknown'.
  *   C. normalize() returns null when OpenAI returns a key not in the provided list (hallucination guard).
@@ -31,6 +31,9 @@ use PHPUnit\Framework\TestCase;
  *      J3. faq_answers.* leaf paths returned by contractService are included unchanged.
  *      J4. Duplicate paths across contractService output are deduplicated.
  *      J5. Static source scan: all four FAQ config names appear in buildFaqAnswerKeys().
+ *   K. Abstract/figurative roof phrases normalize to faq_answers.roof_age_and_condition
+ *      when OpenAI resolves them correctly (mocked), and the improved prompt contains the
+ *      informal-language instruction and roof metaphor examples.
  */
 class AskAiIntentNormalizerServiceTest extends TestCase
 {
@@ -789,6 +792,137 @@ class AskAiIntentNormalizerServiceTest extends TestCase
             'tenant_ai_faq',
             $content,
             "buildFaqAnswerKeys() must scan the 'tenant_ai_faq' config"
+        );
+    }
+
+    // =========================================================================
+    // Case K — Abstract/figurative roof phrases resolve to roof faq key
+    //
+    // These tests use mocked OpenAI responses to verify that normalize() correctly
+    // returns faq_answers.roof_age_and_condition when OpenAI resolves an abstract
+    // roof metaphor to that key. The hallucination guard and all governance rules
+    // remain in effect: the mocked key must be present in knownFieldKeys or
+    // normalize() would return null.
+    //
+    // Live verification (with a paid-tier OpenAI API key) is tracked in #2283.
+    // =========================================================================
+
+    public function test_case_K1_solid_covering_overhead_resolves_to_roof_faq_key(): void
+    {
+        $client     = $this->makeClientMock('faq_answers.roof_age_and_condition');
+        $normalizer = $this->makeNormalizer($client);
+        $keys       = $this->makeKnownFieldKeys();
+
+        $result = $normalizer->normalize('solid covering overhead', $keys);
+
+        $this->assertSame('faq_answers.roof_age_and_condition', $result);
+    }
+
+    public function test_case_K2_top_covering_of_the_house_resolves_to_roof_faq_key(): void
+    {
+        $client     = $this->makeClientMock('faq_answers.roof_age_and_condition');
+        $normalizer = $this->makeNormalizer($client);
+        $keys       = $this->makeKnownFieldKeys();
+
+        $result = $normalizer->normalize('top covering of the house', $keys);
+
+        $this->assertSame('faq_answers.roof_age_and_condition', $result);
+    }
+
+    public function test_case_K3_covering_above_the_home_resolves_to_roof_faq_key(): void
+    {
+        $client     = $this->makeClientMock('faq_answers.roof_age_and_condition');
+        $normalizer = $this->makeNormalizer($client);
+        $keys       = $this->makeKnownFieldKeys();
+
+        $result = $normalizer->normalize('covering above the home', $keys);
+
+        $this->assertSame('faq_answers.roof_age_and_condition', $result);
+    }
+
+    public function test_case_K4_overhead_structure_resolves_to_roof_faq_key(): void
+    {
+        $client     = $this->makeClientMock('faq_answers.roof_age_and_condition');
+        $normalizer = $this->makeNormalizer($client);
+        $keys       = $this->makeKnownFieldKeys();
+
+        $result = $normalizer->normalize('overhead structure', $keys);
+
+        $this->assertSame('faq_answers.roof_age_and_condition', $result);
+    }
+
+    public function test_case_K5_hallucination_guard_still_applies_for_abstract_phrase(): void
+    {
+        // Even if OpenAI returns a roof-sounding key that isn't in the list,
+        // the hallucination guard must reject it and return null.
+        $client     = $this->makeClientMock('faq_answers.roof_material_invented');
+        $normalizer = $this->makeNormalizer($client);
+        $keys       = $this->makeKnownFieldKeys();
+
+        $result = $normalizer->normalize('top covering of the house', $keys);
+
+        $this->assertNull($result);
+    }
+
+    public function test_case_K6_prompt_contains_informal_language_instruction(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            'informal, colloquial, or figurative language',
+            $content,
+            'buildPayload() must instruct OpenAI to handle informal/figurative language'
+        );
+    }
+
+    public function test_case_K7_prompt_contains_roof_metaphor_examples(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            'solid covering overhead',
+            $content,
+            'buildPayload() must include roof metaphor examples to guide OpenAI resolution'
+        );
+        $this->assertStringContainsString(
+            'top covering of the house',
+            $content,
+            'buildPayload() must include roof metaphor examples to guide OpenAI resolution'
+        );
+        $this->assertStringContainsString(
+            'overhead structure',
+            $content,
+            'buildPayload() must include roof metaphor examples to guide OpenAI resolution'
+        );
+    }
+
+    public function test_case_K8_prompt_roof_examples_do_not_hardcode_field_key(): void
+    {
+        // The prompt must reference the roof *concept*, not hardcode the field key name.
+        // Hardcoding would bypass the hallucination guard for future key-list changes.
+        $content     = file_get_contents($this->serviceFilePath());
+        $payloadLines = [];
+
+        $inPayload = false;
+        foreach (explode("\n", $content) as $line) {
+            if (str_contains($line, 'buildPayload(')) {
+                $inPayload = true;
+            }
+            if ($inPayload) {
+                $payloadLines[] = $line;
+            }
+            // Stop after closing brace of buildPayload
+            if ($inPayload && trim($line) === '}' && count($payloadLines) > 3) {
+                break;
+            }
+        }
+
+        $payloadSource = implode("\n", $payloadLines);
+
+        // The roof examples in the prompt must use a generic description ("roof-related field key")
+        // not a hard-coded canonical path (that would bypass the hallucination guard).
+        $this->assertStringNotContainsString(
+            "'faq_answers.roof_age_and_condition'",
+            $payloadSource,
+            'buildPayload() must not hardcode faq_answers.roof_age_and_condition in the prompt — it bypasses the hallucination guard'
         );
     }
 }
