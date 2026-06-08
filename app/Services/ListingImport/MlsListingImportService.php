@@ -102,10 +102,13 @@ class MlsListingImportService
         $labelStop =
             'Pool\b|Spa\b|Garage\b|Carport\b|Appliances?\b' .
             '|Air\s+Conditioning|A\/C\b' .
-            '|Heat(?:ing)?(?:\s+and\s+Fuel)?\b|Fuel\b' .
+            '|Heat(?:ing)?(?:\s+(?:and|&)\s+Fuel)?\b|Fuel\b' .
             '|Interior\s+Features?|Exterior\s+Features?' .
+            '|Exterior\s+Construction\b|Exterior\s+Feat\b' .
+            '|Floor\s+Covering\b|Roof\b' .
             '|Furnishings?\b|Furnished\b|Available\b' .
             '|Tax\s+(?:ID|Year)|Annual\s+(?:CDD|Prop(?:erty)?|Tax)|Taxes\b|Parcel\b' .
+            '|Tax\b|List\b' .
             '|Legal\s+Desc|Flood\s+Zone|HOA\b|Association\b|Homestead\b|CDD\b' .
             '|Zoning\b|Lot\s+(?:Dim|Size|Sq|Acr|Feat)|Total\s+(?:Acreage|Number)' .
             '|Year\s+Built|Bed(?:room)?s?\b|Bath(?:room)?s?\b|Beds?\b|Baths?\b' .
@@ -115,7 +118,11 @@ class MlsListingImportService
             '|Application\s+Fee\b|Security\s+Deposit\b|Minimum\s+(?:Lease|Security)\b' .
             '|(?:Monthly|Lease)\s+(?:Rent|Amount)\b|Remarks?\b|Description\b' .
             '|Directions?\b|MLS\s*(?:#|Num|No\.?|Number)' .
-            '|List\s+Price|Price\b|City\b|County\b|State\b|Zip\b|Address\b';
+            '|List\s+Price|Price\b|City\b|County\b|State\b|Zip\b|Address\b' .
+            '|Kitchen\b|Living\s+Room\b|Primary\s+Bed(?:room)?\b' .
+            '|Community\s+Information\b|Housing\b' .
+            '|Special\s+Assessment|Homeowners?\s+Assoc|Subdivision\b' .
+            '|Foundation\b|Sewer\b|Utilities\b|Roof\s+Type\b';
 
         /**
          * Extract a value from $text matching one of $patterns.
@@ -132,9 +139,10 @@ class MlsListingImportService
                     $val = trim($m[1] ?? '');
                     if ($boundary && $val !== '') {
                         // Trim at the first occurrence of a known label word boundary.
-                        // Using \b avoids needing a trailing separator char that may
-                        // have been excluded by the capture char class.
-                        if (preg_match('/^(.*?)(?:\s+(?:' . $labelStop . ')\b)/is', $val, $sm)) {
+                        // Using \s* (not \s+) handles the no-separator case where a label
+                        // immediately follows the captured value with no space
+                        // (e.g. "1 SpacesCarport:No" or "Central AirFloor Covering:").
+                        if (preg_match('/^(.*?)(?:\s*(?:' . $labelStop . ')\b)/is', $val, $sm)) {
                             $val = trim($sm[1]);
                         }
                     }
@@ -157,7 +165,9 @@ class MlsListingImportService
         }
 
         // ─── City ─────────────────────────────────────────────────────────────
-        if ($v = $extract(['/City[\s:]+([A-Za-z\s\-\.]{2,50})(?:\s|,|$)/i'])) {
+        // Boundary protection: stops at next recognized label so "City: SEMINOLE County:"
+        // does not bleed "County" into the city value.
+        if ($v = $extract(['/City[\s:]+([^\|\n,]{2,50})/i'], true)) {
             $data['city'] = trim($v, ', ');
         }
 
@@ -175,7 +185,9 @@ class MlsListingImportService
         }
 
         // ─── County ───────────────────────────────────────────────────────────
-        if ($v = $extract(['/County[\s:]+([A-Za-z\s\-\.]{2,50})(?:\s|,|$)/i'])) {
+        // Boundary protection: stops at next recognized label so "County: PinellasList"
+        // does not capture the "List" label text.
+        if ($v = $extract(['/County[\s:]+([^\|\n,]{2,50})/i'], true)) {
             $data['county'] = trim($v, ', ');
         }
 
@@ -307,7 +319,14 @@ class MlsListingImportService
         }
 
         // ─── Legal Description ────────────────────────────────────────────────
-        if ($v = $extract(['/Legal\s+Description[\s:]+(.{5,500}?)(?=\s{2,}|[A-Z][a-z]+\s*[\s:\*]|$)/s'])) {
+        // Matches full "Legal Description" and abbreviated "Legal Desc" variants.
+        // NOTE: do NOT add the /i flag here. The lookahead [A-Z][a-z]+ intentionally
+        // matches only Title Case label words (e.g. "Flood"), not ALL-CAPS content
+        // values (e.g. "BLOCK", "ESTATES"). The /i flag would collapse that distinction.
+        if ($v = $extract([
+            '/Legal\s+Description[\s:]+(.{5,500}?)(?=\s{2,}|[A-Z][a-z]+\s*[\s:\*]|$)/s',
+            '/Legal\s+Desc[\s:]+(.{5,500}?)(?=\s{2,}|[A-Z][a-z]+\s*[\s:\*]|$)/s',
+        ])) {
             $data['legal_description'] = trim($v);
         }
 
@@ -324,7 +343,13 @@ class MlsListingImportService
         }
 
         // ─── Flood Zone Panel ─────────────────────────────────────────────────
-        if ($v = $extract(['/Flood\s+Zone\s+Panel[\s:]+([A-Za-z0-9\s\-]{1,30})/i'], true)) {
+        // Matches "Flood Zone Panel:", "FEMA Flood Zone Panel:", and short "Panel:" /
+        // "FEMA Panel:" variants that appear in some MLS exports.
+        if ($v = $extract([
+            '/Flood\s+Zone\s+Panel[\s:]+([A-Za-z0-9\s\-]{1,30})/i',
+            '/FEMA\s+(?:Flood\s+Zone\s+)?Panel[\s:]+([A-Za-z0-9\s\-]{1,30})/i',
+            '/\bPanel[\s:]+([A-Za-z0-9\s\-]{1,30})/i',
+        ], true)) {
             $data['flood_zone_panel'] = $v;
         }
 
@@ -367,8 +392,10 @@ class MlsListingImportService
 
         // ─── HOA / Association ────────────────────────────────────────────────
         // Tight boolean capture only — no bleed possible regardless of what follows.
+        // Includes "Homeowners Association:", "Homeowner Assoc:", and Y/N variants.
         if ($v = $extract([
             '/Association\s+Y\/N[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i',
+            '/Homeowners?\s+Assoc(?:iation)?[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i',
             '/(?:HOA|Association)[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i',
         ])) {
             $data['has_hoa'] = MlsNormalizer::normalize('has_hoa', $v);
@@ -387,10 +414,13 @@ class MlsListingImportService
             $data['association_fee_amount'] = preg_replace('/[^\d.]/', '', $v);
         }
 
-        // "Association Fee Freq:", "Association Fee Frequency:"
+        // "Association Fee Freq:", "Association Fee Frequency:", bare "Freq:"
+        // The bare "Freq:" pattern is only reached when the longer forms don't match,
+        // so it acts as a fallback for terse MLS exports.
         if ($v = $extract([
             '/Association\s+Fee\s+Freq(?:uency)?[\s:]+([^\|\n]{1,30})/i',
             '/HOA\s+Fee\s+Freq(?:uency)?[\s:]+([^\|\n]{1,30})/i',
+            '/\bFreq(?:uency)?[\s:]+([^\|\n]{1,30})/i',
         ], true)) {
             $data['association_fee_frequency'] = MlsNormalizer::normalize('association_fee_frequency', $v);
         }
@@ -421,14 +451,89 @@ class MlsListingImportService
             $data['air_conditioning'] = $v;
         }
 
+        // ─── Heating & Fuel (combined MLS field) ──────────────────────────────
+        // Canonical key 'heating_fuel' for "Heating and Fuel:" / "Heating & Fuel:".
+        // A separate 'heating' key is kept for simple "Heating:" entries.
+        if ($v = $extract(['/Heat(?:ing)?\s+(?:and|&)\s+Fuel[\s:]+([^\|\n]{1,120})/i'], true)) {
+            $data['heating_fuel'] = $v;
+        }
+
         // ─── Heating ──────────────────────────────────────────────────────────
-        if ($v = $extract(['/Heat(?:ing)?(?:\s+and\s+Fuel)?[\s:]+([^\|\n]{1,120})/i'], true)) {
+        if ($v = $extract(['/Heat(?:ing)?(?!\s+(?:and|&)\s+Fuel)[\s:]+([^\|\n]{1,120})/i'], true)) {
             $data['heating'] = $v;
         }
 
         // ─── Interior Features ────────────────────────────────────────────────
         if ($v = $extract(['/Interior\s+Features?[\s:]+([^\|\n]{1,300})/i'], true)) {
             $data['interior_features'] = $v;
+        }
+
+        // ─── Roof Type ────────────────────────────────────────────────────────
+        if ($v = $extract(['/Roof\s+Type[\s:]+([^\|\n]{1,120})/i'], true)) {
+            $data['roof_type'] = $v;
+        }
+
+        // ─── Exterior Construction ────────────────────────────────────────────
+        if ($v = $extract(['/Exterior\s+Construction[\s:]+([^\|\n]{1,120})/i'], true)) {
+            $data['exterior_construction'] = $v;
+        }
+
+        // ─── Foundation ───────────────────────────────────────────────────────
+        if ($v = $extract(['/Foundation[\s:]+([^\|\n]{1,120})/i'], true)) {
+            $data['foundation'] = $v;
+        }
+
+        // ─── Water ────────────────────────────────────────────────────────────
+        // Requires colon immediately after "Water" to avoid matching "Water Access:",
+        // "Water View:", or "Waterfront:" which are handled by dedicated branches.
+        if ($v = $extract(['/\bWater\s*:[\s]*([^\|\n]{1,120})/i'], true)) {
+            $data['water'] = $v;
+        }
+
+        // ─── Sewer ────────────────────────────────────────────────────────────
+        if ($v = $extract(['/Sewer[\s:]+([^\|\n]{1,120})/i'], true)) {
+            $data['sewer'] = $v;
+        }
+
+        // ─── Utilities ────────────────────────────────────────────────────────
+        if ($v = $extract(['/Utilities[\s:]+([^\|\n]{1,120})/i'], true)) {
+            $data['utilities'] = $v;
+        }
+
+        // ─── Sqft Heated Source ───────────────────────────────────────────────
+        if ($v = $extract([
+            '/Sq\.?\s*Ft\.?\s*Heated\s+Source[\s:]+([^\|\n]{1,60})/i',
+            '/(?:Heated\s+)?Sq(?:uare)?\s*Ft\s+Source[\s:]+([^\|\n]{1,60})/i',
+        ], true)) {
+            $data['sqft_heated_source'] = $v;
+        }
+
+        // ─── Flood Insurance Required ─────────────────────────────────────────
+        if ($v = $extract(['/Flood\s+Insurance\s+Req(?:uired)?[\s:]+([^\|\n]{1,30})/i'], true)) {
+            $data['flood_insurance_required'] = MlsNormalizer::normalize('has_hoa', $v);
+        }
+
+        // ─── Special Assessments ──────────────────────────────────────────────
+        // Boolean Y/N from "Special Assessments Y/N:" or bare "Special Assessments: Yes/No".
+        if ($v = $extract([
+            '/Special\s+Assessments?\s+Y\/N[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i',
+            '/Special\s+Assessments?[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i',
+        ])) {
+            $data['has_special_assessments'] = MlsNormalizer::normalize('has_hoa', $v);
+        }
+
+        // Dollar amount from "Special Assessment Amount:" / "Special Assessment Fee:".
+        if ($v = $extract([
+            '/Special\s+Assessment\s+(?:Annual\s+)?(?:Amount|Fee)[\s:\$]+([0-9,\.]+)/i',
+        ])) {
+            $data['special_assessment_amount'] = preg_replace('/[^\d.]/', '', $v);
+        }
+
+        // Free-text description from "Special Assessment Description:" / "Notes:".
+        if ($v = $extract([
+            '/Special\s+Assessment\s+(?:Description|Notes?)[\s:]+([^\|\n]{1,300})/i',
+        ], true)) {
+            $data['special_assessment_description'] = trim($v);
         }
 
         // ─── Appliances ───────────────────────────────────────────────────────
@@ -458,9 +563,13 @@ class MlsListingImportService
         }
 
         // ─── Description / Remarks ────────────────────────────────────────────
+        // "Public Remarks (English Only)" is the canonical MLS field name; also
+        // matches shorter "Public Remarks:" and plain "Remarks:" variants.
+        // Maps directly to canonical key 'description' → Livewire 'additional_details'.
         if ($v = $extract([
-            '/(?:Public\s+)?Remarks?[\s:]+(.{10,1000}?)(?=\s{2,}|(?:[A-Z][a-z]+\s*:)|$)/s',
-            '/Description[\s:]+(.{10,1000}?)(?=\s{2,}|(?:[A-Z][a-z]+\s*:)|$)/s',
+            '/Public\s+Remarks?\s*\(English\s+Only\)[\s:]+(.{10,2000}?)(?=\s{2,}|(?:[A-Z][a-z]+\s*:)|$)/si',
+            '/(?:Public\s+)?Remarks?[\s:]+(.{10,1000}?)(?=\s{2,}|(?:[A-Z][a-z]+\s*:)|$)/si',
+            '/Description[\s:]+(.{10,1000}?)(?=\s{2,}|(?:[A-Z][a-z]+\s*:)|$)/si',
         ])) {
             $data['description'] = trim($v);
         }

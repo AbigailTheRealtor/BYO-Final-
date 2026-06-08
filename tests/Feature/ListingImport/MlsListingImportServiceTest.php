@@ -831,6 +831,469 @@ class MlsListingImportServiceTest extends TestCase
         ];
     }
 
+    // ─── Phase 2: boundary-fix tests ─────────────────────────────────────────
+
+    public function test_city_does_not_bleed_into_county_label(): void
+    {
+        $rawText = 'City: SEMINOLE County: Pinellas State: FL';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('city', $data);
+        $this->assertStringNotContainsStringIgnoringCase('County', $data['city']);
+        $this->assertStringContainsStringIgnoringCase('SEMINOLE', $data['city']);
+    }
+
+    public function test_county_does_not_bleed_into_list_price_label(): void
+    {
+        // "PinellasList" is a known bleed — "List" (from "List Price") must be a stop token
+        $rawText = 'County: PinellasList Price: $450,000';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('county', $data);
+        $this->assertStringNotContainsStringIgnoringCase('List', $data['county']);
+        $this->assertEquals('Pinellas', trim($data['county']));
+    }
+
+    public function test_lot_dimensions_does_not_bleed_into_lot_size_label(): void
+    {
+        $rawText = 'Lot Dimensions: 50x127 Lot Size Acres: 0.14';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('lot_dimensions', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Lot Size', $data['lot_dimensions']);
+        $this->assertStringContainsString('50x127', $data['lot_dimensions']);
+    }
+
+    public function test_garage_does_not_bleed_when_carport_immediately_follows(): void
+    {
+        // No separator: "1 SpacesCarport:No" — Carport must stop the Garage capture
+        $rawText = 'Garage: 1 SpacesCarport: No Appliances: Dishwasher';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('garage', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Carport', $data['garage']);
+    }
+
+    public function test_ac_does_not_bleed_when_floor_covering_immediately_follows(): void
+    {
+        // No separator: "Central AirFloor Covering: Tile"
+        $rawText = 'Air Conditioning: Central AirFloor Covering: Tile Heating: Electric';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('air_conditioning', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Floor', $data['air_conditioning']);
+        $this->assertStringContainsStringIgnoringCase('Central Air', $data['air_conditioning']);
+    }
+
+    public function test_appliances_does_not_bleed_into_room_names(): void
+    {
+        $rawText = 'Appliances: Dishwasher, Refrigerator Kitchen: 12x10 Living Room: 15x14';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('appliances', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Kitchen', $data['appliances']);
+        $this->assertStringNotContainsStringIgnoringCase('Living Room', $data['appliances']);
+        $this->assertStringContainsStringIgnoringCase('Dishwasher', $data['appliances']);
+    }
+
+    public function test_appliances_does_not_bleed_into_exterior_construction(): void
+    {
+        $rawText = 'Appliances: Range, Microwave Exterior Construction: Block Roof: Shingle';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('appliances', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Exterior Construction', $data['appliances']);
+        $this->assertStringContainsStringIgnoringCase('Range', $data['appliances']);
+    }
+
+    // ─── Phase 2: Public Remarks (English Only) → description ─────────────────
+
+    public function test_public_remarks_english_only_maps_to_description(): void
+    {
+        $rawText = 'Public Remarks (English Only): Stunning waterfront home with panoramic views. Directions: Take I-4 west.';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('description', $data);
+        $this->assertStringContainsString('Stunning waterfront home', $data['description']);
+        $this->assertStringNotContainsStringIgnoringCase('Directions', $data['description']);
+    }
+
+    public function test_description_canonical_key_maps_to_additional_details_on_seller(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+        $this->assertArrayHasKey('description', $map);
+        $this->assertEquals('additional_details', $map['description']);
+    }
+
+    public function test_description_canonical_key_maps_to_additional_details_on_landlord(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+        $this->assertArrayHasKey('description', $map);
+        $this->assertEquals('additional_details', $map['description']);
+    }
+
+    // ─── Phase 2: new property characteristic fields ──────────────────────────
+
+    public function test_raw_text_parses_roof_type(): void
+    {
+        $rawText = 'Roof Type: Shingle Exterior Construction: Block Foundation: Slab';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('roof_type', $data);
+        $this->assertStringContainsStringIgnoringCase('Shingle', $data['roof_type']);
+        $this->assertStringNotContainsStringIgnoringCase('Exterior', $data['roof_type']);
+    }
+
+    public function test_raw_text_parses_exterior_construction(): void
+    {
+        $rawText = 'Exterior Construction: Block, Stucco Foundation: Slab Year Built: 2001';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('exterior_construction', $data);
+        $this->assertStringContainsStringIgnoringCase('Block', $data['exterior_construction']);
+        $this->assertStringNotContainsStringIgnoringCase('Foundation', $data['exterior_construction']);
+    }
+
+    public function test_raw_text_parses_foundation(): void
+    {
+        $rawText = 'Foundation: Slab Year Built: 2005';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('foundation', $data);
+        $this->assertStringContainsStringIgnoringCase('Slab', $data['foundation']);
+    }
+
+    public function test_raw_text_parses_heating_and_fuel(): void
+    {
+        $rawText = 'Heating and Fuel: Central, Electric Air Conditioning: Central Air';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('heating_fuel', $data);
+        $this->assertStringContainsStringIgnoringCase('Electric', $data['heating_fuel']);
+        $this->assertStringNotContainsStringIgnoringCase('Air Conditioning', $data['heating_fuel']);
+    }
+
+    public function test_raw_text_parses_heating_ampersand_fuel(): void
+    {
+        $rawText = 'Heating & Fuel: Electric, Gas Sewer: Public';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('heating_fuel', $data);
+        $this->assertStringContainsStringIgnoringCase('Electric', $data['heating_fuel']);
+    }
+
+    public function test_raw_text_parses_water(): void
+    {
+        $rawText = 'Water: Public Sewer: Public Utilities: Cable Available';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('water', $data);
+        $this->assertStringContainsStringIgnoringCase('Public', $data['water']);
+        $this->assertStringNotContainsStringIgnoringCase('Sewer', $data['water']);
+    }
+
+    public function test_raw_text_parses_sewer(): void
+    {
+        $rawText = 'Sewer: Septic Tank Utilities: None';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('sewer', $data);
+        $this->assertStringContainsStringIgnoringCase('Septic', $data['sewer']);
+    }
+
+    public function test_raw_text_parses_utilities(): void
+    {
+        $rawText = 'Utilities: Cable Available, Electricity Connected Year Built: 2008';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('utilities', $data);
+        $this->assertStringContainsStringIgnoringCase('Cable', $data['utilities']);
+    }
+
+    public function test_raw_text_parses_sqft_heated_source(): void
+    {
+        $rawText = 'Sq Ft Heated Source: Public Records Bedrooms: 3';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('sqft_heated_source', $data);
+        $this->assertStringContainsStringIgnoringCase('Public Records', $data['sqft_heated_source']);
+    }
+
+    public function test_raw_text_parses_flood_insurance_required(): void
+    {
+        $rawText = 'Flood Insurance Required: Yes Flood Zone Code: AE';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('flood_insurance_required', $data);
+        $this->assertEquals('yes', $data['flood_insurance_required']);
+    }
+
+    public function test_raw_text_parses_flood_insurance_not_required(): void
+    {
+        $rawText = 'Flood Insurance Required: No Flood Zone Code: X';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('flood_insurance_required', $data);
+        $this->assertEquals('no', $data['flood_insurance_required']);
+    }
+
+    // ─── Phase 2: field map includes new property characteristic fields ────────
+
+    // ─── Phase 2: Special Assessments parsing ────────────────────────────────
+
+    public function test_raw_text_parses_special_assessments_yes_no(): void
+    {
+        $rawText = 'Special Assessments Y/N: Yes CDD Y/N: No';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('has_special_assessments', $data);
+        $this->assertEquals('yes', $data['has_special_assessments']);
+    }
+
+    public function test_raw_text_parses_special_assessments_bare_label(): void
+    {
+        $rawText = 'Special Assessments: No HOA: Yes';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('has_special_assessments', $data);
+        $this->assertEquals('no', $data['has_special_assessments']);
+    }
+
+    public function test_raw_text_parses_special_assessment_amount(): void
+    {
+        $rawText = 'Special Assessments: Yes Special Assessment Amount: $1,200 CDD Y/N: No';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('special_assessment_amount', $data);
+        $this->assertEquals('1200', $data['special_assessment_amount']);
+    }
+
+    public function test_raw_text_parses_special_assessment_description(): void
+    {
+        $rawText = 'Special Assessments: Yes Special Assessment Description: Road repaving district Year Built: 2005';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('special_assessment_description', $data);
+        $this->assertStringContainsStringIgnoringCase('Road repaving', $data['special_assessment_description']);
+    }
+
+    // ─── Phase 2: missing alias variants ─────────────────────────────────────
+
+    public function test_homeowners_association_label_populates_has_hoa(): void
+    {
+        foreach ([
+            'Homeowners Association: Yes CDD Y/N: No',
+            'Homeowner Assoc: Yes CDD Y/N: No',
+        ] as $rawText) {
+            $result = $this->service->import('', $rawText);
+            $this->assertTrue($result['success']);
+            $this->assertArrayHasKey('has_hoa', $result['data'], "has_hoa missing for: $rawText");
+            $this->assertEquals('yes', $result['data']['has_hoa'], "has_hoa incorrect for: $rawText");
+        }
+    }
+
+    public function test_legal_desc_abbreviation_populates_legal_description(): void
+    {
+        $rawText = 'Legal Desc: Lot 4 Block 12 Pine Ridge Sub Flood Zone Code: X';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('legal_description', $result['data']);
+        $this->assertStringContainsString('Lot 4', $result['data']['legal_description']);
+    }
+
+    public function test_bare_freq_label_populates_association_fee_frequency(): void
+    {
+        $rawText = 'Association: Yes Association Fee: $250 Freq: Monthly CDD Y/N: No';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('association_fee_frequency', $result['data']);
+        $this->assertStringContainsStringIgnoringCase('month', $result['data']['association_fee_frequency']);
+    }
+
+    public function test_fema_panel_label_populates_flood_zone_panel(): void
+    {
+        foreach ([
+            'FEMA Panel: 12099C0350H Flood Zone Code: AE',
+            'FEMA Flood Zone Panel: 12099C0350H Flood Zone Code: AE',
+            'Panel: 12099C0350H Flood Zone Code: AE',
+        ] as $rawText) {
+            $result = $this->service->import('', $rawText);
+            $this->assertTrue($result['success']);
+            $this->assertArrayHasKey('flood_zone_panel', $result['data'], "flood_zone_panel missing for: $rawText");
+            $this->assertStringContainsString('12099C0350H', $result['data']['flood_zone_panel'], "value mismatch for: $rawText");
+        }
+    }
+
+    public function test_seller_and_landlord_maps_include_special_assessment_fields(): void
+    {
+        foreach (['seller', 'landlord'] as $role) {
+            $map = MlsFieldMap::forRole($role);
+            $this->assertArrayHasKey('has_special_assessments',        $map, "Role '{$role}' must map has_special_assessments");
+            $this->assertEquals('has_special_assessments',             $map['has_special_assessments']);
+            $this->assertArrayHasKey('special_assessment_amount',      $map, "Role '{$role}' must map special_assessment_amount");
+            $this->assertEquals('special_assessment_amount',           $map['special_assessment_amount']);
+            $this->assertArrayHasKey('special_assessment_description', $map, "Role '{$role}' must map special_assessment_description");
+            $this->assertEquals('special_assessment_description',      $map['special_assessment_description']);
+        }
+    }
+
+    public function test_seller_map_includes_new_property_characteristic_fields(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+
+        $this->assertArrayHasKey('heating_fuel',          $map, 'seller map must have heating_fuel');
+        $this->assertEquals('*heating_and_fuel',          $map['heating_fuel']);
+
+        $this->assertArrayHasKey('roof_type',             $map, 'seller map must have roof_type');
+        $this->assertEquals('*roof_type',                 $map['roof_type']);
+
+        $this->assertArrayHasKey('exterior_construction', $map, 'seller map must have exterior_construction');
+        $this->assertEquals('*exterior_construction',     $map['exterior_construction']);
+
+        $this->assertArrayHasKey('foundation',            $map, 'seller map must have foundation');
+        $this->assertEquals('*foundation',                $map['foundation']);
+
+        $this->assertArrayHasKey('water',                 $map, 'seller map must have water');
+        $this->assertEquals('*water',                     $map['water']);
+
+        $this->assertArrayHasKey('sewer',                 $map, 'seller map must have sewer');
+        $this->assertEquals('*sewer',                     $map['sewer']);
+
+        $this->assertArrayHasKey('utilities',             $map, 'seller map must have utilities');
+        $this->assertEquals('*utilities',                 $map['utilities']);
+
+        $this->assertArrayHasKey('sqft_heated_source',   $map, 'seller map must have sqft_heated_source');
+        $this->assertEquals('sqft_heated_source',         $map['sqft_heated_source']);
+
+        $this->assertArrayHasKey('flood_insurance_required', $map, 'seller map must have flood_insurance_required');
+        $this->assertEquals('flood_insurance_required',   $map['flood_insurance_required']);
+
+        $this->assertArrayHasKey('flood_zone_panel',      $map, 'seller map must have flood_zone_panel');
+        $this->assertEquals('flood_zone_panel',           $map['flood_zone_panel']);
+    }
+
+    public function test_landlord_map_includes_new_property_characteristic_fields(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+
+        $this->assertArrayHasKey('heating_fuel',          $map, 'landlord map must have heating_fuel');
+        $this->assertEquals('*heating_fuel',              $map['heating_fuel']);
+
+        $this->assertArrayHasKey('water',                 $map, 'landlord map must have water');
+        $this->assertEquals('*water',                     $map['water']);
+
+        $this->assertArrayHasKey('sewer',                 $map, 'landlord map must have sewer');
+        $this->assertEquals('*sewer',                     $map['sewer']);
+
+        $this->assertArrayHasKey('utilities',             $map, 'landlord map must have utilities');
+        $this->assertEquals('utilities',                  $map['utilities']);
+
+        $this->assertArrayHasKey('sqft_heated_source',   $map, 'landlord map must have sqft_heated_source');
+        $this->assertEquals('sqft_heated_source',         $map['sqft_heated_source']);
+
+        $this->assertArrayHasKey('flood_insurance_required', $map, 'landlord map must have flood_insurance_required');
+        $this->assertEquals('flood_insurance_required',   $map['flood_insurance_required']);
+
+        $this->assertArrayHasKey('flood_zone_panel',      $map, 'landlord map must have flood_zone_panel');
+        $this->assertEquals('flood_zone_panel',           $map['flood_zone_panel']);
+    }
+
     public function test_public_url_is_not_blocked_by_ssrf_guard(): void
     {
         Http::fake([

@@ -55,14 +55,29 @@ class MlsFieldMap
             'state'           => 'property_state',
             'zip'             => 'property_zip',
             'county'          => 'property_county',
+            // ── Property characteristics ──────────────────────────────────────
+            'heating_fuel'        => '*heating_and_fuel',
+            'roof_type'           => '*roof_type',
+            'exterior_construction' => '*exterior_construction',
+            'foundation'          => '*foundation',
+            'water'               => '*water',
+            'sewer'               => '*sewer',
+            'utilities'           => '*utilities',
+            'sqft_heated_source'  => 'sqft_heated_source',
             // ── Tax / Legal / Flood Zone (owner-side disclosures) ─────────────
             'tax_id'          => 'parcel_id',
             'tax_year'        => 'tax_year',
             'annual_taxes'    => 'annual_property_taxes',
             'legal_description' => 'legal_description',
             'flood_zone_code' => 'flood_zone_code',
+            'flood_zone_panel' => 'flood_zone_panel',
+            'flood_insurance_required' => 'flood_insurance_required',
             'additional_parcels'  => 'additional_parcels',
             'total_parcel_count'  => 'total_parcel_count',
+            // ── Special Assessments ───────────────────────────────────────────
+            'has_special_assessments'       => 'has_special_assessments',
+            'special_assessment_amount'     => 'special_assessment_amount',
+            'special_assessment_description' => 'special_assessment_description',
             // ── HOA / CDD ─────────────────────────────────────────────────────
             'has_hoa'                 => 'has_hoa',
             'association_name'        => 'association_name',
@@ -134,14 +149,26 @@ class MlsFieldMap
             'state'           => 'property_state',
             'zip'             => 'property_zip',
             'county'          => 'property_county',
+            // ── Property characteristics ──────────────────────────────────────
+            'heating_fuel'        => '*heating_fuel',
+            'water'               => '*water',
+            'sewer'               => '*sewer',
+            'utilities'           => 'utilities',
+            'sqft_heated_source'  => 'sqft_heated_source',
             // ── Tax / Legal / Flood Zone (owner-side disclosures) ─────────────
             'tax_id'          => 'parcel_id',
             'tax_year'        => 'tax_year',
             'annual_taxes'    => 'annual_property_taxes',
             'legal_description' => 'legal_description',
             'flood_zone_code' => 'flood_zone_code',
+            'flood_zone_panel' => 'flood_zone_panel',
+            'flood_insurance_required' => 'flood_insurance_required',
             'additional_parcels'  => 'additional_parcels',
             'total_parcel_count'  => 'total_parcel_count',
+            // ── Special Assessments ───────────────────────────────────────────
+            'has_special_assessments'       => 'has_special_assessments',
+            'special_assessment_amount'     => 'special_assessment_amount',
+            'special_assessment_description' => 'special_assessment_description',
             // ── HOA / CDD ─────────────────────────────────────────────────────
             'has_hoa'                 => 'has_hoa',
             'association_name'        => 'association_name',
@@ -225,6 +252,15 @@ class MlsFieldMap
             'water_access'        => 'Water Access',
             'water_view'          => 'Water View',
             'heating'             => 'Heating',
+            'heating_fuel'        => 'Heating & Fuel',
+            'roof_type'           => 'Roof Type',
+            'exterior_construction' => 'Exterior Construction',
+            'foundation'          => 'Foundation',
+            'water'               => 'Water',
+            'sewer'               => 'Sewer',
+            'utilities'           => 'Utilities',
+            'sqft_heated_source'  => 'Sq Ft Heated Source',
+            'flood_insurance_required' => 'Flood Insurance Required',
             'interior_features'   => 'Interior Features',
             'directions'          => 'Directions',
             // HOA / CDD
@@ -234,6 +270,10 @@ class MlsFieldMap
             'association_fee_frequency' => 'Association Fee Frequency',
             'has_cdd'                   => 'Community Development District (CDD)',
             'annual_cdd_fee'            => 'CDD Annual Fee',
+            // Special Assessments
+            'has_special_assessments'        => 'Special Assessments',
+            'special_assessment_amount'      => 'Special Assessment Amount',
+            'special_assessment_description' => 'Special Assessment Description',
         ];
     }
 }
