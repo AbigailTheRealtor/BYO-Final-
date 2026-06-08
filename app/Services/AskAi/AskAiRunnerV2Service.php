@@ -138,6 +138,16 @@ class AskAiRunnerV2Service
      *                                follow_up_questions key from AskAiFollowUpQuestionService; null if skipped
      *   error          string|null — null unless final_response['error'] is set or a Throwable is caught
      *
+     * The trace array also carries two normalizer observability fields:
+     *   normalizer_status  string|null — outcome of the normalizer step:
+     *     'not_applicable' — question type is not 'unsupported' (normalizer cannot help)
+     *     'not_called'     — question is unsupported but normalizer is off or not injected
+     *     'matched'        — normalizer called and returned a canonical key
+     *     'unknown'        — normalizer called; OpenAI returned "unknown"
+     *     'failed'         — normalizer called; operational failure (see normalizer_error)
+     *   normalizer_error   string|null — structured error code when normalizer_status='failed':
+     *     rate_limited | timeout | api_error | invalid_json | invalid_key | empty_response
+     *
      * @param  string $listingType  Canonical or aliased listing type string.
      * @param  int    $listingId    Primary key of the listing record.
      * @param  string $question     The raw user question string.
@@ -146,6 +156,11 @@ class AskAiRunnerV2Service
      */
     public function run(string $listingType, int $listingId, string $question, array $options = []): array
     {
+        // Declared before try so the catch block can always report whatever
+        // normalizer state was reached before the exception fired.
+        $normalizerStatus = null;
+        $normalizerError  = null;
+
         try {
             $classification = $this->classifier->classify($question);
             $questionType   = $classification['question_type'];
@@ -191,6 +206,12 @@ class AskAiRunnerV2Service
             // listing_facts through the normal contract + prompt-builder
             // governance. The normalized_field_key is attached to classification
             // for QA/debug visibility but does not bypass any governance layer.
+            //
+            // Trace fields set here:
+            //   normalizer_status = 'not_applicable' when question type cannot use normalizer
+            //   normalizer_status = 'not_called'     when flag is off or service not injected
+            //   normalizer_status = <from getLastStatus()> when normalizer is called
+            //   normalizer_error  = <from getLastError()>  when normalizer is called
             // ----------------------------------------------------------------
             if ($questionType === 'unsupported'
                 && $this->normalizer !== null
@@ -200,22 +221,10 @@ class AskAiRunnerV2Service
                 $knownFieldKeys = $this->normalizer->buildKnownFieldKeys();
                 $normalizedKey  = $this->normalizer->normalize($question, $knownFieldKeys);
 
-                // Map the normalizer's internal status to the three trace categories:
-                //   matched → normalizer_status=matched
-                //   unknown → normalizer_status=unknown
-                //   any failure → normalizer_status=failed, normalizer_error=<reason>
-                $lastNormStatus = $this->normalizer->getLastStatus();
-                $lastNormError  = $this->normalizer->getLastError();
-                if ($lastNormStatus === 'matched') {
-                    $trace['normalizer_status'] = 'matched';
-                    $trace['normalizer_error']  = null;
-                } elseif ($lastNormStatus === 'unknown') {
-                    $trace['normalizer_status'] = 'unknown';
-                    $trace['normalizer_error']  = null;
-                } else {
-                    $trace['normalizer_status'] = 'failed';
-                    $trace['normalizer_error']  = $lastNormError;
-                }
+                $normalizerStatus           = $this->normalizer->getLastStatus();
+                $normalizerError            = $this->normalizer->getLastError();
+                $trace['normalizer_status'] = $normalizerStatus;
+                $trace['normalizer_error']  = $normalizerError;
 
                 if ($normalizedKey !== null) {
                     $trace['normalized_field_key'] = $normalizedKey;
@@ -232,6 +241,18 @@ class AskAiRunnerV2Service
                     // ensuring the prompt package is grounded in exactly the right data.
                     $options = array_merge($options, ['normalized_field_key' => $normalizedKey]);
                 }
+            } elseif ($questionType === 'unsupported') {
+                // Unsupported question but normalizer not called (flag off or service missing).
+                $normalizerStatus           = 'not_called';
+                $normalizerError            = null;
+                $trace['normalizer_status'] = $normalizerStatus;
+                $trace['normalizer_error']  = $normalizerError;
+            } else {
+                // Non-unsupported question type: normalizer is not applicable.
+                $normalizerStatus           = 'not_applicable';
+                $normalizerError            = null;
+                $trace['normalizer_status'] = $normalizerStatus;
+                $trace['normalizer_error']  = $normalizerError;
             }
 
             // ----------------------------------------------------------------
@@ -376,8 +397,8 @@ class AskAiRunnerV2Service
                 'question'             => $question ?? null,
                 'classifier_result'    => null,
                 'normalizer_called'    => null,
-                'normalizer_status'    => null,
-                'normalizer_error'     => null,
+                'normalizer_status'    => $normalizerStatus,
+                'normalizer_error'     => $normalizerError,
                 'normalized_field_key' => null,
                 'faq_key_detected'     => null,
                 'final_question_type'  => null,

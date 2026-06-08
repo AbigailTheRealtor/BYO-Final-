@@ -36,16 +36,27 @@ class AskAiIntentNormalizerService
     /**
      * Internal status of the most recent normalize() call.
      *
-     * Values: 'not_called', 'matched', 'unknown', 'failed'
-     * Detailed failure reason is stored in $lastError.
+     * Set at every branch of normalize() so the runner can read a structured
+     * outcome rather than inferring meaning from a null return value.
+     *
+     * Possible values:
+     *   matched        — OpenAI returned a canonical key in the approved list.
+     *   unknown        — OpenAI returned the literal string "unknown".
+     *   failed         — An operational failure occurred; inspect $lastError for detail.
+     *   null           — normalize() has not been called yet (initial state).
      */
-    private string $lastStatus = 'not_called';
+    private ?string $lastStatus = null;
 
     /**
-     * Detailed failure reason for the most recent normalize() call, or null.
+     * Structured error code for the most recent failed normalize() call.
      *
-     * Values when $lastStatus === 'failed':
-     *   'rate_limited', 'timeout', 'api_error', 'invalid_json', 'invalid_key', 'empty_response'
+     * Non-null only when $lastStatus === 'failed'. Possible values:
+     *   rate_limited   — OpenAI returned HTTP 429 (rate limit exceeded).
+     *   timeout        — Network-level timeout or connection failure.
+     *   api_error      — Other non-retryable OpenAI API error.
+     *   invalid_json   — Response content is not valid JSON.
+     *   invalid_key    — OpenAI returned a key not in the approved knownFieldKeys list.
+     *   empty_response — Response data is present but normalized_key is missing or empty.
      */
     private ?string $lastError = null;
 
@@ -71,31 +82,29 @@ class AskAiIntentNormalizerService
     }
 
     /**
-     * Return the internal status of the most recent normalize() call.
+     * Return the status of the most recent normalize() call.
      *
-     * Values:
-     *   'not_called'  — normalize() was not called or input guards blocked before OpenAI.
-     *   'matched'     — OpenAI returned a canonical key that passed the hallucination guard.
-     *   'unknown'     — OpenAI returned 'unknown' (no suitable key found).
-     *   'failed'      — An operational failure occurred; see getLastError() for the reason.
+     * Values: 'matched' | 'unknown' | 'failed' | null (not yet called).
+     * Read this after every normalize() call to distinguish operational failures
+     * from legitimate "no match" outcomes.
      *
-     * @return string
+     * @return string|null
      */
-    public function getLastStatus(): string
+    public function getLastStatus(): ?string
     {
         return $this->lastStatus;
     }
 
     /**
-     * Return the detailed failure reason for the most recent normalize() call.
+     * Return the structured error code for the most recent failed normalize() call.
      *
      * Non-null only when getLastStatus() === 'failed'. Values:
-     *   'rate_limited'   — HTTP 429 or rate-limit error from OpenAI.
-     *   'timeout'        — Request timed out before OpenAI responded.
-     *   'api_error'      — Other transport or API-level error.
-     *   'invalid_json'   — Response could not be decoded as valid JSON.
-     *   'invalid_key'    — OpenAI returned a key not in the approved list (hallucination).
-     *   'empty_response' — Response was missing or contained an empty/null normalized_key.
+     *   rate_limited   — HTTP 429 or rate-limit error from OpenAI.
+     *   timeout        — Request timed out before OpenAI responded.
+     *   api_error      — Other transport or API-level error.
+     *   invalid_json   — Response could not be decoded as valid JSON.
+     *   invalid_key    — OpenAI returned a key not in the approved list (hallucination).
+     *   empty_response — Response was missing or contained an empty/null normalized_key.
      *
      * @return string|null
      */
@@ -111,6 +120,8 @@ class AskAiIntentNormalizerService
      * (e.g. {"normalized_key":"listing.bedrooms"}). A 10-second timeout and a 60-token
      * ceiling are deliberately narrow: they protect overall API budget and prevent a slow
      * OpenAI response from blocking the main Ask AI pipeline on every unsupported question.
+     * The 60-token budget (up from 20) ensures keys with longer path names are not
+     * truncated mid-value.
      *
      * These values override the global ai.timeout_seconds and do NOT affect any other
      * OpenAiClientService caller.
@@ -128,8 +139,14 @@ class AskAiIntentNormalizerService
      * response, exception, or timeout results in null — never a fabricated key,
      * never a crash.
      *
-     * Internal status is recorded after every branch and readable via
-     * getLastStatus() / getLastError() for trace logging by the caller.
+     * After every call, getLastStatus() and getLastError() reflect the outcome:
+     *   - matched        → the canonical key is returned; getLastError() is null.
+     *   - unknown        → OpenAI returned "unknown"; getLastError() is null.
+     *   - failed         → operational failure; getLastError() has the reason.
+     * When the question or knownFieldKeys pre-conditions fail, both are reset to null.
+     *
+     * The call uses CALL_OPTIONS to enforce a short timeout and low token cap,
+     * ensuring the normalization step is cheap and fast relative to the main pipeline.
      *
      * Returns null when:
      *   - The question or knownFieldKeys are empty.
@@ -144,7 +161,7 @@ class AskAiIntentNormalizerService
      */
     public function normalize(string $question, array $knownFieldKeys): ?string
     {
-        $this->lastStatus = 'not_called';
+        $this->lastStatus = null;
         $this->lastError  = null;
 
         if ($question === '' || empty($knownFieldKeys)) {
@@ -159,14 +176,14 @@ class AskAiIntentNormalizerService
 
             $normalizedKey = $data['normalized_key'] ?? null;
 
-            if (!is_string($normalizedKey) || $normalizedKey === '') {
-                $this->lastStatus = 'failed';
-                $this->lastError  = 'empty_response';
+            if ($normalizedKey === 'unknown') {
+                $this->lastStatus = 'unknown';
                 return null;
             }
 
-            if ($normalizedKey === 'unknown') {
-                $this->lastStatus = 'unknown';
+            if (!is_string($normalizedKey) || $normalizedKey === '') {
+                $this->lastStatus = 'failed';
+                $this->lastError  = 'empty_response';
                 return null;
             }
 
@@ -181,57 +198,90 @@ class AskAiIntentNormalizerService
             return $normalizedKey;
 
         } catch (\Throwable $e) {
-            $classified       = $this->classifyThrowable($e);
-            $this->lastStatus = $classified['status'];
-            $this->lastError  = $classified['error'];
+            $this->lastStatus = 'failed';
+            $this->lastError  = $this->classifyThrowable($e);
             return null;
         }
     }
 
     /**
-     * Classify a caught Throwable into a structured failure reason.
+     * Classify a caught Throwable into a structured error code.
      *
-     * Uses exception message pattern detection to distinguish timeout, rate-limit,
-     * JSON parse, and generic API errors. This approach works with any exception
-     * type (RuntimeException, ErrorException, etc.) without requiring a dependency
-     * on the OpenAI PHP SDK's specific exception hierarchy.
+     * Inspects the exception code, the getPrevious() chain, and the message to
+     * distinguish operational failure categories without importing any OpenAI SDK
+     * class directly. Code-based and chain-based checks take priority; message-based
+     * pattern matching serves as a fallback for exceptions from validateResponse()
+     * and other places that embed HTTP status or error type in the message.
+     *
+     * No API key, payload content, or PII is included in the returned code.
      *
      * @param  \Throwable $e
-     * @return array{status: string, error: string}
+     * @return string       One of: rate_limited | timeout | invalid_json | api_error
      */
-    private function classifyThrowable(\Throwable $e): array
+    private function classifyThrowable(\Throwable $e): string
     {
-        $message = strtolower($e->getMessage());
+        $message = $e->getMessage();
+        $code    = $e->getCode();
 
-        // HTTP 429 / rate-limit signals
-        if (str_contains($message, '429')
-            || str_contains($message, 'rate limit')
-            || str_contains($message, 'rate_limit')
-            || str_contains($message, 'too many requests')
-        ) {
-            return ['status' => 'failed', 'error' => 'rate_limited'];
+        // HTTP 429 surfaced as the exception code on non-retryable fast-fail.
+        if ($code === 429) {
+            return 'rate_limited';
         }
 
-        // Timeout / connection-timeout signals
-        if (str_contains($message, 'timed out')
-            || str_contains($message, 'timeout')
-            || str_contains($message, 'time out')
-            || str_contains($message, 'curl error 28')
-            || str_contains($message, 'operation_timedout')
-        ) {
-            return ['status' => 'failed', 'error' => 'timeout'];
+        // Inspect the wrapped original exception via getPrevious().
+        $previous = method_exists($e, 'getPrevious') ? $e->getPrevious() : null;
+
+        if ($previous !== null) {
+            $prevClass = get_class($previous);
+            $prevCode  = method_exists($previous, 'getCode') ? $previous->getCode() : 0;
+
+            if (str_contains($prevClass, 'TransporterException')) {
+                return 'timeout';
+            }
+
+            if ($prevCode === 429) {
+                return 'rate_limited';
+            }
+
+            if (str_contains($prevClass, 'ErrorException')) {
+                return 'api_error';
+            }
+
+            if (str_contains($prevClass, 'UnserializableResponse')) {
+                return 'invalid_json';
+            }
         }
 
-        // JSON decode / parse failure signals
-        if (str_contains($message, 'json')
-            || str_contains($message, 'parse error')
-            || str_contains($message, 'decode')
-            || str_contains($message, 'syntax error')
+        // Message-based fallback for HTTP status codes and error types embedded in messages.
+        $lower = strtolower($message);
+
+        if (str_contains($lower, '429')
+            || str_contains($lower, 'rate limit')
+            || str_contains($lower, 'rate_limit')
+            || str_contains($lower, 'too many requests')
         ) {
-            return ['status' => 'failed', 'error' => 'invalid_json'];
+            return 'rate_limited';
         }
 
-        return ['status' => 'failed', 'error' => 'api_error'];
+        if (str_contains($lower, 'timed out')
+            || str_contains($lower, 'timeout')
+            || str_contains($lower, 'time out')
+            || str_contains($lower, 'curl error 28')
+            || str_contains($lower, 'operation_timedout')
+        ) {
+            return 'timeout';
+        }
+
+        if (str_contains($message, 'not valid JSON')
+            || str_contains($message, 'could not be parsed')
+            || str_contains($lower, 'json')
+            || str_contains($lower, 'parse error')
+            || str_contains($lower, 'syntax error')
+        ) {
+            return 'invalid_json';
+        }
+
+        return 'api_error';
     }
 
     /**

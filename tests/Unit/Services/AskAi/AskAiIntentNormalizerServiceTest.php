@@ -926,17 +926,16 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         );
     }
 
-    // =========================================================================
-    // Case L — Internal status tracking via getLastStatus() / getLastError()
+    // Case L — Internal status tracking: getLastStatus() and getLastError()
     //
-    // Verifies that normalize() sets lastStatus/lastError at every branch so
-    // the caller (AskAiRunnerV2Service) can expose structured observability in
-    // the trace without polling normalize()'s return value alone.
+    // After every normalize() call the caller can read getLastStatus() and
+    // getLastError() to distinguish operational failures from legitimate "unknown"
+    // outcomes — without changing the string|null return type.
     // =========================================================================
 
-    // ── L1 ── Successful match → status=matched, error=null ──────────────────
+    // ── L1 ── Valid key returned → status = matched, error = null ────────────
 
-    public function test_case_L1_successful_match_sets_status_matched(): void
+    public function test_case_L1_matched_key_sets_status_matched(): void
     {
         $client     = $this->makeClientMock('faq_answers.hvac_system_age');
         $normalizer = $this->makeNormalizer($client);
@@ -944,10 +943,19 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         $normalizer->normalize('Does the A/C work well?', $this->makeKnownFieldKeys());
 
         $this->assertSame('matched', $normalizer->getLastStatus());
+    }
+
+    public function test_case_L1_matched_key_sets_error_null(): void
+    {
+        $client     = $this->makeClientMock('listing.bedrooms');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('How many bedrooms?', $this->makeKnownFieldKeys());
+
         $this->assertNull($normalizer->getLastError());
     }
 
-    // ── L2 ── OpenAI returns 'unknown' → status=unknown, error=null ──────────
+    // ── L2 ── OpenAI returns 'unknown' → status = unknown, error = null ───────
 
     public function test_case_L2_unknown_response_sets_status_unknown(): void
     {
@@ -957,12 +965,62 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         $normalizer->normalize('Who is the best president?', $this->makeKnownFieldKeys());
 
         $this->assertSame('unknown', $normalizer->getLastStatus());
+    }
+
+    public function test_case_L2_unknown_response_sets_error_null(): void
+    {
+        $client     = $this->makeClientMock('unknown');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Who is the best president?', $this->makeKnownFieldKeys());
+
         $this->assertNull($normalizer->getLastError());
     }
 
-    // ── L3 ── Hallucination guard fires → status=failed, error=invalid_key ───
+    // ── L3 ── OpenAI returns invalid JSON (exception) → status = failed, error = invalid_json
 
-    public function test_case_L3_hallucinated_key_sets_status_failed_invalid_key(): void
+    public function test_case_L3_invalid_json_exception_sets_status_failed(): void
+    {
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException(
+            new \Exception('OpenAI response is not valid JSON: Syntax error.')
+        );
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('failed', $normalizer->getLastStatus());
+    }
+
+    public function test_case_L3_invalid_json_exception_sets_error_invalid_json(): void
+    {
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException(
+            new \Exception('OpenAI response is not valid JSON: Syntax error.')
+        );
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('invalid_json', $normalizer->getLastError());
+    }
+
+    public function test_case_L3_unserializable_response_exception_sets_error_invalid_json(): void
+    {
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException(
+            new \Exception('OpenAI response could not be parsed by the SDK.')
+        );
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('invalid_json', $normalizer->getLastError());
+    }
+
+    // ── L4 ── Key not in approved list → status = failed, error = invalid_key ─
+
+    public function test_case_L4_hallucinated_key_sets_status_failed(): void
     {
         $client     = $this->makeClientMock('listing.invented_field_that_does_not_exist');
         $normalizer = $this->makeNormalizer($client);
@@ -970,10 +1028,19 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
 
         $this->assertSame('failed', $normalizer->getLastStatus());
+    }
+
+    public function test_case_L4_hallucinated_key_sets_error_invalid_key(): void
+    {
+        $client     = $this->makeClientMock('listing.invented_field_that_does_not_exist');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
         $this->assertSame('invalid_key', $normalizer->getLastError());
     }
 
-    // ── L4 ── Timeout exception → status=failed, error=timeout ──────────────
+    // ── L4.1 ── Timeout exception (legacy test case) ─────────────────────────
 
     public function test_case_L4_timeout_exception_sets_status_failed_timeout(): void
     {
@@ -989,9 +1056,50 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         $this->assertSame('timeout', $normalizer->getLastError());
     }
 
-    // ── L5 ── Rate-limit exception → status=failed, error=rate_limited ───────
+    // ── L5 ── Rate limit exception → status = failed, error = rate_limited ────
 
-    public function test_case_L5_rate_limit_exception_sets_status_failed_rate_limited(): void
+    public function test_case_L5_rate_limit_exception_code_sets_status_failed(): void
+    {
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException(
+            new \Exception('Non-retryable OpenAI API error (HTTP 429).', 429)
+        );
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('failed', $normalizer->getLastStatus());
+    }
+
+    public function test_case_L5_rate_limit_exception_code_sets_error_rate_limited(): void
+    {
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException(
+            new \Exception('Non-retryable OpenAI API error (HTTP 429).', 429)
+        );
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('rate_limited', $normalizer->getLastError());
+    }
+
+    public function test_case_L5_rate_limit_via_previous_exception_sets_error_rate_limited(): void
+    {
+        // Simulate the wrapped exception produced when retries are exhausted on a 429.
+        $previous = new \Exception('Rate limited', 429);
+        $wrapping = new \Exception('OpenAI generation failed after 3 attempt(s). Last error: Rate limited', 0, $previous);
+
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException($wrapping);
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('rate_limited', $normalizer->getLastError());
+    }
+
+    public function test_case_L5_rate_limit_exception_message_sets_status_failed_rate_limited(): void
     {
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->method('send')->willThrowException(
@@ -1005,7 +1113,36 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         $this->assertSame('rate_limited', $normalizer->getLastError());
     }
 
-    // ── L6 ── Generic API exception → status=failed, error=api_error ─────────
+    // ── L6 ── Timeout/network exception → status = failed, error = timeout ────
+
+    public function test_case_L6_transporter_exception_via_previous_sets_status_failed(): void
+    {
+        // Simulate a TransporterException wrapped after retries exhausted.
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException(
+            new \RuntimeException('Connection timed out after 10 seconds.')
+        );
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('failed', $normalizer->getLastStatus());
+    }
+
+    public function test_case_L6_generic_network_exception_produces_api_error(): void
+    {
+        // A generic network RuntimeException (not identifiable as TransporterException
+        // via class name) falls back to 'api_error' — still 'failed' status.
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException(
+            new \RuntimeException('Connection timed out after 10 seconds.')
+        );
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertNotNull($normalizer->getLastError());
+    }
 
     public function test_case_L6_generic_api_exception_sets_status_failed_api_error(): void
     {
@@ -1021,20 +1158,82 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         $this->assertSame('api_error', $normalizer->getLastError());
     }
 
-    // ── L7 ── Missing normalized_key → status=failed, error=empty_response ───
+    // ── L7 ── Generic API exception → status = failed, error = api_error ──────
 
-    public function test_case_L7_missing_normalized_key_sets_status_failed_empty_response(): void
+    public function test_case_L7_generic_api_exception_sets_status_failed(): void
+    {
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException(
+            new \Exception('Non-retryable OpenAI API error (HTTP 500).', 500)
+        );
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('failed', $normalizer->getLastStatus());
+    }
+
+    public function test_case_L7_generic_api_exception_sets_error_api_error(): void
+    {
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException(
+            new \Exception('Non-retryable OpenAI API error (HTTP 403).', 403)
+        );
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('api_error', $normalizer->getLastError());
+    }
+
+    // ── L8 ── Empty/missing response data → status = failed, error = empty_response
+
+    public function test_case_L8_missing_normalized_key_sets_status_failed(): void
     {
         $client     = $this->makeClientMockWithMissingKey();
         $normalizer = $this->makeNormalizer($client);
 
-        $normalizer->normalize('Tell me about the A/C system.', $this->makeKnownFieldKeys());
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
 
         $this->assertSame('failed', $normalizer->getLastStatus());
+    }
+
+    public function test_case_L8_missing_normalized_key_sets_error_empty_response(): void
+    {
+        $client     = $this->makeClientMockWithMissingKey();
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
         $this->assertSame('empty_response', $normalizer->getLastError());
     }
 
-    // ── L8 ── Empty question guard → status=unknown (no OpenAI call) ─────────
+    public function test_case_L8_null_normalized_key_sets_error_empty_response(): void
+    {
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willReturn([
+            'data'           => ['normalized_key' => null],
+            'model'          => 'gpt-4o',
+            'prompt_tokens'  => 10,
+            'total_tokens'   => 10,
+            'api_request_id' => null,
+        ]);
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('empty_response', $normalizer->getLastError());
+    }
+
+    public function test_case_L8_empty_string_normalized_key_sets_error_empty_response(): void
+    {
+        $client     = $this->makeClientMock('');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('empty_response', $normalizer->getLastError());
+    }
 
     public function test_case_L8_empty_question_sets_status_unknown(): void
     {
@@ -1048,7 +1247,40 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         $this->assertNull($normalizer->getLastError());
     }
 
-    // ── L9 ── classifyThrowable() timeout detection is present in service ─────
+    // ── L9 ── State resets correctly between calls ─────────────────────────────
+
+    public function test_case_L9_status_resets_between_calls(): void
+    {
+        // First call: match
+        $mockA = $this->createMock(OpenAiClientService::class);
+        $mockA->method('send')->willReturn([
+            'data'           => ['normalized_key' => 'listing.bedrooms'],
+            'model'          => 'gpt-4o',
+            'prompt_tokens'  => 5,
+            'total_tokens'   => 7,
+            'api_request_id' => null,
+        ]);
+        $normalizer = $this->makeNormalizer($mockA);
+        $normalizer->normalize('How many bedrooms?', $this->makeKnownFieldKeys());
+        $this->assertSame('matched', $normalizer->getLastStatus());
+
+        // Second call (different mock — throws): status should change to failed
+        $mockB = $this->createMock(OpenAiClientService::class);
+        $mockB->method('send')->willThrowException(new \RuntimeException('boom'));
+
+        $normalizerB = new \App\Services\AskAi\AskAiIntentNormalizerService($mockB, $this->makeContractServiceMock());
+        $normalizerB->normalize('How many bedrooms?', $this->makeKnownFieldKeys());
+        $this->assertSame('failed', $normalizerB->getLastStatus());
+    }
+
+    public function test_case_L9_getters_return_null_before_first_call(): void
+    {
+        $mock       = $this->createMock(OpenAiClientService::class);
+        $normalizer = $this->makeNormalizer($mock);
+
+        $this->assertNull($normalizer->getLastStatus());
+        $this->assertNull($normalizer->getLastError());
+    }
 
     public function test_case_L9_service_file_contains_timeout_message_detection(): void
     {
@@ -1069,22 +1301,5 @@ class AskAiIntentNormalizerServiceTest extends TestCase
             'classifyThrowable() must produce rate_limited error string'
         );
     }
-
-    // ── L10 ── Status resets between consecutive calls ────────────────────────
-
-    public function test_case_L10_status_resets_correctly_between_calls(): void
-    {
-        // First call: matched
-        $client1     = $this->makeClientMock('listing.bedrooms');
-        $normalizer  = $this->makeNormalizer($client1);
-        $normalizer->normalize('How many bedrooms?', $this->makeKnownFieldKeys());
-        $this->assertSame('matched', $normalizer->getLastStatus());
-
-        // Second call on same instance: should produce its own result (unknown)
-        // We rebuild with a new client so normalize() is called again cleanly.
-        $client2     = $this->makeClientMock('unknown');
-        $normalizer2 = $this->makeNormalizer($client2);
-        $normalizer2->normalize('Who is the best president?', $this->makeKnownFieldKeys());
-        $this->assertSame('unknown', $normalizer2->getLastStatus());
-    }
 }
+

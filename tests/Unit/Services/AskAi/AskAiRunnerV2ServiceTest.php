@@ -99,10 +99,16 @@ class AskAiRunnerV2ServiceTest extends TestCase
      *
      * @param  bool        $isEnabled     Value isEnabled() should return.
      * @param  string|null $normalizedKey Value normalize() should return; null if not configured.
+     * @param  string|null $lastStatus    Value getLastStatus() should return after normalize().
+     * @param  string|null $lastError     Value getLastError() should return after normalize().
      * @return AskAiIntentNormalizerService&\PHPUnit\Framework\MockObject\MockObject
      */
-    private function makeNormalizerMock(bool $isEnabled, ?string $normalizedKey = null)
-    {
+    private function makeNormalizerMock(
+        bool $isEnabled,
+        ?string $normalizedKey = null,
+        ?string $lastStatus = null,
+        ?string $lastError = null
+    ) {
         $mock = $this->createMock(AskAiIntentNormalizerService::class);
         $mock->method('isEnabled')->willReturn($isEnabled);
         $mock->method('buildKnownFieldKeys')->willReturn([
@@ -112,9 +118,12 @@ class AskAiRunnerV2ServiceTest extends TestCase
         ]);
         if ($normalizedKey !== null) {
             $mock->method('normalize')->willReturn($normalizedKey);
+            $mock->method('getLastStatus')->willReturn($lastStatus ?? 'matched');
         } else {
             $mock->method('normalize')->willReturn(null);
+            $mock->method('getLastStatus')->willReturn($lastStatus ?? 'unknown');
         }
+        $mock->method('getLastError')->willReturn($lastError);
         return $mock;
     }
 
@@ -1412,6 +1421,8 @@ class AskAiRunnerV2ServiceTest extends TestCase
     //   failed         — normalizer called, operational failure
     //
     // All tests use pure unit mocks (no DB, no Laravel app).
+    // The run() trace always carries normalizer_status and normalizer_error so
+    // QA/staging can distinguish why normalization returned null.
     // =========================================================================
 
     /**
@@ -1459,6 +1470,22 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $this->assertNull($result['trace']['normalizer_error']);
     }
 
+    public function test_case_M1_non_unsupported_question_trace_normalizer_status_not_applicable(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('property_standout'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertSame('not_applicable', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
     // ── M2 ── Prohibited question → normalizer_status=not_applicable ─────────
 
     public function test_case_M2_prohibited_question_produces_not_applicable_status(): void
@@ -1472,6 +1499,29 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
 
         $result = $runner->run('seller', 1, 'What race is the neighborhood?');
+
+        $this->assertSame('not_applicable', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
+    public function test_case_M1_prohibited_question_trace_normalizer_status_not_applicable(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('prohibited'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'blocked',
+            'prompt_package' => ['status' => 'blocked', 'required_disclosures' => [], 'source_attribution' => [], 'refusal_template' => 'Not permitted.'],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'blocked',
+        ]));
+
+        $result = $runner->run('seller', 1, 'Is this a safe neighborhood?');
 
         $this->assertSame('not_applicable', $result['trace']['normalizer_status']);
         $this->assertNull($result['trace']['normalizer_error']);
@@ -1495,6 +1545,31 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $this->assertNull($result['trace']['normalizer_error']);
     }
 
+    // ── M2 ── Unsupported with normalizer null: normalizer_status = not_called ──
+
+    public function test_case_M2_no_normalizer_injected_trace_normalizer_status_not_called(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'unsupported',
+            'prompt_package' => ['status' => 'unsupported', 'required_disclosures' => [], 'source_attribution' => [], 'refusal_template' => null],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'unsupported',
+        ]));
+
+        $result = $runner->run('seller', 1, 'Some ambiguous question.');
+
+        $this->assertSame('not_called', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
     // ── M4 ── Unsupported + flag off → not_called ────────────────────────────
 
     public function test_case_M4_unsupported_with_flag_off_produces_not_called(): void
@@ -1513,6 +1588,31 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
 
         $result = $runner->run('seller', 1, 'Who designed this house?');
+
+        $this->assertSame('not_called', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
+    public function test_case_M2_flag_off_trace_normalizer_status_not_called(): void
+    {
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(false);
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'unsupported',
+            'prompt_package' => ['status' => 'unsupported', 'required_disclosures' => [], 'source_attribution' => [], 'refusal_template' => null],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'unsupported',
+        ]));
+
+        $result = $runner->run('seller', 1, 'Some ambiguous question.');
 
         $this->assertSame('not_called', $result['trace']['normalizer_status']);
         $this->assertNull($result['trace']['normalizer_error']);
@@ -1542,6 +1642,26 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $this->assertNull($result['trace']['normalizer_error']);
     }
 
+    // ── M3 ── Normalizer called and matched: normalizer_status = matched ───────
+
+    public function test_case_M3_normalizer_matched_trace_normalizer_status_matched(): void
+    {
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, 'faq_answers.hvac_system_age', 'matched', null);
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Does the A/C work well?');
+
+        $this->assertSame('matched', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
     // ── M6 ── Normalizer called + unknown → normalizer_status=unknown ─────────
 
     public function test_case_M6_normalizer_unknown_produces_unknown_status(): void
@@ -1561,6 +1681,33 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
 
         $result = $runner->run('seller', 1, 'Who is the best architect?');
+
+        $this->assertSame('unknown', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
+    // ── M4 ── Normalizer called and returned null (unknown): trace reflects it ─
+
+    public function test_case_M4_normalizer_unknown_trace_normalizer_status_unknown(): void
+    {
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, null, 'unknown', null);
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'unsupported',
+            'prompt_package' => ['status' => 'unsupported', 'required_disclosures' => [], 'source_attribution' => [], 'refusal_template' => null],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'unsupported',
+        ]));
+
+        $result = $runner->run('seller', 1, 'Something OpenAI could not map.');
 
         $this->assertSame('unknown', $result['trace']['normalizer_status']);
         $this->assertNull($result['trace']['normalizer_error']);
@@ -1588,5 +1735,149 @@ class AskAiRunnerV2ServiceTest extends TestCase
 
         $this->assertSame('failed', $result['trace']['normalizer_status']);
         $this->assertSame('rate_limited', $result['trace']['normalizer_error']);
+    }
+
+    // ── M5 ── Normalizer failed (operational): trace carries status + error code ──
+
+    public function test_case_M5_normalizer_failed_trace_normalizer_status_failed(): void
+    {
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, null, 'failed', 'rate_limited');
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'unsupported',
+            'prompt_package' => ['status' => 'unsupported', 'required_disclosures' => [], 'source_attribution' => [], 'refusal_template' => null],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'unsupported',
+        ]));
+
+        $result = $runner->run('seller', 1, 'Something the normalizer rate-limited on.');
+
+        $this->assertSame('failed', $result['trace']['normalizer_status']);
+        $this->assertSame('rate_limited', $result['trace']['normalizer_error']);
+    }
+
+    public function test_case_M5_normalizer_failed_with_timeout_trace_carries_error_code(): void
+    {
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, null, 'failed', 'timeout');
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'unsupported',
+            'prompt_package' => ['status' => 'unsupported', 'required_disclosures' => [], 'source_attribution' => [], 'refusal_template' => null],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'unsupported',
+        ]));
+
+        $result = $runner->run('seller', 1, 'Something that timed out.');
+
+        $this->assertSame('timeout', $result['trace']['normalizer_error']);
+    }
+
+    // ── M6 ── Exception path carries normalizer_status and normalizer_error ───
+
+    public function test_case_M6_throwable_before_normalization_trace_has_null_normalizer_status(): void
+    {
+        // Exception fires during classify() — normalizer never ran.
+        // Both fields should be null (initial pre-try values).
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willThrowException(new \RuntimeException('pipeline exploded'));
+
+        $result = $runner->run('seller', 1, 'q');
+
+        $this->assertArrayHasKey('normalizer_status', $result['trace']);
+        $this->assertArrayHasKey('normalizer_error', $result['trace']);
+        $this->assertNull($result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
+    public function test_case_M6_throwable_after_normalization_preserves_normalizer_status(): void
+    {
+        // Normalizer succeeds (matched), but the internal runner throws afterwards.
+        // The exception trace must carry the normalizer status that was already set.
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, 'faq_answers.hvac_system_age', 'matched', null);
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willThrowException(new \RuntimeException('internal runner exploded'));
+
+        $result = $runner->run('seller', 1, 'Does the A/C work well?');
+
+        $this->assertSame('failed', $result['status']);
+        $this->assertSame('matched', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
+    public function test_case_M6_throwable_after_failed_normalization_preserves_normalizer_error(): void
+    {
+        // Normalizer fails (rate_limited), then the internal runner also throws.
+        // The exception trace must carry the rate_limited error code — not null.
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, null, 'failed', 'rate_limited');
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willThrowException(new \RuntimeException('internal runner exploded'));
+
+        $result = $runner->run('seller', 1, 'Some question.');
+
+        $this->assertSame('failed', $result['status']);
+        $this->assertSame('failed', $result['trace']['normalizer_status']);
+        $this->assertSame('rate_limited', $result['trace']['normalizer_error']);
+    }
+
+    // ── M7 ── Trace keys always present regardless of path ─────────────────────
+
+    public function test_case_M7_trace_always_has_normalizer_status_key_on_happy_path(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertArrayHasKey('normalizer_status', $result['trace']);
+        $this->assertArrayHasKey('normalizer_error', $result['trace']);
+    }
+
+    public function test_case_M7_trace_always_has_normalizer_status_key_on_missing_package_path(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'failed',
+            'prompt_package' => null,
+        ]));
+
+        $result = $runner->run('seller', 1, 'Some question.');
+
+        $this->assertArrayHasKey('normalizer_status', $result['trace']);
+        $this->assertArrayHasKey('normalizer_error', $result['trace']);
     }
 }
