@@ -557,6 +557,13 @@ class TenantAgentAuctionEdit extends Component
     public $assumable_fee_amount = '';
     public $assumable_occupancy_requirement = '';
     public $assumable_occupancy_other = '';
+
+    // Buyer-side assumable financing fields (purchasing-terms partial)
+    public $assumable_interest = '';
+    public $assumable_max_interest_rate = '';
+    public $assumable_max_monthly_payment = '';
+    public $assumable_bridge_gap_cash = '';
+
     public $video_link = '';
 
 
@@ -2832,6 +2839,12 @@ class TenantAgentAuctionEdit extends Component
         $this->gap_payment_amount = $auction->info('gap_payment_amount');
         $this->assumable_occupancy_requirement = $auction->info('assumable_occupancy_requirement') ?? '';
         $this->assumable_occupancy_other = $auction->info('assumable_occupancy_other') ?? '';
+        if ($this->user_type === 'buyer') {
+            $this->assumable_interest = $auction->info('assumable_interest') ?? '';
+            $this->assumable_max_interest_rate = $auction->info('assumable_max_interest_rate') ?? '';
+            $this->assumable_max_monthly_payment = $auction->info('assumable_max_monthly_payment') ?? '';
+            $this->assumable_bridge_gap_cash = $auction->info('assumable_bridge_gap_cash') ?? '';
+        }
         $this->current_status = $auction->info('current_status') ?? '';
         $rawExchangeItem = $auction->info('exchange_item');
         if (is_string($rawExchangeItem)) {
@@ -3630,6 +3643,12 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('gap_payment_amount', $this->gap_payment_amount);
             $auction->saveMeta('assumable_occupancy_requirement', $this->assumable_occupancy_requirement);
             $auction->saveMeta('assumable_occupancy_other', $this->assumable_occupancy_other);
+            if ($this->user_type === 'buyer') {
+                $auction->saveMeta('assumable_interest', $this->assumable_interest);
+                $auction->saveMeta('assumable_max_interest_rate', $this->stripCommas($this->assumable_max_interest_rate));
+                $auction->saveMeta('assumable_max_monthly_payment', $this->stripCommas($this->assumable_max_monthly_payment));
+                $auction->saveMeta('assumable_bridge_gap_cash', $this->stripCommas($this->assumable_bridge_gap_cash));
+            }
             $exchangeItemToSave = is_array($this->exchange_item) ? json_encode(array_values(array_filter($this->exchange_item))) : $this->exchange_item;
             $auction->saveMeta('exchange_item', $exchangeItemToSave);
             $auction->saveMeta('other_exchange_item', $this->other_exchange_item);

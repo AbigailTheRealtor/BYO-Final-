@@ -380,7 +380,13 @@ class TenantAgentAuction extends Component
     public $assumable_fee_amount = '';
     public $assumable_occupancy_requirement = '';
     public $assumable_occupancy_other = '';
-    
+
+    // Buyer-side assumable financing fields (purchasing-terms partial)
+    public $assumable_interest = '';
+    public $assumable_max_interest_rate = '';
+    public $assumable_max_monthly_payment = '';
+    public $assumable_bridge_gap_cash = '';
+
     // Cryptocurrency additional fields
     public $crypto_exchange_method = '';
     public $crypto_custodian_wallet = '';
@@ -3298,6 +3304,12 @@ class TenantAgentAuction extends Component
             $this->assumable_fee_amount = $auction->info('assumable_fee_amount') ?? '';
             $this->assumable_occupancy_requirement = $auction->info('assumable_occupancy_requirement') ?? '';
             $this->assumable_occupancy_other = $auction->info('assumable_occupancy_other') ?? '';
+            if ($this->user_type === 'buyer') {
+                $this->assumable_interest = $auction->info('assumable_interest') ?? '';
+                $this->assumable_max_interest_rate = $auction->info('assumable_max_interest_rate') ?? '';
+                $this->assumable_max_monthly_payment = $auction->info('assumable_max_monthly_payment') ?? '';
+                $this->assumable_bridge_gap_cash = $auction->info('assumable_bridge_gap_cash') ?? '';
+            }
             $this->max_monthly_payment = $auction->get->max_monthly_payment ?? '';
             $this->outstanding_balance = $auction->get->outstanding_balance ?? '';
             $this->gap_payment_type = $auction->get->gap_payment_type ?? '';
@@ -4495,6 +4507,12 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('assumable_fee_amount', $this->stripCommas($this->assumable_fee_amount));
         $auction->saveMeta('assumable_occupancy_requirement', $this->assumable_occupancy_requirement);
         $auction->saveMeta('assumable_occupancy_other', $this->assumable_occupancy_other);
+        if ($this->user_type === 'buyer') {
+            $auction->saveMeta('assumable_interest', $this->assumable_interest);
+            $auction->saveMeta('assumable_max_interest_rate', $this->stripCommas($this->assumable_max_interest_rate));
+            $auction->saveMeta('assumable_max_monthly_payment', $this->stripCommas($this->assumable_max_monthly_payment));
+            $auction->saveMeta('assumable_bridge_gap_cash', $this->stripCommas($this->assumable_bridge_gap_cash));
+        }
         $auction->saveMeta('max_monthly_payment', $this->max_monthly_payment);
         $auction->saveMeta('outstanding_balance', $this->outstanding_balance);
         $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
