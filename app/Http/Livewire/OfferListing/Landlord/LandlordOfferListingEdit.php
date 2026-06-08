@@ -5,6 +5,9 @@ namespace App\Http\Livewire\OfferListing\Landlord;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\LandlordAgentAuction as HirelandLordAgentAuction;
+use App\Models\AcceptedBidSummary;
+use App\Models\PropertyLocationDna;
+use App\Models\PropertyLocationPoi;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -1515,8 +1518,31 @@ class LandlordOfferListingEdit extends Component
     }
     public function render()
     {
+        $canViewLocationDnaPanel = false;
+        if ($this->listingId) {
+            $isOwner = HirelandLordAgentAuction::where('id', $this->listingId)
+                ->where('user_id', Auth::id())
+                ->exists();
+            $isAssigned = !$isOwner && AcceptedBidSummary::where('listing_type', 'landlord_agent')
+                ->where('listing_id', $this->listingId)
+                ->where('agent_user_id', Auth::id())
+                ->exists();
+            $canViewLocationDnaPanel = $isOwner || $isAssigned;
+        }
 
-        return view('livewire.offer-listing.landlord.offer-landlord-listing-edit')->extends('layouts.main')->section('content'); // Define the section
+        $locationDna = $canViewLocationDnaPanel
+            ? PropertyLocationDna::where('listing_type', 'landlord_agent')->where('listing_id', $this->listingId)->first()
+            : null;
+        $locationPois = $canViewLocationDnaPanel
+            ? PropertyLocationPoi::where('listing_type', 'landlord_agent')->where('listing_id', $this->listingId)->orderBy('poi_category')->orderBy('distance_miles')->get()
+            : collect();
+        $canGenerateLocationDna = $canViewLocationDnaPanel
+            && !empty($this->address)
+            && !empty($this->property_city)
+            && !empty($this->property_state);
+
+        return view('livewire.offer-listing.landlord.offer-landlord-listing-edit', compact('locationDna', 'locationPois', 'canGenerateLocationDna', 'canViewLocationDnaPanel'))
+            ->extends('layouts.main')->section('content');
     }
     protected function ensureArray($value)
     {

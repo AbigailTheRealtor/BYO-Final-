@@ -81,6 +81,7 @@ use App\Http\Controllers\LandlordAgentAuctionBidController;
 use App\Http\Controllers\LandlordCounteredTermsController;
 use App\Http\Controllers\Agent\PropertyMarketingBriefReviewController;
 use App\Http\Controllers\Agent\AiMarketingReportAgentController;
+use App\Http\Controllers\Agent\AgentLocationDnaController;
 use App\Http\Controllers\Owner\AiMarketingReportOwnerApprovalController;
 use App\Http\Controllers\SellerCounterBidController;
 use App\Http\Controllers\SellerCounteredTermsController;
@@ -761,6 +762,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
             // Route::get('/referral/auction/add', [ReferralAuctionController::class, 'index'])->name('referral.auction.add');
+
+            Route::post('/agent/location-dna/{listingType}/{listingId}/generate', [AgentLocationDnaController::class, 'generate'])->name('location-dna.generate');
         });
         // Counter Bid Routes
         Route::post('hire/agent/seller/bid/accept', [SellerAgentAuctionController::class, 'acceptSABid'])->name('acceptSABid');

@@ -1222,6 +1222,22 @@
     </div>
 </div>
 
+@if($listingId && $canViewLocationDnaPanel)
+<div class="container-fluid mt-2 mb-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            @include('partials.location-dna-agent-panel', [
+                'listingType'            => 'landlord_agent',
+                'listingId'              => $listingId,
+                'locationDna'            => $locationDna,
+                'locationPois'           => $locationPois,
+                'canGenerateLocationDna' => $canGenerateLocationDna,
+            ])
+        </div>
+    </div>
+</div>
+@endif
+
 @push('scripts')
     <script>
         let currentServiceType = null;

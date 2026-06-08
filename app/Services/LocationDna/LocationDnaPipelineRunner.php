@@ -2,8 +2,10 @@
 
 namespace App\Services\LocationDna;
 
+use App\Models\LandlordAgentAuction;
 use App\Models\LandlordAuction;
 use App\Models\PropertyAuction;
+use App\Models\SellerAgentAuction;
 use App\Models\UsCity;
 use App\Models\UsCounty;
 use App\Models\UsState;
@@ -164,6 +166,14 @@ class LocationDnaPipelineRunner
             return $this->resolveLandlordAddress($listingId);
         }
 
+        if ($listingType === 'seller_agent') {
+            return $this->resolveSellerAgentAddress($listingId);
+        }
+
+        if ($listingType === 'landlord_agent') {
+            return $this->resolveLandlordAgentAddress($listingId);
+        }
+
         return ['address' => '', 'city' => '', 'state' => ''];
     }
 
@@ -212,6 +222,48 @@ class LocationDnaPipelineRunner
         }
 
         $listing = LandlordAuction::find($listingId);
+
+        if ($listing === null) {
+            return ['address' => '', 'city' => '', 'state' => ''];
+        }
+
+        return [
+            'address' => (string) ($listing->info('address') ?: ''),
+            'city'    => (string) ($listing->info('property_city') ?: ''),
+            'state'   => (string) ($listing->info('property_state') ?: ''),
+            'county'  => (string) ($listing->info('property_county') ?: ''),
+            'zip'     => (string) ($listing->info('property_zip') ?: ''),
+        ];
+    }
+
+    /**
+     * Resolve address for a SellerAgentAuction (offer listing) record.
+     * Address data is stored entirely in EAV meta via info().
+     */
+    private function resolveSellerAgentAddress(int $listingId): array
+    {
+        $listing = SellerAgentAuction::find($listingId);
+
+        if ($listing === null) {
+            return ['address' => '', 'city' => '', 'state' => ''];
+        }
+
+        return [
+            'address' => (string) ($listing->info('address') ?: ''),
+            'city'    => (string) ($listing->info('property_city') ?: ''),
+            'state'   => (string) ($listing->info('property_state') ?: ''),
+            'county'  => (string) ($listing->info('property_county') ?: ''),
+            'zip'     => (string) ($listing->info('property_zip') ?: ''),
+        ];
+    }
+
+    /**
+     * Resolve address for a LandlordAgentAuction (offer listing) record.
+     * Address data is stored entirely in EAV meta via info().
+     */
+    private function resolveLandlordAgentAddress(int $listingId): array
+    {
+        $listing = LandlordAgentAuction::find($listingId);
 
         if ($listing === null) {
             return ['address' => '', 'city' => '', 'state' => ''];
