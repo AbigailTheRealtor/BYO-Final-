@@ -397,6 +397,24 @@
     .ask-ai-chip-wrap::-webkit-scrollbar { display: none; }
     .ask-ai-chip { flex-shrink: 0; }
 }
+
+/* ---- Ask AI modal submit button — override Tailwind preflight ----
+   Tailwind's compiled preflight sets [type='button'] { background-color: transparent }
+   with equal specificity to Bootstrap's .btn-primary. Since app.css loads after
+   bootstrap.min.css, Tailwind wins and the button appears white/invisible.
+   Using the modal ID gives specificity (1,1,0) which beats [type='button'] at (0,1,0).
+   ----------------------------------------------------------------- */
+#tclAiModal .modal-footer .btn-primary {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+}
+#tclAiModal .modal-footer .btn-primary:hover,
+#tclAiModal .modal-footer .btn-primary:focus {
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+    color: #ffffff !important;
+}
 </style>
 @endpush
 

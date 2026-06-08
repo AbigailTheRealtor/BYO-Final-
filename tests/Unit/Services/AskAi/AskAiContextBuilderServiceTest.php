@@ -2021,6 +2021,36 @@ class AskAiContextBuilderServiceTest extends TestCase
             "financing_type must be null when financing_id is absent");
     }
 
+    public function test_case_T_buyer_address_native_column_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(['address' => '123 Main St, Tampa, FL 33602'])
+        );
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertArrayHasKey('address', $result['listing'],
+            "listing context must include 'address' key for buyer");
+        $this->assertSame('123 Main St, Tampa, FL 33602', $result['listing']['address'],
+            "buyer address must be read from native address column");
+    }
+
+    public function test_case_T_buyer_address_null_when_address_absent(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields()
+        );
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertArrayHasKey('address', $result['listing'],
+            "address key must be present in buyer context even when null");
+        $this->assertNull($result['listing']['address'],
+            "address must be null when native address column is absent");
+    }
+
     // --- Landlord new fields ---
 
     public function test_case_T_landlord_property_zip_from_eav_appears_in_listing_context(): void

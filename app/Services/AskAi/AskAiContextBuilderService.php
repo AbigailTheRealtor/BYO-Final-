@@ -392,6 +392,7 @@ class AskAiContextBuilderService
             // Buyer — buyer_criteria_auctions (native columns) + EAV
             // -----------------------------------------------------------------
             'buyer' => [
+                'address'             => $nativeGet('address'),
                 'description'         => $nativeGet('description'),
                 'max_price'           => $nativeGet('max_price'),
                 'bedrooms'            => $nativeGet('bedrooms'),
