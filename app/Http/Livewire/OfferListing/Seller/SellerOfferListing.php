@@ -14,10 +14,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 
 class SellerOfferListing extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, HasMlsImport;
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;

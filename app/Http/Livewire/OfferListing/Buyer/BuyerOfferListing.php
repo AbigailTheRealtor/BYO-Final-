@@ -13,10 +13,11 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\UsState;
 use App\Models\UsCounty;
 use App\Models\UsCity;
+use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 
 class BuyerOfferListing extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, HasMlsImport;
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;

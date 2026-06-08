@@ -722,6 +722,26 @@
                     </div>
                 @endif
 
+                {{-- MLS Import Entry Point --}}
+                <div class="container pt-3 pb-0">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                wire:click="$set('showImportModal', true)">
+                            <i class="fas fa-file-import me-1"></i>Have an MLS listing? Import it to pre-fill this form &rarr;
+                        </button>
+                    </div>
+                </div>
+                @include('livewire.offer-listing.shared.mls-import-modal')
+                @if($importSuccess)
+                    <div class="container">
+                        <div class="alert alert-success alert-dismissible py-2 mt-2" role="alert">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <strong>Imported fields were applied.</strong> Please review all values before publishing.
+                            <button type="button" class="btn-close" wire:click="$set('importSuccess', false)"></button>
+                        </div>
+                    </div>
+                @endif
+
                 <div id="wizard-form-container" class="container pt-5 pb-5">
 
                     <form id="create-auction-form" wire:submit.prevent="store" novalidate>
