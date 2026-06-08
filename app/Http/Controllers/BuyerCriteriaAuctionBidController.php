@@ -93,9 +93,10 @@ class BuyerCriteriaAuctionBidController extends Controller
             $bid->saveMeta("lease_purchase_conditions", $request->lease_purchase_conditions);
             $bid->saveMeta("price_changes_possibility_lease_purchase", $request->price_changes_possibility_lease_purchase);
             $bid->saveMeta("sellerFeePurchaseYes", $request->sellerFeePurchaseYes);
-            $bid->saveMeta("assumable_terms_offered", $request->assumable_terms_offered);
-            $bid->saveMeta("restrictions_or_qualifications", $request->restrictions_or_qualifications);
-            $bid->saveMeta("outstandingBalanceYes", $request->outstandingBalanceYes);
+            $bid->saveMeta("assumable_interest", $request->assumable_interest);
+            $bid->saveMeta("assumable_max_interest_rate", $request->assumable_max_interest_rate);
+            $bid->saveMeta("assumable_max_monthly_payment", $request->assumable_max_monthly_payment);
+            $bid->saveMeta("assumable_bridge_gap_cash", $request->assumable_bridge_gap_cash);
             $bid->saveMeta("otherTrade", $request->otherTrade);
             $bid->saveMeta("estimatedTrade", $request->estimatedTrade);
             $bid->saveMeta("specificTrade", $request->specificTrade);

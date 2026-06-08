@@ -89,11 +89,10 @@ class BuyerOfferListingEdit extends Component
     public $balloon_payment = '';
     public $balloon_payment_amount = '';
     public $balloon_payment_date = '';
-    public $assumable_terms = '';
-    public $max_assumable_rate = '';
-    public $max_monthly_payment = '';
-    public $gap_payment_type = '$';
-    public $gap_payment_amount = '';
+    public $assumable_interest = '';
+    public $assumable_max_interest_rate = '';
+    public $assumable_max_monthly_payment = '';
+    public $assumable_bridge_gap_cash = '';
     
     // Seller Financing Additional Properties
     public $seller_amortization_type = '';
@@ -548,7 +547,6 @@ class BuyerOfferListingEdit extends Component
     public $property_items_json = '[]';
     public $business_type_selected_json = '[]';
     public $isEditMode = true;
-    public $assumable_loan_type = '';
     public $business_type_selected = [];
     public $other_business_type = '';
     public $property_city = '';
@@ -582,12 +580,6 @@ class BuyerOfferListingEdit extends Component
         $this->seller_financing_amount = '';
     }
 
-    public function setGapPaymentType($type)
-    {
-        $this->gap_payment_type = $type;
-        $this->gap_payment_amount = '';
-    }
-
     public function setEarnestMoneyType($type)
     {
         $this->earnest_money_type = $type;
@@ -602,11 +594,6 @@ class BuyerOfferListingEdit extends Component
         } elseif ($which === 'purchase') {
             $this->purchase_type = $type ?: 'percent';
             $this->purchase_value = '';
-        }
-
-        if ($which === 'gap_payment_type') {
-            $this->gap_payment_type = $type;
-            $this->gap_payment_amount = '';
         }
 
         if ($which === 'down_payment_type') {
@@ -628,6 +615,15 @@ class BuyerOfferListingEdit extends Component
     public function updatedBusinessTypeSelectedJson($value)
     {
         $this->business_type_selected = json_decode($value, true) ?? [];
+    }
+
+    public function updatedAssumableInterest($value): void
+    {
+        if ($value !== 'Yes') {
+            $this->assumable_max_interest_rate  = '';
+            $this->assumable_max_monthly_payment = '';
+            $this->assumable_bridge_gap_cash     = '';
+        }
     }
 
     public function updatedOfferedFinancing($value)
@@ -675,8 +671,7 @@ class BuyerOfferListingEdit extends Component
                 'seller_payment_frequency', 'seller_payment_frequency_other',
                 'seller_late_fee_amount'
             ],
-            'Assumable' => ['assumable_terms', 'max_assumable_rate', 'assumable_loan_type', 'max_monthly_payment'],
-            'Bridge Loan' => ['gap_payment_amount', 'gap_payment_type'],
+            'Assumable' => ['assumable_interest', 'assumable_max_interest_rate', 'assumable_max_monthly_payment', 'assumable_bridge_gap_cash'],
             'Exchange/Trade' => [
                 'exchange_item', 'other_exchange_item', 'exchange_item_value', 
                 'exchange_item_condition', 'additional_cash', 'value_determination',
@@ -1410,12 +1405,10 @@ class BuyerOfferListingEdit extends Component
             'balloon_payment'                 => $this->balloon_payment,
             'balloon_payment_amount'          => $this->stripCommas($this->balloon_payment_amount),
             'balloon_payment_date'            => $this->balloon_payment_date,
-            'assumable_terms'                 => $this->assumable_terms,
-            'max_assumable_rate'              => $this->stripCommas($this->max_assumable_rate),
-            'max_monthly_payment'             => $this->stripCommas($this->max_monthly_payment),
-            'assumable_loan_type'             => $this->assumable_loan_type,
-            'gap_payment_type'                => $this->gap_payment_type,
-            'gap_payment_amount'              => $this->stripCommas($this->gap_payment_amount),
+            'assumable_interest'              => $this->assumable_interest,
+            'assumable_max_interest_rate'     => $this->stripCommas($this->assumable_max_interest_rate),
+            'assumable_max_monthly_payment'   => $this->stripCommas($this->assumable_max_monthly_payment),
+            'assumable_bridge_gap_cash'       => $this->stripCommas($this->assumable_bridge_gap_cash),
             'seller_amortization_type'        => $this->seller_amortization_type,
             'seller_amortization_other'       => $this->seller_amortization_other,
             'seller_payment_frequency'        => $this->seller_payment_frequency,
@@ -1876,12 +1869,10 @@ class BuyerOfferListingEdit extends Component
             $this->balloon_payment = $auction->get->balloon_payment ?? '';
             $this->balloon_payment_amount = $auction->get->balloon_payment_amount ?? '';
             $this->balloon_payment_date = $auction->get->balloon_payment_date ?? '';
-            $this->assumable_terms = $auction->get->assumable_terms ?? '';
-            $this->max_assumable_rate = $auction->get->max_assumable_rate ?? '';
-            $this->assumable_loan_type = $auction->get->assumable_loan_type ?? '';
-            $this->max_monthly_payment = $auction->get->max_monthly_payment ?? '';
-            $this->gap_payment_type = $auction->get->gap_payment_type ?? '$';
-            $this->gap_payment_amount = $auction->get->gap_payment_amount ?? '';
+            $this->assumable_interest = $auction->get->assumable_interest ?? '';
+            $this->assumable_max_interest_rate = $auction->get->assumable_max_interest_rate ?? '';
+            $this->assumable_max_monthly_payment = $auction->get->assumable_max_monthly_payment ?? '';
+            $this->assumable_bridge_gap_cash = $auction->get->assumable_bridge_gap_cash ?? '';
             
             // Seller Financing Additional Fields
             $this->seller_amortization_type = $auction->get->seller_amortization_type ?? '';
@@ -2362,12 +2353,10 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('balloon_payment', $this->balloon_payment);
         $auction->saveMeta('balloon_payment_amount', $this->stripCommas($this->balloon_payment_amount));
         $auction->saveMeta('balloon_payment_date', $this->balloon_payment_date);
-        $auction->saveMeta('assumable_terms', $this->assumable_terms);
-        $auction->saveMeta('max_assumable_rate', $this->stripCommas($this->max_assumable_rate));
-        $auction->saveMeta('assumable_loan_type', $this->assumable_loan_type);
-        $auction->saveMeta('max_monthly_payment', $this->stripCommas($this->max_monthly_payment));
-        $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
-        $auction->saveMeta('gap_payment_amount', $this->stripCommas($this->gap_payment_amount));
+        $auction->saveMeta('assumable_interest', $this->assumable_interest);
+        $auction->saveMeta('assumable_max_interest_rate', $this->stripCommas($this->assumable_max_interest_rate));
+        $auction->saveMeta('assumable_max_monthly_payment', $this->stripCommas($this->assumable_max_monthly_payment));
+        $auction->saveMeta('assumable_bridge_gap_cash', $this->stripCommas($this->assumable_bridge_gap_cash));
         
         // Seller Financing Additional Fields
         $auction->saveMeta('seller_amortization_type', $this->seller_amortization_type);

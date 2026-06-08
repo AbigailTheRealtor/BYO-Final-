@@ -83,7 +83,10 @@ class BuyerCriteriaAuctionController extends Controller
             $auction->saveMeta("prepaymentOther", json_encode($request->prepaymentOther));
             $auction->saveMeta("balloon", $request->balloon);
             $auction->saveMeta("balloonpyment", json_encode($request->balloonpyment));
-            $auction->saveMeta("assumable", json_encode($request->assumable));
+            $auction->saveMeta("assumable_interest", $request->assumable_interest);
+            $auction->saveMeta("assumable_max_interest_rate", $request->assumable_max_interest_rate);
+            $auction->saveMeta("assumable_max_monthly_payment", $request->assumable_max_monthly_payment);
+            $auction->saveMeta("assumable_bridge_gap_cash", $request->assumable_bridge_gap_cash);
             $auction->saveMeta("sellerFinancing", json_encode($request->sellerFinancing));
             $auction->saveMeta("cryptocurrency", json_encode($request->cryptocurrency));
             $auction->saveMeta("nft", json_encode($request->nft));
@@ -404,7 +407,10 @@ class BuyerCriteriaAuctionController extends Controller
             $auction->saveMeta("prepaymentOther", json_encode($request->prepaymentOther));
             $auction->saveMeta("balloon", $request->balloon);
             $auction->saveMeta("balloonpyment", json_encode($request->balloonpyment));
-            $auction->saveMeta("assumable", json_encode($request->assumable));
+            $auction->saveMeta("assumable_interest", $request->assumable_interest);
+            $auction->saveMeta("assumable_max_interest_rate", $request->assumable_max_interest_rate);
+            $auction->saveMeta("assumable_max_monthly_payment", $request->assumable_max_monthly_payment);
+            $auction->saveMeta("assumable_bridge_gap_cash", $request->assumable_bridge_gap_cash);
             $auction->saveMeta("sellerFinancing", json_encode($request->sellerFinancing));
             $auction->saveMeta("cryptocurrency", json_encode($request->cryptocurrency));
             $auction->saveMeta("nft", json_encode($request->nft));

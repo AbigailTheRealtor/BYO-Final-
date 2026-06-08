@@ -93,12 +93,10 @@ class BuyerAgentAuction extends Component
     public $balloon_payment = '';
     public $balloon_payment_amount = '';
     public $balloon_payment_date = '';
-    public $assumable_terms = '';
-    public $max_assumable_rate = '';
-    public $max_monthly_payment = '';
-    public $assumable_loan_type = '';
-    public $gap_payment_type = '$';
-    public $gap_payment_amount = '';
+    public $assumable_interest = '';
+    public $assumable_max_interest_rate = '';
+    public $assumable_max_monthly_payment = '';
+    public $assumable_bridge_gap_cash = '';
     
     // New Buyer Purchasing Terms Fields
     public $earnest_money_amount = '';
@@ -553,10 +551,13 @@ class BuyerAgentAuction extends Component
         $this->seller_financing_amount = '';
     }
 
-    public function setGapPaymentType($type)
+    public function updatedAssumableInterest($value): void
     {
-        $this->gap_payment_type = $type;
-        $this->gap_payment_amount = '';
+        if ($value !== 'Yes') {
+            $this->assumable_max_interest_rate  = '';
+            $this->assumable_max_monthly_payment = '';
+            $this->assumable_bridge_gap_cash     = '';
+        }
     }
 
     public function updatedOfferedFinancing($value)
@@ -604,8 +605,7 @@ class BuyerAgentAuction extends Component
                 'seller_payment_frequency', 'seller_payment_frequency_other',
                 'seller_late_fee_amount'
             ],
-            'Assumable' => ['assumable_terms', 'max_assumable_rate', 'max_monthly_payment', 'assumable_loan_type'],
-            'Bridge Loan' => ['gap_payment_amount', 'gap_payment_type'],
+            'Assumable' => ['assumable_interest', 'assumable_max_interest_rate', 'assumable_max_monthly_payment', 'assumable_bridge_gap_cash'],
             'Exchange/Trade' => [
                 'exchange_item', 'other_exchange_item', 'exchange_item_value', 
                 'exchange_item_condition', 'additional_cash', 'value_determination',
@@ -1446,12 +1446,10 @@ class BuyerAgentAuction extends Component
             $this->balloon_payment = $auction->get->balloon_payment ?? '';
             $this->balloon_payment_amount = $auction->get->balloon_payment_amount ?? '';
             $this->balloon_payment_date = $auction->get->balloon_payment_date ?? '';
-            $this->assumable_terms = $auction->get->assumable_terms ?? '';
-            $this->max_assumable_rate = $auction->get->max_assumable_rate ?? '';
-            $this->max_monthly_payment = $auction->get->max_monthly_payment ?? '';
-            $this->assumable_loan_type = $auction->get->assumable_loan_type ?? '';
-            $this->gap_payment_type = $auction->get->gap_payment_type ?? '$';
-            $this->gap_payment_amount = $auction->get->gap_payment_amount ?? '';
+            $this->assumable_interest = $auction->get->assumable_interest ?? '';
+            $this->assumable_max_interest_rate = $auction->get->assumable_max_interest_rate ?? '';
+            $this->assumable_max_monthly_payment = $auction->get->assumable_max_monthly_payment ?? '';
+            $this->assumable_bridge_gap_cash = $auction->get->assumable_bridge_gap_cash ?? '';
 
             // New Buyer Purchasing Terms Fields
             $this->earnest_money_amount = $auction->get->earnest_money_amount ?? '';
@@ -1946,12 +1944,10 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('balloon_payment', $this->balloon_payment);
         $auction->saveMeta('balloon_payment_amount', $this->stripCommas($this->balloon_payment_amount));
         $auction->saveMeta('balloon_payment_date', $this->balloon_payment_date);
-        $auction->saveMeta('assumable_terms', $this->assumable_terms);
-        $auction->saveMeta('max_assumable_rate', $this->stripCommas($this->max_assumable_rate));
-        $auction->saveMeta('max_monthly_payment', $this->stripCommas($this->max_monthly_payment));
-        $auction->saveMeta('assumable_loan_type', $this->assumable_loan_type);
-        $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
-        $auction->saveMeta('gap_payment_amount', $this->stripCommas($this->gap_payment_amount));
+        $auction->saveMeta('assumable_interest', $this->assumable_interest);
+        $auction->saveMeta('assumable_max_interest_rate', $this->stripCommas($this->assumable_max_interest_rate));
+        $auction->saveMeta('assumable_max_monthly_payment', $this->stripCommas($this->assumable_max_monthly_payment));
+        $auction->saveMeta('assumable_bridge_gap_cash', $this->stripCommas($this->assumable_bridge_gap_cash));
 
         // New Buyer Purchasing Terms Fields
         $auction->saveMeta('earnest_money_amount', $this->stripCommas($this->earnest_money_amount));

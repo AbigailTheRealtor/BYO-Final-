@@ -357,15 +357,27 @@
                                     @endif
                                 @endif
 
-                                @if (in_array('Assumable', $buyerFinancingOriginal) && !empty(@$auction->get->assumable))
-                                @php $asItems = array_values(array_filter(@$auction->get->assumable, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
-                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Assumable Terms</h6></div>
-                                @if (count($asItems) === 1)
-                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $asItems[0] }}</span></div>
-                                @else
-                                    @foreach ($asItems as $at)
-                                    <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $at }}</span></div>
-                                    @endforeach
+                                @if (in_array('Assumable', $buyerFinancingOriginal) && \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->assumable_interest))
+                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Assumable Financing Interest</h6></div>
+                                <div class="col-md-12 col-12 pt-1 fw-bold">Interested in Assumable Financing:
+                                    <span class="removeBold">{{ @$auction->get->assumable_interest }}</span>
+                                </div>
+                                @if (@$auction->get->assumable_interest === 'Yes')
+                                    @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->assumable_max_interest_rate))
+                                    <div class="col-md-12 col-12 pt-1 fw-bold">Maximum Interest Rate Acceptable:
+                                        <span class="removeBold">{{ @$auction->get->assumable_max_interest_rate }}%</span>
+                                    </div>
+                                    @endif
+                                    @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->assumable_max_monthly_payment))
+                                    <div class="col-md-12 col-12 pt-1 fw-bold">Maximum Monthly Payment Acceptable (P&amp;I):
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->assumable_max_monthly_payment)) }}</span>
+                                    </div>
+                                    @endif
+                                    @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->assumable_bridge_gap_cash))
+                                    <div class="col-md-12 col-12 pt-1 fw-bold">Cash Available to Bridge Assumption Gap:
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->assumable_bridge_gap_cash)) }}</span>
+                                    </div>
+                                    @endif
                                 @endif
                                 @endif
 

@@ -148,16 +148,11 @@ class BuyerFieldMap
                 'Late Fee Amount' => 'seller_late_fee_amount',
             ],
 
-            'Assumable Loan' => [
-                'Assumable Terms' => 'assumable_terms',
-                'Max Assumable Rate' => 'max_assumable_rate',
-            ],
-
-            'Gap / Additional Payments' => [
-                'Max Monthly Payment' => 'max_monthly_payment',
-                'Gap Payment Type' => 'gap_payment_type',
-                'Gap Payment Amount' => 'gap_payment_amount',
-                'Additional Cash' => 'additional_cash',
+            'Assumable Financing Interest' => [
+                'Interested in Assumable Financing' => 'assumable_interest',
+                'Max Acceptable Interest Rate' => 'assumable_max_interest_rate',
+                'Max Monthly Payment (P&I)' => 'assumable_max_monthly_payment',
+                'Cash to Bridge Gap' => 'assumable_bridge_gap_cash',
             ],
 
             'Exchange / Trade' => [

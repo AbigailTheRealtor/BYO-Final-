@@ -444,13 +444,41 @@ class CompatibilityEngine
     }
 
     /**
-     * financing_alignment: Does the supply's seller-financing/assumable availability match demand interest?
-     * Supply source: archetype tags `financing:seller-financed`, `financing:assumable`
-     * Demand source: lifestyle tags `open-to:seller-financing`, `open-to:assumable-loan`
-     * Rule: demand wants seller financing but supply doesn't offer it → conflicting;
-     *        demand wants assumable but supply has none → conflicting;
-     *        supply offers and demand is open to it → aligned;
-     *        neither side signals financing preference → unresolved
+     * financing_alignment: Does supply financing availability match demand financing interest?
+     *
+     * Supply source tags:
+     *   `financing:seller-financed`          — seller offers seller financing
+     *   `financing:assumable`                — seller has an assumable loan
+     *   `financing:assumable-rate:{v}`       — seller's assumable loan interest rate (%, float)
+     *   `financing:assumable-payment:{v}`    — seller's monthly P&I payment ($, float)
+     *                                          RESERVED: emitted only when seller schema adds a
+     *                                          structured monthly P&I field; currently absent.
+     *
+     * Demand source tags:
+     *   `open-to:seller-financing`           — buyer is open to seller financing
+     *   `open-to:assumable-loan`             — buyer is interested in assumable financing
+     *   `assumable:max-rate:{v}`             — buyer's maximum acceptable interest rate (%)
+     *   `assumable:max-payment:{v}`          — buyer's maximum acceptable monthly P&I ($)
+     *   `assumable:bridge-gap:{v}`           — buyer's cash available to bridge price–balance gap ($)
+     *
+     * Assumable sub-comparison status:
+     *   Rate       — FULLY IMPLEMENTED. Conflicts when seller rate > buyer max.
+     *   Payment    — ARCHITECTURE COMPLETE; awaiting seller schema field. Seller schema stores
+     *                assumable loan data as free-text (assumable_terms) with no standalone P&I
+     *                column; PropertyDnaGenerator cannot emit financing:assumable-payment:* without it.
+     *                Outcome when seller payment data absent: not-evaluable → 'aligned' (no conflict
+     *                inferable). Will activate automatically once seller emits the tag.
+     *   Bridge gap — BUYER QUALIFICATION SIGNAL ONLY. Buyer's available bridge-gap cash indicates
+     *                readiness; no seller-side outstanding balance field exists to derive a required
+     *                gap amount. Outcome: not-evaluable → does not alter the dimension result.
+     *                Treated as a positive qualifier, not a threshold conflict gate.
+     *
+     * Rules:
+     *   demand wants seller financing but supply doesn't offer it → conflicting
+     *   demand wants assumable but supply has none → conflicting
+     *   supply offers and demand is open: rate conflict detected → conflicting
+     *   supply offers and demand is open: no conflict detected → aligned
+     *   neither side signals financing preference → unresolved
      */
     private function computeFinancingAlignment(array $supplyTags, array $demandTags): string
     {
@@ -460,8 +488,8 @@ class CompatibilityEngine
             $demandSellerFinancing = $this->hasTag($demandTags, 'open-to:seller-financing');
             $demandAssumable       = $this->hasTag($demandTags, 'open-to:assumable-loan');
 
-            $supplyHasSignal  = $supplySellerFinancing || $supplyAssumable;
-            $demandHasSignal  = $demandSellerFinancing || $demandAssumable;
+            $supplyHasSignal = $supplySellerFinancing || $supplyAssumable;
+            $demandHasSignal = $demandSellerFinancing || $demandAssumable;
 
             if (!$supplyHasSignal && !$demandHasSignal) {
                 return 'unresolved';
@@ -475,11 +503,67 @@ class CompatibilityEngine
             if ($demandAssumable && !$supplyAssumable) {
                 return 'conflicting';
             }
-            // Supply offers financing and demand is open to at least one matching type → aligned
-            if (($supplySellerFinancing && $demandSellerFinancing) || ($supplyAssumable && $demandAssumable)) {
+            // Supply offers seller financing and demand is open to it → aligned
+            if ($supplySellerFinancing && $demandSellerFinancing) {
                 return 'aligned';
             }
-            // Supply offers but demand has no expressed interest — not a conflict
+
+            // Both sides have assumable intent — apply all three threshold sub-comparisons
+            if ($supplyAssumable && $demandAssumable) {
+
+                // Parse supply threshold tags
+                $sellerRate          = null; // financing:assumable-rate:{v} — implemented
+                $sellerMonthlyPayment = null; // financing:assumable-payment:{v} — reserved (schema gap)
+                foreach ($supplyTags as $tag) {
+                    $tag = (string)$tag;
+                    if (str_starts_with($tag, 'financing:assumable-rate:')) {
+                        $sellerRate = (float)substr($tag, strlen('financing:assumable-rate:'));
+                    } elseif (str_starts_with($tag, 'financing:assumable-payment:')) {
+                        $sellerMonthlyPayment = (float)substr($tag, strlen('financing:assumable-payment:'));
+                    }
+                }
+
+                // Parse demand threshold tags
+                $buyerMaxRate    = null; // assumable:max-rate:{v}
+                $buyerMaxPayment = null; // assumable:max-payment:{v}
+                // assumable:bridge-gap:{v} — buyer qualification signal; parsed but not used as conflict gate
+                foreach ($demandTags as $tag) {
+                    $tag = (string)$tag;
+                    if (str_starts_with($tag, 'assumable:max-rate:')) {
+                        $buyerMaxRate = (float)substr($tag, strlen('assumable:max-rate:'));
+                    } elseif (str_starts_with($tag, 'assumable:max-payment:')) {
+                        $buyerMaxPayment = (float)substr($tag, strlen('assumable:max-payment:'));
+                    }
+                    // assumable:bridge-gap:{v} parsed here if future logic needs it
+                }
+
+                // Sub-comparison 1 — Rate (IMPLEMENTED):
+                // Seller's actual interest rate must not exceed buyer's stated maximum.
+                if ($sellerRate !== null && $buyerMaxRate !== null && $sellerRate > $buyerMaxRate) {
+                    return 'conflicting';
+                }
+                // When sellerRate or buyerMaxRate is absent: comparison is not evaluable → no conflict inferred.
+
+                // Sub-comparison 2 — Monthly payment (SCHEMA GAP — NOT YET EVALUABLE):
+                // Seller's actual monthly P&I must not exceed buyer's stated maximum.
+                // Requires financing:assumable-payment:* tag, which PropertyDnaGenerator emits only when
+                // a structured seller P&I field exists. Seller currently stores loan details as free-text
+                // (assumable_terms) with no standalone numeric P&I column. Outcome: indeterminate.
+                if ($sellerMonthlyPayment !== null && $buyerMaxPayment !== null && $sellerMonthlyPayment > $buyerMaxPayment) {
+                    return 'conflicting';
+                }
+                // When sellerMonthlyPayment is null (schema gap): comparison not evaluable → no conflict inferred.
+
+                // Sub-comparison 3 — Bridge-gap cash (BUYER QUALIFICATION SIGNAL — NOT A CONFLICT GATE):
+                // Buyer's available cash to bridge (purchase price − assumable balance).
+                // Seller schema has no structured outstanding balance field; gap amount is not derivable.
+                // The assumable:bridge-gap:{v} demand tag signals buyer readiness, not a seller requirement.
+                // Outcome: this dimension does not contribute to 'conflicting'; it supports 'aligned'.
+
+                return 'aligned';
+            }
+
+            // Supply offers financing but demand has no expressed interest — not a conflict
             return 'unresolved';
         } catch (\Throwable $e) {
             return 'unresolved';

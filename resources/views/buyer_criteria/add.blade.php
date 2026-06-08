@@ -1360,33 +1360,35 @@
                             <div class="form-group custom_assumable_res d-none">
                                 <div class="row">
                                     <div class="col-12 form-group">
-                                        <label class="fw-bold">What assumable terms are being offered?</label>
-                                        <input type="text" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-ruler-combined" />
+                                        <label class="fw-bold">Interested in Assumable Financing?</label>
+                                        <select name="assumable_interest" class="form-control"
+                                            onchange="this.closest('.row').querySelector('.assumable-threshold-fields').style.display = this.value === 'Yes' ? '' : 'none'">
+                                            <option value="Yes" selected>Yes</option>
+                                            <option value="No">No</option>
+                                        </select>
                                     </div>
-                                    <div class="col-12 form-group">
-                                        <label class="fw-bold">What is the maximum interest rate of the assumable loan that
-                                            the buyer is seeking?</label>
-                                        <input type="text" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-percent" />
-                                    </div>
-                                    <div class="col-12 form-group">
-                                        <label class="fw-bold">What is the maximum monthly payment that the buyer is
-                                            seeking, including principal
-                                            and interest, for the assumable loan?</label>
-                                        <input type="text" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-dollar-sign" />
-                                    </div>
-                                    <div class="col-12 form-group">
-                                        <label class="fw-bold">What is the down payment that the buyer can afford to pay
-                                            the seller to bridge the gap
-                                            between the asking price and the assumable loan balance?</label>
-                                        <input type="number" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-dollar-sign" />
+                                    <div class="assumable-threshold-fields">
+                                        <div class="col-12 form-group">
+                                            <label class="fw-bold">Maximum Interest Rate Acceptable</label>
+                                            <input type="text" name="assumable_max_interest_rate" value=""
+                                                data-target="{{ $item['target'] }}" class="form-control has-icon"
+                                                data-icon="fa-solid fa-percent"
+                                                placeholder="e.g., 5.5 (optional)" />
+                                        </div>
+                                        <div class="col-12 form-group">
+                                            <label class="fw-bold">Maximum Monthly Payment Acceptable (P&amp;I)</label>
+                                            <input type="text" name="assumable_max_monthly_payment" value=""
+                                                data-target="{{ $item['target'] }}" class="form-control has-icon"
+                                                data-icon="fa-solid fa-dollar-sign"
+                                                placeholder="e.g., 2000 (optional)" />
+                                        </div>
+                                        <div class="col-12 form-group">
+                                            <label class="fw-bold">Cash Available to Bridge Assumption Gap</label>
+                                            <input type="text" name="assumable_bridge_gap_cash" value=""
+                                                data-target="{{ $item['target'] }}" class="form-control has-icon"
+                                                data-icon="fa-solid fa-dollar-sign"
+                                                placeholder="e.g., 50000 (optional)" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -3488,33 +3490,35 @@
                             <div class="form-group custom_assumable_res2 d-none">
                                 <div class="row">
                                     <div class="col-12 form-group">
-                                        <label class="fw-bold">What assumable terms are being offered?</label>
-                                        <input type="text" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-ruler-combined" />
+                                        <label class="fw-bold">Interested in Assumable Financing?</label>
+                                        <select name="assumable_interest" class="form-control"
+                                            onchange="this.closest('.row').querySelector('.assumable-threshold-fields').style.display = this.value === 'Yes' ? '' : 'none'">
+                                            <option value="Yes" selected>Yes</option>
+                                            <option value="No">No</option>
+                                        </select>
                                     </div>
-                                    <div class="col-12 form-group">
-                                        <label class="fw-bold">What is the maximum interest rate of the assumable loan that
-                                            the buyer is seeking?</label>
-                                        <input type="text" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-percent" />
-                                    </div>
-                                    <div class="col-12 form-group">
-                                        <label class="fw-bold">What is the maximum monthly payment that the buyer is
-                                            seeking, including principal
-                                            and interest, for the assumable loan?</label>
-                                        <input type="text" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-dollar-sign" />
-                                    </div>
-                                    <div class="col-12 form-group">
-                                        <label class="fw-bold">What is the down payment that the buyer can afford to pay
-                                            the seller to bridge the gap
-                                            between the asking price and the assumable loan balance?</label>
-                                        <input type="number" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-dollar-sign" />
+                                    <div class="assumable-threshold-fields">
+                                        <div class="col-12 form-group">
+                                            <label class="fw-bold">Maximum Interest Rate Acceptable</label>
+                                            <input type="text" name="assumable_max_interest_rate" value=""
+                                                data-target="{{ $item['target'] }}" class="form-control has-icon"
+                                                data-icon="fa-solid fa-percent"
+                                                placeholder="e.g., 5.5 (optional)" />
+                                        </div>
+                                        <div class="col-12 form-group">
+                                            <label class="fw-bold">Maximum Monthly Payment Acceptable (P&amp;I)</label>
+                                            <input type="text" name="assumable_max_monthly_payment" value=""
+                                                data-target="{{ $item['target'] }}" class="form-control has-icon"
+                                                data-icon="fa-solid fa-dollar-sign"
+                                                placeholder="e.g., 2000 (optional)" />
+                                        </div>
+                                        <div class="col-12 form-group">
+                                            <label class="fw-bold">Cash Available to Bridge Assumption Gap</label>
+                                            <input type="text" name="assumable_bridge_gap_cash" value=""
+                                                data-target="{{ $item['target'] }}" class="form-control has-icon"
+                                                data-icon="fa-solid fa-dollar-sign"
+                                                placeholder="e.g., 50000 (optional)" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -5396,33 +5400,35 @@
                             <div class="form-group assumableVacant d-none ">
                                 <div class="row">
                                     <div class="col-12 form-group">
-                                        <label class="fw-bold">What assumable terms are being offered?</label>
-                                        <input type="text" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-ruler-combined" />
+                                        <label class="fw-bold">Interested in Assumable Financing?</label>
+                                        <select name="assumable_interest" class="form-control"
+                                            onchange="this.closest('.row').querySelector('.assumable-threshold-fields').style.display = this.value === 'Yes' ? '' : 'none'">
+                                            <option value="Yes" selected>Yes</option>
+                                            <option value="No">No</option>
+                                        </select>
                                     </div>
-                                    <div class="col-12 form-group">
-                                        <label class="fw-bold">What is the maximum interest rate of the assumable loan that
-                                            the buyer is seeking?</label>
-                                        <input type="text" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-percent" />
-                                    </div>
-                                    <div class="col-12 form-group">
-                                        <label class="fw-bold">What is the maximum monthly payment that the buyer is
-                                            seeking, including principal
-                                            and interest, for the assumable loan?</label>
-                                        <input type="text" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-dollar-sign" />
-                                    </div>
-                                    <div class="col-12 form-group">
-                                        <label class="fw-bold">What is the down payment that the buyer can afford to pay
-                                            the seller to bridge the gap
-                                            between the asking price and the assumable loan balance?</label>
-                                        <input type="number" name="assumable[]" value=""
-                                            data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-dollar-sign" />
+                                    <div class="assumable-threshold-fields">
+                                        <div class="col-12 form-group">
+                                            <label class="fw-bold">Maximum Interest Rate Acceptable</label>
+                                            <input type="text" name="assumable_max_interest_rate" value=""
+                                                data-target="{{ $item['target'] }}" class="form-control has-icon"
+                                                data-icon="fa-solid fa-percent"
+                                                placeholder="e.g., 5.5 (optional)" />
+                                        </div>
+                                        <div class="col-12 form-group">
+                                            <label class="fw-bold">Maximum Monthly Payment Acceptable (P&amp;I)</label>
+                                            <input type="text" name="assumable_max_monthly_payment" value=""
+                                                data-target="{{ $item['target'] }}" class="form-control has-icon"
+                                                data-icon="fa-solid fa-dollar-sign"
+                                                placeholder="e.g., 2000 (optional)" />
+                                        </div>
+                                        <div class="col-12 form-group">
+                                            <label class="fw-bold">Cash Available to Bridge Assumption Gap</label>
+                                            <input type="text" name="assumable_bridge_gap_cash" value=""
+                                                data-target="{{ $item['target'] }}" class="form-control has-icon"
+                                                data-icon="fa-solid fa-dollar-sign"
+                                                placeholder="e.g., 50000 (optional)" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -6974,6 +6980,21 @@
 @endsection
 @push('scripts')
     <script>
+        // Disable assumable inputs in hidden property-type sections on submit,
+        // preventing duplicate scalar names from overriding the active section's values.
+        (function () {
+            var form = document.querySelector('form');
+            if (!form) return;
+            form.addEventListener('submit', function () {
+                ['.custom_assumable_res', '.custom_assumable_res2', '.assumableVacant'].forEach(function (sel) {
+                    var sec = document.querySelector(sel);
+                    if (sec && sec.classList.contains('d-none')) {
+                        sec.querySelectorAll('input, select').forEach(function (el) { el.disabled = true; });
+                    }
+                });
+            });
+        })();
+
         // Video Preview
         $(document).ready(function($) {
             // Click button to activate hidden file input

@@ -846,7 +846,7 @@
 
         $hasFinancingContent = count($arr('offered_financing')) || $str('pre_approved')
             || $str('pre_approval_amount') || $str('cash_budget') || $str('down_payment_amount')
-            || $str('interest_rate') || $str('assumable_terms') || $str('lease_option_price')
+            || $str('interest_rate') || $str('assumable_interest') || $str('lease_option_price')
             || $str('lease_purchase_price') || $str('cryptocurrency_type') || $str('exchange_item_value')
             || $str('nft_description') || $str('sale_provision_assignment');
 
@@ -1104,18 +1104,17 @@
             @endif
 
             {{-- Assumable --}}
-            @if($hasAssumable || $str('assumable_terms'))
+            @if($hasAssumable || $str('assumable_interest'))
             <hr>
-            <h6 class="fw-semibold mt-3 mb-2">Assumable Mortgage</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Assumable Financing Interest</h6>
             <div class="row">
                 <div class="col-md-6">
-                    {!! $row('Assumable Terms', $str('assumable_terms')) !!}
-                    {!! $row('Assumable Loan Type', $str('assumable_loan_type')) !!}
-                    {!! $row('Max Assumable Rate', $str('max_assumable_rate') ? $fmtPercent($str('max_assumable_rate')) : null) !!}
+                    {!! $row('Interested in Assumable Financing', $str('assumable_interest')) !!}
+                    {!! $row('Max Acceptable Interest Rate', $str('assumable_max_interest_rate') ? $fmtPercent($str('assumable_max_interest_rate')) : null) !!}
                 </div>
                 <div class="col-md-6">
-                    {!! $row('Max Monthly Payment (P&I)', $fmtMoney($str('max_monthly_payment'))) !!}
-                    {!! $row('Gap Payment Amount', $str('gap_payment_type') === '$' ? $fmtMoney($str('gap_payment_amount')) : $fmtPercent($str('gap_payment_amount'))) !!}
+                    {!! $row('Max Monthly Payment (P&I)', $fmtMoney($str('assumable_max_monthly_payment'))) !!}
+                    {!! $row('Cash to Bridge Gap', $fmtMoney($str('assumable_bridge_gap_cash'))) !!}
                 </div>
             </div>
             @endif

@@ -603,50 +603,37 @@
               </div>
               {{-- Lease Purchase  --}}
               {{-- Assumable  --}}
-                <div class="form-group assumable d-none">
+                <div class="form-group assumable d-none" x-data="{ showDetails: false }">
                   <div class="form-group col-md-12">
-                      <label class="fw-bold">What assumable terms are being offered?</label>
-                      <input type="text" name="assumable_terms_offered"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
-                  </div>
-                  <div class="form-group col-md-12">
-                      <label class="fw-bold">Are there any restrictions or qualifications for a buyer assuming the existing financing?</label>
-                      <input type="text" name="restrictions_or_qualifications"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
-                  </div>
-                  <div class="form-group col-md-12">
-                    <label class="fw-bold">What is the interest rate of the assumable loan?</label>
-                    <input type="text" name="assumable_interest"  class="form-control has-icon" data-icon="fa-solid fa-percent" required>
-                  </div>
-                  <div class="form-group col-md-12">
-                    <label class="fw-bold">What is the monthly payment, including principal and interest, for the assumable loan?</label>
-                    <input type="number" name="assumable_monthly_payment"  class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
-                  </div>
-                  <div class="form-group col-md-12">
-                      @php
-                      $outstandingBalance = [['name' => 'Yes', 'target' => '.outstandingBalanceYes', 'icon' => 'fa-regular fa-circle-check'], ['name' => 'No', 'target' => '', 'icon' => 'fa-regular fa-circle-xmark']];
-                    @endphp
-                    <div class="form-group">
-                      <label class="fw-bold">What is the outstanding balance on the existing loan?</label>
-                      <select class="grid-picker" name="exchange_trade" id="contigencies_accepted_by_seller"
-                        style="justify-content: flex-start;" required>
-                        <option value="">Select</option>
-                        @foreach ($outstandingBalance as $item)
-                          <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row"
-                            style="width:calc(33.3% - 10px);" data-icon='<i class="{{ $item['icon'] }}"></i>'>
-                            {{ $item['name'] }}
-                          </option>
-                        @endforeach
+                      <label class="fw-bold">Interested in Assumable Financing?</label>
+                      <select name="assumable_interest" class="form-control has-icon" data-icon="fa-solid fa-circle-question" required @change="showDetails = ($event.target.value === 'Yes')">
+                          <option value="">Select</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
                       </select>
-                      <div class="form-group col-md-12 outstandingBalanceYes d-none">
-                        <label class="fw-bold">What is the outstanding balance on the existing loan?</label>
-                        <input type="number" name="outstandingBalanceYes"  class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
-
-                        <label class="fw-bold">What is the down payment that the buyer would need to pay the seller to bridge the gap
-                          between the asking price and the assumable loan balance?</label>
-                        <input type="number" name="loan_balance_down_payment"  class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
-                    </div>
                   </div>
-                </div>            
-              </div> 
+                  <div class="form-group col-md-12" x-show="showDetails">
+                      <label class="fw-bold">Maximum Interest Rate You Would Accept: <small class="text-muted">(Optional)</small></label>
+                      <div class="input-group">
+                          <input type="text" name="assumable_max_interest_rate" class="form-control has-icon" data-icon="fa-solid fa-percent" placeholder="e.g., 5">
+                          <span class="input-group-text">%</span>
+                      </div>
+                  </div>
+                  <div class="form-group col-md-12" x-show="showDetails">
+                      <label class="fw-bold">Maximum Monthly Payment (P&amp;I) You Would Accept: <small class="text-muted">(Optional)</small></label>
+                      <div class="input-group">
+                          <span class="input-group-text">$</span>
+                          <input type="text" name="assumable_max_monthly_payment" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="e.g., 2000">
+                      </div>
+                  </div>
+                  <div class="form-group col-md-12" x-show="showDetails">
+                      <label class="fw-bold">Cash Available to Bridge the Gap: <small class="text-muted">(Optional)</small></label>
+                      <div class="input-group">
+                          <span class="input-group-text">$</span>
+                          <input type="text" name="assumable_bridge_gap_cash" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="e.g., 50000">
+                      </div>
+                  </div>
+                </div>
               {{-- Assumable --}}
               {{-- Exchange/trade  --}}
               <div class="form-group row custom_exchange_trade">
@@ -7879,50 +7866,37 @@
               </div>
               {{-- Lease Purchase  --}}
               {{-- Assumable  --}}
-                <div class="form-group assumable d-none">
+                <div class="form-group assumable d-none" x-data="{ showDetails: false }">
                   <div class="form-group col-md-12">
-                      <label class="fw-bold">What assumable terms are being offered?</label>
-                      <input type="text" name="assumable_terms_offered"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
-                  </div>
-                  <div class="form-group col-md-12">
-                      <label class="fw-bold">Are there any restrictions or qualifications for a buyer assuming the existing financing?</label>
-                      <input type="text" name="restrictions_or_qualifications"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
-                  </div>
-                  <div class="form-group col-md-12">
-                    <label class="fw-bold">What is the interest rate of the assumable loan?</label>
-                    <input type="text" name="assumable_interest"  class="form-control has-icon" data-icon="fa-solid fa-percent" required>
-                  </div>
-                  <div class="form-group col-md-12">
-                    <label class="fw-bold">What is the monthly payment, including principal and interest, for the assumable loan?</label>
-                    <input type="number" name="assumable_monthly_payment"  class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
-                  </div>
-                  <div class="form-group col-md-12">
-                      @php
-                      $outstandingBalance = [['name' => 'Yes', 'target' => '.outstandingBalanceYes', 'icon' => 'fa-regular fa-circle-check'], ['name' => 'No', 'target' => '', 'icon' => 'fa-regular fa-circle-xmark']];
-                    @endphp
-                    <div class="form-group">
-                      <label class="fw-bold">What is the outstanding balance on the existing loan?</label>
-                      <select class="grid-picker" name="exchange_trade" id="contigencies_accepted_by_seller"
-                        style="justify-content: flex-start;" required>
-                        <option value="">Select</option>
-                        @foreach ($outstandingBalance as $item)
-                          <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row"
-                            style="width:calc(33.3% - 10px);" data-icon='<i class="{{ $item['icon'] }}"></i>'>
-                            {{ $item['name'] }}
-                          </option>
-                        @endforeach
+                      <label class="fw-bold">Interested in Assumable Financing?</label>
+                      <select name="assumable_interest" class="form-control has-icon" data-icon="fa-solid fa-circle-question" required @change="showDetails = ($event.target.value === 'Yes')">
+                          <option value="">Select</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
                       </select>
-                      <div class="form-group col-md-12 outstandingBalanceYes d-none">
-                        <label class="fw-bold">What is the outstanding balance on the existing loan?</label>
-                        <input type="number" name="outstandingBalanceYes"  class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
-
-                        <label class="fw-bold">What is the down payment that the buyer would need to pay the seller to bridge the gap
-                          between the asking price and the assumable loan balance?</label>
-                        <input type="number" name="loan_balance_down_payment"  class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
-                    </div>
                   </div>
-                </div>            
-              </div> 
+                  <div class="form-group col-md-12" x-show="showDetails">
+                      <label class="fw-bold">Maximum Interest Rate You Would Accept: <small class="text-muted">(Optional)</small></label>
+                      <div class="input-group">
+                          <input type="text" name="assumable_max_interest_rate" class="form-control has-icon" data-icon="fa-solid fa-percent" placeholder="e.g., 5">
+                          <span class="input-group-text">%</span>
+                      </div>
+                  </div>
+                  <div class="form-group col-md-12" x-show="showDetails">
+                      <label class="fw-bold">Maximum Monthly Payment (P&amp;I) You Would Accept: <small class="text-muted">(Optional)</small></label>
+                      <div class="input-group">
+                          <span class="input-group-text">$</span>
+                          <input type="text" name="assumable_max_monthly_payment" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="e.g., 2000">
+                      </div>
+                  </div>
+                  <div class="form-group col-md-12" x-show="showDetails">
+                      <label class="fw-bold">Cash Available to Bridge the Gap: <small class="text-muted">(Optional)</small></label>
+                      <div class="input-group">
+                          <span class="input-group-text">$</span>
+                          <input type="text" name="assumable_bridge_gap_cash" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="e.g., 50000">
+                      </div>
+                  </div>
+                </div>
               {{-- Assumable --}}
               {{-- Exchange/trade  --}}
               <div class="form-group row custom_exchange_trade">

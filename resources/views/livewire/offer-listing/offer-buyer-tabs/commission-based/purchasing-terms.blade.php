@@ -222,184 +222,81 @@
 <!-- Cash Option - No additional fields needed per requirements -->
 
 <!-- Assumable Financing -->
-<div class="financing-assumable-section" x-data="{ visible: {{ (is_array($this->offered_financing) && in_array('Assumable', $this->offered_financing)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Assumable') visible = $event.detail.visible"
+<div class="financing-assumable-section" x-data="{ visible: {{ (is_array($this->offered_financing) && in_array('Assumable', $this->offered_financing)) ? 'true' : 'false' }}, showDetails: {{ $assumable_interest === 'Yes' ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Assumable') visible = $event.detail.visible"
 >
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Assumable
         </h5>
     </div>
-    <div class="form-group">
-        <label class="fw-bold">Offered Assumable Terms:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the terms of the assumable loan being proposed, including remaining balance, interest rate, term type (fixed/variable), and remaining duration.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="text" wire:model="assumable_terms" class="form-control has-icon"
-                data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter assumable terms (e.g., $250,0000 remaining at 4.25% for 20 years)">
-        </div>
-    </div>
 
     <div class="form-group">
-        <label class="fw-bold">Maximum Interest Rate of Assumable Loan:
+        <label class="fw-bold">Interested in Assumable Financing?
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the maximum interest rate the Buyer is willing to accept for the assumable loan (e.g., 5).">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-group">
-            <input type="text" wire:model="max_assumable_rate" class="form-control"
-                placeholder="Enter maximum acceptable interest rate (e.g., 5)"
-                data-error-id="max_assumable_rate_error" oninput="validateInput(this)"
-                onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-            <span class="input-group-text">%</span>
-        </div>
-        <span class="error mt-2" id="max_assumable_rate_error"></span>
-    </div>
-
-    <div class="form-group mt-3">
-        <label class="fw-bold">Maximum Monthly Payment (Principal & Interest) for Assumable Loan:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the highest monthly principal and interest payment the Buyer is willing to make. Exclude taxes, insurance, and HOA unless included in the mortgage.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <span class="input-group-text-seller">$</span>
-
-            <input type="text" wire:model="max_monthly_payment" class="form-control has-icon"
-                placeholder="Enter maximum monthly payment (e.g., 2000)"
-                 data-error-id="max_monthly_payment_error" oninput="validateInput(this)"
-                onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-        </div>
-                <span class="error mt-2" id="max_monthly_payment_error"></span>
-
-    </div>
-
-    <!-- Type of Loan -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Type of Loan:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Assumable loans allow a Buyer to take over the Seller's existing financing. FHA, VA, and USDA loans are the most common types that may be assumed, but lender approval is usually required. Conventional loans almost always have a due-on-sale clause and are not assumable.">
+                title="Select Yes if you are open to assuming the seller's existing loan. FHA, VA, and USDA loans are the most common assumable loan types, subject to lender approval.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
         <div class="input-cover">
-            <select wire:model="assumable_loan_type" class="form-control has-icon"
-                data-icon="fa-solid fa-file-invoice-dollar">
+            <select wire:model="assumable_interest" x-on:change="showDetails = ($event.target.value === 'Yes')" class="form-control has-icon" data-icon="fa-solid fa-circle-question">
                 <option value="">Select</option>
-                <option value="FHA">FHA</option>
-                <option value="VA">VA</option>
-                <option value="USDA">USDA</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
             </select>
         </div>
     </div>
 
-    {{-- <div class="form-group mt-3">
-        <label class="fw-bold">Down Payment Buyer Can Afford to Bridge the Gap:</label>
-        <div class="input-group">
-            <div class="input-group-prepend">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false" style="height: 100%;">
-                    {{ $gap_payment_type }}
-                </button>
-                <div class="dropdown-menu">
-                    <a class="dropdown-item" href="#" wire:click.prevent="setGapPaymentType('$')">$(Flat
-                        Fee)</a>
-                    <a class="dropdown-item" href="#" wire:click.prevent="setGapPaymentType('%')">%
-                        (Percentage)</a>
-                </div>
-            </div>
-            <input type="number" wire:model="gap_payment_amount" class="form-control"
-                placeholder="{{ $gap_payment_type === '$' ? 'Enter down payment amount to bridge gap (e.g., 50000)' : 'Enter down payment amount to bridge gap (e.g., 10)' }}">
-        </div>
-    </div> --}}
-
-    {{-- <div class="form-group mt-3">
-        <label class="fw-bold">Down Payment Buyer Can Afford to Bridge the Gap:<span
-                class="text-danger">*</span></label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the amount the Buyer can pay upfront to cover the difference between the purchase price and the loan balance.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-group">
-            @if ($gap_payment_type === '$')
-                <!-- Show dropdown button first for $ -->
-                <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false" style="height: 100%;">
-                        {{ $gap_payment_type }}
-                    </button>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" href="#" wire:click.prevent="setGapPaymentType('$')">$ (Flat
-                            Fee)</a>
-                        <a class="dropdown-item" href="#" wire:click.prevent="setGapPaymentType('%')">%
-                            (Percentage)</a>
-                    </div>
-                </div>
-                <input type="text" wire:model="gap_payment_amount" class="form-control"
-                    placeholder="Enter down payment amount to bridge gap (e.g., 50000)"
-                     data-error-id="gap_payment_amount_error" oninput="validateInput(this)"
-                onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-            @else
-                <!-- Show input first for % -->
-                <input type="text" wire:model="gap_payment_amount" class="form-control"
-                    placeholder="Enter down payment amount to bridge gap (e.g., 10)"  data-error-id="gap_payment_amount_error" oninput="validateInput(this)"
-                onblur="reformatNumber(this)" onpaste="handlePaste(event)
-                ">
-                <div class="input-group-append">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false" style="height: 100%;">
-                        {{ $gap_payment_type }}
-                    </button>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" href="#" wire:click.prevent="setGapPaymentType('$')">$ (Flat
-                            Fee)</a>
-                        <a class="dropdown-item" href="#" wire:click.prevent="setGapPaymentType('%')">%
-                            (Percentage)</a>
-                    </div>
-                </div>
-            @endif
-        </div>
-
-    </div> --}}
-
-       <div class="form-group mt-3">
-        <label class="fw-bold">Down Payment Buyer Can Afford to Bridge the Gap:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the amount the Buyer can pay upfront to cover the difference between the purchase price and the loan balance.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-     <div class="input-group">
-                <!-- Select for type -->
-                <select wire:model="gap_payment_type" class="form-select" wire:change="setType('gap_payment_type', $event.target.value)" style="max-width: 100px;">
-                    <option value="$">$</option>
-                    <option value="%">%</option>
-                </select>
-
-                <!-- Single input -->
-                <input type="text" step="any" wire:model.lazy="gap_payment_amount" class="form-control"
-                    placeholder="{{ $gap_payment_type === '%'
-                        ? 'Enter down payment percentage to bridge gap (e.g., 10)'
-                        : 'Enter down payment amount to bridge gap (e.g., 50000)' }}"
-                         data-error-id="gap_payment_amount_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-
-                @if ($gap_payment_type === '%')
-                <!-- Suffix for percentage only -->
+    <div x-show="showDetails" x-cloak>
+        <div class="form-group mt-3">
+            <label class="fw-bold">Maximum Interest Rate You Would Accept:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Enter the highest interest rate you are willing to accept on an assumable loan (e.g., 5). Leave blank if no limit.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-group">
+                <input type="text" wire:model="assumable_max_interest_rate" class="form-control"
+                    placeholder="Enter maximum acceptable rate (e.g., 5)"
+                    data-error-id="assumable_max_interest_rate_error" oninput="validateInput(this)"
+                    onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 <span class="input-group-text">%</span>
-                @endif
-
-        <span class="error mt-2" id="gap_payment_amount_error"></span>
-
             </div>
+            <span class="error mt-2" id="assumable_max_interest_rate_error"></span>
+        </div>
 
+        <div class="form-group mt-3">
+            <label class="fw-bold">Maximum Monthly Payment (P&amp;I) You Would Accept:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Enter the highest monthly principal and interest payment you are willing to take on. Leave blank if no limit.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <span class="input-group-text-seller">$</span>
+                <input type="text" wire:model="assumable_max_monthly_payment" class="form-control has-icon"
+                    placeholder="Enter maximum monthly payment (e.g., 2000)"
+                    data-error-id="assumable_max_monthly_payment_error" oninput="validateInput(this)"
+                    onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            </div>
+            <span class="error mt-2" id="assumable_max_monthly_payment_error"></span>
+        </div>
+
+        <div class="form-group mt-3">
+            <label class="fw-bold">Cash Available to Bridge the Gap:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Enter the amount of cash you can pay upfront to cover the difference between the purchase price and the assumable loan balance. Leave blank if unknown.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <span class="input-group-text-seller">$</span>
+                <input type="text" wire:model="assumable_bridge_gap_cash" class="form-control has-icon"
+                    placeholder="Enter bridge gap cash amount (e.g., 50000)"
+                    data-error-id="assumable_bridge_gap_cash_error" oninput="validateInput(this)"
+                    onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            </div>
+            <span class="error mt-2" id="assumable_bridge_gap_cash_error"></span>
+        </div>
     </div>
 
 </div>

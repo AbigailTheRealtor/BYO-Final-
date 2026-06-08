@@ -240,7 +240,27 @@ class PropertyDnaGenerator
         try {
             $assumableTerms = $this->getMeta($meta, 'assumable_terms');
             $d['has_assumable_loan'] = ($assumableTerms !== null && $assumableTerms !== 'none') ? 'yes' : null;
-        } catch (\Throwable $e) { $d['has_assumable_loan'] = null; }
+            // Extract numeric interest rate → emits financing:assumable-rate:{v} tag.
+            $assumableRateRaw   = $this->getMeta($meta, 'max_assumable_rate');
+            $assumableRateClean = ($assumableRateRaw !== null) ? str_replace(',', '', (string)$assumableRateRaw) : null;
+            $d['assumable_rate'] = ($assumableRateClean !== null && is_numeric($assumableRateClean))
+                ? (float)$assumableRateClean : null;
+            // Monthly P&I (financing:assumable-payment:{v}) — RESERVED.
+            // Seller stores loan details in free-text assumable_terms (no standalone P&I numeric field).
+            // Outstanding balance is not available as a structured value; P&I cannot be derived.
+            // When a dedicated seller monthly P&I column is added, extract it here and set
+            // $d['assumable_monthly_payment'] = (float)$value, then emit the tag in buildArchetypeTags().
+            $d['assumable_monthly_payment'] = null; // schema gap — always null until field exists
+            // Bridge-gap requirement — RESERVED.
+            // Gap = purchase_price − outstanding_balance. Neither is available in structured assumable meta.
+            // When seller adds a structured outstanding balance field, derive the gap here.
+            $d['assumable_required_gap'] = null; // schema gap — always null until field exists
+        } catch (\Throwable $e) {
+            $d['has_assumable_loan']       = null;
+            $d['assumable_rate']           = null;
+            $d['assumable_monthly_payment'] = null;
+            $d['assumable_required_gap']   = null;
+        }
 
         try { $d['sale_provision_type'] = $this->getMeta($meta, 'sale_provision'); } catch (\Throwable $e) { $d['sale_provision_type'] = null; }
         try { $d['offered_financing_types'] = $this->getMeta($meta, 'offered_financing'); } catch (\Throwable $e) { $d['offered_financing_types'] = null; }
@@ -323,6 +343,9 @@ class PropertyDnaGenerator
         }
         if (($dimensions['has_assumable_loan'] ?? null) === 'yes') {
             $tags[] = 'financing:assumable';
+            if (($dimensions['assumable_rate'] ?? null) !== null) {
+                $tags[] = 'financing:assumable-rate:' . $dimensions['assumable_rate'];
+            }
         }
         if (($dimensions['has_video_tour'] ?? null) === 'yes') {
             $tags[] = 'marketing:video-tour';

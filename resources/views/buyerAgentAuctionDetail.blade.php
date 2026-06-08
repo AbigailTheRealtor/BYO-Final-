@@ -950,7 +950,7 @@
                                 // Check if each financing type has data for grouped display
                                 $hasSellerFinancingData = !empty(@$auction->get->purchase_price) || !empty(@$auction->get->down_payment_amount) || !empty(@$auction->get->seller_financing_amount) || !empty(@$auction->get->interest_rate) || !empty(@$auction->get->loan_duration) || !empty(@$auction->get->seller_amortization_type) || !empty(@$auction->get->seller_payment_frequency) || !empty(@$auction->get->seller_late_fee_amount) || !empty(@$auction->get->balloon_payment) || !empty(@$auction->get->balloon_payment_amount) || !empty(@$auction->get->balloon_payment_date) || !empty(@$auction->get->prepayment_penalty) || !empty(@$auction->get->prepayment_penalty_amount);
                                 
-                                $hasAssumableData = !empty(@$auction->get->assumable_terms) || !empty(@$auction->get->assumable_loan_type) || !empty(@$auction->get->max_assumable_rate) || !empty(@$auction->get->max_monthly_payment) || !empty(@$auction->get->gap_payment_amount);
+                                $hasAssumableData = !empty(@$auction->get->assumable_interest) || !empty(@$auction->get->assumable_max_interest_rate) || !empty(@$auction->get->assumable_max_monthly_payment) || !empty(@$auction->get->assumable_bridge_gap_cash);
                                 
                                 $hasExchangeData = !empty(@$auction->get->exchange_item) || !empty(@$auction->get->exchange_item_value) || !empty(@$auction->get->exchange_item_condition) || !empty(@$auction->get->additional_cash) || !empty(@$auction->get->value_determination) || !empty(@$auction->get->exchange_transfer_method) || !empty(@$auction->get->exchange_liens) || !empty(@$auction->get->exchange_inspection_rights);
                                 
@@ -1025,53 +1025,33 @@
                             <!-- Assumable Financing Details -->
                             @if (in_array('Assumable', $financingArray) && $hasAssumableData)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="financing-subsection-header">Assumable Terms</h6>
+                                    <h6 class="financing-subsection-header">Assumable Financing Interest</h6>
                                 </div>
-                                @if (@$auction->get->assumable_terms)
-                                    @php
-                                        $displayAssumableTerms = str_replace('"', '', $toStr(@$auction->get->assumable_terms));
-                                    @endphp
+                                @if (@$auction->get->assumable_interest)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Offered Assumable Terms:
-                                        <span class="removeBold">{{ $displayAssumableTerms }}</span>
+                                        Interested in Assumable Financing:
+                                        <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->assumable_interest)) }}</span>
                                     </div>
                                 @endif
 
-                                @if (@$auction->get->assumable_loan_type)
+                                @if (@$auction->get->assumable_max_interest_rate)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Type of Loan:
-                                        <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->assumable_loan_type)) }}</span>
+                                        Maximum Acceptable Interest Rate:
+                                        <span class="removeBold">{{ @$auction->get->assumable_max_interest_rate }}%</span>
                                     </div>
                                 @endif
 
-                                @if (@$auction->get->max_assumable_rate)
+                                @if (@$auction->get->assumable_max_monthly_payment)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Maximum Interest Rate of Assumable Loan:
-                                        <span class="removeBold">{{ @$auction->get->max_assumable_rate }}%</span>
+                                        Maximum Monthly Payment (P&amp;I):
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->assumable_max_monthly_payment)) }}</span>
                                     </div>
                                 @endif
 
-                                @if (@$auction->get->max_monthly_payment)
+                                @if (@$auction->get->assumable_bridge_gap_cash)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Maximum Monthly Payment (Principal & Interest) for Assumable Loan:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->max_monthly_payment)) }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->gap_payment_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Down Payment Buyer Can Afford to Bridge the Gap:
-                                        @php
-                                            $rawGapType = @$auction->get->gap_payment_type;
-                                            $gapType = trim((string) $rawGapType);
-                                            $gapValue = str_replace(',', '', @$auction->get->gap_payment_amount);
-                                            $isPercent = in_array($gapType, ['%', 'percent', 'percentage'], true);
-                                        @endphp
-                                        @if ($isPercent)
-                                            <span class="removeBold">{{ $gapValue }}%</span>
-                                        @else
-                                            <span class="removeBold">${{ number_format((float) $gapValue) }}</span>
-                                        @endif
+                                        Cash Available to Bridge the Gap:
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->assumable_bridge_gap_cash)) }}</span>
                                     </div>
                                 @endif
                             @endif

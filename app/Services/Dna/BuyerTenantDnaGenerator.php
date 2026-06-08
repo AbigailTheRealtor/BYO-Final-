@@ -142,9 +142,34 @@ class BuyerTenantDnaGenerator
         } catch (\Throwable $e) { $d['has_seller_financing_interest'] = null; }
 
         try {
-            $assumableTerms = $this->getMeta($meta, 'assumable_terms');
-            $d['has_assumable_loan_interest'] = ($assumableTerms !== null && $assumableTerms !== 'none') ? 'yes' : null;
-        } catch (\Throwable $e) { $d['has_assumable_loan_interest'] = null; }
+            $assumableInterest = $this->getMeta($meta, 'assumable_interest');
+            $d['has_assumable_loan_interest'] = ($assumableInterest !== null && strtolower((string)$assumableInterest) === 'yes') ? 'yes' : null;
+            $d['assumable_max_rate_threshold']    = null;
+            $d['assumable_max_payment_threshold'] = null;
+            $d['assumable_bridge_gap_threshold']  = null;
+            if (($d['has_assumable_loan_interest'] ?? null) === 'yes') {
+                $rateRaw    = $this->getMeta($meta, 'assumable_max_interest_rate');
+                $rateClean  = ($rateRaw !== null) ? str_replace(',', '', (string)$rateRaw) : null;
+                if ($rateClean !== null && is_numeric($rateClean)) {
+                    $d['assumable_max_rate_threshold'] = (float)$rateClean;
+                }
+                $payRaw   = $this->getMeta($meta, 'assumable_max_monthly_payment');
+                $payClean = ($payRaw !== null) ? str_replace(',', '', (string)$payRaw) : null;
+                if ($payClean !== null && is_numeric($payClean)) {
+                    $d['assumable_max_payment_threshold'] = (float)$payClean;
+                }
+                $gapRaw   = $this->getMeta($meta, 'assumable_bridge_gap_cash');
+                $gapClean = ($gapRaw !== null) ? str_replace(',', '', (string)$gapRaw) : null;
+                if ($gapClean !== null && is_numeric($gapClean) && (float)$gapClean > 0) {
+                    $d['assumable_bridge_gap_threshold'] = (float)$gapClean;
+                }
+            }
+        } catch (\Throwable $e) {
+            $d['has_assumable_loan_interest']     = null;
+            $d['assumable_max_rate_threshold']    = null;
+            $d['assumable_max_payment_threshold'] = null;
+            $d['assumable_bridge_gap_threshold']  = null;
+        }
 
         try {
             $leaseOptionRaw = $this->getMeta($meta, 'interested_lease_option') ?? $this->getMeta($meta, 'interested_lease_option_agreement');
@@ -254,6 +279,15 @@ class BuyerTenantDnaGenerator
         }
         if (($dimensions['has_assumable_loan_interest'] ?? null) === 'yes') {
             $tags[] = 'open-to:assumable-loan';
+            if (($dimensions['assumable_max_rate_threshold'] ?? null) !== null) {
+                $tags[] = 'assumable:max-rate:' . $dimensions['assumable_max_rate_threshold'];
+            }
+            if (($dimensions['assumable_max_payment_threshold'] ?? null) !== null) {
+                $tags[] = 'assumable:max-payment:' . $dimensions['assumable_max_payment_threshold'];
+            }
+            if (($dimensions['assumable_bridge_gap_threshold'] ?? null) !== null) {
+                $tags[] = 'assumable:bridge-gap:' . $dimensions['assumable_bridge_gap_threshold'];
+            }
         }
         if (($dimensions['has_preapproval'] ?? null) === 'yes') {
             $tags[] = 'financial:pre-approved';
