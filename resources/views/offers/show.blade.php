@@ -1070,12 +1070,7 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Custom Terms / Special Conditions</label>
                             <textarea name="custom_terms" class="form-control" rows="4"
-                                placeholder="Enter any special conditions, addendums, or custom terms">{{ old('custom_terms', $metas->get('custom_terms')) }}</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Private Notes <span class="text-muted small">(not shown to the other party)</span></label>
-                            <textarea name="notes" class="form-control" rows="3"
-                                placeholder="Enter private notes for your reference">{{ old('notes', $metas->get('notes')) }}</textarea>
+                                placeholder="Enter any special conditions or custom terms">{{ old('custom_terms', $metas->get('custom_terms')) }}</textarea>
                         </div>
                         <div class="row g-3 mb-4">
                             <div class="col-md-4">
