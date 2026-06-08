@@ -308,6 +308,13 @@ class AskAiQuestionClassifierService
             // MLS
             'mls number',
             'mls id',
+            // Key features — factual enumeration of listing attributes.
+            // 'key features' (plural) routes here so questions like
+            // "What are the key features of this property?" resolve from
+            // listing data rather than requiring property_intelligence (DNA profile).
+            // 'key feature' (singular) stays in property_standout for standout/highlight intent.
+            'key features',
+            'what are the key features',
         ],
 
         'compatibility_signals' => [

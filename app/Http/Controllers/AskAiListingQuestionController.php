@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use App\Services\AskAi\AskAiRunnerV2Service;
 use App\Services\AskAi\AskAiRateLimitService;
 use App\Services\AskAi\AskAiUsageLoggerService;
@@ -122,6 +123,16 @@ class AskAiListingQuestionController extends Controller
             }
 
             if ($status === 'failed') {
+                $pipelineError = $result['error'] ?? null;
+                if ($pipelineError) {
+                    Log::warning('AskAi pipeline failure', [
+                        'listing_type'  => $listingType,
+                        'listing_id'    => $listingId,
+                        'question_hash' => $questionHash,
+                        'question_type' => $questionType,
+                        'error'         => $pipelineError,
+                    ]);
+                }
                 return response()->json([
                     'success'            => false,
                     'status'             => 'failed',

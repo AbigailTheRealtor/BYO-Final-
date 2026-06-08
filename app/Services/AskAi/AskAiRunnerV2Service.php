@@ -366,6 +366,69 @@ class AskAiRunnerV2Service
 
             $adapterResult = $this->adapter->generate($promptPackage);
 
+            // ----------------------------------------------------------------
+            // FAQ direct-return fallback.
+            // When the adapter fails (e.g. OpenAI unconfigured / transient error)
+            // but the listing already has the answer stored in the prompt package's
+            // allowed_context, return the raw FAQ answer text directly rather than
+            // propagating the generic "could not generate" error.  This ensures
+            // listing_facts questions grounded in a specific faq_answers.* field
+            // always return either a grounded answer or a clean insufficient_context
+            // message — never the generic failed status.
+            //
+            // Only fires when all four conditions hold:
+            //   1. Adapter call failed (success = false).
+            //   2. A specific faq_answers.* field was resolved for this question.
+            //   3. The prompt package was prompt_ready (all governance gates passed).
+            //   4. The FAQ answer is present in allowed_context (non-empty).
+            // ----------------------------------------------------------------
+            if (
+                !($adapterResult['success'] ?? false)
+                && $normalizedFieldKey !== null
+                && str_starts_with($normalizedFieldKey, 'faq_answers.')
+                && ($promptPackage['status'] ?? '') === 'prompt_ready'
+                && !empty($promptPackage['allowed_context'])
+            ) {
+                $faqSegments = explode('.', $normalizedFieldKey, 2);
+                $faqTopKey   = $faqSegments[0] ?? '';
+                $faqChildKey = $faqSegments[1] ?? '';
+                $faqEntry    = $promptPackage['allowed_context'][$faqTopKey][$faqChildKey] ?? null;
+                $faqText     = is_array($faqEntry) ? ($faqEntry['answer_text'] ?? null) : null;
+
+                if ($faqText !== null && $faqText !== '') {
+                    $faqFinalResponse = [
+                        'success'            => true,
+                        'status'             => 'ready',
+                        'answer'             => $faqText,
+                        'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                        'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                        'refusal_message'    => null,
+                        'error'              => null,
+                    ];
+                    $faqFinalResponse['follow_up_questions'] = $this->followUpService->forResult(
+                        $faqFinalResponse,
+                        $classification
+                    );
+
+                    $trace['final_status']       = 'ready';
+                    $trace['source_attribution'] = $faqFinalResponse['source_attribution'] ?? null;
+                    $this->emitTrace($trace);
+
+                    return [
+                        'success'        => true,
+                        'status'         => 'ready',
+                        'classification' => $classification,
+                        'context'        => $context,
+                        'contract'       => $contract,
+                        'prompt_package' => $promptPackage,
+                        'adapter_result' => $adapterResult,
+                        'final_response' => $faqFinalResponse,
+                        'error'          => null,
+                        'trace'          => $trace,
+                    ];
+                }
+            }
+
             $finalResponse = $this->finalResponseBuilder->build($promptPackage, $adapterResult);
 
             $finalResponse['follow_up_questions'] = $this->followUpService->forResult(
