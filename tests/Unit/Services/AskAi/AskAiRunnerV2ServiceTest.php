@@ -1399,4 +1399,194 @@ class AskAiRunnerV2ServiceTest extends TestCase
             "AskAiContextBuilderService must extract the 'address' field for seller listings."
         );
     }
+
+    // =========================================================================
+    // Case M — normalizer_status and normalizer_error in trace
+    //
+    // Verifies that run() populates trace.normalizer_status and
+    // trace.normalizer_error correctly for every code path:
+    //   not_applicable — question is deterministic (not 'unsupported')
+    //   not_called     — 'unsupported' but normalizer null or flag off
+    //   matched        — normalizer called and returned a canonical key
+    //   unknown        — normalizer called, OpenAI returned 'unknown'
+    //   failed         — normalizer called, operational failure
+    //
+    // All tests use pure unit mocks (no DB, no Laravel app).
+    // =========================================================================
+
+    /**
+     * Build a normalizer mock that also stubs getLastStatus() and getLastError().
+     *
+     * @param  bool        $isEnabled
+     * @param  string|null $normalizedKey   Value normalize() returns.
+     * @param  string      $lastStatus      Value getLastStatus() returns.
+     * @param  string|null $lastError       Value getLastError() returns.
+     */
+    private function makeNormalizerMockWithStatus(
+        bool $isEnabled,
+        ?string $normalizedKey,
+        string $lastStatus,
+        ?string $lastError = null
+    ) {
+        $mock = $this->createMock(AskAiIntentNormalizerService::class);
+        $mock->method('isEnabled')->willReturn($isEnabled);
+        $mock->method('buildKnownFieldKeys')->willReturn([
+            'listing.bedrooms',
+            'listing.hoa_fee',
+            'faq_answers.hvac_system_age',
+        ]);
+        $mock->method('normalize')->willReturn($normalizedKey);
+        $mock->method('getLastStatus')->willReturn($lastStatus);
+        $mock->method('getLastError')->willReturn($lastError);
+        return $mock;
+    }
+
+    // ── M1 ── Deterministic question type → normalizer_status=not_applicable ─
+
+    public function test_case_M1_listing_facts_question_produces_not_applicable_status(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $this->assertSame('not_applicable', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
+    // ── M2 ── Prohibited question → normalizer_status=not_applicable ─────────
+
+    public function test_case_M2_prohibited_question_produces_not_applicable_status(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('prohibited'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What race is the neighborhood?');
+
+        $this->assertSame('not_applicable', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
+    // ── M3 ── Unsupported + no normalizer injected → not_called ──────────────
+
+    public function test_case_M3_unsupported_with_null_normalizer_produces_not_called(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Who designed this house?');
+
+        $this->assertSame('not_called', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
+    // ── M4 ── Unsupported + flag off → not_called ────────────────────────────
+
+    public function test_case_M4_unsupported_with_flag_off_produces_not_called(): void
+    {
+        $mocks              = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMockWithStatus(
+            false,   // isEnabled=false
+            null,    // normalize() returns null
+            'not_called'
+        );
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Who designed this house?');
+
+        $this->assertSame('not_called', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
+    // ── M5 ── Normalizer called + matched → normalizer_status=matched ─────────
+
+    public function test_case_M5_normalizer_matched_produces_matched_status(): void
+    {
+        $mocks              = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMockWithStatus(
+            true,
+            'listing.bedrooms',
+            'matched',
+            null
+        );
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'How many rooms does this place have?');
+
+        $this->assertSame('matched', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
+    // ── M6 ── Normalizer called + unknown → normalizer_status=unknown ─────────
+
+    public function test_case_M6_normalizer_unknown_produces_unknown_status(): void
+    {
+        $mocks              = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMockWithStatus(
+            true,
+            null,
+            'unknown',
+            null
+        );
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Who is the best architect?');
+
+        $this->assertSame('unknown', $result['trace']['normalizer_status']);
+        $this->assertNull($result['trace']['normalizer_error']);
+    }
+
+    // ── M7 ── Normalizer called + operational failure → failed + error ────────
+
+    public function test_case_M7_normalizer_rate_limit_failure_produces_failed_status(): void
+    {
+        $mocks              = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMockWithStatus(
+            true,
+            null,
+            'failed',
+            'rate_limited'
+        );
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Who is the best architect?');
+
+        $this->assertSame('failed', $result['trace']['normalizer_status']);
+        $this->assertSame('rate_limited', $result['trace']['normalizer_error']);
+    }
 }

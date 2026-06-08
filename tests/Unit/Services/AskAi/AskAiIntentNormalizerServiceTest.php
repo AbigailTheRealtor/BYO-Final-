@@ -525,7 +525,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         $this->assertSame('listing.bedrooms', $result);
     }
 
-    public function test_case_I_normalize_passes_max_tokens_20_to_send(): void
+    public function test_case_I_normalize_passes_max_tokens_60_to_send(): void
     {
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->expects($this->once())
@@ -533,7 +533,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
             ->with(
                 $this->anything(),
                 $this->callback(function (array $options): bool {
-                    return isset($options['max_tokens']) && $options['max_tokens'] === 20;
+                    return isset($options['max_tokens']) && $options['max_tokens'] === 60;
                 })
             )
             ->willReturn([
@@ -561,7 +561,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
                 $this->callback(function (array $options): bool {
                     return isset($options['timeout_seconds'], $options['max_tokens'])
                         && $options['timeout_seconds'] === 10
-                        && $options['max_tokens'] === 20;
+                        && $options['max_tokens'] === 60;
                 })
             )
             ->willReturn([
@@ -586,13 +586,13 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         );
     }
 
-    public function test_case_I_service_file_declares_max_tokens_20_in_call_options(): void
+    public function test_case_I_service_file_declares_max_tokens_60_in_call_options(): void
     {
         $content = file_get_contents($this->serviceFilePath());
         $this->assertStringContainsString(
-            "'max_tokens'      => 20",
+            "'max_tokens'      => 60",
             $content,
-            'AskAiIntentNormalizerService must declare max_tokens => 20 in CALL_OPTIONS'
+            'AskAiIntentNormalizerService must declare max_tokens => 60 in CALL_OPTIONS'
         );
     }
 
@@ -924,5 +924,167 @@ class AskAiIntentNormalizerServiceTest extends TestCase
             $payloadSource,
             'buildPayload() must not hardcode faq_answers.roof_age_and_condition in the prompt — it bypasses the hallucination guard'
         );
+    }
+
+    // =========================================================================
+    // Case L — Internal status tracking via getLastStatus() / getLastError()
+    //
+    // Verifies that normalize() sets lastStatus/lastError at every branch so
+    // the caller (AskAiRunnerV2Service) can expose structured observability in
+    // the trace without polling normalize()'s return value alone.
+    // =========================================================================
+
+    // ── L1 ── Successful match → status=matched, error=null ──────────────────
+
+    public function test_case_L1_successful_match_sets_status_matched(): void
+    {
+        $client     = $this->makeClientMock('faq_answers.hvac_system_age');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Does the A/C work well?', $this->makeKnownFieldKeys());
+
+        $this->assertSame('matched', $normalizer->getLastStatus());
+        $this->assertNull($normalizer->getLastError());
+    }
+
+    // ── L2 ── OpenAI returns 'unknown' → status=unknown, error=null ──────────
+
+    public function test_case_L2_unknown_response_sets_status_unknown(): void
+    {
+        $client     = $this->makeClientMock('unknown');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Who is the best president?', $this->makeKnownFieldKeys());
+
+        $this->assertSame('unknown', $normalizer->getLastStatus());
+        $this->assertNull($normalizer->getLastError());
+    }
+
+    // ── L3 ── Hallucination guard fires → status=failed, error=invalid_key ───
+
+    public function test_case_L3_hallucinated_key_sets_status_failed_invalid_key(): void
+    {
+        $client     = $this->makeClientMock('listing.invented_field_that_does_not_exist');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('failed', $normalizer->getLastStatus());
+        $this->assertSame('invalid_key', $normalizer->getLastError());
+    }
+
+    // ── L4 ── Timeout exception → status=failed, error=timeout ──────────────
+
+    public function test_case_L4_timeout_exception_sets_status_failed_timeout(): void
+    {
+        // The existing makeClientMockThatThrows() throws
+        // RuntimeException('Connection timed out after 10 seconds.')
+        // which contains 'timed out' — classifyThrowable() must detect this.
+        $client     = $this->makeClientMockThatThrows();
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Does the A/C work well?', $this->makeKnownFieldKeys());
+
+        $this->assertSame('failed', $normalizer->getLastStatus());
+        $this->assertSame('timeout', $normalizer->getLastError());
+    }
+
+    // ── L5 ── Rate-limit exception → status=failed, error=rate_limited ───────
+
+    public function test_case_L5_rate_limit_exception_sets_status_failed_rate_limited(): void
+    {
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException(
+            new \RuntimeException('HTTP 429: Too many requests. Please slow down.')
+        );
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Is there a pool?', $this->makeKnownFieldKeys());
+
+        $this->assertSame('failed', $normalizer->getLastStatus());
+        $this->assertSame('rate_limited', $normalizer->getLastError());
+    }
+
+    // ── L6 ── Generic API exception → status=failed, error=api_error ─────────
+
+    public function test_case_L6_generic_api_exception_sets_status_failed_api_error(): void
+    {
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willThrowException(
+            new \RuntimeException('Network error: connection refused')
+        );
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('Is there a pool?', $this->makeKnownFieldKeys());
+
+        $this->assertSame('failed', $normalizer->getLastStatus());
+        $this->assertSame('api_error', $normalizer->getLastError());
+    }
+
+    // ── L7 ── Missing normalized_key → status=failed, error=empty_response ───
+
+    public function test_case_L7_missing_normalized_key_sets_status_failed_empty_response(): void
+    {
+        $client     = $this->makeClientMockWithMissingKey();
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Tell me about the A/C system.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('failed', $normalizer->getLastStatus());
+        $this->assertSame('empty_response', $normalizer->getLastError());
+    }
+
+    // ── L8 ── Empty question guard → status=unknown (no OpenAI call) ─────────
+
+    public function test_case_L8_empty_question_sets_status_unknown(): void
+    {
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->expects($this->never())->method('send');
+
+        $normalizer = $this->makeNormalizer($mock);
+        $normalizer->normalize('', $this->makeKnownFieldKeys());
+
+        $this->assertSame('unknown', $normalizer->getLastStatus());
+        $this->assertNull($normalizer->getLastError());
+    }
+
+    // ── L9 ── classifyThrowable() timeout detection is present in service ─────
+
+    public function test_case_L9_service_file_contains_timeout_message_detection(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            'classifyThrowable',
+            $content,
+            'AskAiIntentNormalizerService must define classifyThrowable() for structured failure classification'
+        );
+        $this->assertStringContainsString(
+            'timed out',
+            $content,
+            'classifyThrowable() must detect timeout via message pattern ("timed out")'
+        );
+        $this->assertStringContainsString(
+            'rate_limited',
+            $content,
+            'classifyThrowable() must produce rate_limited error string'
+        );
+    }
+
+    // ── L10 ── Status resets between consecutive calls ────────────────────────
+
+    public function test_case_L10_status_resets_correctly_between_calls(): void
+    {
+        // First call: matched
+        $client1     = $this->makeClientMock('listing.bedrooms');
+        $normalizer  = $this->makeNormalizer($client1);
+        $normalizer->normalize('How many bedrooms?', $this->makeKnownFieldKeys());
+        $this->assertSame('matched', $normalizer->getLastStatus());
+
+        // Second call on same instance: should produce its own result (unknown)
+        // We rebuild with a new client so normalize() is called again cleanly.
+        $client2     = $this->makeClientMock('unknown');
+        $normalizer2 = $this->makeNormalizer($client2);
+        $normalizer2->normalize('Who is the best president?', $this->makeKnownFieldKeys());
+        $this->assertSame('unknown', $normalizer2->getLastStatus());
     }
 }

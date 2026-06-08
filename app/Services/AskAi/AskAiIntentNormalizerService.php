@@ -33,6 +33,22 @@ class AskAiIntentNormalizerService
     private OpenAiClientService $client;
     private AskAiResponseContractService $contractService;
 
+    /**
+     * Internal status of the most recent normalize() call.
+     *
+     * Values: 'not_called', 'matched', 'unknown', 'failed'
+     * Detailed failure reason is stored in $lastError.
+     */
+    private string $lastStatus = 'not_called';
+
+    /**
+     * Detailed failure reason for the most recent normalize() call, or null.
+     *
+     * Values when $lastStatus === 'failed':
+     *   'rate_limited', 'timeout', 'api_error', 'invalid_json', 'invalid_key', 'empty_response'
+     */
+    private ?string $lastError = null;
+
     public function __construct(
         OpenAiClientService $client,
         AskAiResponseContractService $contractService
@@ -55,10 +71,44 @@ class AskAiIntentNormalizerService
     }
 
     /**
+     * Return the internal status of the most recent normalize() call.
+     *
+     * Values:
+     *   'not_called'  — normalize() was not called or input guards blocked before OpenAI.
+     *   'matched'     — OpenAI returned a canonical key that passed the hallucination guard.
+     *   'unknown'     — OpenAI returned 'unknown' (no suitable key found).
+     *   'failed'      — An operational failure occurred; see getLastError() for the reason.
+     *
+     * @return string
+     */
+    public function getLastStatus(): string
+    {
+        return $this->lastStatus;
+    }
+
+    /**
+     * Return the detailed failure reason for the most recent normalize() call.
+     *
+     * Non-null only when getLastStatus() === 'failed'. Values:
+     *   'rate_limited'   — HTTP 429 or rate-limit error from OpenAI.
+     *   'timeout'        — Request timed out before OpenAI responded.
+     *   'api_error'      — Other transport or API-level error.
+     *   'invalid_json'   — Response could not be decoded as valid JSON.
+     *   'invalid_key'    — OpenAI returned a key not in the approved list (hallucination).
+     *   'empty_response' — Response was missing or contained an empty/null normalized_key.
+     *
+     * @return string|null
+     */
+    public function getLastError(): ?string
+    {
+        return $this->lastError;
+    }
+
+    /**
      * Per-call OpenAI transport constraints for intent normalization.
      *
      * Intent normalization requires only a single short JSON key back from OpenAI
-     * (e.g. {"normalized_key":"listing.bedrooms"}). A 10-second timeout and a 20-token
+     * (e.g. {"normalized_key":"listing.bedrooms"}). A 10-second timeout and a 60-token
      * ceiling are deliberately narrow: they protect overall API budget and prevent a slow
      * OpenAI response from blocking the main Ask AI pipeline on every unsupported question.
      *
@@ -67,7 +117,7 @@ class AskAiIntentNormalizerService
      */
     private const CALL_OPTIONS = [
         'timeout_seconds' => 10,
-        'max_tokens'      => 20,
+        'max_tokens'      => 60,
     ];
 
     /**
@@ -78,8 +128,8 @@ class AskAiIntentNormalizerService
      * response, exception, or timeout results in null — never a fabricated key,
      * never a crash.
      *
-     * The call uses CALL_OPTIONS to enforce a short timeout and low token cap,
-     * ensuring the normalization step is cheap and fast relative to the main pipeline.
+     * Internal status is recorded after every branch and readable via
+     * getLastStatus() / getLastError() for trace logging by the caller.
      *
      * Returns null when:
      *   - The question or knownFieldKeys are empty.
@@ -94,7 +144,11 @@ class AskAiIntentNormalizerService
      */
     public function normalize(string $question, array $knownFieldKeys): ?string
     {
+        $this->lastStatus = 'not_called';
+        $this->lastError  = null;
+
         if ($question === '' || empty($knownFieldKeys)) {
+            $this->lastStatus = 'unknown';
             return null;
         }
 
@@ -105,21 +159,79 @@ class AskAiIntentNormalizerService
 
             $normalizedKey = $data['normalized_key'] ?? null;
 
-            if (!is_string($normalizedKey) || $normalizedKey === '' || $normalizedKey === 'unknown') {
+            if (!is_string($normalizedKey) || $normalizedKey === '') {
+                $this->lastStatus = 'failed';
+                $this->lastError  = 'empty_response';
+                return null;
+            }
+
+            if ($normalizedKey === 'unknown') {
+                $this->lastStatus = 'unknown';
                 return null;
             }
 
             // Hallucination guard: reject any key not in the approved list.
             if (!in_array($normalizedKey, $knownFieldKeys, true)) {
+                $this->lastStatus = 'failed';
+                $this->lastError  = 'invalid_key';
                 return null;
             }
 
+            $this->lastStatus = 'matched';
             return $normalizedKey;
 
         } catch (\Throwable $e) {
-            // Timeouts, network errors, and OpenAI failures return null gracefully.
+            $classified       = $this->classifyThrowable($e);
+            $this->lastStatus = $classified['status'];
+            $this->lastError  = $classified['error'];
             return null;
         }
+    }
+
+    /**
+     * Classify a caught Throwable into a structured failure reason.
+     *
+     * Uses exception message pattern detection to distinguish timeout, rate-limit,
+     * JSON parse, and generic API errors. This approach works with any exception
+     * type (RuntimeException, ErrorException, etc.) without requiring a dependency
+     * on the OpenAI PHP SDK's specific exception hierarchy.
+     *
+     * @param  \Throwable $e
+     * @return array{status: string, error: string}
+     */
+    private function classifyThrowable(\Throwable $e): array
+    {
+        $message = strtolower($e->getMessage());
+
+        // HTTP 429 / rate-limit signals
+        if (str_contains($message, '429')
+            || str_contains($message, 'rate limit')
+            || str_contains($message, 'rate_limit')
+            || str_contains($message, 'too many requests')
+        ) {
+            return ['status' => 'failed', 'error' => 'rate_limited'];
+        }
+
+        // Timeout / connection-timeout signals
+        if (str_contains($message, 'timed out')
+            || str_contains($message, 'timeout')
+            || str_contains($message, 'time out')
+            || str_contains($message, 'curl error 28')
+            || str_contains($message, 'operation_timedout')
+        ) {
+            return ['status' => 'failed', 'error' => 'timeout'];
+        }
+
+        // JSON decode / parse failure signals
+        if (str_contains($message, 'json')
+            || str_contains($message, 'parse error')
+            || str_contains($message, 'decode')
+            || str_contains($message, 'syntax error')
+        ) {
+            return ['status' => 'failed', 'error' => 'invalid_json'];
+        }
+
+        return ['status' => 'failed', 'error' => 'api_error'];
     }
 
     /**

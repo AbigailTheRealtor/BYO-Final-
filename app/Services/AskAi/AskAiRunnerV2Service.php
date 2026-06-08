@@ -150,10 +150,29 @@ class AskAiRunnerV2Service
             $classification = $this->classifier->classify($question);
             $questionType   = $classification['question_type'];
 
+            // Determine normalizer_status before building the trace so every
+            // exit path (including early returns) carries the correct value.
+            // not_applicable — question type is deterministic; normalizer not relevant.
+            // not_called     — question is 'unsupported' but flag is off or service missing.
+            // (updated below when normalizer is actually called)
+            if ($questionType !== 'unsupported') {
+                $normalizerStatus = 'not_applicable';
+                $normalizerError  = null;
+            } elseif ($this->normalizer === null || !$this->normalizer->isEnabled()) {
+                $normalizerStatus = 'not_called';
+                $normalizerError  = null;
+            } else {
+                // Will be overwritten after the normalizer call in step 1a.
+                $normalizerStatus = 'not_called';
+                $normalizerError  = null;
+            }
+
             $trace = [
                 'question'             => $question,
                 'classifier_result'    => $questionType,
                 'normalizer_called'    => 'N',
+                'normalizer_status'    => $normalizerStatus,
+                'normalizer_error'     => $normalizerError,
                 'normalized_field_key' => null,
                 'faq_key_detected'     => null,
                 'final_question_type'  => $questionType,
@@ -180,6 +199,23 @@ class AskAiRunnerV2Service
                 $trace['normalizer_called'] = 'Y';
                 $knownFieldKeys = $this->normalizer->buildKnownFieldKeys();
                 $normalizedKey  = $this->normalizer->normalize($question, $knownFieldKeys);
+
+                // Map the normalizer's internal status to the three trace categories:
+                //   matched → normalizer_status=matched
+                //   unknown → normalizer_status=unknown
+                //   any failure → normalizer_status=failed, normalizer_error=<reason>
+                $lastNormStatus = $this->normalizer->getLastStatus();
+                $lastNormError  = $this->normalizer->getLastError();
+                if ($lastNormStatus === 'matched') {
+                    $trace['normalizer_status'] = 'matched';
+                    $trace['normalizer_error']  = null;
+                } elseif ($lastNormStatus === 'unknown') {
+                    $trace['normalizer_status'] = 'unknown';
+                    $trace['normalizer_error']  = null;
+                } else {
+                    $trace['normalizer_status'] = 'failed';
+                    $trace['normalizer_error']  = $lastNormError;
+                }
 
                 if ($normalizedKey !== null) {
                     $trace['normalized_field_key'] = $normalizedKey;
@@ -340,6 +376,8 @@ class AskAiRunnerV2Service
                 'question'             => $question ?? null,
                 'classifier_result'    => null,
                 'normalizer_called'    => null,
+                'normalizer_status'    => null,
+                'normalizer_error'     => null,
                 'normalized_field_key' => null,
                 'faq_key_detected'     => null,
                 'final_question_type'  => null,
