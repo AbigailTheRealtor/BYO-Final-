@@ -6,6 +6,8 @@ use Tests\TestCase;
 use Illuminate\Support\Facades\Http;
 use App\Services\ListingImport\MlsListingImportService;
 use App\Services\ListingImport\MlsFieldMap;
+use App\Services\ListingImport\MlsNormalizer;
+use App\Services\ListingImport\MlsCoverageReporter;
 use App\Http\Livewire\OfferListing\Seller\SellerOfferListing;
 use App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing;
 
@@ -119,6 +121,50 @@ class MlsListingImportServiceTest extends TestCase
         $this->assertEquals('sale', $result['data']['listing_type_hint']);
     }
 
+    // ─── Tax / Legal / Flood Zone / Zoning parsing (Residential) ─────────────
+
+    public function test_sale_fixture_parses_tax_and_legal_fields(): void
+    {
+        $html = file_get_contents(base_path('tests/Fixtures/ListingImport/matrix_sample.html'));
+
+        Http::fake(['*' => Http::response($html, 200)]);
+
+        $result = $this->service->import('https://www.stellarmls.com/matrix/listing/12345');
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('tax_id', $data);
+        $this->assertEquals('12-34-56-78901', $data['tax_id']);
+
+        $this->assertArrayHasKey('tax_year', $data);
+        $this->assertEquals('2023', $data['tax_year']);
+
+        $this->assertArrayHasKey('annual_taxes', $data);
+        $this->assertEquals('4812', $data['annual_taxes']);
+
+        $this->assertArrayHasKey('legal_description', $data);
+        $this->assertStringContainsString('LOT 15', $data['legal_description']);
+
+        $this->assertArrayHasKey('flood_zone_code', $data);
+        $this->assertEquals('X', $data['flood_zone_code']); // normalized to uppercase
+
+        $this->assertArrayHasKey('flood_zone_date', $data);
+        $this->assertStringContainsString('2009', $data['flood_zone_date']);
+
+        $this->assertArrayHasKey('flood_zone_panel', $data);
+        $this->assertStringContainsString('12057C', $data['flood_zone_panel']);
+
+        $this->assertArrayHasKey('zoning', $data);
+        $this->assertStringContainsString('RSF', $data['zoning']);
+
+        $this->assertArrayHasKey('additional_parcels', $data);
+        $this->assertEquals('no', $data['additional_parcels']); // normalized to lowercase
+
+        $this->assertArrayHasKey('total_parcel_count', $data);
+        $this->assertEquals('1', $data['total_parcel_count']);
+    }
+
     // ─── Rental listing parsing ───────────────────────────────────────────────
 
     public function test_rental_rate_type_produces_rental_hint(): void
@@ -154,6 +200,60 @@ class MlsListingImportServiceTest extends TestCase
         $this->assertEquals('350000', $result['data']['price']);
     }
 
+    public function test_rental_fixture_parses_lease_term_fields(): void
+    {
+        $html = file_get_contents(base_path('tests/Fixtures/ListingImport/matrix_rental_sample.html'));
+
+        Http::fake(['*' => Http::response($html, 200)]);
+
+        $result = $this->service->import('https://www.stellarmls.com/matrix/listing/99999');
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('lease_amount_frequency', $data);
+        $this->assertEquals('monthly', $data['lease_amount_frequency']); // normalized
+
+        $this->assertArrayHasKey('minimum_security_deposit', $data);
+        $this->assertEquals('2400', $data['minimum_security_deposit']);
+
+        $this->assertArrayHasKey('application_fee', $data);
+        $this->assertEquals('75', $data['application_fee']);
+
+        $this->assertArrayHasKey('tenant_pays', $data);
+        $this->assertStringContainsString('Electric', $data['tenant_pays']);
+
+        $this->assertArrayHasKey('terms_of_lease', $data);
+        $this->assertStringContainsString('12 Months', $data['terms_of_lease']);
+
+        $this->assertArrayHasKey('rent_includes', $data);
+        $this->assertStringContainsString('Water', $data['rent_includes']);
+    }
+
+    public function test_rental_fixture_parses_tax_fields(): void
+    {
+        $html = file_get_contents(base_path('tests/Fixtures/ListingImport/matrix_rental_sample.html'));
+
+        Http::fake(['*' => Http::response($html, 200)]);
+
+        $result = $this->service->import('https://www.stellarmls.com/matrix/listing/99999');
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('tax_id', $data);
+        $this->assertEquals('23-45-67-89012', $data['tax_id']);
+
+        $this->assertArrayHasKey('tax_year', $data);
+        $this->assertEquals('2023', $data['tax_year']);
+
+        $this->assertArrayHasKey('annual_taxes', $data);
+        $this->assertEquals('2150', $data['annual_taxes']);
+
+        $this->assertArrayHasKey('flood_zone_code', $data);
+        $this->assertEquals('AE', $data['flood_zone_code']); // normalized to uppercase
+    }
+
     // ─── Raw text parsing ─────────────────────────────────────────────────────
 
     public function test_raw_text_parses_basic_fields(): void
@@ -169,6 +269,442 @@ class MlsListingImportServiceTest extends TestCase
         $this->assertEquals('2015', $result['data']['year_built']);
     }
 
+    public function test_raw_text_parses_tax_legal_fields(): void
+    {
+        $rawText = implode('  ', [
+            'Tax ID: 99-88-77-66',
+            'Tax Year: 2022',
+            'Taxes (Annual Amount): $3,500',
+            'Legal Description: LOT 1 BLOCK A SUNRIDGE SUB PB 22 PG 4',
+            'Flood Zone Code: X',
+            'Zoning: R2',
+            'Additional Parcels: No',
+            'Total Number of Parcels: 1',
+        ]);
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertEquals('99-88-77-66', $data['tax_id']);
+        $this->assertEquals('2022', $data['tax_year']);
+        $this->assertEquals('3500', $data['annual_taxes']);
+        $this->assertStringContainsString('LOT 1', $data['legal_description']);
+        $this->assertEquals('X', $data['flood_zone_code']);
+        $this->assertStringContainsString('R2', $data['zoning']);
+        $this->assertEquals('no', $data['additional_parcels']); // normalized
+        $this->assertEquals('1', $data['total_parcel_count']);
+    }
+
+    public function test_raw_text_parses_rental_lease_fields(): void
+    {
+        $rawText = implode('  ', [
+            'Lease Amount Frequency: Monthly',
+            'Minimum Security Deposit: $1,800',
+            'Terms of Lease: 12 Months, Month to Month',
+            'Tenant Pays: Electric, Internet',
+        ]);
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertEquals('monthly', $data['lease_amount_frequency']); // normalized
+        $this->assertEquals('1800', $data['minimum_security_deposit']);
+        $this->assertStringContainsString('12 Months', $data['terms_of_lease']);
+        $this->assertStringContainsString('Electric', $data['tenant_pays']);
+    }
+
+    // ─── Parser boundary protection ───────────────────────────────────────────
+
+    public function test_pool_value_does_not_bleed_into_garage_label(): void
+    {
+        // No separator between Pool and Garage — stop-pattern must cut off at "Garage:"
+        $rawText = "Pool: Yes Garage: 2 Car Carport: No Appliances: Dishwasher";
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('pool', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Garage', $data['pool']);
+    }
+
+    public function test_carport_value_does_not_bleed_into_appliances_label(): void
+    {
+        $rawText = "Carport: No Appliances: Dishwasher, Refrigerator Interior Features: Walk-in Closet";
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('carport', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Appliances', $data['carport']);
+    }
+
+    public function test_air_conditioning_value_does_not_bleed_into_heating_label(): void
+    {
+        $rawText = "Air Conditioning: Central Air Heating: Electric Year Built: 2005";
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('air_conditioning', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Heating', $data['air_conditioning']);
+    }
+
+    // ─── HOA / CDD parsing (sale fixture) ────────────────────────────────────
+
+    public function test_sale_fixture_parses_hoa_fields(): void
+    {
+        $html = file_get_contents(base_path('tests/Fixtures/ListingImport/matrix_sample.html'));
+        Http::fake(['*' => Http::response($html, 200)]);
+
+        $result = $this->service->import('https://www.stellarmls.com/matrix/listing/12345');
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('has_hoa', $data);
+        $this->assertEquals('yes', $data['has_hoa']); // normalized
+
+        $this->assertArrayHasKey('association_name', $data);
+        $this->assertStringContainsString('Ocean Breeze', $data['association_name']);
+
+        $this->assertArrayHasKey('association_fee_amount', $data);
+        $this->assertEquals('185', $data['association_fee_amount']);
+
+        $this->assertArrayHasKey('association_fee_frequency', $data);
+        $this->assertEquals('monthly', $data['association_fee_frequency']); // normalized
+
+        $this->assertArrayHasKey('has_cdd', $data);
+        $this->assertEquals('no', $data['has_cdd']); // normalized
+    }
+
+    public function test_rental_fixture_parses_hoa_and_cdd_fields(): void
+    {
+        $html = file_get_contents(base_path('tests/Fixtures/ListingImport/matrix_rental_sample.html'));
+        Http::fake(['*' => Http::response($html, 200)]);
+
+        $result = $this->service->import('https://www.stellarmls.com/matrix/listing/99999');
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('has_hoa', $data);
+        $this->assertEquals('no', $data['has_hoa']); // normalized
+
+        $this->assertArrayHasKey('has_cdd', $data);
+        $this->assertEquals('yes', $data['has_cdd']); // normalized
+
+        $this->assertArrayHasKey('annual_cdd_fee', $data);
+        $this->assertEquals('960', $data['annual_cdd_fee']);
+    }
+
+    public function test_raw_text_parses_hoa_fields(): void
+    {
+        $rawText = implode('  ', [
+            'Association Y/N: Yes',
+            'Association Name: Lakewood Owners Association',
+            'Association Fee: $250',
+            'Association Fee Freq: Quarterly',
+            'CDD Y/N: No',
+        ]);
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertEquals('yes', $data['has_hoa']);
+        $this->assertStringContainsString('Lakewood', $data['association_name']);
+        $this->assertEquals('250', $data['association_fee_amount']);
+        $this->assertEquals('quarterly', $data['association_fee_frequency']); // normalized
+        $this->assertEquals('no', $data['has_cdd']);
+    }
+
+    public function test_raw_text_parses_cdd_annual_fee(): void
+    {
+        $rawText = 'CDD Y/N: Yes  CDD Annual Amount: $1,450  Association Y/N: No';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals('yes', $result['data']['has_cdd']);
+        $this->assertEquals('1450', $result['data']['annual_cdd_fee']);
+        $this->assertEquals('no', $result['data']['has_hoa']);
+    }
+
+    // ─── MlsNormalizer ────────────────────────────────────────────────────────
+
+    /**
+     * @dataProvider booleanNormalizerProvider
+     */
+    public function test_normalizer_boolean_coercion(string $field, string $input, string $expected): void
+    {
+        $this->assertEquals($expected, MlsNormalizer::normalize($field, $input));
+    }
+
+    public static function booleanNormalizerProvider(): array
+    {
+        return [
+            'pool Yes'             => ['pool', 'Yes', 'yes'],
+            'pool Y'               => ['pool', 'Y', 'yes'],
+            'pool TRUE'            => ['pool', 'TRUE', 'yes'],
+            'pool 1'               => ['pool', '1', 'yes'],
+            'pool No'              => ['pool', 'No', 'no'],
+            'pool N'               => ['pool', 'N', 'no'],
+            'pool NO'              => ['pool', 'NO', 'no'],
+            'pool 0'               => ['pool', '0', 'no'],
+            'garage Yes'           => ['garage', 'Yes', 'yes'],
+            'carport No'           => ['carport', 'No', 'no'],
+            'waterfront Yes'       => ['waterfront', 'Yes', 'yes'],
+            'additional_parcels Y' => ['additional_parcels', 'Y', 'yes'],
+            'pool In Ground'       => ['pool', 'In Ground', 'In Ground'],
+        ];
+    }
+
+    public function test_normalizer_furnishing(): void
+    {
+        $this->assertEquals('furnished', MlsNormalizer::normalize('furnished', 'Furnished'));
+        $this->assertEquals('unfurnished', MlsNormalizer::normalize('furnished', 'Unfurnished'));
+        $this->assertEquals('negotiable', MlsNormalizer::normalize('furnished', 'Negotiable'));
+        $this->assertEquals('turnkey', MlsNormalizer::normalize('furnished', 'Turnkey'));
+        $this->assertEquals('partial', MlsNormalizer::normalize('furnished', 'Partial'));
+    }
+
+    public function test_normalizer_flood_zone(): void
+    {
+        $this->assertEquals('X', MlsNormalizer::normalize('flood_zone_code', 'X'));
+        $this->assertEquals('AE', MlsNormalizer::normalize('flood_zone_code', 'ae'));
+        $this->assertEquals('VE', MlsNormalizer::normalize('flood_zone_code', 've'));
+        $this->assertEquals('yes', MlsNormalizer::normalize('flood_zone_code', 'Flood Insurance Required'));
+        $this->assertEquals('yes', MlsNormalizer::normalize('flood_zone_code', 'Insurance Required'));
+    }
+
+    public function test_normalizer_hoa_fee_frequency(): void
+    {
+        $this->assertEquals('monthly',      MlsNormalizer::normalize('association_fee_frequency', 'Monthly'));
+        $this->assertEquals('quarterly',    MlsNormalizer::normalize('association_fee_frequency', 'Quarterly'));
+        $this->assertEquals('annually',     MlsNormalizer::normalize('association_fee_frequency', 'Annually'));
+        $this->assertEquals('annually',     MlsNormalizer::normalize('association_fee_frequency', 'annual'));
+        $this->assertEquals('semi_annually',MlsNormalizer::normalize('association_fee_frequency', 'Semi-Annually'));
+        $this->assertEquals('one_time',     MlsNormalizer::normalize('association_fee_frequency', 'One-Time'));
+    }
+
+    public function test_normalizer_has_hoa_and_has_cdd(): void
+    {
+        $this->assertEquals('yes', MlsNormalizer::normalize('has_hoa', 'Yes'));
+        $this->assertEquals('no',  MlsNormalizer::normalize('has_hoa', 'No'));
+        $this->assertEquals('yes', MlsNormalizer::normalize('has_cdd', 'Y'));
+        $this->assertEquals('no',  MlsNormalizer::normalize('has_cdd', 'N'));
+        $this->assertEquals('yes', MlsNormalizer::normalize('has_cdd', 'TRUE'));
+        $this->assertEquals('no',  MlsNormalizer::normalize('has_hoa', '0'));
+    }
+
+    public function test_normalizer_lease_frequency(): void
+    {
+        $this->assertEquals('monthly', MlsNormalizer::normalize('lease_amount_frequency', 'Monthly'));
+        $this->assertEquals('annually', MlsNormalizer::normalize('lease_amount_frequency', 'Annually'));
+        $this->assertEquals('annually', MlsNormalizer::normalize('lease_amount_frequency', 'annual'));
+        $this->assertEquals('weekly', MlsNormalizer::normalize('lease_amount_frequency', 'Weekly'));
+        $this->assertEquals('month_to_month', MlsNormalizer::normalize('lease_amount_frequency', 'Month to Month'));
+        $this->assertEquals('12_months', MlsNormalizer::normalize('lease_amount_frequency', '12 Months'));
+        $this->assertEquals('seasonal', MlsNormalizer::normalize('lease_amount_frequency', 'Seasonal'));
+    }
+
+    public function test_normalizer_unknown_field_passes_value_through(): void
+    {
+        $this->assertEquals('SomeValue', MlsNormalizer::normalize('description', 'SomeValue'));
+        $this->assertEquals('RSF-4', MlsNormalizer::normalize('zoning', 'RSF-4'));
+    }
+
+    // ─── Field map correctness ────────────────────────────────────────────────
+
+    public function test_field_map_returns_arrays_for_all_four_roles(): void
+    {
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $role) {
+            $map = MlsFieldMap::forRole($role);
+            $this->assertIsArray($map);
+            $this->assertNotEmpty($map, "Field map for role '{$role}' should not be empty");
+        }
+    }
+
+    public function test_seller_map_tax_id_maps_to_parcel_id(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+
+        $this->assertArrayHasKey('tax_id', $map, 'seller map must have tax_id canonical key');
+        $this->assertEquals('parcel_id', $map['tax_id'], 'tax_id must map to parcel_id, not tax_id');
+    }
+
+    public function test_seller_map_does_not_contain_invalid_mls_number_mapping(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+
+        // mls_number has no Livewire property on SellerOfferListing — must be absent
+        $this->assertArrayNotHasKey('mls_number', $map);
+    }
+
+    public function test_landlord_map_does_not_contain_application_fee(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+
+        // application_fee property does not exist on LandlordOfferListing
+        $this->assertArrayNotHasKey('application_fee', $map);
+    }
+
+    public function test_landlord_map_does_not_contain_mls_number_mapping(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+
+        $this->assertArrayNotHasKey('mls_number', $map);
+    }
+
+    public function test_landlord_map_includes_rental_fields(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+
+        // Existing rental fields still present
+        $this->assertArrayHasKey('available_date', $map);
+        $this->assertArrayHasKey('rent_includes', $map);
+
+        // New rental fields added in this audit
+        $this->assertArrayHasKey('minimum_security_deposit', $map);
+        $this->assertArrayHasKey('lease_amount_frequency', $map);
+        $this->assertArrayHasKey('terms_of_lease', $map);
+        $this->assertArrayHasKey('tenant_pays', $map);
+    }
+
+    public function test_seller_and_landlord_maps_include_hoa_fields(): void
+    {
+        foreach (['seller', 'landlord'] as $role) {
+            $map = MlsFieldMap::forRole($role);
+            $this->assertArrayHasKey('has_hoa',                 $map, "Role '{$role}' must map has_hoa");
+            $this->assertArrayHasKey('association_name',        $map, "Role '{$role}' must map association_name");
+            $this->assertArrayHasKey('association_fee_amount',  $map, "Role '{$role}' must map association_fee_amount");
+            $this->assertArrayHasKey('association_fee_frequency', $map, "Role '{$role}' must map association_fee_frequency");
+            $this->assertArrayHasKey('has_cdd',                 $map, "Role '{$role}' must map has_cdd");
+            $this->assertArrayHasKey('annual_cdd_fee',          $map, "Role '{$role}' must map annual_cdd_fee");
+        }
+    }
+
+    public function test_hoa_fields_map_to_correct_livewire_properties_on_seller(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+        $this->assertEquals('has_hoa',                 $map['has_hoa']);
+        $this->assertEquals('association_name',        $map['association_name']);
+        $this->assertEquals('association_fee_amount',  $map['association_fee_amount']);
+        $this->assertEquals('association_fee_frequency', $map['association_fee_frequency']);
+        $this->assertEquals('has_cdd',                 $map['has_cdd']);
+        $this->assertEquals('annual_cdd_fee',          $map['annual_cdd_fee']);
+    }
+
+    public function test_buyer_and_tenant_maps_omit_hoa_fields(): void
+    {
+        foreach (['buyer', 'tenant'] as $role) {
+            $map = MlsFieldMap::forRole($role);
+            $this->assertArrayNotHasKey('has_hoa',                 $map, "Role '{$role}' must not map has_hoa");
+            $this->assertArrayNotHasKey('association_fee_amount',  $map, "Role '{$role}' must not map association_fee_amount");
+            $this->assertArrayNotHasKey('has_cdd',                 $map, "Role '{$role}' must not map has_cdd");
+        }
+    }
+
+    public function test_landlord_map_includes_tax_legal_flood_zone_fields(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+
+        $this->assertArrayHasKey('tax_id', $map);
+        $this->assertEquals('parcel_id', $map['tax_id']);
+        $this->assertArrayHasKey('tax_year', $map);
+        $this->assertArrayHasKey('annual_taxes', $map);
+        $this->assertArrayHasKey('legal_description', $map);
+        $this->assertArrayHasKey('flood_zone_code', $map);
+    }
+
+    public function test_seller_map_includes_tax_legal_flood_zone_fields(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+
+        $this->assertArrayHasKey('tax_id', $map);
+        $this->assertArrayHasKey('tax_year', $map);
+        $this->assertArrayHasKey('annual_taxes', $map);
+        $this->assertArrayHasKey('legal_description', $map);
+        $this->assertArrayHasKey('flood_zone_code', $map);
+        $this->assertArrayHasKey('additional_parcels', $map);
+        $this->assertArrayHasKey('total_parcel_count', $map);
+        $this->assertArrayHasKey('zoning', $map);
+    }
+
+    public function test_buyer_and_tenant_maps_omit_rental_only_fields(): void
+    {
+        $buyerMap  = MlsFieldMap::forRole('buyer');
+        $tenantMap = MlsFieldMap::forRole('tenant');
+
+        $this->assertArrayNotHasKey('application_fee', $buyerMap);
+        $this->assertArrayNotHasKey('application_fee', $tenantMap);
+    }
+
+    public function test_buyer_map_omits_year_built(): void
+    {
+        $map = MlsFieldMap::forRole('buyer');
+
+        // year_built property does not exist on BuyerOfferListing
+        $this->assertArrayNotHasKey('year_built', $map);
+    }
+
+    public function test_tenant_map_omits_price_mapping(): void
+    {
+        $map = MlsFieldMap::forRole('tenant');
+
+        // MLS listing price must not auto-fill Tenant's desired rental amount
+        $this->assertArrayNotHasKey('price', $map);
+    }
+
+    public function test_buyer_and_tenant_maps_omit_owner_disclosure_fields(): void
+    {
+        foreach (['buyer', 'tenant'] as $role) {
+            $map = MlsFieldMap::forRole($role);
+            $this->assertArrayNotHasKey('tax_id', $map,           "Role '{$role}' must not map tax_id");
+            $this->assertArrayNotHasKey('tax_year', $map,         "Role '{$role}' must not map tax_year");
+            $this->assertArrayNotHasKey('annual_taxes', $map,     "Role '{$role}' must not map annual_taxes");
+            $this->assertArrayNotHasKey('legal_description', $map, "Role '{$role}' must not map legal_description");
+            $this->assertArrayNotHasKey('flood_zone_code', $map,  "Role '{$role}' must not map flood_zone_code");
+        }
+    }
+
+    public function test_all_mapped_seller_properties_exist_on_component(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+
+        foreach ($map as $canonicalKey => $propName) {
+            $propName = ltrim($propName, '*');
+            $this->assertTrue(
+                property_exists(SellerOfferListing::class, $propName),
+                "Seller map '{$canonicalKey}' → '{$propName}': property does not exist on SellerOfferListing"
+            );
+        }
+    }
+
+    public function test_all_mapped_landlord_properties_exist_on_component(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+
+        foreach ($map as $canonicalKey => $propName) {
+            $propName = ltrim($propName, '*');
+            $this->assertTrue(
+                property_exists(LandlordOfferListing::class, $propName),
+                "Landlord map '{$canonicalKey}' → '{$propName}': property does not exist on LandlordOfferListing"
+            );
+        }
+    }
+
     // ─── applyImportedFields overwrite guard ──────────────────────────────────
 
     public function test_apply_does_not_overwrite_filled_property_unless_in_override_list(): void
@@ -178,7 +714,6 @@ class MlsListingImportServiceTest extends TestCase
         $component = new SellerOfferListing();
         $component->bedrooms = '3';
 
-        // Simulate having preview data
         $component->importPreviewData = [
             [
                 'canonical_key'      => 'bedrooms',
@@ -191,7 +726,6 @@ class MlsListingImportServiceTest extends TestCase
             ],
         ];
 
-        // Call without override — should NOT overwrite
         $component->applyImportedFields(['bedrooms'], []);
 
         $this->assertEquals('3', $component->bedrooms, 'bedrooms should not be overwritten without override confirmation');
@@ -216,7 +750,6 @@ class MlsListingImportServiceTest extends TestCase
             ],
         ];
 
-        // Call WITH override — should overwrite
         $component->applyImportedFields(['bedrooms'], ['bedrooms']);
 
         $this->assertEquals('5', $component->bedrooms, 'bedrooms should be overwritten when in override list');
@@ -246,6 +779,28 @@ class MlsListingImportServiceTest extends TestCase
         $this->assertEquals('4', $component->bedrooms);
     }
 
+    // ─── Missing-property guard: mls_number not imported ─────────────────────
+
+    public function test_mls_number_is_parsed_but_not_mapped_to_any_role(): void
+    {
+        $rawText = "MLS #: T9876543  List Price: \$299,000  Bedrooms: 3  Bathrooms: 2";
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        // mls_number IS parsed (present in raw data)
+        $this->assertArrayHasKey('mls_number', $result['data']);
+        $this->assertEquals('T9876543', $result['data']['mls_number']);
+
+        // But mls_number must NOT appear in any field map (no component property exists)
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $role) {
+            $map = MlsFieldMap::forRole($role);
+            $this->assertArrayNotHasKey('mls_number', $map,
+                "mls_number must not appear in '{$role}' map — no Livewire property exists"
+            );
+        }
+    }
+
     // ─── SSRF protection ──────────────────────────────────────────────────────
 
     /**
@@ -253,12 +808,10 @@ class MlsListingImportServiceTest extends TestCase
      */
     public function test_ssrf_blocked_urls_return_friendly_error(string $url): void
     {
-        // No Http::fake() — the guard must reject before any HTTP call is made.
         $result = $this->service->import($url);
 
         $this->assertFalse($result['success'], "Expected SSRF block for URL: {$url}");
         $this->assertNotEmpty($result['error']);
-        // Error should not reveal internal network details
         $this->assertStringNotContainsStringIgnoringCase('exception', $result['error']);
         $this->assertStringNotContainsStringIgnoringCase('stack', $result['error']);
     }
@@ -284,40 +837,80 @@ class MlsListingImportServiceTest extends TestCase
             '*' => Http::response('<p>Bedrooms: 3 Bathrooms: 2</p>', 200),
         ]);
 
-        // A real public IP should pass the guard and reach the HTTP layer
         $result = $this->service->import('https://8.8.8.8/listing');
 
-        // The guard passed (no "not permitted" error); the HTTP layer may succeed or fail
         $this->assertStringNotContainsStringIgnoringCase('not permitted', $result['error'] ?? '');
     }
 
-    // ─── Field map sanity ─────────────────────────────────────────────────────
+    // ─── Coverage report generation ───────────────────────────────────────────
 
-    public function test_field_map_returns_arrays_for_all_four_roles(): void
+    public function test_coverage_report_generates_file_with_expected_columns(): void
     {
-        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $role) {
-            $map = MlsFieldMap::forRole($role);
-            $this->assertIsArray($map);
-            $this->assertNotEmpty($map, "Field map for role '{$role}' should not be empty");
-        }
-    }
+        $tmpPath = sys_get_temp_dir() . '/mls_coverage_test_' . uniqid() . '.md';
 
-    public function test_buyer_and_tenant_maps_omit_rental_only_fields(): void
-    {
-        $buyerMap  = MlsFieldMap::forRole('buyer');
-        $tenantMap = MlsFieldMap::forRole('tenant');
+        $writtenPath = MlsCoverageReporter::generate($tmpPath);
 
-        // These are landlord-only fields; buyer/tenant should not try to set them
-        $this->assertArrayNotHasKey('application_fee', $buyerMap);
-        $this->assertArrayNotHasKey('application_fee', $tenantMap);
-    }
+        $this->assertFileExists($writtenPath, 'Coverage report file should be written');
 
-    public function test_landlord_map_includes_rental_fields(): void
-    {
-        $map = MlsFieldMap::forRole('landlord');
+        $content = file_get_contents($writtenPath);
 
-        $this->assertArrayHasKey('available_date', $map);
-        $this->assertArrayHasKey('application_fee', $map);
-        $this->assertArrayHasKey('rent_includes', $map);
+        // ── Required exact column headers (from specification contract) ───────
+        $this->assertStringContainsString('MLS Form',                       $content, 'Column: MLS Form');
+        $this->assertStringContainsString('MLS Section',                    $content, 'Column: MLS Section');
+        $this->assertStringContainsString('MLS Field Label',                $content, 'Column: MLS Field Label');
+        $this->assertStringContainsString('Canonical Import Key',           $content, 'Column: Canonical Import Key');
+        $this->assertStringContainsString('Current Mapping',                $content, 'Column: Current Mapping');
+        $this->assertStringContainsString('Target Property',                $content, 'Column: Target Property');
+        $this->assertStringContainsString('Property Exists (Y/N)',          $content, 'Column: Property Exists (Y/N)');
+        $this->assertStringContainsString('Form Field Exists (Y/N)',        $content, 'Column: Form Field Exists (Y/N)');
+        $this->assertStringContainsString('Safe To Import (Y/N)',           $content, 'Column: Safe To Import (Y/N)');
+        $this->assertStringContainsString('Normalization Required (Y/N)',   $content, 'Column: Normalization Required (Y/N)');
+        $this->assertStringContainsString('Notes',                          $content, 'Column: Notes');
+
+        // ── All 7 Stellar MLS form names must appear ─────────────────────────
+        $this->assertStringContainsString('Residential',         $content, 'Form: Residential');
+        $this->assertStringContainsString('Rental',              $content, 'Form: Rental');
+        $this->assertStringContainsString('Vacant Land',         $content, 'Form: Vacant Land');
+        $this->assertStringContainsString('Income',              $content, 'Form: Income');
+        $this->assertStringContainsString('Commercial Sale',     $content, 'Form: Commercial Sale');
+        $this->assertStringContainsString('Commercial Lease',    $content, 'Form: Commercial Lease');
+        $this->assertStringContainsString('Business Opportunity',$content, 'Form: Business Opportunity');
+
+        // ── Form Field Exists column is derived from actual blade files ───────
+        // The column must contain role-prefixed Y/N values (e.g. "S:Y" or "L:N")
+        $this->assertMatchesRegularExpression('/Form Field Exists/i', $content);
+        $this->assertMatchesRegularExpression('/[SLB T]:Y|[SLB T]:N/', $content, 'Form Field Exists column contains role-prefixed Y/N values');
+
+        // ── Rejected Mapping Candidates section ───────────────────────────────
+        $this->assertStringContainsString('Rejected Mapping Candidates', $content);
+        $this->assertStringContainsString('mls_number',     $content, 'Rejected: mls_number documented');
+        $this->assertStringContainsString('parcel_id',      $content, 'Rejected: parcel_id documented');
+        $this->assertStringContainsString('application_fee',$content, 'Rejected: application_fee documented');
+
+        // ── HOA / CDD fields appear in report ─────────────────────────────────
+        $this->assertStringContainsString('has_hoa',                   $content, 'HOA field: has_hoa');
+        $this->assertStringContainsString('association_fee_amount',    $content, 'HOA field: association_fee_amount');
+        $this->assertStringContainsString('has_cdd',                   $content, 'HOA field: has_cdd');
+        $this->assertStringContainsString('annual_cdd_fee',            $content, 'HOA field: annual_cdd_fee');
+
+        // ── Commercial / Income / Vacant Land / Business fields appear ────────
+        // These have NO canonical key — they must appear as unmapped rows (N)
+        // to surface the coverage gap. If they are missing, the audit is incomplete.
+        $this->assertStringContainsString('Building Size',             $content, 'Commercial Sale: Building Size row');
+        $this->assertStringContainsString('Number of Bays',           $content, 'Commercial Sale: Number of Bays row');
+        $this->assertStringContainsString('Cap Rate',                  $content, 'Income/Commercial: Cap Rate row');
+        $this->assertStringContainsString('Net Operating Income',      $content, 'Income/Commercial: NOI row');
+        $this->assertStringContainsString('Number of Units',          $content, 'Income: Number of Units row');
+        $this->assertStringContainsString('Lot Features',             $content, 'Vacant Land: Lot Features row');
+        $this->assertStringContainsString('Business Type',            $content, 'Business Opportunity: Business Type row');
+        $this->assertStringContainsString('Annual Revenue',           $content, 'Business Opportunity: Annual Revenue row');
+        $this->assertStringContainsString('Lease Rate Type',          $content, 'Commercial Lease: Lease Rate Type row');
+
+        // All unmapped rows must show Safe To Import = N
+        // Verify the report contains N entries (unmapped rows from commercial forms)
+        $unmappedCount = substr_count($content, '| N |');
+        $this->assertGreaterThan(10, $unmappedCount, 'Report must have >10 unmapped (N) rows for commercial/land/income/business fields');
+
+        @unlink($tmpPath);
     }
 }

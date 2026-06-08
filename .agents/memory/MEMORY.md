@@ -4,3 +4,5 @@
 - [Bidding Period countdown source](bidding-period-countdown.md) — expiration_date is platform source of truth; fallback to created_at+auction_time for legacy records.
 - [PostgreSQL Gate resolver — raw DB over Eloquent](postgres-gate-resolver.md) — use DB::table() not Eloquent models in Gate callbacks; Eloquent eager-load ($with) aborts the PG transaction on any query error, poisoning subsequent writes even inside try/catch.
 - [tenant_criteria_auctions missing table guard](postgres-gate-resolver.md) — Schema::hasTable() check required before querying tenant_criteria_auctions; table absent in this environment; two tests skipped until table is created.
+- [MLS parser boolean bleed fix](mls-boolean-bleed.md) — boolean fields (has_hoa, has_cdd) must use tight char-class captures (Yes|No|Y|N)\b, not open-ended ([^\|\n]{1,10}); boundary stop won't fire on partial words.
+- [MLS coverage report universe rule](mls-coverage-universe.md) — reporter universe must be fieldInventory() (complete per-form field list), not parsedKeys ∪ fieldMapKeys; fields without parser branches appear as null-canonical-key rows (Safe=N).
