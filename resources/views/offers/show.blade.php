@@ -859,8 +859,8 @@
                                 </div>
                                 <div x-show="finCont" class="contingency-days">
                                     <label class="form-label small mb-1">Contingency Period (days)</label>
-                                    <input type="number" name="financing_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
-                                        placeholder="Enter days (e.g., 21)" style="min-width:9rem"
+                                    <input type="number" name="financing_contingency_days" class="form-control" min="1" max="365"
+                                        placeholder="Enter days (e.g., 21)" style="max-width: 450px; min-width: 18rem;"
                                         value="{{ old('financing_contingency_days', $metas->get('financing_contingency_days')) }}">
                                 </div>
                             </div>
@@ -881,8 +881,8 @@
                                 </div>
                                 <div x-show="inspCont" class="contingency-days">
                                     <label class="form-label small mb-1">Inspection Period (days)</label>
-                                    <input type="number" name="inspection_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
-                                        placeholder="Enter days (e.g., 10)" style="min-width:9rem"
+                                    <input type="number" name="inspection_contingency_days" class="form-control" min="1" max="365"
+                                        placeholder="Enter days (e.g., 7)" style="max-width: 450px; min-width: 18rem;"
                                         value="{{ old('inspection_contingency_days', $metas->get('inspection_contingency_days')) }}">
                                 </div>
                             </div>
@@ -903,8 +903,8 @@
                                 </div>
                                 <div x-show="apprCont" class="contingency-days">
                                     <label class="form-label small mb-1">Appraisal Period (days)</label>
-                                    <input type="number" name="appraisal_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
-                                        placeholder="Enter days (e.g., 15)" style="min-width:9rem"
+                                    <input type="number" name="appraisal_contingency_days" class="form-control" min="1" max="365"
+                                        placeholder="Enter days (e.g., 15)" style="max-width: 450px; min-width: 18rem;"
                                         value="{{ old('appraisal_contingency_days', $metas->get('appraisal_contingency_days')) }}">
                                 </div>
                             </div>
@@ -925,8 +925,8 @@
                                 </div>
                                 <div x-show="saleCont" class="contingency-days">
                                     <label class="form-label small mb-1">Contingency Period (days)</label>
-                                    <input type="number" name="sale_of_buyer_property_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
-                                        placeholder="Enter days (e.g., 30)" style="min-width:9rem"
+                                    <input type="number" name="sale_of_buyer_property_contingency_days" class="form-control" min="1" max="365"
+                                        placeholder="Enter days (e.g., 30)" style="max-width: 450px; min-width: 18rem;"
                                         value="{{ old('sale_of_buyer_property_contingency_days', $metas->get('sale_of_buyer_property_contingency_days')) }}">
                                 </div>
                             </div>
