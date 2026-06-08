@@ -3,6 +3,7 @@
 namespace Tests\Feature\Offers;
 
 use App\Models\Offer;
+use App\Models\User;
 use App\Services\Offers\OfferAvailableActionsService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -10,6 +11,15 @@ use Tests\TestCase;
 class OfferActionButtonWiringTest extends TestCase
 {
     use DatabaseTransactions;
+
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+    }
 
     private function makeActions(array $overrides = []): array
     {

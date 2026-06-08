@@ -54,7 +54,7 @@ class OfferController extends Controller
         ], 201);
     }
 
-    public function submit(Request $request, Offer $offer): JsonResponse
+    public function submit(Request $request, Offer $offer): JsonResponse|RedirectResponse
     {
         $actorId   = Auth::id();
         $actorRole = Auth::user()->role ?? 'buyer';
@@ -62,12 +62,20 @@ class OfferController extends Controller
         $actions = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
         if (!$actions['can_submit']) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $actions['reasons']['submit']);
+            }
             return response()->json(['message' => $actions['reasons']['submit']], 422);
         }
 
         $result = $this->facade->submit($offer, $actorId, $actorRole, [], $request->ip());
 
         if ($result['allowed'] === false) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $result['reason']);
+            }
             return response()->json(['message' => $result['reason']], 422);
         }
 
@@ -77,13 +85,18 @@ class OfferController extends Controller
             Log::error('OfferSubmittedNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
         }
 
+        if (!$request->expectsJson()) {
+            return redirect()->route('offers.show', $offer)
+                ->with('success', 'Offer submitted successfully.');
+        }
+
         return response()->json([
             'message' => 'Offer submitted.',
             'result'  => $result,
         ]);
     }
 
-    public function accept(Request $request, Offer $offer): JsonResponse
+    public function accept(Request $request, Offer $offer): JsonResponse|RedirectResponse
     {
         $actorId   = Auth::id();
         $actorRole = Auth::user()->role ?? 'buyer';
@@ -91,12 +104,20 @@ class OfferController extends Controller
         $actions = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
         if (!$actions['can_accept']) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $actions['reasons']['accept']);
+            }
             return response()->json(['message' => $actions['reasons']['accept']], 422);
         }
 
         $result = $this->facade->accept($offer, $actorId, $actorRole, [], $request->ip());
 
         if ($result['allowed'] === false) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $result['reason']);
+            }
             return response()->json(['message' => $result['reason']], 422);
         }
 
@@ -106,13 +127,18 @@ class OfferController extends Controller
             Log::error('OfferAcceptedNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
         }
 
+        if (!$request->expectsJson()) {
+            return redirect()->route('offers.show', $offer)
+                ->with('success', 'Offer accepted successfully.');
+        }
+
         return response()->json([
             'message' => 'Offer accepted.',
             'result'  => $result,
         ]);
     }
 
-    public function reject(Request $request, Offer $offer): JsonResponse
+    public function reject(Request $request, Offer $offer): JsonResponse|RedirectResponse
     {
         $actorId   = Auth::id();
         $actorRole = Auth::user()->role ?? 'buyer';
@@ -120,12 +146,20 @@ class OfferController extends Controller
         $actions = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
         if (!$actions['can_reject']) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $actions['reasons']['reject']);
+            }
             return response()->json(['message' => $actions['reasons']['reject']], 422);
         }
 
         $result = $this->facade->reject($offer, $actorId, $actorRole, [], $request->ip());
 
         if ($result['allowed'] === false) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $result['reason']);
+            }
             return response()->json(['message' => $result['reason']], 422);
         }
 
@@ -135,13 +169,18 @@ class OfferController extends Controller
             Log::error('OfferRejectedNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
         }
 
+        if (!$request->expectsJson()) {
+            return redirect()->route('offers.show', $offer)
+                ->with('success', 'Offer rejected successfully.');
+        }
+
         return response()->json([
             'message' => 'Offer rejected.',
             'result'  => $result,
         ]);
     }
 
-    public function withdraw(Request $request, Offer $offer): JsonResponse
+    public function withdraw(Request $request, Offer $offer): JsonResponse|RedirectResponse
     {
         $actorId   = Auth::id();
         $actorRole = Auth::user()->role ?? 'buyer';
@@ -149,12 +188,20 @@ class OfferController extends Controller
         $actions = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
         if (!$actions['can_withdraw']) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $actions['reasons']['withdraw']);
+            }
             return response()->json(['message' => $actions['reasons']['withdraw']], 422);
         }
 
         $result = $this->facade->withdraw($offer, $actorId, $actorRole, [], $request->ip());
 
         if ($result['allowed'] === false) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $result['reason']);
+            }
             return response()->json(['message' => $result['reason']], 422);
         }
 
@@ -164,13 +211,18 @@ class OfferController extends Controller
             Log::error('OfferWithdrawnNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
         }
 
+        if (!$request->expectsJson()) {
+            return redirect()->route('offers.show', $offer)
+                ->with('success', 'Offer withdrawn successfully.');
+        }
+
         return response()->json([
             'message' => 'Offer withdrawn.',
             'result'  => $result,
         ]);
     }
 
-    public function counter(Request $request, Offer $offer): JsonResponse
+    public function counter(Request $request, Offer $offer): JsonResponse|RedirectResponse
     {
         $actorId   = Auth::id();
         $actorRole = Auth::user()->role ?? 'buyer';
@@ -178,6 +230,10 @@ class OfferController extends Controller
         $actions = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
         if (!$actions['can_counter']) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $actions['reasons']['counter']);
+            }
             return response()->json(['message' => $actions['reasons']['counter']], 422);
         }
 
@@ -198,6 +254,10 @@ class OfferController extends Controller
         );
 
         if ($result['allowed'] === false) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $result['reason']);
+            }
             return response()->json(['message' => $result['reason']], 422);
         }
 
@@ -205,6 +265,11 @@ class OfferController extends Controller
             $offer->user->notify(new OfferCounteredNotification($offer, $result['counter_offer']));
         } catch (\Throwable $e) {
             Log::error('OfferCounteredNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
+        }
+
+        if (!$request->expectsJson()) {
+            return redirect()->route('offers.show', $offer)
+                ->with('success', 'Counter offer created successfully.');
         }
 
         return response()->json([
