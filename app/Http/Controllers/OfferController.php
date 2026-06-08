@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 class OfferController extends Controller
@@ -70,7 +71,11 @@ class OfferController extends Controller
             return response()->json(['message' => $result['reason']], 422);
         }
 
-        Notification::send($offer->user, new OfferSubmittedNotification($offer));
+        try {
+            Notification::send($offer->user, new OfferSubmittedNotification($offer));
+        } catch (\Throwable $e) {
+            Log::error('OfferSubmittedNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'message' => 'Offer submitted.',
@@ -95,7 +100,11 @@ class OfferController extends Controller
             return response()->json(['message' => $result['reason']], 422);
         }
 
-        $offer->user->notify(new OfferAcceptedNotification($offer));
+        try {
+            $offer->user->notify(new OfferAcceptedNotification($offer));
+        } catch (\Throwable $e) {
+            Log::error('OfferAcceptedNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'message' => 'Offer accepted.',
@@ -120,7 +129,11 @@ class OfferController extends Controller
             return response()->json(['message' => $result['reason']], 422);
         }
 
-        $offer->user->notify(new OfferRejectedNotification($offer));
+        try {
+            $offer->user->notify(new OfferRejectedNotification($offer));
+        } catch (\Throwable $e) {
+            Log::error('OfferRejectedNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'message' => 'Offer rejected.',
@@ -145,7 +158,11 @@ class OfferController extends Controller
             return response()->json(['message' => $result['reason']], 422);
         }
 
-        $offer->user->notify(new OfferWithdrawnNotification($offer));
+        try {
+            $offer->user->notify(new OfferWithdrawnNotification($offer));
+        } catch (\Throwable $e) {
+            Log::error('OfferWithdrawnNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'message' => 'Offer withdrawn.',
@@ -184,7 +201,11 @@ class OfferController extends Controller
             return response()->json(['message' => $result['reason']], 422);
         }
 
-        $offer->user->notify(new OfferCounteredNotification($offer, $result['counter_offer']));
+        try {
+            $offer->user->notify(new OfferCounteredNotification($offer, $result['counter_offer']));
+        } catch (\Throwable $e) {
+            Log::error('OfferCounteredNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'message' => 'Counter offer created.',

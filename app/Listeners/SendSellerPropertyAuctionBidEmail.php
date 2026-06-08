@@ -6,6 +6,7 @@ use App\Events\SellerPropertyAuctionBid;
 use App\Mail\NotificationEmail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SendSellerPropertyAuctionBidEmail
@@ -36,6 +37,10 @@ class SendSellerPropertyAuctionBidEmail
         $mail_data['title'] = 'New Bid on Seller Property Auction';
         $mail_data['subject'] = 'New Bid on Seller Property Auction';
         // return view('mail.notify', $mail_data);
-        Mail::to($user)->send(new NotificationEmail($mail_data));
+        try {
+            Mail::to($user)->send(new NotificationEmail($mail_data));
+        } catch (\Throwable $e) {
+            Log::error('SendSellerPropertyAuctionBidEmail failed', ['bid_id' => $bid->id ?? null, 'error' => $e->getMessage()]);
+        }
     }
 }
