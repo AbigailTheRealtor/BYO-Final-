@@ -441,13 +441,13 @@
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Value Determined By</label>
                                     <input type="text" name="value_determination" class="form-control"
-                                        placeholder="Enter valuation method (e.g., Licensed Appraisal, Online Valuation)"
+                                        placeholder="Enter valuation method (e.g., Licensed appraisal, Online valuation)"
                                         value="{{ old('value_determination', $metas->get('value_determination')) }}">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Transfer Method / Logistics</label>
                                     <input type="text" name="exchange_transfer_method" class="form-control"
-                                        placeholder="Enter transfer method (e.g., Title transfer, Bill of Sale, Delivery at closing)"
+                                        placeholder="Enter transfer method (e.g., Title transfer, Bill of sale, Delivery at closing)"
                                         value="{{ old('exchange_transfer_method', $metas->get('exchange_transfer_method')) }}">
                                 </div>
                                 <div class="col-md-4">
@@ -725,9 +725,12 @@
                                         <option value="Partial" {{ old('lease_purchase_rent_credit', $metas->get('lease_purchase_rent_credit')) === 'Partial' ? 'selected' : '' }}>Partial</option>
                                     </select>
                                     <div x-show="leasePurchRentCredit === 'Yes' || leasePurchRentCredit === 'Partial'" class="mt-2">
-                                        <input type="number" name="lease_purchase_rent_credit_amount" class="form-control" min="0"
-                                            placeholder="Rent credit amount per month (e.g., 500)"
-                                            value="{{ old('lease_purchase_rent_credit_amount', $metas->get('lease_purchase_rent_credit_amount')) }}">
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" name="lease_purchase_rent_credit_amount" class="form-control" min="0"
+                                                placeholder="Rent credit amount per month (e.g., 500)"
+                                                value="{{ old('lease_purchase_rent_credit_amount', $metas->get('lease_purchase_rent_credit_amount')) }}">
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -776,7 +779,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">NFT Description / Type</label>
                                     <input type="text" name="nft_description" class="form-control"
-                                        placeholder="Enter NFT type (e.g., Tokenized Real Estate, Digital Artwork)"
+                                        placeholder="Enter NFT type (e.g., Tokenized real estate, Digital artwork)"
                                         value="{{ old('nft_description', $metas->get('nft_description')) }}">
                                 </div>
                                 <div class="col-md-3">
@@ -806,7 +809,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">NFT Transfer Method</label>
                                     <input type="text" name="nft_transfer_method" class="form-control"
-                                        placeholder="Enter transfer method (e.g., MetaMask, OpenSea, Propy Title, Escrow Smart Contract)"
+                                        placeholder="Enter transfer method (e.g., MetaMask, OpenSea, Propy Title, Escrow smart contract)"
                                         value="{{ old('nft_transfer_method', $metas->get('nft_transfer_method')) }}">
                                 </div>
                                 <div class="col-md-4">
@@ -825,9 +828,9 @@
                         <div x-show="finType === 'Other'" class="border rounded p-3 mb-3 bg-light">
                             <h6 class="fw-semibold mb-3">Other Financing Details</h6>
                             <div class="mb-2">
-                                <label class="form-label fw-semibold">Other Financing Details</label>
-                                <textarea name="other_financing_details" class="form-control" rows="3"
-                                    placeholder="Describe the financing method or arrangement (e.g., Gold Bullion, Stock Transfer, Private Investment Agreement)">{{ old('other_financing_details', $metas->get('other_financing_details')) }}</textarea>
+                                <input type="text" name="other_financing_details" class="form-control"
+                                    placeholder="Enter financing details (e.g., Gold bullion, Stock transfer, Private investment agreement)"
+                                    value="{{ old('other_financing_details', $metas->get('other_financing_details')) }}">
                             </div>
                         </div>
 
@@ -851,7 +854,7 @@
                                 <div x-show="finCont" class="contingency-days">
                                     <label class="form-label small mb-1">Contingency Period (days)</label>
                                     <input type="number" name="financing_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
-                                        placeholder="Enter days (e.g., 21)"
+                                        placeholder="Enter days (e.g., 21)" style="min-width:9rem"
                                         value="{{ old('financing_contingency_days', $metas->get('financing_contingency_days')) }}">
                                 </div>
                             </div>
@@ -873,7 +876,7 @@
                                 <div x-show="inspCont" class="contingency-days">
                                     <label class="form-label small mb-1">Inspection Period (days)</label>
                                     <input type="number" name="inspection_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
-                                        placeholder="Enter days (e.g., 10)"
+                                        placeholder="Enter days (e.g., 10)" style="min-width:9rem"
                                         value="{{ old('inspection_contingency_days', $metas->get('inspection_contingency_days')) }}">
                                 </div>
                             </div>
@@ -895,7 +898,7 @@
                                 <div x-show="apprCont" class="contingency-days">
                                     <label class="form-label small mb-1">Appraisal Period (days)</label>
                                     <input type="number" name="appraisal_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
-                                        placeholder="Enter days"
+                                        placeholder="Enter days (e.g., 15)" style="min-width:9rem"
                                         value="{{ old('appraisal_contingency_days', $metas->get('appraisal_contingency_days')) }}">
                                 </div>
                             </div>
@@ -917,7 +920,7 @@
                                 <div x-show="saleCont" class="contingency-days">
                                     <label class="form-label small mb-1">Contingency Period (days)</label>
                                     <input type="number" name="sale_of_buyer_property_contingency_days" class="form-control form-control-sm w-auto" min="1" max="365"
-                                        placeholder="Enter days (e.g., 30)"
+                                        placeholder="Enter days (e.g., 30)" style="min-width:9rem"
                                         value="{{ old('sale_of_buyer_property_contingency_days', $metas->get('sale_of_buyer_property_contingency_days')) }}">
                                 </div>
                             </div>

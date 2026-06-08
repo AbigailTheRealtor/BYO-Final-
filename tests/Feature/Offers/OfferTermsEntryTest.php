@@ -953,8 +953,8 @@ class OfferTermsEntryTest extends TestCase
 
         // Placeholders must start with "Enter" — not bare "e.g.,"
         $response->assertSee('Enter additional cash offered (e.g., 25,000)', false);
-        $response->assertSee('Enter valuation method (e.g., Licensed Appraisal, Online Valuation)', false);
-        $response->assertSee('Enter transfer method (e.g., Title transfer, Bill of Sale, Delivery at closing)', false);
+        $response->assertSee('Enter valuation method (e.g., Licensed appraisal, Online valuation)', false);
+        $response->assertSee('Enter transfer method (e.g., Title transfer, Bill of sale, Delivery at closing)', false);
         $response->assertSee('Enter lien details (e.g., Auto loan balance, UCC filing)', false);
         $response->assertSee('Enter purchase price (e.g., 500,000)', false);
         $response->assertSee('Enter balloon amount (e.g., 100,000)', false);
@@ -965,7 +965,7 @@ class OfferTermsEntryTest extends TestCase
         $response->assertSee('Enter duration in months (e.g., 12)', false);
         $response->assertSee('Enter option fee amount (e.g., 15,000)', false);
         $response->assertSee('Enter valuation method (e.g., Floor price on OpenSea, Independent appraisal)', false);
-        $response->assertSee('Enter transfer method (e.g., MetaMask, OpenSea, Propy Title, Escrow Smart Contract)', false);
+        $response->assertSee('Enter transfer method (e.g., MetaMask, OpenSea, Propy Title, Escrow smart contract)', false);
 
         // No bare "e.g.," placeholders should remain in money/text financing fields
         $html = $response->getContent();
