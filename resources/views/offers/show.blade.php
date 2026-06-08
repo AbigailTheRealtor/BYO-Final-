@@ -969,7 +969,7 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Possession Notes <span class="text-muted small">(optional)</span></label>
                             <textarea name="possession_notes" class="form-control" rows="3"
-                                placeholder="Enter possession notes (e.g., Requesting possession at closing, or seller may need up to 7 days post-close)">{{ old('possession_notes', $metas->get('possession_notes')) }}</textarea>
+                                placeholder="Enter possession details or special arrangements (e.g., Possession at closing, Delayed possession, Early occupancy request)">{{ old('possession_notes', $metas->get('possession_notes')) }}</textarea>
                         </div>
 
                         {{-- ── Section 5: Additional Terms ── --}}
