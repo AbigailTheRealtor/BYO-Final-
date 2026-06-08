@@ -211,13 +211,14 @@ class OfferController extends Controller
         // Strip commas from comma-formatted money fields before validation
         $moneyFields = [
             'offer_price', 'earnest_deposit', 'down_payment_value',
-            'outstanding_balance', 'additional_cash', 'exchange_item_value',
+            'additional_cash', 'exchange_item_value',
             'sf_purchase_price', 'sf_down_payment_amount', 'seller_financing_amount',
             'seller_financing_balloon_amount', 'prepayment_penalty_amount',
             'option_fee_amount', 'lease_option_price', 'lease_option_payment',
             'lease_purchase_price', 'lease_purchase_payment', 'lease_purchase_deposit',
             'lease_purchase_rent_credit_amount', 'initial_deposit_amount',
             'additional_deposit_amount',
+            'assumable_max_monthly_payment', 'assumable_bridge_gap_cash',
         ];
         foreach ($moneyFields as $field) {
             if ($request->has($field) && $request->input($field) !== null && $request->input($field) !== '') {
@@ -248,12 +249,11 @@ class OfferController extends Controller
                 'appraisal_contingency_days'           => 'nullable|integer|min:1|max:365',
                 'closing_date'                         => 'nullable|date',
                 'possession_date'                      => 'nullable|date',
-                // Assumable sub-fields
-                'assumable_terms'                      => 'nullable|string|max:1000',
-                'assumable_loan_type'                  => 'nullable|in:FHA,VA,USDA',
-                'assumable_interest_rate'              => 'nullable|numeric|min:0|max:100',
-                'outstanding_balance'                  => 'nullable|numeric|min:0',
-                'assumable_loan_term_remaining'        => 'nullable|string|max:200',
+                // Assumable sub-fields (buyer perspective)
+                'assumable_interest'                   => 'nullable|in:Yes,No',
+                'assumable_max_interest_rate'          => 'nullable|numeric|min:0|max:100',
+                'assumable_max_monthly_payment'        => 'nullable|numeric|min:0',
+                'assumable_bridge_gap_cash'            => 'nullable|numeric|min:0',
                 // Cryptocurrency sub-fields
                 'cryptocurrency_type'                  => 'nullable|string|max:200',
                 'crypto_percentage'                    => 'nullable|numeric|min:0|max:100',
@@ -377,12 +377,11 @@ class OfferController extends Controller
             $offer->saveMeta('appraisal_contingency_days',          $validated['appraisal_contingency_days'] ?? null);
             $offer->saveMeta('closing_date',                        $validated['closing_date'] ?? null);
             $offer->saveMeta('possession_date',                     $validated['possession_date'] ?? null);
-            // Assumable sub-fields
-            $offer->saveMeta('assumable_terms',                     $validated['assumable_terms'] ?? null);
-            $offer->saveMeta('assumable_loan_type',                 $validated['assumable_loan_type'] ?? null);
-            $offer->saveMeta('assumable_interest_rate',             $validated['assumable_interest_rate'] ?? null);
-            $offer->saveMeta('outstanding_balance',                 $validated['outstanding_balance'] ?? null);
-            $offer->saveMeta('assumable_loan_term_remaining',       $validated['assumable_loan_term_remaining'] ?? null);
+            // Assumable sub-fields (buyer perspective)
+            $offer->saveMeta('assumable_interest',                  $validated['assumable_interest'] ?? null);
+            $offer->saveMeta('assumable_max_interest_rate',         $validated['assumable_max_interest_rate'] ?? null);
+            $offer->saveMeta('assumable_max_monthly_payment',       $validated['assumable_max_monthly_payment'] ?? null);
+            $offer->saveMeta('assumable_bridge_gap_cash',           $validated['assumable_bridge_gap_cash'] ?? null);
             // Cryptocurrency sub-fields
             $offer->saveMeta('cryptocurrency_type',                 $validated['cryptocurrency_type'] ?? null);
             $offer->saveMeta('crypto_percentage',                   $validated['crypto_percentage'] ?? null);

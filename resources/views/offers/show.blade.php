@@ -319,48 +319,54 @@
                             </div>
                         </div>
 
-                        {{-- Assumable conditional sub-fields --}}
-                        <div x-show="finType === 'Assumable'" class="border rounded p-3 mb-3 bg-light">
-                            <h6 class="fw-semibold mb-3">Assumable Details</h6>
+                        {{-- Assumable conditional sub-fields (buyer perspective) --}}
+                        <div x-show="finType === 'Assumable'" class="border rounded p-3 mb-3 bg-light"
+                             x-data="{ assumableInterest: '{{ old('assumable_interest', $metas->get('assumable_interest')) }}' }">
+                            <h6 class="fw-semibold mb-3">Assumable Financing</h6>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Assumable Loan Terms</label>
-                                    <input type="text" name="assumable_terms" class="form-control"
-                                        placeholder="Enter loan terms (e.g., $250,000 remaining at 4.25% fixed for 20 years)"
-                                        value="{{ old('assumable_terms', $metas->get('assumable_terms')) }}">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">Loan Type</label>
-                                    <select name="assumable_loan_type" class="form-select">
+                                    <label class="form-label fw-semibold">Interested in Assumable Financing?</label>
+                                    <select name="assumable_interest" class="form-select"
+                                        x-model="assumableInterest"
+                                        @change="if (assumableInterest !== 'Yes') {
+                                            $el.closest('.row').querySelectorAll('[data-assumable-optional]').forEach(function(el) {
+                                                el.value = '';
+                                            });
+                                        }">
                                         <option value="">Select</option>
-                                        @foreach(['FHA', 'VA', 'USDA'] as $lt)
-                                        <option value="{{ $lt }}" {{ old('assumable_loan_type', $metas->get('assumable_loan_type')) === $lt ? 'selected' : '' }}>{{ $lt }}</option>
-                                        @endforeach
+                                        <option value="Yes" {{ old('assumable_interest', $metas->get('assumable_interest')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                                        <option value="No" {{ old('assumable_interest', $metas->get('assumable_interest')) === 'No' ? 'selected' : '' }}>No</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">Interest Rate (%)</label>
+                                <div class="col-md-6" x-show="assumableInterest === 'Yes'">
+                                    <label class="form-label fw-semibold">Maximum Interest Rate You Would Accept (%)</label>
                                     <div class="input-group">
-                                        <input type="number" name="assumable_interest_rate" class="form-control" min="0" max="100" step="0.01"
-                                            placeholder="Enter rate (e.g., 4.25)"
-                                            value="{{ old('assumable_interest_rate', $metas->get('assumable_interest_rate')) }}">
+                                        <input type="number" name="assumable_max_interest_rate" class="form-control" min="0" max="100" step="0.01"
+                                            placeholder="Enter maximum acceptable rate (e.g., 5)"
+                                            data-assumable-optional
+                                            value="{{ old('assumable_max_interest_rate', $metas->get('assumable_max_interest_rate')) }}">
                                         <span class="input-group-text">%</span>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Outstanding Balance ($)</label>
+                                <div class="col-md-6" x-show="assumableInterest === 'Yes'">
+                                    <label class="form-label fw-semibold">Maximum Monthly Payment (P&amp;I) You Would Accept</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                                        <input type="text" inputmode="numeric" name="outstanding_balance" class="form-control" data-money-input="true"
-                                            placeholder="Enter balance (e.g., 250,000)"
-                                            value="{{ $fmtMoney(old('outstanding_balance', $metas->get('outstanding_balance'))) }}">
+                                        <input type="text" inputmode="numeric" name="assumable_max_monthly_payment" class="form-control" data-money-input="true"
+                                            placeholder="Enter maximum monthly payment (e.g., 2,000)"
+                                            data-assumable-optional
+                                            value="{{ $fmtMoney(old('assumable_max_monthly_payment', $metas->get('assumable_max_monthly_payment'))) }}">
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Loan Term Remaining</label>
-                                    <input type="text" name="assumable_loan_term_remaining" class="form-control"
-                                        placeholder="Enter term remaining (e.g., 25 years)"
-                                        value="{{ old('assumable_loan_term_remaining', $metas->get('assumable_loan_term_remaining')) }}">
+                                <div class="col-md-6" x-show="assumableInterest === 'Yes'">
+                                    <label class="form-label fw-semibold">Cash Available to Bridge the Gap</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                                        <input type="text" inputmode="numeric" name="assumable_bridge_gap_cash" class="form-control" data-money-input="true"
+                                            placeholder="Enter bridge gap cash amount (e.g., 50,000)"
+                                            data-assumable-optional
+                                            value="{{ $fmtMoney(old('assumable_bridge_gap_cash', $metas->get('assumable_bridge_gap_cash'))) }}">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1210,16 +1216,16 @@
                         <dd class="col-sm-9">{{ $ftLabel }}</dd>
 
                         @if($ftRaw === 'Assumable')
-                        <dt class="col-sm-3">Assumable Loan Terms</dt>
-                        <dd class="col-sm-9">{{ $metas->get('assumable_terms') ?: '—' }}</dd>
-                        <dt class="col-sm-3">Loan Type</dt>
-                        <dd class="col-sm-9">{{ $metas->get('assumable_loan_type') ?: '—' }}</dd>
-                        <dt class="col-sm-3">Interest Rate</dt>
-                        <dd class="col-sm-9">{{ $metas->get('assumable_interest_rate') !== null && $metas->get('assumable_interest_rate') !== '' ? $metas->get('assumable_interest_rate') . '%' : '—' }}</dd>
-                        <dt class="col-sm-3">Outstanding Balance</dt>
-                        <dd class="col-sm-9">{{ $metas->get('outstanding_balance') ? '$' . number_format($metas->get('outstanding_balance')) : '—' }}</dd>
-                        <dt class="col-sm-3">Loan Term Remaining</dt>
-                        <dd class="col-sm-9">{{ $metas->get('assumable_loan_term_remaining') ?: '—' }}</dd>
+                        <dt class="col-sm-3">Interested in Assumable Financing?</dt>
+                        <dd class="col-sm-9">{{ $metas->get('assumable_interest') ?: '—' }}</dd>
+                        @if($metas->get('assumable_interest') === 'Yes')
+                        <dt class="col-sm-3">Max Interest Rate Would Accept</dt>
+                        <dd class="col-sm-9">{{ $metas->get('assumable_max_interest_rate') !== null && $metas->get('assumable_max_interest_rate') !== '' ? $metas->get('assumable_max_interest_rate') . '%' : '—' }}</dd>
+                        <dt class="col-sm-3">Max Monthly Payment (P&I) Would Accept</dt>
+                        <dd class="col-sm-9">{{ $metas->get('assumable_max_monthly_payment') ? '$' . number_format($metas->get('assumable_max_monthly_payment')) : '—' }}</dd>
+                        <dt class="col-sm-3">Cash to Bridge the Gap</dt>
+                        <dd class="col-sm-9">{{ $metas->get('assumable_bridge_gap_cash') ? '$' . number_format($metas->get('assumable_bridge_gap_cash')) : '—' }}</dd>
+                        @endif
                         @endif
 
                         @if($ftRaw === 'Cryptocurrency')
