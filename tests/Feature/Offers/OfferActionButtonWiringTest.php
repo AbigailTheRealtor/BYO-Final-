@@ -243,6 +243,50 @@ class OfferActionButtonWiringTest extends TestCase
         $this->assertStringNotContainsString('action=', $content);
     }
 
+    // ── Test 11: View Timeline renders anchor with correct href ───────────────
+
+    public function test_view_timeline_renders_anchor_with_correct_href(): void
+    {
+        $offer   = Offer::factory()->submitted()->create();
+        $actions = $this->makeActions(['can_view_timeline' => true]);
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('href="#offer-timeline"', $content, 'View Timeline must render as an anchor linking to #offer-timeline.');
+        $this->assertStringContainsString('View Timeline', $content, 'View Timeline label must be present.');
+
+        // Must be an <a> tag, not a <form> or <button>
+        $pos     = strpos($content, 'View Timeline');
+        $this->assertNotFalse($pos);
+        $snippet = substr($content, max(0, $pos - 200), 250);
+        $this->assertStringContainsString('<a ', $snippet, 'View Timeline must render as an <a> tag, not a <button> or <form>.');
+        $this->assertStringNotContainsString('<form', $snippet, 'View Timeline must not be wrapped in a <form>.');
+        $this->assertStringNotContainsString('<button', $snippet, 'View Timeline must not render as a <button>.');
+    }
+
+    // ── Test 12: View Timeline absent when can_view_timeline=false ────────────
+
+    public function test_view_timeline_absent_when_not_allowed(): void
+    {
+        $offer   = Offer::factory()->submitted()->create();
+        $actions = $this->makeActions(['can_view_timeline' => false]);
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringNotContainsString('href="#offer-timeline"', $content, 'href="#offer-timeline" must not appear when can_view_timeline=false.');
+        $this->assertStringNotContainsString('View Timeline', $content, 'View Timeline must not appear when can_view_timeline=false.');
+    }
+
     // ── Test 10: No direct status mutation strings in Blade source ────────────
 
     public function test_blade_source_contains_no_direct_status_mutation_strings(): void

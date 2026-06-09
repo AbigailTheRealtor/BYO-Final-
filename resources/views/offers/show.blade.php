@@ -365,7 +365,7 @@
             </div>
 
             {{-- Negotiation Timeline --}}
-            <div class="card mb-4">
+            <div class="card mb-4" id="offer-timeline">
                 <div class="card-header">
                     <strong>Negotiation Timeline</strong>
                 </div>
@@ -467,8 +467,8 @@
                                         <button type="submit" class="btn {{ $cfg['btn'] }} btn-sm"@if($flag === 'can_submit') id="submit-offer-action-btn"@endif>{{ $cfg['label'] }}</button>
                                     </form>
                                 @else
-                                    {{-- Enabled action with no route (e.g. View Timeline): plain enabled button --}}
-                                    <button type="button" class="btn {{ $cfg['btn'] }} btn-sm">{{ $cfg['label'] }}</button>
+                                    {{-- Enabled action with no route (e.g. View Timeline): anchor to on-page section --}}
+                                    <a href="#offer-timeline" class="btn {{ $cfg['btn'] }} btn-sm">{{ $cfg['label'] }}</a>
                                 @endif
                             </div>
                         @endforeach

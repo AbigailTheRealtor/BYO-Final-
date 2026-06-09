@@ -303,5 +303,7 @@ class OfferActionVisibilityTest extends TestCase
         $content = $response->getContent();
 
         $this->assertStringContainsString('View Timeline', $content, 'View Timeline button must appear when can_view_timeline=true.');
+        $this->assertStringContainsString('href="#offer-timeline"', $content, 'View Timeline must link to #offer-timeline anchor.');
+        $this->assertStringContainsString('id="offer-timeline"', $content, 'Negotiation Timeline card must have id="offer-timeline".');
     }
 }
