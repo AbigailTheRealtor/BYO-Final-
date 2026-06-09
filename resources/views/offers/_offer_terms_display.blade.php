@@ -13,30 +13,200 @@
     };
 @endphp
 
-<dl class="row mb-0">
-    <dt class="col-sm-3">Offer Expires At</dt>
-    <dd class="col-sm-9">{{ $safeDate($metas->get('expires_at')) }}</dd>
+@if($offerType === 'sale')
+@php
+    $ftRaw   = $metas->get('financing_type');
+    $ftLabel = $ftRaw ?: '—';
 
-    @if($offerType === 'sale')
-    @php
-        $ftRaw   = $metas->get('financing_type');
-        $ftLabel = $ftRaw ?: '—';
-    @endphp
+    // Purchase Price & Deposits gate pre-computations
+    $_edVal  = $metas->get('earnest_deposit');
+    $_edUnit = $metas->get('earnest_deposit_unit') ?? '$';
+
+    $_dpRoVal  = $metas->get('down_payment_value') ?? $metas->get('down_payment_percent');
+    $_dpRoUnit = $metas->get('down_payment_unit') ?? ($metas->get('down_payment_percent') !== null ? '%' : '$');
+
+    $_hasOfferPrice        = (bool) $metas->get('offer_price');
+    $_hasEarnestDeposit    = $_edVal !== null && $_edVal !== '';
+    $_hasDownPayment       = $_dpRoVal !== null && $_dpRoVal !== '';
+    $_hasInitialDeposit    = $metas->get('initial_deposit_amount') !== null && $metas->get('initial_deposit_amount') !== '';
+    $_hasAdditionalDeposit = $metas->get('additional_deposit_amount') !== null && $metas->get('additional_deposit_amount') !== '';
+
+    // Special Financing Details gate — type must match AND at least one sub-field must be populated
+    $_sfSubAmt  = $metas->get('seller_financing_amount');
+    $_sfSubDpAmt = $metas->get('sf_down_payment_amount');
+    $_hasSpecialFinancing = (
+        ($ftRaw === 'Assumable' && (
+            $metas->get('assumable_interest') ||
+            ($metas->get('assumable_max_interest_rate') !== null && $metas->get('assumable_max_interest_rate') !== '') ||
+            $metas->get('assumable_max_monthly_payment') ||
+            $metas->get('assumable_bridge_gap_cash')
+        )) ||
+        ($ftRaw === 'Cryptocurrency' && (
+            $metas->get('cryptocurrency_type') ||
+            ($metas->get('crypto_percentage') !== null && $metas->get('crypto_percentage') !== '') ||
+            $metas->get('crypto_exchange_method')
+        )) ||
+        ($ftRaw === 'Exchange/Trade' && (
+            $metas->get('exchange_item') || $metas->get('exchange_item_value') ||
+            $metas->get('exchange_item_condition') || $metas->get('additional_cash') ||
+            $metas->get('value_determination') || $metas->get('exchange_transfer_method') ||
+            $metas->get('exchange_liens') || $metas->get('exchange_inspection_rights')
+        )) ||
+        ($ftRaw === 'Seller Financing' && (
+            $metas->get('sf_purchase_price') ||
+            ($_sfSubDpAmt !== null && $_sfSubDpAmt !== '') ||
+            ($_sfSubAmt !== null && $_sfSubAmt !== '') ||
+            ($metas->get('seller_financing_rate') !== null && $metas->get('seller_financing_rate') !== '') ||
+            $metas->get('seller_financing_term') ||
+            $metas->get('seller_financing_amortization') ||
+            $metas->get('seller_financing_payment_frequency') ||
+            $metas->get('seller_financing_balloon') === 'Yes' ||
+            $metas->get('prepayment_penalty') ||
+            $metas->get('seller_late_fee_amount')
+        )) ||
+        ($ftRaw === 'Lease Option' && (
+            $metas->get('lease_option_price') || $metas->get('lease_option_payment') ||
+            $metas->get('lease_option_duration') || $metas->get('has_option_fee') ||
+            $metas->get('lease_option_fee_credit') || $metas->get('lease_option_maintenance') ||
+            $metas->get('lease_option_conditions') || $metas->get('lease_option_terms') ||
+            $metas->get('lease_option_extension_terms')
+        )) ||
+        ($ftRaw === 'Lease Purchase' && (
+            $metas->get('lease_purchase_price') || $metas->get('lease_purchase_payment') ||
+            $metas->get('lease_purchase_duration') || $metas->get('lease_purchase_rent_credit') ||
+            $metas->get('lease_purchase_deposit') || $metas->get('lease_purchase_maintenance') ||
+            $metas->get('lease_purchase_conditions') || $metas->get('lease_purchase_terms') ||
+            $metas->get('lease_purchase_extension_terms')
+        )) ||
+        ($ftRaw === 'Non-Fungible Token (NFT)' && (
+            $metas->get('nft_description') ||
+            ($metas->get('nft_percentage') !== null && $metas->get('nft_percentage') !== '') ||
+            ($metas->get('cash_percentage_nft') !== null && $metas->get('cash_percentage_nft') !== '') ||
+            $metas->get('nft_valuation_method') || $metas->get('nft_transfer_method') ||
+            $metas->get('nft_gas_fees')
+        )) ||
+        ($ftRaw === 'Other' && $metas->get('other_financing_details'))
+    );
+@endphp
+
+{{-- ── Section: Purchase Price & Deposits ────────────────────────────────── --}}
+@if($_hasOfferPrice || $_hasEarnestDeposit || $_hasDownPayment || $_hasInitialDeposit || $_hasAdditionalDeposit)
+<p class="fw-semibold text-muted mb-1 mt-3">Purchase Price &amp; Deposits</p>
+<dl class="row mb-0">
     <dt class="col-sm-3">Offer Price</dt>
     <dd class="col-sm-9">{{ $metas->get('offer_price') ? '$' . number_format($metas->get('offer_price')) : '—' }}</dd>
 
     <dt class="col-sm-3">Earnest Deposit</dt>
     <dd class="col-sm-9">
-    @php
-        $_edVal  = $metas->get('earnest_deposit');
-        $_edUnit = $metas->get('earnest_deposit_unit') ?? '$';
-    @endphp
-    {{ $_edVal !== null && $_edVal !== '' ? ($_edUnit === '%' ? $_edVal . '%' : '$' . number_format($_edVal)) : '—' }}
+    {{ $_hasEarnestDeposit ? ($_edUnit === '%' ? $_edVal . '%' : '$' . number_format($_edVal)) : '—' }}
     </dd>
 
+    <dt class="col-sm-3">Down Payment</dt>
+    <dd class="col-sm-9">{{ $_hasDownPayment ? ($_dpRoUnit === '%' ? $_dpRoVal . '%' : '$' . number_format($_dpRoVal)) : '—' }}</dd>
+
+    @if($_hasInitialDeposit)
+    @php
+        $_initTfDisplay  = $metas->get('initial_deposit_timeframe');
+        if ($_initTfDisplay === 'Other' && $metas->get('initial_deposit_timeframe_other')) {
+            $_initTfDisplay = $metas->get('initial_deposit_timeframe_other');
+        }
+        $_initDepUnit = $metas->get('initial_deposit_amount_unit') ?? '$';
+        $_initDepFmt  = $_initDepUnit === '%'
+            ? $metas->get('initial_deposit_amount') . '%'
+            : '$' . number_format($metas->get('initial_deposit_amount'));
+    @endphp
+    <dt class="col-sm-3">Initial Deposit Amount</dt>
+    <dd class="col-sm-9">{{ $_initDepFmt }}{{ $_initTfDisplay ? ' — ' . $_initTfDisplay : '' }}</dd>
+    @endif
+
+    @if($_hasAdditionalDeposit)
+    @php
+        $_addTfDisplay = $metas->get('additional_deposit_timeframe');
+        if ($_addTfDisplay === 'Other' && $metas->get('additional_deposit_timeframe_other')) {
+            $_addTfDisplay = $metas->get('additional_deposit_timeframe_other');
+        }
+        $_addDepUnit = $metas->get('additional_deposit_amount_unit') ?? '$';
+        $_addDepFmt  = $_addDepUnit === '%'
+            ? $metas->get('additional_deposit_amount') . '%'
+            : '$' . number_format($metas->get('additional_deposit_amount'));
+    @endphp
+    <dt class="col-sm-3">Additional Deposit Amount</dt>
+    <dd class="col-sm-9">{{ $_addDepFmt }}{{ $_addTfDisplay ? ' — ' . $_addTfDisplay : '' }}</dd>
+    @endif
+</dl>
+@endif
+
+{{-- ── Section: Financing ──────────────────────────────────────────────────── --}}
+@if($ftRaw)
+<p class="fw-semibold text-muted mb-1 mt-3">Financing</p>
+<dl class="row mb-0">
     <dt class="col-sm-3">Financing Type</dt>
     <dd class="col-sm-9">{{ $ftLabel }}</dd>
+</dl>
+@endif
 
+{{-- ── Section: Contingencies ──────────────────────────────────────────────── --}}
+@if($metas->get('financing_contingency') || $metas->get('inspection_contingency') || $metas->get('appraisal_contingency') || $metas->get('sale_of_buyer_property_contingency'))
+<p class="fw-semibold text-muted mb-1 mt-3">Contingencies</p>
+<dl class="row mb-0">
+    <dt class="col-sm-3">Financing Contingency</dt>
+    <dd class="col-sm-9">
+        {{ $metas->get('financing_contingency') ? 'Yes' : 'No' }}
+        @if($metas->get('financing_contingency') && $metas->get('financing_contingency_days'))
+            ({{ $metas->get('financing_contingency_days') }} days)
+        @endif
+    </dd>
+
+    <dt class="col-sm-3">Inspection Contingency</dt>
+    <dd class="col-sm-9">
+        {{ $metas->get('inspection_contingency') ? 'Yes' : 'No' }}
+        @if($metas->get('inspection_contingency') && $metas->get('inspection_contingency_days'))
+            ({{ $metas->get('inspection_contingency_days') }} days)
+        @endif
+    </dd>
+
+    <dt class="col-sm-3">Appraisal Contingency</dt>
+    <dd class="col-sm-9">
+        {{ $metas->get('appraisal_contingency') ? 'Yes' : 'No' }}
+        @if($metas->get('appraisal_contingency') && $metas->get('appraisal_contingency_days'))
+            ({{ $metas->get('appraisal_contingency_days') }} days)
+        @endif
+    </dd>
+
+    <dt class="col-sm-3">Sale of Buyer's Property Contingency</dt>
+    <dd class="col-sm-9">
+        {{ $metas->get('sale_of_buyer_property_contingency') ? 'Yes' : 'No' }}
+        @if($metas->get('sale_of_buyer_property_contingency') && $metas->get('sale_of_buyer_property_contingency_days'))
+            ({{ $metas->get('sale_of_buyer_property_contingency_days') }} days)
+        @endif
+    </dd>
+</dl>
+@endif
+
+{{-- ── Section: Closing & Possession ──────────────────────────────────────── --}}
+@if($metas->get('closing_date') || $metas->get('possession_date') || $metas->get('possession_notes') || $metas->get('expires_at'))
+<p class="fw-semibold text-muted mb-1 mt-3">Closing &amp; Possession</p>
+<dl class="row mb-0">
+    <dt class="col-sm-3">Closing Date</dt>
+    <dd class="col-sm-9">{{ $safeDate($metas->get('closing_date')) }}</dd>
+
+    <dt class="col-sm-3">Possession Date</dt>
+    <dd class="col-sm-9">{{ $safeDate($metas->get('possession_date')) }}</dd>
+
+    @if($metas->get('possession_notes'))
+    <dt class="col-sm-3">Possession Notes</dt>
+    <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('possession_notes') }}</dd>
+    @endif
+
+    <dt class="col-sm-3">Offer Expires At</dt>
+    <dd class="col-sm-9">{{ $safeDate($metas->get('expires_at')) }}</dd>
+</dl>
+@endif
+
+{{-- ── Section: Special Financing Details ─────────────────────────────────── --}}
+@if($_hasSpecialFinancing)
+<p class="fw-semibold text-muted mb-1 mt-3">Special Financing Details</p>
+<dl class="row mb-0">
     @if($ftRaw === 'Assumable')
     <dt class="col-sm-3">Interested in Assumable Financing?</dt>
     <dd class="col-sm-9">{{ $metas->get('assumable_interest') ?: '—' }}</dd>
@@ -148,94 +318,29 @@
     <dt class="col-sm-3">Other Financing Details</dt>
     <dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('other_financing_details') }}</dd>
     @endif
+</dl>
+@endif
 
-    @php
-        $_dpRoVal  = $metas->get('down_payment_value') ?? $metas->get('down_payment_percent');
-        $_dpRoUnit = $metas->get('down_payment_unit') ?? ($metas->get('down_payment_percent') !== null ? '%' : '$');
-    @endphp
-    <dt class="col-sm-3">Down Payment</dt>
-    <dd class="col-sm-9">{{ $_dpRoVal !== null && $_dpRoVal !== '' ? ($_dpRoUnit === '%' ? $_dpRoVal . '%' : '$' . number_format($_dpRoVal)) : '—' }}</dd>
-
-    <dt class="col-sm-3">Financing Contingency</dt>
-    <dd class="col-sm-9">
-        {{ $metas->get('financing_contingency') ? 'Yes' : 'No' }}
-        @if($metas->get('financing_contingency') && $metas->get('financing_contingency_days'))
-            ({{ $metas->get('financing_contingency_days') }} days)
-        @endif
-    </dd>
-
-    <dt class="col-sm-3">Inspection Contingency</dt>
-    <dd class="col-sm-9">
-        {{ $metas->get('inspection_contingency') ? 'Yes' : 'No' }}
-        @if($metas->get('inspection_contingency') && $metas->get('inspection_contingency_days'))
-            ({{ $metas->get('inspection_contingency_days') }} days)
-        @endif
-    </dd>
-
-    <dt class="col-sm-3">Appraisal Contingency</dt>
-    <dd class="col-sm-9">
-        {{ $metas->get('appraisal_contingency') ? 'Yes' : 'No' }}
-        @if($metas->get('appraisal_contingency') && $metas->get('appraisal_contingency_days'))
-            ({{ $metas->get('appraisal_contingency_days') }} days)
-        @endif
-    </dd>
-
-    <dt class="col-sm-3">Closing Date</dt>
-    <dd class="col-sm-9">{{ $safeDate($metas->get('closing_date')) }}</dd>
-
-    <dt class="col-sm-3">Possession Date</dt>
-    <dd class="col-sm-9">{{ $safeDate($metas->get('possession_date')) }}</dd>
-
-    {{-- Purchase Terms --}}
-    @if($metas->get('initial_deposit_amount') !== null && $metas->get('initial_deposit_amount') !== '')
-    @php
-        $_initTfDisplay  = $metas->get('initial_deposit_timeframe');
-        if ($_initTfDisplay === 'Other' && $metas->get('initial_deposit_timeframe_other')) {
-            $_initTfDisplay = $metas->get('initial_deposit_timeframe_other');
-        }
-        $_initDepUnit = $metas->get('initial_deposit_amount_unit') ?? '$';
-        $_initDepFmt  = $_initDepUnit === '%'
-            ? $metas->get('initial_deposit_amount') . '%'
-            : '$' . number_format($metas->get('initial_deposit_amount'));
-    @endphp
-    <dt class="col-sm-3">Initial Deposit Amount</dt>
-    <dd class="col-sm-9">{{ $_initDepFmt }}{{ $_initTfDisplay ? ' — ' . $_initTfDisplay : '' }}</dd>
-    @endif
-
-    @if($metas->get('additional_deposit_amount') !== null && $metas->get('additional_deposit_amount') !== '')
-    @php
-        $_addTfDisplay = $metas->get('additional_deposit_timeframe');
-        if ($_addTfDisplay === 'Other' && $metas->get('additional_deposit_timeframe_other')) {
-            $_addTfDisplay = $metas->get('additional_deposit_timeframe_other');
-        }
-        $_addDepUnit = $metas->get('additional_deposit_amount_unit') ?? '$';
-        $_addDepFmt  = $_addDepUnit === '%'
-            ? $metas->get('additional_deposit_amount') . '%'
-            : '$' . number_format($metas->get('additional_deposit_amount'));
-    @endphp
-    <dt class="col-sm-3">Additional Deposit Amount</dt>
-    <dd class="col-sm-9">{{ $_addDepFmt }}{{ $_addTfDisplay ? ' — ' . $_addTfDisplay : '' }}</dd>
-    @endif
-
-    <dt class="col-sm-3">Sale of Buyer's Property Contingency</dt>
-    <dd class="col-sm-9">
-        {{ $metas->get('sale_of_buyer_property_contingency') ? 'Yes' : 'No' }}
-        @if($metas->get('sale_of_buyer_property_contingency') && $metas->get('sale_of_buyer_property_contingency_days'))
-            ({{ $metas->get('sale_of_buyer_property_contingency_days') }} days)
-        @endif
-    </dd>
-
-    @if($metas->get('possession_notes'))
-    <dt class="col-sm-3">Possession Notes</dt>
-    <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('possession_notes') }}</dd>
-    @endif
-
+{{-- ── Section: Additional Terms ───────────────────────────────────────────── --}}
+@if($metas->get('seller_contribution_requested') || $metas->get('home_warranty_requested') || $metas->get('included_personal_property') || $metas->get('excluded_items') || $metas->get('custom_terms'))
+<p class="fw-semibold text-muted mb-1 mt-3">Additional Terms</p>
+<dl class="row mb-0">
     @if($metas->get('seller_contribution_requested'))
     <dt class="col-sm-3">Seller Contribution Requested</dt>
     <dd class="col-sm-9">
         {{ $metas->get('seller_contribution_requested') }}
         @if($metas->get('seller_contribution_requested') === 'Yes' && $metas->get('seller_contribution_details'))
             — {{ $metas->get('seller_contribution_details') }}
+        @endif
+    </dd>
+    @endif
+
+    @if($metas->get('home_warranty_requested'))
+    <dt class="col-sm-3">Home Warranty Requested</dt>
+    <dd class="col-sm-9">
+        {{ $metas->get('home_warranty_requested') }}
+        @if($metas->get('home_warranty_requested') === 'Yes' && $metas->get('home_warranty_details'))
+            — {{ $metas->get('home_warranty_details') }}
         @endif
     </dd>
     @endif
@@ -250,19 +355,15 @@
     <dd class="col-sm-9">{{ $metas->get('excluded_items') }}</dd>
     @endif
 
-    @if($metas->get('home_warranty_requested'))
-    <dt class="col-sm-3">Home Warranty Requested</dt>
-    <dd class="col-sm-9">
-        {{ $metas->get('home_warranty_requested') }}
-        @if($metas->get('home_warranty_requested') === 'Yes' && $metas->get('home_warranty_details'))
-            — {{ $metas->get('home_warranty_details') }}
-        @endif
-    </dd>
-    @endif
+    <dt class="col-sm-3">Custom Terms</dt>
+    <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('custom_terms') ?: '—' }}</dd>
+</dl>
+@endif
 
-    @endif
+@endif {{-- end sale --}}
 
-    @if(in_array($offerType, ['rental', 'lease']))
+@if(in_array($offerType, ['rental', 'lease']))
+<dl class="row mb-0">
     <dt class="col-sm-3">Monthly Rent</dt>
     <dd class="col-sm-9">{{ $metas->get('monthly_rent') ? '$' . number_format($metas->get('monthly_rent')) : '—' }}</dd>
 
@@ -276,9 +377,8 @@
     <dt class="col-sm-3">Lease Term</dt>
     <dd class="col-sm-9">{{ $metas->get('lease_term_months') ? $metas->get('lease_term_months') . ' months' : '—' }}</dd>
     @endif
-    @endif
 
     <dt class="col-sm-3">Custom Terms</dt>
     <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('custom_terms') ?: '—' }}</dd>
-
 </dl>
+@endif
