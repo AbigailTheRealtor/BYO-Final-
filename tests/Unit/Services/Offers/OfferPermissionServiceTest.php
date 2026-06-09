@@ -47,7 +47,7 @@ class OfferPermissionServiceTest extends TestCase
 
     public function test_can_submit_allowed_for_draft_buyer(): void
     {
-        $offer = Offer::factory()->make(['status' => 'draft']);
+        $offer = Offer::factory()->make(['status' => 'draft', 'user_id' => 1]);
         $result = $this->service->canSubmit($offer, 1, 'buyer');
 
         $this->assertTrue($result['allowed']);
@@ -76,14 +76,60 @@ class OfferPermissionServiceTest extends TestCase
         }
     }
 
-    public function test_can_submit_denied_for_wrong_role(): void
+    public function test_can_submit_allowed_for_draft_tenant_owner(): void
     {
-        $offer = Offer::factory()->make(['status' => 'draft']);
-        $result = $this->service->canSubmit($offer, 1, 'seller');
+        $offer = Offer::factory()->make(['status' => 'draft', 'user_id' => 5]);
+        $result = $this->service->canSubmit($offer, 5, 'tenant');
+
+        $this->assertTrue($result['allowed']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_submit_allowed_for_draft_seller_owner(): void
+    {
+        $offer = Offer::factory()->make(['status' => 'draft', 'user_id' => 5]);
+        $result = $this->service->canSubmit($offer, 5, 'seller');
+
+        $this->assertTrue($result['allowed']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_submit_allowed_for_draft_landlord_owner(): void
+    {
+        $offer = Offer::factory()->make(['status' => 'draft', 'user_id' => 5]);
+        $result = $this->service->canSubmit($offer, 5, 'landlord');
+
+        $this->assertTrue($result['allowed']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_submit_allowed_for_draft_agent_owner(): void
+    {
+        $offer = Offer::factory()->make(['status' => 'draft', 'user_id' => 5]);
+        $result = $this->service->canSubmit($offer, 5, 'agent');
+
+        $this->assertTrue($result['allowed']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_submit_denied_for_non_owner(): void
+    {
+        $offer = Offer::factory()->make(['status' => 'draft', 'user_id' => 10]);
+        $result = $this->service->canSubmit($offer, 99, 'buyer');
 
         $this->assertFalse($result['allowed']);
         $this->assertNotEmpty($result['reason']);
-        $this->assertStringContainsString('seller', $result['reason']);
+        $this->assertStringContainsString('creator', $result['reason']);
+    }
+
+    public function test_can_submit_denied_for_unauthenticated(): void
+    {
+        $offer = Offer::factory()->make(['status' => 'draft', 'user_id' => 10]);
+        $result = $this->service->canSubmit($offer, null, 'buyer');
+
+        $this->assertFalse($result['allowed']);
+        $this->assertNotEmpty($result['reason']);
+        $this->assertStringContainsString('authenticated', $result['reason']);
     }
 
     public function test_can_submit_denied_for_wrong_status(): void
@@ -98,7 +144,7 @@ class OfferPermissionServiceTest extends TestCase
 
     public function test_can_submit_return_shape(): void
     {
-        $offer = Offer::factory()->make(['status' => 'draft']);
+        $offer = Offer::factory()->make(['status' => 'draft', 'user_id' => 1]);
         $result = $this->service->canSubmit($offer, 1, 'buyer');
 
         $this->assertIsBool($result['allowed']);
@@ -469,7 +515,7 @@ class OfferPermissionServiceTest extends TestCase
         [$rejectOffer,  $rejectId]  = $this->partyOffer('submitted');
 
         $checks = [
-            fn () => $this->service->canSubmit(Offer::factory()->make(['status' => 'draft']), 1, 'buyer'),
+            fn () => $this->service->canSubmit(Offer::factory()->make(['status' => 'draft', 'user_id' => 1]), 1, 'buyer'),
             fn () => $this->service->canCounter($counterOffer, $counterId, 'buyer'),
             fn () => $this->service->canAccept($acceptOffer,  $acceptId,  'seller'),
             fn () => $this->service->canReject($rejectOffer,  $rejectId,  'seller'),

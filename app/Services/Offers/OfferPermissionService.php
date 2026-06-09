@@ -45,8 +45,16 @@ class OfferPermissionService
             return ['allowed' => false, 'action' => $action, 'reason' => "Cannot submit: offer status is '{$status}', expected 'draft'."];
         }
 
-        if (!in_array($actorRole, ['buyer', 'system'], true)) {
-            return ['allowed' => false, 'action' => $action, 'reason' => "Cannot submit: actor role '{$actorRole}' is not permitted for this action."];
+        if ($actorRole === 'system') {
+            return ['allowed' => true, 'action' => $action, 'reason' => ''];
+        }
+
+        if ($actorId === null) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot submit: actor must be authenticated.'];
+        }
+
+        if ($actorId !== $offer->user_id) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot submit: only the offer creator may submit a draft.'];
         }
 
         return ['allowed' => true, 'action' => $action, 'reason' => ''];
