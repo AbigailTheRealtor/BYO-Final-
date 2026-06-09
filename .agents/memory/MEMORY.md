@@ -10,3 +10,4 @@
 - [Ask AI registry dual-structure](ask-ai-registry-dual-structure.md) — registry() is FAQ-only (168 entries); listingFieldRegistry() is the separate listing.* registry (45 entries); sample_question_2 injected by withSecondQuestions(), not stored inline.
 - [MLS seller price maps to maximum_budget](mls-seller-price-mapping.md) — seller list price must target maximum_budget (Desired Sale Price on Sale Terms tab), NOT purchase_price (Seller Financing sub-field, hidden by default).
 - [Ask AI listing field guard pattern](ask-ai-listing-field-guard.md) — Guard B fires for listing.* null fields before OpenAI; OpenAI json_object needs "json" in messages; infoGet returns '' not null for empty EAV metas.
+- [Ask AI classifier boundary collision](ask-ai-classifier-boundary-collision.md) — listing_facts keywords must not be substrings of buyer_tenant_match questions; KEYWORD_RULES evaluated in order, listing_facts first; case M tests guard known protected phrases.

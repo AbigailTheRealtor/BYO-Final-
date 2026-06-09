@@ -694,6 +694,20 @@ class AskAiQuestionClassifierService
             'hoa restrictions',
             'detailed pet policy',
             'full pet policy',
+            // Financing type — factual retrieval of requested financing structure
+            // (e.g. "What financing type is requested?"). Distinct from buyer_criteria
+            // negotiation questions; these look up the listing field directly.
+            'financing type',
+            'what financing type',
+            'financing type requested',
+            'requested financing',
+            'type of financing',
+            // Desired lease length — factual phrasing only.
+            // 'desired lease length' / 'preferred lease length' stay in buyer_tenant_match
+            // so that compatibility-framed questions are not swallowed here.
+            // These more-specific phrases address factual retrieval of the listing field.
+            'what lease length is desired',
+            'lease length is desired',
         ],
 
         'compatibility_signals' => [

@@ -611,4 +611,103 @@ class AskAiCoverageHarnessTest extends TestCase
                 . implode("\n  - ", $missing)
         );
     }
+
+    // -------------------------------------------------------------------------
+    // Listing field helpers (tests 15–17)
+    // -------------------------------------------------------------------------
+
+    private function getListingKeyKeywordMap(): array
+    {
+        $rc = new ReflectionClass(AskAiRunnerV2Service::class);
+        $c  = $rc->getConstant('LISTING_KEY_KEYWORD_MAP');
+        $this->assertIsArray($c, 'LISTING_KEY_KEYWORD_MAP constant must be an array');
+        return $c;
+    }
+
+    // -------------------------------------------------------------------------
+    // (15) Every listingFieldRegistry path has a LISTING_KEY_KEYWORD_MAP entry
+    // -------------------------------------------------------------------------
+
+    public function test_every_listing_field_registry_path_has_listing_keyword_map_entry(): void
+    {
+        $listingMap = $this->getListingKeyKeywordMap();
+        $missing    = [];
+
+        foreach (AskAiFieldQuestionRegistryService::allListingFieldPaths() as $path) {
+            if (!array_key_exists($path, $listingMap)) {
+                $missing[] = $path;
+            }
+        }
+
+        $this->assertEmpty(
+            $missing,
+            "listing.* registry paths missing from LISTING_KEY_KEYWORD_MAP "
+                . "(every field must have ≥1 natural-language keyword phrase):\n  - "
+                . implode("\n  - ", $missing)
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // (16) Every LISTING_KEY_KEYWORD_MAP key resolves to a specific deriveFieldLabel
+    // -------------------------------------------------------------------------
+
+    public function test_every_listing_keyword_map_key_has_specific_derive_field_label(): void
+    {
+        $genericFallback = [];
+
+        foreach (array_keys($this->getListingKeyKeywordMap()) as $canonicalPath) {
+            $label = $this->callDeriveFieldLabel($canonicalPath);
+            if ($label === self::GENERIC_LABEL_FALLBACK) {
+                $genericFallback[] = $canonicalPath;
+            }
+        }
+
+        $this->assertEmpty(
+            $genericFallback,
+            "LISTING_KEY_KEYWORD_MAP keys falling through to generic deriveFieldLabel fallback ('"
+                . self::GENERIC_LABEL_FALLBACK . "'):\n  - "
+                . implode("\n  - ", $genericFallback)
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // (17) LISTING_KEY_KEYWORD_MAP coverage count minimums
+    // -------------------------------------------------------------------------
+
+    public function test_listing_keyword_map_covers_at_least_expected_minimum_keys(): void
+    {
+        $listingMap = $this->getListingKeyKeywordMap();
+
+        $this->assertGreaterThanOrEqual(
+            40,
+            count($listingMap),
+            'LISTING_KEY_KEYWORD_MAP should cover at least 40 distinct listing.* keys. Actual: ' . count($listingMap)
+        );
+
+        $totalKeywords = array_sum(array_map('count', $listingMap));
+        $this->assertGreaterThanOrEqual(
+            150,
+            $totalKeywords,
+            'LISTING_KEY_KEYWORD_MAP should contain at least 150 total keyword phrases. Actual: ' . $totalKeywords
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // (18) LISTING_KEY_KEYWORD_MAP keys must all start with listing. prefix
+    // -------------------------------------------------------------------------
+
+    public function test_listing_keyword_map_keys_start_with_listing_prefix(): void
+    {
+        $bad = [];
+        foreach (array_keys($this->getListingKeyKeywordMap()) as $path) {
+            if (!str_starts_with($path, 'listing.')) {
+                $bad[] = $path;
+            }
+        }
+
+        $this->assertEmpty(
+            $bad,
+            "LISTING_KEY_KEYWORD_MAP keys must start with 'listing.':\n  - " . implode("\n  - ", $bad)
+        );
+    }
 }
