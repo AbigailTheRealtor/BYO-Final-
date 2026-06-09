@@ -120,7 +120,7 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertStringContainsString('btn-outline-secondary btn-sm">Withdraw', $content);
     }
 
-    // ── Test 4: Blocked action → disabled button + reason text rendered (no form action) ──
+    // ── Test 4: can_submit=false → entire block silently hidden (no disabled button, no reason) ──
 
     public function test_blocked_action_produces_no_html(): void
     {
@@ -140,8 +140,8 @@ class OfferActionVisibilityTest extends TestCase
 
         $this->assertStringNotContainsString('disabled title="' . $blockedReason . '"', $content, 'Disabled button must not use title= attribute for reason.');
         $this->assertStringNotContainsString('action="' . $submitUrl . '"', $content, 'Blocked action must not have a form action.');
-        $this->assertStringContainsString($blockedReason, $content, 'Blocked reason text must appear in the page.');
-        $this->assertStringContainsString('Submit Offer', $content, 'Disabled Submit Offer button must still appear.');
+        $this->assertStringNotContainsString($blockedReason, $content, 'Submit reason text must not appear in the page when can_submit is false.');
+        $this->assertStringNotContainsString('Submit Offer', $content, 'Submit Offer must not appear when can_submit is false.');
     }
 
     // ── Test 5: Expire action never rendered regardless of can_expire value ──
@@ -178,7 +178,7 @@ class OfferActionVisibilityTest extends TestCase
 
         $this->assertStringNotContainsString('<form', $content, 'No form tags must appear when all actions are disabled.');
         $this->assertStringNotContainsString('action=', $content, 'No action= attributes must appear when all actions are disabled.');
-        $this->assertStringContainsString('Submit Offer', $content, 'Disabled Submit Offer button must appear with a reason.');
+        $this->assertStringNotContainsString('Submit Offer', $content, 'Submit Offer must not appear when can_submit is false.');
         $this->assertStringContainsString('>Withdraw<', $content, 'Disabled Withdraw button must appear with a reason.');
     }
 
@@ -305,5 +305,104 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertStringContainsString('View Timeline', $content, 'View Timeline button must appear when can_view_timeline=true.');
         $this->assertStringContainsString('href="#offer-timeline"', $content, 'View Timeline must link to #offer-timeline anchor.');
         $this->assertStringContainsString('id="offer-timeline"', $content, 'Negotiation Timeline card must have id="offer-timeline".');
+    }
+
+    // ── Test 13: Submitted offer page does not contain "Cannot submit" reason text ──
+
+    public function test_submitted_offer_does_not_contain_cannot_submit_text(): void
+    {
+        $offer   = Offer::factory()->submitted()->create();
+        $actions = $this->makeActions([
+            'reasons' => ['submit' => 'Cannot submit — offer is already submitted'],
+        ]);
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringNotContainsString('Cannot submit', $content, 'Submit reason text must never appear for a submitted offer.');
+    }
+
+    // ── Test 14: Submitted offer with can_submit=false renders no disabled Submit Offer button ──
+
+    public function test_submitted_offer_with_can_submit_false_renders_no_submit_button(): void
+    {
+        $offer   = Offer::factory()->submitted()->create();
+        $actions = $this->makeActions(['can_submit' => false]);
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringNotContainsString('Submit Offer', $content, 'Submit Offer must not appear at all when can_submit is false.');
+    }
+
+    // ── Test 15: Draft offer page contains both save button labels ──
+
+    public function test_draft_offer_shows_both_save_buttons(): void
+    {
+        $offer   = Offer::factory()->create(['status' => 'draft', 'user_id' => $this->user->id]);
+        $actions = $this->makeActions();
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('Save Offer Terms', $content, 'Save Offer Terms button must appear on a draft offer.');
+        $this->assertStringContainsString('Save &amp; Submit Offer', $content, 'Save &amp; Submit Offer button must appear on a draft offer.');
+    }
+
+    // ── Test 16: Draft offer Save & Submit button carries btn-success class ──
+
+    public function test_draft_offer_save_and_submit_button_has_btn_success_class(): void
+    {
+        $offer   = Offer::factory()->create(['status' => 'draft', 'user_id' => $this->user->id]);
+        $actions = $this->makeActions();
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $btnPos = strpos($content, 'id="save-and-submit-offer-btn"');
+        $this->assertNotFalse($btnPos, 'save-and-submit-offer-btn must be present on a draft offer page.');
+        $surrounding = substr($content, max(0, $btnPos - 150), 350);
+        $this->assertStringContainsString('btn-success', $surrounding, 'Save &amp; Submit Offer button must carry btn-success class.');
+        $this->assertStringNotContainsString('background:white', $surrounding, 'Save &amp; Submit Offer button must not have a white background override.');
+        $this->assertStringNotContainsString('background:transparent', $surrounding, 'Save &amp; Submit Offer button must not have a transparent background override.');
+    }
+
+    // ── Test 17: Submitter of active offer sees Withdraw and View Timeline but not Accept or Reject ──
+
+    public function test_submitter_of_active_offer_sees_withdraw_not_accept_or_reject(): void
+    {
+        $offer = Offer::factory()->submitted()->create(['user_id' => $this->user->id]);
+        $actions = $this->makeActions([
+            'can_withdraw'      => true,
+            'can_view_timeline' => true,
+        ]);
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('Withdraw', $content, 'Submitter must see the Withdraw button.');
+        $this->assertStringContainsString('View Timeline', $content, 'Submitter must see the View Timeline button.');
+        $this->assertStringNotContainsString('>Accept<', $content, 'Submitter must not see the Accept button.');
+        $this->assertStringNotContainsString('>Reject<', $content, 'Submitter must not see the Reject button.');
     }
 }

@@ -8,7 +8,7 @@
 @php
     $safeDate = function ($v) {
         if (!$v) return '—';
-        try { return \Carbon\Carbon::parse($v)->format('Y-m-d'); }
+        try { return \Carbon\Carbon::parse($v)->format('F j, Y'); }
         catch (\Throwable $e) { return '—'; }
     };
 @endphp

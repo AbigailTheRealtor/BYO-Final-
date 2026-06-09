@@ -10,6 +10,19 @@
                 <button onclick="window.history.back()" class="btn btn-secondary btn-sm">Back</button>
             </div>
 
+            @php
+                $fmtDate = function ($v) {
+                    if (!$v) return '—';
+                    try { return \Carbon\Carbon::parse($v)->format('F j, Y'); }
+                    catch (\Throwable $e) { return '—'; }
+                };
+                $fmtDateTime = function ($v) {
+                    if (!$v) return '—';
+                    try { return \Carbon\Carbon::parse($v)->format('F j, Y \a\t g:i A'); }
+                    catch (\Throwable $e) { return '—'; }
+                };
+            @endphp
+
             {{-- Offer Summary Card --}}
             <div class="card mb-4">
                 <div class="card-header">
@@ -44,10 +57,10 @@
                         @endif
 
                         <dt class="col-sm-3">Created At</dt>
-                        <dd class="col-sm-9">{{ $offer->created_at?->format('Y-m-d H:i:s') ?? '—' }}</dd>
+                        <dd class="col-sm-9">{{ $fmtDateTime($offer->created_at) }}</dd>
 
                         <dt class="col-sm-3">Submitted At</dt>
-                        <dd class="col-sm-9">{{ $offer->submitted_at?->format('Y-m-d H:i:s') ?? '—' }}</dd>
+                        <dd class="col-sm-9">{{ $fmtDateTime($offer->submitted_at) }}</dd>
                     </dl>
                 </div>
             </div>
@@ -125,11 +138,11 @@
                                         @php $tColor = $statusColors[$item['status']] ?? 'secondary'; @endphp
                                         <span class="badge bg-{{ $tColor }} text-capitalize">{{ $item['status'] }}</span>
                                     </td>
-                                    <td>{{ $item['created_at'] ?? '—' }}</td>
-                                    <td>{{ $item['submitted_at'] ?? '—' }}</td>
+                                    <td>{{ $fmtDateTime($item['created_at'] ?? null) }}</td>
+                                    <td>{{ $fmtDateTime($item['submitted_at'] ?? null) }}</td>
                                     <td>{{ $item['event_count'] }}</td>
                                     <td>{{ $item['latest_event_type'] ?? '—' }}</td>
-                                    <td>{{ $item['latest_event_at'] ?? '—' }}</td>
+                                    <td>{{ $fmtDateTime($item['latest_event_at'] ?? null) }}</td>
                                 </tr>
                                 @empty
                                 <tr>
@@ -179,6 +192,10 @@
                             @endphp
                             {{-- Accept and Reject are hidden entirely for the submitter — they belong to the other party. --}}
                             @if($actorIsSubmitter && $cfg['hide_for_submitter'])
+                                @continue
+                            @endif
+                            {{-- can_submit=false is silently hidden — no disabled button, no reason text. --}}
+                            @if(!$allowed && $flag === 'can_submit')
                                 @continue
                             @endif
                             {{-- Disabled / not-permitted: render a disabled button with the reason if one is provided. --}}

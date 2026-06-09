@@ -300,4 +300,83 @@ class OfferTermsDisplayTest extends TestCase
         $this->assertSame('999000', $offer->getMeta('offer_price'));
         $this->assertSame('Jumbo', $offer->getMeta('financing_type'));
     }
+
+    // ── Test 10: Read-only display shows expires_at in human-readable format ──
+
+    public function test_expires_at_renders_in_human_readable_format(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'sale');
+        $offer->saveMeta('offer_price', '300000');
+        $offer->saveMeta('expires_at', '2026-06-18');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('June 18, 2026');
+        $response->assertDontSee('2026-06-18');
+    }
+
+    // ── Test 11: closing_date and possession_date render in F j, Y format ─────
+
+    public function test_closing_and_possession_dates_render_in_human_readable_format(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'sale');
+        $offer->saveMeta('offer_price', '300000');
+        $offer->saveMeta('closing_date', '2026-07-15');
+        $offer->saveMeta('possession_date', '2026-07-17');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('July 15, 2026');
+        $response->assertSee('July 17, 2026');
+        $response->assertDontSee('2026-07-15');
+        $response->assertDontSee('2026-07-17');
+    }
+
+    // ── Test 12: Timeline columns show timestamps in human-readable format ─────
+
+    public function test_timeline_timestamps_render_in_human_readable_format(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'sale');
+        $offer->saveMeta('offer_price', '300000');
+        $offer->created_at = \Carbon\Carbon::parse('2026-06-09 21:25:00');
+        $offer->save();
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $content = $response->getContent();
+        $this->assertStringContainsString('June 9, 2026 at 9:25 PM', $content, 'Timeline Created At must render in human-readable format.');
+        $this->assertStringNotContainsString('21:25:00', $content, 'Raw 24-hour time must not appear on the page.');
+    }
+
+    // ── Test 13: Offer Information card shows created_at in readable format ────
+
+    public function test_offer_info_card_created_at_renders_in_human_readable_format(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'sale');
+        $offer->saveMeta('offer_price', '300000');
+        $offer->created_at = \Carbon\Carbon::parse('2026-06-09 21:25:00');
+        $offer->save();
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $content = $response->getContent();
+        $this->assertStringContainsString('June 9, 2026 at 9:25 PM', $content, 'Offer Information card Created At must render in human-readable format.');
+        $this->assertStringNotContainsString('2026-06-09 21:25:00', $content, 'Raw Y-m-d H:i:s format must not appear in the Offer Information card.');
+    }
 }

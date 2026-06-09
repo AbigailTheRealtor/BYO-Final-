@@ -27,6 +27,11 @@
     #counter-offer-submit-btn { background:#2563eb; border-color:#2563eb; color:#fff; font-weight:600; }
     #save-offer-terms-btn:hover,
     #counter-offer-submit-btn:hover { background:#1d4ed8; border-color:#1d4ed8; }
+    /* Tailwind Preflight sets background-color:transparent on [type='submit'], which
+       beats Bootstrap's .btn-success when Tailwind loads after Bootstrap. Scoped ID
+       override (higher specificity) restores the correct green appearance. */
+    #save-and-submit-offer-btn { background-color:#198754 !important; border-color:#198754 !important; color:#fff !important; font-weight:600; }
+    #save-and-submit-offer-btn:hover { background-color:#157347 !important; border-color:#146c43 !important; color:#fff !important; }
     .offer-section-header {
         font-size: 0.9rem;
         font-weight: 600;
