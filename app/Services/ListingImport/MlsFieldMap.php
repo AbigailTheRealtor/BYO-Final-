@@ -219,6 +219,62 @@ class MlsFieldMap
         ];
     }
 
+    // ─── Universal base field map ─────────────────────────────────────────────
+
+    /**
+     * Eligibility map for the "Previewed (Y/N)" column in MlsCoverageReporter.
+     *
+     * Lists the canonical keys that are universally applicable across all (or most)
+     * roles with no role-specific or property-type dependency.  These are fields
+     * whose MLS values are meaningful regardless of listing type:
+     * structural characteristics (beds/baths/sqft/pool/garage/carport/furnished),
+     * the public description, and physical location (address through county).
+     *
+     * Role-specific keys (price, year_built, HOA, flood zone, lease terms, tax
+     * disclosures, etc.) are intentionally absent — their values are either only
+     * relevant once the role is known or they map to different Livewire properties
+     * per role.
+     *
+     * *** PREVIEW / IMPORT MAPPING AUTHORITY ***
+     * This map is NOT used to populate the import preview.  The role-specific
+     * MlsFieldMap::forRole() is and must remain the sole authoritative source for
+     * what appears in the preview and what gets written to component properties.
+     * This map is consumed ONLY by MlsCoverageReporter::buildRows() to derive the
+     * "Previewed (Y/N)" column value.
+     */
+    public static function universalBaseMap(): array
+    {
+        return [
+            // Core structural fields — identical target property on all four roles
+            'bedrooms'    => 'bedrooms',
+            'bathrooms'   => 'bathrooms',
+            'heated_sqft' => 'minimum_heated_square',
+            'pool'        => 'pool_needed',
+            'garage'      => 'garage_needed',
+            'carport'     => 'carport_needed',
+            'furnished'   => 'tenant_require',
+            'description' => 'additional_details',
+            // Address fields — identical target property on seller/landlord/tenant
+            // (buyer is intentionally excluded from address mapping by design; the
+            //  guard in importListingFromUrl remains: property_exists($this, $propName))
+            'address'     => 'address',
+            'city'        => 'property_city',
+            'state'       => 'property_state',
+            'zip'         => 'property_zip',
+            'county'      => 'property_county',
+        ];
+    }
+
+    /**
+     * Returns just the canonical key names from the universal base map.
+     *
+     * @return string[]
+     */
+    public static function universalBaseKeys(): array
+    {
+        return array_keys(self::universalBaseMap());
+    }
+
     // ─── Human-readable labels for the preview table ─────────────────────────
 
     public static function fieldLabels(): array

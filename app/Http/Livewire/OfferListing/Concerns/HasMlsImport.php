@@ -49,9 +49,9 @@ trait HasMlsImport
             return;
         }
 
-        $role    = $this->resolveImportRole();
+        $role     = $this->resolveImportRole();
         $fieldMap = MlsFieldMap::forRole($role);
-        $labels  = MlsFieldMap::fieldLabels();
+        $labels   = MlsFieldMap::fieldLabels();
 
         $preview = [];
 

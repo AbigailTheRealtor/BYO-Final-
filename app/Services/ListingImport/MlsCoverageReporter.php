@@ -65,8 +65,9 @@ class MlsCoverageReporter
         $parsedKeys    = self::deriveParsedKeys();
         $fieldMaps     = self::deriveFieldMaps();
         $bladeBindings = self::deriveBladeBindings();
+        $baseKeys      = MlsFieldMap::universalBaseKeys();
 
-        $rows    = self::buildRows($parsedKeys, $fieldMaps, $bladeBindings);
+        $rows    = self::buildRows($parsedKeys, $fieldMaps, $bladeBindings, $baseKeys);
         $content = self::renderMarkdown($rows);
 
         file_put_contents($outputPath, $content);
@@ -157,9 +158,22 @@ class MlsCoverageReporter
      * Entries with canonical_key = null appear as unmapped/unsafe rows.
      * This ensures commercial, vacant-land, income, and business-specific
      * fields that have no parser branch are still visible in the report.
+     *
+     * Each row now includes two additional derived columns:
+     *   • previewed          — Y if the canonical key is in the universal base list;
+     *                          these fields populate the preview without requiring
+     *                          property type to be selected first.
+     *   • reason_not_mapped  — short diagnostic string for every Safe=N row;
+     *                          empty string for Safe=Y rows.
+     *
+     * @param  string[] $baseKeys  From MlsFieldMap::universalBaseKeys().
      */
-    private static function buildRows(array $parsedKeys, array $fieldMaps, array $bladeBindings): array
-    {
+    private static function buildRows(
+        array $parsedKeys,
+        array $fieldMaps,
+        array $bladeBindings,
+        array $baseKeys = []
+    ): array {
         $rows = [];
 
         foreach (self::fieldInventory() as $item) {
@@ -180,6 +194,8 @@ class MlsCoverageReporter
                     'form_field_exists' => '—',
                     'safe'              => 'N',
                     'norm_required'     => 'N',
+                    'previewed'         => 'N',
+                    'reason_not_mapped' => 'missing_from_parser',
                     'notes'             => $itemNotes ?: 'MLS field present on form — no parser branch; no app field',
                 ];
                 continue;
@@ -223,6 +239,16 @@ class MlsCoverageReporter
             $safeCol        = $safeRoles      ? 'Y (' . implode(',', $safeRoles) . ')'      : 'N';
             $notes          = $itemNotes ?: self::fieldNotes($canonicalKey, $isParsed);
 
+            $previewedCol      = in_array($canonicalKey, $baseKeys, true) ? 'Y' : 'N';
+            $reasonNotMapped   = self::deriveReasonNotMapped(
+                $canonicalKey,
+                $isParsed,
+                $mappingParts,
+                $propExistsBits,
+                $formFieldBits,
+                $safeRoles
+            );
+
             $rows[] = [
                 'mls_form'          => $item['form'],
                 'mls_section'       => $item['section'],
@@ -234,6 +260,8 @@ class MlsCoverageReporter
                 'form_field_exists' => $formFieldCol,
                 'safe'              => $safeCol,
                 'norm_required'     => $normRequired ? 'Y' : 'N',
+                'previewed'         => $previewedCol,
+                'reason_not_mapped' => $reasonNotMapped,
                 'notes'             => $notes,
             ];
         }
@@ -245,6 +273,87 @@ class MlsCoverageReporter
         );
 
         return $rows;
+    }
+
+    /**
+     * Derive the "Reason if not mapped" value for a single row.
+     *
+     * Priority order (from task spec):
+     *   1. missing_from_parser      — no parser branch
+     *   2. missing_from_field_map   — parsed but no fieldMap entry for any role
+     *   3. property_missing         — in fieldMap but no Livewire property found
+     *   4. no_form_binding          — property exists but no wire:model binding
+     *   5. intentionally_excluded   — known documented exclusion (lowest priority)
+     *
+     * Rows that ARE safe for at least one role return an empty string.
+     *
+     * @param  string[] $mappingParts    e.g. ['S:maximum_budget', 'B:maximum_budget']
+     * @param  string[] $propExistsBits  e.g. ['S:Y', 'L:N']
+     * @param  string[] $formFieldBits   e.g. ['S:Y', 'L:Y']
+     * @param  string[] $safeRoles       roles for which all three conditions are met
+     */
+    private static function deriveReasonNotMapped(
+        string $canonicalKey,
+        bool $isParsed,
+        array $mappingParts,
+        array $propExistsBits,
+        array $formFieldBits,
+        array $safeRoles
+    ): string {
+        // Safe for at least one role — no reason needed
+        if (!empty($safeRoles)) {
+            return '';
+        }
+
+        // Priority 1: not in parser output
+        if (!$isParsed) {
+            return 'missing_from_parser';
+        }
+
+        // Priority 2: parsed but no field map entry for any role
+        if (empty($mappingParts)) {
+            // Known intentional exclusions surface as intentionally_excluded
+            $intentional = ['mls_number', 'application_fee', 'listing_type_hint'];
+            if (in_array($canonicalKey, $intentional, true)) {
+                return 'intentionally_excluded';
+            }
+            return 'missing_from_field_map';
+        }
+
+        // Priority 3: in field map, but no Livewire property exists on any mapped role
+        $anyPropExists = false;
+        foreach ($propExistsBits as $bit) {
+            if (str_ends_with($bit, ':Y')) {
+                $anyPropExists = true;
+                break;
+            }
+        }
+        if (!$anyPropExists) {
+            return 'property_missing';
+        }
+
+        // Priority 4: property exists on at least one role, but no wire:model found
+        $anyFormExists = false;
+        foreach ($formFieldBits as $bit) {
+            if (str_ends_with($bit, ':Y')) {
+                $anyFormExists = true;
+                break;
+            }
+        }
+        if (!$anyFormExists) {
+            return 'no_form_binding';
+        }
+
+        // Priority 5: intentionally excluded (parsed, mapped, prop and/or form exist,
+        // but still not safe — likely a semantic exclusion documented elsewhere)
+        $intentional = ['mls_number', 'application_fee', 'listing_type_hint'];
+        if (in_array($canonicalKey, $intentional, true)) {
+            return 'intentionally_excluded';
+        }
+
+        // Fallback: mixed-role partial coverage (some roles safe via $safeRoles above,
+        // which was already caught; reaching here means partial infra gap)
+        return 'missing_from_field_map';
     }
 
     // ─── Markdown rendering ──────────────────────────────────────────────────
@@ -262,14 +371,16 @@ class MlsCoverageReporter
         $md .= "- **Property Exists (Y/N)** — `property_exists()` result per role (live, from component class).\n";
         $md .= "- **Form Field Exists (Y/N)** — `wire:model=\"propName\"` found in a Create/Edit tab blade file (live grep).\n";
         $md .= "- **Safe To Import (Y/N)** — Parsed=Y AND Property Exists=Y AND Form Field Exists=Y for that role.\n";
-        $md .= "- **Normalization Required (Y/N)** — `MlsNormalizer::normalize()` applies a non-trivial transformation.\n\n";
+        $md .= "- **Normalization Required (Y/N)** — `MlsNormalizer::normalize()` applies a non-trivial transformation.\n";
+        $md .= "- **Previewed (Y/N)** — Y if the canonical key is in `MlsFieldMap::universalBaseKeys()`; these fields populate the import preview without requiring property type to be selected first.\n";
+        $md .= "- **Reason if not mapped** — for Safe=N rows: `missing_from_parser`, `missing_from_field_map`, `property_missing`, `no_form_binding`, or `intentionally_excluded`. Empty for Safe=Y rows.\n\n";
 
         $header = '| MLS Form | MLS Section | MLS Field Label | Canonical Import Key | '
                 . 'Current Mapping | Target Property | Property Exists (Y/N) | '
                 . 'Form Field Exists (Y/N) | Safe To Import (Y/N) | '
-                . 'Normalization Required (Y/N) | Notes |';
+                . 'Normalization Required (Y/N) | Previewed (Y/N) | Reason if not mapped | Notes |';
 
-        $separator = '|---|---|---|---|---|---|---|---|---|---|---|';
+        $separator = '|---|---|---|---|---|---|---|---|---|---|---|---|---|';
 
         $md .= $header . "\n" . $separator . "\n";
 
@@ -277,7 +388,7 @@ class MlsCoverageReporter
             $keyCell = $r['canonical_key'] !== null ? '`' . $r['canonical_key'] . '`' : '—';
 
             $md .= sprintf(
-                "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
+                "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
                 self::escape($r['mls_form']),
                 self::escape($r['mls_section']),
                 self::escape($r['mls_field_label']),
@@ -288,6 +399,8 @@ class MlsCoverageReporter
                 $r['form_field_exists'],
                 $r['safe'],
                 $r['norm_required'],
+                $r['previewed'],
+                self::escape($r['reason_not_mapped']),
                 self::escape($r['notes'])
             );
         }
