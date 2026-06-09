@@ -1404,4 +1404,41 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $result = $this->makeService()->classify('Does the property have a washer and dryer?');
         $this->assertSame('listing_facts', $result['question_type']);
     }
+
+    // =========================================================================
+    // Case P — Tax colloquial/grammatically-variant phrasings → listing_facts
+    //
+    // Regression guard for "what is the taxes" and related colloquial forms
+    // that the classifier previously missed, returning 'unsupported'.
+    // =========================================================================
+
+    /**
+     * @dataProvider taxColloquialPhrasesProvider
+     */
+    public function test_case_P_tax_colloquial_phrase_classifies_as_listing_facts(string $phrase): void
+    {
+        $result = $this->makeService()->classify($phrase);
+        $this->assertSame(
+            'listing_facts',
+            $result['question_type'],
+            "Colloquial tax phrase \"{$phrase}\" should classify as listing_facts, not unsupported."
+        );
+        $this->assertGreaterThanOrEqual(
+            0.8,
+            $result['confidence'],
+            "Colloquial tax phrase \"{$phrase}\" should have confidence >= 0.8."
+        );
+    }
+
+    public static function taxColloquialPhrasesProvider(): array
+    {
+        return [
+            'what is the taxes'          => ['What is the taxes on this property?'],
+            'what is the tax'            => ['What is the tax on this home?'],
+            "what's the taxes"           => ["What's the taxes for this listing?"],
+            "what's the tax"             => ["What's the tax on this property?"],
+            'taxes on this property'     => ['What are taxes on this property?'],
+            'tax on this property'       => ['How much is the tax on this property?'],
+        ];
+    }
 }

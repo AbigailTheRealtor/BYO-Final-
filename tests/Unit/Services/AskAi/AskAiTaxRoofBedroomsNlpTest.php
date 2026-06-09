@@ -518,4 +518,55 @@ class AskAiTaxRoofBedroomsNlpTest extends TestCase
             'AskAiRunnerV2Service must declare a detectListingFieldKey() method for listing.* field detection.'
         );
     }
+
+    // =========================================================================
+    // Case Tax-A2 — colloquial tax phrase variants pin to
+    //               listing.annual_property_taxes in LISTING_KEY_KEYWORD_MAP
+    //
+    // Regression guard: these six phrases were previously missing from both
+    // the classifier and the field-key detector, causing 'unsupported' results
+    // for real-world questions like "What is the taxes on this property?".
+    // =========================================================================
+
+    /**
+     * @dataProvider colloquialTaxKeywordsProvider
+     */
+    public function test_case_TaxA2_colloquial_tax_keywords_in_listing_key_keyword_map(string $keyword): void
+    {
+        $content = $this->fileContents($this->runnerFilePath());
+
+        $foundSingleQuoted = str_contains($content, "'{$keyword}'");
+        $foundDoubleQuoted = str_contains($content, "\"{$keyword}\"");
+
+        $this->assertTrue(
+            $foundSingleQuoted || $foundDoubleQuoted,
+            "LISTING_KEY_KEYWORD_MAP in AskAiRunnerV2Service must include '{$keyword}' "
+            . "so colloquial tax questions trigger the listing.annual_property_taxes null-field guard."
+        );
+    }
+
+    /**
+     * @dataProvider colloquialTaxKeywordsProvider
+     */
+    public function test_case_TaxA2_colloquial_tax_phrases_classify_as_listing_facts(string $keyword): void
+    {
+        $result = $this->makeClassifier()->classify($keyword);
+        $this->assertSame(
+            'listing_facts',
+            $result['question_type'],
+            "Colloquial tax keyword \"{$keyword}\" should classify as listing_facts."
+        );
+    }
+
+    public static function colloquialTaxKeywordsProvider(): array
+    {
+        return [
+            'what is the taxes'      => ['what is the taxes'],
+            'what is the tax'        => ['what is the tax'],
+            "what's the taxes"       => ["what's the taxes"],
+            "what's the tax"         => ["what's the tax"],
+            'taxes on this property' => ['taxes on this property'],
+            'tax on this property'   => ['tax on this property'],
+        ];
+    }
 }
