@@ -1213,7 +1213,7 @@ class AskAiRunnerV2Service
                 if (
                     is_array($listingData)
                     && array_key_exists($listingField, $listingData)
-                    && $listingData[$listingField] === null
+                    && ($listingData[$listingField] === null || $listingData[$listingField] === '')
                 ) {
                     $fieldLabel        = $this->deriveFieldLabel($normalizedFieldKey);
                     $missingDataAnswer = $fieldLabel . ' has not been provided for this listing.';
@@ -1310,6 +1310,67 @@ class AskAiRunnerV2Service
                         'prompt_package' => $promptPackage,
                         'adapter_result' => $adapterResult,
                         'final_response' => $faqFinalResponse,
+                        'error'          => null,
+                        'trace'          => $trace,
+                    ];
+                }
+            }
+
+            // ----------------------------------------------------------------
+            // listing.* direct-return fallback.
+            // When the adapter fails but the listing field IS populated with a
+            // real value, return that value directly rather than propagating the
+            // generic "could not generate" error.  This mirrors the FAQ
+            // direct-return fallback above and closes the second gap for the
+            // listing.* path.
+            //
+            // Only fires when all four conditions hold:
+            //   1. Adapter call failed (success = false).
+            //   2. A specific listing.* field was resolved for this question.
+            //   3. The prompt package was prompt_ready (all governance gates passed).
+            //   4. The field value in allowed_context is non-null and non-empty.
+            // ----------------------------------------------------------------
+            if (
+                !($adapterResult['success'] ?? false)
+                && $normalizedFieldKey !== null
+                && str_starts_with($normalizedFieldKey, 'listing.')
+                && ($promptPackage['status'] ?? '') === 'prompt_ready'
+                && !empty($promptPackage['allowed_context'])
+            ) {
+                $listingFieldFallback = substr($normalizedFieldKey, strlen('listing.'));
+                $listingDataFallback  = $promptPackage['allowed_context']['listing'] ?? null;
+                $listingFieldValue    = is_array($listingDataFallback)
+                    ? ($listingDataFallback[$listingFieldFallback] ?? null)
+                    : null;
+
+                if ($listingFieldValue !== null && $listingFieldValue !== '') {
+                    $listingFallbackResponse = [
+                        'success'            => true,
+                        'status'             => 'ready',
+                        'answer'             => (string) $listingFieldValue,
+                        'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                        'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                        'refusal_message'    => null,
+                        'error'              => null,
+                    ];
+                    $listingFallbackResponse['follow_up_questions'] = $this->followUpService->forResult(
+                        $listingFallbackResponse,
+                        $classification
+                    );
+
+                    $trace['final_status']       = 'ready';
+                    $trace['source_attribution'] = $listingFallbackResponse['source_attribution'] ?? null;
+                    $this->emitTrace($trace);
+
+                    return [
+                        'success'        => true,
+                        'status'         => 'ready',
+                        'classification' => $classification,
+                        'context'        => $context,
+                        'contract'       => $contract,
+                        'prompt_package' => $promptPackage,
+                        'adapter_result' => $adapterResult,
+                        'final_response' => $listingFallbackResponse,
                         'error'          => null,
                         'trace'          => $trace,
                     ];

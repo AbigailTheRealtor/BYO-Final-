@@ -1880,4 +1880,287 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $this->assertArrayHasKey('normalizer_status', $result['trace']);
         $this->assertArrayHasKey('normalizer_error', $result['trace']);
     }
+
+    // =========================================================================
+    // Case N — Guard B empty-string fix and listing.* direct-return fallback
+    //
+    // N1. listing.* field present as empty string ('') fires Guard B and returns
+    //     insufficient_context (not a generic failure).
+    // N2. listing.* field present as null fires Guard B and returns
+    //     insufficient_context (pre-existing null check still works).
+    // N3. listing.* field with a real value but failed adapter returns the raw
+    //     field value directly (status=ready, success=true) — parity with FAQ.
+    // N4. Regression: annual_property_taxes empty-string returns correct
+    //     "has not been provided" message (not generic error).
+    // N5. annual_property_taxes with data and failed adapter returns field value
+    //     directly via listing.* direct-return fallback.
+    // =========================================================================
+
+    public function test_case_N1_listing_field_empty_string_fires_guard_b_insufficient_context(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [
+                'listing' => ['annual_property_taxes' => ''],
+            ],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackage,
+        ]));
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'What are the taxes?',
+            ['normalized_field_key' => 'listing.annual_property_taxes']
+        );
+
+        $this->assertSame(false, $result['success']);
+        $this->assertSame('insufficient_context', $result['status']);
+        $this->assertSame('insufficient_context', $result['final_response']['status']);
+    }
+
+    public function test_case_N1_listing_field_empty_string_answer_contains_not_provided(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [
+                'listing' => ['annual_property_taxes' => ''],
+            ],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackage,
+        ]));
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'What are the taxes?',
+            ['normalized_field_key' => 'listing.annual_property_taxes']
+        );
+
+        $this->assertStringContainsString('has not been provided', $result['final_response']['answer'] ?? '');
+    }
+
+    public function test_case_N2_listing_field_null_still_fires_guard_b(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [
+                'listing' => ['annual_property_taxes' => null],
+            ],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackage,
+        ]));
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'What are the taxes?',
+            ['normalized_field_key' => 'listing.annual_property_taxes']
+        );
+
+        $this->assertSame(false, $result['success']);
+        $this->assertSame('insufficient_context', $result['status']);
+    }
+
+    public function test_case_N3_listing_field_with_data_and_failed_adapter_returns_field_value_directly(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [
+                'listing' => ['annual_property_taxes' => '4200'],
+            ],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackage,
+        ]));
+
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult([
+            'success' => false,
+            'status'  => 'failed',
+            'error'   => 'OpenAI unavailable',
+        ]));
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'What are the taxes?',
+            ['normalized_field_key' => 'listing.annual_property_taxes']
+        );
+
+        $this->assertSame(true, $result['success']);
+        $this->assertSame('ready', $result['status']);
+        $this->assertSame('4200', $result['final_response']['answer']);
+    }
+
+    public function test_case_N3_listing_field_fallback_result_has_all_nine_keys(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [
+                'listing' => ['annual_property_taxes' => '3500'],
+            ],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackage,
+        ]));
+
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult([
+            'success' => false,
+            'status'  => 'failed',
+            'error'   => 'OpenAI unavailable',
+        ]));
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'What are the taxes?',
+            ['normalized_field_key' => 'listing.annual_property_taxes']
+        );
+
+        foreach (self::REQUIRED_RESULT_KEYS as $key) {
+            $this->assertArrayHasKey($key, $result, "Result missing key: {$key}");
+        }
+    }
+
+    public function test_case_N4_annual_property_taxes_empty_string_returns_not_provided_message(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [
+                'listing' => ['annual_property_taxes' => ''],
+            ],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackage,
+        ]));
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'What are the taxes?',
+            ['normalized_field_key' => 'listing.annual_property_taxes']
+        );
+
+        $answer = $result['final_response']['answer'] ?? '';
+        $this->assertStringNotContainsString('could not generate', $answer);
+        $this->assertStringContainsString('has not been provided', $answer);
+    }
+
+    public function test_case_N5_annual_property_taxes_populated_failed_adapter_returns_value_directly(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [
+                'listing' => ['annual_property_taxes' => '5100'],
+            ],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackage,
+        ]));
+
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult([
+            'success' => false,
+            'status'  => 'failed',
+            'error'   => 'OpenAI timeout',
+        ]));
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'What are the annual property taxes?',
+            ['normalized_field_key' => 'listing.annual_property_taxes']
+        );
+
+        $this->assertSame(true, $result['success']);
+        $this->assertSame('ready', $result['status']);
+        $this->assertSame('5100', $result['final_response']['answer']);
+        $this->assertSame('ready', $result['trace']['final_status']);
+    }
 }
