@@ -52,6 +52,11 @@ class DashboardController extends Controller
                 'App\Notifications\BidRejectedNotification',
                 'App\Notifications\BidSubmittedNotification',
                 'App\Notifications\CounterBidSubmittedNotification',
+                'App\Notifications\Offers\OfferSubmittedNotification',
+                'App\Notifications\Offers\OfferCounteredNotification',
+                'App\Notifications\Offers\OfferAcceptedNotification',
+                'App\Notifications\Offers\OfferRejectedNotification',
+                'App\Notifications\Offers\OfferWithdrawnNotification',
             ])
             ->orderBy('created_at', 'desc')
             ->take(20)

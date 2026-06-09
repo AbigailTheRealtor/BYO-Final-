@@ -1461,10 +1461,6 @@
                         <dt class="col-sm-3">Custom Terms</dt>
                         <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('custom_terms') ?: '—' }}</dd>
 
-                        @if($isOwner)
-                        <dt class="col-sm-3">Private Notes</dt>
-                        <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('notes') ?: '—' }}</dd>
-                        @endif
                     </dl>
                     @endif
                 </div>
@@ -1523,6 +1519,11 @@
                 #submit-offer-action-btn { background:#2563eb; border-color:#2563eb; color:#fff; font-weight:600; }
                 #submit-offer-action-btn:hover { background:#1d4ed8; border-color:#1d4ed8; }
                 #submit-offer-action-btn:disabled { background:#93c5fd; border-color:#93c5fd; color:#fff; }
+                .btn:disabled, .btn[disabled], .btn[aria-disabled="true"] { opacity:.55; cursor:not-allowed; }
+                .btn-success:disabled  { background-color:#198754; border-color:#198754; color:#fff; }
+                .btn-danger:disabled   { background-color:#dc3545; border-color:#dc3545; color:#fff; }
+                .btn-warning:disabled  { background-color:#ffc107; border-color:#ffc107; color:#212529; }
+                .btn-outline-secondary:disabled { background-color:transparent; color:#6c757d; border-color:#6c757d; }
             </style>
             <div class="card mb-4">
                 <div class="card-header">
@@ -1531,13 +1532,14 @@
                 <div class="card-body">
                     @php
                         $actionButtons = [
-                            'can_submit'        => ['label' => 'Submit Offer',  'btn' => 'btn-primary',           'reason_key' => 'submit',        'route' => 'offers.submit'],
-                            'can_accept'        => ['label' => 'Accept',         'btn' => 'btn-success',           'reason_key' => 'accept',        'route' => 'offers.accept'],
-                            'can_reject'        => ['label' => 'Reject',         'btn' => 'btn-danger',            'reason_key' => 'reject',        'route' => 'offers.reject'],
-                            'can_withdraw'      => ['label' => 'Withdraw',       'btn' => 'btn-outline-secondary', 'reason_key' => 'withdraw',      'route' => 'offers.withdraw'],
-                            'can_view_timeline' => ['label' => 'View Timeline',  'btn' => 'btn-outline-info',      'reason_key' => 'view_timeline', 'route' => null],
+                            'can_submit'        => ['label' => 'Submit Offer',  'btn' => 'btn-primary',           'reason_key' => 'submit',        'route' => 'offers.submit',   'hide_for_submitter' => false],
+                            'can_accept'        => ['label' => 'Accept',         'btn' => 'btn-success',           'reason_key' => 'accept',        'route' => 'offers.accept',   'hide_for_submitter' => true],
+                            'can_reject'        => ['label' => 'Reject',         'btn' => 'btn-danger',            'reason_key' => 'reject',        'route' => 'offers.reject',   'hide_for_submitter' => true],
+                            'can_withdraw'      => ['label' => 'Withdraw',       'btn' => 'btn-outline-secondary', 'reason_key' => 'withdraw',      'route' => 'offers.withdraw', 'hide_for_submitter' => false],
+                            'can_view_timeline' => ['label' => 'View Timeline',  'btn' => 'btn-outline-info',      'reason_key' => 'view_timeline', 'route' => null,              'hide_for_submitter' => false],
                         ];
-                        $counterReason = $actions['reasons']['counter'] ?? '';
+                        $counterReason    = $actions['reasons']['counter'] ?? '';
+                        $actorIsSubmitter = auth()->id() !== null && (int) auth()->id() === (int) $offer->user_id;
                     @endphp
                     <div class="d-flex flex-wrap gap-3 align-items-start">
                         @foreach($actionButtons as $flag => $cfg)
@@ -1545,6 +1547,10 @@
                                 $allowed = !empty($actions[$flag]);
                                 $reason  = $allowed ? '' : ($actions['reasons'][$cfg['reason_key']] ?? '');
                             @endphp
+                            {{-- Accept and Reject are hidden entirely for the submitter — they belong to the other party. --}}
+                            @if($actorIsSubmitter && $cfg['hide_for_submitter'])
+                                @continue
+                            @endif
                             <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
                                 @if($allowed && $cfg['route'])
                                     {{-- Enabled action with a route: POST form --}}
@@ -1565,20 +1571,99 @@
                             </div>
                         @endforeach
 
-                        {{-- Counter: three-branch logic --}}
-                        @if(!empty($actions['can_counter']))
-                            {{-- can_counter=true: real POST form with expires_at date input --}}
-                            <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
-                                <form method="POST" action="{{ route('offers.counter', $offer) }}">
-                                    @csrf
-                                    <div class="mb-2">
-                                        <input type="date" name="expires_at" class="form-control form-control-sm">
+                        {{-- Counter: three-branch logic. Hidden entirely for the submitter — countering belongs to the other party. --}}
+                        @if(!$actorIsSubmitter && !empty($actions['can_counter']))
+                            {{-- can_counter=true: full counter form pre-populated from current offer terms --}}
+                            <div class="w-100 mt-3">
+                                <div class="card border-warning">
+                                    <div class="card-header bg-warning bg-opacity-10 fw-semibold">Submit Counter Offer</div>
+                                    <div class="card-body">
+                                        <form method="POST" action="{{ route('offers.counter', $offer) }}">
+                                            @csrf
+                                            @php
+                                                $cd      = $counterDefaults ?? collect();
+                                                $cdDate  = function ($v) {
+                                                    if (!$v) return '';
+                                                    try { return \Carbon\Carbon::parse($v)->format('Y-m-d'); }
+                                                    catch (\Throwable $e) { return ''; }
+                                                };
+                                                $cdMoney = function ($v) {
+                                                    return $v !== null ? number_format((float)$v, 2, '.', '') : '';
+                                                };
+                                            @endphp
+                                            <div class="row g-3">
+                                                @if($offerType === 'sale')
+                                                <div class="col-sm-6">
+                                                    <label class="form-label form-label-sm mb-1">Offer Price ($)</label>
+                                                    <input type="text" inputmode="numeric" name="offer_price"
+                                                        class="form-control form-control-sm"
+                                                        value="{{ $cdMoney($cd->get('offer_price')) }}"
+                                                        placeholder="e.g. 450000">
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="form-label form-label-sm mb-1">Financing Type</label>
+                                                    <select name="financing_type" class="form-select form-select-sm">
+                                                        @php
+                                                            $ftOptions = ['','Assumable','Cash','Conventional','FHA','Jumbo','VA','No-Doc','Non-QM','USDA','Cryptocurrency','Exchange/Trade','Lease Option','Lease Purchase','Non-Fungible Token (NFT)','Seller Financing','Other'];
+                                                            $ftCurrent = $cd->get('financing_type') ?? '';
+                                                        @endphp
+                                                        @foreach($ftOptions as $ftOpt)
+                                                        <option value="{{ $ftOpt }}" @selected($ftCurrent === $ftOpt)>
+                                                            {{ $ftOpt ?: '— Select —' }}
+                                                        </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="form-label form-label-sm mb-1">Closing Date</label>
+                                                    <input type="date" name="closing_date"
+                                                        class="form-control form-control-sm"
+                                                        value="{{ $cdDate($cd->get('closing_date')) }}">
+                                                </div>
+                                                @elseif(in_array($offerType, ['rental','lease']))
+                                                <div class="col-sm-6">
+                                                    <label class="form-label form-label-sm mb-1">Monthly Rent ($)</label>
+                                                    <input type="text" inputmode="numeric" name="monthly_rent"
+                                                        class="form-control form-control-sm"
+                                                        value="{{ $cdMoney($cd->get('monthly_rent')) }}"
+                                                        placeholder="e.g. 2000">
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="form-label form-label-sm mb-1">Move-In Date</label>
+                                                    <input type="date" name="move_in_date"
+                                                        class="form-control form-control-sm"
+                                                        value="{{ $cdDate($cd->get('move_in_date')) }}">
+                                                </div>
+                                                @if($offerType === 'lease')
+                                                <div class="col-sm-6">
+                                                    <label class="form-label form-label-sm mb-1">Lease Term (months)</label>
+                                                    <input type="number" name="lease_term_months" min="1" max="360"
+                                                        class="form-control form-control-sm"
+                                                        value="{{ $cd->get('lease_term_months') }}">
+                                                </div>
+                                                @endif
+                                                @endif
+                                                <div class="col-sm-6">
+                                                    <label class="form-label form-label-sm mb-1">Offer Expiry Date</label>
+                                                    <input type="date" name="expires_at"
+                                                        class="form-control form-control-sm"
+                                                        value="{{ $cdDate($cd->get('expires_at')) }}">
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label form-label-sm mb-1">Custom / Special Terms</label>
+                                                    <textarea name="custom_terms" class="form-control form-control-sm" rows="3"
+                                                        placeholder="Enter any modifications or special conditions">{{ $cd->get('custom_terms') }}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <button type="submit" class="btn btn-warning btn-sm px-4">Submit Counter</button>
+                                            </div>
+                                        </form>
                                     </div>
-                                    <button type="submit" class="btn btn-warning btn-sm">Counter</button>
-                                </form>
+                                </div>
                             </div>
-                        @elseif($counterReason !== '')
-                            {{-- can_counter=false with reason: disabled button with tooltip and reason text --}}
+                        @elseif(!$actorIsSubmitter && $counterReason !== '')
+                            {{-- can_counter=false with reason: disabled button with tooltip and reason text (hidden for submitter) --}}
                             <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
                                 <button type="button" class="btn btn-warning btn-sm" disabled title="{{ $counterReason }}" aria-disabled="true" tabindex="-1">Counter</button>
                                 <small class="text-muted mt-1 px-1" style="font-size: 0.75rem; line-height: 1.3;">{{ $counterReason }}</small>

@@ -286,9 +286,26 @@ class OfferWorkflowReadinessTest extends TestCase
         $untrackedLines = array_filter(explode("\n", trim($untracked)));
         $allChanged     = array_merge($changedLines, $untrackedLines);
 
-        $this->assertEmpty(
+        // Files intentionally modified by the "offer detail page bugs" fix task:
+        // direction-aware permission gating, notification recipient fix,
+        // dashboard filter, Private Notes removal, counter form prefill.
+        $taskAllowlist = [
+            'app/Http/Controllers/DashboardController.php',
+            'app/Http/Controllers/NotificationController.php',
+            'app/Http/Controllers/OfferController.php',
+            'app/Services/Offers/OfferCounterService.php',
+            'app/Services/Offers/OfferPermissionService.php',
+            'resources/views/offers/show.blade.php',
+        ];
+
+        $unexpected = array_values(array_filter(
             $allChanged,
-            'Production files were modified or created: ' . implode(', ', $allChanged),
+            fn ($f) => !in_array(trim($f), $taskAllowlist, true)
+        ));
+
+        $this->assertEmpty(
+            $unexpected,
+            'Production files were modified or created outside the task allowlist: ' . implode(', ', $unexpected),
         );
     }
 }

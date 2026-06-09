@@ -57,7 +57,7 @@ class OfferController extends Controller
     public function submit(Request $request, Offer $offer): JsonResponse|RedirectResponse
     {
         $actorId   = Auth::id();
-        $actorRole = Auth::user()->role ?? 'buyer';
+        $actorRole = Auth::user()->role ?? Auth::user()->user_type ?? 'buyer';
 
         $actions = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
@@ -80,7 +80,11 @@ class OfferController extends Controller
         }
 
         try {
-            Notification::send($offer->user, new OfferSubmittedNotification($offer));
+            $offer->load('offerAuction.user');
+            $recipient = $offer->offerAuction?->user;
+            if ($recipient) {
+                $recipient->notify(new OfferSubmittedNotification($offer));
+            }
         } catch (\Throwable $e) {
             Log::error('OfferSubmittedNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
         }
@@ -99,7 +103,7 @@ class OfferController extends Controller
     public function accept(Request $request, Offer $offer): JsonResponse|RedirectResponse
     {
         $actorId   = Auth::id();
-        $actorRole = Auth::user()->role ?? 'buyer';
+        $actorRole = Auth::user()->role ?? Auth::user()->user_type ?? 'buyer';
 
         $actions = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
@@ -141,7 +145,7 @@ class OfferController extends Controller
     public function reject(Request $request, Offer $offer): JsonResponse|RedirectResponse
     {
         $actorId   = Auth::id();
-        $actorRole = Auth::user()->role ?? 'buyer';
+        $actorRole = Auth::user()->role ?? Auth::user()->user_type ?? 'buyer';
 
         $actions = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
@@ -183,7 +187,7 @@ class OfferController extends Controller
     public function withdraw(Request $request, Offer $offer): JsonResponse|RedirectResponse
     {
         $actorId   = Auth::id();
-        $actorRole = Auth::user()->role ?? 'buyer';
+        $actorRole = Auth::user()->role ?? Auth::user()->user_type ?? 'buyer';
 
         $actions = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
@@ -225,7 +229,7 @@ class OfferController extends Controller
     public function counter(Request $request, Offer $offer): JsonResponse|RedirectResponse
     {
         $actorId   = Auth::id();
-        $actorRole = Auth::user()->role ?? 'buyer';
+        $actorRole = Auth::user()->role ?? Auth::user()->user_type ?? 'buyer';
 
         $actions = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
@@ -237,18 +241,46 @@ class OfferController extends Controller
             return response()->json(['message' => $actions['reasons']['counter']], 422);
         }
 
+        $moneyFields = [
+            'offer_price', 'earnest_deposit', 'down_payment_value',
+            'additional_cash', 'exchange_item_value',
+        ];
+        foreach ($moneyFields as $field) {
+            if ($request->has($field) && $request->input($field) !== null && $request->input($field) !== '') {
+                $request->merge([$field => str_replace(',', '', (string) $request->input($field))]);
+            }
+        }
+
         $validated = $request->validate([
-            'listing_snapshot' => 'nullable|array',
-            'expires_at'       => 'nullable|date',
+            'listing_snapshot'       => 'nullable|array',
+            'expires_at'             => 'nullable|date',
+            'offer_price'            => 'nullable|numeric|min:0',
+            'earnest_deposit'        => 'nullable|numeric|min:0',
+            'earnest_deposit_unit'   => 'nullable|in:$,%',
+            'financing_type'         => 'nullable|string|max:100',
+            'down_payment_value'     => 'nullable|numeric|min:0',
+            'down_payment_unit'      => 'nullable|in:$,%',
+            'closing_date'           => 'nullable|date',
+            'inspection_contingency' => 'nullable|boolean',
+            'financing_contingency'  => 'nullable|boolean',
+            'appraisal_contingency'  => 'nullable|boolean',
+            'custom_terms'           => 'nullable|string|max:5000',
+            'monthly_rent'           => 'nullable|numeric|min:0',
+            'security_deposit'       => 'nullable|numeric|min:0',
+            'move_in_date'           => 'nullable|date',
+            'lease_term_months'      => 'nullable|integer|min:1|max:360',
         ]);
 
-        $overrides = array_filter($validated, fn ($v) => $v !== null);
+        $colOverrides = array_filter(
+            array_intersect_key($validated, array_flip(['listing_snapshot', 'expires_at'])),
+            fn ($v) => $v !== null,
+        );
 
         $result = $this->facade->counter(
             $offer,
             $actorId,
             $actorRole,
-            $overrides,
+            $colOverrides,
             ['source' => 'web'],
             $request->ip(),
         );
@@ -261,14 +293,59 @@ class OfferController extends Controller
             return response()->json(['message' => $result['reason']], 422);
         }
 
+        $child = $result['counter_offer'];
+        $offer->load('metas');
+        $parentMetas = $offer->metas->pluck('meta_value', 'meta_key');
+
+        $termMetaKeys = [
+            'offer_type', 'offer_price', 'earnest_deposit', 'earnest_deposit_unit',
+            'financing_type', 'down_payment_value', 'down_payment_unit',
+            'financing_contingency', 'financing_contingency_days',
+            'inspection_contingency', 'inspection_contingency_days',
+            'appraisal_contingency', 'appraisal_contingency_days',
+            'closing_date', 'possession_date', 'custom_terms',
+            'monthly_rent', 'security_deposit', 'move_in_date', 'lease_term_months',
+        ];
+        foreach ($termMetaKeys as $key) {
+            $parentVal = $parentMetas->get($key);
+            if ($parentVal !== null) {
+                $child->saveMeta($key, $parentVal);
+            }
+        }
+
+        $counterTermFields = [
+            'expires_at', 'offer_price', 'earnest_deposit', 'earnest_deposit_unit',
+            'financing_type', 'down_payment_value', 'down_payment_unit',
+            'closing_date', 'inspection_contingency', 'financing_contingency',
+            'appraisal_contingency', 'custom_terms',
+            'monthly_rent', 'security_deposit', 'move_in_date', 'lease_term_months',
+        ];
+        foreach ($counterTermFields as $key) {
+            if (array_key_exists($key, $validated) && $validated[$key] !== null) {
+                $child->saveMeta($key, $validated[$key]);
+            }
+        }
+
         try {
-            $offer->user->notify(new OfferCounteredNotification($offer, $result['counter_offer']));
+            // Notify the original submitter that their offer was countered.
+            $offer->user->notify(new OfferCounteredNotification($offer, $child));
         } catch (\Throwable $e) {
             Log::error('OfferCounteredNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
         }
 
+        try {
+            // Notify the same party that a new counter-offer now awaits their response
+            // (the child is a freshly-submitted offer directed at them).
+            $counterRecipient = $offer->user;
+            if ($counterRecipient && $counterRecipient->id !== $actorId) {
+                $counterRecipient->notify(new OfferSubmittedNotification($child));
+            }
+        } catch (\Throwable $e) {
+            Log::error('OfferSubmittedNotification (counter) failed', ['offer_id' => $child->id, 'error' => $e->getMessage()]);
+        }
+
         if (!$request->expectsJson()) {
-            return redirect()->route('offers.show', $offer)
+            return redirect()->route('offers.show', $child)
                 ->with('success', 'Counter offer created successfully.');
         }
 
@@ -565,7 +642,7 @@ class OfferController extends Controller
     public function show(Offer $offer)
     {
         $actorId   = Auth::id();
-        $actorRole = Auth::user()->role ?? 'system';
+        $actorRole = Auth::user()->role ?? Auth::user()->user_type ?? 'system';
         $timeline  = $this->timelineBuilder->buildForOffer($offer);
         $actions   = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
@@ -585,6 +662,8 @@ class OfferController extends Controller
             $offerType = 'sale';
         }
 
-        return view('offers.show', compact('offer', 'timeline', 'actions', 'metas', 'offerType'));
+        $counterDefaults = $metas;
+
+        return view('offers.show', compact('offer', 'timeline', 'actions', 'metas', 'offerType', 'counterDefaults'));
     }
 }

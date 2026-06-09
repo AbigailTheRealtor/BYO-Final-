@@ -11,6 +11,27 @@ class OfferPermissionService
         return in_array($status, OfferStateMachineService::FINAL_STATUSES, true);
     }
 
+    /**
+     * Collect the two legitimate party IDs for this offer negotiation:
+     *   1. The listing owner (offerAuction.user_id)
+     *   2. The root submitter (walk up parent chain to the original offer's user_id)
+     *
+     * Returns a de-duplicated array.  Agents and system callers bypass this check.
+     */
+    private function getLegitimatePartyIds(Offer $offer): array
+    {
+        $listingOwnerId = $offer->offerAuction?->user_id;
+
+        // Walk to the root of the counter chain to find the original submitter.
+        $root = $offer;
+        while ($root->parent_offer_id !== null) {
+            $root = $root->parentOffer;
+        }
+        $rootSubmitterId = $root->user_id;
+
+        return array_unique(array_filter([$listingOwnerId, $rootSubmitterId]));
+    }
+
     public function canSubmit(Offer $offer, ?int $actorId, string $actorRole): array
     {
         $action = 'submit';
@@ -48,6 +69,25 @@ class OfferPermissionService
             return ['allowed' => false, 'action' => $action, 'reason' => "Cannot counter: actor role '{$actorRole}' is not permitted for this action."];
         }
 
+        if ($actorId !== null && $actorId === $offer->user_id) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot counter: you submitted this offer and must wait for the other party to respond.'];
+        }
+
+        // Guard: only the active leaf of the negotiation chain can be acted upon.
+        // If this offer already has a non-final child, it is a stale parent.
+        if ($offer->childOffers()->whereNotIn('status', OfferStateMachineService::FINAL_STATUSES)->exists()) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot counter: a counter offer is already pending; act on the counter offer instead.'];
+        }
+
+        // Only 'system' bypasses party membership. All other actors (including agents) must be
+        // one of the two negotiation parties: the listing owner or the root offer submitter.
+        if ($actorId !== null && $actorRole !== 'system') {
+            $legitimateIds = $this->getLegitimatePartyIds($offer);
+            if (!in_array($actorId, $legitimateIds, true)) {
+                return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot counter: you are not a party to this offer negotiation.'];
+            }
+        }
+
         return ['allowed' => true, 'action' => $action, 'reason' => ''];
     }
 
@@ -64,8 +104,26 @@ class OfferPermissionService
             return ['allowed' => false, 'action' => $action, 'reason' => "Cannot accept: offer status is '{$status}', expected 'submitted' or 'countered'."];
         }
 
-        if (!in_array($actorRole, ['seller', 'agent', 'system'], true)) {
+        if (!in_array($actorRole, ['buyer', 'seller', 'agent', 'system'], true)) {
             return ['allowed' => false, 'action' => $action, 'reason' => "Cannot accept: actor role '{$actorRole}' is not permitted for this action."];
+        }
+
+        if ($actorId !== null && $actorId === $offer->user_id) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot accept: you submitted this offer and must wait for the other party to respond.'];
+        }
+
+        // Guard: only the active leaf of the negotiation chain can be acted upon.
+        if ($offer->childOffers()->whereNotIn('status', OfferStateMachineService::FINAL_STATUSES)->exists()) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot accept: a counter offer is already pending; act on the counter offer instead.'];
+        }
+
+        // Only 'system' bypasses party membership. All other actors (including agents) must be
+        // one of the two negotiation parties: the listing owner or the root offer submitter.
+        if ($actorId !== null && $actorRole !== 'system') {
+            $legitimateIds = $this->getLegitimatePartyIds($offer);
+            if (!in_array($actorId, $legitimateIds, true)) {
+                return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot accept: you are not a party to this offer negotiation.'];
+            }
         }
 
         return ['allowed' => true, 'action' => $action, 'reason' => ''];
@@ -84,8 +142,26 @@ class OfferPermissionService
             return ['allowed' => false, 'action' => $action, 'reason' => "Cannot reject: offer status is '{$status}', expected 'submitted' or 'countered'."];
         }
 
-        if (!in_array($actorRole, ['seller', 'agent', 'system'], true)) {
+        if (!in_array($actorRole, ['buyer', 'seller', 'agent', 'system'], true)) {
             return ['allowed' => false, 'action' => $action, 'reason' => "Cannot reject: actor role '{$actorRole}' is not permitted for this action."];
+        }
+
+        if ($actorId !== null && $actorId === $offer->user_id) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot reject: you submitted this offer and must wait for the other party to respond.'];
+        }
+
+        // Guard: only the active leaf of the negotiation chain can be acted upon.
+        if ($offer->childOffers()->whereNotIn('status', OfferStateMachineService::FINAL_STATUSES)->exists()) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot reject: a counter offer is already pending; act on the counter offer instead.'];
+        }
+
+        // Only 'system' bypasses party membership. All other actors (including agents) must be
+        // one of the two negotiation parties: the listing owner or the root offer submitter.
+        if ($actorId !== null && $actorRole !== 'system') {
+            $legitimateIds = $this->getLegitimatePartyIds($offer);
+            if (!in_array($actorId, $legitimateIds, true)) {
+                return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot reject: you are not a party to this offer negotiation.'];
+            }
         }
 
         return ['allowed' => true, 'action' => $action, 'reason' => ''];

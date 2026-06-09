@@ -81,7 +81,7 @@ class OfferCounterService
         $childAttributes = array_merge(
             [
                 'offer_auction_id' => $parent->offer_auction_id,
-                'user_id'          => $parent->user_id,
+                'user_id'          => $actorId ?? $parent->user_id,
                 'role'             => $parent->role,
                 'listing_snapshot' => $parent->listing_snapshot,
             ],

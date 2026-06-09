@@ -3,18 +3,44 @@
 namespace Tests\Unit\Services\Offers;
 
 use App\Models\Offer;
+use App\Models\OfferAuction;
+use App\Models\User;
 use App\Services\Offers\OfferPermissionService;
 use App\Services\Offers\OfferStateMachineService;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class OfferPermissionServiceTest extends TestCase
 {
+    use DatabaseTransactions;
+
     private OfferPermissionService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->service = new OfferPermissionService();
+    }
+
+    /**
+     * Create a persisted offer/auction pair where $actor is the listing owner (not the
+     * submitter of the offer).  This satisfies getLegitimatePartyIds() while passing the
+     * identity (submitter) guard, so canAccept/canReject/canCounter return allowed=true
+     * for the actor.  Returns [$offer, $actor->id] so callers can pass the real actor ID.
+     */
+    private function partyOffer(string $status): array
+    {
+        $actor      = User::factory()->create(['user_type' => 'seller']);
+        $submitter  = User::factory()->create(['user_type' => 'buyer']);
+        $auction    = OfferAuction::factory()->create(['user_id' => $actor->id]);
+
+        $offer = Offer::factory()->create([
+            'offer_auction_id' => $auction->id,
+            'user_id'          => $submitter->id,
+            'status'           => $status,
+        ]);
+
+        return [$offer, $actor->id];
     }
 
     // ── canSubmit ──────────────────────────────────────────────────────────
@@ -84,8 +110,8 @@ class OfferPermissionServiceTest extends TestCase
 
     public function test_can_counter_allowed_for_submitted_agent(): void
     {
-        $offer = Offer::factory()->make(['status' => 'submitted']);
-        $result = $this->service->canCounter($offer, 1, 'agent');
+        [$offer, $actorId] = $this->partyOffer('submitted');
+        $result = $this->service->canCounter($offer, $actorId, 'agent');
 
         $this->assertTrue($result['allowed']);
         $this->assertSame('counter', $result['action']);
@@ -94,8 +120,8 @@ class OfferPermissionServiceTest extends TestCase
 
     public function test_can_counter_allowed_for_countered_seller(): void
     {
-        $offer = Offer::factory()->make(['status' => 'countered']);
-        $result = $this->service->canCounter($offer, 1, 'seller');
+        [$offer, $actorId] = $this->partyOffer('countered');
+        $result = $this->service->canCounter($offer, $actorId, 'seller');
 
         $this->assertTrue($result['allowed']);
         $this->assertSame('', $result['reason']);
@@ -145,8 +171,8 @@ class OfferPermissionServiceTest extends TestCase
 
     public function test_can_accept_allowed_for_submitted_seller(): void
     {
-        $offer = Offer::factory()->make(['status' => 'submitted']);
-        $result = $this->service->canAccept($offer, 1, 'seller');
+        [$offer, $actorId] = $this->partyOffer('submitted');
+        $result = $this->service->canAccept($offer, $actorId, 'seller');
 
         $this->assertTrue($result['allowed']);
         $this->assertSame('accept', $result['action']);
@@ -155,8 +181,8 @@ class OfferPermissionServiceTest extends TestCase
 
     public function test_can_accept_allowed_for_countered_agent(): void
     {
-        $offer = Offer::factory()->make(['status' => 'countered']);
-        $result = $this->service->canAccept($offer, 1, 'agent');
+        [$offer, $actorId] = $this->partyOffer('countered');
+        $result = $this->service->canAccept($offer, $actorId, 'agent');
 
         $this->assertTrue($result['allowed']);
         $this->assertSame('', $result['reason']);
@@ -174,12 +200,15 @@ class OfferPermissionServiceTest extends TestCase
 
     public function test_can_accept_denied_for_wrong_role(): void
     {
+        // 'buyer' is now a permitted role for canAccept (supports counter-reversal where
+        // buyer must accept the seller's counter).  Use 'tenant' — genuinely not in the
+        // allowed-role list — to exercise the role-denial branch.
         $offer = Offer::factory()->make(['status' => 'submitted']);
-        $result = $this->service->canAccept($offer, 1, 'buyer');
+        $result = $this->service->canAccept($offer, 1, 'tenant');
 
         $this->assertFalse($result['allowed']);
         $this->assertNotEmpty($result['reason']);
-        $this->assertStringContainsString('buyer', $result['reason']);
+        $this->assertStringContainsString('tenant', $result['reason']);
     }
 
     public function test_can_accept_denied_for_wrong_status(): void
@@ -206,8 +235,8 @@ class OfferPermissionServiceTest extends TestCase
 
     public function test_can_reject_allowed_for_submitted_agent(): void
     {
-        $offer = Offer::factory()->make(['status' => 'submitted']);
-        $result = $this->service->canReject($offer, 1, 'agent');
+        [$offer, $actorId] = $this->partyOffer('submitted');
+        $result = $this->service->canReject($offer, $actorId, 'agent');
 
         $this->assertTrue($result['allowed']);
         $this->assertSame('reject', $result['action']);
@@ -235,12 +264,14 @@ class OfferPermissionServiceTest extends TestCase
 
     public function test_can_reject_denied_for_wrong_role(): void
     {
+        // 'buyer' is now a permitted role for canReject (supports counter-reversal).
+        // Use 'tenant' — genuinely not in the allowed-role list — to test the role-denial branch.
         $offer = Offer::factory()->make(['status' => 'submitted']);
-        $result = $this->service->canReject($offer, 1, 'buyer');
+        $result = $this->service->canReject($offer, 1, 'tenant');
 
         $this->assertFalse($result['allowed']);
         $this->assertNotEmpty($result['reason']);
-        $this->assertStringContainsString('buyer', $result['reason']);
+        $this->assertStringContainsString('tenant', $result['reason']);
     }
 
     public function test_can_reject_denied_for_wrong_status(): void
@@ -430,11 +461,18 @@ class OfferPermissionServiceTest extends TestCase
 
     public function test_allowed_results_always_have_empty_reason(): void
     {
+        // canCounter/canAccept/canReject require the actor to be a legitimate party (listing
+        // owner or root submitter).  Use partyOffer() to create persisted records so the
+        // party check passes for the returned actor ID.
+        [$counterOffer, $counterId] = $this->partyOffer('submitted');
+        [$acceptOffer,  $acceptId]  = $this->partyOffer('submitted');
+        [$rejectOffer,  $rejectId]  = $this->partyOffer('submitted');
+
         $checks = [
             fn () => $this->service->canSubmit(Offer::factory()->make(['status' => 'draft']), 1, 'buyer'),
-            fn () => $this->service->canCounter(Offer::factory()->make(['status' => 'submitted']), 1, 'buyer'),
-            fn () => $this->service->canAccept(Offer::factory()->make(['status' => 'submitted']), 1, 'seller'),
-            fn () => $this->service->canReject(Offer::factory()->make(['status' => 'submitted']), 1, 'seller'),
+            fn () => $this->service->canCounter($counterOffer, $counterId, 'buyer'),
+            fn () => $this->service->canAccept($acceptOffer,  $acceptId,  'seller'),
+            fn () => $this->service->canReject($rejectOffer,  $rejectId,  'seller'),
             fn () => $this->service->canWithdraw(Offer::factory()->make(['status' => 'submitted']), 1, 'buyer'),
             fn () => $this->service->canExpire(Offer::factory()->make(['status' => 'submitted']), null, 'system'),
             fn () => $this->service->canViewTimeline(Offer::factory()->make(['status' => 'accepted']), 1, 'agent'),

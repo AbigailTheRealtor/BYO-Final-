@@ -34,14 +34,24 @@ class NotificationController extends Controller
         $auctionId = $data['auction_id'] ?? null;
         $summaryLink = $data['summary_link'] ?? null;
         $auctionType = $data['auction_type'] ?? null;
-        
-        $destination = $this->resolveDestination($type, $bidId, $auctionId, $summaryLink, $user, $auctionType);
+        $link = $data['link'] ?? null;
+
+        $destination = $this->resolveDestination($type, $bidId, $auctionId, $summaryLink, $user, $auctionType, $link);
         
         return redirect($destination);
     }
 
-    private function resolveDestination($type, $bidId, $auctionId, $summaryLink, $user, $auctionType = null)
+    private function resolveDestination($type, $bidId, $auctionId, $summaryLink, $user, $auctionType = null, $link = null)
     {
+        // Offer notifications store a direct `link` in their payload pointing to /offers/{id}.
+        $offerTypes = [
+            'offer_submitted', 'offer_countered', 'offer_accepted',
+            'offer_rejected',  'offer_withdrawn', 'offer_expired',
+        ];
+        if (in_array($type, $offerTypes, true) && $link) {
+            return $link;
+        }
+
         switch ($type) {
             case 'bid_accepted':
             case 'counter_bid_accepted':
