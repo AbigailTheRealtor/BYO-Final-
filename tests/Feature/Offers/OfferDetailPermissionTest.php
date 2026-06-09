@@ -435,7 +435,7 @@ class OfferDetailPermissionTest extends TestCase
         $response = $this->actingAs($seller)->get(route('offers.show', $offer));
         $response->assertStatus(200);
 
-        $this->assertStringContainsString('475000.00', $response->getContent(),
+        $this->assertStringContainsString('475,000', $response->getContent(),
             'Counter form must show offer price prefilled from metas.');
     }
 

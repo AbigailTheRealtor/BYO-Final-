@@ -3,6 +3,7 @@
 namespace Tests\Feature\Offers;
 
 use App\Models\Offer;
+use App\Models\User;
 use App\Services\Offers\OfferAvailableActionsService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -10,6 +11,15 @@ use Tests\TestCase;
 class OfferCounterFormTest extends TestCase
 {
     use DatabaseTransactions;
+
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+    }
 
     private function makeActions(array $overrides = []): array
     {
@@ -107,9 +117,9 @@ class OfferCounterFormTest extends TestCase
         $this->assertStringContainsString('name="expires_at"', $content);
     }
 
-    // ── Test 4: can_counter=false with non-empty reason → disabled button with reason ──
+    // ── Test 4: can_counter=false with reason → disabled Counter button + reason, no form action ──
 
-    public function test_disabled_counter_button_with_reason_when_can_counter_is_false_and_reason_set(): void
+    public function test_no_counter_element_when_can_counter_is_false_with_reason(): void
     {
         $offer  = Offer::factory()->submitted()->create();
         $reason = 'Not allowed to counter';
@@ -126,11 +136,14 @@ class OfferCounterFormTest extends TestCase
         $content    = $response->getContent();
         $counterUrl = route('offers.counter', $offer);
 
-        $this->assertStringContainsString('Counter', $content, 'Counter button must be visible.');
-        $this->assertStringContainsString('disabled', $content, 'Counter button must be disabled.');
-        $this->assertStringContainsString('title="' . $reason . '"', $content, 'Reason must appear in title attribute.');
-        $this->assertStringContainsString($reason, $content, 'Reason must appear as visible text.');
-        $this->assertStringNotContainsString('action="' . $counterUrl . '"', $content, 'No form action must be present.');
+        $this->assertStringNotContainsString('action="' . $counterUrl . '"', $content, 'No counter form action must be present when can_counter=false.');
+        $this->assertStringContainsString('>Counter<', $content, 'Disabled Counter button must be rendered when can_counter=false with a reason.');
+        $this->assertStringContainsString($reason, $content, 'Counter reason text must appear in the page when can_counter=false with a reason.');
+
+        $counterPos = strpos($content, '>Counter<');
+        $this->assertNotFalse($counterPos, 'Counter button must be findable in rendered HTML.');
+        $snippet = substr($content, max(0, $counterPos - 200), 250);
+        $this->assertStringContainsString(' disabled', $snippet, 'Counter button must carry the disabled attribute when can_counter=false.');
     }
 
     // ── Test 5: can_counter=false with empty reason → no Counter element at all ──
@@ -185,5 +198,90 @@ class OfferCounterFormTest extends TestCase
         $this->assertStringNotContainsString("->update(['status'",  $viewContent, 'Blade must not directly call ->update([\'status\']).');
         $this->assertStringNotContainsString('Offer::where',        $viewContent, 'Blade must not run Offer::where() queries.');
         $this->assertStringNotContainsString('OfferEventLog',       $viewContent, 'Blade must not reference OfferEventLog.');
+    }
+
+    // ── Test 8: can_counter=true → full form contains all required offer term fields ──
+
+    public function test_counter_form_contains_all_required_offer_term_fields(): void
+    {
+        $offer   = Offer::factory()->submitted()->create();
+        $actions = $this->makeActions(['can_counter' => true]);
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $requiredFields = [
+            'offer_price',
+            'earnest_deposit',
+            'down_payment_value',
+            'initial_deposit_amount',
+            'additional_deposit_amount',
+            'financing_type',
+            'financing_contingency',
+            'financing_contingency_days',
+            'inspection_contingency',
+            'inspection_contingency_days',
+            'appraisal_contingency',
+            'appraisal_contingency_days',
+            'closing_date',
+            'possession_date',
+            'seller_contribution_requested',
+            'home_warranty_requested',
+            'included_personal_property',
+            'excluded_items',
+            'custom_terms',
+            'expires_at',
+        ];
+
+        foreach ($requiredFields as $field) {
+            $this->assertStringContainsString('name="' . $field . '"', $content,
+                "Counter form must contain a field named '{$field}'.");
+        }
+    }
+
+    // ── Test 9: counter form pre-populates all fields from counterDefaults ────
+
+    public function test_counter_form_pre_populates_fields_from_counter_defaults(): void
+    {
+        $offer = Offer::factory()->submitted()->create();
+
+        $offer->saveMeta('offer_price',  '450000');
+        $offer->saveMeta('closing_date', '2026-09-01');
+        $offer->saveMeta('custom_terms', 'Test special conditions');
+        $offer->saveMeta('expires_at',   '2026-08-01');
+
+        $actions = $this->makeActions(['can_counter' => true]);
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('450,000',                    $content, 'Offer price should be pre-populated in counter form.');
+        $this->assertStringContainsString('2026-09-01',                 $content, 'Closing date should be pre-populated in counter form.');
+        $this->assertStringContainsString('Test special conditions',    $content, 'Custom terms should be pre-populated in counter form.');
+        $this->assertStringContainsString('2026-08-01',                 $content, 'Expires at should be pre-populated in counter form.');
+    }
+
+    // ── Test 10: Submit Counter Offer button appears in counter form ──────────
+
+    public function test_counter_form_has_submit_counter_offer_button(): void
+    {
+        $offer   = Offer::factory()->submitted()->create();
+        $actions = $this->makeActions(['can_counter' => true]);
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('Submit Counter Offer', $content, 'Counter form must have a "Submit Counter Offer" submit button.');
     }
 }

@@ -120,7 +120,7 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertStringContainsString('btn-outline-secondary btn-sm">Withdraw', $content);
     }
 
-    // ── Test 4: Blocked action → no disabled button or reason text rendered ──
+    // ── Test 4: Blocked action → disabled button + reason text rendered (no form action) ──
 
     public function test_blocked_action_produces_no_html(): void
     {
@@ -135,11 +135,13 @@ class OfferActionVisibilityTest extends TestCase
         $response = $this->get(route('offers.show', $offer));
         $response->assertStatus(200);
 
-        $content = $response->getContent();
+        $content    = $response->getContent();
+        $submitUrl  = route('offers.submit', $offer);
 
-        $this->assertStringNotContainsString('disabled title="' . $blockedReason . '"', $content);
-        $this->assertStringNotContainsString($blockedReason, $content);
-        $this->assertStringNotContainsString('Submit Offer', $content);
+        $this->assertStringNotContainsString('disabled title="' . $blockedReason . '"', $content, 'Disabled button must not use title= attribute for reason.');
+        $this->assertStringNotContainsString('action="' . $submitUrl . '"', $content, 'Blocked action must not have a form action.');
+        $this->assertStringContainsString($blockedReason, $content, 'Blocked reason text must appear in the page.');
+        $this->assertStringContainsString('Submit Offer', $content, 'Disabled Submit Offer button must still appear.');
     }
 
     // ── Test 5: Expire action never rendered regardless of can_expire value ──
@@ -160,7 +162,7 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertStringNotContainsString('>Expire ', $content);
     }
 
-    // ── Test 6: When all actions are disabled, no form tags or disabled buttons appear ──
+    // ── Test 6: When all actions are disabled, no form tags but disabled buttons with reasons appear ──
 
     public function test_all_disabled_actions_produce_no_form_tags(): void
     {
@@ -174,10 +176,10 @@ class OfferActionVisibilityTest extends TestCase
 
         $content = $response->getContent();
 
-        $this->assertStringNotContainsString('<form', $content);
-        $this->assertStringNotContainsString('action=', $content);
-        $this->assertStringNotContainsString('Submit Offer', $content);
-        $this->assertStringNotContainsString('>Withdraw<', $content);
+        $this->assertStringNotContainsString('<form', $content, 'No form tags must appear when all actions are disabled.');
+        $this->assertStringNotContainsString('action=', $content, 'No action= attributes must appear when all actions are disabled.');
+        $this->assertStringContainsString('Submit Offer', $content, 'Disabled Submit Offer button must appear with a reason.');
+        $this->assertStringContainsString('>Withdraw<', $content, 'Disabled Withdraw button must appear with a reason.');
     }
 
     // ── Test 7: Enabled actions produce forms; disabled actions of the same type do not ──
@@ -206,13 +208,12 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertStringNotContainsString('action="' . $withdrawUrl . '"', $content, 'Disabled withdraw must not have a form action.');
     }
 
-    // ── Test 8: Counter — disabled button with reason when can_counter=false and reason is set ──
+    // ── Test 8: Counter — disabled button + reason when can_counter=false with reason ──
 
-    public function test_counter_renders_disabled_button_with_reason_when_blocked(): void
+    public function test_counter_renders_nothing_when_can_counter_is_false(): void
     {
         $offer = Offer::factory()->create(['status' => 'draft']);
 
-        // Counter disabled with non-empty reason (default in makeActions)
         $actions = $this->makeActions(['can_counter' => false]);
         $this->mockActionsService($offer, $actions);
 
@@ -222,15 +223,10 @@ class OfferActionVisibilityTest extends TestCase
         $content    = $response->getContent();
         $counterUrl = route('offers.counter', $offer);
 
-        $this->assertStringContainsString('Counter', $content, 'Counter must be visible when can_counter=false with a reason.');
-        $this->assertStringNotContainsString('action="' . $counterUrl . '"', $content, 'Counter must not have a form action when can_counter=false.');
-        $this->assertStringContainsString('Not allowed to counter', $content, 'Reason text must be visible when can_counter=false.');
-
-        // disabled attribute must appear adjacent to the Counter label
-        $counterPos = strpos($content, '>Counter<');
-        $this->assertNotFalse($counterPos);
-        $snippet = substr($content, max(0, $counterPos - 200), 250);
-        $this->assertStringContainsString(' disabled', $snippet, 'Counter must render as a disabled button when can_counter=false.');
+        $this->assertStringNotContainsString('action="' . $counterUrl . '"', $content, 'No counter form action must appear when can_counter=false.');
+        $this->assertStringNotContainsString('Submit Counter Offer',         $content, 'No "Submit Counter Offer" header must appear when can_counter=false.');
+        $this->assertStringNotContainsString('counter-offer-submit-btn',     $content, 'Counter submit button ID must not appear when can_counter=false.');
+        $this->assertStringContainsString('Not allowed to counter',          $content, 'Reason text must be visible when can_counter=false and reason is set.');
     }
 
     // ── Test 9: Tenant offer creator sees enabled Withdraw on a submitted offer ──
@@ -254,7 +250,7 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertStringNotContainsString(' disabled', substr($content, (int) strpos($content, '>Withdraw<') - 300, 350));
     }
 
-    // ── Test 10: No disabled Withdraw HTML appears regardless of role ──
+    // ── Test 10: Disabled Withdraw button with reason appears when can_withdraw=false ──
 
     public function test_no_disabled_withdraw_html_for_any_blocked_role(): void
     {
@@ -266,11 +262,13 @@ class OfferActionVisibilityTest extends TestCase
         $response = $this->get(route('offers.show', $offer));
         $response->assertStatus(200);
 
-        $content = $response->getContent();
+        $content    = $response->getContent();
+        $withdrawUrl = route('offers.withdraw', $offer);
 
-        $this->assertStringNotContainsString('>Withdraw<', $content, 'No Withdraw button must appear when can_withdraw=false.');
-        $this->assertStringNotContainsString('Not allowed to withdraw', $content);
-        $this->assertStringNotContainsString('btn-outline-secondary btn-sm', $content, 'Wrapper div for Withdraw must not appear when can_withdraw=false.');
+        $this->assertStringNotContainsString('action="' . $withdrawUrl . '"', $content, 'No Withdraw form action must appear when can_withdraw=false.');
+        $this->assertStringContainsString('>Withdraw<', $content, 'Disabled Withdraw button must appear when can_withdraw=false with a reason.');
+        $this->assertStringContainsString('Not allowed to withdraw', $content, 'Reason text must appear when can_withdraw=false.');
+        $this->assertStringContainsString('btn-outline-secondary btn-sm', $content, 'Disabled Withdraw button must carry its CSS class.');
     }
 
     // ── Test 11: View Timeline absent when can_view_timeline=false ──

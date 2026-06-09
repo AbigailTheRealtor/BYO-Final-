@@ -258,7 +258,257 @@ class OfferControllerTest extends TestCase
             ->assertJsonValidationErrors(['offer_auction_id']);
     }
 
-    // ── Test 11: static scan — no direct Offer.status mutation or OfferEventLog write ──
+    // ── Test 11: counter POST — parent metas are carried forward to child offer ─
+
+    public function test_counter_carries_forward_parent_metas_to_child_offer(): void
+    {
+        $this->mockActionsService($this->allowedActions());
+
+        $this->submittedOffer->saveMeta('offer_price',       '480000');
+        $this->submittedOffer->saveMeta('financing_type',    'Conventional');
+        $this->submittedOffer->saveMeta('closing_date',      '2026-10-01');
+        $this->submittedOffer->saveMeta('possession_date',   '2026-10-03');
+        $this->submittedOffer->saveMeta('custom_terms',      'Original terms');
+        $this->submittedOffer->saveMeta('earnest_deposit',   '10000');
+        $this->submittedOffer->saveMeta('earnest_deposit_unit', '$');
+        $this->submittedOffer->saveMeta('inspection_contingency_days', '10');
+        $this->submittedOffer->saveMeta('seller_contribution_requested', 'Yes');
+        $this->submittedOffer->saveMeta('home_warranty_requested', 'Yes');
+
+        $counterOffer = Offer::factory()->create([
+            'parent_offer_id' => $this->submittedOffer->id,
+            'status'          => 'submitted',
+        ]);
+
+        $facade = $this->createMock(OfferWorkflowFacade::class);
+        $facade->method('counter')->willReturn($this->successResult(['counter_offer' => $counterOffer]));
+        $this->app->instance(OfferWorkflowFacade::class, $facade);
+
+        $this->actingAsAllowedUser()
+            ->postJson(route('offers.counter', $this->submittedOffer), []);
+
+        $counterOffer->load('metas');
+        $childMetas = $counterOffer->metas->pluck('meta_value', 'meta_key');
+
+        // Non-boolean fields: carried forward unchanged from parent.
+        $this->assertEquals('480000',        $childMetas->get('offer_price'),                  'offer_price must be carried forward from parent.');
+        $this->assertEquals('Conventional',  $childMetas->get('financing_type'),               'financing_type must be carried forward from parent.');
+        $this->assertEquals('2026-10-01',    $childMetas->get('closing_date'),                 'closing_date must be carried forward from parent.');
+        $this->assertEquals('2026-10-03',    $childMetas->get('possession_date'),              'possession_date must be carried forward from parent.');
+        $this->assertEquals('Original terms',$childMetas->get('custom_terms'),                 'custom_terms must be carried forward from parent.');
+        $this->assertEquals('10000',         $childMetas->get('earnest_deposit'),              'earnest_deposit must be carried forward from parent.');
+        $this->assertEquals('$',             $childMetas->get('earnest_deposit_unit'),         'earnest_deposit_unit must be carried forward from parent.');
+        $this->assertEquals('10',            $childMetas->get('inspection_contingency_days'),  'inspection_contingency_days must be carried forward from parent.');
+        $this->assertEquals('Yes',           $childMetas->get('seller_contribution_requested'),'seller_contribution_requested must be carried forward from parent.');
+        $this->assertEquals('Yes',           $childMetas->get('home_warranty_requested'),      'home_warranty_requested must be carried forward from parent.');
+        // Boolean contingency fields use $request->boolean() — always driven by form state, not carry-forward.
+        // See test_counter_boolean_contingency_toggle_true_to_false / _false_to_true for those assertions.
+    }
+
+    // ── Test 12: counter POST — submitted form fields override parent metas ────
+
+    public function test_counter_submitted_fields_override_parent_metas(): void
+    {
+        $this->mockActionsService($this->allowedActions());
+
+        $this->submittedOffer->saveMeta('offer_price',  '480000');
+        $this->submittedOffer->saveMeta('closing_date', '2026-10-01');
+        $this->submittedOffer->saveMeta('custom_terms', 'Original terms');
+
+        $counterOffer = Offer::factory()->create([
+            'parent_offer_id' => $this->submittedOffer->id,
+            'status'          => 'submitted',
+        ]);
+
+        $facade = $this->createMock(OfferWorkflowFacade::class);
+        $facade->method('counter')->willReturn($this->successResult(['counter_offer' => $counterOffer]));
+        $this->app->instance(OfferWorkflowFacade::class, $facade);
+
+        $this->actingAsAllowedUser()
+            ->postJson(route('offers.counter', $this->submittedOffer), [
+                'offer_price'  => '510000',
+                'closing_date' => '2026-11-15',
+                'custom_terms' => 'Updated counter terms',
+            ]);
+
+        $counterOffer->load('metas');
+        $childMetas = $counterOffer->metas->pluck('meta_value', 'meta_key');
+
+        $this->assertEquals('510000',               $childMetas->get('offer_price'),  'Submitted offer_price must override parent value.');
+        $this->assertEquals('2026-11-15',            $childMetas->get('closing_date'), 'Submitted closing_date must override parent value.');
+        $this->assertEquals('Updated counter terms', $childMetas->get('custom_terms'), 'Submitted custom_terms must override parent value.');
+    }
+
+    // ── Test 13: counter POST — comma-formatted money fields have commas stripped ──
+
+    public function test_counter_strips_commas_from_money_fields(): void
+    {
+        $this->mockActionsService($this->allowedActions());
+
+        $counterOffer = Offer::factory()->create([
+            'parent_offer_id' => $this->submittedOffer->id,
+            'status'          => 'submitted',
+        ]);
+
+        $facade = $this->createMock(OfferWorkflowFacade::class);
+        $facade->method('counter')->willReturn($this->successResult(['counter_offer' => $counterOffer]));
+        $this->app->instance(OfferWorkflowFacade::class, $facade);
+
+        $this->actingAsAllowedUser()
+            ->postJson(route('offers.counter', $this->submittedOffer), [
+                'offer_price'      => '525,000',
+                'earnest_deposit'  => '10,500',
+                'down_payment_value' => '105,000',
+            ]);
+
+        $counterOffer->load('metas');
+        $childMetas = $counterOffer->metas->pluck('meta_value', 'meta_key');
+
+        $this->assertEquals('525000',  $childMetas->get('offer_price'),      'Commas must be stripped from offer_price before saving.');
+        $this->assertEquals('10500',   $childMetas->get('earnest_deposit'),   'Commas must be stripped from earnest_deposit before saving.');
+        $this->assertEquals('105000',  $childMetas->get('down_payment_value'),'Commas must be stripped from down_payment_value before saving.');
+    }
+
+    // ── Test 14: counter POST — all full-form SF sub-fields are validated & saved ─
+
+    public function test_counter_validates_and_saves_seller_financing_sub_fields(): void
+    {
+        $this->mockActionsService($this->allowedActions());
+
+        $counterOffer = Offer::factory()->create([
+            'parent_offer_id' => $this->submittedOffer->id,
+            'status'          => 'submitted',
+        ]);
+
+        $facade = $this->createMock(OfferWorkflowFacade::class);
+        $facade->method('counter')->willReturn($this->successResult(['counter_offer' => $counterOffer]));
+        $this->app->instance(OfferWorkflowFacade::class, $facade);
+
+        $response = $this->actingAsAllowedUser()
+            ->postJson(route('offers.counter', $this->submittedOffer), [
+                'financing_type'              => 'Seller Financing',
+                'seller_financing_rate'       => '6.5',
+                'seller_financing_term'       => '30 years',
+                'seller_financing_amortization' => 'Fully Amortizing',
+                'seller_financing_balloon'    => 'No',
+                'prepayment_penalty'          => 'No',
+            ]);
+
+        $response->assertOk();
+
+        $counterOffer->load('metas');
+        $childMetas = $counterOffer->metas->pluck('meta_value', 'meta_key');
+
+        $this->assertEquals('Seller Financing',   $childMetas->get('financing_type'),              'financing_type must be saved for SF offer.');
+        $this->assertEquals('6.5',                $childMetas->get('seller_financing_rate'),        'seller_financing_rate must be saved.');
+        $this->assertEquals('30 years',           $childMetas->get('seller_financing_term'),        'seller_financing_term must be saved.');
+        $this->assertEquals('Fully Amortizing',   $childMetas->get('seller_financing_amortization'),'seller_financing_amortization must be saved.');
+        $this->assertEquals('No',                 $childMetas->get('seller_financing_balloon'),     'seller_financing_balloon must be saved.');
+        $this->assertEquals('No',                 $childMetas->get('prepayment_penalty'),           'prepayment_penalty must be saved.');
+    }
+
+    // ── Test 15: counter POST — boolean contingency true→false toggle is respected ─
+
+    public function test_counter_boolean_contingency_toggle_true_to_false(): void
+    {
+        $this->mockActionsService($this->allowedActions());
+
+        // Parent has all four contingencies set to true.
+        $this->submittedOffer->saveMeta('financing_contingency',               '1');
+        $this->submittedOffer->saveMeta('inspection_contingency',              '1');
+        $this->submittedOffer->saveMeta('appraisal_contingency',               '1');
+        $this->submittedOffer->saveMeta('sale_of_buyer_property_contingency',  '1');
+
+        $counterOffer = Offer::factory()->create([
+            'parent_offer_id' => $this->submittedOffer->id,
+            'status'          => 'submitted',
+        ]);
+
+        $facade = $this->createMock(OfferWorkflowFacade::class);
+        $facade->method('counter')->willReturn($this->successResult(['counter_offer' => $counterOffer]));
+        $this->app->instance(OfferWorkflowFacade::class, $facade);
+
+        // Counter submitted with no contingency keys present at all (simulates unchecked checkboxes).
+        $this->actingAsAllowedUser()
+            ->postJson(route('offers.counter', $this->submittedOffer), [
+                'offer_price' => '460000',
+                // All four contingency checkboxes absent from request → should become 0.
+            ]);
+
+        $counterOffer->load('metas');
+        $childMetas = $counterOffer->metas->pluck('meta_value', 'meta_key');
+
+        $this->assertEquals(0, (int) $childMetas->get('financing_contingency'),              'financing_contingency must be 0 when absent from counter request (unchecked).');
+        $this->assertEquals(0, (int) $childMetas->get('inspection_contingency'),             'inspection_contingency must be 0 when absent from counter request (unchecked).');
+        $this->assertEquals(0, (int) $childMetas->get('appraisal_contingency'),              'appraisal_contingency must be 0 when absent from counter request (unchecked).');
+        $this->assertEquals(0, (int) $childMetas->get('sale_of_buyer_property_contingency'), 'sale_of_buyer_property_contingency must be 0 when absent from counter request (unchecked).');
+    }
+
+    // ── Test 16: counter POST — boolean contingency false→true toggle is respected ─
+
+    public function test_counter_boolean_contingency_toggle_false_to_true(): void
+    {
+        $this->mockActionsService($this->allowedActions());
+
+        $this->submittedOffer->saveMeta('financing_contingency',  '0');
+        $this->submittedOffer->saveMeta('inspection_contingency', '0');
+
+        $counterOffer = Offer::factory()->create([
+            'parent_offer_id' => $this->submittedOffer->id,
+            'status'          => 'submitted',
+        ]);
+
+        $facade = $this->createMock(OfferWorkflowFacade::class);
+        $facade->method('counter')->willReturn($this->successResult(['counter_offer' => $counterOffer]));
+        $this->app->instance(OfferWorkflowFacade::class, $facade);
+
+        $this->actingAsAllowedUser()
+            ->postJson(route('offers.counter', $this->submittedOffer), [
+                'financing_contingency'  => 1,
+                'inspection_contingency' => 1,
+            ]);
+
+        $counterOffer->load('metas');
+        $childMetas = $counterOffer->metas->pluck('meta_value', 'meta_key');
+
+        $this->assertEquals(1, (int) $childMetas->get('financing_contingency'),  'financing_contingency must be 1 when explicitly sent as 1.');
+        $this->assertEquals(1, (int) $childMetas->get('inspection_contingency'), 'inspection_contingency must be 1 when explicitly sent as 1.');
+    }
+
+    // ── Test 17: counter POST — intentional text field clear overwrites parent value ──
+
+    public function test_counter_intentional_field_clear_overwrites_parent(): void
+    {
+        $this->mockActionsService($this->allowedActions());
+
+        $this->submittedOffer->saveMeta('custom_terms',       'Original terms text');
+        $this->submittedOffer->saveMeta('possession_notes',   'Possession at closing');
+
+        $counterOffer = Offer::factory()->create([
+            'parent_offer_id' => $this->submittedOffer->id,
+            'status'          => 'submitted',
+        ]);
+
+        $facade = $this->createMock(OfferWorkflowFacade::class);
+        $facade->method('counter')->willReturn($this->successResult(['counter_offer' => $counterOffer]));
+        $this->app->instance(OfferWorkflowFacade::class, $facade);
+
+        // Explicitly send the fields as null to simulate intentional clearing.
+        $this->actingAsAllowedUser()
+            ->postJson(route('offers.counter', $this->submittedOffer), [
+                'offer_price'     => '500000',
+                'custom_terms'    => null,
+                'possession_notes' => null,
+            ]);
+
+        $counterOffer->load('metas');
+        $childMetas = $counterOffer->metas->pluck('meta_value', 'meta_key');
+
+        $this->assertNull($childMetas->get('custom_terms'),     'custom_terms must be null when explicitly cleared in counter request.');
+        $this->assertNull($childMetas->get('possession_notes'), 'possession_notes must be null when explicitly cleared in counter request.');
+    }
+
+    // ── Test 18: static scan — no direct Offer.status mutation or OfferEventLog write ──
 
     public function test_controller_source_does_not_directly_mutate_offer_status_or_write_event_log(): void
     {

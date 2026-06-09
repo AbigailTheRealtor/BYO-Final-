@@ -244,6 +244,13 @@ class OfferController extends Controller
         $moneyFields = [
             'offer_price', 'earnest_deposit', 'down_payment_value',
             'additional_cash', 'exchange_item_value',
+            'sf_purchase_price', 'sf_down_payment_amount', 'seller_financing_amount',
+            'seller_financing_balloon_amount', 'prepayment_penalty_amount',
+            'option_fee_amount', 'lease_option_price', 'lease_option_payment',
+            'lease_purchase_price', 'lease_purchase_payment', 'lease_purchase_deposit',
+            'lease_purchase_rent_credit_amount', 'initial_deposit_amount',
+            'additional_deposit_amount',
+            'assumable_max_monthly_payment', 'assumable_bridge_gap_cash',
         ];
         foreach ($moneyFields as $field) {
             if ($request->has($field) && $request->input($field) !== null && $request->input($field) !== '') {
@@ -252,23 +259,119 @@ class OfferController extends Controller
         }
 
         $validated = $request->validate([
-            'listing_snapshot'       => 'nullable|array',
-            'expires_at'             => 'nullable|date',
-            'offer_price'            => 'nullable|numeric|min:0',
-            'earnest_deposit'        => 'nullable|numeric|min:0',
-            'earnest_deposit_unit'   => 'nullable|in:$,%',
-            'financing_type'         => 'nullable|string|max:100',
-            'down_payment_value'     => 'nullable|numeric|min:0',
-            'down_payment_unit'      => 'nullable|in:$,%',
-            'closing_date'           => 'nullable|date',
-            'inspection_contingency' => 'nullable|boolean',
-            'financing_contingency'  => 'nullable|boolean',
-            'appraisal_contingency'  => 'nullable|boolean',
-            'custom_terms'           => 'nullable|string|max:5000',
-            'monthly_rent'           => 'nullable|numeric|min:0',
-            'security_deposit'       => 'nullable|numeric|min:0',
-            'move_in_date'           => 'nullable|date',
-            'lease_term_months'      => 'nullable|integer|min:1|max:360',
+            'listing_snapshot'                     => 'nullable|array',
+            'expires_at'                           => 'nullable|date',
+            'notes'                                => 'nullable|string|max:5000',
+            'custom_terms'                         => 'nullable|string|max:5000',
+            // Sale-specific
+            'offer_price'                          => 'nullable|numeric|min:0',
+            'earnest_deposit'                      => 'nullable|numeric|min:0',
+            'earnest_deposit_unit'                 => 'nullable|in:$,%',
+            'financing_type'                       => 'nullable|in:Assumable,Cash,Conventional,FHA,Jumbo,VA,No-Doc,Non-QM,USDA,Cryptocurrency,Exchange/Trade,Lease Option,Lease Purchase,Non-Fungible Token (NFT),Seller Financing,Other',
+            'financing_contingency'                => 'nullable|boolean',
+            'financing_contingency_days'           => 'nullable|integer|min:1|max:365',
+            'down_payment_value'                   => 'nullable|numeric|min:0',
+            'down_payment_unit'                    => 'nullable|in:$,%',
+            'inspection_contingency'               => 'nullable|boolean',
+            'inspection_contingency_days'          => 'nullable|integer|min:1|max:365',
+            'appraisal_contingency'                => 'nullable|boolean',
+            'appraisal_contingency_days'           => 'nullable|integer|min:1|max:365',
+            'closing_date'                         => 'nullable|date',
+            'possession_date'                      => 'nullable|date',
+            // Assumable sub-fields
+            'assumable_interest'                   => 'nullable|in:Yes,No',
+            'assumable_max_interest_rate'          => 'nullable|numeric|min:0|max:100',
+            'assumable_max_monthly_payment'        => 'nullable|numeric|min:0',
+            'assumable_bridge_gap_cash'            => 'nullable|numeric|min:0',
+            // Cryptocurrency sub-fields
+            'cryptocurrency_type'                  => 'nullable|string|max:200',
+            'crypto_percentage'                    => 'nullable|numeric|min:0|max:100',
+            'crypto_exchange_method'               => 'nullable|string|max:500',
+            // Exchange/Trade sub-fields
+            'exchange_item'                        => 'nullable|in:Another Home,Artwork,Boat,Jewelry,Motorhome,Vehicle,Other',
+            'other_exchange_item'                  => 'nullable|string|max:500',
+            'exchange_item_value'                  => 'nullable|numeric|min:0',
+            'exchange_item_condition'              => 'nullable|in:New,Like New,Excellent,Very Good,Good,Fair,Repair,Salvage Condition',
+            'additional_cash'                      => 'nullable|numeric|min:0',
+            'value_determination'                  => 'nullable|string|max:500',
+            'exchange_transfer_method'             => 'nullable|string|max:500',
+            'exchange_liens'                       => 'nullable|in:Yes,No',
+            'exchange_liens_details'               => 'nullable|string|max:500',
+            'exchange_inspection_rights'           => 'nullable|in:Yes,No',
+            // Seller Financing sub-fields
+            'sf_purchase_price'                    => 'nullable|numeric|min:0',
+            'sf_down_payment_type'                 => 'nullable|in:$,%',
+            'sf_down_payment_amount'               => 'nullable|numeric|min:0',
+            'seller_financing_amount_type'         => 'nullable|in:$,%',
+            'seller_financing_amount'              => 'nullable|numeric|min:0',
+            'seller_financing_rate'                => 'nullable|numeric|min:0|max:100',
+            'seller_financing_term'                => 'nullable|string|max:200',
+            'seller_financing_amortization'        => 'nullable|in:Fully Amortizing,Interest-Only,Other',
+            'seller_financing_amortization_other'  => 'nullable|string|max:200',
+            'seller_financing_payment_frequency'   => 'nullable|in:Monthly,Bi-Weekly,Quarterly,Annually,Other',
+            'seller_financing_payment_frequency_other' => 'nullable|string|max:200',
+            'seller_financing_balloon'             => 'nullable|in:Yes,No',
+            'seller_financing_balloon_amount'      => 'nullable|numeric|min:0',
+            'seller_financing_balloon_date'        => 'nullable|string|max:200',
+            'prepayment_penalty'                   => 'nullable|in:Yes,No',
+            'prepayment_penalty_amount'            => 'nullable|numeric|min:0',
+            'seller_late_fee_amount'               => 'nullable|string|max:500',
+            // Lease Option sub-fields
+            'lease_option_price'                   => 'nullable|numeric|min:0',
+            'lease_option_payment'                 => 'nullable|numeric|min:0',
+            'lease_option_duration'                => 'nullable|integer|min:1',
+            'has_option_fee'                       => 'nullable|in:Yes,No',
+            'option_fee_amount'                    => 'nullable|numeric|min:0',
+            'lease_option_fee_credit'              => 'nullable|in:Yes,No,Partial',
+            'lease_option_fee_credit_pct'          => 'nullable|numeric|min:0|max:100',
+            'lease_option_maintenance'             => 'nullable|in:Seller,Tenant-Buyer,Shared',
+            'lease_option_conditions'              => 'nullable|string|max:1000',
+            'lease_option_terms'                   => 'nullable|string|max:1000',
+            'lease_option_extension_terms'         => 'nullable|string|max:1000',
+            // Lease Purchase sub-fields
+            'lease_purchase_price'                 => 'nullable|numeric|min:0',
+            'lease_purchase_payment'               => 'nullable|numeric|min:0',
+            'lease_purchase_duration'              => 'nullable|integer|min:1',
+            'lease_purchase_rent_credit'           => 'nullable|in:Yes,No,Partial',
+            'lease_purchase_rent_credit_amount'    => 'nullable|numeric|min:0',
+            'lease_purchase_deposit'               => 'nullable|numeric|min:0',
+            'lease_purchase_maintenance'           => 'nullable|in:Seller,Tenant-Buyer,Shared',
+            'lease_purchase_conditions'            => 'nullable|string|max:1000',
+            'lease_purchase_terms'                 => 'nullable|string|max:1000',
+            'lease_purchase_extension_terms'       => 'nullable|string|max:1000',
+            // NFT sub-fields
+            'nft_description'                      => 'nullable|string|max:500',
+            'nft_percentage'                       => 'nullable|numeric|min:0|max:100',
+            'cash_percentage_nft'                  => 'nullable|numeric|min:0|max:100',
+            'nft_valuation_method'                 => 'nullable|string|max:500',
+            'nft_transfer_method'                  => 'nullable|string|max:500',
+            'nft_gas_fees'                         => 'nullable|in:Buyer,Seller,Split',
+            // Other financing
+            'other_financing_details'              => 'nullable|string|max:2000',
+            // Deposit details
+            'initial_deposit_amount'               => 'nullable|numeric|min:0',
+            'initial_deposit_amount_unit'          => 'nullable|in:$,%',
+            'initial_deposit_timeframe'            => 'nullable|string|max:100',
+            'initial_deposit_timeframe_other'      => 'nullable|string|max:200',
+            'additional_deposit_amount'            => 'nullable|numeric|min:0',
+            'additional_deposit_amount_unit'       => 'nullable|in:$,%',
+            'additional_deposit_timeframe'         => 'nullable|string|max:100',
+            'additional_deposit_timeframe_other'   => 'nullable|string|max:200',
+            // Purchase terms
+            'sale_of_buyer_property_contingency'      => 'nullable|boolean',
+            'sale_of_buyer_property_contingency_days' => 'nullable|integer|min:1|max:365',
+            'possession_notes'                        => 'nullable|string|max:2000',
+            'seller_contribution_requested'        => 'nullable|in:Yes,No',
+            'seller_contribution_details'          => 'nullable|string|max:1000',
+            'included_personal_property'           => 'nullable|string|max:1000',
+            'excluded_items'                       => 'nullable|string|max:1000',
+            'home_warranty_requested'              => 'nullable|in:Yes,No',
+            'home_warranty_details'                => 'nullable|string|max:1000',
+            // Rental/Lease
+            'monthly_rent'                         => 'nullable|numeric|min:0',
+            'security_deposit'                     => 'nullable|numeric|min:0',
+            'move_in_date'                         => 'nullable|date',
+            'lease_term_months'                    => 'nullable|integer|min:1|max:360',
         ]);
 
         $colOverrides = array_filter(
@@ -297,13 +400,60 @@ class OfferController extends Controller
         $offer->load('metas');
         $parentMetas = $offer->metas->pluck('meta_value', 'meta_key');
 
+        // All meta keys written by saveTerms() — carried forward from parent to child.
         $termMetaKeys = [
-            'offer_type', 'offer_price', 'earnest_deposit', 'earnest_deposit_unit',
+            'offer_type', 'expires_at', 'custom_terms', 'notes',
+            'offer_price', 'earnest_deposit', 'earnest_deposit_unit',
             'financing_type', 'down_payment_value', 'down_payment_unit',
             'financing_contingency', 'financing_contingency_days',
             'inspection_contingency', 'inspection_contingency_days',
             'appraisal_contingency', 'appraisal_contingency_days',
-            'closing_date', 'possession_date', 'custom_terms',
+            'closing_date', 'possession_date', 'possession_notes',
+            // Assumable sub-fields
+            'assumable_interest', 'assumable_max_interest_rate',
+            'assumable_max_monthly_payment', 'assumable_bridge_gap_cash',
+            // Cryptocurrency sub-fields
+            'cryptocurrency_type', 'crypto_percentage', 'crypto_exchange_method',
+            // Exchange/Trade sub-fields
+            'exchange_item', 'other_exchange_item', 'exchange_item_value',
+            'exchange_item_condition', 'additional_cash', 'value_determination',
+            'exchange_transfer_method', 'exchange_liens', 'exchange_liens_details',
+            'exchange_inspection_rights',
+            // Seller Financing sub-fields
+            'sf_purchase_price', 'sf_down_payment_type', 'sf_down_payment_amount',
+            'seller_financing_amount_type', 'seller_financing_amount',
+            'seller_financing_rate', 'seller_financing_term',
+            'seller_financing_amortization', 'seller_financing_amortization_other',
+            'seller_financing_payment_frequency', 'seller_financing_payment_frequency_other',
+            'seller_financing_balloon', 'seller_financing_balloon_amount',
+            'seller_financing_balloon_date', 'prepayment_penalty',
+            'prepayment_penalty_amount', 'seller_late_fee_amount',
+            // Lease Option sub-fields
+            'lease_option_price', 'lease_option_payment', 'lease_option_duration',
+            'has_option_fee', 'option_fee_amount', 'lease_option_fee_credit',
+            'lease_option_fee_credit_pct', 'lease_option_maintenance',
+            'lease_option_conditions', 'lease_option_terms', 'lease_option_extension_terms',
+            // Lease Purchase sub-fields
+            'lease_purchase_price', 'lease_purchase_payment', 'lease_purchase_duration',
+            'lease_purchase_rent_credit', 'lease_purchase_rent_credit_amount',
+            'lease_purchase_deposit', 'lease_purchase_maintenance',
+            'lease_purchase_conditions', 'lease_purchase_terms', 'lease_purchase_extension_terms',
+            // NFT sub-fields
+            'nft_description', 'nft_percentage', 'cash_percentage_nft',
+            'nft_valuation_method', 'nft_transfer_method', 'nft_gas_fees',
+            // Other financing
+            'other_financing_details',
+            // Deposit details
+            'initial_deposit_amount', 'initial_deposit_amount_unit',
+            'initial_deposit_timeframe', 'initial_deposit_timeframe_other',
+            'additional_deposit_amount', 'additional_deposit_amount_unit',
+            'additional_deposit_timeframe', 'additional_deposit_timeframe_other',
+            // Purchase terms
+            'sale_of_buyer_property_contingency', 'sale_of_buyer_property_contingency_days',
+            'seller_contribution_requested', 'seller_contribution_details',
+            'included_personal_property', 'excluded_items',
+            'home_warranty_requested', 'home_warranty_details',
+            // Rental/Lease
             'monthly_rent', 'security_deposit', 'move_in_date', 'lease_term_months',
         ];
         foreach ($termMetaKeys as $key) {
@@ -313,15 +463,70 @@ class OfferController extends Controller
             }
         }
 
+        // Boolean contingency fields: HTML checkboxes omit the key when unchecked, so
+        // $request->boolean() is the authoritative source — mirrors saveTerms() behaviour.
+        // These are handled separately and excluded from the general loop below.
+        $boolContingencyFields = [
+            'financing_contingency',
+            'inspection_contingency',
+            'appraisal_contingency',
+            'sale_of_buyer_property_contingency',
+        ];
+        foreach ($boolContingencyFields as $key) {
+            $child->saveMeta($key, $request->boolean($key) ? 1 : 0);
+        }
+
+        // All other fields the counter party explicitly submitted override parent values.
+        // Uses $request->exists() so intentionally-cleared fields (empty string → null)
+        // are written through rather than silently keeping the parent value.
         $counterTermFields = [
-            'expires_at', 'offer_price', 'earnest_deposit', 'earnest_deposit_unit',
+            'expires_at', 'custom_terms', 'notes',
+            'offer_price', 'earnest_deposit', 'earnest_deposit_unit',
             'financing_type', 'down_payment_value', 'down_payment_unit',
-            'closing_date', 'inspection_contingency', 'financing_contingency',
-            'appraisal_contingency', 'custom_terms',
+            'financing_contingency_days',
+            'inspection_contingency_days',
+            'appraisal_contingency_days',
+            'closing_date', 'possession_date', 'possession_notes',
+            'assumable_interest', 'assumable_max_interest_rate',
+            'assumable_max_monthly_payment', 'assumable_bridge_gap_cash',
+            'cryptocurrency_type', 'crypto_percentage', 'crypto_exchange_method',
+            'exchange_item', 'other_exchange_item', 'exchange_item_value',
+            'exchange_item_condition', 'additional_cash', 'value_determination',
+            'exchange_transfer_method', 'exchange_liens', 'exchange_liens_details',
+            'exchange_inspection_rights',
+            'sf_purchase_price', 'sf_down_payment_type', 'sf_down_payment_amount',
+            'seller_financing_amount_type', 'seller_financing_amount',
+            'seller_financing_rate', 'seller_financing_term',
+            'seller_financing_amortization', 'seller_financing_amortization_other',
+            'seller_financing_payment_frequency', 'seller_financing_payment_frequency_other',
+            'seller_financing_balloon', 'seller_financing_balloon_amount',
+            'seller_financing_balloon_date', 'prepayment_penalty',
+            'prepayment_penalty_amount', 'seller_late_fee_amount',
+            'lease_option_price', 'lease_option_payment', 'lease_option_duration',
+            'has_option_fee', 'option_fee_amount', 'lease_option_fee_credit',
+            'lease_option_fee_credit_pct', 'lease_option_maintenance',
+            'lease_option_conditions', 'lease_option_terms', 'lease_option_extension_terms',
+            'lease_purchase_price', 'lease_purchase_payment', 'lease_purchase_duration',
+            'lease_purchase_rent_credit', 'lease_purchase_rent_credit_amount',
+            'lease_purchase_deposit', 'lease_purchase_maintenance',
+            'lease_purchase_conditions', 'lease_purchase_terms', 'lease_purchase_extension_terms',
+            'nft_description', 'nft_percentage', 'cash_percentage_nft',
+            'nft_valuation_method', 'nft_transfer_method', 'nft_gas_fees',
+            'other_financing_details',
+            'initial_deposit_amount', 'initial_deposit_amount_unit',
+            'initial_deposit_timeframe', 'initial_deposit_timeframe_other',
+            'additional_deposit_amount', 'additional_deposit_amount_unit',
+            'additional_deposit_timeframe', 'additional_deposit_timeframe_other',
+            'sale_of_buyer_property_contingency_days',
+            'seller_contribution_requested', 'seller_contribution_details',
+            'included_personal_property', 'excluded_items',
+            'home_warranty_requested', 'home_warranty_details',
             'monthly_rent', 'security_deposit', 'move_in_date', 'lease_term_months',
         ];
         foreach ($counterTermFields as $key) {
-            if (array_key_exists($key, $validated) && $validated[$key] !== null) {
+            // Write when the field was explicitly sent in the request (even as null),
+            // overriding whatever the parent had.
+            if ($request->exists($key) && array_key_exists($key, $validated)) {
                 $child->saveMeta($key, $validated[$key]);
             }
         }

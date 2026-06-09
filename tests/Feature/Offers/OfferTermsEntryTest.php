@@ -269,8 +269,9 @@ class OfferTermsEntryTest extends TestCase
         $response = $this->actingAs($owner)->get(route('offers.show', $offer));
 
         $response->assertStatus(200);
-        // Conditional financing sub-fields
-        $response->assertSee('name="assumable_terms"', false);
+        // Conditional financing sub-fields (Assumable uses structured sub-fields, not legacy assumable_terms textarea)
+        $response->assertSee('name="assumable_interest"', false);
+        $response->assertSee('name="assumable_max_interest_rate"', false);
         $response->assertSee('name="cryptocurrency_type"', false);
         $response->assertSee('name="exchange_item"', false);
         $response->assertSee('name="seller_financing_amount"', false);
@@ -305,11 +306,11 @@ class OfferTermsEntryTest extends TestCase
 
         $payload = [
             'financing_type'                          => 'Assumable',
-            'assumable_terms'                         => '$200,000 at 3.5% fixed for 25 years',
-            'assumable_loan_type'                     => 'FHA',
-            'assumable_interest_rate'                 => '3.5',
-            'outstanding_balance'                     => '200000',
-            'assumable_loan_term_remaining'           => '25 years',
+            // Assumable structured sub-fields (replaces legacy assumable_terms textarea)
+            'assumable_interest'                      => 'Yes',
+            'assumable_max_interest_rate'             => '3.5',
+            'assumable_max_monthly_payment'           => '1500',
+            'assumable_bridge_gap_cash'               => '5000',
             'initial_deposit_amount'                  => '5000',
             'initial_deposit_timeframe'               => 'Within 3 Days',
             'additional_deposit_amount'               => '10000',
@@ -329,9 +330,11 @@ class OfferTermsEntryTest extends TestCase
         $response->assertRedirect(route('offers.show', $offer));
 
         $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'financing_type',                          'meta_value' => 'Assumable']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'assumable_terms',                         'meta_value' => '$200,000 at 3.5% fixed for 25 years']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'assumable_loan_type',                     'meta_value' => 'FHA']);
-        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'outstanding_balance',                     'meta_value' => '200000']);
+        // Assumable structured sub-fields (legacy assumable_terms/assumable_loan_type/outstanding_balance replaced)
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'assumable_interest',                      'meta_value' => 'Yes']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'assumable_max_interest_rate',             'meta_value' => '3.5']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'assumable_max_monthly_payment',           'meta_value' => '1500']);
+        $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'assumable_bridge_gap_cash',               'meta_value' => '5000']);
         $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'initial_deposit_amount',                  'meta_value' => '5000']);
         $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'initial_deposit_timeframe',               'meta_value' => 'Within 3 Days']);
         $this->assertDatabaseHas('offer_metas', ['offer_id' => $offer->id, 'meta_key' => 'additional_deposit_amount',               'meta_value' => '10000']);
