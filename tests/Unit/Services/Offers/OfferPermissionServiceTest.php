@@ -344,11 +344,56 @@ class OfferPermissionServiceTest extends TestCase
 
     public function test_can_withdraw_allowed_for_submitted_buyer(): void
     {
-        $offer = Offer::factory()->make(['status' => 'submitted']);
+        $offer = Offer::factory()->make(['status' => 'submitted', 'user_id' => 1]);
         $result = $this->service->canWithdraw($offer, 1, 'buyer');
 
         $this->assertTrue($result['allowed']);
         $this->assertSame('withdraw', $result['action']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_withdraw_allowed_for_submitted_tenant_creator(): void
+    {
+        $offer = Offer::factory()->make(['status' => 'submitted', 'user_id' => 5]);
+        $result = $this->service->canWithdraw($offer, 5, 'tenant');
+
+        $this->assertTrue($result['allowed']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_withdraw_allowed_for_submitted_landlord_creator(): void
+    {
+        $offer = Offer::factory()->make(['status' => 'submitted', 'user_id' => 5]);
+        $result = $this->service->canWithdraw($offer, 5, 'landlord');
+
+        $this->assertTrue($result['allowed']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_withdraw_allowed_for_submitted_seller_creator(): void
+    {
+        $offer = Offer::factory()->make(['status' => 'submitted', 'user_id' => 5]);
+        $result = $this->service->canWithdraw($offer, 5, 'seller');
+
+        $this->assertTrue($result['allowed']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_withdraw_allowed_for_submitted_agent_creator(): void
+    {
+        $offer = Offer::factory()->make(['status' => 'submitted', 'user_id' => 5]);
+        $result = $this->service->canWithdraw($offer, 5, 'agent');
+
+        $this->assertTrue($result['allowed']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_withdraw_allowed_for_countered_creator(): void
+    {
+        $offer = Offer::factory()->make(['status' => 'countered', 'user_id' => 7]);
+        $result = $this->service->canWithdraw($offer, 7, 'tenant');
+
+        $this->assertTrue($result['allowed']);
         $this->assertSame('', $result['reason']);
     }
 
@@ -371,14 +416,24 @@ class OfferPermissionServiceTest extends TestCase
         $this->assertStringContainsString('expired', $result['reason']);
     }
 
-    public function test_can_withdraw_denied_for_wrong_role(): void
+    public function test_can_withdraw_denied_for_non_owner(): void
     {
-        $offer = Offer::factory()->make(['status' => 'submitted']);
-        $result = $this->service->canWithdraw($offer, 1, 'seller');
+        $offer = Offer::factory()->make(['status' => 'submitted', 'user_id' => 10]);
+        $result = $this->service->canWithdraw($offer, 99, 'seller');
 
         $this->assertFalse($result['allowed']);
         $this->assertNotEmpty($result['reason']);
-        $this->assertStringContainsString('seller', $result['reason']);
+        $this->assertStringContainsString('creator', $result['reason']);
+    }
+
+    public function test_can_withdraw_denied_for_unauthenticated(): void
+    {
+        $offer = Offer::factory()->make(['status' => 'submitted', 'user_id' => 10]);
+        $result = $this->service->canWithdraw($offer, null, 'tenant');
+
+        $this->assertFalse($result['allowed']);
+        $this->assertNotEmpty($result['reason']);
+        $this->assertStringContainsString('authenticated', $result['reason']);
     }
 
     public function test_can_withdraw_denied_for_wrong_status(): void
@@ -466,31 +521,60 @@ class OfferPermissionServiceTest extends TestCase
 
     // ── canViewTimeline ────────────────────────────────────────────────────
 
-    public function test_can_view_timeline_allowed_for_any_status_and_permitted_roles(): void
+    public function test_can_view_timeline_allowed_for_listing_owner(): void
     {
-        $statuses = OfferStateMachineService::APPROVED_STATUSES;
-        $roles = ['buyer', 'seller', 'agent', 'system'];
+        [$offer, $actorId] = $this->partyOffer('submitted');
+        $result = $this->service->canViewTimeline($offer, $actorId, 'seller');
 
-        foreach ($statuses as $status) {
-            foreach ($roles as $role) {
-                $offer = Offer::factory()->make(['status' => $status]);
-                $result = $this->service->canViewTimeline($offer, 1, $role);
-
-                $this->assertTrue($result['allowed'], "Expected allowed for status '{$status}', role '{$role}'.");
-                $this->assertSame('view_timeline', $result['action']);
-                $this->assertSame('', $result['reason']);
-            }
-        }
+        $this->assertTrue($result['allowed']);
+        $this->assertSame('view_timeline', $result['action']);
+        $this->assertSame('', $result['reason']);
     }
 
-    public function test_can_view_timeline_denied_for_unknown_role(): void
+    public function test_can_view_timeline_allowed_for_root_submitter(): void
     {
-        $offer = Offer::factory()->make(['status' => 'submitted']);
-        $result = $this->service->canViewTimeline($offer, 1, 'stranger');
+        $submitter = User::factory()->create(['user_type' => 'tenant']);
+        $auction   = OfferAuction::factory()->create();
+        $offer     = Offer::factory()->create([
+            'offer_auction_id' => $auction->id,
+            'user_id'          => $submitter->id,
+            'status'           => 'submitted',
+        ]);
+
+        $result = $this->service->canViewTimeline($offer, $submitter->id, 'tenant');
+
+        $this->assertTrue($result['allowed']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_view_timeline_allowed_for_system(): void
+    {
+        $offer  = Offer::factory()->make(['status' => 'submitted']);
+        $result = $this->service->canViewTimeline($offer, null, 'system');
+
+        $this->assertTrue($result['allowed']);
+        $this->assertSame('view_timeline', $result['action']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_view_timeline_denied_for_non_party(): void
+    {
+        [$offer] = $this->partyOffer('submitted');
+        $stranger = User::factory()->create();
+
+        $result = $this->service->canViewTimeline($offer, $stranger->id, 'buyer');
 
         $this->assertFalse($result['allowed']);
-        $this->assertNotEmpty($result['reason']);
-        $this->assertStringContainsString('stranger', $result['reason']);
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_can_view_timeline_denied_for_unauthenticated(): void
+    {
+        $offer  = Offer::factory()->make(['status' => 'submitted']);
+        $result = $this->service->canViewTimeline($offer, null, 'buyer');
+
+        $this->assertFalse($result['allowed']);
+        $this->assertSame('', $result['reason']);
     }
 
     public function test_can_view_timeline_return_shape(): void
@@ -514,14 +598,16 @@ class OfferPermissionServiceTest extends TestCase
         [$acceptOffer,  $acceptId]  = $this->partyOffer('submitted');
         [$rejectOffer,  $rejectId]  = $this->partyOffer('submitted');
 
+        [$viewTimelineOffer, $viewTimelineActorId] = $this->partyOffer('submitted');
+
         $checks = [
             fn () => $this->service->canSubmit(Offer::factory()->make(['status' => 'draft', 'user_id' => 1]), 1, 'buyer'),
             fn () => $this->service->canCounter($counterOffer, $counterId, 'buyer'),
             fn () => $this->service->canAccept($acceptOffer,  $acceptId,  'seller'),
             fn () => $this->service->canReject($rejectOffer,  $rejectId,  'seller'),
-            fn () => $this->service->canWithdraw(Offer::factory()->make(['status' => 'submitted']), 1, 'buyer'),
+            fn () => $this->service->canWithdraw(Offer::factory()->make(['status' => 'submitted', 'user_id' => 1]), 1, 'buyer'),
             fn () => $this->service->canExpire(Offer::factory()->make(['status' => 'submitted']), null, 'system'),
-            fn () => $this->service->canViewTimeline(Offer::factory()->make(['status' => 'accepted']), 1, 'agent'),
+            fn () => $this->service->canViewTimeline($viewTimelineOffer, $viewTimelineActorId, 'seller'),
         ];
 
         foreach ($checks as $check) {
@@ -542,7 +628,6 @@ class OfferPermissionServiceTest extends TestCase
             fn () => $this->service->canReject(Offer::factory()->make(['status' => 'draft']), 1, 'seller'),
             fn () => $this->service->canWithdraw(Offer::factory()->make(['status' => 'draft']), 1, 'buyer'),
             fn () => $this->service->canExpire(Offer::factory()->make(['status' => 'draft']), null, 'system'),
-            fn () => $this->service->canViewTimeline(Offer::factory()->make(['status' => 'draft']), 1, 'intruder'),
         ];
 
         foreach ($checks as $check) {

@@ -120,9 +120,9 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertStringContainsString('btn-outline-secondary btn-sm">Withdraw', $content);
     }
 
-    // ── Test 4: Blocked action with non-empty reason → disabled button with reason tooltip ──
+    // ── Test 4: Blocked action → no disabled button or reason text rendered ──
 
-    public function test_blocked_action_with_reason_shows_disabled_button_with_tooltip(): void
+    public function test_blocked_action_produces_no_html(): void
     {
         $offer        = Offer::factory()->create(['status' => 'draft']);
         $blockedReason = 'Offer must be in submitted status';
@@ -137,9 +137,9 @@ class OfferActionVisibilityTest extends TestCase
 
         $content = $response->getContent();
 
-        $this->assertStringContainsString($blockedReason, $content);
-        $this->assertStringContainsString('disabled title="' . $blockedReason . '"', $content);
-        $this->assertStringContainsString('title="' . $blockedReason . '"', $content);
+        $this->assertStringNotContainsString('disabled title="' . $blockedReason . '"', $content);
+        $this->assertStringNotContainsString($blockedReason, $content);
+        $this->assertStringNotContainsString('Submit Offer', $content);
     }
 
     // ── Test 5: Expire action never rendered regardless of can_expire value ──
@@ -160,7 +160,7 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertStringNotContainsString('>Expire ', $content);
     }
 
-    // ── Test 6: When all actions are disabled, no form tags appear on page ──
+    // ── Test 6: When all actions are disabled, no form tags or disabled buttons appear ──
 
     public function test_all_disabled_actions_produce_no_form_tags(): void
     {
@@ -176,6 +176,8 @@ class OfferActionVisibilityTest extends TestCase
 
         $this->assertStringNotContainsString('<form', $content);
         $this->assertStringNotContainsString('action=', $content);
+        $this->assertStringNotContainsString('Submit Offer', $content);
+        $this->assertStringNotContainsString('>Withdraw<', $content);
     }
 
     // ── Test 7: Enabled actions produce forms; disabled actions of the same type do not ──
@@ -229,5 +231,79 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertNotFalse($counterPos);
         $snippet = substr($content, max(0, $counterPos - 200), 250);
         $this->assertStringContainsString(' disabled', $snippet, 'Counter must render as a disabled button when can_counter=false.');
+    }
+
+    // ── Test 9: Tenant offer creator sees enabled Withdraw on a submitted offer ──
+
+    public function test_tenant_offer_creator_sees_enabled_withdraw_button(): void
+    {
+        $offer   = Offer::factory()->submitted()->create([
+            'role'    => 'tenant',
+            'user_id' => $this->user->id,
+        ]);
+        $actions = $this->makeActions(['can_withdraw' => true]);
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('btn-outline-secondary btn-sm">Withdraw', $content, 'Enabled Withdraw button must appear for offer creator.');
+        $this->assertStringNotContainsString(' disabled', substr($content, (int) strpos($content, '>Withdraw<') - 300, 350));
+    }
+
+    // ── Test 10: No disabled Withdraw HTML appears regardless of role ──
+
+    public function test_no_disabled_withdraw_html_for_any_blocked_role(): void
+    {
+        $offer   = Offer::factory()->submitted()->create(['role' => 'seller']);
+        $actions = $this->makeActions(['can_withdraw' => false]);
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringNotContainsString('>Withdraw<', $content, 'No Withdraw button must appear when can_withdraw=false.');
+        $this->assertStringNotContainsString('Not allowed to withdraw', $content);
+        $this->assertStringNotContainsString('btn-outline-secondary btn-sm', $content, 'Wrapper div for Withdraw must not appear when can_withdraw=false.');
+    }
+
+    // ── Test 11: View Timeline absent when can_view_timeline=false ──
+
+    public function test_view_timeline_absent_when_not_allowed(): void
+    {
+        $offer   = Offer::factory()->submitted()->create();
+        $actions = $this->makeActions(['can_view_timeline' => false]);
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringNotContainsString('View Timeline', $content, 'View Timeline must not appear when can_view_timeline=false.');
+    }
+
+    // ── Test 12: View Timeline present when can_view_timeline=true ──
+
+    public function test_view_timeline_present_when_allowed(): void
+    {
+        $offer   = Offer::factory()->submitted()->create();
+        $actions = $this->makeActions(['can_view_timeline' => true]);
+
+        $this->mockActionsService($offer, $actions);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('View Timeline', $content, 'View Timeline button must appear when can_view_timeline=true.');
     }
 }

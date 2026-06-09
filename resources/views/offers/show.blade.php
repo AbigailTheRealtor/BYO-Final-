@@ -1551,22 +1551,20 @@
                             @if($actorIsSubmitter && $cfg['hide_for_submitter'])
                                 @continue
                             @endif
+                            {{-- Disabled / not-permitted: skip before emitting any wrapper markup. --}}
+                            @if(!$allowed)
+                                @continue
+                            @endif
                             <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
-                                @if($allowed && $cfg['route'])
+                                @if($cfg['route'])
                                     {{-- Enabled action with a route: POST form --}}
                                     <form method="POST" action="{{ route($cfg['route'], $offer) }}">
                                         @csrf
                                         <button type="submit" class="btn {{ $cfg['btn'] }} btn-sm"@if($flag === 'can_submit') id="submit-offer-action-btn"@endif>{{ $cfg['label'] }}</button>
                                     </form>
-                                @elseif($allowed)
+                                @else
                                     {{-- Enabled action with no route (e.g. View Timeline): plain enabled button --}}
                                     <button type="button" class="btn {{ $cfg['btn'] }} btn-sm">{{ $cfg['label'] }}</button>
-                                @else
-                                    {{-- Disabled action: bare button, no form --}}
-                                    <button type="button" class="btn {{ $cfg['btn'] }} btn-sm"@if($flag === 'can_submit') id="submit-offer-action-btn"@endif disabled title="{{ $reason }}" aria-disabled="true" tabindex="-1">{{ $cfg['label'] }}</button>
-                                    @if($reason)
-                                        <small class="text-muted mt-1 px-1" style="font-size: 0.75rem; line-height: 1.3;">{{ $reason }}</small>
-                                    @endif
                                 @endif
                             </div>
                         @endforeach

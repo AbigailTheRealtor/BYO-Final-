@@ -188,8 +188,16 @@ class OfferPermissionService
             return ['allowed' => false, 'action' => $action, 'reason' => "Cannot withdraw: offer status is '{$status}', expected 'submitted' or 'countered'."];
         }
 
-        if (!in_array($actorRole, ['buyer', 'system'], true)) {
-            return ['allowed' => false, 'action' => $action, 'reason' => "Cannot withdraw: actor role '{$actorRole}' is not permitted for this action."];
+        if ($actorRole === 'system') {
+            return ['allowed' => true, 'action' => $action, 'reason' => ''];
+        }
+
+        if ($actorId === null) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot withdraw: actor must be authenticated.'];
+        }
+
+        if ($actorId !== $offer->user_id) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot withdraw: only the offer creator may withdraw this offer.'];
         }
 
         return ['allowed' => true, 'action' => $action, 'reason' => ''];
@@ -219,8 +227,17 @@ class OfferPermissionService
     {
         $action = 'view_timeline';
 
-        if (!in_array($actorRole, ['buyer', 'seller', 'agent', 'system'], true)) {
-            return ['allowed' => false, 'action' => $action, 'reason' => "Cannot view timeline: actor role '{$actorRole}' is not permitted for this action."];
+        if ($actorRole === 'system') {
+            return ['allowed' => true, 'action' => $action, 'reason' => ''];
+        }
+
+        if ($actorId === null) {
+            return ['allowed' => false, 'action' => $action, 'reason' => ''];
+        }
+
+        $legitimateIds = $this->getLegitimatePartyIds($offer);
+        if (!in_array($actorId, $legitimateIds, true)) {
+            return ['allowed' => false, 'action' => $action, 'reason' => ''];
         }
 
         return ['allowed' => true, 'action' => $action, 'reason' => ''];
