@@ -702,6 +702,27 @@ class AskAiQuestionClassifierService
             'financing type requested',
             'requested financing',
             'type of financing',
+            // Seller financing terms — factual retrieval of seller-offered financing.
+            // Routes to listing_facts so the full listing context (including faq_answers)
+            // is searched before OpenAI is called. Not in buyer_tenant_match because
+            // these phrases describe the listing terms, not a buyer/tenant criterion.
+            'seller financing',
+            'seller finance',
+            'seller will finance',
+            'will the seller finance',
+            'seller financing terms',
+            'financing offered by seller',
+            'owner financing',
+            'owner will finance',
+            'owner finance',
+            'seller carry',
+            'seller carryback',
+            // Lease option / rent-to-own — factual retrieval of lease-option terms.
+            // 'lease to own' is already covered; adding the 'lease option' variant.
+            'lease option',
+            'lease-option',
+            'lease option terms',
+            'option to purchase terms',
             // Desired lease length — factual phrasing only.
             // 'desired lease length' / 'preferred lease length' stay in buyer_tenant_match
             // so that compatibility-framed questions are not swallowed here.

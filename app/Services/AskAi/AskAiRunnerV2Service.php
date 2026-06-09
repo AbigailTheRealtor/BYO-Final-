@@ -1028,6 +1028,10 @@ class AskAiRunnerV2Service
             'garage included with',
             'is there an attached garage',
             'detached garage',
+            'garage situation',
+            'what is the garage',
+            'tell me about the garage',
+            'garage type',
         ],
         'listing.water_view' => [
             'water view',
@@ -1051,6 +1055,9 @@ class AskAiRunnerV2Service
             'does this property have an hoa',
             'homeowners association details',
             'hoa association for this listing',
+            'is there an hoa',
+            'does it have an hoa',
+            'does the property have an hoa',
         ],
         'listing.hoa_fee' => [
             'hoa fee',
@@ -1224,6 +1231,9 @@ class AskAiRunnerV2Service
         'listing.is_in_flood_zone' => [
             'flood zone status',
             'is this in a flood zone',
+            'is this property in a flood zone',
+            'is the property in a flood zone',
+            'in a flood zone',
             'fema flood zone',
             'flood insurance required for this property',
             'flood zone designation',
@@ -1691,6 +1701,68 @@ class AskAiRunnerV2Service
                         'trace'          => $trace,
                     ];
                 }
+            }
+
+            // ----------------------------------------------------------------
+            // Universal prompt-ready adapter-failed fallback.
+            //
+            // Fires when ALL of the following are true:
+            //   1. Adapter call failed (success = false).
+            //   2. The prompt package was 'prompt_ready' — i.e. ALL governance
+            //      gates (context assembly, response contract, prompt builder)
+            //      passed and the only failure is the external OpenAI call.
+            //   3. Neither the faq_answers.* nor the listing.* specific fallbacks
+            //      handled the failure (they return early before reaching here).
+            //
+            // This is intentionally NOT gated on question_type so that it covers:
+            //   - listing_facts questions with no specific field key pinned
+            //     (e.g. "What are the seller financing terms?", "What are the
+            //     lease option terms?", "What is the garage situation?")
+            //   - property_standout questions (e.g. "What are the key features
+            //     of this property?") — these classify as 'property_standout',
+            //     not 'listing_facts', so a listing_facts-only gate would miss them
+            //   - any other question type where the prompt was ready but the
+            //     external LLM call failed transiently
+            //
+            // Purpose: prevent the generic "Ask AI could not generate a response
+            // right now" error banner for ANY prompt-ready question when OpenAI is
+            // temporarily unavailable.  Returns a clean 'insufficient_context'
+            // status with a user-friendly "try again" message instead.
+            // ----------------------------------------------------------------
+            if (
+                !($adapterResult['success'] ?? false)
+                && ($promptPackage['status'] ?? '') === 'prompt_ready'
+            ) {
+                $unavailableFallbackResponse = [
+                    'success'            => false,
+                    'status'             => 'insufficient_context',
+                    'answer'             => 'A response could not be generated right now. Please try again shortly.',
+                    'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                    'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                    'refusal_message'    => null,
+                    'error'              => null,
+                ];
+                $unavailableFallbackResponse['follow_up_questions'] = $this->followUpService->forResult(
+                    $unavailableFallbackResponse,
+                    $classification
+                );
+
+                $trace['final_status']       = 'insufficient_context';
+                $trace['source_attribution'] = $unavailableFallbackResponse['source_attribution'] ?? null;
+                $this->emitTrace($trace);
+
+                return [
+                    'success'        => false,
+                    'status'         => 'insufficient_context',
+                    'classification' => $classification,
+                    'context'        => $context,
+                    'contract'       => $contract,
+                    'prompt_package' => $promptPackage,
+                    'adapter_result' => $adapterResult,
+                    'final_response' => $unavailableFallbackResponse,
+                    'error'          => null,
+                    'trace'          => $trace,
+                ];
             }
 
             $finalResponse = $this->finalResponseBuilder->build($promptPackage, $adapterResult);

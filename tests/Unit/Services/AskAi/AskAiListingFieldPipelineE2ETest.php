@@ -795,4 +795,277 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
             'desired lease length'=> ['tenant',   'What lease length is desired?',     'desired_lease_length',  'Tenant desired lease length information'],
         ];
     }
+
+    // =========================================================================
+    // Q13: "What are the seller financing terms?" — now classifies listing_facts
+    // =========================================================================
+
+    public function test_seller_financing_terms_classifies_as_listing_facts(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('What are the seller financing terms?');
+        $this->assertSame(
+            'listing_facts',
+            $result['question_type'],
+            '"What are the seller financing terms?" must now classify as listing_facts (not unsupported).'
+        );
+    }
+
+    public function test_seller_will_finance_classifies_as_listing_facts(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('Will the seller finance?');
+        $this->assertSame(
+            'listing_facts',
+            $result['question_type'],
+            '"Will the seller finance?" must classify as listing_facts.'
+        );
+    }
+
+    public function test_owner_financing_classifies_as_listing_facts(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('Is owner financing available?');
+        $this->assertSame(
+            'listing_facts',
+            $result['question_type'],
+            '"Is owner financing available?" must classify as listing_facts.'
+        );
+    }
+
+    // =========================================================================
+    // Q14: "What are the lease option terms?" — now classifies listing_facts
+    // =========================================================================
+
+    public function test_lease_option_terms_classifies_as_listing_facts(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('What are the lease option terms?');
+        $this->assertSame(
+            'listing_facts',
+            $result['question_type'],
+            '"What are the lease option terms?" must classify as listing_facts (not unsupported).'
+        );
+    }
+
+    public function test_lease_option_classifies_as_listing_facts(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('Is there a lease option available?');
+        $this->assertSame(
+            'listing_facts',
+            $result['question_type'],
+            '"Is there a lease option available?" must classify as listing_facts.'
+        );
+    }
+
+    // =========================================================================
+    // Q11: "What is the garage situation?" — now maps to listing.garage
+    // =========================================================================
+
+    public function test_garage_situation_resolves_to_listing_garage(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('garage', '2-car attached');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
+        $result = $runner->run('seller', 1, 'What is the garage situation?');
+
+        $this->assertSame(
+            'listing.garage',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"What is the garage situation?" must resolve to listing.garage.'
+        );
+    }
+
+    public function test_garage_situation_openai_disabled_direct_return_fallback(): void
+    {
+        $this->assertDirectReturnFallback('seller', 'What is the garage situation?', 'garage', '2-car attached');
+    }
+
+    // =========================================================================
+    // Q12: "Is this property in a flood zone?" — now maps to listing.is_in_flood_zone
+    // =========================================================================
+
+    public function test_is_property_in_flood_zone_resolves_to_listing_field(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('is_in_flood_zone', 'Zone X');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
+        $result = $runner->run('seller', 1, 'Is this property in a flood zone?');
+
+        $this->assertSame(
+            'listing.is_in_flood_zone',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"Is this property in a flood zone?" must resolve to listing.is_in_flood_zone.'
+        );
+    }
+
+    public function test_is_property_in_flood_zone_openai_disabled_direct_return_fallback(): void
+    {
+        $this->assertDirectReturnFallback('seller', 'Is this property in a flood zone?', 'is_in_flood_zone', 'Zone X');
+    }
+
+    // =========================================================================
+    // Q6: "Is there an HOA?" — short phrase now maps to listing.hoa_association
+    // =========================================================================
+
+    public function test_is_there_an_hoa_resolves_to_listing_hoa_association(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('hoa_association', 'Sunset Ridge HOA');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
+        $result = $runner->run('seller', 1, 'Is there an HOA?');
+
+        $this->assertSame(
+            'listing.hoa_association',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"Is there an HOA?" must resolve to listing.hoa_association.'
+        );
+    }
+
+    // =========================================================================
+    // Final listing_facts adapter-failed fallback
+    //
+    // When a listing_facts question has no specific field key detected AND the
+    // adapter fails, the pipeline must return status='insufficient_context' with
+    // a clean user-friendly message — never the generic error banner.
+    // =========================================================================
+
+    /**
+     * Mock an internalRunner that returns a full (non-narrowed) listing_facts
+     * prompt package — simulating a question whose field key could not be pinned
+     * to a single listing.* or faq_answers.* entry.
+     */
+    private function makeRunnerWithFullListingContext(): AskAiInternalRunnerService
+    {
+        $mock = $this->createMock(AskAiInternalRunnerService::class);
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'allowed_context'      => ['listing' => ['asking_price' => '500000', 'bedrooms' => '3']],
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'refusal_template'     => null,
+        ];
+        $mock->method('run')->willReturn([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'context'        => ['listing' => ['listing_type' => 'seller', 'asking_price' => '500000']],
+            'contract'       => ['status' => 'contract_ready', 'question_type' => 'listing_facts'],
+            'prompt_package' => $promptPackage,
+            'error'          => null,
+        ]);
+        return $mock;
+    }
+
+    public function test_listing_facts_adapter_failed_final_fallback_returns_insufficient_context(): void
+    {
+        $internalRunner = $this->makeRunnerWithFullListingContext();
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+
+        $adapter->expects($this->once())->method('generate')->willReturn($this->makeAdapterFailure());
+        $finalBuilder->expects($this->never())->method('build');
+
+        $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
+        $result = $runner->run('seller', 1, 'What are the seller financing terms?');
+
+        $this->assertFalse(
+            $result['success'],
+            'Universal prompt-ready fallback must set success=false.'
+        );
+        $this->assertSame(
+            'insufficient_context',
+            $result['status'],
+            'Universal prompt-ready fallback must return insufficient_context, not failed.'
+        );
+        $this->assertSame(
+            'A response could not be generated right now. Please try again shortly.',
+            $result['final_response']['answer'] ?? null,
+            'Universal prompt-ready fallback answer must be the clean try-again message.'
+        );
+        $this->assertNull(
+            $result['error'],
+            'Universal prompt-ready fallback must set error=null (not the adapter error string).'
+        );
+    }
+
+    /**
+     * Q3: A property_standout question (e.g. "What are the highlights of this property?")
+     * must NOT return the generic error banner on adapter failure.
+     * The universal prompt-ready adapter-failed fallback must cover property_standout
+     * (which does NOT classify as listing_facts) — otherwise it would fall through to
+     * finalResponseBuilder and return status='failed'.
+     *
+     * "highlight" is a keyword in the property_standout classifier block.
+     */
+    public function test_property_standout_adapter_failed_returns_insufficient_context_not_failed(): void
+    {
+        $internalRunner = $this->makeRunnerWithFullListingContext();
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+
+        $adapter->expects($this->once())->method('generate')->willReturn($this->makeAdapterFailure());
+        $finalBuilder->expects($this->never())->method('build');
+
+        $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
+        $result = $runner->run('seller', 1, 'What are the highlights of this property?');
+
+        $classifiedType = $result['classification']['question_type'] ?? null;
+        $this->assertSame(
+            'property_standout',
+            $classifiedType,
+            'Sanity: question must classify as property_standout (not listing_facts) to prove the fallback is type-agnostic.'
+        );
+
+        $this->assertFalse(
+            $result['success'],
+            'Q3 adapter failure: success must be false.'
+        );
+        $this->assertSame(
+            'insufficient_context',
+            $result['status'],
+            'Q3 adapter failure: status must be insufficient_context, never failed.'
+        );
+        $this->assertSame(
+            'A response could not be generated right now. Please try again shortly.',
+            $result['final_response']['answer'] ?? null,
+            'Q3 adapter failure: answer must be the clean try-again message.'
+        );
+    }
+
+    public function test_universal_fallback_does_not_fire_when_listing_direct_return_handled_it(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('asking_price', '500000');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+
+        $adapter->expects($this->once())->method('generate')->willReturn($this->makeAdapterFailure());
+        $finalBuilder->expects($this->never())->method('build');
+
+        $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
+        $result = $runner->run('seller', 1, 'What is the asking price?');
+
+        $this->assertTrue(
+            $result['success'],
+            'listing.* direct-return fallback must succeed (not be swallowed by universal fallback).'
+        );
+        $this->assertSame(
+            'ready',
+            $result['status'],
+            'listing.* direct-return fallback must return ready status.'
+        );
+        $this->assertSame(
+            '500000',
+            $result['final_response']['answer'] ?? null,
+            'listing.* direct-return must surface the raw field value, not the try-again message.'
+        );
+    }
 }

@@ -81,6 +81,126 @@
     @endif
 </div>
 
+{{-- ── 7-Column Per-Stage Trace Summary ────────────────────────────────── --}}
+@isset($traceColumns)
+<div class="card mb-3">
+    <div class="card-header bg-secondary text-white py-2">
+        <strong>Pipeline Trace — Per-Stage Summary</strong>
+        <small class="ml-2">(7 columns; expand accordion panels below for full data)</small>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered table-striped mb-0 font-monospace" style="font-size:0.82rem;">
+                <thead class="thead-dark">
+                    <tr>
+                        <th title="Question type assigned by AskAiQuestionClassifierService">classifier_result</th>
+                        <th title="Specific listing.* or faq_answers.* key resolved for this question">normalized_field_key</th>
+                        <th title="Status returned by AskAiContextBuilderService (assembled / partial / not_found / failed)">context_status</th>
+                        <th title="Status returned by AskAiResponseContractService (contract_ready / insufficient_context / refusal_required / unsupported)">contract_status</th>
+                        <th title="Status returned by AskAiPromptBuilderService (prompt_ready / blocked / insufficient_context / unsupported / failed)">prompt_package_status</th>
+                        <th title="Status returned by AskAiOpenAiAdapterService (generated / blocked / failed)">adapter_status</th>
+                        <th title="Final pipeline status (ready / insufficient_context / blocked / unsupported / failed)">final_status</th>
+                        <th title="Error message if any stage failed">error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        {{-- classifier_result --}}
+                        <td>
+                            @php $cr = $traceColumns['classifier_result'] ?? 'n/a'; @endphp
+                            @if($cr === 'listing_facts')
+                                <span class="badge badge-success">{{ $cr }}</span>
+                            @elseif($cr === 'unsupported')
+                                <span class="badge badge-danger">{{ $cr }}</span>
+                            @else
+                                <span class="badge badge-info">{{ $cr }}</span>
+                            @endif
+                        </td>
+                        {{-- normalized_field_key --}}
+                        <td>
+                            @if(!empty($traceColumns['normalized_field_key']))
+                                <span class="text-primary">{{ $traceColumns['normalized_field_key'] }}</span>
+                            @else
+                                <span class="text-muted">null (full context)</span>
+                            @endif
+                        </td>
+                        {{-- context_status --}}
+                        <td>
+                            @php $cs = $traceColumns['context_status'] ?? 'n/a'; @endphp
+                            @if(in_array($cs, ['assembled', 'partial']))
+                                <span class="badge badge-success">{{ $cs }}</span>
+                            @elseif($cs === 'n/a')
+                                <span class="text-muted">—</span>
+                            @else
+                                <span class="badge badge-warning">{{ $cs }}</span>
+                            @endif
+                        </td>
+                        {{-- contract_status --}}
+                        <td>
+                            @php $ks = $traceColumns['contract_status'] ?? 'n/a'; @endphp
+                            @if($ks === 'contract_ready')
+                                <span class="badge badge-success">{{ $ks }}</span>
+                            @elseif($ks === 'n/a')
+                                <span class="text-muted">—</span>
+                            @else
+                                <span class="badge badge-warning">{{ $ks }}</span>
+                            @endif
+                        </td>
+                        {{-- prompt_package_status --}}
+                        <td>
+                            @php $ps = $traceColumns['prompt_package_status'] ?? 'n/a'; @endphp
+                            @if($ps === 'prompt_ready')
+                                <span class="badge badge-success">{{ $ps }}</span>
+                            @elseif($ps === 'n/a')
+                                <span class="text-muted">—</span>
+                            @else
+                                <span class="badge badge-warning">{{ $ps }}</span>
+                            @endif
+                        </td>
+                        {{-- adapter_status --}}
+                        <td>
+                            @php $as = $traceColumns['adapter_status'] ?? 'n/a'; @endphp
+                            @if($as === 'generated')
+                                <span class="badge badge-success">{{ $as }}</span>
+                            @elseif(in_array($as, ['n/a', 'skipped']))
+                                <span class="text-muted">{{ $as }}</span>
+                            @elseif($as === 'blocked')
+                                <span class="badge badge-warning">{{ $as }}</span>
+                            @else
+                                <span class="badge badge-danger">{{ $as }}</span>
+                            @endif
+                        </td>
+                        {{-- final_status --}}
+                        <td>
+                            @php $fs = $traceColumns['final_status'] ?? 'n/a'; @endphp
+                            @if($fs === 'ready')
+                                <span class="badge badge-success">{{ $fs }}</span>
+                            @elseif($fs === 'insufficient_context')
+                                <span class="badge badge-warning">{{ $fs }}</span>
+                            @elseif($fs === 'failed')
+                                <span class="badge badge-danger">{{ $fs }}</span>
+                            @else
+                                <span class="badge badge-secondary">{{ $fs }}</span>
+                            @endif
+                        </td>
+                        {{-- error --}}
+                        <td>
+                            @if(!empty($traceColumns['error']))
+                                <span class="text-danger" title="{{ $traceColumns['error'] }}">
+                                    {{ \Illuminate\Support\Str::limit($traceColumns['error'], 60) }}
+                                </span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@endisset
+
 {{-- ── Result Panels ────────────────────────────────────────────────────── --}}
 <div class="accordion" id="askAiResultAccordion">
 

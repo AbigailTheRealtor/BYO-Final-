@@ -464,10 +464,16 @@ class AskAiRunnerV2ServiceTest extends TestCase
     }
 
     // =========================================================================
-    // Case E — Adapter failure: adapter returns failed, final response returns failed
+    // Case E — Adapter failure with prompt_ready: universal fallback returns insufficient_context
+    //
+    // When the prompt package is prompt_ready and the adapter fails, the universal
+    // prompt-ready adapter-failed fallback fires BEFORE finalResponseBuilder.build().
+    // This means the result is always 'insufficient_context' (not 'failed') and
+    // error is null (the adapter error is intentionally swallowed by the fallback
+    // to avoid surfacing raw OpenAI error strings to users).
     // =========================================================================
 
-    public function test_case_E_adapter_failure_returns_success_false_and_failed_status(): void
+    public function test_case_E_adapter_failure_returns_insufficient_context_not_failed(): void
     {
         $mocks  = $this->makeMocks();
         $runner = $this->makeRunner($mocks);
@@ -479,44 +485,43 @@ class AskAiRunnerV2ServiceTest extends TestCase
             'status'  => 'failed',
             'error'   => 'OpenAI rate limit exceeded.',
         ]));
-        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
-            'success' => false,
-            'status'  => 'failed',
-            'answer'  => null,
-            'error'   => 'OpenAI rate limit exceeded.',
-        ]));
+        $mocks['finalBuilder']->expects($this->never())->method('build');
 
         $result = $runner->run('seller', 1, 'What makes this property stand out?');
 
         $this->assertFalse($result['success']);
-        $this->assertSame('failed', $result['status']);
+        $this->assertSame(
+            'insufficient_context',
+            $result['status'],
+            'Universal prompt-ready fallback must return insufficient_context, never failed.'
+        );
     }
 
-    public function test_case_E_adapter_failure_error_is_populated(): void
+    public function test_case_E_adapter_failure_error_is_null_on_universal_fallback(): void
     {
         $mocks  = $this->makeMocks();
         $runner = $this->makeRunner($mocks);
-
-        $errorMessage = 'OpenAI rate limit exceeded.';
 
         $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
         $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
         $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult([
             'success' => false,
             'status'  => 'failed',
-            'error'   => $errorMessage,
+            'error'   => 'OpenAI rate limit exceeded.',
         ]));
-        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
-            'success' => false,
-            'status'  => 'failed',
-            'answer'  => null,
-            'error'   => $errorMessage,
-        ]));
+        $mocks['finalBuilder']->expects($this->never())->method('build');
 
         $result = $runner->run('seller', 1, 'What makes this property stand out?');
 
-        $this->assertNotNull($result['error']);
-        $this->assertSame($errorMessage, $result['error']);
+        $this->assertNull(
+            $result['error'],
+            'Universal fallback must set error=null; adapter error string must not surface at top level.'
+        );
+        $this->assertSame(
+            'A response could not be generated right now. Please try again shortly.',
+            $result['final_response']['answer'] ?? null,
+            'Universal fallback must return the clean try-again message.'
+        );
     }
 
     // =========================================================================
