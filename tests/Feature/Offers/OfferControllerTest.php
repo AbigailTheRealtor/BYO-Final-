@@ -27,6 +27,7 @@ class OfferControllerTest extends TestCase
             'user_id' => $this->user->id,
             'status'  => 'draft',
         ]);
+        $this->draftOffer->saveMeta('offer_price', '480000');
 
         $this->submittedOffer = Offer::factory()->submitted()->create([
             'user_id' => $this->user->id,

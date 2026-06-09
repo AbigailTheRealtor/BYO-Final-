@@ -242,4 +242,23 @@ class OfferPermissionService
 
         return ['allowed' => true, 'action' => $action, 'reason' => ''];
     }
+
+    /**
+     * Check whether an actor may view the offer detail page.
+     * Permitted: system/admin roles, and the two negotiation parties
+     * (listing owner + root offer submitter).
+     */
+    public function canView(Offer $offer, ?int $actorId, string $actorRole): bool
+    {
+        if (in_array($actorRole, ['system', 'admin'], true)) {
+            return true;
+        }
+
+        if ($actorId === null) {
+            return false;
+        }
+
+        $legitimateIds = $this->getLegitimatePartyIds($offer);
+        return in_array($actorId, $legitimateIds, true);
+    }
 }

@@ -293,9 +293,13 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Http/Controllers/DashboardController.php',
             'app/Http/Controllers/NotificationController.php',
             'app/Http/Controllers/OfferController.php',
+            'app/Http/Controllers/LandlordOfferListingController.php',
             'app/Services/Offers/OfferCounterService.php',
             'app/Services/Offers/OfferPermissionService.php',
             'resources/views/offers/show.blade.php',
+            'resources/views/offer-listing/landlord/view.blade.php',
+            'resources/views/offers/_offer_terms_display.blade.php',
+            'resources/views/offers/_offer_terms_form.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

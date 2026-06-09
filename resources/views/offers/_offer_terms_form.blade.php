@@ -980,31 +980,150 @@
 
     {{-- Rental/Lease-specific fields --}}
     @if(in_array($offerType, ['rental', 'lease']))
-    <h6 class="fw-semibold text-muted mt-3 mb-2">{{ ucfirst($offerType) }} Terms</h6>
+    {{-- ── Section: Pre-Screening Information ── --}}
+    <h6 class="offer-section-header">Pre-Screening Information</h6>
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <label class="form-label fw-semibold">Number of Occupants</label>
+            <input type="number" name="num_occupants" class="form-control" min="1" max="99"
+                placeholder="e.g., 2"
+                value="{{ old('num_occupants', $formData->get('num_occupants')) }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold">Pets</label>
+            <select name="has_pets" class="form-select"
+                x-data x-model="$el.value"
+                @change="$dispatch('rental-pets-changed', {val: $el.value})">
+                <option value="">Select</option>
+                @foreach(['Yes', 'No', 'Negotiable'] as $_po)
+                <option value="{{ $_po }}" {{ old('has_pets', $formData->get('has_pets')) === $_po ? 'selected' : '' }}>{{ $_po }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-6"
+            x-data="{ show: {{ in_array(old('has_pets', $formData->get('has_pets')), ['Yes','Negotiable']) ? 'true' : 'false' }} }"
+            @rental-pets-changed.window="show = ($event.detail.val === 'Yes' || $event.detail.val === 'Negotiable')">
+            <label class="form-label fw-semibold">Pet Details <span class="text-muted small">(type, breed, weight)</span></label>
+            <input type="text" name="pet_details" class="form-control"
+                placeholder="e.g., 1 cat, domestic shorthair, 10 lbs"
+                x-show="show"
+                value="{{ old('pet_details', $formData->get('pet_details')) }}">
+            <span x-show="!show" class="text-muted small">—</span>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold">Smoking</label>
+            <select name="smoking_preference" class="form-select">
+                <option value="">Select</option>
+                <option value="No" {{ old('smoking_preference', $formData->get('smoking_preference')) === 'No' ? 'selected' : '' }}>Non-smoker</option>
+                <option value="Yes" {{ old('smoking_preference', $formData->get('smoking_preference')) === 'Yes' ? 'selected' : '' }}>Smoker</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold">Est. Monthly Net Income ($)</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                <input type="text" inputmode="numeric" name="monthly_income" class="form-control" data-money-input="true"
+                    placeholder="e.g., 6,000"
+                    value="{{ $fmtMoney(old('monthly_income', $formData->get('monthly_income'))) }}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold">Credit Score Range</label>
+            <input type="text" name="credit_score_range" class="form-control"
+                placeholder="e.g., 720–750"
+                value="{{ old('credit_score_range', $formData->get('credit_score_range')) }}">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-semibold">About Yourself / Notes for Landlord <span class="text-muted small">(optional)</span></label>
+        <textarea name="screening_notes" class="form-control" rows="3"
+            placeholder="Introduce yourself, mention employment, rental history, or anything relevant">{{ old('screening_notes', $formData->get('screening_notes')) }}</textarea>
+    </div>
+
+    {{-- ── Section: Lease Offer Terms ── --}}
+    <h6 class="offer-section-header">Lease Offer Terms</h6>
     <div class="row g-3 mb-3">
         <div class="col-md-4">
-            <label class="form-label fw-semibold">Monthly Rent ($)</label>
-            <input type="number" name="monthly_rent" class="form-control" min="0" step="50"
-                value="{{ old('monthly_rent', $formData->get('monthly_rent')) }}">
+            <label class="form-label fw-semibold">Proposed Monthly Rent ($)</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                <input type="text" inputmode="numeric" name="monthly_rent" class="form-control" data-money-input="true"
+                    placeholder="e.g., 2,200"
+                    value="{{ $fmtMoney(old('monthly_rent', $formData->get('monthly_rent'))) }}">
+            </div>
         </div>
         <div class="col-md-4">
-            <label class="form-label fw-semibold">Security Deposit ($)</label>
-            <input type="number" name="security_deposit" class="form-control" min="0" step="50"
-                value="{{ old('security_deposit', $formData->get('security_deposit')) }}">
+            <label class="form-label fw-semibold">Proposed Security Deposit ($)</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                <input type="text" inputmode="numeric" name="security_deposit" class="form-control" data-money-input="true"
+                    placeholder="e.g., 2,200"
+                    value="{{ $fmtMoney(old('security_deposit', $formData->get('security_deposit'))) }}">
+            </div>
         </div>
         <div class="col-md-4">
-            <label class="form-label fw-semibold">Move-in Date</label>
-            <input type="date" name="move_in_date" class="form-control"
-                value="{{ old('move_in_date', ($v = $formData->get('move_in_date')) ? $safeDate($v) : '') }}">
+            <label class="form-label fw-semibold">Proposed Lease Length (Months)</label>
+            <input type="number" name="lease_term_months" class="form-control" min="1" max="360"
+                placeholder="e.g., 12"
+                value="{{ old('lease_term_months', $formData->get('lease_term_months')) }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Move-in / Lease Start Date</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
+                <input type="date" name="move_in_date" class="form-control"
+                    value="{{ old('move_in_date', ($v = $formData->get('move_in_date')) ? $safeDate($v) : '') }}">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Last Month's Rent Offered</label>
+            <select name="last_month_rent_offered" class="form-select">
+                <option value="">Select</option>
+                <option value="Yes" {{ old('last_month_rent_offered', $formData->get('last_month_rent_offered')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                <option value="No" {{ old('last_month_rent_offered', $formData->get('last_month_rent_offered')) === 'No' ? 'selected' : '' }}>No</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Total Move-in Funds Available ($)</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                <input type="text" inputmode="numeric" name="move_in_funds" class="form-control" data-money-input="true"
+                    placeholder="e.g., 6,600"
+                    value="{{ $fmtMoney(old('move_in_funds', $formData->get('move_in_funds'))) }}">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Utilities Responsibility</label>
+            <input type="text" name="utilities_terms" class="form-control"
+                placeholder="e.g., Tenant pays electric and gas; landlord pays water"
+                value="{{ old('utilities_terms', $formData->get('utilities_terms')) }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Maintenance Responsibility</label>
+            <select name="maintenance_responsibility" class="form-select">
+                <option value="">Select</option>
+                @foreach(['Landlord', 'Tenant', 'Shared'] as $_mr)
+                <option value="{{ $_mr }}" {{ old('maintenance_responsibility', $formData->get('maintenance_responsibility')) === $_mr ? 'selected' : '' }}>{{ $_mr }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">Parking Terms <span class="text-muted small">(optional)</span></label>
+            <input type="text" name="parking_terms" class="form-control"
+                placeholder="e.g., 1 covered parking spot included"
+                value="{{ old('parking_terms', $formData->get('parking_terms')) }}">
         </div>
     </div>
-    @if($offerType === 'lease')
     <div class="mb-3">
-        <label class="form-label fw-semibold">Lease Term (Months)</label>
-        <input type="number" name="lease_term_months" class="form-control w-auto" min="1" max="360"
-            value="{{ old('lease_term_months', $formData->get('lease_term_months')) }}">
+        <label class="form-label fw-semibold">Additional Lease Terms / Requests <span class="text-muted small">(optional)</span></label>
+        <textarea name="additional_lease_terms" class="form-control" rows="3"
+            placeholder="e.g., Request to install EV charger, desire for month-to-month after initial term">{{ old('additional_lease_terms', $formData->get('additional_lease_terms')) }}</textarea>
     </div>
-    @endif
+    <div class="mb-3">
+        <label class="form-label fw-semibold">Message to Landlord <span class="text-muted small">(optional)</span></label>
+        <textarea name="message_to_landlord" class="form-control" rows="3"
+            placeholder="Anything else you'd like the landlord to know about you or your application">{{ old('message_to_landlord', $formData->get('message_to_landlord')) }}</textarea>
+    </div>
     @endif
 
     {{-- ── Section 6: Internal Notes & Expiration ── --}}

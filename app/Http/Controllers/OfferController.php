@@ -9,6 +9,7 @@ use App\Notifications\Offers\OfferRejectedNotification;
 use App\Notifications\Offers\OfferSubmittedNotification;
 use App\Notifications\Offers\OfferWithdrawnNotification;
 use App\Services\Offers\OfferAvailableActionsService;
+use App\Services\Offers\OfferPermissionService;
 use App\Services\Offers\OfferTimelineBuilder;
 use App\Services\Offers\OfferWorkflowFacade;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +25,7 @@ class OfferController extends Controller
         private readonly OfferWorkflowFacade $facade,
         private readonly OfferAvailableActionsService $actionsService,
         private readonly OfferTimelineBuilder $timelineBuilder,
+        private readonly OfferPermissionService $permissionService,
     ) {}
 
     public function store(Request $request): JsonResponse|RedirectResponse
@@ -43,6 +45,12 @@ class OfferController extends Controller
             'expires_at'       => $validated['expires_at'] ?? null,
             'status'           => 'draft',
         ]);
+
+        // Stamp offer_type=rental for landlord-role offers so resolveOfferType()
+        // returns the correct type immediately, before any terms are saved.
+        if ($validated['role'] === 'landlord') {
+            $offer->saveMeta('offer_type', 'rental');
+        }
 
         if (!$request->expectsJson()) {
             return redirect()->route('offers.show', $offer);
@@ -80,7 +88,7 @@ class OfferController extends Controller
             $offerType = $this->resolveOfferType($offer);
             $hasSavedTerms = $offerType === 'sale'
                 ? $offer->getMeta('offer_price') !== null
-                : $offer->getMeta('monthly_rent') !== null;
+                : ($offer->getMeta('monthly_rent') !== null);
 
             if (!$hasSavedTerms) {
                 $msg = 'Please save your offer terms before submitting.';
@@ -273,6 +281,8 @@ class OfferController extends Controller
             'lease_purchase_rent_credit_amount', 'initial_deposit_amount',
             'additional_deposit_amount',
             'assumable_max_monthly_payment', 'assumable_bridge_gap_cash',
+            // Rental/Lease money fields
+            'monthly_rent', 'security_deposit', 'move_in_funds', 'monthly_income',
         ];
         foreach ($moneyFields as $field) {
             if ($request->has($field) && $request->input($field) !== null && $request->input($field) !== '') {
@@ -389,11 +399,26 @@ class OfferController extends Controller
             'excluded_items'                       => 'nullable|string|max:1000',
             'home_warranty_requested'              => 'nullable|in:Yes,No',
             'home_warranty_details'                => 'nullable|string|max:1000',
-            // Rental/Lease
+            // Rental/Lease — pre-screening
+            'num_occupants'                        => 'nullable|integer|min:1|max:99',
+            'has_pets'                             => 'nullable|in:Yes,No,Negotiable',
+            'pet_details'                          => 'nullable|string|max:500',
+            'smoking_preference'                   => 'nullable|in:Yes,No',
+            'monthly_income'                       => 'nullable|numeric|min:0',
+            'credit_score_range'                   => 'nullable|string|max:50',
+            'screening_notes'                      => 'nullable|string|max:2000',
+            'message_to_landlord'                  => 'nullable|string|max:2000',
+            // Rental/Lease — offer terms
             'monthly_rent'                         => 'nullable|numeric|min:0',
-            'security_deposit'                     => 'nullable|numeric|min:0',
-            'move_in_date'                         => 'nullable|date',
             'lease_term_months'                    => 'nullable|integer|min:1|max:360',
+            'security_deposit'                     => 'nullable|numeric|min:0',
+            'last_month_rent_offered'              => 'nullable|in:Yes,No',
+            'move_in_funds'                        => 'nullable|numeric|min:0',
+            'move_in_date'                         => 'nullable|date',
+            'utilities_terms'                      => 'nullable|string|max:500',
+            'maintenance_responsibility'           => 'nullable|in:Landlord,Tenant,Shared',
+            'parking_terms'                        => 'nullable|string|max:500',
+            'additional_lease_terms'               => 'nullable|string|max:2000',
         ]);
 
         $colOverrides = array_filter(
@@ -475,8 +500,14 @@ class OfferController extends Controller
             'seller_contribution_requested', 'seller_contribution_details',
             'included_personal_property', 'excluded_items',
             'home_warranty_requested', 'home_warranty_details',
-            // Rental/Lease
-            'monthly_rent', 'security_deposit', 'move_in_date', 'lease_term_months',
+            // Rental/Lease — pre-screening
+            'num_occupants', 'has_pets', 'pet_details', 'smoking_preference',
+            'monthly_income', 'credit_score_range', 'screening_notes', 'message_to_landlord',
+            // Rental/Lease — offer terms
+            'monthly_rent', 'lease_term_months', 'security_deposit',
+            'last_month_rent_offered', 'move_in_funds', 'move_in_date',
+            'utilities_terms', 'maintenance_responsibility', 'parking_terms',
+            'additional_lease_terms',
         ];
         foreach ($termMetaKeys as $key) {
             $parentVal = $parentMetas->get($key);
@@ -543,7 +574,14 @@ class OfferController extends Controller
             'seller_contribution_requested', 'seller_contribution_details',
             'included_personal_property', 'excluded_items',
             'home_warranty_requested', 'home_warranty_details',
-            'monthly_rent', 'security_deposit', 'move_in_date', 'lease_term_months',
+            // Rental/Lease — pre-screening
+            'num_occupants', 'has_pets', 'pet_details', 'smoking_preference',
+            'monthly_income', 'credit_score_range', 'screening_notes', 'message_to_landlord',
+            // Rental/Lease — offer terms
+            'monthly_rent', 'lease_term_months', 'security_deposit',
+            'last_month_rent_offered', 'move_in_funds', 'move_in_date',
+            'utilities_terms', 'maintenance_responsibility', 'parking_terms',
+            'additional_lease_terms',
         ];
         foreach ($counterTermFields as $key) {
             // Write when the field was explicitly sent in the request (even as null),
@@ -618,9 +656,18 @@ class OfferController extends Controller
             $offer->load('offerAuction.metas');
         }
 
-        $raw = $offer->offerAuction?->info('offer_type') ?: 'sale';
+        $raw = $offer->offerAuction?->info('offer_type') ?: '';
 
-        return in_array($raw, ['sale', 'rental', 'lease']) ? $raw : 'sale';
+        if (in_array($raw, ['sale', 'rental', 'lease'])) {
+            return $raw;
+        }
+
+        // Final fallback: role=landlord means a rental application.
+        if ($offer->role === 'landlord') {
+            return 'rental';
+        }
+
+        return 'sale';
     }
 
     /**
@@ -761,13 +808,27 @@ class OfferController extends Controller
             ];
         } elseif (in_array($offerType, ['rental', 'lease'])) {
             $typeRules = [
-                'monthly_rent'     => 'nullable|numeric|min:0',
-                'security_deposit' => 'nullable|numeric|min:0',
-                'move_in_date'     => 'nullable|date',
+                // Pre-screening
+                'num_occupants'              => 'nullable|integer|min:1|max:99',
+                'has_pets'                   => 'nullable|in:Yes,No,Negotiable',
+                'pet_details'                => 'nullable|string|max:500',
+                'smoking_preference'         => 'nullable|in:Yes,No',
+                'monthly_income'             => 'nullable|numeric|min:0',
+                'credit_score_range'         => 'nullable|string|max:50',
+                'screening_notes'            => 'nullable|string|max:2000',
+                'message_to_landlord'        => 'nullable|string|max:2000',
+                // Lease offer terms
+                'monthly_rent'               => 'nullable|numeric|min:0',
+                'lease_term_months'          => 'nullable|integer|min:1|max:360',
+                'security_deposit'           => 'nullable|numeric|min:0',
+                'last_month_rent_offered'    => 'nullable|in:Yes,No',
+                'move_in_funds'              => 'nullable|numeric|min:0',
+                'move_in_date'               => 'nullable|date',
+                'utilities_terms'            => 'nullable|string|max:500',
+                'maintenance_responsibility' => 'nullable|in:Landlord,Tenant,Shared',
+                'parking_terms'              => 'nullable|string|max:500',
+                'additional_lease_terms'     => 'nullable|string|max:2000',
             ];
-            if ($offerType === 'lease') {
-                $typeRules['lease_term_months'] = 'nullable|integer|min:1|max:360';
-            }
         }
 
         $validated = $request->validate(array_merge($commonRules, $typeRules));
@@ -887,10 +948,26 @@ class OfferController extends Controller
             $offer->saveMeta('home_warranty_requested',             $validated['home_warranty_requested'] ?? null);
             $offer->saveMeta('home_warranty_details',               $validated['home_warranty_details'] ?? null);
         } elseif (in_array($offerType, ['rental', 'lease'])) {
-            $offer->saveMeta('monthly_rent',      $validated['monthly_rent'] ?? null);
-            $offer->saveMeta('security_deposit',  $validated['security_deposit'] ?? null);
-            $offer->saveMeta('move_in_date',      $validated['move_in_date'] ?? null);
-            $offer->saveMeta('lease_term_months', $offerType === 'lease' ? ($validated['lease_term_months'] ?? null) : null);
+            // Pre-screening fields
+            $offer->saveMeta('num_occupants',              $validated['num_occupants'] ?? null);
+            $offer->saveMeta('has_pets',                   $validated['has_pets'] ?? null);
+            $offer->saveMeta('pet_details',                $validated['pet_details'] ?? null);
+            $offer->saveMeta('smoking_preference',         $validated['smoking_preference'] ?? null);
+            $offer->saveMeta('monthly_income',             $validated['monthly_income'] ?? null);
+            $offer->saveMeta('credit_score_range',         $validated['credit_score_range'] ?? null);
+            $offer->saveMeta('screening_notes',            $validated['screening_notes'] ?? null);
+            $offer->saveMeta('message_to_landlord',        $validated['message_to_landlord'] ?? null);
+            // Lease offer terms
+            $offer->saveMeta('monthly_rent',               $validated['monthly_rent'] ?? null);
+            $offer->saveMeta('lease_term_months',          $validated['lease_term_months'] ?? null);
+            $offer->saveMeta('security_deposit',           $validated['security_deposit'] ?? null);
+            $offer->saveMeta('last_month_rent_offered',    $validated['last_month_rent_offered'] ?? null);
+            $offer->saveMeta('move_in_funds',              $validated['move_in_funds'] ?? null);
+            $offer->saveMeta('move_in_date',               $validated['move_in_date'] ?? null);
+            $offer->saveMeta('utilities_terms',            $validated['utilities_terms'] ?? null);
+            $offer->saveMeta('maintenance_responsibility', $validated['maintenance_responsibility'] ?? null);
+            $offer->saveMeta('parking_terms',              $validated['parking_terms'] ?? null);
+            $offer->saveMeta('additional_lease_terms',     $validated['additional_lease_terms'] ?? null);
         }
     }
 
@@ -898,6 +975,11 @@ class OfferController extends Controller
     {
         $actorId   = Auth::id();
         $actorRole = Auth::user()->role ?? Auth::user()->user_type ?? 'system';
+
+        if (!$this->permissionService->canView($offer, $actorId, $actorRole)) {
+            abort(403, 'You are not authorised to view this offer.');
+        }
+
         $timeline  = $this->timelineBuilder->buildForOffer($offer);
         $actions   = $this->actionsService->forOffer($offer, $actorId, $actorRole);
 
@@ -918,6 +1000,34 @@ class OfferController extends Controller
         }
 
         $counterDefaults = $metas;
+
+        // For landlord-role offers (rental applications), pre-populate form defaults
+        // from the landlord listing's asking terms when no terms have been saved yet.
+        if ($offer->role === 'landlord' && !$metas->has('monthly_rent')) {
+            $linkedLandlordId = $offer->offerAuction?->info('linked_landlord_auction_id');
+            if ($linkedLandlordId) {
+                $landlordAuction = \App\Models\LandlordAgentAuction::with('meta')->find((int) $linkedLandlordId);
+                if ($landlordAuction) {
+                    $lMeta = fn($k) => $landlordAuction->meta->where('meta_key', $k)->first()?->meta_value;
+                    $prefill = [];
+                    // Financial terms
+                    if ($v = $lMeta('desired_rental_amount'))       $prefill['monthly_rent']              = $v;
+                    if ($v = $lMeta('security_deposit_amount'))     $prefill['security_deposit']          = $v;
+                    if ($v = $lMeta('total_move_in_funds_required')) $prefill['move_in_funds']            = $v;
+                    // Dates
+                    if ($v = $lMeta('available_date') ?: $lMeta('lease_available_date') ?: $lMeta('lease_date')) {
+                        $prefill['move_in_date'] = $v;
+                    }
+                    // Lease conditions that the landlord has already defined
+                    if ($v = $lMeta('utilities'))                   $prefill['utilities_terms']           = $v;
+                    if ($v = $lMeta('maintenance_by'))              $prefill['maintenance_responsibility'] = $v;
+                    if ($v = $lMeta('parking_terms') ?: $lMeta('commercial_parking_terms')) {
+                        $prefill['parking_terms'] = $v;
+                    }
+                    $counterDefaults = $metas->merge($prefill);
+                }
+            }
+        }
 
         return view('offers.show', compact('offer', 'timeline', 'actions', 'metas', 'offerType', 'counterDefaults'));
     }

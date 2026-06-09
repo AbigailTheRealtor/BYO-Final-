@@ -3,6 +3,7 @@
 namespace Tests\Feature\Offers;
 
 use App\Models\Offer;
+use App\Models\OfferAuction;
 use App\Models\User;
 use App\Notifications\Offers\OfferSubmittedNotification;
 use App\Services\Offers\OfferAvailableActionsService;
@@ -16,18 +17,24 @@ class OfferSubmittedNotificationDispatchTest extends TestCase
     use DatabaseTransactions;
 
     private User $user;
+    private User $listingOwner;
     private Offer $draftOffer;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->user = User::factory()->create(['user_type' => 'seller']);
+        $this->user         = User::factory()->create(['user_type' => 'seller']);
+        $this->listingOwner = User::factory()->create(['user_type' => 'seller']);
+
+        $auction = OfferAuction::factory()->create(['user_id' => $this->listingOwner->id]);
 
         $this->draftOffer = Offer::factory()->create([
-            'user_id' => $this->user->id,
-            'status'  => 'draft',
+            'user_id'          => $this->user->id,
+            'offer_auction_id' => $auction->id,
+            'status'           => 'draft',
         ]);
+        $this->draftOffer->saveMeta('offer_price', '480000');
     }
 
     private function actingAsAllowedUser(?User $user = null): static
@@ -88,7 +95,7 @@ class OfferSubmittedNotificationDispatchTest extends TestCase
             ->postJson(route('offers.submit', $this->draftOffer))
             ->assertOk();
 
-        Notification::assertSentTo($this->user, OfferSubmittedNotification::class);
+        Notification::assertSentTo($this->listingOwner, OfferSubmittedNotification::class);
     }
 
     // ── Test 2: permission denial does not dispatch ───────────────────────────

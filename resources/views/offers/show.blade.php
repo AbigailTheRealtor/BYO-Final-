@@ -101,7 +101,7 @@
                 </div>
                 <div class="card-body">
                     @if($canEdit)
-                    @include('offers._offer_terms_form', ['mode' => 'draft_terms', 'formData' => $metas])
+                    @include('offers._offer_terms_form', ['mode' => 'draft_terms', 'formData' => $counterDefaults])
                     @else
                     {{-- Read-only display --}}
                     @include('offers._offer_terms_display', ['metas' => $metas, 'offerType' => $offerType])

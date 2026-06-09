@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\LandlordAgentAuction;
+use App\Models\OfferAuction;
 use App\Models\SellerListingInquiry;
 use App\Services\AskAi\AskAiContextBuilderService;
 use Illuminate\Http\Request;
@@ -33,6 +34,49 @@ class LandlordOfferListingController extends Controller
      * Fallback path — presence of Offer-Listing-exclusive meta keys for older records.
      * Any other record (hire_agent, null, unknown, etc.) results in abort(404).
      */
+    /**
+     * Read the OfferAuction record linked to this LandlordAgentAuction.
+     * Returns null when none is present.  Never writes to the database.
+     */
+    private function resolveOfferAuction(LandlordAgentAuction $auction): ?OfferAuction
+    {
+        $linkedId = $auction->info('linked_offer_auction_id');
+        if ($linkedId) {
+            return OfferAuction::find((int) $linkedId) ?: null;
+        }
+        return null;
+    }
+
+    /**
+     * Return the OfferAuction linked to this landlord listing, creating one on
+     * first access when none exists.  The OfferAuction is the record that
+     * offer_auction_id in offer submission forms must reference.
+     *
+     * A back-reference meta (linked_landlord_auction_id) is stored on the
+     * OfferAuction so that the offer show page can pre-fill the tenant
+     * application form with the landlord's asking terms.
+     */
+    public function ensureLinkedOfferAuction(LandlordAgentAuction $auction): OfferAuction
+    {
+        $existing = $this->resolveOfferAuction($auction);
+        if ($existing) {
+            return $existing;
+        }
+
+        $offerAuction = OfferAuction::create([
+            'user_id'     => $auction->user_id,
+            'title'       => $auction->title ?: ($auction->info('listing_title') ?: 'Rental Property'),
+            'is_draft'    => false,
+            'is_approved' => true,
+        ]);
+        $offerAuction->saveMeta('offer_type', 'rental');
+        $offerAuction->saveMeta('linked_landlord_auction_id', $auction->id);
+
+        $auction->saveMeta('linked_offer_auction_id', $offerAuction->id);
+
+        return $offerAuction;
+    }
+
     private function resolveOfferListing(int|string $id): LandlordAgentAuction
     {
         $auction = LandlordAgentAuction::with('meta')->find($id);
@@ -101,7 +145,9 @@ class LandlordOfferListingController extends Controller
             'title' => $auction->title ?? ($meta['listing_title'] ?? 'Rental Property Listing'),
         ];
 
-        return view('offer-listing.landlord.view', compact('auction', 'meta', 'askAiChipContext') + $page_data);
+        $offerAuction = $this->ensureLinkedOfferAuction($auction);
+
+        return view('offer-listing.landlord.view', compact('auction', 'meta', 'askAiChipContext', 'offerAuction') + $page_data);
     }
 
     public function submitQuestion(Request $request, $auction)

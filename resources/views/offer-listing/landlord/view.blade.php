@@ -591,7 +591,7 @@
                     <div class="lol-hero-ctas">
                         <form method="POST" action="{{ route('offers.store') }}" style="display:inline;">
                             @csrf
-                            <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                            <input type="hidden" name="offer_auction_id" value="{{ optional($offerAuction)->id }}">
                             <input type="hidden" name="role" value="landlord">
                             <button type="submit" class="btn btn-primary" aria-label="Submit an application for this rental">
                                 <i class="fa-solid fa-file-signature me-1"></i>Submit Application
@@ -638,7 +638,7 @@
                 <div class="lol-interaction-card-helper">Review rental terms and submit your application.</div>
                 <form method="POST" action="{{ route('offers.store') }}">
                     @csrf
-                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                    <input type="hidden" name="offer_auction_id" value="{{ optional($offerAuction)->id }}">
                     <input type="hidden" name="role" value="landlord">
                     <button type="submit" class="lol-interaction-cta lol-interaction-cta-primary"
                             aria-label="Submit an application for this rental">
@@ -1475,7 +1475,7 @@
             <div class="lol-sticky-title">Quick Actions</div>
             <form method="POST" action="{{ route('offers.store') }}">
                 @csrf
-                <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+                <input type="hidden" name="offer_auction_id" value="{{ optional($offerAuction)->id }}">
                 <input type="hidden" name="role" value="landlord">
                 <button type="submit" class="lol-action-btn lol-action-primary">
                     <i class="fa-solid fa-file-signature"></i>Submit Application
@@ -1748,7 +1748,7 @@
 <div class="lol-mobile-bar d-lg-none">
     <form method="POST" action="{{ route('offers.store') }}">
         @csrf
-        <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
+        <input type="hidden" name="offer_auction_id" value="{{ optional($offerAuction)->id }}">
         <input type="hidden" name="role" value="landlord">
         <button type="submit" class="lol-mobile-bar-btn lol-mobile-bar-offer">
             <i class="fa-solid fa-file-signature"></i>

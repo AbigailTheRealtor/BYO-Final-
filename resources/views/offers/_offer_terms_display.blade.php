@@ -363,20 +363,37 @@
 @endif {{-- end sale --}}
 
 @if(in_array($offerType, ['rental', 'lease']))
-<dl class="row mb-0">
-    <dt class="col-sm-3">Monthly Rent</dt>
+    @if($metas->get('num_occupants') || $metas->get('has_pets') || $metas->get('smoking_preference') ||
+        $metas->get('monthly_income') || $metas->get('credit_score_range') || $metas->get('screening_notes'))
+    <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Pre-Screening</dt>
+    @if($metas->get('num_occupants')) <dt class="col-sm-3">Occupants</dt><dd class="col-sm-9">{{ $metas->get('num_occupants') }}</dd> @endif
+    @if($metas->get('has_pets'))
+        <dt class="col-sm-3">Pets</dt>
+        <dd class="col-sm-9">{{ $metas->get('has_pets') }}{{ $metas->get('pet_details') ? ' — ' . $metas->get('pet_details') : '' }}</dd>
+    @endif
+    @if($metas->get('smoking_preference')) <dt class="col-sm-3">Smoking</dt><dd class="col-sm-9">{{ $metas->get('smoking_preference') === 'No' ? 'Non-smoker' : 'Smoker' }}</dd> @endif
+    @if($metas->get('monthly_income')) <dt class="col-sm-3">Est. Monthly Income</dt><dd class="col-sm-9">${{ number_format($metas->get('monthly_income')) }}</dd> @endif
+    @if($metas->get('credit_score_range')) <dt class="col-sm-3">Credit Score Range</dt><dd class="col-sm-9">{{ $metas->get('credit_score_range') }}</dd> @endif
+    @if($metas->get('screening_notes')) <dt class="col-sm-3">Notes for Landlord</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('screening_notes') }}</dd> @endif
+    @endif
+
+    <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Lease Offer Terms</dt>
+    <dt class="col-sm-3">Proposed Monthly Rent</dt>
     <dd class="col-sm-9">{{ $metas->get('monthly_rent') ? '$' . number_format($metas->get('monthly_rent')) : '—' }}</dd>
 
     <dt class="col-sm-3">Security Deposit</dt>
     <dd class="col-sm-9">{{ $metas->get('security_deposit') ? '$' . number_format($metas->get('security_deposit')) : '—' }}</dd>
 
-    <dt class="col-sm-3">Move-in Date</dt>
-    <dd class="col-sm-9">{{ $safeDate($metas->get('move_in_date')) }}</dd>
-
-    @if($offerType === 'lease')
-    <dt class="col-sm-3">Lease Term</dt>
-    <dd class="col-sm-9">{{ $metas->get('lease_term_months') ? $metas->get('lease_term_months') . ' months' : '—' }}</dd>
-    @endif
+    @if($metas->get('lease_term_months')) <dt class="col-sm-3">Lease Length</dt><dd class="col-sm-9">{{ $metas->get('lease_term_months') }} months</dd> @endif
+    @if($metas->get('move_in_date')) <dt class="col-sm-3">Move-in / Lease Start Date</dt><dd class="col-sm-9">{{ $safeDate($metas->get('move_in_date')) }}</dd> @endif
+    @if($metas->get('last_month_rent_offered')) <dt class="col-sm-3">Last Month's Rent Offered</dt><dd class="col-sm-9">{{ $metas->get('last_month_rent_offered') }}</dd> @endif
+    @if($metas->get('move_in_funds')) <dt class="col-sm-3">Total Move-in Funds</dt><dd class="col-sm-9">${{ number_format($metas->get('move_in_funds')) }}</dd> @endif
+    @if($metas->get('utilities_terms')) <dt class="col-sm-3">Utilities</dt><dd class="col-sm-9">{{ $metas->get('utilities_terms') }}</dd> @endif
+    @if($metas->get('maintenance_responsibility')) <dt class="col-sm-3">Maintenance</dt><dd class="col-sm-9">{{ $metas->get('maintenance_responsibility') }}</dd> @endif
+    @if($metas->get('parking_terms')) <dt class="col-sm-3">Parking</dt><dd class="col-sm-9">{{ $metas->get('parking_terms') }}</dd> @endif
+    @if($metas->get('additional_lease_terms')) <dt class="col-sm-3">Additional Terms</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('additional_lease_terms') }}</dd> @endif
+    @if($metas->get('message_to_landlord')) <dt class="col-sm-3">Message to Landlord</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('message_to_landlord') }}</dd> @endif
+@endif
 
     <dt class="col-sm-3">Custom Terms</dt>
     <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('custom_terms') ?: '—' }}</dd>

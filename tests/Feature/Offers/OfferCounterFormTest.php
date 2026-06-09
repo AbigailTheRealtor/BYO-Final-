@@ -3,6 +3,7 @@
 namespace Tests\Feature\Offers;
 
 use App\Models\Offer;
+use App\Models\OfferAuction;
 use App\Models\User;
 use App\Services\Offers\OfferAvailableActionsService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -62,11 +63,31 @@ class OfferCounterFormTest extends TestCase
         });
     }
 
+    private function makeOffer(array $attrs = []): Offer
+    {
+        return Offer::factory()->create(array_merge(['user_id' => $this->user->id], $attrs));
+    }
+
+    private function makeSubmittedOffer(array $attrs = []): Offer
+    {
+        return Offer::factory()->submitted()->create(array_merge(['user_id' => $this->user->id], $attrs));
+    }
+
+    private function makeSubmittedOfferByOtherUser(array $attrs = []): Offer
+    {
+        $other        = User::factory()->create();
+        $offerAuction = OfferAuction::factory()->create(['user_id' => $this->user->id]);
+        return Offer::factory()->submitted()->create(array_merge([
+            'user_id'          => $other->id,
+            'offer_auction_id' => $offerAuction->id,
+        ], $attrs));
+    }
+
     // ── Test 1: can_counter=true → form with action pointing to offers.counter ──
 
     public function test_counter_form_appears_with_correct_action_when_can_counter_is_true(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOfferByOtherUser();
         $actions = $this->makeActions(['can_counter' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -86,7 +107,7 @@ class OfferCounterFormTest extends TestCase
 
     public function test_counter_form_includes_csrf_token(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOfferByOtherUser();
         $actions = $this->makeActions(['can_counter' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -103,7 +124,7 @@ class OfferCounterFormTest extends TestCase
 
     public function test_counter_form_includes_expires_at_date_input(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOfferByOtherUser();
         $actions = $this->makeActions(['can_counter' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -121,7 +142,7 @@ class OfferCounterFormTest extends TestCase
 
     public function test_no_counter_element_when_can_counter_is_false_with_reason(): void
     {
-        $offer  = Offer::factory()->submitted()->create();
+        $offer  = $this->makeSubmittedOfferByOtherUser();
         $reason = 'Not allowed to counter';
         $actions = $this->makeActions([
             'can_counter' => false,
@@ -150,7 +171,7 @@ class OfferCounterFormTest extends TestCase
 
     public function test_no_counter_element_when_can_counter_is_false_and_reason_is_empty(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOffer();
         $actions = $this->makeActions([
             'can_counter' => false,
             'reasons'     => ['counter' => ''],
@@ -172,7 +193,7 @@ class OfferCounterFormTest extends TestCase
 
     public function test_expire_is_absent_from_rendered_html_regardless_of_can_expire(): void
     {
-        $offer   = Offer::factory()->create(['status' => 'draft']);
+        $offer   = $this->makeOffer(['status' => 'draft']);
         $actions = $this->makeActions(['can_expire' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -204,7 +225,7 @@ class OfferCounterFormTest extends TestCase
 
     public function test_counter_form_contains_all_required_offer_term_fields(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOfferByOtherUser();
         $actions = $this->makeActions(['can_counter' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -247,7 +268,7 @@ class OfferCounterFormTest extends TestCase
 
     public function test_counter_form_pre_populates_fields_from_counter_defaults(): void
     {
-        $offer = Offer::factory()->submitted()->create();
+        $offer = $this->makeSubmittedOfferByOtherUser();
 
         $offer->saveMeta('offer_price',  '450000');
         $offer->saveMeta('closing_date', '2026-09-01');
@@ -272,7 +293,7 @@ class OfferCounterFormTest extends TestCase
 
     public function test_counter_form_has_submit_counter_offer_button(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOfferByOtherUser();
         $actions = $this->makeActions(['can_counter' => true]);
 
         $this->mockActionsService($offer, $actions);

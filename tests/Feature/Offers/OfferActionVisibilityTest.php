@@ -3,6 +3,7 @@
 namespace Tests\Feature\Offers;
 
 use App\Models\Offer;
+use App\Models\OfferAuction;
 use App\Models\User;
 use App\Services\Offers\OfferAvailableActionsService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -63,11 +64,41 @@ class OfferActionVisibilityTest extends TestCase
         });
     }
 
+    private function makeOffer(array $attrs = []): Offer
+    {
+        return Offer::factory()->create(array_merge(['user_id' => $this->user->id], $attrs));
+    }
+
+    private function makeSubmittedOffer(array $attrs = []): Offer
+    {
+        return Offer::factory()->submitted()->create(array_merge(['user_id' => $this->user->id], $attrs));
+    }
+
+    private function makeOfferByOtherUser(array $attrs = []): Offer
+    {
+        $other        = User::factory()->create();
+        $offerAuction = OfferAuction::factory()->create(['user_id' => $this->user->id]);
+        return Offer::factory()->create(array_merge([
+            'user_id'          => $other->id,
+            'offer_auction_id' => $offerAuction->id,
+        ], $attrs));
+    }
+
+    private function makeSubmittedOfferByOtherUser(array $attrs = []): Offer
+    {
+        $other        = User::factory()->create();
+        $offerAuction = OfferAuction::factory()->create(['user_id' => $this->user->id]);
+        return Offer::factory()->submitted()->create(array_merge([
+            'user_id'          => $other->id,
+            'offer_auction_id' => $offerAuction->id,
+        ], $attrs));
+    }
+
     // ── Test 1: Buyer + draft offer → Submit Offer button is present and not disabled ──
 
     public function test_buyer_draft_offer_shows_submit_offer_button_enabled(): void
     {
-        $offer   = Offer::factory()->create(['status' => 'draft', 'role' => 'buyer']);
+        $offer   = $this->makeOffer(['status' => 'draft', 'role' => 'buyer']);
         $actions = $this->makeActions(['can_submit' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -86,7 +117,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_seller_submitted_offer_shows_accept_and_reject_buttons_enabled(): void
     {
-        $offer   = Offer::factory()->submitted()->create(['role' => 'seller']);
+        $offer   = $this->makeSubmittedOfferByOtherUser(['role' => 'seller']);
         $actions = $this->makeActions([
             'can_accept' => true,
             'can_reject' => true,
@@ -107,7 +138,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_buyer_submitted_offer_shows_withdraw_button_enabled(): void
     {
-        $offer   = Offer::factory()->submitted()->create(['role' => 'buyer']);
+        $offer   = $this->makeSubmittedOffer(['role' => 'buyer']);
         $actions = $this->makeActions(['can_withdraw' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -124,7 +155,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_blocked_action_produces_no_html(): void
     {
-        $offer        = Offer::factory()->create(['status' => 'draft']);
+        $offer        = $this->makeOfferByOtherUser(['status' => 'draft']);
         $blockedReason = 'Offer must be in submitted status';
         $actions = $this->makeActions([
             'reasons' => ['submit' => $blockedReason],
@@ -148,7 +179,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_expire_action_never_rendered(): void
     {
-        $offer   = Offer::factory()->create(['status' => 'draft']);
+        $offer   = $this->makeOffer(['status' => 'draft']);
         $actions = $this->makeActions(['can_expire' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -166,7 +197,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_all_disabled_actions_produce_no_form_tags(): void
     {
-        $offer   = Offer::factory()->create(['status' => 'draft']);
+        $offer   = $this->makeOfferByOtherUser(['status' => 'draft']);
         $actions = $this->makeActions();
 
         $this->mockActionsService($offer, $actions);
@@ -186,7 +217,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_enabled_action_has_form_and_disabled_action_has_none(): void
     {
-        $offer = Offer::factory()->create(['status' => 'draft']);
+        $offer = $this->makeOffer(['status' => 'draft']);
 
         // Submit enabled — all others disabled
         $actions = $this->makeActions(['can_submit' => true]);
@@ -212,7 +243,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_counter_renders_nothing_when_can_counter_is_false(): void
     {
-        $offer = Offer::factory()->create(['status' => 'draft']);
+        $offer = $this->makeOfferByOtherUser(['status' => 'draft']);
 
         $actions = $this->makeActions(['can_counter' => false]);
         $this->mockActionsService($offer, $actions);
@@ -233,9 +264,8 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_tenant_offer_creator_sees_enabled_withdraw_button(): void
     {
-        $offer   = Offer::factory()->submitted()->create([
-            'role'    => 'tenant',
-            'user_id' => $this->user->id,
+        $offer   = $this->makeSubmittedOffer([
+            'role' => 'tenant',
         ]);
         $actions = $this->makeActions(['can_withdraw' => true]);
 
@@ -254,7 +284,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_no_disabled_withdraw_html_for_any_blocked_role(): void
     {
-        $offer   = Offer::factory()->submitted()->create(['role' => 'seller']);
+        $offer   = $this->makeSubmittedOffer(['role' => 'seller']);
         $actions = $this->makeActions(['can_withdraw' => false]);
 
         $this->mockActionsService($offer, $actions);
@@ -275,7 +305,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_view_timeline_absent_when_not_allowed(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOffer();
         $actions = $this->makeActions(['can_view_timeline' => false]);
 
         $this->mockActionsService($offer, $actions);
@@ -292,7 +322,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_view_timeline_present_when_allowed(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOffer();
         $actions = $this->makeActions(['can_view_timeline' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -311,7 +341,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_submitted_offer_does_not_contain_cannot_submit_text(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOffer();
         $actions = $this->makeActions([
             'reasons' => ['submit' => 'Cannot submit — offer is already submitted'],
         ]);
@@ -330,7 +360,7 @@ class OfferActionVisibilityTest extends TestCase
 
     public function test_submitted_offer_with_can_submit_false_renders_no_submit_button(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOffer();
         $actions = $this->makeActions(['can_submit' => false]);
 
         $this->mockActionsService($offer, $actions);

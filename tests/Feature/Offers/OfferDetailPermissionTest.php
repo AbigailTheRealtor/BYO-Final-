@@ -63,12 +63,14 @@ class OfferDetailPermissionTest extends TestCase
 
     private function makeDraftOffer(OfferAuction $auction, User $buyer): Offer
     {
-        return Offer::factory()->create([
+        $offer = Offer::factory()->create([
             'user_id'          => $buyer->id,
             'offer_auction_id' => $auction->id,
             'role'             => 'buyer',
             'status'           => 'draft',
         ]);
+        $offer->saveMeta('offer_price', '480000');
+        return $offer;
     }
 
     private function allActionsAllowed(): array
@@ -192,6 +194,42 @@ class OfferDetailPermissionTest extends TestCase
         $offer->refresh();
         $this->assertSame('submitted', $offer->status,
             'Offer status must stay submitted after a blocked counter attempt.');
+    }
+
+    public function test_stranger_viewing_offer_show_is_denied(): void
+    {
+        $buyer    = $this->makeBuyer();
+        $seller   = $this->makeSeller();
+        $stranger = User::factory()->create(['user_type' => 'seller']);
+        $offer    = $this->makeSubmittedOffer($this->makeAuction($seller), $buyer);
+
+        $response = $this->actingAs($stranger)
+            ->get(route('offers.show', $offer));
+
+        $response->assertStatus(403,
+            'A stranger who is not a party must be denied GET access to the offer detail page.');
+    }
+
+    public function test_submitter_can_view_their_own_offer(): void
+    {
+        $buyer  = $this->makeBuyer();
+        $seller = $this->makeSeller();
+        $offer  = $this->makeSubmittedOffer($this->makeAuction($seller), $buyer);
+
+        $this->actingAs($buyer)
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200);
+    }
+
+    public function test_listing_owner_can_view_offer_submitted_to_their_listing(): void
+    {
+        $buyer  = $this->makeBuyer();
+        $seller = $this->makeSeller();
+        $offer  = $this->makeSubmittedOffer($this->makeAuction($seller), $buyer);
+
+        $this->actingAs($seller)
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200);
     }
 
     public function test_stranger_posting_accept_is_denied_server_side(): void

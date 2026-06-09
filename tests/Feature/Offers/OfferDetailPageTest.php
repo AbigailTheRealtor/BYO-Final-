@@ -3,6 +3,7 @@
 namespace Tests\Feature\Offers;
 
 use App\Models\Offer;
+use App\Models\OfferAuction;
 use App\Models\User;
 use App\Services\Offers\OfferAvailableActionsService;
 use App\Services\Offers\OfferCounterService;
@@ -18,7 +19,7 @@ class OfferDetailPageTest extends TestCase
     public function test_root_offer_page_loads_200(): void
     {
         $user  = User::factory()->create();
-        $offer = Offer::factory()->create(['status' => 'draft']);
+        $offer = Offer::factory()->create(['status' => 'draft', 'user_id' => $user->id]);
 
         $response = $this->actingAs($user)->get(route('offers.show', $offer));
 
@@ -30,10 +31,11 @@ class OfferDetailPageTest extends TestCase
     public function test_counter_offer_page_shows_parent_offer_id(): void
     {
         $user   = User::factory()->create();
-        $parent = Offer::factory()->submitted()->create();
+        $parent = Offer::factory()->submitted()->create(['user_id' => $user->id]);
         $child  = Offer::factory()->create([
             'parent_offer_id' => $parent->id,
             'status'          => 'submitted',
+            'user_id'         => $user->id,
         ]);
 
         $response = $this->actingAs($user)->get(route('offers.show', $child));
@@ -47,7 +49,7 @@ class OfferDetailPageTest extends TestCase
     public function test_timeline_item_count_matches_chain_length(): void
     {
         $user   = User::factory()->create();
-        $parent = Offer::factory()->submitted()->create();
+        $parent = Offer::factory()->submitted()->create(['user_id' => $user->id]);
 
         $counterService = $this->app->make(OfferCounterService::class);
         $result         = $counterService->counter(
@@ -74,7 +76,7 @@ class OfferDetailPageTest extends TestCase
     public function test_at_least_one_can_flag_appears_in_rendered_html(): void
     {
         $user  = User::factory()->create();
-        $offer = Offer::factory()->create(['status' => 'draft']);
+        $offer = Offer::factory()->create(['status' => 'draft', 'user_id' => $user->id]);
 
         $response = $this->actingAs($user)->get(route('offers.show', $offer));
 
@@ -98,8 +100,15 @@ class OfferDetailPageTest extends TestCase
 
     public function test_disabled_reason_appears_when_action_is_blocked(): void
     {
-        $user  = User::factory()->create();
-        $offer = Offer::factory()->create(['status' => 'draft']);
+        // Use a different user as the submitter so the viewer (listing owner) sees all blocked reasons
+        $submitter    = User::factory()->create();
+        $viewer       = User::factory()->create();
+        $offerAuction = OfferAuction::factory()->create(['user_id' => $viewer->id]);
+        $offer        = Offer::factory()->create([
+            'status'           => 'draft',
+            'user_id'          => $submitter->id,
+            'offer_auction_id' => $offerAuction->id,
+        ]);
 
         $actionsService = $this->app->make(OfferAvailableActionsService::class);
         $actions        = $actionsService->forOffer($offer, null, 'system');
@@ -114,7 +123,8 @@ class OfferDetailPageTest extends TestCase
 
         $this->assertNotNull($blockedReason, 'At least one blocked reason must exist for a draft offer');
 
-        $response = $this->actingAs($user)->get(route('offers.show', $offer));
+        // View as the listing owner (non-submitter) — all action sections including counter are rendered
+        $response = $this->actingAs($viewer)->get(route('offers.show', $offer));
 
         $response->assertStatus(200);
         $response->assertSee($blockedReason);

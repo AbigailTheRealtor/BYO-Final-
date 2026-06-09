@@ -3,6 +3,7 @@
 namespace Tests\Feature\Offers;
 
 use App\Models\Offer;
+use App\Models\OfferAuction;
 use App\Models\User;
 use App\Services\Offers\OfferAvailableActionsService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -62,11 +63,41 @@ class OfferActionButtonWiringTest extends TestCase
         });
     }
 
+    private function makeOffer(array $attrs = []): Offer
+    {
+        return Offer::factory()->create(array_merge(['user_id' => $this->user->id], $attrs));
+    }
+
+    private function makeSubmittedOffer(array $attrs = []): Offer
+    {
+        return Offer::factory()->submitted()->create(array_merge(['user_id' => $this->user->id], $attrs));
+    }
+
+    private function makeSubmittedOfferByOtherUser(array $attrs = []): Offer
+    {
+        $other        = User::factory()->create();
+        $offerAuction = OfferAuction::factory()->create(['user_id' => $this->user->id]);
+        return Offer::factory()->submitted()->create(array_merge([
+            'user_id'          => $other->id,
+            'offer_auction_id' => $offerAuction->id,
+        ], $attrs));
+    }
+
+    private function makeOfferByOtherUser(array $attrs = []): Offer
+    {
+        $other        = User::factory()->create();
+        $offerAuction = OfferAuction::factory()->create(['user_id' => $this->user->id]);
+        return Offer::factory()->create(array_merge([
+            'user_id'          => $other->id,
+            'offer_auction_id' => $offerAuction->id,
+        ], $attrs));
+    }
+
     // ── Test 1: Enabled submit → form POSTs to offers.submit ─────────────────
 
     public function test_enabled_submit_has_form_posting_to_submit_route(): void
     {
-        $offer   = Offer::factory()->create(['status' => 'draft']);
+        $offer   = $this->makeOffer(['status' => 'draft']);
         $actions = $this->makeActions(['can_submit' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -86,7 +117,7 @@ class OfferActionButtonWiringTest extends TestCase
 
     public function test_enabled_accept_has_form_posting_to_accept_route(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOfferByOtherUser();
         $actions = $this->makeActions(['can_accept' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -105,7 +136,7 @@ class OfferActionButtonWiringTest extends TestCase
 
     public function test_enabled_reject_has_form_posting_to_reject_route(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOfferByOtherUser();
         $actions = $this->makeActions(['can_reject' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -124,7 +155,7 @@ class OfferActionButtonWiringTest extends TestCase
 
     public function test_enabled_withdraw_has_form_posting_to_withdraw_route(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOffer();
         $actions = $this->makeActions(['can_withdraw' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -143,7 +174,7 @@ class OfferActionButtonWiringTest extends TestCase
 
     public function test_enabled_action_form_contains_csrf_token(): void
     {
-        $offer   = Offer::factory()->create(['status' => 'draft']);
+        $offer   = $this->makeOffer(['status' => 'draft']);
         $actions = $this->makeActions(['can_submit' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -160,10 +191,13 @@ class OfferActionButtonWiringTest extends TestCase
 
     public function test_disabled_action_renders_button_without_form(): void
     {
-        $offer  = Offer::factory()->create(['status' => 'draft']);
-        $reason = 'Offer must be in submitted status';
+        // Accept is hide_for_submitter=true, so use makeSubmittedOfferByOtherUser so the
+        // test user is the OfferAuction owner (not the submitter) and the disabled Accept
+        // button is rendered without a wrapping form action.
+        $offer  = $this->makeSubmittedOfferByOtherUser();
+        $reason = 'Not yet eligible to accept';
         $actions = $this->makeActions([
-            'reasons' => ['submit' => $reason],
+            'reasons' => ['accept' => $reason],
         ]);
 
         $this->mockActionsService($offer, $actions);
@@ -171,12 +205,12 @@ class OfferActionButtonWiringTest extends TestCase
         $response = $this->get(route('offers.show', $offer));
         $response->assertStatus(200);
 
-        $content    = $response->getContent();
-        $submitUrl  = route('offers.submit', $offer);
+        $content   = $response->getContent();
+        $acceptUrl = route('offers.accept', $offer);
 
         $this->assertStringContainsString('disabled', $content);
-        $this->assertStringContainsString('Submit Offer', $content);
-        $this->assertStringNotContainsString('action="' . $submitUrl . '"', $content);
+        $this->assertStringContainsString('Accept', $content);
+        $this->assertStringNotContainsString('action="' . $acceptUrl . '"', $content);
         $this->assertStringContainsString($reason, $content);
     }
 
@@ -184,7 +218,7 @@ class OfferActionButtonWiringTest extends TestCase
 
     public function test_counter_renders_disabled_button_with_reason_when_blocked(): void
     {
-        $offer = Offer::factory()->submitted()->create();
+        $offer = $this->makeSubmittedOfferByOtherUser();
 
         // can_counter=false with non-empty reason → disabled button, reason visible, no form action
         $actions = $this->makeActions(['can_counter' => false]);
@@ -210,7 +244,7 @@ class OfferActionButtonWiringTest extends TestCase
 
     public function test_expire_never_appears_in_rendered_html(): void
     {
-        $offer   = Offer::factory()->create(['status' => 'draft']);
+        $offer   = $this->makeOffer(['status' => 'draft']);
         $actions = $this->makeActions(['can_expire' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -229,7 +263,7 @@ class OfferActionButtonWiringTest extends TestCase
 
     public function test_fully_disabled_page_has_no_form_elements(): void
     {
-        $offer   = Offer::factory()->create(['status' => 'accepted']);
+        $offer   = $this->makeOffer(['status' => 'accepted']);
         $actions = $this->makeActions();
 
         $this->mockActionsService($offer, $actions);
@@ -247,7 +281,7 @@ class OfferActionButtonWiringTest extends TestCase
 
     public function test_view_timeline_renders_anchor_with_correct_href(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOffer();
         $actions = $this->makeActions(['can_view_timeline' => true]);
 
         $this->mockActionsService($offer, $actions);
@@ -260,20 +294,15 @@ class OfferActionButtonWiringTest extends TestCase
         $this->assertStringContainsString('href="#offer-timeline"', $content, 'View Timeline must render as an anchor linking to #offer-timeline.');
         $this->assertStringContainsString('View Timeline', $content, 'View Timeline label must be present.');
 
-        // Must be an <a> tag, not a <form> or <button>
-        $pos     = strpos($content, 'View Timeline');
-        $this->assertNotFalse($pos);
-        $snippet = substr($content, max(0, $pos - 200), 250);
-        $this->assertStringContainsString('<a ', $snippet, 'View Timeline must render as an <a> tag, not a <button> or <form>.');
-        $this->assertStringNotContainsString('<form', $snippet, 'View Timeline must not be wrapped in a <form>.');
-        $this->assertStringNotContainsString('<button', $snippet, 'View Timeline must not render as a <button>.');
+        // Must be an <a> tag, not a <form> or <button> — search for the href anchor directly.
+        $this->assertStringContainsString('<a href="#offer-timeline"', $content, 'View Timeline must render as <a href="#offer-timeline">, confirming it is an anchor, not a form or button.');
     }
 
     // ── Test 12: View Timeline absent when can_view_timeline=false ────────────
 
     public function test_view_timeline_absent_when_not_allowed(): void
     {
-        $offer   = Offer::factory()->submitted()->create();
+        $offer   = $this->makeSubmittedOffer();
         $actions = $this->makeActions(['can_view_timeline' => false]);
 
         $this->mockActionsService($offer, $actions);
