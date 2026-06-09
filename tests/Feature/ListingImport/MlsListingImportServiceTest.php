@@ -1282,7 +1282,8 @@ class MlsListingImportServiceTest extends TestCase
         $this->assertEquals('*sewer',                     $map['sewer']);
 
         $this->assertArrayHasKey('utilities',             $map, 'landlord map must have utilities');
-        $this->assertEquals('utilities',                  $map['utilities']);
+        // Phase B fix: landlord utilities must target the array property, not the legacy string property
+        $this->assertEquals('*property_utilities',        $map['utilities']);
 
         $this->assertArrayHasKey('sqft_heated_source',   $map, 'landlord map must have sqft_heated_source');
         $this->assertEquals('sqft_heated_source',         $map['sqft_heated_source']);
@@ -1580,5 +1581,252 @@ class MlsListingImportServiceTest extends TestCase
             'Parser must extract a price canonical key from "List Price:" label');
         $this->assertEquals('450000', $data['price'],
             'List price must be normalised to a plain integer string (no commas, no $ sign)');
+    }
+
+    // ─── Phase B regression tests ─────────────────────────────────────────────
+
+    // ── Fix #1: Landlord utilities → *property_utilities ──────────────────────
+
+    public function test_landlord_map_utilities_targets_array_property(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+
+        $this->assertArrayHasKey('utilities', $map);
+        $this->assertEquals('*property_utilities', $map['utilities'],
+            'Landlord utilities must map to *property_utilities (the array multi-select), not the legacy string $utilities');
+    }
+
+    // ── Fix #2: Heating simple label merges into heating_fuel key ─────────────
+
+    public function test_plain_heating_label_maps_to_heating_fuel_key(): void
+    {
+        $rawText = 'Heating: Electric Year Built: 2010';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('heating_fuel', $data,
+            'Plain "Heating:" label must produce heating_fuel canonical key');
+        $this->assertStringContainsStringIgnoringCase('Electric', $data['heating_fuel']);
+        $this->assertArrayNotHasKey('heating', $data,
+            'Separate heating key must not exist — it should be merged into heating_fuel');
+    }
+
+    public function test_heating_and_fuel_label_still_maps_to_heating_fuel_key(): void
+    {
+        $rawText = 'Heating and Fuel: Central, Gas Sewer: Public';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('heating_fuel', $data);
+        $this->assertStringContainsStringIgnoringCase('Gas', $data['heating_fuel']);
+    }
+
+    // ── Fix #3: Landlord lot_size_acres → total_acreage ──────────────────────
+
+    public function test_landlord_map_includes_lot_size_acres(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+
+        $this->assertArrayHasKey('lot_size_acres', $map,
+            'Landlord map must include lot_size_acres (LandlordOfferListing has $total_acreage)');
+        $this->assertEquals('total_acreage', $map['lot_size_acres']);
+    }
+
+    // ── Fix #4: Tenant address fields added ───────────────────────────────────
+
+    public function test_tenant_map_includes_all_address_fields(): void
+    {
+        $map = MlsFieldMap::forRole('tenant');
+
+        $this->assertArrayHasKey('address', $map,       'tenant map must include address');
+        $this->assertEquals('address',        $map['address']);
+
+        $this->assertArrayHasKey('city', $map,          'tenant map must include city');
+        $this->assertEquals('property_city',  $map['city']);
+
+        $this->assertArrayHasKey('state', $map,         'tenant map must include state');
+        $this->assertEquals('property_state', $map['state']);
+
+        $this->assertArrayHasKey('zip', $map,           'tenant map must include zip');
+        $this->assertEquals('property_zip',   $map['zip']);
+
+        $this->assertArrayHasKey('county', $map,        'tenant map must include county');
+        $this->assertEquals('property_county',$map['county']);
+    }
+
+    // ── Fix #5: Tenant sqft_heated_source added ───────────────────────────────
+
+    public function test_tenant_map_includes_sqft_heated_source(): void
+    {
+        $map = MlsFieldMap::forRole('tenant');
+
+        $this->assertArrayHasKey('sqft_heated_source', $map,
+            'Tenant map must include sqft_heated_source (TenantOfferListing has the property)');
+        $this->assertEquals('sqft_heated_source', $map['sqft_heated_source']);
+    }
+
+    // ── Fix #6: Buyer address fields intentionally excluded ───────────────────
+
+    public function test_buyer_map_omits_address_fields(): void
+    {
+        $map = MlsFieldMap::forRole('buyer');
+
+        // BuyerOfferListing uses a preference-based multi-city/county model.
+        // No wire:model bindings exist for these fields in any buyer blade tab.
+        $this->assertArrayNotHasKey('address', $map, 'buyer must not map address — no blade binding');
+        $this->assertArrayNotHasKey('city',    $map, 'buyer must not map city — no blade binding');
+        $this->assertArrayNotHasKey('state',   $map, 'buyer must not map state — no blade binding');
+        $this->assertArrayNotHasKey('zip',     $map, 'buyer must not map zip — no blade binding');
+        $this->assertArrayNotHasKey('county',  $map, 'buyer must not map county — no blade binding');
+    }
+
+    // ── Fix #7: flood_insurance_required normalizer uses named case ───────────
+
+    public function test_normalizer_flood_insurance_required_named_case(): void
+    {
+        $this->assertEquals('yes', MlsNormalizer::normalize('flood_insurance_required', 'Yes'));
+        $this->assertEquals('no',  MlsNormalizer::normalize('flood_insurance_required', 'No'));
+        $this->assertEquals('yes', MlsNormalizer::normalize('flood_insurance_required', 'Y'));
+        $this->assertEquals('no',  MlsNormalizer::normalize('flood_insurance_required', 'N'));
+    }
+
+    // ── Fix #8: has_special_assessments normalizer uses named case ────────────
+
+    public function test_normalizer_has_special_assessments_named_case(): void
+    {
+        $this->assertEquals('yes', MlsNormalizer::normalize('has_special_assessments', 'Yes'));
+        $this->assertEquals('no',  MlsNormalizer::normalize('has_special_assessments', 'No'));
+        $this->assertEquals('yes', MlsNormalizer::normalize('has_special_assessments', 'Y'));
+        $this->assertEquals('no',  MlsNormalizer::normalize('has_special_assessments', 'N'));
+    }
+
+    // ── Coverage: address + beds/baths + pool/garage/carport + appliances + remarks ──
+
+    public function test_address_import_from_raw_text(): void
+    {
+        $rawText = 'Address: 123 Main Street City: Tampa State: FL Zip: 33601 County: Hillsborough';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('address', $data);
+        $this->assertStringContainsString('123 Main Street', $data['address']);
+        $this->assertArrayHasKey('city', $data);
+        $this->assertStringContainsStringIgnoringCase('Tampa', $data['city']);
+        $this->assertArrayHasKey('state', $data);
+        $this->assertEquals('FL', $data['state']);
+        $this->assertArrayHasKey('zip', $data);
+        $this->assertEquals('33601', $data['zip']);
+        $this->assertArrayHasKey('county', $data);
+        $this->assertStringContainsStringIgnoringCase('Hillsborough', $data['county']);
+    }
+
+    public function test_bedrooms_and_bathrooms_parse_from_raw_text(): void
+    {
+        $rawText = 'Bedrooms: 4 Bathrooms: 2.5 Heated Sq Ft: 2,100';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals('4',   $result['data']['bedrooms']);
+        $this->assertEquals('2.5', $result['data']['bathrooms']);
+        $this->assertEquals('2100',$result['data']['heated_sqft']);
+    }
+
+    public function test_annual_property_taxes_parse_from_raw_text(): void
+    {
+        $rawText = 'Annual Property Taxes: $5,200 Tax Year: 2023 Tax ID: 11-22-33-44555';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('annual_taxes', $data);
+        $this->assertEquals('5200', $data['annual_taxes']);
+        $this->assertArrayHasKey('tax_year', $data);
+        $this->assertEquals('2023', $data['tax_year']);
+        $this->assertArrayHasKey('tax_id', $data);
+        $this->assertEquals('11-22-33-44555', $data['tax_id']);
+    }
+
+    public function test_tax_year_and_parcel_id_parsed_as_separate_fields(): void
+    {
+        $rawText = 'Tax ID: 55-66-77-88999 Tax Year: 2024 Annual Property Taxes: $3,100';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('tax_id', $data, 'tax_id must be its own key');
+        $this->assertArrayHasKey('tax_year', $data, 'tax_year must be its own key');
+        $this->assertNotEquals($data['tax_id'], $data['tax_year'], 'tax_id and tax_year must be different values');
+        $this->assertEquals('55-66-77-88999', $data['tax_id']);
+        $this->assertEquals('2024', $data['tax_year']);
+    }
+
+    public function test_pool_garage_carport_parse_from_raw_text(): void
+    {
+        $rawText = 'Pool: Yes Garage: 2 Car Carport: No Year Built: 2005';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('pool', $data);
+        $this->assertEquals('yes', $data['pool']);
+        $this->assertArrayHasKey('garage', $data);
+        $this->assertStringContainsString('2', $data['garage']);
+        $this->assertArrayHasKey('carport', $data);
+        $this->assertEquals('no', $data['carport']);
+    }
+
+    public function test_appliances_parse_from_raw_text(): void
+    {
+        $rawText = 'Appliances: Dishwasher, Range, Refrigerator, Microwave Interior Features: Walk-in Closet';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('appliances', $data);
+        $this->assertStringContainsStringIgnoringCase('Dishwasher', $data['appliances']);
+        $this->assertStringContainsStringIgnoringCase('Refrigerator', $data['appliances']);
+        $this->assertStringNotContainsStringIgnoringCase('Interior Features', $data['appliances']);
+    }
+
+    public function test_public_remarks_parses_to_description_key(): void
+    {
+        $rawText = 'Public Remarks: Beautiful 3/2 home with updated kitchen. Directions: Head north on US-19.';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('description', $data);
+        $this->assertStringContainsStringIgnoringCase('Beautiful 3/2', $data['description']);
+        $this->assertStringNotContainsStringIgnoringCase('Directions', $data['description']);
+    }
+
+    public function test_description_maps_to_additional_details_for_all_roles(): void
+    {
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $role) {
+            $map = MlsFieldMap::forRole($role);
+            $this->assertArrayHasKey('description', $map, "Role '{$role}' must map description");
+            $this->assertEquals('additional_details', $map['description'],
+                "Role '{$role}' description must target additional_details");
+        }
     }
 }

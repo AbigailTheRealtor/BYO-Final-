@@ -455,15 +455,15 @@ class MlsListingImportService
         }
 
         // ─── Heating & Fuel (combined MLS field) ──────────────────────────────
-        // Canonical key 'heating_fuel' for "Heating and Fuel:" / "Heating & Fuel:".
-        // A separate 'heating' key is kept for simple "Heating:" entries.
-        if ($v = $extract(['/Heat(?:ing)?\s+(?:and|&)\s+Fuel[\s:]+([^\|\n]{1,120})/i'], true)) {
+        // Canonical key 'heating_fuel' covers both "Heating and Fuel:" / "Heating & Fuel:"
+        // AND plain "Heating:" labels so both patterns land on the same import key.
+        // The "and Fuel" variant is tried first; the plain "Heating:" fallback only fires
+        // when the combined label is absent, avoiding double-capture on the same field.
+        if ($v = $extract([
+            '/Heat(?:ing)?\s+(?:and|&)\s+Fuel[\s:]+([^\|\n]{1,120})/i',
+            '/Heat(?:ing)?(?!\s+(?:and|&)\s+Fuel)[\s:]+([^\|\n]{1,120})/i',
+        ], true)) {
             $data['heating_fuel'] = $v;
-        }
-
-        // ─── Heating ──────────────────────────────────────────────────────────
-        if ($v = $extract(['/Heat(?:ing)?(?!\s+(?:and|&)\s+Fuel)[\s:]+([^\|\n]{1,120})/i'], true)) {
-            $data['heating'] = $v;
         }
 
         // ─── Interior Features ────────────────────────────────────────────────
@@ -513,7 +513,7 @@ class MlsListingImportService
 
         // ─── Flood Insurance Required ─────────────────────────────────────────
         if ($v = $extract(['/Flood\s+Insurance\s+Req(?:uired)?[\s:]+([^\|\n]{1,30})/i'], true)) {
-            $data['flood_insurance_required'] = MlsNormalizer::normalize('has_hoa', $v);
+            $data['flood_insurance_required'] = MlsNormalizer::normalize('flood_insurance_required', $v);
         }
 
         // ─── Special Assessments ──────────────────────────────────────────────
@@ -522,7 +522,7 @@ class MlsListingImportService
             '/Special\s+Assessments?\s+Y\/N[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i',
             '/Special\s+Assessments?[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i',
         ])) {
-            $data['has_special_assessments'] = MlsNormalizer::normalize('has_hoa', $v);
+            $data['has_special_assessments'] = MlsNormalizer::normalize('has_special_assessments', $v);
         }
 
         // Dollar amount from "Special Assessment Amount:" / "Special Assessment Fee:".

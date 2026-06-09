@@ -25,7 +25,9 @@ class MlsNormalizer
             'waterfront',
             'additional_parcels',
             'has_hoa',
-            'has_cdd'               => self::normalizeBoolean($v),
+            'has_cdd',
+            'flood_insurance_required',
+            'has_special_assessments'   => self::normalizeBoolean($v),
 
             'furnished'             => self::normalizeFurnishing($v),
             'flood_zone_code'       => self::normalizeFloodZone($v),

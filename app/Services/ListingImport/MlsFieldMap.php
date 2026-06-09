@@ -110,11 +110,11 @@ class MlsFieldMap
             'furnished'       => 'tenant_require',
             'description'     => 'additional_details',
             'price'           => 'maximum_budget',
-            'address'         => 'address',
-            'city'            => 'property_city',
-            'state'           => 'property_state',
-            'zip'             => 'property_zip',
-            'county'          => 'property_county',
+            // NOTE: 'address', 'city', 'state', 'zip', 'county' intentionally omitted —
+            //       BuyerOfferListing uses a preference-based multi-city/county search
+            //       model (newCity[], newCounty[], state), not a single address field.
+            //       The blade files have no wire:model bindings for these properties
+            //       on any buyer tab, so importing them would silently discard the data.
             // NOTE: 'year_built' intentionally omitted — property does not exist
             //       on BuyerOfferListing (see Rejected Mapping Candidates).
         ];
@@ -130,6 +130,7 @@ class MlsFieldMap
             'bedrooms'        => 'bedrooms',
             'bathrooms'       => 'bathrooms',
             'heated_sqft'     => 'minimum_heated_square',
+            'lot_size_acres'  => 'total_acreage',
             'pool'            => 'pool_needed',
             'garage'          => 'garage_needed',
             'carport'         => 'carport_needed',
@@ -156,7 +157,10 @@ class MlsFieldMap
             'heating_fuel'        => '*heating_fuel',
             'water'               => '*water',
             'sewer'               => '*sewer',
-            'utilities'           => 'utilities',
+            // NOTE: LandlordOfferListing has two properties: $utilities (string, legacy)
+            //       and $property_utilities (array, the multi-select). The MLS import
+            //       targets the multi-select array property, hence the '*' prefix.
+            'utilities'           => '*property_utilities',
             'sqft_heated_source'  => 'sqft_heated_source',
             // ── Tax / Legal / Flood Zone (owner-side disclosures) ─────────────
             'tax_id'          => 'parcel_id',
@@ -198,12 +202,19 @@ class MlsFieldMap
             'bedrooms'        => 'bedrooms',
             'bathrooms'       => 'bathrooms',
             'heated_sqft'     => 'minimum_heated_square',
+            'sqft_heated_source' => 'sqft_heated_source',
             'pool'            => 'pool_needed',
             'garage'          => 'garage_needed',
             'carport'         => 'carport_needed',
             'furnished'       => 'tenant_require',
             'rent_includes'   => '*rent_includes',
             'description'     => 'additional_details',
+            // ── Address fields ────────────────────────────────────────────────
+            'address'         => 'address',
+            'city'            => 'property_city',
+            'state'           => 'property_state',
+            'zip'             => 'property_zip',
+            'county'          => 'property_county',
             // NOTE: 'price' intentionally omitted — see Rejected Mapping Candidates.
         ];
     }
