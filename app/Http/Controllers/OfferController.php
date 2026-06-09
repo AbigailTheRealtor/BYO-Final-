@@ -69,6 +69,28 @@ class OfferController extends Controller
             return response()->json(['message' => $actions['reasons']['submit']], 422);
         }
 
+        // If the request carries terms fields (submitted via the "Save & Submit" button),
+        // persist them before transitioning status.
+        if ($request->boolean('_offer_terms_present')) {
+            $offerType = $this->resolveOfferType($offer);
+            $this->persistTermsMeta($request, $offer, $offerType);
+        } else {
+            // No terms in this request — ensure terms were already saved.
+            $offer->load('metas', 'offerAuction.metas');
+            $offerType = $this->resolveOfferType($offer);
+            $hasSavedTerms = $offerType === 'sale'
+                ? $offer->getMeta('offer_price') !== null
+                : $offer->getMeta('monthly_rent') !== null;
+
+            if (!$hasSavedTerms) {
+                $msg = 'Please save your offer terms before submitting.';
+                if (!$request->expectsJson()) {
+                    return redirect()->route('offers.show', $offer)->with('error', $msg);
+                }
+                return response()->json(['message' => $msg], 422);
+            }
+        }
+
         $result = $this->facade->submit($offer, $actorId, $actorRole, [], $request->ip());
 
         if ($result['allowed'] === false) {
@@ -571,12 +593,43 @@ class OfferController extends Controller
         }
 
         $offer->load('offerAuction.metas');
-        $offerType = $offer->offerAuction?->info('offer_type') ?: 'sale';
-        if (!in_array($offerType, ['sale', 'rental', 'lease'])) {
-            $offerType = 'sale';
+        $offerType = $this->resolveOfferType($offer);
+
+        $this->persistTermsMeta($request, $offer, $offerType);
+
+        return redirect()->route('offers.show', $offer)
+            ->with('success', 'Offer terms saved successfully.');
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    /**
+     * Resolve the offer type from metas or the linked auction.
+     * Always returns one of: 'sale', 'rental', 'lease'.
+     */
+    private function resolveOfferType(Offer $offer): string
+    {
+        $fromMeta = $offer->getMeta('offer_type');
+        if ($fromMeta && in_array($fromMeta, ['sale', 'rental', 'lease'])) {
+            return $fromMeta;
         }
 
-        // Strip commas from comma-formatted money fields before validation
+        if (!$offer->relationLoaded('offerAuction')) {
+            $offer->load('offerAuction.metas');
+        }
+
+        $raw = $offer->offerAuction?->info('offer_type') ?: 'sale';
+
+        return in_array($raw, ['sale', 'rental', 'lease']) ? $raw : 'sale';
+    }
+
+    /**
+     * Strip comma-formatting, validate, and persist all offer-terms meta keys.
+     * Throws a ValidationException on invalid input (Laravel handles the redirect).
+     * Called from both saveTerms() and submit() when terms are present in the request.
+     */
+    private function persistTermsMeta(Request $request, Offer $offer, string $offerType): void
+    {
         $moneyFields = [
             'offer_price', 'earnest_deposit', 'down_payment_value',
             'additional_cash', 'exchange_item_value',
@@ -839,9 +892,6 @@ class OfferController extends Controller
             $offer->saveMeta('move_in_date',      $validated['move_in_date'] ?? null);
             $offer->saveMeta('lease_term_months', $offerType === 'lease' ? ($validated['lease_term_months'] ?? null) : null);
         }
-
-        return redirect()->route('offers.show', $offer)
-            ->with('success', 'Offer terms saved successfully.');
     }
 
     public function show(Offer $offer)

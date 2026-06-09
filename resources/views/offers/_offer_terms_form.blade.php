@@ -45,6 +45,7 @@
 </style>
 <form id="{{ $formId }}" method="POST" action="{{ $formAction }}">
     @csrf
+    <input type="hidden" name="_offer_terms_present" value="1">
 
     @if($errors->any())
     <div class="alert alert-danger mb-3">
@@ -1025,8 +1026,17 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-end">
+    <div class="d-flex justify-content-end gap-2">
         <button type="submit" id="{{ $submitBtnId }}" class="btn btn-primary px-4">{{ $submitLabel }}</button>
+        @if($mode === 'draft_terms')
+        <button type="submit"
+                formaction="{{ route('offers.submit', $offer) }}"
+                id="save-and-submit-offer-btn"
+                class="btn btn-success px-4"
+                onclick="return confirm('This will save your terms and submit the offer. Continue?')">
+            Save &amp; Submit Offer
+        </button>
+        @endif
     </div>
 </form>
 <script>
