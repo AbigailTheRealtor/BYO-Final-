@@ -9,6 +9,10 @@ class Kernel extends ConsoleKernel
 {
     // protected $commands = [\App\Console\Commands\AutoBid::class,];
     // protected $commands = [\App\Console\Commands\SellerAutocounter::class, \App\Console\Commands\BuyerAutocounter::class];
+
+    protected $commands = [
+        \App\Console\Commands\MlsParseDebug::class,
+    ];
     /**
      * Define the application's command schedule.
      *
