@@ -393,7 +393,6 @@
     @if($metas->get('parking_terms')) <dt class="col-sm-3">Parking</dt><dd class="col-sm-9">{{ $metas->get('parking_terms') }}</dd> @endif
     @if($metas->get('additional_lease_terms')) <dt class="col-sm-3">Additional Terms</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('additional_lease_terms') }}</dd> @endif
     @if($metas->get('message_to_landlord')) <dt class="col-sm-3">Message to Landlord</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('message_to_landlord') }}</dd> @endif
-@endif
 
     <dt class="col-sm-3">Custom Terms</dt>
     <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('custom_terms') ?: '—' }}</dd>
