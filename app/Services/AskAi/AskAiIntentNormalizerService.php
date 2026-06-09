@@ -40,10 +40,11 @@ class AskAiIntentNormalizerService
      * outcome rather than inferring meaning from a null return value.
      *
      * Possible values:
-     *   matched        — OpenAI returned a canonical key in the approved list.
-     *   unknown        — OpenAI returned the literal string "unknown".
-     *   failed         — An operational failure occurred; inspect $lastError for detail.
-     *   null           — normalize() has not been called yet (initial state).
+     *   matched    — OpenAI returned a canonical key in the approved list.
+     *   unknown    — OpenAI returned "unknown" or {status:"unsupported"}.
+     *   prohibited — OpenAI flagged the question as a prohibited topic.
+     *   failed     — An operational failure occurred; inspect $lastError for detail.
+     *   null       — normalize() has not been called yet (initial state).
      */
     private ?string $lastStatus = null;
 
@@ -59,6 +60,18 @@ class AskAiIntentNormalizerService
      *   empty_response — Response data is present but normalized_key is missing or empty.
      */
     private ?string $lastError = null;
+
+    /**
+     * The raw context path returned by OpenAI on the most recent normalize() call,
+     * captured BEFORE the hallucination guard validates it against knownFieldKeys.
+     *
+     * Non-null only when OpenAI returned a 'matched' status with a context_path, or
+     * the legacy normalized_key format contained a non-empty, non-unknown value.
+     * Null on 'unsupported', 'prohibited', empty, or error responses.
+     *
+     * Used by AskAiRunnerV2Service to populate router_context_path in the debug trace.
+     */
+    private ?string $lastContextPath = null;
 
     public function __construct(
         OpenAiClientService $client,
@@ -84,7 +97,7 @@ class AskAiIntentNormalizerService
     /**
      * Return the status of the most recent normalize() call.
      *
-     * Values: 'matched' | 'unknown' | 'failed' | null (not yet called).
+     * Values: 'matched' | 'unknown' | 'prohibited' | 'failed' | null (not yet called).
      * Read this after every normalize() call to distinguish operational failures
      * from legitimate "no match" outcomes.
      *
@@ -114,55 +127,85 @@ class AskAiIntentNormalizerService
     }
 
     /**
+     * Return the raw context path returned by OpenAI on the most recent normalize() call,
+     * captured before the hallucination guard validates it against knownFieldKeys.
+     *
+     * Non-null when OpenAI returned a matched status with a context_path (or the legacy
+     * normalized_key format with a non-empty, non-unknown value), even if the hallucination
+     * guard subsequently rejected it.
+     *
+     * Null on 'unsupported', 'prohibited', empty, or error responses.
+     *
+     * Used by AskAiRunnerV2Service to populate router_context_path in the debug trace,
+     * enabling QA to distinguish between OpenAI returning a plausible-but-invalid path
+     * versus returning "unsupported" outright.
+     *
+     * @return string|null
+     */
+    public function getLastContextPath(): ?string
+    {
+        return $this->lastContextPath;
+    }
+
+    /**
      * Per-call OpenAI transport constraints for intent normalization.
      *
-     * Intent normalization requires only a single short JSON key back from OpenAI
-     * (e.g. {"normalized_key":"listing.bedrooms"}). A 10-second timeout and a 60-token
-     * ceiling are deliberately narrow: they protect overall API budget and prevent a slow
-     * OpenAI response from blocking the main Ask AI pipeline on every unsupported question.
-     * The 60-token budget (up from 20) ensures keys with longer path names are not
-     * truncated mid-value.
+     * The router returns a compact JSON object with status and optional context_path
+     * (e.g. {"status":"matched","context_path":"listing.bedrooms"}). A 10-second timeout
+     * and an 80-token ceiling are deliberately narrow: they protect overall API budget
+     * and prevent a slow OpenAI response from blocking the main Ask AI pipeline on every
+     * unsupported question. The 80-token budget accommodates the longer status+context_path
+     * JSON shape without truncating values at long field key names.
      *
      * These values override the global ai.timeout_seconds and do NOT affect any other
      * OpenAiClientService caller.
      */
     private const CALL_OPTIONS = [
         'timeout_seconds' => 10,
-        'max_tokens'      => 60,
+        'max_tokens'      => 80,
     ];
 
     /**
      * Attempt to normalize a user question to a canonical context-path field key.
      *
-     * Calls OpenAI with a strictly governed prompt. OpenAI may only return one
-     * entry from $knownFieldKeys or the literal string 'unknown'. Any other
-     * response, exception, or timeout results in null — never a fabricated key,
-     * never a crash.
+     * Calls OpenAI with a strictly governed prompt enriched with role-filtered registry
+     * metadata (labels and sample questions). OpenAI returns one of three JSON shapes:
+     *   {"status":"matched","context_path":"<key>"}  — a specific approved field was matched
+     *   {"status":"unsupported"}                     — no approved field matches
+     *   {"status":"prohibited"}                      — question touches a prohibited topic
      *
-     * After every call, getLastStatus() and getLastError() reflect the outcome:
-     *   - matched        → the canonical key is returned; getLastError() is null.
-     *   - unknown        → OpenAI returned "unknown"; getLastError() is null.
-     *   - failed         → operational failure; getLastError() has the reason.
-     * When the question or knownFieldKeys pre-conditions fail, both are reset to null.
+     * The legacy response format {"normalized_key":"<key>"} is also accepted for backward
+     * compatibility. Any other response, exception, or timeout results in null.
      *
-     * The call uses CALL_OPTIONS to enforce a short timeout and low token cap,
-     * ensuring the normalization step is cheap and fast relative to the main pipeline.
+     * After every call, getLastStatus(), getLastError(), and getLastContextPath() reflect
+     * the outcome:
+     *   - matched    → the canonical key is returned; getLastError() is null.
+     *   - unknown    → OpenAI returned "unsupported" or the legacy "unknown".
+     *   - prohibited → OpenAI flagged the question as prohibited; null returned.
+     *   - failed     → operational failure; getLastError() has the reason.
+     *
+     * The raw context_path from OpenAI (before the hallucination guard) is stored in
+     * getLastContextPath() for observability, even when the guard rejects the path.
      *
      * Returns null when:
      *   - The question or knownFieldKeys are empty.
-     *   - OpenAI returns 'unknown' or omits 'normalized_key'.
+     *   - OpenAI returns 'unsupported' / 'unknown'.
+     *   - OpenAI returns 'prohibited'.
      *   - OpenAI returns a key not present in knownFieldKeys (hallucination guard).
      *   - Any exception or timeout occurs during the OpenAI call.
      *
      * @param  string   $question       The raw user question string.
-     * @param  string[] $knownFieldKeys Canonical context paths (e.g. 'listing.bedrooms',
-     *                                  'faq_answers.hvac_system_age') OpenAI may choose from.
+     * @param  string[] $knownFieldKeys Canonical context paths OpenAI may choose from.
+     * @param  string   $role           Listing type ('seller','buyer','landlord','tenant').
+     *                                  When provided, the prompt is enriched with role-filtered
+     *                                  registry labels and sample questions.
      * @return string|null              A matched canonical path, or null when no match.
      */
-    public function normalize(string $question, array $knownFieldKeys): ?string
+    public function normalize(string $question, array $knownFieldKeys, string $role = ''): ?string
     {
-        $this->lastStatus = null;
-        $this->lastError  = null;
+        $this->lastStatus      = null;
+        $this->lastError       = null;
+        $this->lastContextPath = null;
 
         if ($question === '' || empty($knownFieldKeys)) {
             $this->lastStatus = 'unknown';
@@ -170,10 +213,66 @@ class AskAiIntentNormalizerService
         }
 
         try {
-            $payload = $this->buildPayload($question, $knownFieldKeys);
+            $payload = $this->buildPayload($question, $knownFieldKeys, $role);
             $result  = $this->client->send($payload, self::CALL_OPTIONS);
             $data    = $result['data'] ?? [];
 
+            // ----------------------------------------------------------------
+            // Parse the router response.
+            //
+            // Primary (new) format: {status, context_path}
+            //   status = 'matched'    → validated context_path is returned
+            //   status = 'unsupported'→ null (no approved field matches)
+            //   status = 'prohibited' → null (fair-housing or prohibited topic)
+            //
+            // Legacy fallback format: {normalized_key: "<key>"|"unknown"}
+            //   Used by test mocks and earlier versions of the prompt.
+            // ----------------------------------------------------------------
+            if (isset($data['status'])) {
+                $status = $data['status'];
+
+                if ($status === 'prohibited') {
+                    $this->lastStatus = 'prohibited';
+                    return null;
+                }
+
+                if ($status === 'unsupported') {
+                    $this->lastStatus = 'unknown';
+                    return null;
+                }
+
+                if ($status === 'matched') {
+                    $contextPath = $data['context_path'] ?? null;
+
+                    if (!is_string($contextPath) || $contextPath === '') {
+                        $this->lastStatus = 'failed';
+                        $this->lastError  = 'empty_response';
+                        return null;
+                    }
+
+                    // Capture raw path BEFORE the hallucination guard rejects it.
+                    $this->lastContextPath = $contextPath;
+
+                    // Hallucination guard: reject any path not in the approved registry.
+                    if (!in_array($contextPath, $knownFieldKeys, true)) {
+                        $this->lastStatus = 'failed';
+                        $this->lastError  = 'invalid_key';
+                        return null;
+                    }
+
+                    $this->lastStatus = 'matched';
+                    return $contextPath;
+                }
+
+                // Unknown status value — treat as an empty/malformed response.
+                $this->lastStatus = 'failed';
+                $this->lastError  = 'empty_response';
+                return null;
+            }
+
+            // ----------------------------------------------------------------
+            // Legacy format: normalized_key field.
+            // ----------------------------------------------------------------
             $normalizedKey = $data['normalized_key'] ?? null;
 
             if ($normalizedKey === 'unknown') {
@@ -186,6 +285,9 @@ class AskAiIntentNormalizerService
                 $this->lastError  = 'empty_response';
                 return null;
             }
+
+            // Capture raw path BEFORE the hallucination guard rejects it.
+            $this->lastContextPath = $normalizedKey;
 
             // Hallucination guard: reject any key not in the approved list.
             if (!in_array($normalizedKey, $knownFieldKeys, true)) {
@@ -316,44 +418,84 @@ class AskAiIntentNormalizerService
     }
 
     /**
-     * Build the prompt payload for the OpenAI intent normalization call.
+     * Build the prompt payload for the OpenAI intent normalization / field router call.
      *
-     * The governed prompt instructs OpenAI to return only a JSON object
-     * with a single key 'normalized_key' whose value is exactly one entry from
-     * the provided field_keys list or the literal string 'unknown'. OpenAI is
-     * explicitly prohibited from generating a final answer or referencing any
-     * protected class characteristics.
+     * When $role is provided, the payload includes an enriched field registry pulled
+     * from AskAiFieldQuestionRegistryService::routerEntries($role) — each entry carries
+     * the canonical context path, a human-readable label, and up to two sample questions
+     * that show how a user might phrase a question about that field naturally. This
+     * allows OpenAI to match any informal, colloquial, or figurative phrasing to the
+     * correct path without keyword training.
+     *
+     * OpenAI must return one of exactly three JSON shapes:
+     *   {"status":"matched","context_path":"<exact entry from field_registry paths>"}
+     *   {"status":"unsupported"}
+     *   {"status":"prohibited"}
+     *
+     * The legacy response format {"normalized_key":"..."} is still accepted by the
+     * normalize() parser for backward compatibility with test mocks, but new prompts
+     * instruct OpenAI to use the status+context_path shape exclusively.
      *
      * @param  string   $question       The user question.
      * @param  string[] $knownFieldKeys The canonical field keys OpenAI may choose from.
+     * @param  string   $role           Listing type for registry filtering (optional).
      * @return array
      */
-    private function buildPayload(string $question, array $knownFieldKeys): array
+    private function buildPayload(string $question, array $knownFieldKeys, string $role = ''): array
     {
-        return [
-            'task'        => 'intent_normalization_v1',
-            'instruction' => implode(' ', [
-                'You are a real estate field-key resolver.',
-                'Users often ask about property features using informal, colloquial, or figurative language',
-                'rather than technical terms.',
-                'Given a user question about a property listing and a list of canonical field keys,',
-                'identify the underlying real estate concept the question is about,',
-                'then return the single field key from the provided list that best matches that concept.',
-                'Common informal phrasings and the real estate concepts they represent:',
-                '"solid covering overhead", "top covering of the house", "covering above the home",',
-                '"overhead structure" → the roof (e.g. a roof-related field key if present in the list).',
-                'Return ONLY a valid JSON object with exactly one key: "normalized_key".',
-                'Its value must be exactly one entry from the provided field_keys list,',
-                'OR the literal string "unknown" if no single field key matches.',
-                'You MUST NOT generate a final answer to the question.',
-                'You MUST NOT reference, infer, or imply any protected class characteristics',
-                '(race, religion, national origin, sex, disability, familial status, or any similar category).',
-                'Your entire response must be a valid JSON object with no additional text.',
-            ]),
+        $registryContext = [];
+        if ($role !== '') {
+            try {
+                $entries = AskAiFieldQuestionRegistryService::routerEntries($role);
+                foreach ($entries as $path => $entry) {
+                    $registryContext[] = [
+                        'path'             => $path,
+                        'label'            => $entry['label'],
+                        'sample_questions' => $entry['sample_questions'],
+                    ];
+                }
+            } catch (\Throwable $ignored) {
+                // Registry unavailable (e.g. pure unit test without booted app). Fall
+                // through — the prompt still contains field_keys as the fallback list.
+                $registryContext = [];
+            }
+        }
+
+        $instruction = implode(' ', [
+            'You are a real estate field-key router.',
+            'Users often ask about property features using informal, colloquial, or figurative language',
+            'rather than technical terms.',
+            'Given a user question and a registry of approved context paths with labels and sample questions,',
+            'identify which single approved field the question is asking about.',
+            'Common informal phrasings and the real estate concepts they represent:',
+            '"solid covering overhead", "top covering of the house", "covering above the home",',
+            '"overhead structure" → the roof (e.g. a roof-related field key if present in the registry).',
+            'You MUST return ONLY one of these three JSON shapes — no other output is permitted:',
+            '{"status":"matched","context_path":"<exact path from the approved registry>"}',
+            '{"status":"unsupported"}',
+            '{"status":"prohibited"}',
+            'Use "matched" when one approved field clearly corresponds to the question.',
+            'Use "unsupported" when no approved field matches the question.',
+            'Use "prohibited" when the question asks about race, religion, national origin,',
+            'sex, disability, familial status, or any other fair-housing protected characteristic.',
+            'You MUST NOT generate a final answer to the user\'s question.',
+            'You MUST NOT invent or infer any field not present in the approved registry.',
+            'Your entire response must be a valid JSON object with no additional text.',
+        ]);
+
+        $payload = [
+            'task'        => 'intent_normalization_v2',
+            'instruction' => $instruction,
             'question'    => $question,
             'field_keys'  => array_values($knownFieldKeys),
-            'governance'  => 'Return only {"normalized_key": "<one entry from field_keys or unknown>"}. No other output is permitted.',
+            'governance'  => 'Return only {"status":"matched","context_path":"<path>"} or {"status":"unsupported"} or {"status":"prohibited"}. The context_path MUST be an exact entry from field_registry paths or field_keys. No other output is permitted.',
         ];
+
+        if (!empty($registryContext)) {
+            $payload['field_registry'] = $registryContext;
+        }
+
+        return $payload;
     }
 
     /**

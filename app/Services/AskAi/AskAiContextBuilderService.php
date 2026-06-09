@@ -334,88 +334,79 @@ class AskAiContextBuilderService
         return match ($canonicalType) {
 
             // -----------------------------------------------------------------
-            // Seller — property_auctions (native columns) + property_auction_metas (EAV)
+            // Seller — seller_agent_auctions (native columns) + seller_agent_auction_metas (EAV)
+            //
+            // Almost all property-detail fields are stored in EAV via saveMeta(), not
+            // in native columns. Native-only fields: address, description, auction_length,
+            // is_sold, bedroom_id (FK fallback), bathroom_id (FK fallback).
+            // All other factual fields use infoGet() to read from seller_agent_auction_metas.
             // -----------------------------------------------------------------
             'seller' => [
-                'address'                         => $nativeGet('address'),
-                'description'                     => $nativeGet('description'),
-                'asking_price'                    => $nativeGet('starting_price'),
-                'buy_now_price'                   => $nativeGet('buy_now_price'),
-                'bedrooms'                        => $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
-                'bathrooms'                       => $infoGet('bathrooms') ?? $nativeGet('bathroom_id'),
-                'square_feet'                     => $nativeGet('heated_sqft'),
-                'year_built'                      => $nativeGet('year_built'),
-                'pool'                            => $nativeGet('pool'),
-                'pool_type'                       => $nativeGet('pool_type'),
-                'carport'                         => $nativeGet('carport'),
-                'garage'                          => $nativeGet('garage'),
-                'garage_spaces'                   => $nativeGet('garage_spaces'),
-                'water_view'                      => $nativeGet('water_view'),
-                'water_extras'                    => $nativeGet('water_extras'),
-                'hoa_association'                 => $nativeGet('hoa_association'),
-                'hoa_fee'                         => $nativeGet('hoa_fee'),
-                'hoa_fee_requirement'             => $nativeGet('hoa_fee_requirement'),
-                'hoa_payment_schedule'            => $nativeGet('hoa_payment_schedule'),
-                'condo_fee'                       => $nativeGet('condo_fee'),
-                'condo_fee_schedule'              => $nativeGet('condo_fee_schedule'),
-                'pets_allowed'                    => $nativeGet('pets_allowed'),
-                'number_of_pets_allowed'          => $nativeGet('number_of_pets_allowed'),
-                'max_pet_weight'                  => $nativeGet('max_pet_weight'),
-                'pet_restrictions'                => $nativeGet('pet_restrictions'),
-                'rental_restrictions'             => $nativeGet('rental_restrictions'),
-                // NOTE: The DB column is intentionally misspelled 'rental_restrictions_desription'
-                // (missing 'c'). This is a legacy schema typo in property_auctions and must
-                // not be corrected here until a DB migration renames the column.
-                'rental_restrictions_description' => $nativeGet('rental_restrictions_desription'),
-                'is_in_flood_zone'                => $nativeGet('is_in_flood_zone'),
-                'flood_zone_code'                 => $nativeGet('flood_zone_code'),
+                'address'              => $nativeGet('address'),
+                'description'          => $nativeGet('description'),
+                'asking_price'         => $infoGet('maximum_budget'),
+                'bedrooms'             => $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
+                'bathrooms'            => $infoGet('bathrooms') ?? $nativeGet('bathroom_id'),
+                'square_feet'          => $infoGet('minimum_heated_square'),
+                'year_built'           => $infoGet('year_built'),
+                'pool'                 => $infoGet('pool_needed'),
+                'pool_type'            => $this->decodeJsonField($infoGet('pool_type')),
+                'carport'              => $infoGet('carport_needed'),
+                'garage'               => $infoGet('garage_needed'),
+                'garage_spaces'        => $infoGet('garage_parking_spaces'),
+                'hoa_association'      => $infoGet('has_hoa'),
+                'hoa_fee'              => $infoGet('association_fee_amount'),
+                'hoa_payment_schedule' => $infoGet('association_fee_frequency'),
+                'pets_allowed'         => $infoGet('pets'),
+                'number_of_pets_allowed' => $infoGet('number_of_pets'),
+                'max_pet_weight'       => $infoGet('weight_of_pets'),
+                'pet_restrictions'     => $infoGet('pet_restrictions'),
+                'rental_restrictions'  => $infoGet('leasing_restrictions'),
+                'flood_zone_code'      => $infoGet('flood_zone_code'),
                 // disclosure_flags is a governance contract marker for the prompt layer.
                 // flood_zone => true does NOT mean the property is in a flood zone — the
-                // is_in_flood_zone scalar carries that boolean. This flag tells the AI that
-                // flood-zone data (is_in_flood_zone + flood_zone_code) is present in this
-                // context and must be handled with the flood-zone disclosure template.
-                // It is always set for seller listings because these fields are always
-                // included regardless of the property's actual flood status.
-                'disclosure_flags'                => ['flood_zone' => true],
-                'lease_terms'                     => $nativeGet('lease_terms'),
-                'tenant_pays'                     => $nativeGet('tenant_pays'),
-                'landlord_pays'                   => $nativeGet('landlord_pays'),
-                'closing_date'                    => $nativeGet('closing_date'),
-                'auction_length'                  => $nativeGet('auction_length'),
-                'mls_id'                          => $nativeGet('mls_id'),
-                'sold'                            => $nativeGet('sold'),
-                'annual_property_taxes'           => $infoGet('annual_property_taxes'),
-                'showing_instructions'            => $infoGet('showing_instructions'),
-                'service_type'                    => $infoGet('service_type'),
+                // flood_zone_code scalar carries that data. This flag tells the AI that
+                // flood-zone data is present in this context and must be handled with
+                // the flood-zone disclosure template. Always set for seller listings.
+                'disclosure_flags'     => ['flood_zone' => true],
+                'closing_date'         => $infoGet('target_closing_date'),
+                'auction_length'       => $nativeGet('auction_length'),
+                'sold'                 => $nativeGet('is_sold'),
+                'annual_property_taxes' => $infoGet('annual_property_taxes'),
+                'service_type'         => $infoGet('service_type'),
             ],
 
             // -----------------------------------------------------------------
-            // Buyer — buyer_criteria_auctions (native columns) + EAV
+            // Buyer — buyer_agent_auctions (native columns) + buyer_agent_auction_metas (EAV)
+            //
+            // All property-detail and buyer-criteria fields are stored in EAV via
+            // saveMeta(). Native-only fields: address, additional_details (description).
+            // All other factual fields use infoGet() to read from buyer_agent_auction_metas.
             // -----------------------------------------------------------------
             'buyer' => [
-                'address'             => $nativeGet('address'),
-                'description'         => $nativeGet('description'),
-                'max_price'           => $nativeGet('max_price'),
-                'bedrooms'            => $nativeGet('bedrooms'),
-                'bathrooms'           => $nativeGet('bathrooms'),
-                'square_feet'         => $nativeGet('sqft'),
-                'pool'                => $nativeGet('pool'),
-                'carport'             => $nativeGet('carport'),
-                'garage'              => $nativeGet('garage'),
-                'garage_spaces'       => $nativeGet('garage_spaces'),
-                'water_view'          => $nativeGet('water_view'),
-                'hoa_acceptable'      => $nativeGet('hoa'),
-                'hoa_fee_requirement' => $nativeGet('hoa_fee_requirement'),
-                'max_hoa_fee'         => $nativeGet('max_hoa_fee'),
-                'pets_allowed'        => $nativeGet('pets_allowed'),
-                'pets_detail'         => $nativeGet('pets_detail'),
-                'pets_breed'          => $nativeGet('pets_breed'),
-                'pets_weight'         => $nativeGet('pets_weight'),
-                'loan_pre_approved'   => $nativeGet('loan_pre_approved'),
-                'financing_type'      => $this->resolveFinancingType($nativeGet('financing_id')),
-                'inspection_period'   => $nativeGet('inspection_period'),
-                'closing_days'        => $nativeGet('closing_days'),
-                'contingencies'       => $nativeGet('contingencies'),
+                'address'                      => $nativeGet('address'),
+                'description'                  => $nativeGet('additional_details'),
+                'max_price'                    => $infoGet('maximum_budget'),
+                'bedrooms'                     => $infoGet('bedrooms'),
+                'bathrooms'                    => $infoGet('bathrooms'),
+                'square_feet'                  => $infoGet('minimum_heated_square'),
+                'pool'                         => $infoGet('pool_needed'),
+                'carport'                      => $infoGet('carport_needed'),
+                'garage'                       => $infoGet('garage_needed'),
+                'garage_spaces'                => $infoGet('garage_parking_spaces'),
+                'hoa_acceptable'               => $infoGet('hoa_acceptance'),
+                'max_hoa_fee'                  => $infoGet('hoa_max_monthly_fee'),
+                'pets_allowed'                 => $infoGet('pets'),
+                'pets_detail'                  => $infoGet('type_of_pets'),
+                'pets_breed'                   => $infoGet('breed_of_pets'),
+                'pets_weight'                  => $infoGet('weight_of_pets'),
+                'loan_pre_approved'            => $infoGet('pre_approved'),
+                'financing_type'               => $this->decodeJsonField($infoGet('offered_financing')),
+                'inspection_period'            => $infoGet('inspection_period_days'),
+                'closing_date'                 => $infoGet('target_closing_date'),
+                'inspection_contingency_buyer' => $infoGet('inspection_contingency_buyer'),
+                'appraisal_contingency_buyer'  => $infoGet('appraisal_contingency_buyer'),
+                'financing_contingency_buyer'  => $infoGet('financing_contingency_buyer'),
             ],
 
             // -----------------------------------------------------------------
@@ -450,7 +441,7 @@ class AskAiContextBuilderService
                 'leasing_restrictions'      => $infoGet('leasing_restrictions'),
                 'lease_length'              => $infoGet('min_lease_period') ?? $infoGet('minimum_lease_period'),
                 'renewal_option'            => $infoGet('renewal_option_offered'),
-                'number_of_occupants'       => $infoGet('number_of_occupants_allowed'),
+                'number_of_occupants'       => $infoGet('number_occupant'),
                 'additional_lease_terms'    => $infoGet('additional_landlord_lease_terms'),
             ],
 

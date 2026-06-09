@@ -357,7 +357,7 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
     }
 
     // =========================================================================
-    // 4. Seller — "Is this in a flood zone?" → listing.is_in_flood_zone
+    // 4. Seller — "Is this in a flood zone?" → listing.flood_zone_code
     // =========================================================================
 
     public function test_flood_zone_question_classifies_and_detects_correct_listing_key(): void
@@ -365,7 +365,7 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
         $result = (new AskAiQuestionClassifierService())->classify('Is this in a flood zone?');
         $this->assertSame('listing_facts', $result['question_type']);
 
-        $internalRunner = $this->makeRunnerWithListingField('is_in_flood_zone', 'Yes — FEMA Zone AE');
+        $internalRunner = $this->makeRunnerWithListingField('flood_zone_code', 'Yes — FEMA Zone AE');
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
         $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
@@ -375,15 +375,15 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
         $result = $runner->run('seller', 1, 'Is this in a flood zone?');
 
         $this->assertSame(
-            'listing.is_in_flood_zone',
+            'listing.flood_zone_code',
             $result['classification']['normalized_field_key'] ?? null,
-            '"Is this in a flood zone?" must resolve to listing.is_in_flood_zone.'
+            '"Is this in a flood zone?" must resolve to listing.flood_zone_code.'
         );
     }
 
     public function test_flood_zone_field_present_pipeline_succeeds(): void
     {
-        $internalRunner = $this->makeRunnerWithListingField('is_in_flood_zone', 'No — Zone X');
+        $internalRunner = $this->makeRunnerWithListingField('flood_zone_code', 'No — Zone X');
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
 
@@ -397,12 +397,12 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
 
     public function test_flood_zone_field_null_guard_b_returns_field_specific_message(): void
     {
-        $this->assertGuardBFiresWithMessage('seller', 'Is this in a flood zone?', 'is_in_flood_zone', 'Flood zone status information');
+        $this->assertGuardBFiresWithMessage('seller', 'Is this in a flood zone?', 'flood_zone_code', 'Flood zone status information');
     }
 
     public function test_flood_zone_openai_disabled_direct_return_fallback(): void
     {
-        $this->assertDirectReturnFallback('seller', 'Is this in a flood zone?', 'is_in_flood_zone', 'Yes — FEMA Zone AE');
+        $this->assertDirectReturnFallback('seller', 'Is this in a flood zone?', 'flood_zone_code', 'Yes — FEMA Zone AE');
     }
 
     // =========================================================================
@@ -721,7 +721,7 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
             'taxes'               => ['seller',   'What are the taxes?',               'annual_property_taxes', '4200'],
             'appliances'          => ['landlord',  'What appliances are included?',     'appliances',            'Refrigerator, dishwasher'],
             'bedrooms'            => ['seller',    'How many bedrooms?',                'bedrooms',              '3'],
-            'flood zone'          => ['seller',    'Is this in a flood zone?',          'is_in_flood_zone',      'Zone X'],
+            'flood zone'          => ['seller',    'Is this in a flood zone?',          'flood_zone_code',       'Zone X'],
             'hoa fees'            => ['seller',    'What are the HOA fees?',            'hoa_fee',               '$350/month'],
             'utilities'           => ['landlord',  'What utilities are included?',      'utilities',             'Water, trash'],
             'pets allowed'        => ['seller',    'Are pets allowed?',                 'pets_allowed',          'Yes'],
@@ -786,7 +786,7 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
             'taxes'               => ['seller',  'What are the taxes?',               'annual_property_taxes', 'Annual property tax information'],
             'appliances'          => ['landlord', 'What appliances are included?',     'appliances',            'Included appliances information'],
             'bedrooms'            => ['seller',   'How many bedrooms?',                'bedrooms',              'Bedroom information'],
-            'flood zone'          => ['seller',   'Is this in a flood zone?',          'is_in_flood_zone',      'Flood zone status information'],
+            'flood zone'          => ['seller',   'Is this in a flood zone?',          'flood_zone_code',       'Flood zone status information'],
             'hoa fees'            => ['seller',   'What are the HOA fees?',            'hoa_fee',               'HOA fee information'],
             'utilities'           => ['landlord', 'What utilities are included?',      'utilities',             'Included utilities information'],
             'pets allowed'        => ['seller',   'Are pets allowed?',                 'pets_allowed',          'Pet policy information'],
@@ -882,12 +882,12 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
     }
 
     // =========================================================================
-    // Q12: "Is this property in a flood zone?" — now maps to listing.is_in_flood_zone
+    // Q12: "Is this property in a flood zone?" — maps to listing.flood_zone_code
     // =========================================================================
 
     public function test_is_property_in_flood_zone_resolves_to_listing_field(): void
     {
-        $internalRunner = $this->makeRunnerWithListingField('is_in_flood_zone', 'Zone X');
+        $internalRunner = $this->makeRunnerWithListingField('flood_zone_code', 'Zone X');
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
         $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
@@ -897,15 +897,15 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
         $result = $runner->run('seller', 1, 'Is this property in a flood zone?');
 
         $this->assertSame(
-            'listing.is_in_flood_zone',
+            'listing.flood_zone_code',
             $result['classification']['normalized_field_key'] ?? null,
-            '"Is this property in a flood zone?" must resolve to listing.is_in_flood_zone.'
+            '"Is this property in a flood zone?" must resolve to listing.flood_zone_code.'
         );
     }
 
     public function test_is_property_in_flood_zone_openai_disabled_direct_return_fallback(): void
     {
-        $this->assertDirectReturnFallback('seller', 'Is this property in a flood zone?', 'is_in_flood_zone', 'Zone X');
+        $this->assertDirectReturnFallback('seller', 'Is this property in a flood zone?', 'flood_zone_code', 'Zone X');
     }
 
     // =========================================================================

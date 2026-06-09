@@ -1508,7 +1508,7 @@ class AskAiContextBuilderServiceTest extends TestCase
     {
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields(['starting_price' => '450000'])
+            $this->makeListingStubWithFields([], ['maximum_budget' => '450000'])
         );
 
         $result = $service->buildForListing('seller', 1);
@@ -1536,7 +1536,7 @@ class AskAiContextBuilderServiceTest extends TestCase
     {
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields(['year_built' => '2005'])
+            $this->makeListingStubWithFields([], ['year_built' => '2005'])
         );
 
         $result = $service->buildForListing('seller', 1);
@@ -1550,47 +1550,49 @@ class AskAiContextBuilderServiceTest extends TestCase
     {
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields(['hoa_fee' => '200'])
+            $this->makeListingStubWithFields([], ['association_fee_amount' => '200'])
         );
 
         $result = $service->buildForListing('seller', 1);
 
         $this->assertArrayHasKey('hoa_fee', $result['listing'],
             "listing context must include 'hoa_fee' for seller");
+        $this->assertSame('200', $result['listing']['hoa_fee']);
     }
 
     public function test_case_R_seller_pets_allowed_appears_in_listing_context(): void
     {
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields(['pets_allowed' => '1'])
+            $this->makeListingStubWithFields([], ['pets' => 'Yes'])
         );
 
         $result = $service->buildForListing('seller', 1);
 
         $this->assertArrayHasKey('pets_allowed', $result['listing'],
             "listing context must include 'pets_allowed' for seller");
+        $this->assertSame('Yes', $result['listing']['pets_allowed']);
     }
 
-    public function test_case_R_seller_showing_instructions_from_eav_appears_in_listing_context(): void
+    public function test_case_R_seller_annual_property_taxes_from_eav_appears_in_listing_context(): void
     {
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields([], ['showing_instructions' => 'Call agent at 555-0100'])
+            $this->makeListingStubWithFields([], ['annual_property_taxes' => '4200'])
         );
 
         $result = $service->buildForListing('seller', 1);
 
-        $this->assertArrayHasKey('showing_instructions', $result['listing'],
-            "listing context must include 'showing_instructions' (EAV) for seller");
-        $this->assertSame('Call agent at 555-0100', $result['listing']['showing_instructions']);
+        $this->assertArrayHasKey('annual_property_taxes', $result['listing'],
+            "listing context must include 'annual_property_taxes' (EAV) for seller");
+        $this->assertSame('4200', $result['listing']['annual_property_taxes']);
     }
 
     public function test_case_R_buyer_max_price_appears_in_listing_context(): void
     {
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields(['max_price' => '500000'])
+            $this->makeListingStubWithFields([], ['maximum_budget' => '500000'])
         );
 
         $result = $service->buildForListing('buyer', 1);
@@ -1600,11 +1602,11 @@ class AskAiContextBuilderServiceTest extends TestCase
         $this->assertSame('500000', $result['listing']['max_price']);
     }
 
-    public function test_case_R_buyer_bedrooms_native_appears_in_listing_context(): void
+    public function test_case_R_buyer_bedrooms_eav_appears_in_listing_context(): void
     {
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields(['bedrooms' => '3'])
+            $this->makeListingStubWithFields([], ['bedrooms' => '3'])
         );
 
         $result = $service->buildForListing('buyer', 1);
@@ -1911,18 +1913,26 @@ class AskAiContextBuilderServiceTest extends TestCase
         $this->assertSame('123 Main St', $result['listing']['address']);
     }
 
-    public function test_case_T_seller_rental_restrictions_description_appears_in_listing_context(): void
+    public function test_case_T_seller_rental_restrictions_phantom_key_is_absent(): void
     {
+        // rental_restrictions_description was previously read from the misspelled legacy
+        // column rental_restrictions_desription which exists only in property_auctions,
+        // not in seller_agent_auctions. The seller offer form does not save this field.
+        // It is a phantom key and must not appear in the seller context output.
+        // The correct key is rental_restrictions (read from EAV leasing_restrictions).
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields(['rental_restrictions_desription' => 'No short-term rentals'])
+            $this->makeListingStubWithFields([], ['leasing_restrictions' => 'No short-term rentals'])
         );
 
         $result = $service->buildForListing('seller', 1);
 
-        $this->assertArrayHasKey('rental_restrictions_description', $result['listing'],
-            "listing context must include 'rental_restrictions_description' for seller");
-        $this->assertSame('No short-term rentals', $result['listing']['rental_restrictions_description']);
+        $this->assertArrayNotHasKey('rental_restrictions_description', $result['listing'],
+            "rental_restrictions_description is a phantom key (not saved by seller offer form) and must be absent");
+
+        $this->assertArrayHasKey('rental_restrictions', $result['listing'],
+            "rental_restrictions must be present (reads EAV leasing_restrictions)");
+        $this->assertSame('No short-term rentals', $result['listing']['rental_restrictions']);
     }
 
     public function test_case_T_seller_auction_length_appears_in_listing_context(): void
@@ -2260,76 +2270,74 @@ class AskAiContextBuilderServiceTest extends TestCase
         $service->method('findListing')->willReturn(
             $this->makeListingStubWithFields(
                 [
-                    'address'                         => '100 Maple Ave',
-                    'description'                     => 'A lovely home',
-                    'starting_price'                  => '350000',
-                    'buy_now_price'                   => '390000',
-                    'bedroom_id'                      => '3',
-                    'bathroom_id'                     => '2',
-                    'heated_sqft'                     => '1800',
-                    'year_built'                      => '1995',
-                    'pool'                            => 'Yes',
-                    'pool_type'                       => 'Inground',
-                    'carport'                         => 'No',
-                    'garage'                          => 'Yes',
-                    'garage_spaces'                   => '2',
-                    'water_view'                      => 'No',
-                    'water_extras'                    => 'No',
-                    'hoa_association'                 => 'Yes',
-                    'hoa_fee'                         => '250',
-                    'hoa_fee_requirement'             => 'Mandatory',
-                    'hoa_payment_schedule'            => 'Monthly',
-                    'condo_fee'                       => '0',
-                    'condo_fee_schedule'              => '',
-                    'pets_allowed'                    => 'Yes',
-                    'number_of_pets_allowed'          => '2',
-                    'max_pet_weight'                  => '50',
-                    'pet_restrictions'                => 'No aggressive breeds',
-                    'rental_restrictions'             => 'Yes',
-                    'rental_restrictions_desription'  => 'No Airbnb',
-                    'is_in_flood_zone'                => 'No',
-                    'flood_zone_code'                 => 'X',
-                    'lease_terms'                     => '12 months',
-                    'tenant_pays'                     => 'Electric',
-                    'landlord_pays'                   => 'Water',
-                    'closing_date'                    => '2026-09-01',
-                    'auction_length'                  => '30',
-                    'mls_id'                          => 'MLS123',
-                    'sold'                            => '0',
+                    'address'      => '100 Maple Ave',
+                    'description'  => 'A lovely home',
+                    'bedroom_id'   => '3',
+                    'bathroom_id'  => '2',
+                    'auction_length' => '30',
+                    'is_sold'      => '0',
                 ],
                 [
-                    'showing_instructions' => 'Call 24h ahead',
-                    'service_type'         => 'Full Service',
+                    'maximum_budget'        => '350000',
+                    'bedrooms'              => '3',
+                    'bathrooms'             => '2',
+                    'minimum_heated_square' => '1800',
+                    'year_built'            => '1995',
+                    'pool_needed'           => 'Yes',
+                    'pool_type'             => '["Inground"]',
+                    'carport_needed'        => 'No',
+                    'garage_needed'         => 'Yes',
+                    'garage_parking_spaces' => '2',
+                    'has_hoa'               => 'Yes',
+                    'association_fee_amount'    => '250',
+                    'association_fee_frequency' => 'Monthly',
+                    'pets'                  => 'Yes',
+                    'number_of_pets'        => '2',
+                    'weight_of_pets'        => '50',
+                    'pet_restrictions'      => 'No aggressive breeds',
+                    'leasing_restrictions'  => 'Yes',
+                    'flood_zone_code'       => 'X',
+                    'target_closing_date'   => '2026-09-01',
+                    'annual_property_taxes' => '4200',
+                    'service_type'          => 'Full Service',
                 ]
             )
         );
 
-        $result = $service->buildForListing('seller', 1);
+        $result  = $service->buildForListing('seller', 1);
         $listing = $result['listing'];
 
         $expectedKeys = [
             // Base metadata
             'listing_type', 'listing_id', 'listing_title', 'city', 'state', 'county',
-            'property_type', 'listing_status',
+            'property_type', 'listing_status', 'created_at', 'updated_at',
             // Factual — native columns
-            'address', 'description', 'asking_price', 'buy_now_price',
-            'bedrooms', 'bathrooms', 'square_feet', 'year_built',
+            'address', 'description', 'auction_length', 'sold',
+            // Factual — EAV (corrected from old property_auctions phantom keys)
+            'asking_price', 'bedrooms', 'bathrooms', 'square_feet', 'year_built',
             'pool', 'pool_type', 'carport', 'garage', 'garage_spaces',
-            'water_view', 'water_extras',
-            'hoa_association', 'hoa_fee', 'hoa_fee_requirement', 'hoa_payment_schedule',
-            'condo_fee', 'condo_fee_schedule',
+            'hoa_association', 'hoa_fee', 'hoa_payment_schedule',
             'pets_allowed', 'number_of_pets_allowed', 'max_pet_weight', 'pet_restrictions',
-            'rental_restrictions', 'rental_restrictions_description',
-            'is_in_flood_zone', 'flood_zone_code', 'disclosure_flags',
-            'lease_terms', 'tenant_pays', 'landlord_pays', 'closing_date',
-            'auction_length', 'mls_id', 'sold',
-            // Factual — EAV
-            'showing_instructions', 'service_type',
+            'rental_restrictions', 'flood_zone_code', 'disclosure_flags',
+            'closing_date', 'annual_property_taxes', 'service_type',
         ];
 
         foreach ($expectedKeys as $key) {
             $this->assertArrayHasKey($key, $listing,
                 "Seller listing context is missing expected key: '{$key}'");
+        }
+
+        // Phantom keys from old property_auctions schema must be absent
+        $removedPhantomKeys = [
+            'buy_now_price', 'water_view', 'water_extras', 'hoa_fee_requirement',
+            'condo_fee', 'condo_fee_schedule', 'rental_restrictions_description',
+            'is_in_flood_zone', 'lease_terms', 'tenant_pays', 'landlord_pays',
+            'mls_id', 'showing_instructions',
+        ];
+
+        foreach ($removedPhantomKeys as $phantom) {
+            $this->assertArrayNotHasKey($phantom, $listing,
+                "Seller listing context must NOT include phantom key '{$phantom}' (not saved by offer form)");
         }
     }
 
@@ -2337,30 +2345,35 @@ class AskAiContextBuilderServiceTest extends TestCase
     {
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields([
-                'description'       => 'Looking for a 3-bed',
-                'max_price'         => '450000',
-                'bedrooms'          => '3',
-                'bathrooms'         => '2',
-                'sqft'              => '1500',
-                'pool'              => 'Yes',
-                'carport'           => 'No',
-                'garage'            => 'Yes',
-                'garage_spaces'     => '2',
-                'water_view'        => 'No',
-                'hoa'               => 'Yes',
-                'hoa_fee_requirement' => 'Flexible',
-                'max_hoa_fee'       => '300',
-                'pets_allowed'      => 'Yes',
-                'pets_detail'       => 'One dog',
-                'pets_breed'        => 'Labrador',
-                'pets_weight'       => '60',
-                'loan_pre_approved'  => 'Yes',
-                'financing_id'      => '0',
-                'inspection_period' => '10',
-                'closing_days'      => '45',
-                'contingencies'     => 'Inspection',
-            ])
+            $this->makeListingStubWithFields(
+                [
+                    'address'            => '200 Oak St',
+                    'additional_details' => 'Looking for a 3-bed',
+                ],
+                [
+                    'maximum_budget'        => '450000',
+                    'bedrooms'              => '3',
+                    'bathrooms'             => '2',
+                    'minimum_heated_square' => '1500',
+                    'pool_needed'           => 'Yes',
+                    'carport_needed'        => 'No',
+                    'garage_needed'         => 'Yes',
+                    'garage_parking_spaces' => '2',
+                    'hoa_acceptance'        => 'Yes',
+                    'hoa_max_monthly_fee'   => '300',
+                    'pets'                  => 'Yes',
+                    'type_of_pets'          => 'Dog',
+                    'breed_of_pets'         => 'Labrador',
+                    'weight_of_pets'        => '60',
+                    'pre_approved'          => 'Yes',
+                    'offered_financing'     => '["Conventional","FHA"]',
+                    'inspection_period_days' => '10',
+                    'target_closing_date'   => '2026-10-15',
+                    'inspection_contingency_buyer' => 'Yes',
+                    'appraisal_contingency_buyer'  => 'Yes',
+                    'financing_contingency_buyer'  => 'No',
+                ]
+            )
         );
 
         $result  = $service->buildForListing('buyer', 1);
@@ -2369,19 +2382,32 @@ class AskAiContextBuilderServiceTest extends TestCase
         $expectedKeys = [
             // Base metadata
             'listing_type', 'listing_id', 'listing_title', 'city', 'state', 'county',
-            'property_type', 'listing_status',
+            'property_type', 'listing_status', 'created_at', 'updated_at',
             // Factual — native columns
-            'description', 'max_price', 'bedrooms', 'bathrooms', 'square_feet',
-            'pool', 'carport', 'garage', 'garage_spaces', 'water_view',
-            'hoa_acceptable', 'hoa_fee_requirement', 'max_hoa_fee',
+            'address', 'description',
+            // Factual — EAV (corrected from old buyer_criteria_auctions phantom keys)
+            'max_price', 'bedrooms', 'bathrooms', 'square_feet',
+            'pool', 'carport', 'garage', 'garage_spaces',
+            'hoa_acceptable', 'max_hoa_fee',
             'pets_allowed', 'pets_detail', 'pets_breed', 'pets_weight',
             'loan_pre_approved', 'financing_type',
-            'inspection_period', 'closing_days', 'contingencies',
+            'inspection_period', 'closing_date',
+            'inspection_contingency_buyer', 'appraisal_contingency_buyer', 'financing_contingency_buyer',
         ];
 
         foreach ($expectedKeys as $key) {
             $this->assertArrayHasKey($key, $listing,
                 "Buyer listing context is missing expected key: '{$key}'");
+        }
+
+        // Phantom keys from old schema must be absent
+        $removedPhantomKeys = [
+            'water_view', 'hoa_fee_requirement', 'closing_days', 'contingencies',
+        ];
+
+        foreach ($removedPhantomKeys as $phantom) {
+            $this->assertArrayNotHasKey($phantom, $listing,
+                "Buyer listing context must NOT include phantom key '{$phantom}' (not saved by offer form)");
         }
     }
 
@@ -2417,7 +2443,7 @@ class AskAiContextBuilderServiceTest extends TestCase
                 'leasing_restrictions'         => 'No short-term',
                 'min_lease_period'             => '12',
                 'renewal_option_offered'       => 'Yes',
-                'number_of_occupants_allowed'  => '4',
+                'number_occupant'              => '4',
                 'additional_landlord_lease_terms' => 'No parties',
             ])
         );
@@ -2537,30 +2563,28 @@ class AskAiContextBuilderServiceTest extends TestCase
         // disclosure_flags.flood_zone = true is a prompt-layer governance contract
         // marker. It signals that flood-zone fields are present in this context and
         // require the flood disclosure template — it does NOT mean the property is
-        // in a flood zone. The actual flood status comes from is_in_flood_zone.
+        // in a flood zone. The actual flood zone code is carried by flood_zone_code (EAV).
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields([
-                'is_in_flood_zone' => 'No',
-                'flood_zone_code'  => 'X',
-            ])
+            $this->makeListingStubWithFields([], ['flood_zone_code' => 'X'])
         );
 
         $result  = $service->buildForListing('seller', 1);
         $listing = $result['listing'];
 
-        // governance marker is always present regardless of is_in_flood_zone value
+        // governance marker is always present
         $this->assertArrayHasKey('disclosure_flags', $listing);
         $this->assertSame(true, $listing['disclosure_flags']['flood_zone'],
-            "disclosure_flags.flood_zone must always be true for seller (governance marker, not property state)");
+            "disclosure_flags.flood_zone must always be true for seller (governance marker)");
 
-        // actual flood status is carried separately
-        $this->assertSame('No', $listing['is_in_flood_zone'],
-            "is_in_flood_zone carries the actual property flood status, independent of disclosure_flags");
-
-        // the two fields must coexist in the same context
-        $this->assertArrayHasKey('is_in_flood_zone', $listing);
+        // flood_zone_code is the EAV field that carries zone data
         $this->assertArrayHasKey('flood_zone_code', $listing);
+        $this->assertSame('X', $listing['flood_zone_code'],
+            "flood_zone_code must carry the EAV flood zone value");
+
+        // is_in_flood_zone was a phantom key (not saved by offer form) and must be absent
+        $this->assertArrayNotHasKey('is_in_flood_zone', $listing,
+            "is_in_flood_zone is a phantom key not collected by the seller offer form and must be absent");
     }
 
     public function test_case_U_json_decoded_fields_produce_comma_separated_strings_not_arrays(): void
@@ -2594,6 +2618,208 @@ class AskAiContextBuilderServiceTest extends TestCase
         $this->assertIsString($listing['association_amenities']);
         $this->assertStringNotContainsString('[', $listing['appliances']);
         $this->assertStringNotContainsString('[', $listing['pet_species_allowed']);
+    }
+
+    // =========================================================================
+    // Case W — EAV field extraction returns non-null values for critical fields
+    //
+    // Integration tests asserting that after the Phase-D accessor fix, Seller and
+    // Buyer extractFactualFields() returns real (non-null) values for the critical
+    // repaired fields when the listing stub has EAV meta populated correctly.
+    //
+    // These tests directly exercise the EAV accessor path that was broken (nativeGet
+    // on fields that only exist in EAV) and verify the fix resolves it. Landlord is
+    // verified for the number_of_occupants key-name fix.
+    //
+    // Fields asserted:
+    //   Seller: asking_price, bedrooms, bathrooms, square_feet, year_built, pool,
+    //           garage, hoa_association, pets_allowed, closing_date
+    //   Buyer:  max_price, bedrooms, bathrooms, square_feet, pool, garage,
+    //           hoa_acceptable, pets_allowed, closing_date, financing_type,
+    //           inspection_contingency_buyer, appraisal_contingency_buyer,
+    //           financing_contingency_buyer
+    //   Landlord: number_of_occupants (key-name fix from number_of_occupants_allowed
+    //             → number_occupant)
+    // =========================================================================
+
+    public function test_case_W_seller_critical_eav_fields_return_non_null_values(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(
+                [],
+                [
+                    'maximum_budget'        => '375000',
+                    'bedrooms'              => '3',
+                    'bathrooms'             => '2',
+                    'minimum_heated_square' => '1750',
+                    'year_built'            => '2003',
+                    'pool_needed'           => 'Yes',
+                    'garage_needed'         => 'Yes',
+                    'has_hoa'               => 'Yes',
+                    'pets'                  => 'Yes',
+                    'target_closing_date'   => '2026-11-01',
+                ]
+            )
+        );
+
+        $result  = $service->buildForListing('seller', 1);
+        $listing = $result['listing'];
+
+        $this->assertSame('375000', $listing['asking_price'],
+            "asking_price must read EAV maximum_budget — nativeGet('starting_price') was the broken path");
+        $this->assertSame('3', $listing['bedrooms'],
+            "bedrooms must return non-null from EAV");
+        $this->assertSame('2', $listing['bathrooms'],
+            "bathrooms must return non-null from EAV");
+        $this->assertSame('1750', $listing['square_feet'],
+            "square_feet must read EAV minimum_heated_square — nativeGet('heated_sqft') was broken");
+        $this->assertSame('2003', $listing['year_built'],
+            "year_built must read EAV — nativeGet('year_built') was broken");
+        $this->assertSame('Yes', $listing['pool'],
+            "pool must read EAV pool_needed — nativeGet('pool') was broken");
+        $this->assertSame('Yes', $listing['garage'],
+            "garage must read EAV garage_needed — nativeGet('garage') was broken");
+        $this->assertSame('Yes', $listing['hoa_association'],
+            "hoa_association must read EAV has_hoa — nativeGet('hoa_association') was broken");
+        $this->assertSame('Yes', $listing['pets_allowed'],
+            "pets_allowed must read EAV pets — nativeGet('pets_allowed') was broken");
+        $this->assertSame('2026-11-01', $listing['closing_date'],
+            "closing_date must read EAV target_closing_date — nativeGet('closing_date') was broken");
+    }
+
+    public function test_case_W_seller_fields_are_null_when_eav_meta_absent(): void
+    {
+        // Confirms that when EAV meta is absent, fields are null (not populated from
+        // a phantom native column that doesn't exist on seller_agent_auctions).
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(
+                ['starting_price' => '999999'],
+                []
+            )
+        );
+
+        $result  = $service->buildForListing('seller', 1);
+        $listing = $result['listing'];
+
+        // asking_price reads infoGet('maximum_budget') — native starting_price is ignored
+        $this->assertNull($listing['asking_price'],
+            "asking_price must be null when EAV maximum_budget is absent, even if starting_price native attr exists");
+        $this->assertNull($listing['square_feet'],
+            "square_feet must be null when EAV minimum_heated_square is absent");
+        $this->assertNull($listing['year_built'],
+            "year_built must be null when EAV year_built is absent");
+    }
+
+    public function test_case_W_buyer_critical_eav_fields_return_non_null_values(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(
+                [],
+                [
+                    'maximum_budget'               => '480000',
+                    'bedrooms'                     => '4',
+                    'bathrooms'                    => '3',
+                    'minimum_heated_square'        => '2000',
+                    'pool_needed'                  => 'Yes',
+                    'garage_needed'                => 'Yes',
+                    'hoa_acceptance'               => 'Yes',
+                    'pets'                         => 'Yes',
+                    'target_closing_date'          => '2026-12-15',
+                    'offered_financing'            => '["Conventional"]',
+                    'inspection_contingency_buyer' => 'Yes',
+                    'appraisal_contingency_buyer'  => 'Yes',
+                    'financing_contingency_buyer'  => 'No',
+                ]
+            )
+        );
+
+        $result  = $service->buildForListing('buyer', 1);
+        $listing = $result['listing'];
+
+        $this->assertSame('480000', $listing['max_price'],
+            "max_price must read EAV maximum_budget — nativeGet('max_price') was the broken path");
+        $this->assertSame('4', $listing['bedrooms'],
+            "bedrooms must return non-null from EAV — nativeGet('bedrooms') was broken");
+        $this->assertSame('3', $listing['bathrooms'],
+            "bathrooms must return non-null from EAV — nativeGet('bathrooms') was broken");
+        $this->assertSame('2000', $listing['square_feet'],
+            "square_feet must read EAV minimum_heated_square — nativeGet('sqft') was broken");
+        $this->assertSame('Yes', $listing['pool'],
+            "pool must read EAV pool_needed — nativeGet('pool') was broken");
+        $this->assertSame('Yes', $listing['garage'],
+            "garage must read EAV garage_needed — nativeGet('garage') was broken");
+        $this->assertSame('Yes', $listing['hoa_acceptable'],
+            "hoa_acceptable must read EAV hoa_acceptance — nativeGet('hoa') was broken");
+        $this->assertSame('Yes', $listing['pets_allowed'],
+            "pets_allowed must read EAV pets — nativeGet('pets_allowed') was broken");
+        $this->assertSame('2026-12-15', $listing['closing_date'],
+            "closing_date must read EAV target_closing_date — was phantom closing_days before");
+        $this->assertSame('Conventional', $listing['financing_type'],
+            "financing_type must decode EAV offered_financing JSON — resolveFinancingType(financing_id) was broken");
+        $this->assertSame('Yes', $listing['inspection_contingency_buyer'],
+            "inspection_contingency_buyer must be present (split from phantom contingencies key)");
+        $this->assertSame('Yes', $listing['appraisal_contingency_buyer'],
+            "appraisal_contingency_buyer must be present (split from phantom contingencies key)");
+        $this->assertSame('No', $listing['financing_contingency_buyer'],
+            "financing_contingency_buyer must be present (split from phantom contingencies key)");
+    }
+
+    public function test_case_W_buyer_description_reads_additional_details_native_column(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(
+                ['additional_details' => 'Seeking family home near top schools'],
+                []
+            )
+        );
+
+        $result  = $service->buildForListing('buyer', 1);
+        $listing = $result['listing'];
+
+        $this->assertSame('Seeking family home near top schools', $listing['description'],
+            "description must read nativeGet('additional_details') — nativeGet('description') was the broken path");
+    }
+
+    public function test_case_W_landlord_number_of_occupants_reads_correct_eav_key(): void
+    {
+        // Before the fix: infoGet('number_of_occupants_allowed') — key mismatch.
+        // After the fix:  infoGet('number_occupant') — matches what saveMeta() writes.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(
+                [],
+                ['number_occupant' => '3']
+            )
+        );
+
+        $result  = $service->buildForListing('landlord', 1);
+        $listing = $result['listing'];
+
+        $this->assertSame('3', $listing['number_of_occupants'],
+            "number_of_occupants must read EAV key 'number_occupant' (not 'number_of_occupants_allowed')");
+    }
+
+    public function test_case_W_landlord_number_of_occupants_is_null_with_old_wrong_key(): void
+    {
+        // Confirms that the old wrong key ('number_of_occupants_allowed') does NOT
+        // populate number_of_occupants — proving the key fix was necessary.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields(
+                [],
+                ['number_of_occupants_allowed' => '5']
+            )
+        );
+
+        $result  = $service->buildForListing('landlord', 1);
+        $listing = $result['listing'];
+
+        $this->assertNull($listing['number_of_occupants'],
+            "number_of_occupants must be null when only the old wrong key 'number_of_occupants_allowed' is set");
     }
 
     // =========================================================================
@@ -2634,19 +2860,19 @@ class AskAiContextBuilderServiceTest extends TestCase
     {
         $service = $this->makeService();
 
-        // Seller listing with a populated asking_price (native) and bedrooms (meta)
+        // Seller listing with asking_price (EAV maximum_budget) and bedrooms (EAV)
         $listing = $this->makeListingStubWithFields(
-            ['starting_price' => '450000'],
-            ['bedrooms' => '3', 'city' => 'Tampa']
+            [],
+            ['maximum_budget' => '450000', 'bedrooms' => '3', 'city' => 'Tampa']
         );
 
         $result  = $service->buildChipContext($listing, 'seller');
         $fields  = $result['listing'];
 
         $this->assertArrayHasKey('asking_price', $fields,
-            "Seller chip context must contain 'asking_price' (mapped from starting_price)");
+            "Seller chip context must contain 'asking_price' (mapped from EAV maximum_budget)");
         $this->assertSame('450000', $fields['asking_price'],
-            "asking_price must carry the starting_price value");
+            "asking_price must carry the maximum_budget EAV value");
         $this->assertArrayHasKey('bedrooms', $fields,
             "Seller chip context must contain 'bedrooms'");
         $this->assertSame('seller', $fields['listing_type'],

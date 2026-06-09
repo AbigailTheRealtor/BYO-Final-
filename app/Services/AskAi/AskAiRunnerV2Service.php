@@ -1221,20 +1221,26 @@ class AskAiRunnerV2Service
             'buyer inspection contingency days',
             'inspection contingency timeline',
         ],
-        'listing.closing_days' => [
-            'how quickly can the buyer close',
-            'days to close',
-            'buyer closing days',
-            'how many days does the buyer need to close',
+        'listing.inspection_contingency_buyer' => [
+            'inspection contingency',
+            'does the buyer need an inspection contingency',
+            'is the offer contingent on inspection',
+            'home inspection contingency',
         ],
-        'listing.contingencies' => [
-            'what contingencies does the buyer require',
-            'buyer contingencies',
-            'contingencies required by buyer',
-            'home sale contingency',
+        'listing.appraisal_contingency_buyer' => [
+            'appraisal contingency',
+            'is there an appraisal contingency',
+            'does the buyer need the property to appraise',
+            'appraisal contingency buyer',
+        ],
+        'listing.financing_contingency_buyer' => [
+            'financing contingency',
+            'is the offer contingent on financing',
+            'does the buyer have a financing contingency',
+            'mortgage contingency',
         ],
         // ---- Safety & Disclosure ----
-        'listing.is_in_flood_zone' => [
+        'listing.flood_zone_code' => [
             'flood zone status',
             'is this in a flood zone',
             'is this property in a flood zone',
@@ -1342,16 +1348,20 @@ class AskAiRunnerV2Service
             }
 
             $trace = [
-                'question'             => $question,
-                'classifier_result'    => $questionType,
-                'normalizer_called'    => 'N',
-                'normalizer_status'    => $normalizerStatus,
-                'normalizer_error'     => $normalizerError,
-                'normalized_field_key' => null,
-                'faq_key_detected'     => null,
-                'final_question_type'  => $questionType,
-                'final_status'         => null,
-                'source_attribution'   => null,
+                'question'                    => $question,
+                'classifier_result'           => $questionType,
+                'deterministic_question_type' => $questionType,
+                'normalizer_called'           => 'N',
+                'normalizer_status'           => $normalizerStatus,
+                'normalizer_error'            => $normalizerError,
+                'router_called'               => 'N',
+                'router_status'               => null,
+                'router_context_path'         => null,
+                'normalized_field_key'        => null,
+                'faq_key_detected'            => null,
+                'final_question_type'         => $questionType,
+                'final_status'                => null,
+                'source_attribution'          => null,
             ];
 
             // ----------------------------------------------------------------
@@ -1377,15 +1387,40 @@ class AskAiRunnerV2Service
                 && $this->normalizer->isEnabled()
             ) {
                 $trace['normalizer_called'] = 'Y';
+                $trace['router_called']     = 'Y';
+
                 $knownFieldKeys = $this->normalizer->buildKnownFieldKeys();
-                $normalizedKey  = $this->normalizer->normalize($question, $knownFieldKeys);
+                $normalizedKey  = $this->normalizer->normalize($question, $knownFieldKeys, $listingType);
 
-                $normalizerStatus           = $this->normalizer->getLastStatus();
-                $normalizerError            = $this->normalizer->getLastError();
-                $trace['normalizer_status'] = $normalizerStatus;
-                $trace['normalizer_error']  = $normalizerError;
+                $normalizerStatus  = $this->normalizer->getLastStatus();
+                $normalizerError   = $this->normalizer->getLastError();
+                $routerContextPath = $this->normalizer->getLastContextPath();
 
-                if ($normalizedKey !== null) {
+                $trace['normalizer_status']   = $normalizerStatus;
+                $trace['normalizer_error']    = $normalizerError;
+                $trace['router_context_path'] = $routerContextPath;
+
+                // Map normalizer status to the router_status vocabulary.
+                // 'unknown' (legacy "no match") surfaces as 'unsupported' in the router trace.
+                $trace['router_status'] = match ($normalizerStatus) {
+                    'matched'    => 'matched',
+                    'unknown'    => 'unsupported',
+                    'prohibited' => 'prohibited',
+                    'failed'     => 'failed',
+                    default      => 'not_called',
+                };
+
+                // When the router flagged the question as prohibited, re-classify so the
+                // internal runner applies the same fair-housing refusal it would for a
+                // classifier-blocked question.
+                if ($normalizerStatus === 'prohibited') {
+                    $questionType   = 'prohibited';
+                    $classification = [
+                        'question_type' => 'prohibited',
+                        'confidence'    => 1.0,
+                        'reason'        => 'OpenAI router flagged this question as touching a prohibited topic.',
+                    ];
+                } elseif ($normalizedKey !== null) {
                     $trace['normalized_field_key'] = $normalizedKey;
                     $classification = [
                         'question_type'        => 'listing_facts',
@@ -1406,12 +1441,14 @@ class AskAiRunnerV2Service
                 $normalizerError            = null;
                 $trace['normalizer_status'] = $normalizerStatus;
                 $trace['normalizer_error']  = $normalizerError;
+                $trace['router_status']     = 'not_called';
             } else {
                 // Non-unsupported question type: normalizer is not applicable.
                 $normalizerStatus           = 'not_applicable';
                 $normalizerError            = null;
                 $trace['normalizer_status'] = $normalizerStatus;
                 $trace['normalizer_error']  = $normalizerError;
+                $trace['router_status']     = 'not_called';
             }
 
             // ----------------------------------------------------------------
@@ -1799,16 +1836,20 @@ class AskAiRunnerV2Service
 
         } catch (\Throwable $e) {
             $exceptionTrace = [
-                'question'             => $question ?? null,
-                'classifier_result'    => null,
-                'normalizer_called'    => null,
-                'normalizer_status'    => $normalizerStatus,
-                'normalizer_error'     => $normalizerError,
-                'normalized_field_key' => null,
-                'faq_key_detected'     => null,
-                'final_question_type'  => null,
-                'final_status'         => 'failed',
-                'source_attribution'   => null,
+                'question'                    => $question ?? null,
+                'classifier_result'           => null,
+                'deterministic_question_type' => null,
+                'normalizer_called'           => null,
+                'normalizer_status'           => $normalizerStatus,
+                'normalizer_error'            => $normalizerError,
+                'router_called'               => null,
+                'router_status'               => null,
+                'router_context_path'         => null,
+                'normalized_field_key'        => null,
+                'faq_key_detected'            => null,
+                'final_question_type'         => null,
+                'final_status'                => 'failed',
+                'source_attribution'          => null,
             ];
             $this->emitTrace($exceptionTrace);
             return [
@@ -1977,10 +2018,11 @@ class AskAiRunnerV2Service
             'listing.loan_pre_approved'                  => 'Loan pre-approval information',
             'listing.financing_type'                     => 'Financing type information',
             'listing.inspection_period'                  => 'Inspection period information',
-            'listing.closing_days'                       => 'Days to close information',
-            'listing.contingencies'                      => 'Contingencies information',
+            'listing.inspection_contingency_buyer'       => 'Inspection contingency information',
+            'listing.appraisal_contingency_buyer'        => 'Appraisal contingency information',
+            'listing.financing_contingency_buyer'        => 'Financing contingency information',
             // Listing.* fields — Safety & Disclosure
-            'listing.is_in_flood_zone'                   => 'Flood zone status information',
+            'listing.flood_zone_code'                    => 'Flood zone status information',
             // Seller: Financial & Utility Insights
             'faq_answers.average_utility_costs'          => 'Utility cost information',
             'faq_answers.internet_utility_providers'     => 'Internet and utility provider information',

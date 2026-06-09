@@ -1610,6 +1610,63 @@ class AskAiFieldQuestionRegistryService
     }
 
     // =========================================================================
+    // ROUTER ENTRY PROVIDER
+    //
+    // Returns structured registry metadata for the OpenAI natural-language
+    // field router. Combines FAQ entries (registry()) and listing-model entries
+    // (listingFieldRegistry()), filtered to the current listing type role.
+    //
+    // Excluded from the router:
+    //   match_criteria — buyer/tenant match-criteria fields answered by the
+    //                    listing party; not surfaced as listing_facts paths.
+    //   umbrella_only  — high-level umbrella paths with no specific field key.
+    //
+    // Each returned entry includes path, label, description, and up to two
+    // natural-language sample questions so OpenAI can perform semantic matching
+    // without hardcoding any keyword phrases in the router prompt.
+    // =========================================================================
+
+    /**
+     * Return role-filtered router entries combining FAQ and listing-model registry data.
+     *
+     * Used by AskAiIntentNormalizerService to build the enriched router prompt.
+     * Only entries whose roles array includes $role are returned. Entries with
+     * keyword_route_status of 'match_criteria' or 'umbrella_only' are excluded.
+     *
+     * @param  string  $role  Listing-type role: 'seller', 'buyer', 'landlord', or 'tenant'.
+     * @return array<string, array{path: string, label: string, description: string, sample_questions: string[]}>
+     */
+    public static function routerEntries(string $role): array
+    {
+        $excluded = ['match_criteria', 'umbrella_only'];
+        $entries  = [];
+
+        $all = array_merge(static::registry(), static::listingFieldRegistry());
+
+        foreach ($all as $path => $entry) {
+            if (in_array($entry['keyword_route_status'] ?? '', $excluded, true)) {
+                continue;
+            }
+
+            if (!in_array($role, $entry['roles'] ?? [], true)) {
+                continue;
+            }
+
+            $sq1 = $entry['sample_question']   ?? '';
+            $sq2 = $entry['sample_question_2'] ?? '';
+
+            $entries[$path] = [
+                'path'             => $path,
+                'label'            => $entry['label'] ?? '',
+                'description'      => $entry['label'] ?? '',
+                'sample_questions' => array_values(array_filter([$sq1, $sq2])),
+            ];
+        }
+
+        return $entries;
+    }
+
+    // =========================================================================
     // FAQ SECOND-QUESTION ENRICHMENT
     //
     // Applied by registry() to add field_type='faq' and sample_question_2 to
@@ -1850,15 +1907,6 @@ class AskAiFieldQuestionRegistryService
                 'sample_question_2'    => 'How much is this property listed for?',
                 'keyword_route_status' => 'listing_native',
             ],
-            'listing.buy_now_price' => [
-                'roles'                => ['seller'],
-                'field_type'           => 'listing_model',
-                'config_key'           => 'buy_now_price',
-                'label'                => 'Buy Now / Fixed Price',
-                'sample_question'      => 'Is there a buy-it-now price?',
-                'sample_question_2'    => 'What is the fixed buy-now price for this listing?',
-                'keyword_route_status' => 'listing_native',
-            ],
             'listing.max_price' => [
                 'roles'                => ['buyer'],
                 'field_type'           => 'listing_model',
@@ -1979,15 +2027,6 @@ class AskAiFieldQuestionRegistryService
                 'sample_question_2'    => 'Is there an attached or detached garage?',
                 'keyword_route_status' => 'listing_native',
             ],
-            'listing.water_view' => [
-                'roles'                => ['seller', 'buyer'],
-                'field_type'           => 'listing_model',
-                'config_key'           => 'water_view',
-                'label'                => 'Water View',
-                'sample_question'      => 'Does this property have a water view?',
-                'sample_question_2'    => 'Is there a lake, river, or ocean view?',
-                'keyword_route_status' => 'listing_native',
-            ],
             'listing.appliances' => [
                 'roles'                => ['landlord', 'tenant'],
                 'field_type'           => 'listing_model',
@@ -2014,15 +2053,6 @@ class AskAiFieldQuestionRegistryService
                 'label'                => 'HOA Fee Amount',
                 'sample_question'      => 'What is the HOA fee for this property?',
                 'sample_question_2'    => 'How much are the monthly HOA dues?',
-                'keyword_route_status' => 'listing_native',
-            ],
-            'listing.hoa_fee_requirement' => [
-                'roles'                => ['seller', 'buyer'],
-                'field_type'           => 'listing_model',
-                'config_key'           => 'hoa_fee_requirement',
-                'label'                => 'HOA Fee Requirement',
-                'sample_question'      => 'Is the HOA fee required for this property?',
-                'sample_question_2'    => 'Is the HOA mandatory or optional?',
                 'keyword_route_status' => 'listing_native',
             ],
             'listing.hoa_acceptable' => [
@@ -2090,15 +2120,6 @@ class AskAiFieldQuestionRegistryService
                 'keyword_route_status' => 'listing_native',
             ],
             // ---- Lease & Rental Terms ----
-            'listing.lease_terms' => [
-                'roles'                => ['seller'],
-                'field_type'           => 'listing_model',
-                'config_key'           => 'lease_terms',
-                'label'                => 'Lease Terms (Seller)',
-                'sample_question'      => 'Are there existing lease terms on this property?',
-                'sample_question_2'    => 'Is there a tenant currently leasing this property?',
-                'keyword_route_status' => 'listing_native',
-            ],
             'listing.lease_length' => [
                 'roles'                => ['landlord'],
                 'field_type'           => 'listing_model',
@@ -2192,7 +2213,7 @@ class AskAiFieldQuestionRegistryService
                 'keyword_route_status' => 'listing_native',
             ],
             'listing.closing_date' => [
-                'roles'                => ['seller'],
+                'roles'                => ['seller', 'buyer'],
                 'field_type'           => 'listing_model',
                 'config_key'           => 'closing_date',
                 'label'                => 'Preferred Closing Date',
@@ -2228,32 +2249,41 @@ class AskAiFieldQuestionRegistryService
                 'sample_question_2'    => 'What inspection contingency does this buyer need?',
                 'keyword_route_status' => 'listing_native',
             ],
-            'listing.closing_days' => [
+            'listing.inspection_contingency_buyer' => [
                 'roles'                => ['buyer'],
                 'field_type'           => 'listing_model',
-                'config_key'           => 'closing_days',
-                'label'                => 'Days to Close',
-                'sample_question'      => 'How quickly can this buyer close?',
-                'sample_question_2'    => 'How many days does the buyer need to close?',
+                'config_key'           => 'inspection_contingency_buyer',
+                'label'                => 'Inspection Contingency',
+                'sample_question'      => 'Does this buyer need an inspection contingency?',
+                'sample_question_2'    => 'Is the offer contingent on a home inspection?',
                 'keyword_route_status' => 'listing_native',
             ],
-            'listing.contingencies' => [
+            'listing.appraisal_contingency_buyer' => [
                 'roles'                => ['buyer'],
                 'field_type'           => 'listing_model',
-                'config_key'           => 'contingencies',
-                'label'                => 'Contingencies',
-                'sample_question'      => 'What contingencies does this buyer require?',
-                'sample_question_2'    => 'Does the buyer have a home sale contingency?',
+                'config_key'           => 'appraisal_contingency_buyer',
+                'label'                => 'Appraisal Contingency',
+                'sample_question'      => 'Is there an appraisal contingency for this buyer?',
+                'sample_question_2'    => 'Does the buyer need the property to appraise at value?',
+                'keyword_route_status' => 'listing_native',
+            ],
+            'listing.financing_contingency_buyer' => [
+                'roles'                => ['buyer'],
+                'field_type'           => 'listing_model',
+                'config_key'           => 'financing_contingency_buyer',
+                'label'                => 'Financing Contingency',
+                'sample_question'      => 'Does this buyer have a financing contingency?',
+                'sample_question_2'    => 'Is the offer contingent on the buyer securing a mortgage?',
                 'keyword_route_status' => 'listing_native',
             ],
             // ---- Safety & Disclosure ----
-            'listing.is_in_flood_zone' => [
+            'listing.flood_zone_code' => [
                 'roles'                => ['seller'],
                 'field_type'           => 'listing_model',
-                'config_key'           => 'is_in_flood_zone',
+                'config_key'           => 'flood_zone_code',
                 'label'                => 'Flood Zone Status',
                 'sample_question'      => 'Is this property in a flood zone?',
-                'sample_question_2'    => 'Does this property require flood insurance?',
+                'sample_question_2'    => 'What is the flood zone designation for this property?',
                 'keyword_route_status' => 'listing_native',
             ],
         ];

@@ -525,15 +525,17 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         $this->assertSame('listing.bedrooms', $result);
     }
 
-    public function test_case_I_normalize_passes_max_tokens_60_to_send(): void
+    public function test_case_I_normalize_passes_max_tokens_80_to_send(): void
     {
+        // max_tokens was raised from 60 → 80 to accommodate the richer three-shape
+        // JSON response format introduced by the field router enrichment (Task #2405).
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->expects($this->once())
             ->method('send')
             ->with(
                 $this->anything(),
                 $this->callback(function (array $options): bool {
-                    return isset($options['max_tokens']) && $options['max_tokens'] === 60;
+                    return isset($options['max_tokens']) && $options['max_tokens'] === 80;
                 })
             )
             ->willReturn([
@@ -561,7 +563,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
                 $this->callback(function (array $options): bool {
                     return isset($options['timeout_seconds'], $options['max_tokens'])
                         && $options['timeout_seconds'] === 10
-                        && $options['max_tokens'] === 60;
+                        && $options['max_tokens'] === 80;
                 })
             )
             ->willReturn([
@@ -586,13 +588,14 @@ class AskAiIntentNormalizerServiceTest extends TestCase
         );
     }
 
-    public function test_case_I_service_file_declares_max_tokens_60_in_call_options(): void
+    public function test_case_I_service_file_declares_max_tokens_80_in_call_options(): void
     {
+        // max_tokens raised from 60 → 80 to fit the enriched three-shape router response.
         $content = file_get_contents($this->serviceFilePath());
         $this->assertStringContainsString(
-            "'max_tokens'      => 60",
+            "'max_tokens'      => 80",
             $content,
-            'AskAiIntentNormalizerService must declare max_tokens => 60 in CALL_OPTIONS'
+            'AskAiIntentNormalizerService must declare max_tokens => 80 in CALL_OPTIONS (raised from 60 to accommodate field router JSON shape)'
         );
     }
 
@@ -1299,6 +1302,411 @@ class AskAiIntentNormalizerServiceTest extends TestCase
             'rate_limited',
             $content,
             'classifyThrowable() must produce rate_limited error string'
+        );
+    }
+
+    // =========================================================================
+    // Case M — getLastContextPath() tracking
+    //
+    // After every normalize() call, getLastContextPath() exposes the raw path
+    // that OpenAI returned BEFORE the hallucination guard validated it.
+    // This enables the runner to populate router_context_path in the debug trace
+    // even when the guard ultimately rejected the path.
+    // =========================================================================
+
+    public function test_case_M1_matched_response_sets_last_context_path(): void
+    {
+        $client     = $this->makeClientMock('faq_answers.hvac_system_age');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Does the A/C work well?', $this->makeKnownFieldKeys());
+
+        $this->assertSame('faq_answers.hvac_system_age', $normalizer->getLastContextPath());
+    }
+
+    public function test_case_M2_unknown_response_sets_last_context_path_null(): void
+    {
+        $client     = $this->makeClientMock('unknown');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Who is president?', $this->makeKnownFieldKeys());
+
+        $this->assertNull($normalizer->getLastContextPath());
+    }
+
+    public function test_case_M3_hallucinated_key_sets_last_context_path_before_guard(): void
+    {
+        // Even when the hallucination guard rejects the path, getLastContextPath()
+        // still returns the raw path OpenAI produced, for observability.
+        $client     = $this->makeClientMock('listing.invented_field_that_does_not_exist');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('listing.invented_field_that_does_not_exist', $normalizer->getLastContextPath());
+    }
+
+    public function test_case_M4_exception_sets_last_context_path_null(): void
+    {
+        $client     = $this->makeClientMockThatThrows();
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Does the A/C work well?', $this->makeKnownFieldKeys());
+
+        $this->assertNull($normalizer->getLastContextPath());
+    }
+
+    public function test_case_M5_last_context_path_resets_between_calls(): void
+    {
+        // First call: match → contextPath set
+        $client     = $this->makeClientMock('listing.bedrooms');
+        $normalizer = $this->makeNormalizer($client);
+        $normalizer->normalize('How many bedrooms?', $this->makeKnownFieldKeys());
+        $this->assertSame('listing.bedrooms', $normalizer->getLastContextPath());
+
+        // Second call with exception: contextPath should reset to null
+        $throwingClient = $this->makeClientMockThatThrows();
+        $normalizerB    = new \App\Services\AskAi\AskAiIntentNormalizerService($throwingClient, $this->makeContractServiceMock());
+        $normalizerB->normalize('Does the A/C work?', $this->makeKnownFieldKeys());
+        $this->assertNull($normalizerB->getLastContextPath());
+    }
+
+    public function test_case_M6_last_context_path_null_before_first_call(): void
+    {
+        $mock       = $this->createMock(\App\Services\Ai\OpenAiClientService::class);
+        $normalizer = $this->makeNormalizer($mock);
+
+        $this->assertNull($normalizer->getLastContextPath());
+    }
+
+    // =========================================================================
+    // Case N — New response format: {status, context_path}
+    //
+    // The enriched router prompt instructs OpenAI to return one of three JSON
+    // shapes: {"status":"matched","context_path":"..."}, {"status":"unsupported"},
+    // or {"status":"prohibited"}. normalize() must parse all three correctly
+    // while still accepting the legacy {"normalized_key":"..."} format.
+    // =========================================================================
+
+    /**
+     * Build a mock that returns the new {status, context_path} response format.
+     */
+    private function makeClientMockWithStatus(string $status, ?string $contextPath = null): OpenAiClientService
+    {
+        $data = ['status' => $status];
+        if ($contextPath !== null) {
+            $data['context_path'] = $contextPath;
+        }
+        $mock = $this->createMock(OpenAiClientService::class);
+        $mock->method('send')->willReturn([
+            'data'           => $data,
+            'model'          => 'gpt-4o',
+            'prompt_tokens'  => 15,
+            'total_tokens'   => 15,
+            'api_request_id' => null,
+        ]);
+        return $mock;
+    }
+
+    public function test_case_N1_new_format_matched_returns_context_path(): void
+    {
+        $client     = $this->makeClientMockWithStatus('matched', 'listing.bedrooms');
+        $normalizer = $this->makeNormalizer($client);
+
+        $result = $normalizer->normalize('How many rooms does this place have?', $this->makeKnownFieldKeys());
+
+        $this->assertSame('listing.bedrooms', $result);
+    }
+
+    public function test_case_N1_new_format_matched_sets_status_matched(): void
+    {
+        $client     = $this->makeClientMockWithStatus('matched', 'listing.bathrooms');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('How many bathrooms?', $this->makeKnownFieldKeys());
+
+        $this->assertSame('matched', $normalizer->getLastStatus());
+    }
+
+    public function test_case_N1_new_format_matched_sets_context_path(): void
+    {
+        $client     = $this->makeClientMockWithStatus('matched', 'faq_answers.hvac_system_age');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Does the A/C work well?', $this->makeKnownFieldKeys());
+
+        $this->assertSame('faq_answers.hvac_system_age', $normalizer->getLastContextPath());
+    }
+
+    public function test_case_N2_new_format_unsupported_returns_null(): void
+    {
+        $client     = $this->makeClientMockWithStatus('unsupported');
+        $normalizer = $this->makeNormalizer($client);
+
+        $result = $normalizer->normalize('Who designed this house?', $this->makeKnownFieldKeys());
+
+        $this->assertNull($result);
+    }
+
+    public function test_case_N2_new_format_unsupported_sets_status_unknown(): void
+    {
+        $client     = $this->makeClientMockWithStatus('unsupported');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Who designed this house?', $this->makeKnownFieldKeys());
+
+        $this->assertSame('unknown', $normalizer->getLastStatus());
+    }
+
+    public function test_case_N2_new_format_unsupported_sets_context_path_null(): void
+    {
+        $client     = $this->makeClientMockWithStatus('unsupported');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Who designed this house?', $this->makeKnownFieldKeys());
+
+        $this->assertNull($normalizer->getLastContextPath());
+    }
+
+    public function test_case_N3_new_format_prohibited_returns_null(): void
+    {
+        $client     = $this->makeClientMockWithStatus('prohibited');
+        $normalizer = $this->makeNormalizer($client);
+
+        $result = $normalizer->normalize('What religion is the neighborhood?', $this->makeKnownFieldKeys());
+
+        $this->assertNull($result);
+    }
+
+    public function test_case_N3_new_format_prohibited_sets_status_prohibited(): void
+    {
+        $client     = $this->makeClientMockWithStatus('prohibited');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('What race are most of the residents?', $this->makeKnownFieldKeys());
+
+        $this->assertSame('prohibited', $normalizer->getLastStatus());
+    }
+
+    public function test_case_N3_new_format_prohibited_sets_error_null(): void
+    {
+        $client     = $this->makeClientMockWithStatus('prohibited');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('What race are most of the residents?', $this->makeKnownFieldKeys());
+
+        $this->assertNull($normalizer->getLastError());
+    }
+
+    public function test_case_N4_new_format_matched_hallucinated_path_rejected(): void
+    {
+        // Even with the new format, a context_path not in knownFieldKeys is rejected.
+        $client     = $this->makeClientMockWithStatus('matched', 'listing.invented_field_xyz');
+        $normalizer = $this->makeNormalizer($client);
+
+        $result = $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertNull($result);
+    }
+
+    public function test_case_N4_new_format_hallucinated_path_sets_status_failed(): void
+    {
+        $client     = $this->makeClientMockWithStatus('matched', 'listing.invented_field_xyz');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('failed', $normalizer->getLastStatus());
+    }
+
+    public function test_case_N4_new_format_hallucinated_path_sets_error_invalid_key(): void
+    {
+        $client     = $this->makeClientMockWithStatus('matched', 'listing.invented_field_xyz');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('invalid_key', $normalizer->getLastError());
+    }
+
+    public function test_case_N4_new_format_hallucinated_path_still_captured_in_context_path(): void
+    {
+        // The raw path is captured in lastContextPath even when the guard rejects it.
+        $client     = $this->makeClientMockWithStatus('matched', 'listing.invented_field_xyz');
+        $normalizer = $this->makeNormalizer($client);
+
+        $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertSame('listing.invented_field_xyz', $normalizer->getLastContextPath());
+    }
+
+    public function test_case_N5_new_format_matched_empty_context_path_fails(): void
+    {
+        $client     = $this->makeClientMockWithStatus('matched', '');
+        $normalizer = $this->makeNormalizer($client);
+
+        $result = $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertNull($result);
+        $this->assertSame('failed', $normalizer->getLastStatus());
+        $this->assertSame('empty_response', $normalizer->getLastError());
+    }
+
+    public function test_case_N6_new_format_unknown_status_value_fails_empty_response(): void
+    {
+        // An unrecognized status value is treated as a malformed response.
+        $client     = $this->makeClientMockWithStatus('unrecognized_status_value');
+        $normalizer = $this->makeNormalizer($client);
+
+        $result = $normalizer->normalize('Some question.', $this->makeKnownFieldKeys());
+
+        $this->assertNull($result);
+        $this->assertSame('failed', $normalizer->getLastStatus());
+        $this->assertSame('empty_response', $normalizer->getLastError());
+    }
+
+    // =========================================================================
+    // Case P — Role parameter and enriched payload
+    //
+    // normalize() accepts an optional $role parameter. When provided, buildPayload()
+    // adds role-filtered registry context to the prompt. The normalizer's own
+    // governance, hallucination guard, and status tracking are unaffected.
+    // =========================================================================
+
+    public function test_case_P1_role_parameter_accepted_without_error(): void
+    {
+        $client     = $this->makeClientMock('listing.max_rent');
+        $normalizer = $this->makeNormalizer($client);
+
+        // normalize() must accept a role parameter without throwing.
+        // listing.max_rent is included explicitly since makeKnownFieldKeys() is seller/landlord scoped.
+        $keys   = array_merge($this->makeKnownFieldKeys(), ['listing.max_rent']);
+        $result = $normalizer->normalize(
+            'What is the maximum rent this tenant is willing to pay?',
+            $keys,
+            'tenant'
+        );
+
+        $this->assertSame('listing.max_rent', $result);
+    }
+
+    public function test_case_P2_seller_role_resolves_bathrooms(): void
+    {
+        $client     = $this->makeClientMock('listing.bathrooms');
+        $normalizer = $this->makeNormalizer($client);
+
+        $result = $normalizer->normalize(
+            'How many bathrooms?',
+            $this->makeKnownFieldKeys(),
+            'seller'
+        );
+
+        $this->assertSame('listing.bathrooms', $result);
+    }
+
+    public function test_case_P3_seller_role_resolves_annual_property_taxes(): void
+    {
+        $client     = $this->makeClientMock('listing.annual_property_taxes');
+        $normalizer = $this->makeNormalizer($client);
+
+        $keys   = array_merge($this->makeKnownFieldKeys(), ['listing.annual_property_taxes']);
+        $result = $normalizer->normalize(
+            'What are the property taxes?',
+            $keys,
+            'seller'
+        );
+
+        $this->assertSame('listing.annual_property_taxes', $result);
+    }
+
+    public function test_case_P4_empty_role_accepted_without_error(): void
+    {
+        // When role is empty string, no registry context is added but the normalizer works normally.
+        $client     = $this->makeClientMock('faq_answers.roof_age_and_condition');
+        $normalizer = $this->makeNormalizer($client);
+
+        $result = $normalizer->normalize(
+            'Is the roof in good shape?',
+            $this->makeKnownFieldKeys(),
+            ''
+        );
+
+        $this->assertSame('faq_answers.roof_age_and_condition', $result);
+    }
+
+    public function test_case_P5_hallucination_guard_still_applies_with_role(): void
+    {
+        // Even with role enrichment, invented keys are rejected.
+        $client     = $this->makeClientMock('listing.not_a_real_field');
+        $normalizer = $this->makeNormalizer($client);
+
+        $result = $normalizer->normalize(
+            'Something obscure.',
+            $this->makeKnownFieldKeys(),
+            'seller'
+        );
+
+        $this->assertNull($result);
+        $this->assertSame('failed', $normalizer->getLastStatus());
+    }
+
+    public function test_case_P6_service_file_contains_routerEntries_call(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            'routerEntries',
+            $content,
+            'buildPayload() must call AskAiFieldQuestionRegistryService::routerEntries() for role-filtered registry context'
+        );
+    }
+
+    public function test_case_P7_service_file_contains_field_registry_key(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            'field_registry',
+            $content,
+            'buildPayload() must include "field_registry" key in the enriched payload'
+        );
+    }
+
+    public function test_case_P8_service_file_contains_status_matched_shape(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            '"status":"matched"',
+            $content,
+            'buildPayload() must instruct OpenAI to return {"status":"matched",...} shape'
+        );
+    }
+
+    public function test_case_P9_service_file_contains_status_unsupported_shape(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            '"status":"unsupported"',
+            $content,
+            'buildPayload() must instruct OpenAI to return {"status":"unsupported"} shape'
+        );
+    }
+
+    public function test_case_P10_service_file_contains_status_prohibited_shape(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            '"status":"prohibited"',
+            $content,
+            'buildPayload() must instruct OpenAI to return {"status":"prohibited"} shape'
+        );
+    }
+
+    public function test_case_P11_service_file_contains_get_last_context_path(): void
+    {
+        $content = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString(
+            'getLastContextPath',
+            $content,
+            'AskAiIntentNormalizerService must define getLastContextPath() for router_context_path tracing'
         );
     }
 }

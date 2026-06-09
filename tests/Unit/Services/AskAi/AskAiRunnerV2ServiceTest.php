@@ -2168,4 +2168,341 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $this->assertSame('5100', $result['final_response']['answer']);
         $this->assertSame('ready', $result['trace']['final_status']);
     }
+
+    // =========================================================================
+    // Case P — Router trace fields: deterministic_question_type, router_called,
+    //           router_status, router_context_path
+    //
+    // Verifies that run() always populates the four new router observability
+    // fields in the trace regardless of which code path fires.
+    // =========================================================================
+
+    // ── P1 ── trace always has the four router keys ──────────────────────────
+
+    public function test_case_P1_trace_always_has_deterministic_question_type_key(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $this->assertArrayHasKey('deterministic_question_type', $result['trace']);
+    }
+
+    public function test_case_P1_trace_always_has_router_called_key(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertArrayHasKey('router_called', $result['trace']);
+    }
+
+    public function test_case_P1_trace_always_has_router_status_key(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertArrayHasKey('router_status', $result['trace']);
+    }
+
+    public function test_case_P1_trace_always_has_router_context_path_key(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertArrayHasKey('router_context_path', $result['trace']);
+    }
+
+    // ── P2 ── deterministic_question_type reflects classifier output ──────────
+
+    public function test_case_P2_deterministic_question_type_is_classifier_result(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $this->assertSame('listing_facts', $result['trace']['deterministic_question_type']);
+    }
+
+    public function test_case_P2_deterministic_question_type_unsupported(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Who designed this house?');
+
+        $this->assertSame('unsupported', $result['trace']['deterministic_question_type']);
+    }
+
+    // ── P3 ── router_called reflects whether the normalizer fired ─────────────
+
+    public function test_case_P3_router_called_N_for_deterministic_questions(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $this->assertSame('N', $result['trace']['router_called']);
+    }
+
+    public function test_case_P3_router_called_N_when_normalizer_flag_off(): void
+    {
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(false);
+        $runner              = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Who designed this house?');
+
+        $this->assertSame('N', $result['trace']['router_called']);
+    }
+
+    public function test_case_P3_router_called_Y_when_normalizer_enabled_and_unsupported(): void
+    {
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, 'listing.bedrooms', 'matched');
+        $runner              = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'How many rooms does this place have?');
+
+        $this->assertSame('Y', $result['trace']['router_called']);
+    }
+
+    // ── P4 ── router_status maps from normalizer status ───────────────────────
+
+    public function test_case_P4_router_status_not_called_for_deterministic_question(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('property_standout'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What are the key features?');
+
+        $this->assertSame('not_called', $result['trace']['router_status']);
+    }
+
+    public function test_case_P4_router_status_matched_when_normalizer_matched(): void
+    {
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, 'listing.bedrooms', 'matched');
+        $runner              = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'How many rooms does this place have?');
+
+        $this->assertSame('matched', $result['trace']['router_status']);
+    }
+
+    public function test_case_P4_router_status_unsupported_when_normalizer_unknown(): void
+    {
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, null, 'unknown');
+        $runner              = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Who is the best architect?');
+
+        $this->assertSame('unsupported', $result['trace']['router_status']);
+    }
+
+    public function test_case_P4_router_status_failed_when_normalizer_failed(): void
+    {
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, null, 'failed', 'timeout');
+        $runner              = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Who is the best architect?');
+
+        $this->assertSame('failed', $result['trace']['router_status']);
+    }
+
+    // ── P5 ── router_context_path ──────────────────────────────────────────────
+
+    public function test_case_P5_router_context_path_null_for_deterministic_question(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $this->assertNull($result['trace']['router_context_path']);
+    }
+
+    public function test_case_P5_router_context_path_populated_from_normalizer(): void
+    {
+        // Build a normalizer mock that also stubs getLastContextPath()
+        $mock = $this->createMock(AskAiIntentNormalizerService::class);
+        $mock->method('isEnabled')->willReturn(true);
+        $mock->method('buildKnownFieldKeys')->willReturn(['listing.bedrooms', 'faq_answers.hvac_system_age']);
+        $mock->method('normalize')->willReturn('listing.bedrooms');
+        $mock->method('getLastStatus')->willReturn('matched');
+        $mock->method('getLastError')->willReturn(null);
+        $mock->method('getLastContextPath')->willReturn('listing.bedrooms');
+
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $mock;
+        $runner              = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'How many rooms does this place have?');
+
+        $this->assertSame('listing.bedrooms', $result['trace']['router_context_path']);
+    }
+
+    public function test_case_P5_router_context_path_null_when_normalizer_not_called(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        // No normalizer injected → router not called
+        $result = $runner->run('seller', 1, 'Who designed this house?');
+
+        $this->assertNull($result['trace']['router_context_path']);
+    }
+
+    // ── P6 ── prohibited from router re-classifies question ──────────────────
+
+    public function test_case_P6_router_prohibited_re_classifies_as_prohibited(): void
+    {
+        $mock = $this->createMock(AskAiIntentNormalizerService::class);
+        $mock->method('isEnabled')->willReturn(true);
+        $mock->method('buildKnownFieldKeys')->willReturn(['listing.bedrooms']);
+        $mock->method('normalize')->willReturn(null);
+        $mock->method('getLastStatus')->willReturn('prohibited');
+        $mock->method('getLastError')->willReturn(null);
+        $mock->method('getLastContextPath')->willReturn(null);
+
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $mock;
+        $runner              = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'blocked',
+            'prompt_package' => ['status' => 'blocked', 'required_disclosures' => [], 'source_attribution' => [], 'refusal_template' => 'Not permitted.'],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'blocked',
+        ]));
+
+        $result = $runner->run('seller', 1, 'Is this a fair housing violation question?');
+
+        $this->assertSame('prohibited', $result['trace']['router_status']);
+    }
+
+    // ── P7 ── router trace fields present on exception path ──────────────────
+
+    public function test_case_P7_exception_path_has_router_called_key(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willThrowException(new \RuntimeException('pipeline exploded'));
+
+        $result = $runner->run('seller', 1, 'q');
+
+        $this->assertArrayHasKey('router_called', $result['trace']);
+        $this->assertArrayHasKey('router_status', $result['trace']);
+        $this->assertArrayHasKey('router_context_path', $result['trace']);
+    }
+
+    // ── P8 ── run() file passes role to normalizer ────────────────────────────
+
+    public function test_case_P8_runner_file_passes_listing_type_to_normalize(): void
+    {
+        $content = file_get_contents(
+            app_path('Services/AskAi/AskAiRunnerV2Service.php')
+        );
+        $this->assertStringContainsString(
+            'normalize($question, $knownFieldKeys, $listingType)',
+            $content,
+            'run() must pass $listingType as the third argument to normalize()'
+        );
+    }
 }

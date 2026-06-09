@@ -931,7 +931,9 @@ class AskAiResponseContractServiceTest extends TestCase
             'listing.pool',
             'listing.pets_allowed',
             'listing.hoa_fee',
-            'listing.showing_instructions',
+            // showing_instructions removed: no native column, no form writes to it,
+            // zero populated rows in seller_agent_auction_metas — confirmed phantom.
+            // Removed from context builder and contract in #2401 cleanup.
             'listing.appliances',
             'listing.utilities',
         ];

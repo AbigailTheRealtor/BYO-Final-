@@ -310,12 +310,12 @@ class AskAiResponseContractService
                 'listing.loan_pre_approved',
                 'listing.financing_type',
                 'listing.inspection_period',
-                'listing.closing_days',
-                'listing.contingencies',
+                'listing.inspection_contingency_buyer',
+                'listing.appraisal_contingency_buyer',
+                'listing.financing_contingency_buyer',
                 // Tenant status
                 'listing.current_status',
-                // Showing / MLS / service
-                'listing.showing_instructions',
+                // MLS / service
                 'listing.mls_id',
                 'listing.sold',
                 'listing.service_type',
