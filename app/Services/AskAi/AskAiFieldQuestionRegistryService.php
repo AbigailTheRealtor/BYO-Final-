@@ -1830,6 +1830,16 @@ class AskAiFieldQuestionRegistryService
     public static function listingFieldRegistry(): array
     {
         return [
+            // ---- Tax ----
+            'listing.annual_property_taxes' => [
+                'roles'                => ['seller', 'landlord'],
+                'field_type'           => 'listing_model',
+                'config_key'           => 'annual_property_taxes',
+                'label'                => 'Annual Property Taxes',
+                'sample_question'      => 'What are the annual property taxes for this property?',
+                'sample_question_2'    => 'How much are the property taxes per year?',
+                'keyword_route_status' => 'listing_native',
+            ],
             // ---- Price & Financial ----
             'listing.asking_price' => [
                 'roles'                => ['seller'],

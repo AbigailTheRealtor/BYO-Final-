@@ -2124,10 +2124,12 @@
                             html += '<div style="font-size:.75rem;color:#64748b;margin-top:.4rem;padding:.5rem .75rem;background:#f8fafc;border-radius:.4rem;border:1px solid #e2e8f0;">' + escHtml(disc) + '</div>';
                         }
                     }
-                    if (data.source_attribution) {
-                        var src = Array.isArray(data.source_attribution) ? data.source_attribution.join(', ') : String(data.source_attribution);
-                        if (src.trim()) {
-                            html += '<div style="font-size:.72rem;color:#94a3b8;margin-top:.3rem;">Source: ' + escHtml(src) + '</div>';
+                    if (data.source_attribution && Array.isArray(data.source_attribution.sources) && data.source_attribution.sources.length > 0) {
+                        var srcLabels = data.source_attribution.sources
+                            .map(function(s) { return s.label || s.key || ''; })
+                            .filter(function(l) { return l !== ''; });
+                        if (srcLabels.length > 0) {
+                            html += '<div style="font-size:.72rem;color:#94a3b8;margin-top:.3rem;">Source: ' + escHtml(srcLabels.join(', ')) + '</div>';
                         }
                     }
                     if (Array.isArray(data.follow_up_questions) && data.follow_up_questions.length > 0) {

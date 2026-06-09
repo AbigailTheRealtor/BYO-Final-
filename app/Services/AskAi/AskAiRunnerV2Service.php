@@ -59,6 +59,11 @@ class AskAiRunnerV2Service
         'faq_answers.roof_age_and_condition' => [
             'roof age',
             'age of roof',
+            'age of the roof',
+            'what is the age of the roof',
+            'condition of the roof',
+            'condition is the roof',
+            'what condition is the roof',
             'when was the roof',
             'how old is the roof',
             "what's the roof situation",
@@ -874,6 +879,41 @@ class AskAiRunnerV2Service
         ],
     ];
 
+    /**
+     * Keyword → canonical listing.* path map used by detectListingFieldKey().
+     *
+     * Each entry maps natural-language phrases to a native or EAV listing field
+     * path. When a question matches one of these entries AND the resolved field
+     * is null in the assembled context, the listing.* null-field guard fires
+     * before OpenAI is called, returning a grounded "not provided" message.
+     *
+     * Only include keys whose intent is unambiguously one specific listing field.
+     */
+    private const LISTING_KEY_KEYWORD_MAP = [
+        'listing.bedrooms' => [
+            'how many bedrooms',
+            'number of bedrooms',
+            'bedroom count',
+            'how many bedroom',
+            'bedrooms in this',
+            'bedrooms does',
+            'how many rooms',
+        ],
+        'listing.annual_property_taxes' => [
+            'property tax',
+            'property taxes',
+            'annual taxes',
+            'annual tax',
+            'annual property tax',
+            'real estate tax',
+            'real estate taxes',
+            'tax amount',
+            'what are the taxes',
+            'how much are the taxes',
+            'how much are property taxes',
+        ],
+    ];
+
     private AskAiQuestionClassifierService $classifier;
     private AskAiInternalRunnerService $internalRunner;
     private AskAiOpenAiAdapterService $adapter;
@@ -1061,6 +1101,13 @@ class AskAiRunnerV2Service
                     $trace['faq_key_detected'] = $detectedKey;
                     $classification['normalized_field_key'] = $detectedKey;
                     $options = array_merge($options, ['normalized_field_key' => $detectedKey]);
+                } else {
+                    $detectedListingKey = $this->detectListingFieldKey($question);
+                    if ($detectedListingKey !== null) {
+                        $trace['listing_key_detected'] = $detectedListingKey;
+                        $classification['normalized_field_key'] = $detectedListingKey;
+                        $options = array_merge($options, ['normalized_field_key' => $detectedListingKey]);
+                    }
                 }
             }
 
@@ -1096,16 +1143,20 @@ class AskAiRunnerV2Service
             }
 
             // ----------------------------------------------------------------
-            // Field-specific missing-data guard.
+            // Field-specific missing-data guards.
+            //
+            // Guard A — faq_answers.* keys:
             // Fires when the normalizer resolved a faq_answers.* key but the
             // listing has no answer for that key — i.e. filterAllowedContext()
             // returned an empty array because the FAQ entry is absent.
-            // Without this guard, OpenAI would be called with zero context and
-            // could hallucinate an answer. Instead we return a clear, grounded
-            // message that the specific information was not provided.
-            // Only applies to faq_answers.* keys; listing.* null values are
-            // passed through normally (they appear as null in allowed_context
-            // and the response rules direct the LLM to state they are absent).
+            //
+            // Guard B — listing.* null fields:
+            // Fires when detectListingFieldKey() resolved a native/EAV listing
+            // field path (e.g. listing.bedrooms, listing.annual_property_taxes)
+            // and filterAllowedContext() included that field with a null value.
+            // Without either guard, OpenAI would be called with zero or null
+            // context and could hallucinate. Both guards return a grounded
+            // "not provided" message instead.
             // ----------------------------------------------------------------
             $normalizedFieldKey = $options['normalized_field_key'] ?? null;
 
@@ -1149,6 +1200,55 @@ class AskAiRunnerV2Service
                     'error'          => null,
                     'trace'          => $trace,
                 ];
+            }
+
+            if (
+                $normalizedFieldKey !== null
+                && str_starts_with($normalizedFieldKey, 'listing.')
+                && ($promptPackage['status'] ?? '') === 'prompt_ready'
+            ) {
+                $listingField = substr($normalizedFieldKey, strlen('listing.'));
+                $listingData  = $promptPackage['allowed_context']['listing'] ?? null;
+
+                if (
+                    is_array($listingData)
+                    && array_key_exists($listingField, $listingData)
+                    && $listingData[$listingField] === null
+                ) {
+                    $fieldLabel        = $this->deriveFieldLabel($normalizedFieldKey);
+                    $missingDataAnswer = $fieldLabel . ' has not been provided for this listing.';
+
+                    $missingListingResponse = [
+                        'success'            => false,
+                        'status'             => 'insufficient_context',
+                        'answer'             => $missingDataAnswer,
+                        'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                        'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                        'refusal_message'    => null,
+                        'error'              => null,
+                    ];
+                    $missingListingResponse['follow_up_questions'] = $this->followUpService->forResult(
+                        $missingListingResponse,
+                        $classification
+                    );
+
+                    $trace['final_status']       = 'insufficient_context';
+                    $trace['source_attribution'] = $missingListingResponse['source_attribution'] ?? null;
+                    $this->emitTrace($trace);
+
+                    return [
+                        'success'        => false,
+                        'status'         => 'insufficient_context',
+                        'classification' => $classification,
+                        'context'        => $context,
+                        'contract'       => $contract,
+                        'prompt_package' => $promptPackage,
+                        'adapter_result' => null,
+                        'final_response' => $missingListingResponse,
+                        'error'          => null,
+                        'trace'          => $trace,
+                    ];
+                }
             }
 
             $adapterResult = $this->adapter->generate($promptPackage);
@@ -1316,6 +1416,30 @@ class AskAiRunnerV2Service
     }
 
     /**
+     * Detect a canonical listing.* field path from the question text.
+     *
+     * Iterates LISTING_KEY_KEYWORD_MAP in order and returns the FIRST match,
+     * or null when no unambiguous listing field is identified.
+     *
+     * @param  string $question  The user's raw question text.
+     * @return string|null  e.g. 'listing.bedrooms', 'listing.annual_property_taxes'
+     */
+    private function detectListingFieldKey(string $question): ?string
+    {
+        $lower = mb_strtolower(trim($question));
+
+        foreach (self::LISTING_KEY_KEYWORD_MAP as $listingKey => $keywords) {
+            foreach ($keywords as $keyword) {
+                if (str_contains($lower, mb_strtolower($keyword))) {
+                    return $listingKey;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Derive a human-readable field label from a normalized faq_answers.* key.
      *
      * Used to compose field-specific missing-data messages such as
@@ -1344,6 +1468,9 @@ class AskAiRunnerV2Service
             'faq_answers.pest_treatment_history'         => 'Pest treatment information',
             'faq_answers.flood_damage_history'           => 'Flood and water damage history information',
             'faq_answers.mold_issues_history'            => 'Mold history information',
+            // Listing.* fields
+            'listing.annual_property_taxes'              => 'Annual property tax information',
+            'listing.bedrooms'                           => 'Bedroom information',
             // Seller: Financial & Utility Insights
             'faq_answers.average_utility_costs'          => 'Utility cost information',
             'faq_answers.internet_utility_providers'     => 'Internet and utility provider information',

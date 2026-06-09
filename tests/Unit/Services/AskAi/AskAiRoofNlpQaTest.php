@@ -617,7 +617,7 @@ class AskAiRoofNlpQaTest extends TestCase
         );
     }
 
-    public function test_case_G_listing_key_with_empty_context_does_not_trigger_field_specific_guard(): void
+    public function test_case_G_listing_null_field_guard_fires_before_adapter_when_bedrooms_is_null(): void
     {
         $classifier     = $this->createMock(AskAiQuestionClassifierService::class);
         $internalRunner = $this->createMock(AskAiInternalRunnerService::class);
@@ -644,8 +644,8 @@ class AskAiRoofNlpQaTest extends TestCase
             'error'          => null,
         ]);
 
-        $adapter->expects($this->once())->method('generate')->willReturn($this->makeAdapterResult());
-        $finalBuilder->expects($this->once())->method('build')->willReturn($this->makeFinalResponse());
+        $adapter->expects($this->never())->method('generate');
+        $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($classifier, $internalRunner, $adapter, $finalBuilder);
         $result = $runner->run(
@@ -655,8 +655,17 @@ class AskAiRoofNlpQaTest extends TestCase
             ['normalized_field_key' => 'listing.bedrooms']
         );
 
-        $this->assertTrue($result['success']);
-        $this->assertSame('ready', $result['status']);
+        $this->assertFalse($result['success']);
+        $this->assertSame('insufficient_context', $result['status']);
+        $this->assertStringContainsString(
+            'Bedroom information',
+            $result['final_response']['answer'],
+            'Guard B must produce a field-specific "Bedroom information has not been provided" message.'
+        );
+        $this->assertStringContainsString(
+            'has not been provided for this listing',
+            $result['final_response']['answer']
+        );
     }
 
     // =========================================================================

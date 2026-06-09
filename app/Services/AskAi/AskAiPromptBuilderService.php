@@ -47,7 +47,7 @@ class AskAiPromptBuilderService
         'If required_disclosures are provided, every disclosure must appear verbatim in your response without alteration.',
         'If source_attribution is required, it must appear clearly in your response before or after the substantive content.',
         'You must not generate or imply legal, financial, investment, or professional advice of any kind.',
-        'Do not make decisions on behalf of users. Present data and analysis only; all decisions remain with the user.',
+        'Do not make decisions on behalf of users. Present data and analysis only; all decisions remain with the user. Respond using a JSON object.',
     ];
 
     /**

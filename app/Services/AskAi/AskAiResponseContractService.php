@@ -296,6 +296,8 @@ class AskAiResponseContractService
                 'listing.parking_terms',
                 'listing.parking_needed',
                 'listing.property_zip',
+                // Tax
+                'listing.annual_property_taxes',
                 // Compliance-sensitive (carry disclosure requirement)
                 'listing.is_in_flood_zone',
                 'listing.flood_zone_code',
