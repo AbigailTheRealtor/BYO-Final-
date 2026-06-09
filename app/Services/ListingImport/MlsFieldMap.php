@@ -34,7 +34,10 @@ class MlsFieldMap
     {
         return [
             // ── Core property fields ─────────────────────────────────────────
-            'price'           => 'purchase_price',
+            // NOTE: 'price' maps to 'maximum_budget' (the "Desired Sale Price" input on
+            //       Sale Terms tab, wire:model="maximum_budget"), NOT 'purchase_price'.
+            //       purchase_price is a sub-field inside the Seller Financing section only.
+            'price'           => 'maximum_budget',
             'bedrooms'        => 'bedrooms',
             'bathrooms'       => 'bathrooms',
             'heated_sqft'     => 'minimum_heated_square',
@@ -96,7 +99,7 @@ class MlsFieldMap
     {
         return [
             // Buyer should NOT receive: tax_id, tax_year, annual_taxes,
-            // legal_description, flood_zone_code, price→purchase_price (seller field).
+            // legal_description, flood_zone_code, or owner-disclosure fields.
             // See MlsCoverageReporter::rejectedMappingsSection() for full rationale.
             'bedrooms'        => 'bedrooms',
             'bathrooms'       => 'bathrooms',

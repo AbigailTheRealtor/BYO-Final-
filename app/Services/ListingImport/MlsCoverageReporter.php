@@ -394,7 +394,7 @@ class MlsCoverageReporter
             $address('Residential'),
             $mlsId('Residential'),
             [
-                ['form' => 'Residential', 'section' => 'LISTING INFORMATION', 'mls_label' => 'List Price', 'canonical_key' => 'price', 'norm_required' => false, 'notes' => 'Seller→purchase_price; Buyer→desired_purchase_price'],
+                ['form' => 'Residential', 'section' => 'LISTING INFORMATION', 'mls_label' => 'List Price', 'canonical_key' => 'price', 'norm_required' => false, 'notes' => 'Seller→maximum_budget (Desired Sale Price on Sale Terms tab); Buyer→maximum_budget (budget cap)'],
             ],
             [
                 ['form' => 'Residential', 'section' => 'PROPERTY DETAILS', 'mls_label' => 'Bedrooms',    'canonical_key' => 'bedrooms',    'norm_required' => false, 'notes' => ''],
@@ -624,7 +624,7 @@ class MlsCoverageReporter
         return match ($key) {
             'mls_number'              => 'Parsed; not mapped — no Livewire property on any component (see Rejected Mapping Candidates)',
             'application_fee'         => 'Parsed; not mapped for Landlord — property absent on LandlordOfferListing',
-            'price'                   => 'Seller→purchase_price; Landlord→desired_rental_amount; Tenant price omitted',
+            'price'                   => 'Seller→maximum_budget (Desired Sale Price, Sale Terms tab); Landlord→desired_rental_amount; Buyer→maximum_budget; Tenant price omitted',
             'flood_zone_code'         => 'Select field; valid values: X, AE, A, AH, AO, VE, V, D — normalizer uppercases',
             'tax_id'                  => 'App property is parcel_id (not tax_id) — see Rejected Mapping Candidates',
             'annual_taxes'            => 'App property is annual_property_taxes (includes "property" in name)',

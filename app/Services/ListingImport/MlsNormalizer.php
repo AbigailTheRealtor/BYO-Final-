@@ -41,9 +41,15 @@ class MlsNormalizer
     /**
      * Coerce MLS Yes/No/Y/N variants to lowercase "yes" or "no".
      * Values that don't match are returned as-is (e.g. pool type strings).
+     *
+     * Also strips the "Y/N:" prefix that some MLS exports emit for boolean fields
+     * (e.g. "Additional Parcels Y/N: Y/N:No" → "No" → "no").
      */
     public static function normalizeBoolean(string $value): string
     {
+        // Strip leading "Y/N:" prefix emitted by some MLS exports before boolean lookup.
+        $value = preg_replace('/^Y\/N\s*:\s*/i', '', trim($value));
+
         $lower = strtolower(trim($value));
 
         if (in_array($lower, ['yes', 'y', 'true', '1'], true)) {

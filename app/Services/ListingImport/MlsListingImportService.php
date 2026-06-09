@@ -103,8 +103,9 @@ class MlsListingImportService
             'Pool\b|Spa\b|Garage\b|Carport\b|Appliances?\b' .
             '|Air\s+Conditioning|A\/C\b' .
             '|Heat(?:ing)?(?:\s+(?:and|&)\s+Fuel)?\b|Fuel\b' .
+            '|Fireplace\b|Heated\s+Area\b' .
             '|Interior\s+Features?|Exterior\s+Features?' .
-            '|Exterior\s+Construction\b|Exterior\s+Feat\b' .
+            '|Exterior\s+Construction\b|Exterior\s+Feat\b|Exterior\s+Information\b' .
             '|Floor\s+Covering\b|Roof\b' .
             '|Furnishings?\b|Furnished\b|Available\b' .
             '|Tax\s+(?:ID|Year)|Annual\s+(?:CDD|Prop(?:erty)?|Tax)|Taxes\b|Parcel\b' .
@@ -112,14 +113,14 @@ class MlsListingImportService
             '|Legal\s+Desc|Flood\s+Zone|HOA\b|Association\b|Homestead\b|CDD\b' .
             '|Zoning\b|Lot\s+(?:Dim|Size|Sq|Acr|Feat)|Total\s+(?:Acreage|Number)' .
             '|Year\s+Built|Bed(?:room)?s?\b|Bath(?:room)?s?\b|Beds?\b|Baths?\b' .
-            '|(?:Heated\s+)?Sq\.?\s*Ft\.?|Square\s+Feet' .
+            '|(?:Heated\s+)?Sq\.?\s*Ft\.?|Square\s+Feet|CDOM\b' .
             '|Waterfront\b|Water\s+(?:Access|View|Extra|Front)\b' .
             '|Rent\s+(?:Includes?|Price)\b|Tenant\s+Pays?\b|Terms\s+of\s+Lease\b' .
             '|Application\s+Fee\b|Security\s+Deposit\b|Minimum\s+(?:Lease|Security)\b' .
             '|(?:Monthly|Lease)\s+(?:Rent|Amount)\b|Remarks?\b|Description\b' .
             '|Directions?\b|MLS\s*(?:#|Num|No\.?|Number)' .
             '|List\s+Price|Price\b|City\b|County\b|State\b|Zip\b|Address\b' .
-            '|Kitchen\b|Living\s+Room\b|Primary\s+Bed(?:room)?\b' .
+            '|Kitchen\b|Living\s+Room\b|Primary\s+Bed(?:room)?\b|Rooms\b' .
             '|Community\s+Information\b|Housing\b' .
             '|Special\s+Assessment|Homeowners?\s+Assoc|Subdivision\b' .
             '|Foundation\b|Sewer\b|Utilities\b|Roof\s+Type\b';
@@ -301,7 +302,9 @@ class MlsListingImportService
         }
 
         // ─── Tax / Parcel ID ──────────────────────────────────────────────────
-        if ($v = $extract(['/(?:Tax\s+ID|Parcel\s+(?:ID|Number))[\s:]+([A-Za-z0-9\-\.]+)/i'])) {
+        // Boundary protection: prevents "19-30-17-45612-000-1410Tax" from bleeding
+        // "Tax" into the value when "Tax Year:" or "Tax:" immediately follows.
+        if ($v = $extract(['/(?:Tax\s+ID|Parcel\s+(?:ID|Number))[\s:]+([A-Za-z0-9\-\.]+)/i'], true)) {
             $data['tax_id'] = $v;
         }
 

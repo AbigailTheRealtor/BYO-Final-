@@ -1376,4 +1376,209 @@ class MlsListingImportServiceTest extends TestCase
 
         @unlink($tmpPath);
     }
+
+    // ─── Phase 3: boundary-fix verification tests ─────────────────────────────
+
+    public function test_parcel_id_does_not_bleed_into_tax_label(): void
+    {
+        // Real Stellar MLS pattern: parcel ID immediately followed by "Tax" label
+        $rawText = 'Parcel ID: 19-30-17-45612-000-1410Tax Year: 2024 Annual Taxes: $3,200';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('tax_id', $data);
+        $this->assertEquals('19-30-17-45612-000-1410', $data['tax_id'],
+            'Parcel ID must not include "Tax" from the following label');
+        $this->assertStringNotContainsStringIgnoringCase('Tax', $data['tax_id']);
+    }
+
+    public function test_parcel_id_boundary_with_tax_id_label(): void
+    {
+        $rawText = 'Tax ID: 12-34-56-78901Tax Year: 2023 Flood Zone Code: X';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('tax_id', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Tax', $data['tax_id'],
+            'tax_id must not bleed into following Tax Year label');
+        $this->assertStringContainsString('12-34-56-78901', $data['tax_id']);
+    }
+
+    public function test_heating_fuel_does_not_bleed_into_fireplace_label(): void
+    {
+        $rawText = 'Heating & Fuel: Central, Electric Fireplace Y/N: No Heated Area: 1850';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('heating_fuel', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Fireplace', $data['heating_fuel'],
+            'Heating & Fuel must not absorb Fireplace Y/N label');
+        $this->assertStringContainsStringIgnoringCase('Electric', $data['heating_fuel']);
+    }
+
+    public function test_heating_fuel_does_not_bleed_into_heated_area_label(): void
+    {
+        $rawText = 'Heating and Fuel: Natural Gas Heated Area: 2050 Heated Area Meters: 190';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('heating_fuel', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Heated Area', $data['heating_fuel'],
+            'Heating & Fuel must not absorb Heated Area label');
+        $this->assertStringContainsStringIgnoringCase('Natural Gas', $data['heating_fuel']);
+    }
+
+    public function test_sqft_heated_source_does_not_bleed_into_cdom(): void
+    {
+        // Real Stellar MLS pattern: CDOM immediately follows the source value
+        $rawText = 'Sq Ft Heated Source: Public RecordsCDOM: 136 Year Built: 2005';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('sqft_heated_source', $data);
+        $this->assertStringNotContainsStringIgnoringCase('CDOM', $data['sqft_heated_source'],
+            'Sq Ft Heated Source must not absorb CDOM label');
+        $this->assertStringContainsStringIgnoringCase('Public Records', $data['sqft_heated_source']);
+    }
+
+    public function test_appliances_does_not_bleed_into_rooms_section(): void
+    {
+        $rawText = 'Appliances: Dishwasher, Refrigerator, MicrowaveRooms Kitchen: 12x10 Living Room: 15x14 Primary Bedroom: 14x12';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('appliances', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Rooms', $data['appliances'],
+            'Appliances must not absorb Rooms section header');
+        $this->assertStringContainsStringIgnoringCase('Dishwasher', $data['appliances']);
+    }
+
+    public function test_appliances_does_not_bleed_into_exterior_information(): void
+    {
+        $rawText = 'Appliances: Range, Microwave, DishwasherExterior Information Pool: Yes Garage: 2';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('appliances', $data);
+        $this->assertStringNotContainsStringIgnoringCase('Exterior Information', $data['appliances'],
+            'Appliances must not absorb Exterior Information section header');
+        $this->assertStringContainsStringIgnoringCase('Range', $data['appliances']);
+    }
+
+    public function test_additional_parcels_yn_colon_prefix_is_normalized(): void
+    {
+        // Stellar MLS exports "Y/N:No" for additional parcels boolean field
+        $rawText = 'Additional Parcels: Y/N:No Total Number of Parcels: 1';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('additional_parcels', $data);
+        $this->assertEquals('no', $data['additional_parcels'],
+            'additional_parcels Y/N:No should normalize to "no"');
+    }
+
+    public function test_additional_parcels_yn_colon_yes_prefix_is_normalized(): void
+    {
+        $rawText = 'Additional Parcels: Y/N:Yes Total Number of Parcels: 2';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('additional_parcels', $data);
+        $this->assertEquals('yes', $data['additional_parcels'],
+            'additional_parcels Y/N:Yes should normalize to "yes"');
+    }
+
+    public function test_normalizer_boolean_strips_yn_colon_prefix(): void
+    {
+        $this->assertEquals('no',  MlsNormalizer::normalizeBoolean('Y/N:No'));
+        $this->assertEquals('yes', MlsNormalizer::normalizeBoolean('Y/N:Yes'));
+        $this->assertEquals('no',  MlsNormalizer::normalizeBoolean('Y/N: No'));
+        $this->assertEquals('yes', MlsNormalizer::normalizeBoolean('Y/N: Yes'));
+        // Normal values still work
+        $this->assertEquals('no',  MlsNormalizer::normalizeBoolean('No'));
+        $this->assertEquals('yes', MlsNormalizer::normalizeBoolean('Yes'));
+    }
+
+    // ─── Phase 4: field-map correctness tests ─────────────────────────────────
+
+    /**
+     * Seller list price must map to 'maximum_budget' (the "Desired Sale Price" wire:model
+     * on the Sale Terms tab), NOT 'purchase_price' (which is inside the Seller Financing
+     * sub-section and hidden by default).
+     */
+    public function test_seller_price_maps_to_maximum_budget_not_purchase_price(): void
+    {
+        $sellerMap = \App\Services\ListingImport\MlsFieldMap::forRole('seller');
+
+        $this->assertArrayHasKey('price', $sellerMap,
+            'Seller field map must include a price entry');
+        $this->assertEquals('maximum_budget', $sellerMap['price'],
+            'Seller price must map to maximum_budget (the Desired Sale Price field on Sale Terms tab)');
+        $this->assertNotEquals('purchase_price', $sellerMap['price'],
+            'purchase_price is the Seller Financing sub-field, not the primary list price');
+    }
+
+    /** Buyer price must continue to map to maximum_budget (buyer budget cap). */
+    public function test_buyer_price_maps_to_maximum_budget(): void
+    {
+        $buyerMap = \App\Services\ListingImport\MlsFieldMap::forRole('buyer');
+
+        $this->assertArrayHasKey('price', $buyerMap);
+        $this->assertEquals('maximum_budget', $buyerMap['price']);
+    }
+
+    /** Landlord list price must map to desired_rental_amount. */
+    public function test_landlord_price_maps_to_desired_rental_amount(): void
+    {
+        $landlordMap = \App\Services\ListingImport\MlsFieldMap::forRole('landlord');
+
+        $this->assertArrayHasKey('price', $landlordMap);
+        $this->assertEquals('desired_rental_amount', $landlordMap['price']);
+    }
+
+    /**
+     * End-to-end: parse a raw MLS snippet containing a list price and verify
+     * the parsed 'price' canonical key is present with the correct numeric value.
+     */
+    public function test_list_price_parses_correctly_from_raw_mls_text(): void
+    {
+        $rawText = 'List Price: $450,000 Bedrooms: 4 Bathrooms: 3';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertArrayHasKey('price', $data,
+            'Parser must extract a price canonical key from "List Price:" label');
+        $this->assertEquals('450000', $data['price'],
+            'List price must be normalised to a plain integer string (no commas, no $ sign)');
+    }
 }
