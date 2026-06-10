@@ -1125,9 +1125,9 @@
                 { id: 'fences', placeholder: 'Select' },
                 { id: 'vegetation', placeholder: 'Select' },
                 { id: 'easements', placeholder: 'Select' },
-                { id: 'water_access', placeholder: 'Select' },
-                { id: 'water_view', placeholder: 'Select' },
-                { id: 'interior_features', placeholder: 'Select' },
+                { id: 'water_access', placeholder: 'Select', otherId: 'other_water_access_wrapper' },
+                { id: 'water_view', placeholder: 'Select', otherId: 'other_water_view_wrapper' },
+                { id: 'interior_features', placeholder: 'Select', otherId: 'other_interior_features_wrapper' },
             ];
             _mlsFields.forEach(function(field) {
                 var selectors = _mlsFieldSelectors[field.id] || ['#' + field.id];

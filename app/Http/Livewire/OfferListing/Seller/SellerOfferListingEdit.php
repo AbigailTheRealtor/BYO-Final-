@@ -780,6 +780,9 @@ class SellerOfferListingEdit extends Component
     public $water_access = [];
     public $water_view = [];
     public $interior_features = [];
+    public $other_water_access = '';
+    public $other_water_view = '';
+    public $other_interior_features = '';
     public $has_cdd = '';
     public $annual_cdd_fee = '';
     public $has_special_assessments = '';
@@ -1985,6 +1988,9 @@ class SellerOfferListingEdit extends Component
             'water_access'                    => json_encode($this->water_access),
             'water_view'                      => json_encode($this->water_view),
             'interior_features'               => json_encode($this->interior_features),
+            'other_water_access'              => $this->other_water_access,
+            'other_water_view'                => $this->other_water_view,
+            'other_interior_features'         => $this->other_interior_features,
             'has_cdd'                         => $this->has_cdd,
             'annual_cdd_fee'                  => $this->stripCommas($this->annual_cdd_fee),
             'has_special_assessments'         => $this->has_special_assessments,
@@ -2682,6 +2688,9 @@ class SellerOfferListingEdit extends Component
             $this->water_access            = is_string($auction->get->water_access) ? json_decode($auction->get->water_access, true) ?? [] : (array)($auction->get->water_access ?? []);
             $this->water_view              = is_string($auction->get->water_view) ? json_decode($auction->get->water_view, true) ?? [] : (array)($auction->get->water_view ?? []);
             $this->interior_features       = is_string($auction->get->interior_features) ? json_decode($auction->get->interior_features, true) ?? [] : (array)($auction->get->interior_features ?? []);
+            $this->other_water_access      = $auction->get->other_water_access ?? '';
+            $this->other_water_view        = $auction->get->other_water_view ?? '';
+            $this->other_interior_features = $auction->get->other_interior_features ?? '';
 
             // CDD / Special Assessments
             $this->has_cdd                     = $auction->get->has_cdd ?? '';
@@ -3655,6 +3664,9 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('water_access', json_encode($this->water_access));
         $auction->saveMeta('water_view', json_encode($this->water_view));
         $auction->saveMeta('interior_features', json_encode($this->interior_features));
+        $auction->saveMeta('other_water_access', $this->other_water_access);
+        $auction->saveMeta('other_water_view', $this->other_water_view);
+        $auction->saveMeta('other_interior_features', $this->other_interior_features);
         $auction->saveMeta('has_cdd', $this->has_cdd);
         $auction->saveMeta('annual_cdd_fee', $this->stripCommas($this->annual_cdd_fee));
         $auction->saveMeta('has_special_assessments', $this->has_special_assessments);

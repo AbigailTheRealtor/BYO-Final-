@@ -1198,6 +1198,13 @@
     </div>
 </div>
 
+<div class="form-group" style="display: {{ (is_array($water_access ?? []) && in_array('Other', $water_access ?? [])) ? 'block' : 'none' }};" id="other_water_access_wrapper">
+    <div class="input-cover">
+        <input type="text" wire:model="other_water_access" class="form-control has-icon"
+            data-icon="fa-solid fa-water" placeholder="Enter title (e.g., example)">
+    </div>
+</div>
+
 <!-- Water View -->
 <div class="form-group">
     <label class="fw-bold">Water View:</label>
@@ -1212,6 +1219,12 @@
                 <option value="{{ $opt }}" {{ is_array($water_view) && in_array($opt, $water_view) ? 'selected' : '' }}>{{ $opt }}</option>
             @endforeach
         </select>
+    </div>
+</div>
+<div class="form-group" style="display: {{ (is_array($water_view ?? []) && in_array('Other', $water_view ?? [])) ? 'block' : 'none' }};" id="other_water_view_wrapper">
+    <div class="input-cover">
+        <input type="text" wire:model="other_water_view" class="form-control has-icon"
+            data-icon="fa-solid fa-binoculars" placeholder="Enter title (e.g., example)">
     </div>
 </div>
 
@@ -1229,6 +1242,12 @@
                 <option value="{{ $opt }}" {{ is_array($interior_features) && in_array($opt, $interior_features) ? 'selected' : '' }}>{{ $opt }}</option>
             @endforeach
         </select>
+    </div>
+</div>
+<div class="form-group" style="display: {{ (is_array($interior_features ?? []) && in_array('Other', $interior_features ?? [])) ? 'block' : 'none' }};" id="other_interior_features_wrapper">
+    <div class="input-cover">
+        <input type="text" wire:model="other_interior_features" class="form-control has-icon"
+            data-icon="fa-solid fa-house" placeholder="Enter title (e.g., example)">
     </div>
 </div>
 
