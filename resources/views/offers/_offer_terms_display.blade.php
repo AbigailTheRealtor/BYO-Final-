@@ -142,71 +142,8 @@
 <dl class="row mb-0">
     <dt class="col-sm-3">Financing Type</dt>
     <dd class="col-sm-9">{{ $ftLabel }}</dd>
-</dl>
-@endif
 
-{{-- ── Section: Contingencies ──────────────────────────────────────────────── --}}
-@if($metas->get('financing_contingency') || $metas->get('inspection_contingency') || $metas->get('appraisal_contingency') || $metas->get('sale_of_buyer_property_contingency'))
-<p class="fw-semibold text-muted mb-1 mt-3">Contingencies</p>
-<dl class="row mb-0">
-    <dt class="col-sm-3">Financing Contingency</dt>
-    <dd class="col-sm-9">
-        {{ $metas->get('financing_contingency') ? 'Yes' : 'No' }}
-        @if($metas->get('financing_contingency') && $metas->get('financing_contingency_days'))
-            ({{ $metas->get('financing_contingency_days') }} days)
-        @endif
-    </dd>
-
-    <dt class="col-sm-3">Inspection Contingency</dt>
-    <dd class="col-sm-9">
-        {{ $metas->get('inspection_contingency') ? 'Yes' : 'No' }}
-        @if($metas->get('inspection_contingency') && $metas->get('inspection_contingency_days'))
-            ({{ $metas->get('inspection_contingency_days') }} days)
-        @endif
-    </dd>
-
-    <dt class="col-sm-3">Appraisal Contingency</dt>
-    <dd class="col-sm-9">
-        {{ $metas->get('appraisal_contingency') ? 'Yes' : 'No' }}
-        @if($metas->get('appraisal_contingency') && $metas->get('appraisal_contingency_days'))
-            ({{ $metas->get('appraisal_contingency_days') }} days)
-        @endif
-    </dd>
-
-    <dt class="col-sm-3">Sale of Buyer's Property Contingency</dt>
-    <dd class="col-sm-9">
-        {{ $metas->get('sale_of_buyer_property_contingency') ? 'Yes' : 'No' }}
-        @if($metas->get('sale_of_buyer_property_contingency') && $metas->get('sale_of_buyer_property_contingency_days'))
-            ({{ $metas->get('sale_of_buyer_property_contingency_days') }} days)
-        @endif
-    </dd>
-</dl>
-@endif
-
-{{-- ── Section: Closing & Possession ──────────────────────────────────────── --}}
-@if($metas->get('closing_date') || $metas->get('possession_date') || $metas->get('possession_notes') || $metas->get('expires_at'))
-<p class="fw-semibold text-muted mb-1 mt-3">Closing &amp; Possession</p>
-<dl class="row mb-0">
-    <dt class="col-sm-3">Closing Date</dt>
-    <dd class="col-sm-9">{{ $safeDate($metas->get('closing_date')) }}</dd>
-
-    <dt class="col-sm-3">Possession Date</dt>
-    <dd class="col-sm-9">{{ $safeDate($metas->get('possession_date')) }}</dd>
-
-    @if($metas->get('possession_notes'))
-    <dt class="col-sm-3">Possession Notes</dt>
-    <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('possession_notes') }}</dd>
-    @endif
-
-    <dt class="col-sm-3">Response Requested By</dt>
-    <dd class="col-sm-9">{{ $safeDate($metas->get('expires_at')) }}</dd>
-</dl>
-@endif
-
-{{-- ── Section: Special Financing Details ─────────────────────────────────── --}}
-@if($_hasSpecialFinancing)
-<p class="fw-semibold text-muted mb-1 mt-3">Special Financing Details</p>
-<dl class="row mb-0">
+    @if($_hasSpecialFinancing)
     @if($ftRaw === 'Assumable')
     <dt class="col-sm-3">Interested in Assumable Financing?</dt>
     <dd class="col-sm-9">{{ $metas->get('assumable_interest') ?: '—' }}</dd>
@@ -318,6 +255,65 @@
     <dt class="col-sm-3">Other Financing Details</dt>
     <dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('other_financing_details') }}</dd>
     @endif
+    @endif
+</dl>
+@endif
+
+{{-- ── Section: Contingencies ──────────────────────────────────────────────── --}}
+@if($metas->get('financing_contingency') || $metas->get('inspection_contingency') || $metas->get('appraisal_contingency') || $metas->get('sale_of_buyer_property_contingency'))
+<p class="fw-semibold text-muted mb-1 mt-3">Contingencies</p>
+<dl class="row mb-0">
+    <dt class="col-sm-3">Financing Contingency</dt>
+    <dd class="col-sm-9">
+        {{ $metas->get('financing_contingency') ? 'Yes' : 'No' }}
+        @if($metas->get('financing_contingency') && $metas->get('financing_contingency_days'))
+            ({{ $metas->get('financing_contingency_days') }} days)
+        @endif
+    </dd>
+
+    <dt class="col-sm-3">Inspection Contingency</dt>
+    <dd class="col-sm-9">
+        {{ $metas->get('inspection_contingency') ? 'Yes' : 'No' }}
+        @if($metas->get('inspection_contingency') && $metas->get('inspection_contingency_days'))
+            ({{ $metas->get('inspection_contingency_days') }} days)
+        @endif
+    </dd>
+
+    <dt class="col-sm-3">Appraisal Contingency</dt>
+    <dd class="col-sm-9">
+        {{ $metas->get('appraisal_contingency') ? 'Yes' : 'No' }}
+        @if($metas->get('appraisal_contingency') && $metas->get('appraisal_contingency_days'))
+            ({{ $metas->get('appraisal_contingency_days') }} days)
+        @endif
+    </dd>
+
+    <dt class="col-sm-3">Sale of Buyer's Property Contingency</dt>
+    <dd class="col-sm-9">
+        {{ $metas->get('sale_of_buyer_property_contingency') ? 'Yes' : 'No' }}
+        @if($metas->get('sale_of_buyer_property_contingency') && $metas->get('sale_of_buyer_property_contingency_days'))
+            ({{ $metas->get('sale_of_buyer_property_contingency_days') }} days)
+        @endif
+    </dd>
+</dl>
+@endif
+
+{{-- ── Section: Closing & Possession ──────────────────────────────────────── --}}
+@if($metas->get('closing_date') || $metas->get('possession_date') || $metas->get('possession_notes') || $metas->get('expires_at'))
+<p class="fw-semibold text-muted mb-1 mt-3">Closing &amp; Possession</p>
+<dl class="row mb-0">
+    <dt class="col-sm-3">Closing Date</dt>
+    <dd class="col-sm-9">{{ $safeDate($metas->get('closing_date')) }}</dd>
+
+    <dt class="col-sm-3">Possession Date</dt>
+    <dd class="col-sm-9">{{ $safeDate($metas->get('possession_date')) }}</dd>
+
+    @if($metas->get('possession_notes'))
+    <dt class="col-sm-3">Possession Notes</dt>
+    <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('possession_notes') }}</dd>
+    @endif
+
+    <dt class="col-sm-3">Response Requested By</dt>
+    <dd class="col-sm-9">{{ $safeDate($metas->get('expires_at')) }}</dd>
 </dl>
 @endif
 
