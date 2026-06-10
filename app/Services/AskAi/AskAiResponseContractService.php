@@ -245,7 +245,10 @@ class AskAiResponseContractService
                 'listing.garage',
                 'listing.garage_spaces',
                 'listing.water_view',
+                'listing.view',
                 'listing.water_extras',
+                // Tenant credit score
+                'listing.credit_score_range',
                 // HOA / fees
                 'listing.hoa_association',
                 'listing.hoa_fee',

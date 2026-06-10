@@ -1618,9 +1618,11 @@ class AskAiContextBuilderServiceTest extends TestCase
 
     public function test_case_R_landlord_rent_amount_from_eav_appears_in_listing_context(): void
     {
+        // Live-DB audit (June 2026) confirmed landlord forms save rent under
+        // 'desired_rental_amount', not 'maximum_budget' (which is always empty for landlords).
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields([], ['maximum_budget' => '1800'])
+            $this->makeListingStubWithFields([], ['desired_rental_amount' => '1800'])
         );
 
         $result = $service->buildForListing('landlord', 1);
@@ -1676,9 +1678,12 @@ class AskAiContextBuilderServiceTest extends TestCase
 
     public function test_case_R_tenant_desired_lease_length_from_eav_appears_in_listing_context(): void
     {
+        // Live-DB audit (June 2026) confirmed tenant forms save desired lease length under
+        // 'desired_lease_length' (JSON multiselect) or 'lease_for', not 'tenant_desired_lease_length'
+        // (which is always empty in real listings).
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
-            $this->makeListingStubWithFields([], ['tenant_desired_lease_length' => '12 months'])
+            $this->makeListingStubWithFields([], ['desired_lease_length' => '["12 months"]'])
         );
 
         $result = $service->buildForListing('tenant', 1);
@@ -2316,6 +2321,8 @@ class AskAiContextBuilderServiceTest extends TestCase
             // Factual — EAV (corrected from old property_auctions phantom keys)
             'asking_price', 'bedrooms', 'bathrooms', 'square_feet', 'year_built',
             'pool', 'pool_type', 'carport', 'garage', 'garage_spaces',
+            // water_view: decoded from the seller 'view' JSON meta key
+            'water_view',
             'hoa_association', 'hoa_fee', 'hoa_payment_schedule',
             'pets_allowed', 'number_of_pets_allowed', 'max_pet_weight', 'pet_restrictions',
             'rental_restrictions', 'flood_zone_code', 'disclosure_flags',
@@ -2329,7 +2336,7 @@ class AskAiContextBuilderServiceTest extends TestCase
 
         // Phantom keys from old property_auctions schema must be absent
         $removedPhantomKeys = [
-            'buy_now_price', 'water_view', 'water_extras', 'hoa_fee_requirement',
+            'buy_now_price', 'water_extras', 'hoa_fee_requirement',
             'condo_fee', 'condo_fee_schedule', 'rental_restrictions_description',
             'is_in_flood_zone', 'lease_terms', 'tenant_pays', 'landlord_pays',
             'mls_id', 'showing_instructions',
@@ -2388,6 +2395,8 @@ class AskAiContextBuilderServiceTest extends TestCase
             // Factual — EAV (corrected from old buyer_criteria_auctions phantom keys)
             'max_price', 'bedrooms', 'bathrooms', 'square_feet',
             'pool', 'carport', 'garage', 'garage_spaces',
+            // water_view: decoded from buyer 'water_view' JSON meta key
+            'water_view',
             'hoa_acceptable', 'max_hoa_fee',
             'pets_allowed', 'pets_detail', 'pets_breed', 'pets_weight',
             'loan_pre_approved', 'financing_type',
@@ -2402,7 +2411,7 @@ class AskAiContextBuilderServiceTest extends TestCase
 
         // Phantom keys from old schema must be absent
         $removedPhantomKeys = [
-            'water_view', 'hoa_fee_requirement', 'closing_days', 'contingencies',
+            'hoa_fee_requirement', 'closing_days', 'contingencies',
         ];
 
         foreach ($removedPhantomKeys as $phantom) {
@@ -2881,18 +2890,20 @@ class AskAiContextBuilderServiceTest extends TestCase
 
     public function test_case_V2b_buildChipContext_landlord_returns_rent_amount_field(): void
     {
+        // Live-DB audit (June 2026) confirmed landlord forms save rent under
+        // 'desired_rental_amount', not 'maximum_budget'. Chip context uses same extractor.
         $service = $this->makeService();
 
         $listing = $this->makeListingStubWithFields(
             [],
-            ['maximum_budget' => '1800', 'pet_policy' => 'No pets']
+            ['desired_rental_amount' => '1800', 'pet_policy' => 'No pets']
         );
 
         $result = $service->buildChipContext($listing, 'landlord');
         $fields = $result['listing'];
 
         $this->assertArrayHasKey('rent_amount', $fields,
-            "Landlord chip context must map maximum_budget → rent_amount");
+            "Landlord chip context must map desired_rental_amount → rent_amount");
         $this->assertSame('1800', $fields['rent_amount']);
         $this->assertArrayHasKey('pet_policy', $fields);
         $this->assertSame('No pets', $fields['pet_policy']);
@@ -3133,5 +3144,427 @@ class AskAiContextBuilderServiceTest extends TestCase
             $content,
             'buildFaqAnswers() must call info(\'listing_ai_faq\') inside the tenant branch for live TenantAgentAuction'
         );
+    }
+
+    // =========================================================================
+    // Case V — resolveOtherValue() resolves "Other" companion meta keys
+    //
+    // Regression tests for the four confirmed live failures:
+    //  1. Seller "How many bathrooms?" returned literal "Other" instead of the
+    //     custom value stored in other_bathrooms.
+    //  2. "What is the view?" returned unsupported because view/water_view was
+    //     absent from extractFactualFields for seller and landlord.
+    //  3. Tenant "What is the credit score range?" returned unsupported because
+    //     credit_score_range was absent from tenant extractFactualFields.
+    //
+    // All tests use makeListingStubWithFields() to avoid any DB access.
+    // =========================================================================
+
+    public function test_case_V_seller_bathrooms_other_resolves_to_custom_value(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'bathrooms'       => 'Other',
+                'other_bathrooms' => '3.5',
+            ])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+        $this->assertSame(
+            '3.5',
+            $result['listing']['bathrooms'],
+            'When bathrooms="Other" and other_bathrooms="3.5", context must return "3.5" not "Other"'
+        );
+    }
+
+    public function test_case_V_buyer_bathrooms_other_resolves_to_custom_value(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'bathrooms'       => 'Other',
+                'other_bathrooms' => '2.5',
+            ])
+        );
+
+        $result = $service->buildForListing('buyer', 1);
+        $this->assertSame(
+            '2.5',
+            $result['listing']['bathrooms'],
+            'When bathrooms="Other" and other_bathrooms="2.5", buyer context must return "2.5" not "Other"'
+        );
+    }
+
+    public function test_case_V_landlord_bathrooms_other_resolves_to_custom_value(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'bathrooms'       => 'Other',
+                'other_bathrooms' => '1.5',
+            ])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+        $this->assertSame(
+            '1.5',
+            $result['listing']['bathrooms'],
+            'When bathrooms="Other" and other_bathrooms="1.5", landlord context must return "1.5" not "Other"'
+        );
+    }
+
+    public function test_case_V_tenant_bathrooms_other_resolves_to_custom_value(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'bathrooms'       => 'Other',
+                'other_bathrooms' => '4',
+            ])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+        $this->assertSame(
+            '4',
+            $result['listing']['bathrooms'],
+            'When bathrooms="Other" and other_bathrooms="4", tenant context must return "4" not "Other"'
+        );
+    }
+
+    public function test_case_V_bathrooms_non_other_value_is_returned_unchanged(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'bathrooms' => '3',
+            ])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+        $this->assertSame(
+            '3',
+            $result['listing']['bathrooms'],
+            'When bathrooms is a real value (not "Other"), it must be returned unchanged'
+        );
+    }
+
+    public function test_case_V_bathrooms_other_with_no_companion_returns_null(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'bathrooms' => 'Other',
+                // other_bathrooms intentionally absent
+            ])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+        $this->assertNull(
+            $result['listing']['bathrooms'],
+            'When bathrooms="Other" and no companion key is set, context must return null not "Other"'
+        );
+    }
+
+    public function test_case_V_seller_bedrooms_other_resolves_to_custom_value(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'bedrooms'       => 'Other',
+                'other_bedrooms' => '6',
+            ])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+        $this->assertSame(
+            '6',
+            $result['listing']['bedrooms'],
+            'When bedrooms="Other" and other_bedrooms="6", context must return "6" not "Other"'
+        );
+    }
+
+    public function test_case_V_seller_water_view_decoded_from_view_json_meta(): void
+    {
+        // Live-DB audit (June 2026) confirmed all roles store scenic/water view selections
+        // under the 'view_preference' meta key — 'view' and 'water_view' do not exist in
+        // any role's meta table. Updated key corrects the always-null extraction.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'view_preference' => '["Ocean View","Lake View"]',
+            ])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('water_view', $result['listing'],
+            'Seller context must include water_view key (decoded from view_preference JSON meta)');
+        $this->assertSame(
+            'Ocean View, Lake View',
+            $result['listing']['water_view'],
+            'Seller water_view must be decoded from JSON view_preference meta to comma-separated string'
+        );
+    }
+
+    public function test_case_V_landlord_water_view_decoded_from_water_view_json_meta(): void
+    {
+        // Live-DB audit (June 2026) confirmed landlord forms store view selections under
+        // 'view_preference', not 'water_view' or 'view'. Corrected key for landlord extractor.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'view_preference' => '["Lake","River"]',
+            ])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+        $this->assertArrayHasKey('water_view', $result['listing'],
+            'Landlord context must include water_view key');
+        $this->assertSame(
+            'Lake, River',
+            $result['listing']['water_view'],
+            'Landlord water_view must be decoded from JSON view_preference meta to comma-separated string'
+        );
+    }
+
+    public function test_case_V_tenant_credit_score_range_read_from_credit_score_meta(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'credit_score' => '680-720',
+            ])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+        $this->assertArrayHasKey('credit_score_range', $result['listing'],
+            'Tenant context must include credit_score_range key');
+        $this->assertSame(
+            '680-720',
+            $result['listing']['credit_score_range'],
+            'Tenant credit_score_range must fall back to credit_score meta when credit_score_range absent'
+        );
+    }
+
+    public function test_case_V_tenant_credit_score_range_meta_takes_priority_over_credit_score(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'credit_score_range' => 'Excellent (720+)',
+                'credit_score'       => '680-720',
+            ])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+        $this->assertSame(
+            'Excellent (720+)',
+            $result['listing']['credit_score_range'],
+            'credit_score_range meta must take priority over credit_score meta'
+        );
+    }
+
+    // =========================================================================
+    // Case W — Live-DB key-mismatch fixes (June 2026 audit)
+    //
+    // Six extraction bugs discovered by querying real listing IDs 87/121
+    // (seller), 97 (buyer), 71 (landlord), 170 (tenant) against the production
+    // meta tables.  Each test seeds the stub with the *correct* DB meta key and
+    // asserts the context field resolves to a non-null value.
+    // =========================================================================
+
+    public function test_case_W_buyer_water_view_decoded_from_view_preference_meta(): void
+    {
+        // Live-DB audit: buyer_agent_auction_metas has no 'water_view' key.
+        // The form saves scenic/water view under 'view_preference'.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'view_preference' => '["Ocean View","Bay View"]',
+            ])
+        );
+
+        $result = $service->buildForListing('buyer', 1);
+
+        $this->assertArrayHasKey('water_view', $result['listing']);
+        $this->assertSame(
+            'Ocean View, Bay View',
+            $result['listing']['water_view'],
+            'Buyer water_view must decode from view_preference JSON meta'
+        );
+    }
+
+    public function test_case_W_landlord_rent_amount_reads_desired_rental_amount(): void
+    {
+        // Live-DB audit: landlord 71 has maximum_budget="" and desired_rental_amount=7000.
+        // Context builder must use desired_rental_amount as primary rent key.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['desired_rental_amount' => '7000.00'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertSame('7000.00', $result['listing']['rent_amount'],
+            'rent_amount must come from desired_rental_amount when maximum_budget is absent');
+    }
+
+    public function test_case_W_landlord_rent_amount_cascades_to_starting_rent(): void
+    {
+        // When desired_rental_amount is absent, fall back to starting_rent.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['starting_rent' => '5500.00'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertSame('5500.00', $result['listing']['rent_amount'],
+            'rent_amount must cascade to starting_rent when desired_rental_amount is absent');
+    }
+
+    public function test_case_W_landlord_rent_amount_cascades_to_lease_now_price(): void
+    {
+        // When desired_rental_amount and starting_rent are absent, fall back to lease_now_price.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['lease_now_price' => '6500.00'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertSame('6500.00', $result['listing']['rent_amount'],
+            'rent_amount must cascade to lease_now_price when desired_rental_amount and starting_rent are absent');
+    }
+
+    public function test_case_W_landlord_utilities_reads_property_utilities_json(): void
+    {
+        // Live-DB audit: landlord 71 has utilities="" and property_utilities=JSON array.
+        // Context builder must decode property_utilities as the primary utilities source.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'property_utilities' => '["Water","Sewer","Electric"]',
+                'utilities'          => '',
+            ])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertStringContainsString('Water', (string) $result['listing']['utilities'],
+            'utilities must decode from property_utilities JSON');
+        $this->assertStringContainsString('Sewer', (string) $result['listing']['utilities']);
+    }
+
+    public function test_case_W_landlord_utilities_falls_back_to_utilities_meta(): void
+    {
+        // When property_utilities is absent, fall back to the plain utilities key.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['utilities' => 'Water included'])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertSame('Water included', $result['listing']['utilities'],
+            'utilities must fall back to plain utilities meta when property_utilities is absent');
+    }
+
+    public function test_case_W_landlord_lease_length_resolves_other_to_min_lease_period_other(): void
+    {
+        // Live-DB audit: landlord 71 has min_lease_period="Other" and
+        // min_lease_period_other="30 Days".  resolveOtherValue must replace "Other"
+        // with the free-text sibling so the AI never sees the literal word "Other".
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'min_lease_period'       => 'Other',
+                'min_lease_period_other' => '30 Days',
+            ])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertSame('30 Days', $result['listing']['lease_length'],
+            'lease_length must resolve "Other" to min_lease_period_other');
+    }
+
+    public function test_case_W_landlord_lease_length_falls_back_to_desired_lease_length_json(): void
+    {
+        // When min_lease_period is absent, fall back to desired_lease_length JSON multiselect.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'desired_lease_length' => '["1 Year","2 Years"]',
+            ])
+        );
+
+        $result = $service->buildForListing('landlord', 1);
+
+        $this->assertStringContainsString('1 Year', (string) $result['listing']['lease_length'],
+            'lease_length must decode desired_lease_length JSON when min_lease_period is absent');
+    }
+
+    public function test_case_W_tenant_max_rent_reads_budget_meta(): void
+    {
+        // Live-DB audit: tenant 170 has maximum_budget="" and budget="5,000".
+        // Context builder must use budget as the primary max_rent key.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['budget' => '5,000'])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertSame('5,000', $result['listing']['max_rent'],
+            'max_rent must come from budget meta when maximum_budget is absent');
+    }
+
+    public function test_case_W_tenant_max_rent_falls_back_to_maximum_budget(): void
+    {
+        // When budget is absent, fall back to maximum_budget (legacy path).
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['maximum_budget' => '2500'])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertSame('2500', $result['listing']['max_rent'],
+            'max_rent must fall back to maximum_budget when budget is absent');
+    }
+
+    public function test_case_W_tenant_desired_lease_length_reads_desired_lease_length_json(): void
+    {
+        // Live-DB audit: tenant forms store desired lease lengths under
+        // 'desired_lease_length' (JSON multiselect), not 'tenant_desired_lease_length'.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'desired_lease_length' => '["1 Year","2 Years","Month-to-Month"]',
+            ])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertStringContainsString('1 Year', (string) $result['listing']['desired_lease_length'],
+            'desired_lease_length must decode from desired_lease_length JSON meta');
+    }
+
+    public function test_case_W_tenant_desired_lease_length_falls_back_to_lease_for_json(): void
+    {
+        // When desired_lease_length is absent/empty, fall back to lease_for JSON.
+        // Live-DB audit: tenant 170 has desired_lease_length=[] but lease_for has actual data.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'lease_for' => '["6 Months","1 Year","Month to Month"]',
+            ])
+        );
+
+        $result = $service->buildForListing('tenant', 1);
+
+        $this->assertStringContainsString('6 Months', (string) $result['listing']['desired_lease_length'],
+            'desired_lease_length must decode from lease_for JSON when desired_lease_length is absent');
     }
 }

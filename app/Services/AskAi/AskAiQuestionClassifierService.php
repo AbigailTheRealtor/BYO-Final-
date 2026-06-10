@@ -126,15 +126,18 @@ class AskAiQuestionClassifierService
             'how much does it rent',
             'what is the rent',
             'rent per month',
-            // Lease length — note: bare 'lease length' is intentionally excluded here
-            // so 'desired lease length' and 'preferred lease length' in buyer_tenant_match
-            // are not swallowed. 'what is the lease', 'lease term', 'how long is the lease'
-            // cover the factual case without conflicting with match-criteria phrases.
+            // Lease length — bare 'lease length' and 'desired lease length' are intentionally
+            // excluded here so generic buyer_tenant_match phrases ("is the tenant flexible on
+            // lease length", "would the tenant take a longer lease") are not swallowed.
+            // The possessive form "tenant's desired lease" is safe to include because none of
+            // the buyer_tenant_match keywords use that phrasing — it unambiguously signals
+            // a field-lookup ("What is the tenant's desired lease length?").
             'lease term',
             'what is the lease',
             'how long is the lease',
             'length of lease',
             'lease duration',
+            "tenant's desired lease",
             // Pets
             'pets allowed',
             'pet policy',
@@ -155,6 +158,34 @@ class AskAiQuestionClassifierService
             'hoa amount',
             'hoa cost',
             'hoa',
+            // Property type
+            'property type',
+            'what type of property',
+            'type of property',
+            'what kind of property',
+            'what property type',
+            'what is the property type',
+            'kind of property',
+            // View / Water view
+            'what is the view',
+            'water view',
+            'does it have a view',
+            'lake view',
+            'ocean view',
+            'river view',
+            'waterfront view',
+            'what view does it have',
+            'what view',
+            'scenic view',
+            'is there a water view',
+            // Credit score range (tenant) — only specific phrases to avoid swallowing
+            // "is credit score listed?" which belongs to missing_data.
+            'credit score range',
+            'tenant credit score',
+            'what is the credit score',
+            'credit range',
+            'what credit score',
+            'required credit score',
             // Pool
             'is there a pool',
             'does it have a pool',

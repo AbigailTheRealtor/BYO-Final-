@@ -1441,4 +1441,132 @@ class AskAiQuestionClassifierServiceTest extends TestCase
             'tax on this property'       => ['How much is the tax on this property?'],
         ];
     }
+
+    // =========================================================================
+    // Case N2 — Regression tests for four confirmed live routing failures
+    //
+    //  1. "What is the view?" was returning unsupported (no view keywords in
+    //     listing_facts).
+    //  2. "What type of property?" was returning unsupported (no property_type
+    //     keywords in listing_facts).
+    //  3. "What is the tenant's credit score range?" was returning unsupported
+    //     (no credit score keywords in listing_facts).
+    //  4. "Is credit score listed?" must still route to missing_data, not
+    //     listing_facts — guards against substring collision with credit score
+    //     keywords.
+    // =========================================================================
+
+    public function test_case_N2_what_is_the_view_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the view from this property?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What is the view?" must route to listing_facts');
+    }
+
+    public function test_case_N2_water_view_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Does this property have a water view?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"Does this property have a water view?" must route to listing_facts');
+    }
+
+    public function test_case_N2_lake_view_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Is there a lake view from this home?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"Is there a lake view?" must route to listing_facts');
+    }
+
+    public function test_case_N2_ocean_view_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('Does it have an ocean view?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"Does it have an ocean view?" must route to listing_facts');
+    }
+
+    public function test_case_N2_what_type_of_property_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What type of property is this?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What type of property?" must route to listing_facts');
+    }
+
+    public function test_case_N2_property_type_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the property type?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What is the property type?" must route to listing_facts');
+    }
+
+    public function test_case_N2_what_kind_of_property_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What kind of property is this?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What kind of property?" must route to listing_facts');
+    }
+
+    public function test_case_N2_credit_score_range_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What is the credit score range for this tenant?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What is the credit score range?" must route to listing_facts');
+    }
+
+    public function test_case_N2_tenant_credit_score_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify("What is the tenant's credit score range?");
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What is the tenant\'s credit score range?" must route to listing_facts');
+    }
+
+    public function test_case_N2_what_credit_score_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify('What credit score does this tenant have?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What credit score does this tenant have?" must route to listing_facts');
+    }
+
+    public function test_case_N2_is_credit_score_listed_still_routes_to_missing_data(): void
+    {
+        $result = $this->makeService()->classify('Is credit score listed for this applicant?');
+        $this->assertSame('missing_data', $result['question_type'],
+            '"Is credit score listed?" must route to missing_data, not listing_facts — substring collision guard');
+    }
+
+    // --- Case N2 — Tenant desired lease length (live-DB audit, June 2026) ---
+    // The phrase "tenant's desired lease" was added to listing_facts so that
+    // "What is the tenant's desired lease length?" routes to listing_facts
+    // (field lookup) rather than buyer_tenant_match (compatibility scoring).
+    // Bare 'desired lease length' and 'preferred lease length' intentionally
+    // remain in buyer_tenant_match for generic non-possessive phrasings.
+
+    public function test_case_N2_tenants_desired_lease_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify("What is the tenant's desired lease length?");
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What is the tenant\'s desired lease length?" must route to listing_facts via possessive anchor');
+    }
+
+    public function test_case_N2_tenants_desired_lease_phrase_variant_classifies_as_listing_facts(): void
+    {
+        $result = $this->makeService()->classify("Show me the tenant's desired lease length");
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"Show me the tenant\'s desired lease length" must route to listing_facts');
+    }
+
+    public function test_case_N2_desired_lease_length_for_buyer_still_routes_to_buyer_tenant_match(): void
+    {
+        // The non-possessive "desired lease length" phrasing (without "tenant's")
+        // must remain in buyer_tenant_match for backward compatibility.
+        $result = $this->makeService()->classify('What is the desired lease length for this buyer?');
+        $this->assertSame('buyer_tenant_match', $result['question_type'],
+            'Non-possessive "desired lease length" must stay in buyer_tenant_match');
+    }
+
+    public function test_case_N2_preferred_lease_length_still_routes_to_buyer_tenant_match(): void
+    {
+        $result = $this->makeService()->classify('What is the preferred lease length for this tenant?');
+        $this->assertSame('buyer_tenant_match', $result['question_type'],
+            '"preferred lease length" must remain in buyer_tenant_match — not swallowed by listing_facts');
+    }
 }

@@ -345,15 +345,37 @@ class AskAiContextBuilderService
                 'address'              => $nativeGet('address'),
                 'description'          => $nativeGet('description'),
                 'asking_price'         => $infoGet('maximum_budget'),
-                'bedrooms'             => $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
-                'bathrooms'            => $infoGet('bathrooms') ?? $nativeGet('bathroom_id'),
+                'bedrooms'             => $this->resolveOtherValue(
+                                             $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
+                                             $infoGet,
+                                             'other_bedrooms'
+                                         ),
+                'bathrooms'            => $this->resolveOtherValue(
+                                             $infoGet('bathrooms') ?? $nativeGet('bathroom_id'),
+                                             $infoGet,
+                                             'other_bathrooms'
+                                         ),
                 'square_feet'          => $infoGet('minimum_heated_square'),
                 'year_built'           => $infoGet('year_built'),
                 'pool'                 => $infoGet('pool_needed'),
                 'pool_type'            => $this->decodeJsonField($infoGet('pool_type')),
-                'carport'              => $infoGet('carport_needed'),
-                'garage'               => $infoGet('garage_needed'),
+                'carport'              => $this->resolveOtherValue(
+                                             $infoGet('carport_needed'),
+                                             $infoGet,
+                                             'other_carport_needed'
+                                         ),
+                'garage'               => $this->resolveOtherValue(
+                                             $infoGet('garage_needed'),
+                                             $infoGet,
+                                             'other_garage',
+                                             'other_garage_needed'
+                                         ),
                 'garage_spaces'        => $infoGet('garage_parking_spaces'),
+                // view / water_view: the form stores scenic/water view selections as a
+                // JSON-encoded multiselect under the 'view_preference' meta key.
+                // Live-DB audit (June 2026) confirmed neither 'view' nor 'water_view' exists
+                // in seller_agent_auction_metas — the actual key is 'view_preference'.
+                'water_view'           => $this->decodeJsonField($infoGet('view_preference')),
                 'hoa_association'      => $infoGet('has_hoa'),
                 'hoa_fee'              => $infoGet('association_fee_amount'),
                 'hoa_payment_schedule' => $infoGet('association_fee_frequency'),
@@ -387,13 +409,35 @@ class AskAiContextBuilderService
                 'address'                      => $nativeGet('address'),
                 'description'                  => $nativeGet('additional_details'),
                 'max_price'                    => $infoGet('maximum_budget'),
-                'bedrooms'                     => $infoGet('bedrooms'),
-                'bathrooms'                    => $infoGet('bathrooms'),
+                'bedrooms'                     => $this->resolveOtherValue(
+                                                     $infoGet('bedrooms'),
+                                                     $infoGet,
+                                                     'other_bedrooms'
+                                                 ),
+                'bathrooms'                    => $this->resolveOtherValue(
+                                                     $infoGet('bathrooms'),
+                                                     $infoGet,
+                                                     'other_bathrooms'
+                                                 ),
                 'square_feet'                  => $infoGet('minimum_heated_square'),
                 'pool'                         => $infoGet('pool_needed'),
-                'carport'                      => $infoGet('carport_needed'),
-                'garage'                       => $infoGet('garage_needed'),
+                'carport'                      => $this->resolveOtherValue(
+                                                     $infoGet('carport_needed'),
+                                                     $infoGet,
+                                                     'other_carport_needed'
+                                                 ),
+                'garage'                       => $this->resolveOtherValue(
+                                                     $infoGet('garage_needed'),
+                                                     $infoGet,
+                                                     'other_garage',
+                                                     'other_garage_needed'
+                                                 ),
                 'garage_spaces'                => $infoGet('garage_parking_spaces'),
+                // view / water_view: the form stores scenic/water view selections as a
+                // JSON-encoded multiselect under the 'view_preference' meta key.
+                // Live-DB audit (June 2026) confirmed 'water_view' does not exist in
+                // buyer_agent_auction_metas — the actual key is 'view_preference'.
+                'water_view'                   => $this->decodeJsonField($infoGet('view_preference')),
                 'hoa_acceptable'               => $infoGet('hoa_acceptance'),
                 'max_hoa_fee'                  => $infoGet('hoa_max_monthly_fee'),
                 'pets_allowed'                 => $infoGet('pets'),
@@ -413,23 +457,51 @@ class AskAiContextBuilderService
             // Landlord — landlord_auction_metas (EAV only via info())
             // -----------------------------------------------------------------
             'landlord' => [
-                'rent_amount'               => $infoGet('maximum_budget'),
-                'bedrooms'                  => $infoGet('bedrooms'),
-                'bathrooms'                 => $infoGet('bathrooms'),
+                // rent_amount: the form saves the asking rent under 'desired_rental_amount'.
+                // Live-DB audit (June 2026) confirmed 'maximum_budget' is empty for landlord
+                // listings — the field is a buyer/tenant budget concept, not a landlord rent.
+                // Cascade through the three rent keys the landlord form may populate.
+                'rent_amount'               => $infoGet('desired_rental_amount')
+                                                  ?? $infoGet('starting_rent')
+                                                  ?? $infoGet('lease_now_price'),
+                'bedrooms'                  => $this->resolveOtherValue(
+                                                  $infoGet('bedrooms'),
+                                                  $infoGet,
+                                                  'other_bedrooms'
+                                              ),
+                'bathrooms'                 => $this->resolveOtherValue(
+                                                  $infoGet('bathrooms'),
+                                                  $infoGet,
+                                                  'other_bathrooms'
+                                              ),
                 'square_feet'               => $infoGet('minimum_heated_square'),
                 'unit_size'                 => $infoGet('unit_size'),
                 'number_of_units'           => $infoGet('number_of_unit'),
                 'property_zip'              => $infoGet('property_zip'),
                 'property_items'            => $this->decodeJsonField($infoGet('property_items')),
-                'condition_prop'            => $infoGet('condition_prop'),
+                'condition_prop'            => $this->resolveOtherValue(
+                                                  $infoGet('condition_prop'),
+                                                  $infoGet,
+                                                  'other_property_condition'
+                                              ),
                 'appliances'                => $this->decodeJsonField($infoGet('appliances')),
+                // view / water_view: the form stores scenic/water view selections as a
+                // JSON-encoded multiselect under the 'view_preference' meta key.
+                // Live-DB audit (June 2026) confirmed neither 'water_view' nor 'view'
+                // exists in landlord_agent_auction_metas — the key is 'view_preference'.
+                'water_view'                => $this->decodeJsonField($infoGet('view_preference')),
+                'view'                      => $this->decodeJsonField($infoGet('view_preference')),
                 'available_date'            => $infoGet('available_date'),
                 'pet_policy'                => $infoGet('pet_policy'),
                 'pet_deposit_fee_rent'      => $infoGet('pet_deposit_fee_rent'),
                 'pet_max_weight_lbs'        => $infoGet('pet_max_weight_lbs'),
                 'pet_species_allowed'       => $this->decodeJsonField($infoGet('pet_species_allowed')),
                 'parking_terms'             => $infoGet('parking_terms'),
-                'utilities'                 => $infoGet('utilities'),
+                // utilities: the form saves utility data under 'property_utilities' (JSON
+                // multiselect). Live-DB audit confirmed 'utilities' is always empty for
+                // landlord listings; 'property_utilities' holds the real selections.
+                'utilities'                 => $this->decodeJsonField($infoGet('property_utilities'))
+                                                  ?? $infoGet('utilities'),
                 'smoking_policy'            => $infoGet('smoking_policy'),
                 'subletting_policy'         => $infoGet('subletting_policy'),
                 'has_hoa'                   => $infoGet('has_hoa'),
@@ -439,7 +511,14 @@ class AskAiContextBuilderService
                 'association_amenities'     => $this->decodeJsonField($infoGet('association_amenities')),
                 'annual_property_taxes'     => $infoGet('annual_property_taxes'),
                 'leasing_restrictions'      => $infoGet('leasing_restrictions'),
-                'lease_length'              => $infoGet('min_lease_period') ?? $infoGet('minimum_lease_period'),
+                // lease_length: 'min_lease_period' may be "Other"; resolve to the free-text
+                // sibling 'min_lease_period_other' in that case. Also check the alternate
+                // 'desired_lease_length' multiselect for cases where the primary is absent.
+                'lease_length'              => $this->resolveOtherValue(
+                                                  $infoGet('min_lease_period') ?? $infoGet('minimum_lease_period'),
+                                                  $infoGet,
+                                                  'min_lease_period_other'
+                                              ) ?? $this->decodeJsonField($infoGet('desired_lease_length')),
                 'renewal_option'            => $infoGet('renewal_option_offered'),
                 'number_of_occupants'       => $infoGet('number_occupant'),
                 'additional_lease_terms'    => $infoGet('additional_landlord_lease_terms'),
@@ -449,13 +528,32 @@ class AskAiContextBuilderService
             // Tenant — tenant_criteria_auction_metas (EAV via info())
             // -----------------------------------------------------------------
             'tenant' => [
-                'max_rent'             => $infoGet('maximum_budget'),
-                'bedrooms'             => $infoGet('bedrooms'),
-                'bathrooms'            => $infoGet('bathrooms'),
-                'desired_lease_length' => $infoGet('tenant_desired_lease_length'),
+                // max_rent: the form saves the tenant's rent budget under 'budget'.
+                // Live-DB audit (June 2026) confirmed 'maximum_budget' is empty for tenant
+                // agent auction listings — 'budget' holds the actual value.
+                'max_rent'             => $infoGet('budget') ?? $infoGet('maximum_budget'),
+                'bedrooms'             => $this->resolveOtherValue(
+                                             $infoGet('bedrooms'),
+                                             $infoGet,
+                                             'other_bedrooms'
+                                         ),
+                'bathrooms'            => $this->resolveOtherValue(
+                                             $infoGet('bathrooms'),
+                                             $infoGet,
+                                             'other_bathrooms'
+                                         ),
+                // desired_lease_length: stored under 'desired_lease_length' (JSON multiselect)
+                // or 'lease_for' depending on the form path. Live-DB audit confirmed
+                // 'tenant_desired_lease_length' is always empty — wrong key.
+                'desired_lease_length' => $this->decodeJsonField($infoGet('desired_lease_length'))
+                                              ?? $this->decodeJsonField($infoGet('lease_for')),
                 'property_items'       => $this->decodeJsonField($infoGet('property_items')),
                 'appliances'           => $this->decodeJsonField($infoGet('appliances')),
-                'condition_prop'       => $infoGet('condition_prop'),
+                'condition_prop'       => $this->resolveOtherValue(
+                                             $infoGet('condition_prop'),
+                                             $infoGet,
+                                             'other_property_condition'
+                                         ),
                 'pet_information'      => $infoGet('pet_information'),
                 'parking_needed'       => $infoGet('parking_needed'),
                 'utilities'            => $infoGet('utilities'),
@@ -464,10 +562,52 @@ class AskAiContextBuilderService
                 'current_status'       => $infoGet('current_status'),
                 'number_of_occupants'  => $infoGet('number_of_occupants'),
                 'number_of_units'      => $infoGet('number_of_unit'),
+                // credit_score_range: stored under 'credit_score' meta key for tenant agent
+                // auctions, or 'credit_score_range' for offer-flow tenant listings.
+                'credit_score_range'   => $infoGet('credit_score_range') ?? $infoGet('credit_score'),
             ],
 
             default => [],
         };
+    }
+
+    /**
+     * Resolve a "select + Other custom input" field pair.
+     *
+     * Many listing forms present a select box whose last option is "Other", paired
+     * with a free-text input that stores the user's custom value. This helper
+     * ensures the literal word "Other" is never surfaced to the AI when a real
+     * custom value is available.
+     *
+     * Resolution order:
+     *   1. If $primaryValue is NOT "Other" (case-insensitive), return it unchanged.
+     *   2. If $primaryValue IS "Other", iterate $fallbackKeys in order and return
+     *      the first non-empty string value returned by $infoGet.
+     *   3. If all fallback keys are empty, return null rather than the literal "Other".
+     *
+     * @param  string|null $primaryValue  Raw value from the primary meta key.
+     * @param  callable    $infoGet       EAV meta reader: info($key) → ?string.
+     * @param  string      ...$fallbackKeys  EAV meta keys to check when primary = "Other".
+     * @return string|null
+     */
+    private function resolveOtherValue(?string $primaryValue, callable $infoGet, string ...$fallbackKeys): ?string
+    {
+        if ($primaryValue === null || $primaryValue === '') {
+            return null;
+        }
+
+        if (strtolower(trim($primaryValue)) !== 'other') {
+            return $primaryValue;
+        }
+
+        foreach ($fallbackKeys as $key) {
+            $val = $infoGet($key);
+            if ($val !== null && $val !== '' && $val !== false) {
+                return (string) $val;
+            }
+        }
+
+        return null;
     }
 
     /**

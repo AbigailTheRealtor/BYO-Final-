@@ -2000,6 +2000,36 @@ class AskAiFieldQuestionRegistryService
                 'keyword_route_status' => 'listing_native',
             ],
             // ---- Amenities & Features ----
+            // ---- Property Type ----
+            'listing.property_type' => [
+                'roles'                => ['seller', 'buyer', 'landlord', 'tenant'],
+                'field_type'           => 'listing_model',
+                'config_key'           => 'property_type',
+                'label'                => 'Property Type',
+                'sample_question'      => 'What type of property is this?',
+                'sample_question_2'    => 'What kind of property is listed here?',
+                'keyword_route_status' => 'listing_native',
+            ],
+            // ---- View ----
+            'listing.water_view' => [
+                'roles'                => ['seller', 'buyer', 'landlord'],
+                'field_type'           => 'listing_model',
+                'config_key'           => 'water_view',
+                'label'                => 'View / Water View',
+                'sample_question'      => 'What is the view from this property?',
+                'sample_question_2'    => 'Does this property have a water view or scenic view?',
+                'keyword_route_status' => 'listing_native',
+            ],
+            // ---- Credit Score (Tenant) ----
+            'listing.credit_score_range' => [
+                'roles'                => ['tenant'],
+                'field_type'           => 'listing_model',
+                'config_key'           => 'credit_score_range',
+                'label'                => 'Credit Score Range',
+                'sample_question'      => 'What is the tenant\'s credit score range?',
+                'sample_question_2'    => 'What credit score range does the tenant have?',
+                'keyword_route_status' => 'listing_native',
+            ],
             'listing.pool' => [
                 'roles'                => ['seller', 'buyer'],
                 'field_type'           => 'listing_model',

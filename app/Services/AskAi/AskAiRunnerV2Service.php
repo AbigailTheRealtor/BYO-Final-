@@ -1039,6 +1039,17 @@ class AskAiRunnerV2Service
             'tell me about the garage',
             'garage type',
         ],
+        // ---- Property Type ----
+        'listing.property_type' => [
+            'property type',
+            'what type of property',
+            'type of property',
+            'what kind of property',
+            'what property type',
+            'what is the property type',
+            'kind of property',
+        ],
+        // ---- View ----
         'listing.water_view' => [
             'water view',
             'lake view',
@@ -1046,6 +1057,22 @@ class AskAiRunnerV2Service
             'river view',
             'does it have a water view',
             'waterfront view',
+            'what is the view',
+            'what view',
+            'what view does it have',
+            'scenic view',
+            'is there a water view',
+            'does it have a view',
+        ],
+        // ---- Credit Score (Tenant) ----
+        'listing.credit_score_range' => [
+            'credit score range',
+            'tenant credit score',
+            'what is the credit score',
+            'credit range',
+            'what credit score',
+            'required credit score',
+            'credit score',
         ],
         'listing.appliances' => [
             'what appliances are included',
@@ -1141,6 +1168,7 @@ class AskAiRunnerV2Service
             'how long a lease does the tenant want',
             'tenant preferred lease duration',
             'tenant desired lease term',
+            "tenant's desired lease",
         ],
         'listing.renewal_option' => [
             'renewal option available',
@@ -1982,10 +2010,13 @@ class AskAiRunnerV2Service
             // Listing.* fields — Location
             'listing.address'                            => 'Property address information',
             // Listing.* fields — Amenities & Features
+            'listing.property_type'                      => 'Property type information',
             'listing.pool'                               => 'Pool information',
             'listing.carport'                            => 'Carport information',
             'listing.garage'                             => 'Garage information',
-            'listing.water_view'                         => 'Water view information',
+            'listing.water_view'                         => 'View / water view information',
+            'listing.view'                               => 'View information',
+            'listing.credit_score_range'                 => 'Credit score range information',
             'listing.appliances'                         => 'Included appliances information',
             // Listing.* fields — HOA & Community
             'listing.hoa_association'                    => 'HOA association information',

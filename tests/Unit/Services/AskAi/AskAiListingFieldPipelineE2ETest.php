@@ -1068,4 +1068,214 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
             'listing.* direct-return must surface the raw field value, not the try-again message.'
         );
     }
+
+    // =========================================================================
+    // 11. Seller — "What is the view?" → listing.water_view (regression for
+    //     live failure: was returning unsupported — no keywords/context path)
+    // =========================================================================
+
+    public function test_view_question_classifies_as_listing_facts_and_detects_water_view_key(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('What is the view from this property?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What is the view?" must classify as listing_facts');
+
+        $internalRunner = $this->makeRunnerWithListingField('water_view', 'Ocean View, Lake View');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('seller', 1, 'What is the view from this property?');
+
+        $this->assertSame('listing.water_view',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"What is the view?" must resolve to listing.water_view');
+    }
+
+    public function test_view_field_present_pipeline_succeeds(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('water_view', 'Ocean View');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+
+        $adapter->expects($this->once())->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->expects($this->once())->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('seller', 1, 'What is the view from this property?');
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('ready', $result['status']);
+    }
+
+    public function test_view_field_null_guard_b_returns_field_specific_message(): void
+    {
+        $this->assertGuardBFiresWithMessage('seller', 'What is the view from this property?', 'water_view', 'View / water view information');
+    }
+
+    public function test_view_question_never_returns_unsupported(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('water_view', 'Lake View');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('seller', 1, 'Does it have a water view?');
+
+        $this->assertNotSame('unsupported', $result['status'],
+            '"Does it have a water view?" must never return unsupported');
+    }
+
+    // =========================================================================
+    // 12. Buyer — "What type of property?" → listing.property_type (regression
+    //     for live failure: was returning unsupported — no keywords/context path)
+    // =========================================================================
+
+    public function test_property_type_question_classifies_as_listing_facts_and_detects_correct_key(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('What type of property is this?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What type of property?" must classify as listing_facts');
+
+        $internalRunner = $this->makeRunnerWithListingField('property_type', 'Single Family Home');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('buyer', 1, 'What type of property is this?');
+
+        $this->assertSame('listing.property_type',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"What type of property?" must resolve to listing.property_type');
+    }
+
+    public function test_property_type_field_present_pipeline_succeeds(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('property_type', 'Condo');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+
+        $adapter->expects($this->once())->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->expects($this->once())->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('landlord', 1, 'What type of property is this?');
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('ready', $result['status']);
+    }
+
+    public function test_property_type_field_null_guard_b_returns_field_specific_message(): void
+    {
+        $this->assertGuardBFiresWithMessage('buyer', 'What type of property is this?', 'property_type', 'Property type information');
+    }
+
+    public function test_property_type_question_never_returns_unsupported(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('property_type', 'Townhouse');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('landlord', 1, 'What kind of property is this?');
+
+        $this->assertNotSame('unsupported', $result['status'],
+            '"What kind of property?" must never return unsupported');
+    }
+
+    // =========================================================================
+    // 13. Tenant — "What is the credit score range?" → listing.credit_score_range
+    //     (regression for live failure: was returning unsupported)
+    // =========================================================================
+
+    public function test_credit_score_range_question_classifies_as_listing_facts_and_detects_correct_key(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify("What is the tenant's credit score range?");
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What is the credit score range?" must classify as listing_facts');
+
+        $internalRunner = $this->makeRunnerWithListingField('credit_score_range', '680-720');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('tenant', 1, "What is the tenant's credit score range?");
+
+        $this->assertSame('listing.credit_score_range',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"What is the credit score range?" must resolve to listing.credit_score_range');
+    }
+
+    public function test_credit_score_range_field_present_pipeline_succeeds(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('credit_score_range', 'Excellent (720+)');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+
+        $adapter->expects($this->once())->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->expects($this->once())->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('tenant', 1, "What is the tenant's credit score range?");
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('ready', $result['status']);
+    }
+
+    public function test_credit_score_range_field_null_guard_b_returns_field_specific_message(): void
+    {
+        $this->assertGuardBFiresWithMessage('tenant', "What is the tenant's credit score range?", 'credit_score_range', 'Credit score range information');
+    }
+
+    public function test_credit_score_range_question_never_returns_unsupported(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('credit_score_range', '700+');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('tenant', 1, 'What credit score range does the tenant have?');
+
+        $this->assertNotSame('unsupported', $result['status'],
+            '"What credit score range?" must never return unsupported');
+    }
+
+    // =========================================================================
+    // 14. Approved factual questions never produce generic 'failed' status
+    //     (regression: verified the RunnerV2 backstop converts adapter failure
+    //     to direct-return or insufficient_context, never generic 'failed')
+    // =========================================================================
+
+    public function test_approved_view_question_never_returns_generic_failed_on_adapter_error(): void
+    {
+        $this->assertDirectReturnFallback('seller', 'What is the view from this property?', 'water_view', 'Ocean View');
+    }
+
+    public function test_approved_property_type_question_never_returns_generic_failed_on_adapter_error(): void
+    {
+        $this->assertDirectReturnFallback('buyer', 'What type of property is this?', 'property_type', 'Single Family Home');
+    }
+
+    public function test_approved_credit_score_range_question_never_returns_generic_failed_on_adapter_error(): void
+    {
+        $this->assertDirectReturnFallback('tenant', "What is the tenant's credit score range?", 'credit_score_range', '680-720');
+    }
+
+    // =========================================================================
+    // 15. "is credit score listed?" must NOT route to listing_facts
+    //     (regression guard: bare 'credit score' excluded from listing_facts
+    //      classifier to prevent it swallowing missing_data questions)
+    // =========================================================================
+
+    public function test_is_credit_score_listed_does_not_route_to_listing_facts(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('Is credit score listed for this applicant?');
+        $this->assertNotSame('listing_facts', $result['question_type'],
+            '"Is credit score listed?" must not route to listing_facts — it belongs to missing_data');
+        $this->assertSame('missing_data', $result['question_type'],
+            '"Is credit score listed?" must route to missing_data');
+    }
 }
