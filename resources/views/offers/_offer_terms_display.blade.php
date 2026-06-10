@@ -60,7 +60,7 @@
             $metas->get('seller_financing_term') ||
             $metas->get('seller_financing_amortization') ||
             $metas->get('seller_financing_payment_frequency') ||
-            $metas->get('seller_financing_balloon') === 'Yes' ||
+            $metas->get('seller_financing_balloon') ||
             $metas->get('prepayment_penalty') ||
             $metas->get('seller_late_fee_amount')
         )) ||
@@ -270,9 +270,9 @@
     <dt class="col-sm-3">Payment Frequency</dt>
     <dd class="col-sm-9">{{ $metas->get('seller_financing_payment_frequency') === 'Other' ? ($metas->get('seller_financing_payment_frequency_other') ?: 'Other') : $metas->get('seller_financing_payment_frequency') }}</dd>
     @endif
-    @if($metas->get('seller_financing_balloon') === 'Yes')
+    @if($metas->get('seller_financing_balloon'))
     <dt class="col-sm-3">Balloon Payment</dt>
-    <dd class="col-sm-9">Yes{{ $metas->get('seller_financing_balloon_amount') ? ' — $' . number_format($metas->get('seller_financing_balloon_amount')) : '' }}{{ $metas->get('seller_financing_balloon_date') ? ' due ' . $metas->get('seller_financing_balloon_date') : '' }}</dd>
+    <dd class="col-sm-9">{{ $metas->get('seller_financing_balloon') }}{{ $metas->get('seller_financing_balloon') === 'Yes' && $metas->get('seller_financing_balloon_amount') ? ' — $' . number_format($metas->get('seller_financing_balloon_amount')) : '' }}{{ $metas->get('seller_financing_balloon') === 'Yes' && $metas->get('seller_financing_balloon_date') ? ' due ' . $metas->get('seller_financing_balloon_date') : '' }}</dd>
     @endif
     @if($metas->get('prepayment_penalty'))
     <dt class="col-sm-3">Prepayment Penalty</dt>
