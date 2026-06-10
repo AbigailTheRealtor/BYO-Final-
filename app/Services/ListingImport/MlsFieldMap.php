@@ -67,6 +67,13 @@ class MlsFieldMap
             'sewer'               => '*sewer',
             'utilities'           => '*utilities',
             'sqft_heated_source'  => 'sqft_heated_source',
+            // NOTE: 'lot_size_sqft' intentionally omitted -- SellerOfferListing uses
+            //       total_acreage (acres) for lot size via the lot_size_acres canonical key.
+            //       No Livewire property exists to accept lot size expressed in square feet.
+            // NOTE: 'heating' is a parser fieldLabel alias; the importer always emits the
+            //       canonical key 'heating_fuel' for both "Heating:" and "Heating & Fuel:"
+            //       MLS label variants. heating_fuel maps to '*heating_and_fuel' above --
+            //       no separate 'heating' entry is needed.
             // ── Tax / Legal / Flood Zone (owner-side disclosures) ─────────────
             'tax_id'          => 'parcel_id',
             'tax_year'        => 'tax_year',
@@ -169,6 +176,13 @@ class MlsFieldMap
             //       targets the multi-select array property, hence the '*' prefix.
             'utilities'           => '*property_utilities',
             'sqft_heated_source'  => 'sqft_heated_source',
+            // NOTE: 'lot_size_sqft' intentionally omitted -- LandlordOfferListing uses
+            //       total_acreage (acres) for lot size via the lot_size_acres canonical key.
+            //       No Livewire property exists to accept lot size expressed in square feet.
+            // NOTE: 'heating' is a parser fieldLabel alias; the importer always emits the
+            //       canonical key 'heating_fuel' for both "Heating:" and "Heating & Fuel:"
+            //       MLS label variants. heating_fuel maps to '*heating_fuel' above --
+            //       no separate 'heating' entry is needed.
             // ── Tax / Legal / Flood Zone (owner-side disclosures) ─────────────
             'tax_id'          => 'parcel_id',
             'tax_year'        => 'tax_year',
@@ -197,6 +211,11 @@ class MlsFieldMap
             'water_view'        => '*water_view',
             // ── Interior ─────────────────────────────────────────────────────
             'interior_features' => '*interior_features',
+            // ── Structural fields ─────────────────────────────────────────────
+            'lot_dimensions'        => 'lot_dimensions',
+            'roof_type'             => '*roof_type',
+            'exterior_construction' => '*exterior_construction',
+            'foundation'            => '*foundation',
             // NOTE: 'application_fee' intentionally omitted — property does not exist
             //       on LandlordOfferListing (see Rejected Mapping Candidates).
             // NOTE: 'mls_number' intentionally omitted — property does not exist

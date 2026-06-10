@@ -1221,6 +1221,18 @@ $tenantPays = [
                     } catch (e) {}
                 }
             });
+            // Structural fields use wire:ignore — sync DOM → Livewire explicitly before save
+            var structuralFieldMap = {
+                'roof_type':             '#roof_type_landlord_res',
+                'exterior_construction': '#exterior_construction_landlord_res',
+                'foundation':            '#foundation_landlord_res',
+            };
+            Object.entries(structuralFieldMap).forEach(function([field, selector]) {
+                var $el = $(selector);
+                if ($el.length && $el.hasClass('select2-hidden-accessible') && component.set) {
+                    try { component.set(field, $el.val() || []); } catch(e) {}
+                }
+            });
         }
 
         window.addEventListener('draftLoaded', function() {

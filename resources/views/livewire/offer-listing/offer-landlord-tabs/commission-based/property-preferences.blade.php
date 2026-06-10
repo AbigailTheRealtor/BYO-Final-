@@ -916,6 +916,92 @@
         <span class="error mt-2" id="year_built_error"></span>
     </div>
 
+    <!-- Lot Dimensions -->
+    <div class="form-group">
+        <label class="fw-bold">Lot Dimensions:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the lot dimensions (e.g., 100x200, 150x300).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model.defer="lot_dimensions" class="form-control has-icon"
+                data-icon="fa-solid fa-ruler" placeholder="Enter lot dimensions (e.g., 100x200)">
+        </div>
+        <span class="error mt-2" id="lot_dimensions_error"></span>
+    </div>
+
+    <!-- Roof Type -->
+    <div class="form-group" wire:key="roof-type-landlord-res">
+        <label class="fw-bold">Roof Type:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the type(s) of roofing material on the property.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="roof_type_landlord_res" class="form-control has-icon select2-multiple"
+                data-icon="fa-solid fa-house" data-placeholder="Select" multiple>
+                @foreach (['Built-Up','Cement','Concrete','Membrane','Metal','Roof Over','Shake','Shingle','Slate','Tile','Other'] as $_opt)
+                    <option value="{{ $_opt }}" {{ is_array($roof_type) && in_array($_opt, $roof_type) ? 'selected' : '' }}>{{ $_opt }}</option>
+                @endforeach
+            </select>
+        </div>
+        <span class="error mt-2" id="roof_type_error_landlord_res"></span>
+    </div>
+    <div class="form-group" id="other_roof_type_landlord_res_wrapper" style="{{ is_array($roof_type) && in_array('Other', $roof_type) ? '' : 'display:none;' }}">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="other_roof_type" class="form-control has-icon"
+                data-icon="fa-solid fa-pen" placeholder="Enter roof type (e.g., Foam, TPO)">
+        </div>
+    </div>
+
+    <!-- Exterior Construction -->
+    <div class="form-group" wire:key="exterior-construction-landlord-res">
+        <label class="fw-bold">Exterior Construction:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the exterior construction material(s) of the property.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="exterior_construction_landlord_res" class="form-control has-icon select2-multiple"
+                data-icon="fa-solid fa-building" data-placeholder="Select" multiple>
+                @foreach (['Asbestos','Block','Brick','Cedar','Cement Siding','Concrete','HardiPlank Type','ICFs (Insulated Concrete Forms)','Log','Metal Frame','Metal Siding','SIP (Structurally Insulated Panel)','Stone','Stucco','Tilt up Walls','Vinyl Siding','Wood Frame','Wood Frame (FSC)','Wood Siding','Other'] as $_opt)
+                    <option value="{{ $_opt }}" {{ is_array($exterior_construction) && in_array($_opt, $exterior_construction) ? 'selected' : '' }}>{{ $_opt }}</option>
+                @endforeach
+            </select>
+        </div>
+        <span class="error mt-2" id="exterior_construction_error_landlord_res"></span>
+    </div>
+    <div class="form-group" id="other_exterior_construction_landlord_res_wrapper" style="{{ is_array($exterior_construction) && in_array('Other', $exterior_construction) ? '' : 'display:none;' }}">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="other_exterior_construction" class="form-control has-icon"
+                data-icon="fa-solid fa-pen" placeholder="Enter exterior construction (e.g., Fiber cement, SIPs)">
+        </div>
+    </div>
+
+    <!-- Foundation -->
+    <div class="form-group" wire:key="foundation-landlord-res">
+        <label class="fw-bold">Foundation:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the type(s) of foundation for the property.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="foundation_landlord_res" class="form-control has-icon select2-multiple"
+                data-icon="fa-solid fa-layer-group" data-placeholder="Select" multiple>
+                @foreach (['Basement','Block','Brick/Mortar','Concrete Perimeter','Crawlspace','Pillar/Post/Pier','Slab','Stem Wall','Stilt/On Piling','Other'] as $_opt)
+                    <option value="{{ $_opt }}" {{ is_array($foundation) && in_array($_opt, $foundation) ? 'selected' : '' }}>{{ $_opt }}</option>
+                @endforeach
+            </select>
+        </div>
+        <span class="error mt-2" id="foundation_error_landlord_res"></span>
+    </div>
+    <div class="form-group" id="other_foundation_landlord_res_wrapper" style="{{ is_array($foundation) && in_array('Other', $foundation) ? '' : 'display:none;' }}">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="other_foundation" class="form-control has-icon"
+                data-icon="fa-solid fa-pen" placeholder="Enter foundation type (e.g., Helical pier, Pressure-treated wood)">
+        </div>
+    </div>
+
     <!-- Heating and Fuel -->
     <div class="form-group">
         <label class="fw-bold">Heating and Fuel:</label>
@@ -1682,6 +1768,24 @@
 </div>
 
 <script>
+    // ── MLS structural multi-select field selectors ─────────────────────────
+    var _landlordMlsFieldSelectors = {
+        roof_type:             ['#roof_type_landlord_res'],
+        exterior_construction: ['#exterior_construction_landlord_res'],
+        foundation:            ['#foundation_landlord_res'],
+    };
+
+    function syncAllSelect2BeforeSave() {
+        Object.entries(_landlordMlsFieldSelectors).forEach(function([fieldId, selectors]) {
+            selectors.forEach(function(selector) {
+                var el = $(selector);
+                if (el.length && el.hasClass('select2-hidden-accessible')) {
+                    @this.set(fieldId, el.val() || []);
+                }
+            });
+        });
+    }
+
     document.addEventListener('livewire:load', function() {
         const select = document.getElementById('property_type');
         let isDropdownOpen = false;
@@ -1698,5 +1802,49 @@
                 option.text = originalOptions[option.value];
             }
         });
+
+        // ── Initialize new structural Select2 fields ──────────────────────
+        // Delegated change handlers ($(document).on) survive DOM replacement by Livewire.
+        var _structuralCfgs = [
+            { selector: '#roof_type_landlord_res',             field: 'roof_type',             otherWrapperId: 'other_roof_type_landlord_res_wrapper' },
+            { selector: '#exterior_construction_landlord_res', field: 'exterior_construction', otherWrapperId: 'other_exterior_construction_landlord_res_wrapper' },
+            { selector: '#foundation_landlord_res',            field: 'foundation',            otherWrapperId: 'other_foundation_landlord_res_wrapper' },
+        ];
+
+        _structuralCfgs.forEach(function(cfg) {
+            $(document).on('change', cfg.selector, function() {
+                var values = $(cfg.selector).val() || [];
+                @this.set(cfg.field, values);
+                var wrapper = document.getElementById(cfg.otherWrapperId);
+                if (wrapper) {
+                    wrapper.style.display = values.includes('Other') ? '' : 'none';
+                }
+            });
+        });
+
+        function initStructuralSelect2() {
+            _structuralCfgs.forEach(function(cfg) {
+                var $el = $(cfg.selector);
+                if (!$el.length || $el.hasClass('select2-hidden-accessible')) return;
+                $el.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
+                var current = $el.val() || [];
+                var wrapper = document.getElementById(cfg.otherWrapperId);
+                if (wrapper) {
+                    wrapper.style.display = current.includes('Other') ? '' : 'none';
+                }
+            });
+        }
+
+        initStructuralSelect2();
+
+        // Re-init after Livewire re-renders (wire:ignore protects values, but Select2 may need re-attachment)
+        window.addEventListener('landlord:propertyTypeChanged', function() {
+            setTimeout(initStructuralSelect2, 100);
+        });
+    });
+
+    // Re-init after Livewire updates (handles tab navigation re-renders)
+    document.addEventListener('livewire:update', function() {
+        setTimeout(initStructuralSelect2, 50);
     });
 </script>

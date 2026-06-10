@@ -661,6 +661,15 @@ class LandlordOfferListing extends Component
     public $other_water_view = '';
     public $other_interior_features = '';
 
+    // Structural fields (MLS import targets)
+    public $lot_dimensions = '';
+    public array $roof_type = [];
+    public $other_roof_type = '';
+    public array $exterior_construction = [];
+    public $other_exterior_construction = '';
+    public array $foundation = [];
+    public $other_foundation = '';
+
     // Group 3 — CDD / Special Assessments
     public $has_cdd = '';
     public $annual_cdd_fee = '';
@@ -2813,6 +2822,13 @@ class LandlordOfferListing extends Component
             $this->other_water_access = $auction->get->other_water_access ?? '';
             $this->other_water_view = $auction->get->other_water_view ?? '';
             $this->other_interior_features = $auction->get->other_interior_features ?? '';
+            $this->lot_dimensions = $auction->get->lot_dimensions ?? '';
+            $this->roof_type = is_string($auction->get->roof_type) ? json_decode($auction->get->roof_type, true) ?? [] : (array)($auction->get->roof_type ?? []);
+            $this->other_roof_type = $auction->get->other_roof_type ?? '';
+            $this->exterior_construction = is_string($auction->get->exterior_construction) ? json_decode($auction->get->exterior_construction, true) ?? [] : (array)($auction->get->exterior_construction ?? []);
+            $this->other_exterior_construction = $auction->get->other_exterior_construction ?? '';
+            $this->foundation = is_string($auction->get->foundation) ? json_decode($auction->get->foundation, true) ?? [] : (array)($auction->get->foundation ?? []);
+            $this->other_foundation = $auction->get->other_foundation ?? '';
             $this->has_cdd = $auction->get->has_cdd ?? '';
             $this->annual_cdd_fee = $auction->get->annual_cdd_fee ?? '';
             $this->has_special_assessments = $auction->get->has_special_assessments ?? '';
@@ -3471,6 +3487,13 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('other_water_access', $this->other_water_access);
         $auction->saveMeta('other_water_view', $this->other_water_view);
         $auction->saveMeta('other_interior_features', $this->other_interior_features);
+        $auction->saveMeta('lot_dimensions', $this->lot_dimensions);
+        $auction->saveMeta('roof_type', json_encode($this->ensureArray($this->roof_type)));
+        $auction->saveMeta('other_roof_type', $this->other_roof_type);
+        $auction->saveMeta('exterior_construction', json_encode($this->ensureArray($this->exterior_construction)));
+        $auction->saveMeta('other_exterior_construction', $this->other_exterior_construction);
+        $auction->saveMeta('foundation', json_encode($this->ensureArray($this->foundation)));
+        $auction->saveMeta('other_foundation', $this->other_foundation);
         $auction->saveMeta('has_cdd', $this->has_cdd);
         $auction->saveMeta('annual_cdd_fee', $this->stripCommas($this->annual_cdd_fee));
         $auction->saveMeta('has_special_assessments', $this->has_special_assessments);
@@ -3808,6 +3831,15 @@ class LandlordOfferListing extends Component
             'phone_number'         => 'required|string',
             'email'                => 'required|email',
             'desired_lease_length' => 'required|array|min:1',
+            'roof_type'                => 'nullable|array',
+            'roof_type.*'              => 'string|in:Built-Up,Cement,Concrete,Membrane,Metal,Roof Over,Shake,Shingle,Slate,Tile,Other',
+            'exterior_construction'    => 'nullable|array',
+            'exterior_construction.*'  => 'string|in:Asbestos,Block,Brick,Cedar,Cement Siding,Concrete,HardiPlank Type,ICFs (Insulated Concrete Forms),Log,Metal Frame,Metal Siding,SIP (Structurally Insulated Panel),Stone,Stucco,Tilt up Walls,Vinyl Siding,Wood Frame,Wood Frame (FSC),Wood Siding,Other',
+            'foundation'               => 'nullable|array',
+            'foundation.*'             => 'string|in:Basement,Block,Brick/Mortar,Concrete Perimeter,Crawlspace,Pillar/Post/Pier,Slab,Stem Wall,Stilt/On Piling,Other',
+            'other_roof_type'          => 'nullable|string|max:255',
+            'other_exterior_construction' => 'nullable|string|max:255',
+            'other_foundation'         => 'nullable|string|max:255',
         ], [
             'first_name.required'           => 'First Name is required.',
             'last_name.required'            => 'Last Name is required.',

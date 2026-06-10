@@ -1829,4 +1829,116 @@ class MlsListingImportServiceTest extends TestCase
                 "Role '{$role}' description must target additional_details");
         }
     }
+
+    // ── Landlord structural field-map entries ─────────────────────────────────
+
+    public function test_landlord_field_map_has_lot_dimensions(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+        $this->assertArrayHasKey('lot_dimensions', $map);
+        $this->assertEquals('lot_dimensions', $map['lot_dimensions']);
+    }
+
+    public function test_landlord_field_map_has_roof_type(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+        $this->assertArrayHasKey('roof_type', $map);
+        $this->assertEquals('*roof_type', $map['roof_type']);
+    }
+
+    public function test_landlord_field_map_has_exterior_construction(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+        $this->assertArrayHasKey('exterior_construction', $map);
+        $this->assertEquals('*exterior_construction', $map['exterior_construction']);
+    }
+
+    public function test_landlord_field_map_has_foundation(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+        $this->assertArrayHasKey('foundation', $map);
+        $this->assertEquals('*foundation', $map['foundation']);
+    }
+
+    // ── MlsCoverageReporter inventory-gap keys ────────────────────────────────
+
+    private function generateReportContent(): string
+    {
+        $tmpPath = sys_get_temp_dir() . '/mls_coverage_gap_test_' . uniqid() . '.md';
+        MlsCoverageReporter::generate($tmpPath);
+        $content = file_get_contents($tmpPath);
+        @unlink($tmpPath);
+        return $content;
+    }
+
+    public function test_inventory_contains_all_12_gap_keys(): void
+    {
+        $content = $this->generateReportContent();
+
+        $gapKeys = [
+            'heating_fuel',
+            'roof_type',
+            'exterior_construction',
+            'foundation',
+            'water',
+            'sewer',
+            'utilities',
+            'sqft_heated_source',
+            'flood_insurance_required',
+            'has_special_assessments',
+            'special_assessment_amount',
+            'special_assessment_description',
+        ];
+
+        foreach ($gapKeys as $key) {
+            $this->assertStringContainsString($key, $content,
+                "fieldInventory() must contain canonical_key '{$key}'");
+        }
+    }
+
+    public function test_inventory_flood_insurance_required_in_flood_zone_section(): void
+    {
+        $content = $this->generateReportContent();
+
+        $this->assertStringContainsString('flood_insurance_required', $content,
+            'flood_insurance_required must be in fieldInventory');
+        $this->assertStringContainsString('FLOOD ZONE', $content,
+            'FLOOD ZONE section must appear in report');
+        // Verify both strings appear in close proximity in the same table row
+        $this->assertMatchesRegularExpression(
+            '/FLOOD ZONE[^\n]*flood_insurance_required|flood_insurance_required[^\n]*FLOOD ZONE/',
+            $content,
+            'flood_insurance_required must appear in the FLOOD ZONE section row'
+        );
+    }
+
+    public function test_inventory_special_assessments_in_hoa_cdd_section(): void
+    {
+        $content = $this->generateReportContent();
+
+        foreach (['has_special_assessments', 'special_assessment_amount', 'special_assessment_description'] as $key) {
+            $this->assertStringContainsString($key, $content,
+                "{$key} must be in fieldInventory");
+            $this->assertMatchesRegularExpression(
+                '/HOA \/ CDD[^\n]*' . preg_quote($key, '/') . '|' . preg_quote($key, '/') . '[^\n]*HOA \/ CDD/',
+                $content,
+                "{$key} should appear in the HOA / CDD section row"
+            );
+        }
+    }
+
+    public function test_inventory_structural_fields_in_property_characteristics_section(): void
+    {
+        $content = $this->generateReportContent();
+
+        foreach (['roof_type', 'exterior_construction', 'foundation', 'water', 'sewer', 'utilities'] as $key) {
+            $this->assertStringContainsString($key, $content,
+                "{$key} must be in fieldInventory");
+            $this->assertMatchesRegularExpression(
+                '/PROPERTY CHARACTERISTICS[^\n]*' . preg_quote($key, '/') . '|' . preg_quote($key, '/') . '[^\n]*PROPERTY CHARACTERISTICS/',
+                $content,
+                "{$key} should appear in the PROPERTY CHARACTERISTICS section row"
+            );
+        }
+    }
 }

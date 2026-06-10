@@ -2246,6 +2246,22 @@
                 initLeaseMetaSelect2();
                 initSingleSelectOtherToggles();
                 if (typeof reformatAllMoneyFields === 'function') reformatAllMoneyFields();
+                // Re-sync structural Select2 fields from Livewire after import apply
+                // (wire:ignore prevents DOM replacement, so Select2 must be updated manually)
+                var structuralResync = {
+                    'roof_type':             '#roof_type_landlord_res',
+                    'exterior_construction': '#exterior_construction_landlord_res',
+                    'foundation':            '#foundation_landlord_res',
+                };
+                Object.entries(structuralResync).forEach(function([field, selector]) {
+                    var $el = $(selector);
+                    if (!$el.length || !$el.hasClass('select2-hidden-accessible')) return;
+                    var lwVal = @this.get(field) || [];
+                    var cur = $el.val() || [];
+                    if (JSON.stringify(lwVal.slice().sort()) !== JSON.stringify(cur.slice().sort())) {
+                        $el.val(lwVal).trigger('change.select2');
+                    }
+                });
             });
 
             window.syncLandlordSelect2BeforeSave = function() {
@@ -2273,6 +2289,10 @@
                     'space_classification': '#space_classification',
                     'association_fee_includes': '#association_fee_includes',
                     'association_amenities': '#association_amenities',
+                    // ── Structural fields (Residential — property-preferences tab) ──
+                    'roof_type':             '#roof_type_landlord_res',
+                    'exterior_construction': '#exterior_construction_landlord_res',
+                    'foundation':            '#foundation_landlord_res',
                 };
                 Object.entries(selects2Map).forEach(function([field, selector]) {
                     var $el = $(selector);

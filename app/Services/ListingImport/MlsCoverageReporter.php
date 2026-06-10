@@ -458,9 +458,10 @@ class MlsCoverageReporter
         ];
 
         $floodZone = fn (string $form) => [
-            ['form' => $form, 'section' => 'FLOOD ZONE', 'mls_label' => 'Flood Zone Code',  'canonical_key' => 'flood_zone_code',  'norm_required' => true,  'notes' => 'Valid values: X, AE, A, AH, AO, VE, V, D — normalizer uppercases'],
-            ['form' => $form, 'section' => 'FLOOD ZONE', 'mls_label' => 'Flood Zone Date',  'canonical_key' => 'flood_zone_date',  'norm_required' => false, 'notes' => ''],
-            ['form' => $form, 'section' => 'FLOOD ZONE', 'mls_label' => 'Flood Zone Panel', 'canonical_key' => 'flood_zone_panel', 'norm_required' => false, 'notes' => ''],
+            ['form' => $form, 'section' => 'FLOOD ZONE', 'mls_label' => 'Flood Zone Code',        'canonical_key' => 'flood_zone_code',         'norm_required' => true,  'notes' => 'Valid values: X, AE, A, AH, AO, VE, V, D — normalizer uppercases'],
+            ['form' => $form, 'section' => 'FLOOD ZONE', 'mls_label' => 'Flood Zone Date',        'canonical_key' => 'flood_zone_date',         'norm_required' => false, 'notes' => ''],
+            ['form' => $form, 'section' => 'FLOOD ZONE', 'mls_label' => 'Flood Zone Panel',       'canonical_key' => 'flood_zone_panel',        'norm_required' => false, 'notes' => ''],
+            ['form' => $form, 'section' => 'FLOOD ZONE', 'mls_label' => 'Flood Insurance Reqd',   'canonical_key' => 'flood_insurance_required', 'norm_required' => false, 'notes' => ''],
         ];
 
         $hoaCdd = fn (string $form) => [
@@ -481,6 +482,21 @@ class MlsCoverageReporter
             ['form' => $form, 'section' => 'WATERFRONT', 'mls_label' => 'Waterfront Y/N', 'canonical_key' => 'waterfront',   'norm_required' => true,  'notes' => ''],
             ['form' => $form, 'section' => 'WATERFRONT', 'mls_label' => 'Water Access',   'canonical_key' => 'water_access', 'norm_required' => false, 'notes' => ''],
             ['form' => $form, 'section' => 'WATERFRONT', 'mls_label' => 'Water View',     'canonical_key' => 'water_view',   'norm_required' => false, 'notes' => ''],
+        ];
+
+        $propertyStructural = fn (string $form) => [
+            ['form' => $form, 'section' => 'PROPERTY CHARACTERISTICS', 'mls_label' => 'Roof Type',             'canonical_key' => 'roof_type',             'norm_required' => false, 'notes' => 'Multi-value; split on comma by importer'],
+            ['form' => $form, 'section' => 'PROPERTY CHARACTERISTICS', 'mls_label' => 'Exterior Construction', 'canonical_key' => 'exterior_construction',  'norm_required' => false, 'notes' => 'Multi-value; split on comma by importer'],
+            ['form' => $form, 'section' => 'PROPERTY CHARACTERISTICS', 'mls_label' => 'Foundation',            'canonical_key' => 'foundation',             'norm_required' => false, 'notes' => 'Multi-value; split on comma by importer'],
+            ['form' => $form, 'section' => 'PROPERTY CHARACTERISTICS', 'mls_label' => 'Water',                 'canonical_key' => 'water',                  'norm_required' => false, 'notes' => 'Multi-value; split on comma by importer'],
+            ['form' => $form, 'section' => 'PROPERTY CHARACTERISTICS', 'mls_label' => 'Sewer',                 'canonical_key' => 'sewer',                  'norm_required' => false, 'notes' => 'Multi-value; split on comma by importer'],
+            ['form' => $form, 'section' => 'PROPERTY CHARACTERISTICS', 'mls_label' => 'Utilities',             'canonical_key' => 'utilities',              'norm_required' => false, 'notes' => 'Multi-value; split on comma by importer'],
+        ];
+
+        $specialAssessments = fn (string $form) => [
+            ['form' => $form, 'section' => 'HOA / CDD', 'mls_label' => 'Special Assessments Y/N',   'canonical_key' => 'has_special_assessments',        'norm_required' => false, 'notes' => ''],
+            ['form' => $form, 'section' => 'HOA / CDD', 'mls_label' => 'Special Assessment Amount', 'canonical_key' => 'special_assessment_amount',      'norm_required' => false, 'notes' => ''],
+            ['form' => $form, 'section' => 'HOA / CDD', 'mls_label' => 'Special Assessment Desc',   'canonical_key' => 'special_assessment_description', 'norm_required' => false, 'notes' => ''],
         ];
 
         $lotFields = fn (string $form) => [
@@ -520,15 +536,21 @@ class MlsCoverageReporter
             ],
             $lotFields('Residential'),
             [
+                ['form' => 'Residential', 'section' => 'PROPERTY DETAILS',    'mls_label' => 'Sq Ft Heated Source', 'canonical_key' => 'sqft_heated_source', 'norm_required' => false, 'notes' => ''],
+            ],
+            [
                 ['form' => 'Residential', 'section' => 'INTERIOR / SYSTEMS', 'mls_label' => 'Air Conditioning',  'canonical_key' => 'air_conditioning',  'norm_required' => false, 'notes' => ''],
                 ['form' => 'Residential', 'section' => 'INTERIOR / SYSTEMS', 'mls_label' => 'Heating',           'canonical_key' => 'heating',           'norm_required' => false, 'notes' => ''],
+                ['form' => 'Residential', 'section' => 'INTERIOR / SYSTEMS', 'mls_label' => 'Heating / Fuel',    'canonical_key' => 'heating_fuel',      'norm_required' => false, 'notes' => 'Seller maps heating_fuel → heating_and_fuel; Landlord maps heating_fuel → heating_fuel'],
                 ['form' => 'Residential', 'section' => 'INTERIOR / SYSTEMS', 'mls_label' => 'Interior Features', 'canonical_key' => 'interior_features', 'norm_required' => false, 'notes' => ''],
                 ['form' => 'Residential', 'section' => 'INTERIOR / SYSTEMS', 'mls_label' => 'Appliances',        'canonical_key' => 'appliances',        'norm_required' => false, 'notes' => ''],
             ],
+            $propertyStructural('Residential'),
             $waterfront('Residential'),
             $taxLegal('Residential'),
             $floodZone('Residential'),
             $hoaCdd('Residential'),
+            $specialAssessments('Residential'),
             $remarks('Residential'),
             [
                 ['form' => 'Residential', 'section' => 'DERIVED', 'mls_label' => '(Derived from rental signals — not an MLS field)', 'canonical_key' => 'listing_type_hint', 'norm_required' => false, 'notes' => 'Set to "rental" or "sale"; not an MLS field'],
@@ -556,15 +578,21 @@ class MlsCoverageReporter
             ],
             $lotFields('Rental'),
             [
+                ['form' => 'Rental', 'section' => 'PROPERTY DETAILS',    'mls_label' => 'Sq Ft Heated Source', 'canonical_key' => 'sqft_heated_source', 'norm_required' => false, 'notes' => ''],
+            ],
+            [
                 ['form' => 'Rental', 'section' => 'INTERIOR / SYSTEMS', 'mls_label' => 'Air Conditioning',  'canonical_key' => 'air_conditioning',  'norm_required' => false, 'notes' => ''],
                 ['form' => 'Rental', 'section' => 'INTERIOR / SYSTEMS', 'mls_label' => 'Heating',           'canonical_key' => 'heating',           'norm_required' => false, 'notes' => ''],
+                ['form' => 'Rental', 'section' => 'INTERIOR / SYSTEMS', 'mls_label' => 'Heating / Fuel',    'canonical_key' => 'heating_fuel',      'norm_required' => false, 'notes' => 'Landlord maps heating_fuel → heating_fuel'],
                 ['form' => 'Rental', 'section' => 'INTERIOR / SYSTEMS', 'mls_label' => 'Interior Features', 'canonical_key' => 'interior_features', 'norm_required' => false, 'notes' => ''],
                 ['form' => 'Rental', 'section' => 'INTERIOR / SYSTEMS', 'mls_label' => 'Appliances',        'canonical_key' => 'appliances',        'norm_required' => false, 'notes' => ''],
             ],
+            $propertyStructural('Rental'),
             $waterfront('Rental'),
             $taxLegal('Rental'),
             $floodZone('Rental'),
             $hoaCdd('Rental'),
+            $specialAssessments('Rental'),
             [
                 ['form' => 'Rental', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Available Date',            'canonical_key' => 'available_date',           'norm_required' => false, 'notes' => ''],
                 ['form' => 'Rental', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Minimum Security Deposit',  'canonical_key' => 'minimum_security_deposit', 'norm_required' => false, 'notes' => ''],
