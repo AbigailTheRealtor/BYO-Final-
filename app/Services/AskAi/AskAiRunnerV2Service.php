@@ -951,6 +951,15 @@ class AskAiRunnerV2Service
             'how much can the tenant pay',
             'tenant rent budget',
             'highest rent the tenant',
+            // Previously in listing.rental_budget — merged here because the context
+            // builder stores the tenant's budget as 'max_rent', not 'rental_budget'.
+            "tenant's rental budget",
+            'tenant rental budget',
+            'what is your budget for rent',
+            'maximum rental budget',
+            'how much can the tenant pay per month',
+            'tenant monthly budget',
+            'budget for rent',
         ],
         // ---- Property Specifications ----
         'listing.bedrooms' => [
@@ -1278,6 +1287,10 @@ class AskAiRunnerV2Service
             'flood insurance required for this property',
             'flood zone designation',
         ],
+        // listing.rental_budget was removed — keywords merged into listing.max_rent above.
+        // The context builder stores the tenant's max budget under ctx['listing']['max_rent']
+        // (cascade: EAV 'budget' → 'maximum_budget').  A separate rental_budget context key
+        // does not exist, so a separate LISTING_KEY_KEYWORD_MAP entry would always miss.
     ];
 
     private AskAiQuestionClassifierService $classifier;

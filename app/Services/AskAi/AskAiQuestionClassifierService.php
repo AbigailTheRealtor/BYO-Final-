@@ -766,6 +766,104 @@ class AskAiQuestionClassifierService
             // These more-specific phrases address factual retrieval of the listing field.
             'what lease length is desired',
             'lease length is desired',
+            // ---- LISTING_KEY_KEYWORD_MAP gap coverage --------------------------------
+            // Phrases present in LISTING_KEY_KEYWORD_MAP but previously absent from this
+            // classifier, causing them to fall through to the normalizer path.  Adding
+            // them here ensures deterministic listing_facts routing for all 50 approved
+            // listing.* fields without requiring an OpenAI round-trip.
+            // Buyer maximum price
+            'buyer maximum budget',
+            'buyer max budget',
+            'maximum price buyer',
+            'buyer top price',
+            // Tenant max rent / budget
+            'tenant max rent',
+            'maximum rent budget',
+            'tenant rent budget',
+            "tenant's rental budget",
+            'tenant rental budget',
+            'budget for rent',
+            'maximum rental budget',
+            // Property description — factual retrieval only.
+            // Bare 'listing description' / 'property description' are ALSO marketing_angles
+            // keywords; using them here would route creative-writing prompts to listing_facts.
+            // Only specific factual-retrieval phrases are safe here.
+            'what does the property description say',
+            'what does the listing description say',
+            'what is the property description',
+            // Property condition (rental)
+            'condition of the rental',
+            'rental property condition',
+            'property overall condition',
+            // Carport
+            'carport',
+            'is there a carport',
+            'does it have a carport',
+            // Association amenities
+            'association amenities',
+            'community association offer',
+            // Lease renewal option
+            'renewal option available',
+            'is lease renewal an option',
+            'extension option for the lease',
+            // Rental restrictions
+            'rental restrictions on this property',
+            'property rental restriction',
+            // Subletting policy (listing field — distinct from FAQ subletting answer)
+            'subletting policy',
+            'subletting rules',
+            // Parking terms
+            'parking terms for this rental',
+            'parking included in rent',
+            // Buyer loan / pre-approval status
+            'buyer pre-approved for a loan',
+            'has the buyer been pre-approved',
+            'loan pre-approval status',
+            'is the buyer pre-approved',
+            // Inspection / contingency criteria
+            'inspection period',
+            'buyer inspection contingency days',
+            'inspection contingency',
+            'home inspection contingency',
+            'appraisal contingency',
+            'does the buyer need the property to appraise',
+            'financing contingency',
+            'mortgage contingency',
+            // Smoking policy (listing field — distinct from FAQ answer)
+            'does this unit allow smoking',
+            'is this a smoke-free unit',
+            'smoke-free unit',
+            // Buy-it-now price variants
+            'buy it now price',
+            'buy-it-now price',
+            'fixed buy-now price',
+            // Pet policy / rules
+            'pet rules',
+            'pet-friendly property',
+            'is this pet-friendly',
+            // Pet deposit / fee
+            'pet fee amount',
+            'monthly pet rent',
+            // Lease terms (existing / inherited)
+            'existing lease terms on this property',
+            'current tenant lease on this property',
+            // Lease length variants
+            'what lease lengths are available',
+            'lease length options',
+            // Tenant pet details
+            'tenant pet details',
+            'tenant pet type and size',
+            // Tenant preferred lease duration
+            'tenant preferred lease duration',
+            // Lease terms (existing inherited)
+            'is there a tenant currently leasing',
+            'inherited lease terms',
+            // Inspection / contingency — sentence variants that lack the core keyword phrase
+            'how many days for inspection',
+            'is there a home inspection contingency',
+            'does the buyer have a financing contingency',
+            // Rental restrictions — secondary phrase
+            'property rental restriction rules',
         ],
 
         'compatibility_signals' => [

@@ -355,7 +355,13 @@ class AskAiContextBuilderService
                                              $infoGet,
                                              'other_bathrooms'
                                          ),
-                'square_feet'          => $infoGet('minimum_heated_square'),
+                // square_feet: forms may save under 'minimum_heated_square' (wizard path),
+                // 'heated_square_footage' (full-service offer), or 'heated_square' (legacy).
+                // Live-DB audit (June 2026) confirmed 'minimum_heated_square' is populated
+                // for agent auctions; the two fallbacks cover offer-listing and legacy rows.
+                'square_feet'          => $infoGet('minimum_heated_square')
+                                              ?? $infoGet('heated_square_footage')
+                                              ?? $infoGet('heated_square'),
                 'year_built'           => $infoGet('year_built'),
                 'pool'                 => $infoGet('pool_needed'),
                 'pool_type'            => $this->decodeJsonField($infoGet('pool_type')),
@@ -419,7 +425,11 @@ class AskAiContextBuilderService
                                                      $infoGet,
                                                      'other_bathrooms'
                                                  ),
-                'square_feet'                  => $infoGet('minimum_heated_square'),
+                // square_feet: same cascade as seller — 'minimum_heated_square' (wizard),
+                // 'heated_square_footage' (offer form), 'heated_square' (legacy).
+                'square_feet'                  => $infoGet('minimum_heated_square')
+                                                      ?? $infoGet('heated_square_footage')
+                                                      ?? $infoGet('heated_square'),
                 'pool'                         => $infoGet('pool_needed'),
                 'carport'                      => $this->resolveOtherValue(
                                                      $infoGet('carport_needed'),
@@ -445,7 +455,13 @@ class AskAiContextBuilderService
                 'pets_breed'                   => $infoGet('breed_of_pets'),
                 'pets_weight'                  => $infoGet('weight_of_pets'),
                 'loan_pre_approved'            => $infoGet('pre_approved'),
-                'financing_type'               => $this->decodeJsonField($infoGet('offered_financing')),
+                // financing_type: the form saves buyer financing selections under 'financing_type'
+                // (JSON multiselect). Legacy/agent-wizard rows may use 'offered_financing'.
+                // Live-DB audit (June 2026) confirmed 'offered_financing' is always null for
+                // buyer agent auction listings — the correct key is 'financing_type'.
+                'financing_type'               => $this->decodeJsonField(
+                                                      $infoGet('financing_type') ?? $infoGet('offered_financing')
+                                                  ),
                 'inspection_period'            => $infoGet('inspection_period_days'),
                 'closing_date'                 => $infoGet('target_closing_date'),
                 'inspection_contingency_buyer' => $infoGet('inspection_contingency_buyer'),
@@ -474,7 +490,11 @@ class AskAiContextBuilderService
                                                   $infoGet,
                                                   'other_bathrooms'
                                               ),
-                'square_feet'               => $infoGet('minimum_heated_square'),
+                // square_feet: same cascade as seller/buyer — 'minimum_heated_square' (wizard),
+                // 'heated_square_footage' (offer form), 'heated_square' (legacy).
+                'square_feet'               => $infoGet('minimum_heated_square')
+                                                  ?? $infoGet('heated_square_footage')
+                                                  ?? $infoGet('heated_square'),
                 'unit_size'                 => $infoGet('unit_size'),
                 'number_of_units'           => $infoGet('number_of_unit'),
                 'property_zip'              => $infoGet('property_zip'),
@@ -638,7 +658,16 @@ class AskAiContextBuilderService
         $decoded = json_decode($value, true);
 
         if (is_array($decoded)) {
-            $items = array_filter(array_map('strval', $decoded), static fn ($v) => $v !== '');
+            // Strip the literal token "Other" (case-insensitive) from multi-select
+            // JSON arrays.  When "Other" appears as an element alongside real values it
+            // means the user selected a custom-entry option but the custom text itself is
+            // stored in a sibling meta key (handled by resolveOtherValue for single-select
+            // fields).  For multi-select arrays the literal "Other" token is never
+            // meaningful to the AI and must be removed to avoid the "Other leak" pattern.
+            $items = array_filter(
+                array_map('strval', $decoded),
+                static fn ($v) => $v !== '' && strtolower(trim($v)) !== 'other'
+            );
             return !empty($items) ? implode(', ', array_values($items)) : null;
         }
 
