@@ -1163,6 +1163,75 @@
     </div>
 
 @endif
+
+<!-- Waterfront -->
+<div class="form-group">
+    <label class="fw-bold">Waterfront:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Indicate whether the property has waterfront access (e.g., directly on a lake, river, canal, or ocean).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <select wire:model="waterfront" id="waterfront" class="form-control has-icon"
+            data-icon="fa-solid fa-water">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+    </div>
+</div>
+
+<!-- Water Access -->
+<div class="form-group">
+    <label class="fw-bold">Water Access:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Select the type(s) of water access associated with the property.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover has-select-icon" wire:ignore>
+        <select id="water_access" class="form-control has-icon select2-multiple"
+            data-icon="fa-solid fa-water" data-placeholder="Select" multiple>
+            @foreach (['Bay/Harbor', 'Bayou', 'Beach', 'Canal - Freshwater', 'Canal - Saltwater', 'Creek', 'Gulf/Ocean', 'Intracoastal Waterway', 'Lake', 'Pond', 'River', 'Other'] as $opt)
+                <option value="{{ $opt }}" {{ is_array($water_access) && in_array($opt, $water_access) ? 'selected' : '' }}>{{ $opt }}</option>
+            @endforeach
+        </select>
+    </div>
+</div>
+
+<!-- Water View -->
+<div class="form-group">
+    <label class="fw-bold">Water View:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Select the water view type(s) visible from the property.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover has-select-icon" wire:ignore>
+        <select id="water_view" class="form-control has-icon select2-multiple"
+            data-icon="fa-solid fa-binoculars" data-placeholder="Select" multiple>
+            @foreach (['Bay/Harbor - Full', 'Bay/Harbor - Partial', 'Canal', 'Creek/Stream', 'Gulf/Ocean - Full', 'Gulf/Ocean - Partial', 'Intracoastal Waterway', 'Lake', 'Pond', 'River', 'Other'] as $opt)
+                <option value="{{ $opt }}" {{ is_array($water_view) && in_array($opt, $water_view) ? 'selected' : '' }}>{{ $opt }}</option>
+            @endforeach
+        </select>
+    </div>
+</div>
+
+<!-- Interior Features -->
+<div class="form-group">
+    <label class="fw-bold">Interior Features:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Select the interior features present in the property.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover has-select-icon" wire:ignore>
+        <select id="interior_features" class="form-control has-icon select2-multiple"
+            data-icon="fa-solid fa-house" data-placeholder="Select" multiple>
+            @foreach (['Ceiling Fans(s)', 'Crown Molding', 'Eat-in Kitchen', 'Fireplace', 'High Ceilings', 'Kitchen/Family Room Combo', 'Living Room/Dining Room Combo', 'Open Floorplan', 'Primary Bedroom Main Floor', 'Skylight(s)', 'Split Bedroom', 'Stone Counters', 'Granite Counters', 'Quartz Counters', 'Tray Ceiling(s)', 'Vaulted Ceiling(s)', 'Walk-In Closet(s)', 'Wet Bar', 'Window Treatments', 'Other'] as $opt)
+                <option value="{{ $opt }}" {{ is_array($interior_features) && in_array($opt, $interior_features) ? 'selected' : '' }}>{{ $opt }}</option>
+            @endforeach
+        </select>
+    </div>
+</div>
+
 <!-- Pool Needed -->
 @if ($property_type === 'Residential' or $property_type === 'Income')
     <div class="form-group">

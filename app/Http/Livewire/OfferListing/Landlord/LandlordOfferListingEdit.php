@@ -630,6 +630,11 @@ class LandlordOfferListingEdit extends Component
     public $flood_zone_code_other = '';
     public $flood_insurance_required = '';
     public $flood_zone_panel = '';
+    public $flood_zone_date = '';
+    public $waterfront = '';
+    public $water_access = [];
+    public $water_view = [];
+    public $interior_features = [];
     public $has_cdd = '';
     public $annual_cdd_fee = '';
     public $has_special_assessments = '';
@@ -1998,6 +2003,11 @@ class LandlordOfferListingEdit extends Component
             'flood_zone_code_other'           => $this->flood_zone_code_other,
             'flood_insurance_required'        => $this->flood_insurance_required,
             'flood_zone_panel'                => $this->flood_zone_panel,
+            'flood_zone_date'                 => $this->flood_zone_date,
+            'waterfront'                      => $this->waterfront,
+            'water_access'                    => json_encode($this->water_access),
+            'water_view'                      => json_encode($this->water_view),
+            'interior_features'               => json_encode($this->interior_features),
             'has_cdd'                         => $this->has_cdd,
             'annual_cdd_fee'                  => $this->stripCommas($this->annual_cdd_fee),
             'has_special_assessments'         => $this->has_special_assessments,
@@ -2695,6 +2705,11 @@ class LandlordOfferListingEdit extends Component
             $this->flood_zone_code_other = $auction->get->flood_zone_code_other ?? '';
             $this->flood_insurance_required = $auction->get->flood_insurance_required ?? '';
             $this->flood_zone_panel = $auction->get->flood_zone_panel ?? '';
+            $this->flood_zone_date = $auction->get->flood_zone_date ?? '';
+            $this->waterfront = $auction->get->waterfront ?? '';
+            $this->water_access = is_string($auction->get->water_access) ? json_decode($auction->get->water_access, true) ?? [] : (array)($auction->get->water_access ?? []);
+            $this->water_view = is_string($auction->get->water_view) ? json_decode($auction->get->water_view, true) ?? [] : (array)($auction->get->water_view ?? []);
+            $this->interior_features = is_string($auction->get->interior_features) ? json_decode($auction->get->interior_features, true) ?? [] : (array)($auction->get->interior_features ?? []);
             $this->has_cdd = $auction->get->has_cdd ?? '';
             $this->annual_cdd_fee = $auction->get->annual_cdd_fee ?? '';
             $this->has_special_assessments = $auction->get->has_special_assessments ?? '';
@@ -3409,6 +3424,11 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('flood_zone_code_other', $this->flood_zone_code_other);
         $auction->saveMeta('flood_insurance_required', $this->flood_insurance_required);
         $auction->saveMeta('flood_zone_panel', $this->flood_zone_panel);
+        $auction->saveMeta('flood_zone_date', $this->flood_zone_date);
+        $auction->saveMeta('waterfront', $this->waterfront);
+        $auction->saveMeta('water_access', json_encode($this->water_access));
+        $auction->saveMeta('water_view', json_encode($this->water_view));
+        $auction->saveMeta('interior_features', json_encode($this->interior_features));
         $auction->saveMeta('has_cdd', $this->has_cdd);
         $auction->saveMeta('annual_cdd_fee', $this->stripCommas($this->annual_cdd_fee));
         $auction->saveMeta('has_special_assessments', $this->has_special_assessments);

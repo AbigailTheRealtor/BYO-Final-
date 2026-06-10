@@ -74,6 +74,7 @@ class MlsFieldMap
             'legal_description' => 'legal_description',
             'flood_zone_code' => 'flood_zone_code',
             'flood_zone_panel' => 'flood_zone_panel',
+            'flood_zone_date'  => 'flood_zone_date',
             'flood_insurance_required' => 'flood_insurance_required',
             'additional_parcels'  => 'additional_parcels',
             'total_parcel_count'  => 'total_parcel_count',
@@ -88,6 +89,12 @@ class MlsFieldMap
             'association_fee_frequency' => 'association_fee_frequency',
             'has_cdd'                 => 'has_cdd',
             'annual_cdd_fee'          => 'annual_cdd_fee',
+            // ── Waterfront ────────────────────────────────────────────────────
+            'waterfront'        => 'waterfront',
+            'water_access'      => '*water_access',
+            'water_view'        => '*water_view',
+            // ── Interior ─────────────────────────────────────────────────────
+            'interior_features' => '*interior_features',
             // NOTE: 'mls_number' intentionally omitted — property does not exist
             //       on SellerOfferListing (see Rejected Mapping Candidates).
         ];
@@ -169,6 +176,7 @@ class MlsFieldMap
             'legal_description' => 'legal_description',
             'flood_zone_code' => 'flood_zone_code',
             'flood_zone_panel' => 'flood_zone_panel',
+            'flood_zone_date'  => 'flood_zone_date',
             'flood_insurance_required' => 'flood_insurance_required',
             'additional_parcels'  => 'additional_parcels',
             'total_parcel_count'  => 'total_parcel_count',
@@ -183,6 +191,12 @@ class MlsFieldMap
             'association_fee_frequency' => 'association_fee_frequency',
             'has_cdd'                 => 'has_cdd',
             'annual_cdd_fee'          => 'annual_cdd_fee',
+            // ── Waterfront ────────────────────────────────────────────────────
+            'waterfront'        => 'waterfront',
+            'water_access'      => '*water_access',
+            'water_view'        => '*water_view',
+            // ── Interior ─────────────────────────────────────────────────────
+            'interior_features' => '*interior_features',
             // NOTE: 'application_fee' intentionally omitted — property does not exist
             //       on LandlordOfferListing (see Rejected Mapping Candidates).
             // NOTE: 'mls_number' intentionally omitted — property does not exist

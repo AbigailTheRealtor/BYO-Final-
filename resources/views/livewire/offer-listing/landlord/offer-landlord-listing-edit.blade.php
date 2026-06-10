@@ -1512,6 +1512,9 @@ $tenantPays = [
                 { id: 'space_type',           field: 'space_type',           placeholder: 'Select' },
                 { id: 'space_classification', field: 'space_classification', placeholder: 'Select' },
                 { id: 'garage_parking_spaces_option_landlord', field: 'garage_parking_spaces_option', placeholder: 'Select', otherId: 'other_garage_parking_spaces_option_landlord' },
+                { id: 'water_access',      field: 'water_access',      placeholder: 'Select' },
+                { id: 'water_view',        field: 'water_view',         placeholder: 'Select' },
+                { id: 'interior_features', field: 'interior_features',  placeholder: 'Select' },
             ];
             function initMlsEditMultiSelects() {
                 _mlsEditCfgs.forEach(function(cfg) {

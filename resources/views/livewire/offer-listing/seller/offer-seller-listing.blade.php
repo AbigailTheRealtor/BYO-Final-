@@ -1247,6 +1247,9 @@
             fences:                 ['#fences'],
             vegetation:             ['#vegetation'],
             easements:              ['#easements'],
+            water_access:           ['#water_access'],
+            water_view:             ['#water_view'],
+            interior_features:      ['#interior_features'],
         };
 
         function syncAllSelect2BeforeSave() {
@@ -1422,6 +1425,9 @@
                 { id: 'fences', placeholder: 'Select' },
                 { id: 'vegetation', placeholder: 'Select' },
                 { id: 'easements', placeholder: 'Select' },
+                { id: 'water_access', placeholder: 'Select' },
+                { id: 'water_view', placeholder: 'Select' },
+                { id: 'interior_features', placeholder: 'Select' },
             ];
             _mlsFields.forEach(function(field) {
                 var selectors = _mlsFieldSelectors[field.id] || ['#' + field.id];

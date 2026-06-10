@@ -207,6 +207,21 @@
             </div>
         </div>
 
+        {{-- Flood Zone Date --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">Flood Zone Determination Date:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Enter the effective date of the flood zone determination or FEMA map, if known.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <input type="text" wire:model="flood_zone_date" class="form-control has-icon"
+                    data-icon="fa-solid fa-calendar-days"
+                    placeholder="Enter flood zone determination date (e.g., 2019-01-15)">
+            </div>
+        </div>
+
     </div>
 </div>
 
