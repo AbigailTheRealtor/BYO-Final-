@@ -986,7 +986,7 @@
         <div class="col-md-3">
             <label class="form-label fw-semibold">Number of Occupants</label>
             <input type="number" name="num_occupants" class="form-control" min="1" max="99"
-                placeholder="e.g., 2"
+                placeholder="Enter number of occupants (e.g., 2)"
                 value="{{ old('num_occupants', $formData->get('num_occupants')) }}">
         </div>
         <div class="col-md-3">
@@ -1005,7 +1005,7 @@
             @rental-pets-changed.window="show = ($event.detail.val === 'Yes' || $event.detail.val === 'Negotiable')">
             <label class="form-label fw-semibold">Pet Details <span class="text-muted small">(type, breed, weight)</span></label>
             <input type="text" name="pet_details" class="form-control"
-                placeholder="e.g., 1 cat, domestic shorthair, 10 lbs"
+                placeholder="Enter pet details (e.g., One cat, Doesn't shed, 10 lbs)"
                 x-show="show"
                 value="{{ old('pet_details', $formData->get('pet_details')) }}">
             <span x-show="!show" class="text-muted small">—</span>
@@ -1023,32 +1023,32 @@
             <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
                 <input type="text" inputmode="numeric" name="monthly_income" class="form-control" data-money-input="true"
-                    placeholder="e.g., 6,000"
+                    placeholder="Enter estimated monthly net income (e.g., 6,000)"
                     value="{{ $fmtMoney(old('monthly_income', $formData->get('monthly_income'))) }}">
             </div>
         </div>
         <div class="col-md-3">
             <label class="form-label fw-semibold">Credit Score Range</label>
             <input type="text" name="credit_score_range" class="form-control"
-                placeholder="e.g., 720–750"
+                placeholder="Enter your credit score range (e.g., 720–750)"
                 value="{{ old('credit_score_range', $formData->get('credit_score_range')) }}">
         </div>
     </div>
     <div class="mb-3">
         <label class="form-label fw-semibold">About Yourself / Notes for Landlord <span class="text-muted small">(optional)</span></label>
         <textarea name="screening_notes" class="form-control" rows="3"
-            placeholder="Introduce yourself, mention employment, rental history, or anything relevant">{{ old('screening_notes', $formData->get('screening_notes')) }}</textarea>
+            placeholder="Enter a brief introduction about yourself (e.g., employed 3+ years, excellent rental history)">{{ old('screening_notes', $formData->get('screening_notes')) }}</textarea>
     </div>
 
-    {{-- ── Section: Lease Offer Terms ── --}}
-    <h6 class="offer-section-header">Lease Offer Terms</h6>
+    {{-- ── Section: Rental Application & Lease Terms ── --}}
+    <h6 class="offer-section-header">Rental Application &amp; Lease Terms</h6>
     <div class="row g-3 mb-3">
         <div class="col-md-4">
             <label class="form-label fw-semibold">Proposed Monthly Rent ($)</label>
             <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
                 <input type="text" inputmode="numeric" name="monthly_rent" class="form-control" data-money-input="true"
-                    placeholder="e.g., 2,200"
+                    placeholder="Enter your proposed monthly rent (e.g., 2,200)"
                     value="{{ $fmtMoney(old('monthly_rent', $formData->get('monthly_rent'))) }}">
             </div>
         </div>
@@ -1057,14 +1057,14 @@
             <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
                 <input type="text" inputmode="numeric" name="security_deposit" class="form-control" data-money-input="true"
-                    placeholder="e.g., 2,200"
+                    placeholder="Enter your proposed security deposit (e.g., 2,200)"
                     value="{{ $fmtMoney(old('security_deposit', $formData->get('security_deposit'))) }}">
             </div>
         </div>
         <div class="col-md-4">
             <label class="form-label fw-semibold">Proposed Lease Length (Months)</label>
             <input type="number" name="lease_term_months" class="form-control" min="1" max="360"
-                placeholder="e.g., 12"
+                placeholder="Enter lease length in months (e.g., 12)"
                 value="{{ old('lease_term_months', $formData->get('lease_term_months')) }}">
         </div>
         <div class="col-md-4">
@@ -1088,14 +1088,14 @@
             <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
                 <input type="text" inputmode="numeric" name="move_in_funds" class="form-control" data-money-input="true"
-                    placeholder="e.g., 6,600"
+                    placeholder="Enter total move-in funds available (e.g., 6,600)"
                     value="{{ $fmtMoney(old('move_in_funds', $formData->get('move_in_funds'))) }}">
             </div>
         </div>
         <div class="col-md-4">
             <label class="form-label fw-semibold">Utilities Responsibility</label>
             <input type="text" name="utilities_terms" class="form-control"
-                placeholder="e.g., Tenant pays electric and gas; landlord pays water"
+                placeholder="Enter utilities arrangement (e.g., Tenant pays electric and gas; landlord pays water)"
                 value="{{ old('utilities_terms', $formData->get('utilities_terms')) }}">
         </div>
         <div class="col-md-4">
@@ -1110,19 +1110,21 @@
         <div class="col-md-6">
             <label class="form-label fw-semibold">Parking Terms <span class="text-muted small">(optional)</span></label>
             <input type="text" name="parking_terms" class="form-control"
-                placeholder="e.g., 1 covered parking spot included"
+                placeholder="Enter parking terms (e.g., 1 covered spot included)"
                 value="{{ old('parking_terms', $formData->get('parking_terms')) }}">
         </div>
     </div>
+    {{-- ── Section: Additional Terms ── --}}
+    <h6 class="offer-section-header">Additional Terms</h6>
     <div class="mb-3">
         <label class="form-label fw-semibold">Additional Lease Terms / Requests <span class="text-muted small">(optional)</span></label>
         <textarea name="additional_lease_terms" class="form-control" rows="3"
-            placeholder="e.g., Request to install EV charger, desire for month-to-month after initial term">{{ old('additional_lease_terms', $formData->get('additional_lease_terms')) }}</textarea>
+            placeholder="Enter any additional terms or requests (e.g., Request to install EV charger, Month-to-month option after initial term)">{{ old('additional_lease_terms', $formData->get('additional_lease_terms')) }}</textarea>
     </div>
     <div class="mb-3">
         <label class="form-label fw-semibold">Message to Landlord <span class="text-muted small">(optional)</span></label>
         <textarea name="message_to_landlord" class="form-control" rows="3"
-            placeholder="Anything else you'd like the landlord to know about you or your application">{{ old('message_to_landlord', $formData->get('message_to_landlord')) }}</textarea>
+            placeholder="Enter any additional message for the landlord (e.g., Available for a showing any weekday evening)">{{ old('message_to_landlord', $formData->get('message_to_landlord')) }}</textarea>
     </div>
     @endif
 
@@ -1136,9 +1138,9 @@
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <label class="form-label fw-semibold">
-                Offer Expires At
+                Response Requested By
                 <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="The deadline by which the seller must respond to this offer. After this date the offer will be considered withdrawn.">
+                    title="The date by which the landlord should respond to this application. After this date the offer will be considered withdrawn.">
                     <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
                 </span>
             </label>

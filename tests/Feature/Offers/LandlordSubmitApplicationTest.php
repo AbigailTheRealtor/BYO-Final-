@@ -162,8 +162,8 @@ class LandlordSubmitApplicationTest extends TestCase
 
         $this->assertStringContainsString('Pre-Screening Information', $body,
             'Offer show must render the Pre-Screening Information section for rental.');
-        $this->assertStringContainsString('Lease Offer Terms', $body,
-            'Offer show must render the Lease Offer Terms section for rental.');
+        $this->assertStringContainsString('Rental Application &amp; Lease Terms', $body,
+            'Offer show must render the Rental Application & Lease Terms section for rental.');
         $this->assertStringNotContainsString('Financing Type', $body,
             'Offer show must NOT render the sale Financing Type field for rental.');
     }
