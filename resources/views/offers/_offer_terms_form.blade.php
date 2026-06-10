@@ -1003,13 +1003,39 @@
         <div class="col-md-6"
             x-data="{ show: {{ in_array(old('has_pets', $formData->get('has_pets')), ['Yes','Negotiable']) ? 'true' : 'false' }} }"
             @rental-pets-changed.window="show = ($event.detail.val === 'Yes' || $event.detail.val === 'Negotiable')">
-            <label class="form-label fw-semibold">Pet Details <span class="text-muted small">(type, breed, weight)</span></label>
+            <label class="form-label fw-semibold" x-show="show">Pet Details</label>
             <input type="text" name="pet_details" class="form-control"
-                placeholder="Enter pet details (e.g., One cat, Doesn't shed, 10 lbs)"
+                placeholder="Enter pet details (e.g., One dog, House-trained, 35 lbs)"
                 x-show="show"
                 value="{{ old('pet_details', $formData->get('pet_details')) }}">
             <span x-show="!show" class="text-muted small">—</span>
         </div>
+    </div>
+    {{-- ── Screening Concerns ── --}}
+    <div class="row g-3 mb-3"
+        x-data="{ showConcerns: '{{ old('screening_concerns', $formData->get('screening_concerns')) }}' === 'Yes' }"
+        @change="showConcerns = ($el.querySelector('[name=screening_concerns]') ? $el.querySelector('[name=screening_concerns]').value === 'Yes' : showConcerns)">
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Screening Concerns That May Affect Rental Approval</label>
+            <select name="screening_concerns" class="form-select"
+                x-data x-model="$el.value"
+                @change="$dispatch('rental-concerns-changed', {val: $el.value})">
+                <option value="">Select</option>
+                <option value="Yes" {{ old('screening_concerns', $formData->get('screening_concerns')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                <option value="No" {{ old('screening_concerns', $formData->get('screening_concerns')) === 'No' ? 'selected' : '' }}>No</option>
+            </select>
+        </div>
+        <div class="col-md-8"
+            x-data="{ show: {{ old('screening_concerns', $formData->get('screening_concerns')) === 'Yes' ? 'true' : 'false' }} }"
+            @rental-concerns-changed.window="show = ($event.detail.val === 'Yes')">
+            <label class="form-label fw-semibold" x-show="show">Screening Concern Details</label>
+            <textarea name="screening_concerns_details" class="form-control" rows="3"
+                x-show="show"
+                placeholder="Enter screening concerns (e.g., Low credit, Prior eviction, Background check issues)">{{ old('screening_concerns_details', $formData->get('screening_concerns_details')) }}</textarea>
+        </div>
+    </div>{{-- end screening concerns row --}}
+
+    <div class="row g-3 mb-3">
         <div class="col-md-3">
             <label class="form-label fw-semibold">Smoking</label>
             <select name="smoking_preference" class="form-select">
@@ -1019,7 +1045,7 @@
             </select>
         </div>
         <div class="col-md-3">
-            <label class="form-label fw-semibold">Est. Monthly Net Income ($)</label>
+            <label class="form-label fw-semibold">Est. Monthly Net Income</label>
             <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
                 <input type="text" inputmode="numeric" name="monthly_income" class="form-control" data-money-input="true"
@@ -1035,7 +1061,7 @@
         </div>
     </div>
     <div class="mb-3">
-        <label class="form-label fw-semibold">About Yourself / Notes for Landlord <span class="text-muted small">(optional)</span></label>
+        <label class="form-label fw-semibold">About Yourself <span class="text-muted small">(optional)</span></label>
         <textarea name="screening_notes" class="form-control" rows="3"
             placeholder="Enter a brief introduction about yourself (e.g., employed 3+ years, excellent rental history)">{{ old('screening_notes', $formData->get('screening_notes')) }}</textarea>
     </div>
@@ -1044,7 +1070,7 @@
     <h6 class="offer-section-header">Rental Application &amp; Lease Terms</h6>
     <div class="row g-3 mb-3">
         <div class="col-md-4">
-            <label class="form-label fw-semibold">Proposed Monthly Rent ($)</label>
+            <label class="form-label fw-semibold">Proposed Monthly Rent</label>
             <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
                 <input type="text" inputmode="numeric" name="monthly_rent" class="form-control" data-money-input="true"
@@ -1053,7 +1079,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <label class="form-label fw-semibold">Proposed Security Deposit ($)</label>
+            <label class="form-label fw-semibold">Proposed Security Deposit</label>
             <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
                 <input type="text" inputmode="numeric" name="security_deposit" class="form-control" data-money-input="true"
@@ -1084,7 +1110,7 @@
             </select>
         </div>
         <div class="col-md-4">
-            <label class="form-label fw-semibold">Total Move-in Funds Available ($)</label>
+            <label class="form-label fw-semibold">Total Move-in Funds Available</label>
             <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
                 <input type="text" inputmode="numeric" name="move_in_funds" class="form-control" data-money-input="true"
@@ -1122,7 +1148,7 @@
             placeholder="Enter any additional terms or requests (e.g., Request to install EV charger, Month-to-month option after initial term)">{{ old('additional_lease_terms', $formData->get('additional_lease_terms')) }}</textarea>
     </div>
     <div class="mb-3">
-        <label class="form-label fw-semibold">Message to Landlord <span class="text-muted small">(optional)</span></label>
+        <label class="form-label fw-semibold">Additional Message to Landlord <span class="text-muted small">(optional)</span></label>
         <textarea name="message_to_landlord" class="form-control" rows="3"
             placeholder="Enter any additional message for the landlord (e.g., Available for a showing any weekday evening)">{{ old('message_to_landlord', $formData->get('message_to_landlord')) }}</textarea>
     </div>

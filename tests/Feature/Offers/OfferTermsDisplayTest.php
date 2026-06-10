@@ -861,4 +861,149 @@ class OfferTermsDisplayTest extends TestCase
         $response->assertDontSee('Offer Expires At');
         $response->assertSee('September 1, 2026');
     }
+
+    // ── Test 33: Rental display — "About Yourself" label renders ─────────────
+
+    public function test_rental_display_shows_about_yourself_label(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('rental', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('screening_notes', 'Stable employment for 5 years, great rental history.');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('About Yourself');
+        $response->assertSee('Stable employment for 5 years, great rental history.');
+        $response->assertDontSee('Notes for Landlord');
+    }
+
+    // ── Test 34: Rental display — "Additional Message to Landlord" label ──────
+
+    public function test_rental_display_shows_additional_message_to_landlord_label(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('rental', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('message_to_landlord', 'Available for a showing any weekday evening.');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('Additional Message to Landlord');
+        $response->assertSee('Available for a showing any weekday evening.');
+    }
+
+    // ── Test 35: Rental display — Screening Concerns "No" renders ────────────
+
+    public function test_rental_display_shows_screening_concerns_no(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('rental', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('screening_concerns', 'No');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('Screening Concerns');
+        $response->assertSee('No');
+        $response->assertDontSee('Screening Concern Details');
+    }
+
+    // ── Test 36: Rental display — Screening Concerns "Yes" renders with details
+
+    public function test_rental_display_shows_screening_concerns_yes_with_details(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('rental', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('screening_concerns', 'Yes');
+        $offer->saveMeta('screening_concerns_details', 'Low credit from 2022 medical bills, fully resolved.');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('Screening Concerns');
+        $response->assertSee('Yes');
+        $response->assertSee('Screening Concern Details');
+        $response->assertSee('Low credit from 2022 medical bills, fully resolved.');
+    }
+
+    // ── Test 37: Rental display — details not shown when concerns = No ────────
+
+    public function test_rental_display_hides_details_row_when_concerns_no(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('rental', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('screening_concerns', 'No');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertDontSee('Screening Concern Details');
+    }
+
+    // ── Test 37: Rental display — Pet Details value renders when Pets = Yes ───
+
+    public function test_rental_display_shows_pet_details_when_pets_yes(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('rental', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('has_pets', 'Yes');
+        $offer->saveMeta('pet_details', 'One lab mix, 60 lbs, house-trained');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('Pet Details');
+        $response->assertSee('One lab mix, 60 lbs, house-trained');
+    }
+
+    // ── Test 38: Rental display — "Message to Landlord" label must not appear ─
+
+    public function test_rental_display_does_not_use_old_message_to_landlord_label(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('rental', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('message_to_landlord', 'Looking forward to hearing from you.');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('Additional Message to Landlord');
+        // The old label must not appear as a standalone label (the meta key name contains
+        // the substring so we assert the display label text specifically)
+        $body = $response->getContent();
+        $this->assertStringNotContainsString('<dt class="col-sm-3">Message to Landlord</dt>', $body,
+            'The old "Message to Landlord" label must not appear in the display view');
+    }
+
+    // ── Test 39: Rental display — Screening Concern Details hidden when concerns = Yes but empty ─
+
+    public function test_rental_display_hides_details_when_concerns_yes_but_details_empty(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('rental', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('screening_concerns', 'Yes');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('Screening Concerns');
+        $response->assertDontSee('Screening Concern Details');
+    }
 }

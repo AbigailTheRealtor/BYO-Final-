@@ -407,6 +407,8 @@ class OfferController extends Controller
             'monthly_income'                       => 'nullable|numeric|min:0',
             'credit_score_range'                   => 'nullable|string|max:50',
             'screening_notes'                      => 'nullable|string|max:2000',
+            'screening_concerns'                   => 'nullable|in:Yes,No',
+            'screening_concerns_details'           => 'nullable|string|max:2000',
             'message_to_landlord'                  => 'nullable|string|max:2000',
             // Rental/Lease — offer terms
             'monthly_rent'                         => 'nullable|numeric|min:0',
@@ -502,7 +504,8 @@ class OfferController extends Controller
             'home_warranty_requested', 'home_warranty_details',
             // Rental/Lease — pre-screening
             'num_occupants', 'has_pets', 'pet_details', 'smoking_preference',
-            'monthly_income', 'credit_score_range', 'screening_notes', 'message_to_landlord',
+            'monthly_income', 'credit_score_range', 'screening_notes',
+            'screening_concerns', 'screening_concerns_details', 'message_to_landlord',
             // Rental/Lease — offer terms
             'monthly_rent', 'lease_term_months', 'security_deposit',
             'last_month_rent_offered', 'move_in_funds', 'move_in_date',
@@ -576,7 +579,8 @@ class OfferController extends Controller
             'home_warranty_requested', 'home_warranty_details',
             // Rental/Lease — pre-screening
             'num_occupants', 'has_pets', 'pet_details', 'smoking_preference',
-            'monthly_income', 'credit_score_range', 'screening_notes', 'message_to_landlord',
+            'monthly_income', 'credit_score_range', 'screening_notes',
+            'screening_concerns', 'screening_concerns_details', 'message_to_landlord',
             // Rental/Lease — offer terms
             'monthly_rent', 'lease_term_months', 'security_deposit',
             'last_month_rent_offered', 'move_in_funds', 'move_in_date',
@@ -816,6 +820,8 @@ class OfferController extends Controller
                 'monthly_income'             => 'nullable|numeric|min:0',
                 'credit_score_range'         => 'nullable|string|max:50',
                 'screening_notes'            => 'nullable|string|max:2000',
+                'screening_concerns'         => 'nullable|in:Yes,No',
+                'screening_concerns_details' => 'nullable|string|max:2000',
                 'message_to_landlord'        => 'nullable|string|max:2000',
                 // Lease offer terms
                 'monthly_rent'               => 'nullable|numeric|min:0',
@@ -956,6 +962,8 @@ class OfferController extends Controller
             $offer->saveMeta('monthly_income',             $validated['monthly_income'] ?? null);
             $offer->saveMeta('credit_score_range',         $validated['credit_score_range'] ?? null);
             $offer->saveMeta('screening_notes',            $validated['screening_notes'] ?? null);
+            $offer->saveMeta('screening_concerns',         $validated['screening_concerns'] ?? null);
+            $offer->saveMeta('screening_concerns_details', $validated['screening_concerns_details'] ?? null);
             $offer->saveMeta('message_to_landlord',        $validated['message_to_landlord'] ?? null);
             // Lease offer terms
             $offer->saveMeta('monthly_rent',               $validated['monthly_rent'] ?? null);

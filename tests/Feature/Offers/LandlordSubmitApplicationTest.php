@@ -431,6 +431,316 @@ class LandlordSubmitApplicationTest extends TestCase
         $this->assertEquals('2400', $child->getMeta('monthly_rent'));
     }
 
+    // ── UX polish: no ($) suffixes on money labels ────────────────────────────
+
+    public function test_rental_form_has_no_dollar_suffix_on_money_labels(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+
+        $body = $this->actingAsTenant()
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200)
+            ->getContent();
+
+        $this->assertStringNotContainsString('Monthly Net Income ($)', $body, 'Est. Monthly Net Income label must not include ($)');
+        $this->assertStringNotContainsString('Monthly Rent ($)', $body, 'Proposed Monthly Rent label must not include ($)');
+        $this->assertStringNotContainsString('Security Deposit ($)', $body, 'Proposed Security Deposit label must not include ($)');
+        $this->assertStringNotContainsString('Move-in Funds Available ($)', $body, 'Total Move-in Funds Available label must not include ($)');
+    }
+
+    // ── UX polish: updated label wording ─────────────────────────────────────
+
+    public function test_rental_form_uses_updated_label_wording(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+
+        $body = $this->actingAsTenant()
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200)
+            ->getContent();
+
+        $this->assertStringContainsString('About Yourself', $body, 'Label must be "About Yourself"');
+        $this->assertStringNotContainsString('Notes for Landlord', $body, 'Old label "Notes for Landlord" must not appear');
+        $this->assertStringContainsString('Additional Message to Landlord', $body, 'Label must be "Additional Message to Landlord"');
+    }
+
+    // ── UX polish: Pet Details label hidden when Pets = No ───────────────────
+
+    public function test_rental_form_pet_details_label_uses_x_show_attribute(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('has_pets', 'No');
+
+        $body = $this->actingAsTenant()
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200)
+            ->getContent();
+
+        // The label must carry x-show so AlpineJS hides it when Pets = No
+        $this->assertMatchesRegularExpression(
+            '/x-show[^>]*>Pet Details</',
+            $body,
+            'Pet Details label must have x-show attribute so it is hidden when Pets = No'
+        );
+    }
+
+    // ── UX polish: Pet Details label shown when Pets = Yes ───────────────────
+
+    public function test_rental_form_pet_details_label_visible_initial_state_when_pets_yes(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('has_pets', 'Yes');
+
+        $body = $this->actingAsTenant()
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200)
+            ->getContent();
+
+        // When Pets = Yes the x-data show state must initialise as true
+        $this->assertStringContainsString('show: true', $body,
+            'Pet Details x-data must initialise show=true when has_pets=Yes');
+    }
+
+    // ── UX polish: Pet Details label shown when Pets = Negotiable ────────────
+
+    public function test_rental_form_pet_details_visible_when_pets_negotiable(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('has_pets', 'Negotiable');
+
+        $body = $this->actingAsTenant()
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200)
+            ->getContent();
+
+        $this->assertStringContainsString('show: true', $body,
+            'Pet Details x-data must initialise show=true when has_pets=Negotiable');
+    }
+
+    // ── UX polish: Pet Details label NOT shown when Pets = No ────────────────
+
+    public function test_rental_form_pet_details_hidden_initial_state_when_pets_no(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('has_pets', 'No');
+
+        $body = $this->actingAsTenant()
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200)
+            ->getContent();
+
+        $this->assertStringContainsString('show: false', $body,
+            'Pet Details x-data must initialise show=false when has_pets=No');
+    }
+
+    // ── UX polish: Pet Details label has no (type, breed, weight) text ────────
+
+    public function test_rental_form_pet_details_label_has_no_type_breed_weight(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+
+        $body = $this->actingAsTenant()
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200)
+            ->getContent();
+
+        $this->assertStringNotContainsString('type, breed, weight', $body,
+            'Pet Details label must not contain "(type, breed, weight)"');
+    }
+
+    // ── Screening Concerns: field present in form ─────────────────────────────
+
+    public function test_screening_concerns_field_present_in_rental_form(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+
+        $body = $this->actingAsTenant()
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200)
+            ->getContent();
+
+        $this->assertStringContainsString('Screening Concerns That May Affect Rental Approval', $body,
+            'Screening Concerns field must appear in the rental form');
+        $this->assertStringContainsString('name="screening_concerns"', $body,
+            'screening_concerns input must be present in the rental form');
+    }
+
+    // ── Screening Concerns: details hidden when = No ─────────────────────────
+
+    public function test_screening_concerns_details_initialised_hidden_when_concerns_no(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('screening_concerns', 'No');
+
+        $body = $this->actingAsTenant()
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200)
+            ->getContent();
+
+        // x-data show initialised to false when concerns = No
+        $this->assertStringContainsString('show: false', $body,
+            'Screening Concern Details x-data show must be false when screening_concerns=No');
+    }
+
+    // ── Screening Concerns: details shown when = Yes ──────────────────────────
+
+    public function test_screening_concerns_details_initialised_visible_when_concerns_yes(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+        $offer->saveMeta('screening_concerns', 'Yes');
+
+        $body = $this->actingAsTenant()
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200)
+            ->getContent();
+
+        $this->assertStringContainsString('show: true', $body,
+            'Screening Concern Details x-data show must be true when screening_concerns=Yes');
+    }
+
+    // ── Screening Concerns: persist No ────────────────────────────────────────
+
+    public function test_save_terms_persists_screening_concerns_no(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+
+        $this->actingAsTenant()
+            ->post(route('offers.terms', $offer), [
+                '_offer_terms_present'  => '1',
+                'screening_concerns'    => 'No',
+            ])
+            ->assertRedirect(route('offers.show', $offer));
+
+        $offer->load('metas');
+        $this->assertEquals('No', $offer->getMeta('screening_concerns'));
+        $this->assertNull($offer->getMeta('screening_concerns_details'));
+    }
+
+    // ── Screening Concerns: persist Yes with details ──────────────────────────
+
+    public function test_save_terms_persists_screening_concerns_yes_with_details(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+
+        $this->actingAsTenant()
+            ->post(route('offers.terms', $offer), [
+                '_offer_terms_present'        => '1',
+                'screening_concerns'          => 'Yes',
+                'screening_concerns_details'  => 'Low credit score from 2022 medical bills, now resolved.',
+            ])
+            ->assertRedirect(route('offers.show', $offer));
+
+        $offer->load('metas');
+        $this->assertEquals('Yes', $offer->getMeta('screening_concerns'));
+        $this->assertEquals('Low credit score from 2022 medical bills, now resolved.', $offer->getMeta('screening_concerns_details'));
+    }
+
+    // ── Updated placeholder text ──────────────────────────────────────────────
+
+    public function test_rental_form_has_updated_pet_details_placeholder(): void
+    {
+        $offerAuction = $this->getLinkedOfferAuction();
+        $offer = Offer::create([
+            'user_id'          => $this->tenant->id,
+            'offer_auction_id' => $offerAuction->id,
+            'role'             => 'landlord',
+            'status'           => 'draft',
+        ]);
+        $offer->saveMeta('offer_type', 'rental');
+
+        $body = $this->actingAsTenant()
+            ->get(route('offers.show', $offer))
+            ->assertStatus(200)
+            ->getContent();
+
+        $this->assertStringContainsString('One dog, House-trained, 35 lbs', $body,
+            'Pet details placeholder must contain updated example text');
+    }
+
     // ── tenant withdraw ───────────────────────────────────────────────────────
 
     public function test_tenant_can_withdraw_submitted_application(): void

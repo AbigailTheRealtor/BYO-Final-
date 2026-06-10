@@ -365,7 +365,8 @@
 @if(in_array($offerType, ['rental', 'lease']))
 <dl class="row">
     @if($metas->get('num_occupants') || $metas->get('has_pets') || $metas->get('pet_details') || $metas->get('smoking_preference') ||
-        $metas->get('monthly_income') || $metas->get('credit_score_range') || $metas->get('screening_notes'))
+        $metas->get('monthly_income') || $metas->get('credit_score_range') || $metas->get('screening_notes') ||
+        $metas->get('screening_concerns') || $metas->get('screening_concerns_details'))
     <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Pre-Screening Information</dt>
     @if($metas->get('num_occupants')) <dt class="col-sm-3">Occupants</dt><dd class="col-sm-9">{{ $metas->get('num_occupants') }}</dd> @endif
     @if($metas->get('has_pets')) <dt class="col-sm-3">Pets</dt><dd class="col-sm-9">{{ $metas->get('has_pets') }}</dd> @endif
@@ -374,6 +375,8 @@
     @if($metas->get('monthly_income')) <dt class="col-sm-3">Est. Monthly Income</dt><dd class="col-sm-9">${{ number_format($metas->get('monthly_income')) }}</dd> @endif
     @if($metas->get('credit_score_range')) <dt class="col-sm-3">Credit Score Range</dt><dd class="col-sm-9">{{ $metas->get('credit_score_range') }}</dd> @endif
     @if($metas->get('screening_notes')) <dt class="col-sm-3">About Yourself</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('screening_notes') }}</dd> @endif
+    @if($metas->get('screening_concerns')) <dt class="col-sm-3">Screening Concerns</dt><dd class="col-sm-9">{{ $metas->get('screening_concerns') }}</dd> @endif
+    @if($metas->get('screening_concerns') === 'Yes' && $metas->get('screening_concerns_details')) <dt class="col-sm-3">Screening Concern Details</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('screening_concerns_details') }}</dd> @endif
     @endif
 
     <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Rental Application &amp; Lease Terms</dt>
@@ -394,7 +397,7 @@
     @if($metas->get('additional_lease_terms') || $metas->get('message_to_landlord'))
     <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Additional Terms</dt>
     @if($metas->get('additional_lease_terms')) <dt class="col-sm-3">Additional Terms</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('additional_lease_terms') }}</dd> @endif
-    @if($metas->get('message_to_landlord')) <dt class="col-sm-3">Message to Landlord</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('message_to_landlord') }}</dd> @endif
+    @if($metas->get('message_to_landlord')) <dt class="col-sm-3">Additional Message to Landlord</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('message_to_landlord') }}</dd> @endif
     @endif
 
     <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Application Timing</dt>
