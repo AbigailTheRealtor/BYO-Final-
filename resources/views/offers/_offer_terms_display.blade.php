@@ -198,7 +198,7 @@
     <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('possession_notes') }}</dd>
     @endif
 
-    <dt class="col-sm-3">Offer Expires At</dt>
+    <dt class="col-sm-3">Response Requested By</dt>
     <dd class="col-sm-9">{{ $safeDate($metas->get('expires_at')) }}</dd>
 </dl>
 @endif

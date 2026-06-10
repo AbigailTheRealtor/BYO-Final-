@@ -842,4 +842,23 @@ class OfferTermsDisplayTest extends TestCase
         $response->assertSee('0%');
         $response->assertSee('TBD');
     }
+
+    // ── Test 32: expires_at label is "Response Requested By", not "Offer Expires At" ──
+
+    public function test_expires_at_label_is_response_requested_by(): void
+    {
+        ['offer' => $offer, 'owner' => $owner] = $this->makeOfferWithAuction('sale', 'submitted');
+        $this->allowPlayoffAccess($owner);
+
+        $offer->saveMeta('offer_type', 'sale');
+        $offer->saveMeta('offer_price', '300000');
+        $offer->saveMeta('expires_at', '2026-09-01');
+
+        $response = $this->actingAs($owner)->get(route('offers.show', $offer));
+
+        $response->assertStatus(200);
+        $response->assertSee('Response Requested By');
+        $response->assertDontSee('Offer Expires At');
+        $response->assertSee('September 1, 2026');
+    }
 }
