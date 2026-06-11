@@ -637,6 +637,133 @@ class OfferPermissionServiceTest extends TestCase
         }
     }
 
+    // ── Multi-round counter chain (A → B → C) ─────────────────────────────
+
+    /**
+     * Build a 3-node persisted chain:
+     *   A = root offer (status 'countered'),  submitted by $buyer
+     *   B = first counter (status 'countered'), created by $seller (listing owner)
+     *   C = second counter (status 'countered'), created by $buyer
+     *
+     * Returns [$offerA, $offerB, $offerC, $buyerId, $sellerId].
+     */
+    private function threeNodeChain(): array
+    {
+        $buyer  = User::factory()->create(['user_type' => 'buyer']);
+        $seller = User::factory()->create(['user_type' => 'seller']);
+        $auction = OfferAuction::factory()->create(['user_id' => $seller->id]);
+
+        $offerA = Offer::factory()->create([
+            'offer_auction_id' => $auction->id,
+            'user_id'          => $buyer->id,
+            'status'           => 'countered',
+            'parent_offer_id'  => null,
+        ]);
+
+        $offerB = Offer::factory()->create([
+            'offer_auction_id' => $auction->id,
+            'user_id'          => $seller->id,
+            'status'           => 'countered',
+            'parent_offer_id'  => $offerA->id,
+        ]);
+
+        $offerC = Offer::factory()->create([
+            'offer_auction_id' => $auction->id,
+            'user_id'          => $buyer->id,
+            'status'           => 'countered',
+            'parent_offer_id'  => $offerB->id,
+        ]);
+
+        return [$offerA, $offerB, $offerC, $buyer->id, $seller->id];
+    }
+
+    // The recipient of C (seller = listing owner) can accept.
+    public function test_multi_round_recipient_of_leaf_can_accept(): void
+    {
+        [, , $offerC, , $sellerId] = $this->threeNodeChain();
+
+        $result = $this->service->canAccept($offerC, $sellerId, 'seller');
+
+        $this->assertTrue($result['allowed'], 'Recipient of the leaf counter must be able to accept.');
+        $this->assertSame('', $result['reason']);
+    }
+
+    // The recipient of C (seller = listing owner) can reject.
+    public function test_multi_round_recipient_of_leaf_can_reject(): void
+    {
+        [, , $offerC, , $sellerId] = $this->threeNodeChain();
+
+        $result = $this->service->canReject($offerC, $sellerId, 'seller');
+
+        $this->assertTrue($result['allowed'], 'Recipient of the leaf counter must be able to reject.');
+        $this->assertSame('', $result['reason']);
+    }
+
+    // The recipient of C (seller = listing owner) can counter.
+    public function test_multi_round_recipient_of_leaf_can_counter(): void
+    {
+        [, , $offerC, , $sellerId] = $this->threeNodeChain();
+
+        $result = $this->service->canCounter($offerC, $sellerId, 'seller');
+
+        $this->assertTrue($result['allowed'], 'Recipient of the leaf counter must be able to counter.');
+        $this->assertSame('', $result['reason']);
+    }
+
+    // The sender of C (buyer) is blocked from acting on C (must wait).
+    public function test_multi_round_sender_of_leaf_is_blocked(): void
+    {
+        [, , $offerC, $buyerId] = $this->threeNodeChain();
+
+        $accept  = $this->service->canAccept($offerC,  $buyerId, 'buyer');
+        $reject  = $this->service->canReject($offerC,  $buyerId, 'buyer');
+        $counter = $this->service->canCounter($offerC, $buyerId, 'buyer');
+
+        $this->assertFalse($accept['allowed'],  'Sender of leaf C must not be able to accept.');
+        $this->assertFalse($reject['allowed'],  'Sender of leaf C must not be able to reject.');
+        $this->assertFalse($counter['allowed'], 'Sender of leaf C must not be able to counter.');
+
+        $this->assertStringContainsString('wait', $accept['reason']);
+        $this->assertStringContainsString('wait', $reject['reason']);
+        $this->assertStringContainsString('wait', $counter['reason']);
+    }
+
+    // Stale-parent guard fires on A: it has non-final child B.
+    public function test_multi_round_stale_parent_a_is_blocked(): void
+    {
+        [$offerA, , , $buyerId, $sellerId] = $this->threeNodeChain();
+
+        foreach ([$buyerId, $sellerId] as $actorId) {
+            $role = $actorId === $buyerId ? 'buyer' : 'seller';
+            $this->assertFalse(
+                $this->service->canAccept($offerA, $actorId, $role)['allowed'],
+                "Stale parent A must block accept for role '{$role}'."
+            );
+            $this->assertFalse(
+                $this->service->canReject($offerA, $actorId, $role)['allowed'],
+                "Stale parent A must block reject for role '{$role}'."
+            );
+            $this->assertFalse(
+                $this->service->canCounter($offerA, $actorId, $role)['allowed'],
+                "Stale parent A must block counter for role '{$role}'."
+            );
+        }
+    }
+
+    // Stale-parent guard fires on B: it has non-final child C.
+    public function test_multi_round_stale_parent_b_is_blocked(): void
+    {
+        [, $offerB, , $buyerId, $sellerId] = $this->threeNodeChain();
+
+        foreach ([$buyerId, $sellerId] as $actorId) {
+            $role = $actorId === $buyerId ? 'buyer' : 'seller';
+            $this->assertFalse(
+                $this->service->canAccept($offerB, $actorId, $role)['allowed'],
+                "Stale parent B must block accept for role '{$role}'."
+            );
+        }
+    }
+
     // ── Static no-write scan ───────────────────────────────────────────────
 
     public function test_service_file_contains_no_write_or_forbidden_references(): void

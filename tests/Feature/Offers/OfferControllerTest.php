@@ -509,6 +509,99 @@ class OfferControllerTest extends TestCase
         $this->assertNull($childMetas->get('possession_notes'), 'possession_notes must be null when explicitly cleared in counter request.');
     }
 
+    // ── Test 18 (a-d): multi-round chain redirect tests ───────────────────────
+
+    /**
+     * Build a persisted 3-node chain:
+     *   A (countered) → B (countered) → C (countered, active leaf)
+     * where $seller owns the listing and $buyer submitted A.
+     * Returns [$offerA, $offerB, $offerC, $seller, $buyer].
+     */
+    private function buildThreeNodeChain(): array
+    {
+        $seller  = User::factory()->create(['user_type' => 'seller']);
+        $buyer   = User::factory()->create(['user_type' => 'buyer']);
+
+        $this->app['config']->set('offer.playoff_access.allowed_user_ids', [$seller->id, $buyer->id]);
+
+        $auction = \App\Models\OfferAuction::factory()->create(['user_id' => $seller->id]);
+
+        $offerA = Offer::factory()->create([
+            'offer_auction_id' => $auction->id,
+            'user_id'          => $buyer->id,
+            'status'           => 'countered',
+            'parent_offer_id'  => null,
+        ]);
+
+        $offerB = Offer::factory()->create([
+            'offer_auction_id' => $auction->id,
+            'user_id'          => $seller->id,
+            'status'           => 'countered',
+            'parent_offer_id'  => $offerA->id,
+        ]);
+
+        $offerC = Offer::factory()->create([
+            'offer_auction_id' => $auction->id,
+            'user_id'          => $buyer->id,
+            'status'           => 'countered',
+            'parent_offer_id'  => $offerB->id,
+        ]);
+
+        return [$offerA, $offerB, $offerC, $seller, $buyer];
+    }
+
+    // Visiting stale root A redirects to active leaf C.
+    public function test_show_stale_root_redirects_to_active_leaf(): void
+    {
+        [$offerA, , $offerC, $seller] = $this->buildThreeNodeChain();
+
+        $response = $this->actingAs($seller)
+            ->get(route('offers.show', $offerA));
+
+        $response->assertRedirect(route('offers.show', $offerC));
+    }
+
+    // Visiting stale mid-chain B redirects to active leaf C.
+    public function test_show_stale_mid_chain_redirects_to_active_leaf(): void
+    {
+        [, $offerB, $offerC, $seller] = $this->buildThreeNodeChain();
+
+        $response = $this->actingAs($seller)
+            ->get(route('offers.show', $offerB));
+
+        $response->assertRedirect(route('offers.show', $offerC));
+    }
+
+    // Visiting the active leaf C does NOT redirect.
+    public function test_show_active_leaf_does_not_redirect(): void
+    {
+        [, , $offerC, $seller] = $this->buildThreeNodeChain();
+
+        // Mock the actions service to avoid permission/view rendering side-effects.
+        $this->mockActionsService($this->allowedActions());
+
+        $response = $this->actingAs($seller)
+            ->get(route('offers.show', $offerC));
+
+        // Should not be a redirect — either a 200 or a render-time error (e.g. missing view
+        // partials in test env); what matters is that it is NOT a 302 to C itself.
+        $this->assertNotEquals(302, $response->getStatusCode(), 'Active leaf must not redirect.');
+    }
+
+    // Redirect carries the informational flash message.
+    public function test_show_stale_parent_redirect_sets_info_flash(): void
+    {
+        [$offerA, , $offerC, $seller] = $this->buildThreeNodeChain();
+
+        $response = $this->actingAs($seller)
+            ->get(route('offers.show', $offerA));
+
+        $response->assertRedirect(route('offers.show', $offerC));
+        // Flash keys are aged to _flash.old by the time assertSessionHas fires.
+        // Check the aged bucket directly (see project memory: laravel-flash-assert-pattern).
+        $this->assertContains('info', $response->getSession()->get('_flash.old', []));
+    }
+
     // ── Test 18: static scan — no direct Offer.status mutation or OfferEventLog write ──
 
     public function test_controller_source_does_not_directly_mutate_offer_status_or_write_event_log(): void

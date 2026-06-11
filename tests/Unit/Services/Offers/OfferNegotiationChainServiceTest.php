@@ -130,4 +130,79 @@ class OfferNegotiationChainServiceTest extends TestCase
         $this->assertStringNotContainsString('->delete(', $source);
         $this->assertStringNotContainsString('->insert(', $source);
     }
+
+    // ── getActiveLeaf ──────────────────────────────────────────────────────
+
+    // Case 9: single root with no children is its own active leaf.
+    public function test_get_active_leaf_returns_root_when_no_children(): void
+    {
+        $root = Offer::factory()->create(['parent_offer_id' => null, 'status' => 'submitted']);
+
+        $leaf = $this->service->getActiveLeaf($root);
+
+        $this->assertSame($root->id, $leaf->id);
+    }
+
+    // Case 10: root with one non-final child — leaf is the child.
+    public function test_get_active_leaf_returns_non_final_child(): void
+    {
+        $root  = Offer::factory()->create(['parent_offer_id' => null, 'status' => 'countered']);
+        $child = Offer::factory()->create(['parent_offer_id' => $root->id, 'status' => 'countered']);
+
+        $leaf = $this->service->getActiveLeaf($root);
+
+        $this->assertSame($child->id, $leaf->id);
+    }
+
+    // Case 11: 3-node chain A → B → C; active leaf is C regardless of which node is passed.
+    public function test_get_active_leaf_traverses_three_node_chain(): void
+    {
+        $a = Offer::factory()->create(['parent_offer_id' => null,  'status' => 'countered', 'created_at' => now()->subSeconds(20)]);
+        $b = Offer::factory()->create(['parent_offer_id' => $a->id, 'status' => 'countered', 'created_at' => now()->subSeconds(10)]);
+        $c = Offer::factory()->create(['parent_offer_id' => $b->id, 'status' => 'countered', 'created_at' => now()]);
+
+        // Starting from root A
+        $this->assertSame($c->id, $this->service->getActiveLeaf($a)->id, 'Leaf from root A must be C.');
+        // Starting from mid-chain B
+        $this->assertSame($c->id, $this->service->getActiveLeaf($b)->id, 'Leaf from B must also be C.');
+        // Starting from leaf C itself — should return C unchanged
+        $this->assertSame($c->id, $this->service->getActiveLeaf($c)->id, 'Leaf from C must be C itself.');
+    }
+
+    // Case 12: final child is skipped; root is the active leaf when the only child is final.
+    public function test_get_active_leaf_skips_final_children(): void
+    {
+        $root  = Offer::factory()->create(['parent_offer_id' => null,   'status' => 'countered']);
+        // Final child should NOT be descended into.
+        Offer::factory()->create(['parent_offer_id' => $root->id, 'status' => 'accepted']);
+
+        $leaf = $this->service->getActiveLeaf($root);
+
+        $this->assertSame($root->id, $leaf->id, 'Root must be the active leaf when its only child is final.');
+    }
+
+    // Case 13: when multiple non-final children exist (data anomaly), most recent is chosen.
+    public function test_get_active_leaf_picks_most_recent_when_multiple_non_final_children(): void
+    {
+        $root   = Offer::factory()->create(['parent_offer_id' => null, 'status' => 'countered', 'created_at' => now()->subSeconds(30)]);
+        $older  = Offer::factory()->create(['parent_offer_id' => $root->id, 'status' => 'countered', 'created_at' => now()->subSeconds(10)]);
+        $newer  = Offer::factory()->create(['parent_offer_id' => $root->id, 'status' => 'countered', 'created_at' => now()]);
+
+        $leaf = $this->service->getActiveLeaf($root);
+
+        $this->assertSame($newer->id, $leaf->id, 'Most recent non-final child must be chosen as the active leaf.');
+    }
+
+    // Case 14: getActiveLeaf called from mid-chain correctly finds the deepest leaf.
+    public function test_get_active_leaf_called_from_middle_of_chain_finds_deepest_leaf(): void
+    {
+        $root  = Offer::factory()->create(['parent_offer_id' => null,   'status' => 'countered', 'created_at' => now()->subSeconds(30)]);
+        $mid   = Offer::factory()->create(['parent_offer_id' => $root->id, 'status' => 'countered', 'created_at' => now()->subSeconds(15)]);
+        $deep  = Offer::factory()->create(['parent_offer_id' => $mid->id,  'status' => 'countered', 'created_at' => now()->subSeconds(5)]);
+        $leaf  = Offer::factory()->create(['parent_offer_id' => $deep->id, 'status' => 'countered', 'created_at' => now()]);
+
+        $result = $this->service->getActiveLeaf($mid);
+
+        $this->assertSame($leaf->id, $result->id, 'Starting from mid-chain must still reach the deepest leaf.');
+    }
 }

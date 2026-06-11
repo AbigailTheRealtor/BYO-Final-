@@ -9,6 +9,7 @@ use App\Notifications\Offers\OfferRejectedNotification;
 use App\Notifications\Offers\OfferSubmittedNotification;
 use App\Notifications\Offers\OfferWithdrawnNotification;
 use App\Services\Offers\OfferAvailableActionsService;
+use App\Services\Offers\OfferNegotiationChainService;
 use App\Services\Offers\OfferPermissionService;
 use App\Services\Offers\OfferTimelineBuilder;
 use App\Services\Offers\OfferWorkflowFacade;
@@ -26,6 +27,7 @@ class OfferController extends Controller
         private readonly OfferAvailableActionsService $actionsService,
         private readonly OfferTimelineBuilder $timelineBuilder,
         private readonly OfferPermissionService $permissionService,
+        private readonly OfferNegotiationChainService $chainService,
     ) {}
 
     public function store(Request $request): JsonResponse|RedirectResponse
@@ -986,6 +988,15 @@ class OfferController extends Controller
 
         if (!$this->permissionService->canView($offer, $actorId, $actorRole)) {
             abort(403, 'You are not authorised to view this offer.');
+        }
+
+        // Redirect stale parents to the active leaf so both parties always
+        // land on the offer they can actually act on.
+        $activeLeaf = $this->chainService->getActiveLeaf($offer);
+        if ($activeLeaf->id !== $offer->id) {
+            return redirect()
+                ->route('offers.show', $activeLeaf)
+                ->with('info', 'You have been redirected to the latest counter offer in this negotiation.');
         }
 
         $timeline  = $this->timelineBuilder->buildForOffer($offer);

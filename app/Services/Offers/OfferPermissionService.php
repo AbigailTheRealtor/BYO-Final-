@@ -84,7 +84,7 @@ class OfferPermissionService
         // Guard: only the active leaf of the negotiation chain can be acted upon.
         // If this offer already has a non-final child, it is a stale parent.
         if ($offer->childOffers()->whereNotIn('status', OfferStateMachineService::FINAL_STATUSES)->exists()) {
-            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot counter: a counter offer is already pending; act on the counter offer instead.'];
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot counter: this offer has been superseded by a newer counter offer. You will be redirected to the active offer.'];
         }
 
         // Only 'system' bypasses party membership. All other actors (including agents) must be
@@ -122,7 +122,7 @@ class OfferPermissionService
 
         // Guard: only the active leaf of the negotiation chain can be acted upon.
         if ($offer->childOffers()->whereNotIn('status', OfferStateMachineService::FINAL_STATUSES)->exists()) {
-            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot accept: a counter offer is already pending; act on the counter offer instead.'];
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot accept: this offer has been superseded by a newer counter offer. You will be redirected to the active offer.'];
         }
 
         // Only 'system' bypasses party membership. All other actors (including agents) must be
@@ -160,7 +160,7 @@ class OfferPermissionService
 
         // Guard: only the active leaf of the negotiation chain can be acted upon.
         if ($offer->childOffers()->whereNotIn('status', OfferStateMachineService::FINAL_STATUSES)->exists()) {
-            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot reject: a counter offer is already pending; act on the counter offer instead.'];
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot reject: this offer has been superseded by a newer counter offer. You will be redirected to the active offer.'];
         }
 
         // Only 'system' bypasses party membership. All other actors (including agents) must be
