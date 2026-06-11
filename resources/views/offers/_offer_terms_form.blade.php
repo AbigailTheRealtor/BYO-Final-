@@ -981,8 +981,8 @@
     {{-- Rental/Lease-specific fields --}}
     @if(in_array($offerType, ['rental', 'lease']))
     @if($mode !== 'counter_terms')
-    {{-- ── Section: Pre-Screening Information ── --}}
-    <h6 class="offer-section-header">Pre-Screening Information</h6>
+    {{-- ── Section: Tenant Details ── --}}
+    <h6 class="offer-section-header">Tenant Details</h6>
     <div class="row g-3 mb-3">
         <div class="col-md-3">
             <label class="form-label fw-semibold">Number of Occupants</label>
@@ -1062,7 +1062,7 @@
         </div>
     </div>
     <div class="mb-3">
-        <label class="form-label fw-semibold">About Yourself <span class="text-muted small">(optional)</span></label>
+        <label class="form-label fw-semibold">About Yourself</label>
         <textarea name="screening_notes" class="form-control" rows="3"
             placeholder="Enter a brief introduction about yourself (e.g., Employed 3+ years, Excellent rental history)">{{ old('screening_notes', $formData->get('screening_notes')) }}</textarea>
     </div>
@@ -1112,17 +1112,17 @@
             </select>
         </div>
     </div>
-    {{-- ── Section: Additional Terms ── --}}
-    <h6 class="offer-section-header">Additional Terms</h6>
+    @endif
+
+    {{-- ── Section 6: Additional Terms & Response Deadline ── --}}
+    <h6 class="offer-section-header">Additional Terms &amp; Response Deadline</h6>
+    @if(in_array($offerType, ['rental', 'lease']))
     <div class="mb-3">
         <label class="form-label fw-semibold">Additional Terms &amp; Requests</label>
         <textarea name="additional_lease_terms" class="form-control" rows="3"
             placeholder="Enter any additional requests, conditions, accommodations, or notes for the landlord.">{{ old('additional_lease_terms', $formData->get('additional_lease_terms')) }}</textarea>
     </div>
     @endif
-
-    {{-- ── Section 6: Additional Terms & Response Deadline ── --}}
-    <h6 class="offer-section-header">Additional Terms &amp; Response Deadline</h6>
     @if($offerType === 'sale')
     <div class="mb-3">
         <label class="form-label fw-semibold">Custom Terms / Special Conditions</label>
@@ -1155,7 +1155,11 @@
                 id="save-and-submit-offer-btn"
                 class="btn btn-success px-4"
                 onclick="return confirm('This will save your terms and submit the offer. Continue?')">
-            Save &amp; Submit Offer
+            @if(in_array($offerType ?? '', ['rental', 'lease']))
+                Submit Rental Offer
+            @else
+                Save &amp; Submit Offer
+            @endif
         </button>
         @endif
     </div>

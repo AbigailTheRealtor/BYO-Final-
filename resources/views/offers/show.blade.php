@@ -145,7 +145,6 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Offer ID</th>
-                                    <th>Parent Offer ID</th>
                                     <th>Status</th>
                                     <th>Created At</th>
                                     <th>Submitted At</th>
@@ -158,7 +157,6 @@
                                 @forelse($timeline as $item)
                                 <tr @if($item['offer_id'] === $offer->id) class="table-active" @endif>
                                     <td>{{ $item['offer_id'] }}</td>
-                                    <td>{{ $item['parent_offer_id'] ?? '—' }}</td>
                                     <td>
                                         @php $tColor = $statusColors[$item['status']] ?? 'secondary'; @endphp
                                         <span class="badge bg-{{ $tColor }} text-capitalize">{{ $item['status'] }}</span>
@@ -171,7 +169,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted">No timeline data available.</td>
+                                    <td colspan="7" class="text-center text-muted">No timeline data available.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
