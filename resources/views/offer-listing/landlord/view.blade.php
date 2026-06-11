@@ -593,8 +593,8 @@
                             @csrf
                             <input type="hidden" name="offer_auction_id" value="{{ optional($offerAuction)->id }}">
                             <input type="hidden" name="role" value="landlord">
-                            <button type="submit" class="btn btn-primary" aria-label="Submit an application for this rental">
-                                <i class="fa-solid fa-file-signature me-1"></i>Submit Application
+                            <button type="submit" class="btn btn-primary" aria-label="Submit a rental offer for this property">
+                                <i class="fa-solid fa-file-signature me-1"></i>Submit Rental Offer
                             </button>
                         </form>
                         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
@@ -631,18 +631,18 @@
         <div class="lol-interaction-hub-label"><i class="fa-solid fa-bolt me-1"></i>Quick Actions &amp; Listing Info</div>
         <div class="lol-interaction-grid">
 
-            {{-- 1. Submit Application --}}
+            {{-- 1. Submit Rental Offer --}}
             <div class="lol-interaction-card">
                 <div class="lol-interaction-card-icon"><i class="fa-solid fa-file-signature"></i></div>
-                <div class="lol-interaction-card-label">Submit Application</div>
-                <div class="lol-interaction-card-helper">Review rental terms and submit your application.</div>
+                <div class="lol-interaction-card-label">Submit Rental Offer</div>
+                <div class="lol-interaction-card-helper">Review rental terms and submit your rental offer.</div>
                 <form method="POST" action="{{ route('offers.store') }}">
                     @csrf
                     <input type="hidden" name="offer_auction_id" value="{{ optional($offerAuction)->id }}">
                     <input type="hidden" name="role" value="landlord">
                     <button type="submit" class="lol-interaction-cta lol-interaction-cta-primary"
-                            aria-label="Submit an application for this rental">
-                        <i class="fa-solid fa-file-signature"></i>Submit Application
+                            aria-label="Submit a rental offer for this property">
+                        <i class="fa-solid fa-file-signature"></i>Submit Rental Offer
                     </button>
                 </form>
             </div>
@@ -1477,8 +1477,8 @@
                 @csrf
                 <input type="hidden" name="offer_auction_id" value="{{ optional($offerAuction)->id }}">
                 <input type="hidden" name="role" value="landlord">
-                <button type="submit" class="lol-action-btn lol-action-primary">
-                    <i class="fa-solid fa-file-signature"></i>Submit Application
+                <button type="submit" class="lol-action-btn lol-action-primary" aria-label="Submit a rental offer for this property">
+                    <i class="fa-solid fa-file-signature"></i>Submit Rental Offer
                 </button>
             </form>
             <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolQuestionModal">
