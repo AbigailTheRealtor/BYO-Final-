@@ -2549,7 +2549,7 @@
                     <div id="solAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
                         <span class="text-muted fst-italic" style="font-size:.875rem;" id="solAiExampleText"></span>
                     </div>
-                    @php $__solAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('seller', $askAiChipContext ?? []); @endphp
+                    @php $__solAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('seller', $askAiChipContext ?? [], auth()->check()); @endphp
                     @if(!empty($__solAiSuggestions))
                     <div id="solAiSuggestions"
                          aria-label="Suggested questions for this listing"
@@ -2563,6 +2563,7 @@
                                     role="button"
                                     class="ask-ai-chip"
                                     data-question="{{ $__sq['question'] }}"
+                                    data-category="{{ $__sq['category'] }}"
                                     aria-label="{{ $__sq['question'] }}"
                                     title="{{ $__sq['question'] }}">
                                 <span class="text-muted me-2" style="font-size:.7rem;"><i class="fa-solid {{ $__sq['category_icon'] }} me-1" aria-hidden="true"></i>{{ $__sq['category_label'] }}</span>{{ $__sqLabel }}

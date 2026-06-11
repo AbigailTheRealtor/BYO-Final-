@@ -842,4 +842,504 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
             }
         }
     }
+
+    // =========================================================================
+    // Registry-driven chip tests (Phase 4 rev 2)
+    // =========================================================================
+
+    /**
+     * (a) Every chip returned by forListing() must carry a `category` field
+     *     whose value is one of the six approved category strings.
+     */
+    public function test_every_chip_has_category_field_from_registry(): void
+    {
+        $approvedCategories = ['Property', 'Financial', 'Match', 'Lifestyle', 'Marketing', 'Education'];
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $results = $this->service->forListing($type);
+            $this->assertNotEmpty($results, "$type must return at least one chip");
+            foreach ($results as $i => $item) {
+                $this->assertArrayHasKey(
+                    'category',
+                    $item,
+                    "[$type][$i] chip is missing the 'category' field"
+                );
+                $this->assertContains(
+                    $item['category'],
+                    $approvedCategories,
+                    "[$type][$i] category '{$item['category']}' is not one of the six approved categories"
+                );
+            }
+        }
+    }
+
+    /**
+     * (b) A requires_data=true chip must be suppressed when its source_path
+     *     is absent from the context (empty listing + empty faq_answers).
+     */
+    public function test_requires_data_chip_suppressed_when_data_absent(): void
+    {
+        $emptyContext = ['listing' => [], 'faq_answers' => []];
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $results = $this->service->forListing($type, $emptyContext);
+            $factsChips = array_filter($results, fn($c) => $c['question_type'] === 'listing_facts');
+            $this->assertCount(
+                0,
+                $factsChips,
+                "$type: listing_facts (requires_data=true) chips must be absent when context is empty"
+            );
+        }
+    }
+
+    /**
+     * (c) requires_data=false chips must appear when listing_facts chips are suppressed
+     *     by a non-empty context that contains no matching field data.
+     *
+     * When context is provided but empty (listing={}, faq_answers={}), every
+     * requires_data=true chip is suppressed, leaving only static chips. This
+     * verifies that static chips (requires_data=false) are never themselves
+     * filtered by context — they fill the output when data-aware chips are absent.
+     *
+     * Note: with no context at all (empty []), all pool entries (including
+     * listing_facts) are eligible. Roles with 5+ listing_facts entries will fill
+     * all 5 slots with listing_facts chips, which is correct and intentional.
+     */
+    public function test_static_chips_surface_when_listing_facts_suppressed_by_context(): void
+    {
+        // A non-empty but data-free context: triggers filterByContext, suppresses
+        // all requires_data=true chips, leaving only requires_data=false static chips.
+        $emptyDataContext = ['listing' => [], 'faq_answers' => []];
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $results     = $this->service->forListing($type, $emptyDataContext);
+            $staticChips = array_filter(
+                $results,
+                fn($c) => $c['question_type'] !== 'listing_facts'
+            );
+            $this->assertGreaterThanOrEqual(
+                1,
+                count($staticChips),
+                "$type: at least one non-listing_facts (requires_data=false) chip must appear when data context is empty"
+            );
+        }
+    }
+
+    /**
+     * (d) Chips with public_allowed=false must be hidden when $isAuthenticated is false.
+     *     The registry marks marketing_angles and certain missing_data/buyer_tenant_match
+     *     chips as not public — none should appear in guest results.
+     */
+    public function test_public_not_allowed_chips_hidden_for_unauthenticated_viewers(): void
+    {
+        $guestHiddenTypes = ['marketing_angles', 'buyer_tenant_match'];
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $guestResults = $this->service->forListing($type, [], false);
+            foreach ($guestResults as $i => $item) {
+                $this->assertNotContains(
+                    $item['question_type'],
+                    $guestHiddenTypes,
+                    "[$type][$i] question_type '{$item['question_type']}' must not appear for unauthenticated viewers"
+                );
+            }
+        }
+    }
+
+    /**
+     * (d-extension) Authenticated viewers must see public_allowed=false chips that
+     *               guest viewers cannot see — i.e. the auth chip set is a strict
+     *               superset of the guest chip set for roles that have public_allowed=false
+     *               entries ranked within the top-5 priority slots.
+     *
+     * We use buyer and tenant — roles where all static chips are public_allowed=false
+     * (buyer_tenant_match, missing_data) and they rank above educational in priority,
+     * so they are visible to authenticated users but stripped for guests.
+     * An empty-data context suppresses listing_facts chips to open up those slots.
+     */
+    public function test_public_not_allowed_chips_visible_for_authenticated_viewers(): void
+    {
+        $emptyDataContext = ['listing' => [], 'faq_answers' => []];
+
+        // buyer and tenant have public_allowed=false chips that rank highly enough
+        // (buyer_tenant_match = priority 3, missing_data = priority 5) to appear
+        // within the 5-chip cap when listing_facts are absent.
+        foreach (['buyer', 'tenant'] as $type) {
+            $authQuestions  = array_column($this->service->forListing($type, $emptyDataContext, true),  'question');
+            $guestQuestions = array_column($this->service->forListing($type, $emptyDataContext, false), 'question');
+
+            $authOnly = array_diff($authQuestions, $guestQuestions);
+            $this->assertNotEmpty(
+                $authOnly,
+                "$type: authenticated viewer must see at least one chip that is hidden from guests (public_allowed=false)"
+            );
+        }
+    }
+
+    /**
+     * (e) All four roles must return at least one chip when given a rich context
+     *     that populates their primary listing fields.
+     */
+    public function test_all_roles_produce_chips_with_seeded_context(): void
+    {
+        $contexts = [
+            'seller' => [
+                'listing'     => ['address' => '1 Oak Ave', 'asking_price' => 300000, 'bedrooms' => 3],
+                'faq_answers' => ['roof_age_and_condition' => $this->makeFaqEntry('2022 replacement')],
+            ],
+            'buyer' => [
+                'listing'     => ['max_price' => 500000, 'financing_type' => 'Conventional', 'bedrooms' => 2],
+                'faq_answers' => [],
+            ],
+            'landlord' => [
+                'listing'     => ['rent_amount' => 2000, 'bedrooms' => 2, 'pet_policy' => 'No pets'],
+                'faq_answers' => ['laundry_situation' => $this->makeFaqEntry('In-unit')],
+            ],
+            'tenant' => [
+                'listing'     => ['max_rent' => 1800, 'appliances' => 'Dishwasher', 'pet_information' => 'None'],
+                'faq_answers' => ['laundry_situation' => $this->makeFaqEntry('In-unit required')],
+            ],
+        ];
+
+        foreach ($contexts as $type => $context) {
+            $results = $this->service->forListing($type, $context);
+            $this->assertNotEmpty($results, "$type: must produce at least one chip with seeded context");
+            $this->assertLessThanOrEqual(5, count($results), "$type: must not exceed 5 chips with seeded context");
+        }
+    }
+
+    /**
+     * (f) Output is deterministic: identical input always produces the same chip set.
+     *     No random rotation or shuffle may occur between consecutive calls.
+     */
+    public function test_output_is_deterministic_for_same_input(): void
+    {
+        $context = [
+            'listing'     => ['bedrooms' => 3, 'asking_price' => 400000, 'address' => '99 Elm St'],
+            'faq_answers' => ['roof_age_and_condition' => $this->makeFaqEntry('Good')],
+        ];
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $first  = $this->service->forListing($type, $context);
+            $second = $this->service->forListing($type, $context);
+            $this->assertSame(
+                $first,
+                $second,
+                "$type: two consecutive calls with the same context must return identical chip arrays"
+            );
+        }
+    }
+
+    /**
+     * (g) The output chip array must not contain any registry-internal keys.
+     *     Only the six public keys are permitted: label, question, question_type,
+     *     category, category_label, category_icon.
+     */
+    public function test_registry_internal_keys_never_surfaced_in_output(): void
+    {
+        $internalKeys = [
+            'required_context_path',
+            'source_path',
+            'requires_data',
+            'public_allowed',
+            'canonical_key',
+            'alternate_questions',
+            'roles',
+            'primary_question',
+            'field_id',
+        ];
+
+        $withContext = ['listing' => ['bedrooms' => 2], 'faq_answers' => []];
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            foreach ([[], $withContext] as $ctx) {
+                $results = $this->service->forListing($type, $ctx);
+                foreach ($results as $i => $item) {
+                    foreach ($internalKeys as $key) {
+                        $this->assertArrayNotHasKey(
+                            $key,
+                            $item,
+                            "[$type][$i] internal registry key '$key' must not appear in chip output"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * (h) The six required output keys must all be present on every chip:
+     *     label, question, question_type, category, category_label, category_icon.
+     */
+    public function test_all_six_public_chip_keys_are_present(): void
+    {
+        $requiredKeys = ['label', 'question', 'question_type', 'category', 'category_label', 'category_icon'];
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $results = $this->service->forListing($type);
+            foreach ($results as $i => $item) {
+                foreach ($requiredKeys as $key) {
+                    $this->assertArrayHasKey(
+                        $key,
+                        $item,
+                        "[$type][$i] chip is missing required key '$key'"
+                    );
+                    $this->assertIsString($item[$key], "[$type][$i].$key must be a string");
+                    $this->assertNotEmpty($item[$key],  "[$type][$i].$key must not be empty");
+                }
+            }
+        }
+    }
+
+    /**
+     * (i) forListing() must not reference the deprecated POOLS constant.
+     *     Verified by ensuring the registry-generated output matches questions
+     *     that exist in suggestedQuestionRegistry() and not in the empty POOLS stub.
+     */
+    public function test_for_listing_is_driven_by_registry_not_pools(): void
+    {
+        $registry = \App\Services\AskAi\AskAiFieldQuestionRegistryService::suggestedQuestionRegistry();
+        $registryQuestions = array_column(array_values($registry), 'primary_question');
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $results = $this->service->forListing($type);
+            foreach ($results as $i => $item) {
+                $this->assertContains(
+                    $item['question'],
+                    $registryQuestions,
+                    "[$type][$i] chip question '{$item['question']}' was not found in suggestedQuestionRegistry(); forListing() may be using legacy POOLS"
+                );
+            }
+        }
+    }
+
+    /**
+     * (j) Guest vs authenticated chip counts: unauthenticated viewers must see
+     *     fewer or equal chips compared to authenticated viewers (auth guard removes chips,
+     *     never adds them).
+     */
+    public function test_guest_chip_count_never_exceeds_authenticated_count(): void
+    {
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $authCount  = count($this->service->forListing($type, [], true));
+            $guestCount = count($this->service->forListing($type, [], false));
+            $this->assertLessThanOrEqual(
+                $authCount,
+                $guestCount,
+                "$type: unauthenticated viewers must not receive more chips than authenticated viewers"
+            );
+        }
+    }
+
+    /**
+     * (k) suggestedQuestionRegistry() entries must not contain any phantom source_path
+     *     values — i.e. all requires_data=true entries must reference a known path prefix
+     *     (listing.* or faq_answers.*). Entries with requires_data=false may have null source_path.
+     */
+    public function test_registry_source_paths_are_well_formed(): void
+    {
+        $registry = \App\Services\AskAi\AskAiFieldQuestionRegistryService::suggestedQuestionRegistry();
+
+        foreach ($registry as $fieldId => $entry) {
+            if ($entry['requires_data']) {
+                $this->assertNotNull(
+                    $entry['source_path'],
+                    "Registry entry '$fieldId': requires_data=true but source_path is null"
+                );
+                $this->assertTrue(
+                    str_starts_with($entry['source_path'], 'listing.') ||
+                    str_starts_with($entry['source_path'], 'faq_answers.'),
+                    "Registry entry '$fieldId': source_path '{$entry['source_path']}' must start with 'listing.' or 'faq_answers.'"
+                );
+            } else {
+                $this->assertNull(
+                    $entry['source_path'],
+                    "Registry entry '$fieldId': requires_data=false should have null source_path (static chip needs no data source)"
+                );
+            }
+        }
+    }
+
+    // =========================================================================
+    // Requirement (b): Empty / blank listing field values must suppress chips
+    // =========================================================================
+
+    /**
+     * An empty string in a listing context field must be treated as missing data
+     * and suppress the corresponding requires_data=true chip, the same as null.
+     *
+     * We provide only the asking_price key (with an empty string value) so the
+     * only listing_facts chip that COULD appear is the asking_price one. With an
+     * empty string it must be suppressed, yielding zero listing_facts chips.
+     */
+    public function test_empty_string_listing_value_suppresses_chip(): void
+    {
+        $context = [
+            'listing'     => ['asking_price' => ''],
+            'faq_answers' => [],
+        ];
+
+        $results   = $this->service->forListing('seller', $context);
+        $factChips = array_values(array_filter($results, fn($c) => $c['question_type'] === 'listing_facts'));
+
+        $this->assertCount(
+            0,
+            $factChips,
+            'seller: asking_price chip must be suppressed when value is an empty string, yielding no listing_facts chips'
+        );
+    }
+
+    /**
+     * A whitespace-only string in a listing context field must be treated as missing
+     * data and suppress the chip, the same as an empty string.
+     */
+    public function test_whitespace_only_listing_value_suppresses_chip(): void
+    {
+        $context = [
+            'listing'     => ['asking_price' => '   '],
+            'faq_answers' => [],
+        ];
+
+        $results   = $this->service->forListing('seller', $context);
+        $factChips = array_values(array_filter($results, fn($c) => $c['question_type'] === 'listing_facts'));
+
+        $this->assertCount(
+            0,
+            $factChips,
+            'seller: asking_price chip must be suppressed when value is whitespace-only, yielding no listing_facts chips'
+        );
+    }
+
+    /**
+     * An empty array in a listing context field must also suppress the chip.
+     */
+    public function test_empty_array_listing_value_suppresses_chip(): void
+    {
+        $context = [
+            'listing'     => ['asking_price' => []],
+            'faq_answers' => [],
+        ];
+
+        $results   = $this->service->forListing('seller', $context);
+        $factChips = array_values(array_filter($results, fn($c) => $c['question_type'] === 'listing_facts'));
+
+        $this->assertCount(
+            0,
+            $factChips,
+            'seller: asking_price chip must be suppressed when value is an empty array, yielding no listing_facts chips'
+        );
+    }
+
+    /**
+     * Falsy-but-intentional values (integer 0, boolean false, string "0") must NOT
+     * suppress a chip — they represent real data, just with a falsy value.
+     */
+    public function test_falsy_integer_zero_listing_value_does_not_suppress_chip(): void
+    {
+        // bedrooms = 0 is a valid datum (a studio with no separate bedroom)
+        $context = [
+            'listing'     => ['bedrooms' => 0],
+            'faq_answers' => [],
+        ];
+
+        $results   = $this->service->forListing('seller', $context);
+        $factChips = array_filter($results, fn($c) => $c['question_type'] === 'listing_facts');
+
+        $bedroomChips = array_filter($factChips, fn($c) => stripos($c['question'], 'bedroom') !== false);
+        $this->assertNotEmpty(
+            $bedroomChips,
+            'seller: bedrooms chip must appear when bedrooms = 0 (intentional falsy datum)'
+        );
+    }
+
+    // =========================================================================
+    // Requirement: Phantom / removed canonical keys must not produce chips
+    // =========================================================================
+
+    /**
+     * Every non-null canonical_key in suggestedQuestionRegistry() must exist in
+     * its respective primary registry:
+     *   - listing.* keys  → must be in listingFieldRegistry()
+     *   - faq_answers.* keys → must be in registry() (FAQ registry)
+     *
+     * This catches phantom keys at the registry definition level, before forListing()
+     * is called. Any key failing this check would be silently suppressed at runtime.
+     */
+    public function test_all_canonical_keys_exist_in_their_primary_registries(): void
+    {
+        $suggestedRegistry = \App\Services\AskAi\AskAiFieldQuestionRegistryService::suggestedQuestionRegistry();
+        $validListingKeys  = array_flip(array_keys(\App\Services\AskAi\AskAiFieldQuestionRegistryService::listingFieldRegistry()));
+        $validFaqKeys      = array_flip(array_keys(\App\Services\AskAi\AskAiFieldQuestionRegistryService::registry()));
+
+        foreach ($suggestedRegistry as $fieldId => $entry) {
+            $ck = $entry['canonical_key'] ?? null;
+            if ($ck === null) {
+                continue; // static chip — no canonical key required
+            }
+            if (str_starts_with($ck, 'listing.')) {
+                $this->assertArrayHasKey(
+                    $ck,
+                    $validListingKeys,
+                    "Registry entry '$fieldId': listing canonical_key '$ck' is not in listingFieldRegistry(). Add it there or remove it from suggestedQuestionRegistry()."
+                );
+            } elseif (str_starts_with($ck, 'faq_answers.')) {
+                $this->assertArrayHasKey(
+                    $ck,
+                    $validFaqKeys,
+                    "Registry entry '$fieldId': faq_answers canonical_key '$ck' is not in registry(). This is a phantom FAQ key and would be silently suppressed."
+                );
+            } else {
+                $this->fail(
+                    "Registry entry '$fieldId': canonical_key '$ck' has an unknown prefix — only 'listing.' and 'faq_answers.' are supported."
+                );
+            }
+        }
+    }
+
+    /**
+     * forListing() output must never include chips with phantom canonical_keys —
+     * i.e. keys absent from their respective primary registry must be silently
+     * suppressed before they reach the output.
+     *
+     * Both listing.* and faq_answers.* keys are verified here, consistent with
+     * the full phantom-key guard now implemented in forListing().
+     */
+    public function test_forListing_output_never_contains_phantom_key_questions(): void
+    {
+        $suggestedRegistry = \App\Services\AskAi\AskAiFieldQuestionRegistryService::suggestedQuestionRegistry();
+        $validListingKeys  = array_flip(array_keys(\App\Services\AskAi\AskAiFieldQuestionRegistryService::listingFieldRegistry()));
+        $validFaqKeys      = array_flip(array_keys(\App\Services\AskAi\AskAiFieldQuestionRegistryService::registry()));
+
+        // Build a question → canonical_key lookup from the full suggested registry
+        $questionToCanonical = [];
+        foreach ($suggestedRegistry as $entry) {
+            $ck = $entry['canonical_key'] ?? null;
+            if ($ck !== null) {
+                $questionToCanonical[$entry['primary_question']] = $ck;
+            }
+        }
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
+            $chips = $this->service->forListing($type);
+            foreach ($chips as $i => $chip) {
+                $ck = $questionToCanonical[$chip['question']] ?? null;
+                if ($ck === null) {
+                    continue; // static chip — no canonical key to check
+                }
+                if (str_starts_with($ck, 'listing.')) {
+                    $this->assertArrayHasKey(
+                        $ck,
+                        $validListingKeys,
+                        "[$type][$i] chip '{$chip['question']}' has listing canonical_key '$ck' not in listingFieldRegistry() — phantom listing key leaked into output"
+                    );
+                } elseif (str_starts_with($ck, 'faq_answers.')) {
+                    $this->assertArrayHasKey(
+                        $ck,
+                        $validFaqKeys,
+                        "[$type][$i] chip '{$chip['question']}' has faq_answers canonical_key '$ck' not in registry() — phantom FAQ key leaked into output"
+                    );
+                }
+            }
+        }
+    }
 }

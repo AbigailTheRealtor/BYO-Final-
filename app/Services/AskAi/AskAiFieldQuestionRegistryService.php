@@ -2186,6 +2186,15 @@ class AskAiFieldQuestionRegistryService
                 'sample_question_2'    => 'Can this property be used as a rental investment?',
                 'keyword_route_status' => 'listing_native',
             ],
+            'listing.lease_terms' => [
+                'roles'                => ['seller'],
+                'field_type'           => 'listing_model',
+                'config_key'           => 'lease_terms',
+                'label'                => 'Existing Lease Terms',
+                'sample_question'      => 'What lease terms has the seller specified for this property?',
+                'sample_question_2'    => 'Are there any inherited tenant leases on this property?',
+                'keyword_route_status' => 'listing_native',
+            ],
             // ---- Utilities & Services ----
             'listing.utilities' => [
                 'roles'                => ['landlord', 'tenant'],
@@ -2315,6 +2324,679 @@ class AskAiFieldQuestionRegistryService
                 'sample_question'      => 'Is this property in a flood zone?',
                 'sample_question_2'    => 'What is the flood zone designation for this property?',
                 'keyword_route_status' => 'listing_native',
+            ],
+        ];
+    }
+
+    /**
+     * Registry of all approved suggested-question chips for the Ask AI panel.
+     *
+     * Used exclusively by AskAiSuggestedQuestionsService::forListing() to generate
+     * context-aware, role-scoped, auth-gated chip suggestions. This registry is the
+     * single source of truth for chip content; the legacy POOLS constant in
+     * AskAiSuggestedQuestionsService is deprecated and must not be used by forListing().
+     *
+     * Entry schema (each key is a unique field_id string):
+     *  'field_id' => [
+     *      'canonical_key'       — matching key in the listing field or FAQ registry (or null for static chips)
+     *      'roles'               — listing roles this chip applies to
+     *      'category'            — one of: Property | Financial | Match | Lifestyle | Marketing | Education
+     *      'question_type'       — legacy 8-category type kept for backward-compat sort/label/icon mapping
+     *      'label'               — short display label (≤ 80 chars; shown on the chip surface)
+     *      'primary_question'    — full question text populated into the textarea on chip click
+     *      'alternate_questions' — additional phrasings (reserved for future rotation; not surfaced yet)
+     *      'source_path'         — dot-path resolved against context (listing.* or faq_answers.*); null for static
+     *      'requires_data'       — true = chip is suppressed when source_path resolves to null/empty
+     *      'public_allowed'      — false = chip is hidden for unauthenticated (guest) viewers
+     *  ]
+     *
+     * @return array<string, array{canonical_key: string|null, roles: string[], category: string, question_type: string, label: string, primary_question: string, alternate_questions: string[], source_path: string|null, requires_data: bool, public_allowed: bool}>
+     */
+    public static function suggestedQuestionRegistry(): array
+    {
+        return [
+
+            // ================================================================
+            // SELLER — Listing Facts (data-aware, requires_data=true)
+            // ================================================================
+
+            'seller_address' => [
+                'canonical_key'       => 'listing.address',
+                'roles'               => ['seller'],
+                'category'            => 'Property',
+                'question_type'       => 'listing_facts',
+                'label'               => "What's the address?",
+                'primary_question'    => "What's the address of this property?",
+                'alternate_questions' => ["Where is this property located?"],
+                'source_path'         => 'listing.address',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'seller_asking_price' => [
+                'canonical_key'       => 'listing.asking_price',
+                'roles'               => ['seller'],
+                'category'            => 'Financial',
+                'question_type'       => 'listing_facts',
+                'label'               => 'What is the asking price?',
+                'primary_question'    => 'What is the asking price for this property?',
+                'alternate_questions' => ['How much is this property listed for?'],
+                'source_path'         => 'listing.asking_price',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'seller_bedrooms' => [
+                'canonical_key'       => 'listing.bedrooms',
+                'roles'               => ['seller'],
+                'category'            => 'Property',
+                'question_type'       => 'listing_facts',
+                'label'               => 'How many bedrooms?',
+                'primary_question'    => 'How many bedrooms does this property have?',
+                'alternate_questions' => ['What is the bedroom count for this listing?'],
+                'source_path'         => 'listing.bedrooms',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'seller_rental_restrictions' => [
+                'canonical_key'       => 'listing.rental_restrictions',
+                'roles'               => ['seller'],
+                'category'            => 'Lifestyle',
+                'question_type'       => 'listing_facts',
+                'label'               => 'Are there rental restrictions?',
+                'primary_question'    => 'Are there any rental restrictions on this property?',
+                'alternate_questions' => ['Can this property be used as a short-term rental?'],
+                'source_path'         => 'listing.rental_restrictions',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'seller_lease_terms' => [
+                'canonical_key'       => 'listing.lease_terms',
+                'roles'               => ['seller'],
+                'category'            => 'Lifestyle',
+                'question_type'       => 'listing_facts',
+                'label'               => 'What are the lease terms?',
+                'primary_question'    => 'What lease terms has the seller specified for this property?',
+                'alternate_questions' => ['What are the seller\'s leasing requirements?'],
+                'source_path'         => 'listing.lease_terms',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'seller_roof_age' => [
+                'canonical_key'       => 'faq_answers.roof_age_and_condition',
+                'roles'               => ['seller'],
+                'category'            => 'Property',
+                'question_type'       => 'listing_facts',
+                'label'               => 'How old is the roof?',
+                'primary_question'    => 'How old is the roof and what condition is it in?',
+                'alternate_questions' => ['When was the roof replaced?'],
+                'source_path'         => 'faq_answers.roof_age_and_condition',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'seller_avg_utility_costs' => [
+                'canonical_key'       => 'faq_answers.average_utility_costs',
+                'roles'               => ['seller'],
+                'category'            => 'Financial',
+                'question_type'       => 'listing_facts',
+                'label'               => 'What are the average utility costs?',
+                'primary_question'    => 'What are the average monthly utility costs for this property?',
+                'alternate_questions' => ['What is the average electric bill for this home?'],
+                'source_path'         => 'faq_answers.average_utility_costs',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'seller_hvac' => [
+                'canonical_key'       => 'faq_answers.heating_cooling_system',
+                'roles'               => ['seller'],
+                'category'            => 'Property',
+                'question_type'       => 'listing_facts',
+                'label'               => "What's the heating/cooling system?",
+                'primary_question'    => "What type of heating and cooling system does this property have?",
+                'alternate_questions' => ['Is there central air conditioning?'],
+                'source_path'         => 'faq_answers.heating_cooling_system',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            // ----------------------------------------------------------------
+            // SELLER — Static chips (requires_data=false)
+            // ----------------------------------------------------------------
+
+            'seller_key_features' => [
+                'canonical_key'       => null,
+                'roles'               => ['seller'],
+                'category'            => 'Property',
+                'question_type'       => 'property_standout',
+                'label'               => 'What are the key features of this property?',
+                'primary_question'    => 'What are the key features of this property?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            'seller_compare_similar' => [
+                'canonical_key'       => null,
+                'roles'               => ['seller'],
+                'category'            => 'Property',
+                'question_type'       => 'property_standout',
+                'label'               => 'How does this home compare to similar listings on the platform?',
+                'primary_question'    => 'How does this home compare to similar listings on the platform?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            'seller_sale_terms' => [
+                'canonical_key'       => null,
+                'roles'               => ['seller'],
+                'category'            => 'Property',
+                'question_type'       => 'property_standout',
+                'label'               => 'What sale terms has the seller specified?',
+                'primary_question'    => 'What sale terms has the seller specified?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            'seller_suited_buyer' => [
+                'canonical_key'       => null,
+                'roles'               => ['seller'],
+                'category'            => 'Match',
+                'question_type'       => 'suited_audience',
+                'label'               => 'What type of buyer might find this property a practical fit?',
+                'primary_question'    => 'What type of buyer might find this property a practical fit?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            'seller_missing_info' => [
+                'canonical_key'       => null,
+                'roles'               => ['seller'],
+                'category'            => 'Property',
+                'question_type'       => 'missing_data',
+                'label'               => 'What information is missing from this listing?',
+                'primary_question'    => 'What information is missing from this listing?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => false,
+            ],
+
+            'seller_marketing' => [
+                'canonical_key'       => null,
+                'roles'               => ['seller'],
+                'category'            => 'Marketing',
+                'question_type'       => 'marketing_angles',
+                'label'               => 'What marketing angles could work for this property?',
+                'primary_question'    => 'What marketing angles could work for this property?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => false,
+            ],
+
+            'seller_education' => [
+                'canonical_key'       => null,
+                'roles'               => ['seller'],
+                'category'            => 'Education',
+                'question_type'       => 'educational',
+                'label'               => 'How does the seller agent auction process work?',
+                'primary_question'    => 'How does the seller agent auction process work?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            // ================================================================
+            // BUYER — Listing Facts (data-aware, requires_data=true)
+            // ================================================================
+
+            'buyer_max_price' => [
+                'canonical_key'       => 'listing.max_price',
+                'roles'               => ['buyer'],
+                'category'            => 'Financial',
+                'question_type'       => 'listing_facts',
+                'label'               => "What's the max budget?",
+                'primary_question'    => "What is the maximum budget stated in this buyer listing?",
+                'alternate_questions' => ['What is the highest price this buyer will pay?'],
+                'source_path'         => 'listing.max_price',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'buyer_financing_type' => [
+                'canonical_key'       => 'listing.financing_type',
+                'roles'               => ['buyer'],
+                'category'            => 'Financial',
+                'question_type'       => 'listing_facts',
+                'label'               => 'What financing is accepted?',
+                'primary_question'    => 'What type of financing has this buyer indicated they will use?',
+                'alternate_questions' => ['Is this a cash offer or a financed purchase?'],
+                'source_path'         => 'listing.financing_type',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'buyer_bedrooms' => [
+                'canonical_key'       => 'listing.bedrooms',
+                'roles'               => ['buyer'],
+                'category'            => 'Property',
+                'question_type'       => 'listing_facts',
+                'label'               => 'How many bedrooms?',
+                'primary_question'    => 'How many bedrooms is this buyer looking for?',
+                'alternate_questions' => ['What bedroom count is this buyer targeting?'],
+                'source_path'         => 'listing.bedrooms',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            // ----------------------------------------------------------------
+            // BUYER — Static chips (requires_data=false)
+            // ----------------------------------------------------------------
+
+            'buyer_strongest_criteria' => [
+                'canonical_key'       => null,
+                'roles'               => ['buyer'],
+                'category'            => 'Match',
+                'question_type'       => 'buyer_tenant_match',
+                'label'               => "What are the strongest criteria I've stated in this listing?",
+                'primary_question'    => "What are the strongest criteria I've stated in this listing?",
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => false,
+            ],
+
+            'buyer_how_complete' => [
+                'canonical_key'       => null,
+                'roles'               => ['buyer'],
+                'category'            => 'Property',
+                'question_type'       => 'missing_data',
+                'label'               => 'How complete is my buyer criteria listing?',
+                'primary_question'    => 'How complete is my buyer criteria listing?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => false,
+            ],
+
+            'buyer_what_to_add' => [
+                'canonical_key'       => null,
+                'roles'               => ['buyer'],
+                'category'            => 'Property',
+                'question_type'       => 'missing_data',
+                'label'               => "What should I add to help agents better understand what I'm looking for?",
+                'primary_question'    => "What should I add to help agents better understand what I'm looking for?",
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => false,
+            ],
+
+            'buyer_education_auction' => [
+                'canonical_key'       => null,
+                'roles'               => ['buyer'],
+                'category'            => 'Education',
+                'question_type'       => 'educational',
+                'label'               => 'How does the buyer agent auction process work?',
+                'primary_question'    => 'How does the buyer agent auction process work?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            'buyer_education_factors' => [
+                'canonical_key'       => null,
+                'roles'               => ['buyer'],
+                'category'            => 'Education',
+                'question_type'       => 'educational',
+                'label'               => 'What factors do agents consider most important in a buyer criteria listing?',
+                'primary_question'    => 'What factors do agents consider most important in a buyer criteria listing?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            // ================================================================
+            // LANDLORD — Listing Facts (data-aware, requires_data=true)
+            // ================================================================
+
+            'landlord_rent_amount' => [
+                'canonical_key'       => 'listing.rent_amount',
+                'roles'               => ['landlord'],
+                'category'            => 'Financial',
+                'question_type'       => 'listing_facts',
+                'label'               => 'What is the asking rent?',
+                'primary_question'    => 'What is the asking rent for this property?',
+                'alternate_questions' => ['How much does this rental cost per month?'],
+                'source_path'         => 'listing.rent_amount',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'landlord_bedrooms' => [
+                'canonical_key'       => 'listing.bedrooms',
+                'roles'               => ['landlord'],
+                'category'            => 'Property',
+                'question_type'       => 'listing_facts',
+                'label'               => 'How many bedrooms?',
+                'primary_question'    => 'How many bedrooms does this rental property have?',
+                'alternate_questions' => ['What is the bedroom count for this rental?'],
+                'source_path'         => 'listing.bedrooms',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'landlord_pet_policy' => [
+                'canonical_key'       => 'listing.pet_policy',
+                'roles'               => ['landlord'],
+                'category'            => 'Lifestyle',
+                'question_type'       => 'listing_facts',
+                'label'               => "What's the pet policy?",
+                'primary_question'    => "What is the pet policy for this rental property?",
+                'alternate_questions' => ['Are pets allowed, and what are the restrictions?'],
+                'source_path'         => 'listing.pet_policy',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'landlord_available_date' => [
+                'canonical_key'       => 'listing.available_date',
+                'roles'               => ['landlord'],
+                'category'            => 'Lifestyle',
+                'question_type'       => 'listing_facts',
+                'label'               => 'When is it available?',
+                'primary_question'    => 'When is this rental property available?',
+                'alternate_questions' => ['What is the earliest available move-in date?'],
+                'source_path'         => 'listing.available_date',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'landlord_utilities' => [
+                'canonical_key'       => 'listing.utilities',
+                'roles'               => ['landlord'],
+                'category'            => 'Financial',
+                'question_type'       => 'listing_facts',
+                'label'               => 'What utilities are included?',
+                'primary_question'    => 'What utilities are included in the rent for this property?',
+                'alternate_questions' => ['Does the rent cover water, electric, or other utilities?'],
+                'source_path'         => 'listing.utilities',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'landlord_smoking_policy' => [
+                'canonical_key'       => 'listing.smoking_policy',
+                'roles'               => ['landlord'],
+                'category'            => 'Lifestyle',
+                'question_type'       => 'listing_facts',
+                'label'               => 'Is smoking allowed?',
+                'primary_question'    => 'What is the smoking policy for this rental property?',
+                'alternate_questions' => ['Is vaping or smoking permitted in or around the unit?'],
+                'source_path'         => 'listing.smoking_policy',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'landlord_laundry' => [
+                'canonical_key'       => 'faq_answers.laundry_situation',
+                'roles'               => ['landlord'],
+                'category'            => 'Property',
+                'question_type'       => 'listing_facts',
+                'label'               => 'Is there in-unit laundry?',
+                'primary_question'    => 'Is there in-unit laundry at this rental property?',
+                'alternate_questions' => ['Is a washer and dryer included or available on-site?'],
+                'source_path'         => 'faq_answers.laundry_situation',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'landlord_hvac' => [
+                'canonical_key'       => 'faq_answers.heating_cooling_system',
+                'roles'               => ['landlord'],
+                'category'            => 'Property',
+                'question_type'       => 'listing_facts',
+                'label'               => "What's the heating/cooling system?",
+                'primary_question'    => "What type of heating and cooling system does this rental have?",
+                'alternate_questions' => ['Is there central air conditioning in this unit?'],
+                'source_path'         => 'faq_answers.heating_cooling_system',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            // ----------------------------------------------------------------
+            // LANDLORD — Static chips (requires_data=false)
+            // ----------------------------------------------------------------
+
+            'landlord_key_features' => [
+                'canonical_key'       => null,
+                'roles'               => ['landlord'],
+                'category'            => 'Property',
+                'question_type'       => 'property_standout',
+                'label'               => 'What are the key features of this rental property?',
+                'primary_question'    => 'What are the key features of this rental property?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            'landlord_compare_similar' => [
+                'canonical_key'       => null,
+                'roles'               => ['landlord'],
+                'category'            => 'Property',
+                'question_type'       => 'property_standout',
+                'label'               => 'How does this rental compare to similar listings in the area?',
+                'primary_question'    => 'How does this rental compare to similar listings in the area?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            'landlord_lease_terms' => [
+                'canonical_key'       => null,
+                'roles'               => ['landlord'],
+                'category'            => 'Lifestyle',
+                'question_type'       => 'property_standout',
+                'label'               => 'What lease terms has the landlord specified?',
+                'primary_question'    => 'What lease terms has the landlord specified?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            'landlord_suited_renter' => [
+                'canonical_key'       => null,
+                'roles'               => ['landlord'],
+                'category'            => 'Match',
+                'question_type'       => 'suited_audience',
+                'label'               => 'What type of renter might find this rental a practical fit?',
+                'primary_question'    => 'What type of renter might find this rental a practical fit?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            'landlord_missing_info' => [
+                'canonical_key'       => null,
+                'roles'               => ['landlord'],
+                'category'            => 'Property',
+                'question_type'       => 'missing_data',
+                'label'               => 'What information is missing from this listing?',
+                'primary_question'    => 'What information is missing from this listing?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => false,
+            ],
+
+            'landlord_marketing' => [
+                'canonical_key'       => null,
+                'roles'               => ['landlord'],
+                'category'            => 'Marketing',
+                'question_type'       => 'marketing_angles',
+                'label'               => 'What marketing angles could work for this rental?',
+                'primary_question'    => 'What marketing angles could work for this rental?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => false,
+            ],
+
+            'landlord_education' => [
+                'canonical_key'       => null,
+                'roles'               => ['landlord'],
+                'category'            => 'Education',
+                'question_type'       => 'educational',
+                'label'               => 'How does the landlord auction process work on this platform?',
+                'primary_question'    => 'How does the landlord auction process work on this platform?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            // ================================================================
+            // TENANT — Listing Facts (data-aware, requires_data=true)
+            // ================================================================
+
+            'tenant_max_rent' => [
+                'canonical_key'       => 'listing.max_rent',
+                'roles'               => ['tenant'],
+                'category'            => 'Financial',
+                'question_type'       => 'listing_facts',
+                'label'               => "What's the max rent?",
+                'primary_question'    => "What is the maximum rent this tenant is willing to pay?",
+                'alternate_questions' => ['What is the tenant\'s monthly rent budget?'],
+                'source_path'         => 'listing.max_rent',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'tenant_appliances' => [
+                'canonical_key'       => 'listing.appliances',
+                'roles'               => ['tenant'],
+                'category'            => 'Lifestyle',
+                'question_type'       => 'listing_facts',
+                'label'               => 'What appliances are required?',
+                'primary_question'    => 'What appliances has this tenant listed as required?',
+                'alternate_questions' => ['Does this tenant need a washer, dryer, or dishwasher?'],
+                'source_path'         => 'listing.appliances',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'tenant_pet_info' => [
+                'canonical_key'       => 'listing.pet_information',
+                'roles'               => ['tenant'],
+                'category'            => 'Lifestyle',
+                'question_type'       => 'listing_facts',
+                'label'               => 'Does the tenant have pets?',
+                'primary_question'    => 'Does this tenant have pets that need to be accommodated?',
+                'alternate_questions' => ['What type of pets does this tenant have?'],
+                'source_path'         => 'listing.pet_information',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            'tenant_laundry' => [
+                'canonical_key'       => 'faq_answers.laundry_situation',
+                'roles'               => ['tenant'],
+                'category'            => 'Property',
+                'question_type'       => 'listing_facts',
+                'label'               => 'Is there in-unit laundry?',
+                'primary_question'    => 'Has this tenant specified a need for in-unit laundry?',
+                'alternate_questions' => ['Is washer/dryer access a requirement for this tenant?'],
+                'source_path'         => 'faq_answers.laundry_situation',
+                'requires_data'       => true,
+                'public_allowed'      => true,
+            ],
+
+            // ----------------------------------------------------------------
+            // TENANT — Static chips (requires_data=false)
+            // ----------------------------------------------------------------
+
+            'tenant_strongest_criteria' => [
+                'canonical_key'       => null,
+                'roles'               => ['tenant'],
+                'category'            => 'Match',
+                'question_type'       => 'buyer_tenant_match',
+                'label'               => "What are the strongest lease requirements I've stated in this listing?",
+                'primary_question'    => "What are the strongest lease requirements I've stated in this listing?",
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => false,
+            ],
+
+            'tenant_how_complete' => [
+                'canonical_key'       => null,
+                'roles'               => ['tenant'],
+                'category'            => 'Property',
+                'question_type'       => 'missing_data',
+                'label'               => 'How complete is my tenant criteria listing?',
+                'primary_question'    => 'How complete is my tenant criteria listing?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => false,
+            ],
+
+            'tenant_what_to_add' => [
+                'canonical_key'       => null,
+                'roles'               => ['tenant'],
+                'category'            => 'Property',
+                'question_type'       => 'missing_data',
+                'label'               => 'What should I add to help landlords better understand what I need?',
+                'primary_question'    => 'What should I add to help landlords better understand what I need?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => false,
+            ],
+
+            'tenant_education_auction' => [
+                'canonical_key'       => null,
+                'roles'               => ['tenant'],
+                'category'            => 'Education',
+                'question_type'       => 'educational',
+                'label'               => 'How does the tenant agent auction process work?',
+                'primary_question'    => 'How does the tenant agent auction process work?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
+            ],
+
+            'tenant_education_factors' => [
+                'canonical_key'       => null,
+                'roles'               => ['tenant'],
+                'category'            => 'Education',
+                'question_type'       => 'educational',
+                'label'               => 'What compatibility factors matter most when landlords evaluate tenant criteria?',
+                'primary_question'    => 'What compatibility factors matter most when landlords evaluate tenant criteria?',
+                'alternate_questions' => [],
+                'source_path'         => null,
+                'requires_data'       => false,
+                'public_allowed'      => true,
             ],
         ];
     }
