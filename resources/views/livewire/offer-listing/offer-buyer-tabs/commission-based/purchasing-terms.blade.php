@@ -65,7 +65,7 @@
     <div class="input-cover">
         <input type="text" wire:model="sale_provision_other" class="form-control has-icon"
             data-icon="fa-solid fa-screwdriver-wrench"
-            placeholder="Enter special sale provision (e.g., Divorce sale, third-party approval)">
+            placeholder="Enter special sale provision (e.g., Divorce sale, Third-party approval)">
     </div>
 </div>
 
@@ -433,7 +433,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_custodian_wallet" class="form-control has-icon"
                 data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, escrow wallet, Propy Title)">
+                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, Escrow wallet, Propy Title)">
         </div>
     </div>
 
@@ -598,7 +598,7 @@
         <div class="input-cover">
             <input type="text" wire:model="value_determination" class="form-control has-icon"
                 data-icon="fa-solid fa-right-left"
-                placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed appraisal, online valuation, mutual agreement)">
+                placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed appraisal, Online valuation, Mutual agreement)">
         </div>
     </div>
 
@@ -613,7 +613,7 @@
         <div class="input-cover">
             <input type="text" wire:model="exchange_transfer_method" class="form-control has-icon"
                 data-icon="fa-solid fa-truck"
-                placeholder="Enter how the exchange/trade item will be delivered or transferred (e.g., Title transfer, bill of sale, delivery at closing)">
+                placeholder="Enter how the exchange/trade item will be delivered or transferred (e.g., Title transfer, Bill of sale, Delivery at closing)">
         </div>
     </div>
 
@@ -1036,7 +1036,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_description" class="form-control has-icon"
                 data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter NFT type (e.g., Tokenized real estate, digital artwork)">
+                placeholder="Enter NFT type (e.g., Tokenized real estate, Digital artwork)">
         </div>
     </div>
 
@@ -1087,7 +1087,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_valuation_method" class="form-control has-icon"
                 data-icon="fa-solid fa-chart-line"
-                placeholder="Enter how NFT value will be determined (e.g., Floor price on OpenSea, independent appraisal, mutual agreement)">
+                placeholder="Enter how NFT value will be determined (e.g., Floor price on OpenSea, Independent appraisal, Mutual agreement)">
         </div>
     </div>
 
@@ -1102,7 +1102,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_transfer_method" class="form-control has-icon"
                 data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, escrow smart contract)">
+                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, Escrow smart contract)">
         </div>
     </div>
 
@@ -1430,7 +1430,7 @@
         <div class="input-cover">
             <input type="text" wire:model="seller_amortization_other" class="form-control has-icon"
                 data-icon="fa-solid fa-chart-line"
-                placeholder="Enter custom amortization type (e.g., Hybrid, graduated payments, step-up structure)">
+                placeholder="Enter custom amortization type (e.g., Hybrid, Graduated payments, Step-up structure)">
         </div>
     </div>
     @endif
@@ -1461,7 +1461,7 @@
         <div class="input-cover">
             <input type="text" wire:model="seller_payment_frequency_other" class="form-control has-icon"
                 data-icon="fa-solid fa-calendar-check"
-                placeholder="Enter custom payment schedule (e.g., Semi-annual, lump sum at harvest)">
+                placeholder="Enter custom payment schedule (e.g., Semi-annual, Lump sum at harvest)">
         </div>
     </div>
     @endif

@@ -396,7 +396,7 @@
     @if($metas->get('message_to_landlord')) <dt class="col-sm-3">Additional Message to Landlord</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('message_to_landlord') }}</dd> @endif
     @endif
 
-    <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Application Timing</dt>
+    <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Response Deadline</dt>
     <dt class="col-sm-3">Response Requested By</dt>
     <dd class="col-sm-9">{{ $safeDate($metas->get('expires_at')) }}</dd>
     @php

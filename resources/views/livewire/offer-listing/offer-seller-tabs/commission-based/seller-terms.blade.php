@@ -733,7 +733,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_custodian_wallet" class="form-control has-icon"
                 data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, escrow wallet, Propy Title)">
+                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, Escrow wallet, Propy Title)">
         </div>
     </div>
 
@@ -820,7 +820,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="other_exchange_item" class="form-control has-icon"
                     data-icon="fa-solid fa-right-left"
-                    placeholder="Enter exchange item (e.g., Private jet, Yacht, Luxury RV)">
+                    placeholder="Enter exchange item (e.g., Private jet, yacht, luxury RV)">
             </div>
         </div>
     </div>
@@ -914,7 +914,7 @@
         <div class="input-cover">
             <input type="text" wire:model="exchange_transfer_method" class="form-control has-icon"
                 data-icon="fa-solid fa-truck"
-                placeholder="Enter how the exchange/trade item will be delivered or transferred (e.g., Title transfer, bill of sale, delivery at closing)">
+                placeholder="Enter how the exchange/trade item will be delivered or transferred (e.g., Title transfer, Bill of sale, Delivery at closing)">
         </div>
     </div>
 
@@ -1384,7 +1384,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_valuation_method" class="form-control has-icon"
                 data-icon="fa-solid fa-chart-line"
-                placeholder="Enter how NFT value will be determined (e.g., Floor price on OpenSea, independent appraisal, mutual agreement)">
+                placeholder="Enter how NFT value will be determined (e.g., Floor price on OpenSea, Independent appraisal, Mutual agreement)">
         </div>
     </div>
 
@@ -1399,7 +1399,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_transfer_method" class="form-control has-icon"
                 data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, escrow smart contract)">
+                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, Escrow smart contract)">
         </div>
     </div>
 
@@ -1646,7 +1646,7 @@
         <div class="input-cover">
             <input type="text" wire:model="seller_amortization_other" class="form-control has-icon"
                 data-icon="fa-solid fa-chart-line"
-                placeholder="Enter custom amortization type (e.g., Hybrid, graduated payments, step-up structure)">
+                placeholder="Enter custom amortization type (e.g., Hybrid, Graduated payments, Step-up structure)">
         </div>
     </div>
     @endif

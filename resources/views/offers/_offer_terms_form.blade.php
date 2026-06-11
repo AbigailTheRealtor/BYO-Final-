@@ -486,7 +486,7 @@
                 </select>
                 <div x-show="sfAmortType === 'Other'" class="mt-2">
                     <input type="text" name="seller_financing_amortization_other" class="form-control"
-                        placeholder="Enter custom amortization type (e.g., Graduated Payments)"
+                        placeholder="Enter custom amortization type (e.g., Graduated payments)"
                         value="{{ old('seller_financing_amortization_other', $formData->get('seller_financing_amortization_other')) }}">
                 </div>
             </div>
@@ -519,7 +519,7 @@
                             value="{{ $fmtMoney(old('seller_financing_balloon_amount', $formData->get('seller_financing_balloon_amount'))) }}">
                     </div>
                     <input type="text" name="seller_financing_balloon_date" class="form-control"
-                        placeholder="Enter due date (e.g., 5 Years)"
+                        placeholder="Enter due date (e.g., 5 years)"
                         value="{{ old('seller_financing_balloon_date', $formData->get('seller_financing_balloon_date')) }}">
                 </div>
             </div>
@@ -1063,7 +1063,7 @@
     <div class="mb-3">
         <label class="form-label fw-semibold">About Yourself <span class="text-muted small">(optional)</span></label>
         <textarea name="screening_notes" class="form-control" rows="3"
-            placeholder="Enter a brief introduction about yourself (e.g., employed 3+ years, excellent rental history)">{{ old('screening_notes', $formData->get('screening_notes')) }}</textarea>
+            placeholder="Enter a brief introduction about yourself (e.g., Employed 3+ years, Excellent rental history)">{{ old('screening_notes', $formData->get('screening_notes')) }}</textarea>
     </div>
 
     {{-- ── Section: Rental Application & Lease Terms ── --}}
@@ -1154,8 +1154,8 @@
     </div>
     @endif
 
-    {{-- ── Section 6: Internal Notes & Expiration ── --}}
-    <h6 class="offer-section-header">Internal Notes &amp; Expiration</h6>
+    {{-- ── Section 6: Additional Terms & Response Deadline ── --}}
+    <h6 class="offer-section-header">Additional Terms &amp; Response Deadline</h6>
     <div class="mb-3">
         <label class="form-label fw-semibold">Custom Terms / Special Conditions</label>
         <textarea name="custom_terms" class="form-control" rows="4"
