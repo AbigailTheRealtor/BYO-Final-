@@ -125,26 +125,16 @@ class MlsLiveImportAuditTest extends TestCase
     }
 
     /**
-     * AUDIT: Known Parser Bug #8 — flood_zone_panel newline bleed (SKIPPED — bug present).
-     * flood_zone_panel regex char class contains \s which matches \n,
-     * allowing the capture to bleed into the next field's text.
-     * CURRENT (buggy) output: "12057C0215G\nFlood Insurance Re" (30-char window)
-     * CORRECT expected value: "12057C0215G"
-     * Fix: replace \s with [^\n] in the char class.
-     * Remove markTestSkipped and assert the correct value once the parser is fixed.
+     * Regression: flood_zone_panel char class [A-Za-z0-9\s\-] matched \n,
+     * causing capture to bleed into the next field's text.
+     * Fix: removed \s so the capture stops at the alphanumeric panel code.
      */
     public function test_parser_residential_flood_zone_panel_exact_value(): void
     {
         $result = $this->service->import('', $this->fixtures['residential']);
         $data = $result['data'];
 
-        $this->markTestSkipped(
-            'KNOWN PARSER BUG #8 — flood_zone_panel newline bleed: ' .
-            'regex [A-Za-z0-9\\s\\-]{1,30} uses \\s which matches \\n; capture bleeds into next-line text. ' .
-            'Current output: ' . json_encode($data['flood_zone_panel'] ?? null) . '. ' .
-            'Correct: "12057C0215G". Fix: replace \\s with [^\\n] in char class. ' .
-            'Remove markTestSkipped and assertSame(\'12057C0215G\', trim($data[\'flood_zone_panel\'])) when fixed.'
-        );
+        $this->assertSame('12057C0215G', $data['flood_zone_panel'] ?? null, 'flood_zone_panel exact value — no newline bleed');
     }
 
     public function test_parser_residential_tax_legal_fields(): void
@@ -211,101 +201,77 @@ class MlsLiveImportAuditTest extends TestCase
     }
 
     /**
-     * AUDIT: Known Parser Bug #2 — Sewer\b stop fires inside "Public Sewer" (SKIPPED — bug present).
-     * CURRENT (buggy) output: 'Public'
-     * CORRECT expected value: 'Public Sewer'
-     * Fix: require $labelStop words to be followed by \s*: so bare \b alone does not terminate.
-     * Remove markTestSkipped and assertSame('Public Sewer', ...) when fixed.
+     * Regression: Sewer\b in $labelStop fired inside "Public Sewer",
+     * truncating the value to "Public". Fix: boundary stop now requires \s*: after
+     * a stop label so it only fires when the word is an actual field label.
      */
     public function test_parser_residential_sewer_full_value(): void
     {
         $result = $this->service->import('', $this->fixtures['residential']);
         $data = $result['data'];
 
-        $this->markTestSkipped(
-            'KNOWN PARSER BUG #2 — Sewer\\b stop truncates "Public Sewer" to "Public". ' .
-            'Current output: ' . json_encode($data['sewer'] ?? null) . '. Correct: "Public Sewer". ' .
-            'Fix: require stop words to be followed by \\s*: before terminating.'
-        );
+        $this->assertSame('Public Sewer', $data['sewer'] ?? null, 'sewer multi-word value preserved');
     }
 
     /**
-     * AUDIT: Known Parser Bug #3 — Available\b stop fires inside utility value list (SKIPPED — bug present).
-     * CURRENT (buggy) output: 'BB/HS Internet' (list truncated before "Available" token)
-     * CORRECT expected value: full multi-value list including 'Cable Available', 'Electricity Available', etc.
-     * Fix: require $labelStop words to be followed by \s*: before terminating.
-     * Remove markTestSkipped and assertStringContainsStringIgnoringCase('Cable Available', ...) when fixed.
+     * Regression: Available\b in $labelStop truncated "BB/HS Internet Available,Cable Available,..."
+     * to just "BB/HS Internet". Fix: boundary stop now requires \s*: so "Available," (no colon) is
+     * not mistaken for a field label.
      */
     public function test_parser_residential_utilities_full_multivalue(): void
     {
         $result = $this->service->import('', $this->fixtures['residential']);
         $data = $result['data'];
 
-        $this->markTestSkipped(
-            'KNOWN PARSER BUG #3 — Available\\b stop truncates utility list. ' .
-            'Current output: ' . json_encode($data['utilities'] ?? null) . '. ' .
-            'Correct: full list including "Cable Available". Fix: require \\s*: after stop words.'
-        );
+        $this->assertStringContainsStringIgnoringCase('BB/HS Internet Available', $data['utilities'] ?? '',
+            'utilities: BB/HS Internet Available present');
+        $this->assertStringContainsStringIgnoringCase('Cable Available', $data['utilities'] ?? '',
+            'utilities: Cable Available present');
+        $this->assertStringContainsStringIgnoringCase('Electricity Connected', $data['utilities'] ?? '',
+            'utilities: Electricity Connected present');
     }
 
     /**
-     * AUDIT: Known Parser Bug #1 — Furnished\b fires inside "Unfurnished" (SKIPPED — bug present).
-     * CURRENT (buggy) output: 'Un' (normalizer receives "Un", cannot map it, passes through)
-     * CORRECT expected value: 'unfurnished'
-     * Fix: use tight pattern — e.g., (?<!Un)Furnished\b or require stop words to be field labels.
-     * Remove markTestSkipped and assertSame('unfurnished', $data['furnished']) when fixed.
+     * Regression: Furnished\b in $labelStop fired inside "Unfurnished",
+     * truncating the value to "Un". Fix: boundary stop now requires \s*: so
+     * "Furnished" without a following colon is not treated as a field label.
      */
     public function test_parser_residential_furnished_full_value(): void
     {
         $result = $this->service->import('', $this->fixtures['residential']);
         $data = $result['data'];
 
-        $this->markTestSkipped(
-            'KNOWN PARSER BUG #1 — Furnished\\b fires inside "Unfurnished". ' .
-            'Current output: ' . json_encode($data['furnished'] ?? null) . '. ' .
-            'Correct: "unfurnished". Fix: tighten stop pattern so it does not fire mid-word.'
-        );
+        $this->assertSame('unfurnished', $data['furnished'] ?? null,
+            'furnished value preserved — normaliser maps Unfurnished → unfurnished');
     }
 
     /**
-     * AUDIT: Known Parser Bug #6 — HOA\b stop fires inside "Sunridge HOA" (SKIPPED — bug present).
-     * CURRENT (buggy) output: 'Sunridge'
-     * CORRECT expected value: 'Sunridge HOA'
-     * Fix: require stop words to be followed by \s*: before terminating.
-     * Remove markTestSkipped and assertSame('Sunridge HOA', ...) when fixed.
+     * Regression: HOA\b in $labelStop fired inside "Sunridge HOA",
+     * truncating the association name to "Sunridge". Fix: boundary stop now
+     * requires \s*: so trailing "HOA" without a colon is kept as part of the name.
      */
     public function test_parser_residential_association_name_with_hoa_suffix(): void
     {
         $result = $this->service->import('', $this->fixtures['residential']);
         $data = $result['data'];
 
-        $this->markTestSkipped(
-            'KNOWN PARSER BUG #6 — HOA\\b stop truncates "Sunridge HOA" to "Sunridge". ' .
-            'Current output: ' . json_encode($data['association_name'] ?? null) . '. ' .
-            'Correct: "Sunridge HOA". Fix: require \\s*: after stop words.'
-        );
+        $this->assertSame('Sunridge HOA', $data['association_name'] ?? null,
+            'association_name HOA suffix preserved');
     }
 
     // ── Vacant Land fixture — multi-word city ─────────────────────────────────
 
     /**
-     * AUDIT: Known Parser Bug #5 — City\b stop fires inside "Dade City" (SKIPPED — bug present).
-     * Same root cause as Bug #4 — City\b also fires inside "Electricity" in the rental fixture.
-     * CURRENT (buggy) output: 'Dade'
-     * CORRECT expected value: 'Dade City'
-     * Fix: require stop words to be followed by \s*: before terminating.
-     * Remove markTestSkipped and assertSame('Dade City', ...) when fixed.
+     * Regression: City\b in $labelStop fired inside "Dade City",
+     * truncating the city name to "Dade". Fix: boundary stop now requires \s*:
+     * so a trailing "City" without a colon is kept as part of the value.
      */
     public function test_parser_vacant_land_multiword_city_preserved(): void
     {
         $result = $this->service->import('', $this->fixtures['vacant_land']);
         $data = $result['data'];
 
-        $this->markTestSkipped(
-            'KNOWN PARSER BUG #5 — City\\b stop truncates "Dade City" to "Dade". ' .
-            'Current output: ' . json_encode($data['city'] ?? null) . '. ' .
-            'Correct: "Dade City". Fix: require \\s*: after stop words.'
-        );
+        $this->assertSame('Dade City', $data['city'] ?? null, 'multi-word city name preserved');
     }
 
     public function test_parser_vacant_land_lot_dimensions_and_acreage(): void
@@ -380,23 +346,21 @@ class MlsLiveImportAuditTest extends TestCase
     }
 
     /**
-     * AUDIT: Known Parser Bug #4 — City\b fires inside "Electricity" (SKIPPED — bug present).
-     * Case-insensitive stop pattern matches "city" inside "Electricity", truncating to "Electri".
-     * CURRENT (buggy) output: 'Electri'
-     * CORRECT expected value: 'Electricity' (or multi-value list)
-     * Fix: require stop words to be followed by \s*: before terminating, not bare \b.
-     * Remove markTestSkipped and assertStringContainsStringIgnoringCase('Electricity', ...) when fixed.
+     * Regression: City\b (case-insensitive) matched "city" inside "Electricity",
+     * truncating "Electricity,Gas,Water" to "Electri". Fix: boundary stop now
+     * requires \s*: so substring matches inside values are ignored.
      */
     public function test_parser_rental_tenant_pays_full_value(): void
     {
         $result = $this->service->import('', $this->fixtures['rental']);
         $data = $result['data'];
 
-        $this->markTestSkipped(
-            'KNOWN PARSER BUG #4 — City\\b fires inside "Electricity", truncates to "Electri". ' .
-            'Current output: ' . json_encode($data['tenant_pays'] ?? null) . '. ' .
-            'Correct: includes "Electricity". Fix: require \\s*: after stop words.'
-        );
+        $this->assertStringContainsStringIgnoringCase('Electricity', $data['tenant_pays'] ?? '',
+            'tenant_pays: Electricity present');
+        $this->assertStringContainsStringIgnoringCase('Gas', $data['tenant_pays'] ?? '',
+            'tenant_pays: Gas present');
+        $this->assertStringContainsStringIgnoringCase('Water', $data['tenant_pays'] ?? '',
+            'tenant_pays: Water present');
     }
 
     public function test_parser_rental_landlord_wiring_gap_fields_all_parsed(): void
@@ -457,22 +421,18 @@ class MlsLiveImportAuditTest extends TestCase
     // ── Commercial Lease ──────────────────────────────────────────────────────
 
     /**
-     * AUDIT: Known Parser Bug #7 — Association\b fires at end of name (SKIPPED — bug present).
-     * CURRENT (buggy) output: 'Executive Commerce Park'
-     * CORRECT expected value: 'Executive Commerce Park Association'
-     * Fix: require stop words to be followed by \s*: before terminating.
-     * Remove markTestSkipped and assertSame('Executive Commerce Park Association', ...) when fixed.
+     * Regression: Association\b in $labelStop fired at the end of
+     * "Executive Commerce Park Association", truncating to "Executive Commerce Park".
+     * Fix: boundary stop now requires \s*: so "Association" without a following
+     * colon is kept as part of the name.
      */
     public function test_parser_commercial_lease_association_name_with_association_suffix(): void
     {
         $result = $this->service->import('', $this->fixtures['commercial_lease']);
         $data = $result['data'];
 
-        $this->markTestSkipped(
-            'KNOWN PARSER BUG #7 — Association\\b stop truncates "Executive Commerce Park Association". ' .
-            'Current output: ' . json_encode($data['association_name'] ?? null) . '. ' .
-            'Correct: "Executive Commerce Park Association". Fix: require \\s*: after stop words.'
-        );
+        $this->assertSame('Executive Commerce Park Association', $data['association_name'] ?? null,
+            'association_name Association suffix preserved');
     }
 
     // =========================================================================

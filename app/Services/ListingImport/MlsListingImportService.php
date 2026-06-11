@@ -107,10 +107,10 @@ class MlsListingImportService
             '|Interior\s+Features?|Exterior\s+Features?' .
             '|Exterior\s+Construction\b|Exterior\s+Feat\b|Exterior\s+Information\b' .
             '|Floor\s+Covering\b|Roof\b' .
-            '|Furnishings?\b|Furnished\b|Available\b' .
+            '|Furnishings?\b(?=\s*:)|Furnished\b(?=\s*:)|Available\b(?=\s*:)' .
             '|Tax\s+(?:ID|Year)|Annual\s+(?:CDD|Prop(?:erty)?|Tax)|Taxes\b|Parcel\b' .
             '|Tax\b|List\b' .
-            '|Legal\s+Desc|Flood\s+Zone|HOA\b|Association\b|Homestead\b|CDD\b' .
+            '|Legal\s+Desc|Flood\s+Zone|HOA\b(?=\s*:)|Association\b(?=\s*:)|Homestead\b|CDD\b' .
             '|Zoning\b|Lot\s+(?:Dim|Size|Sq|Acr|Feat)|Total\s+(?:Acreage|Number)' .
             '|Year\s+Built|Bed(?:room)?s?\b|Bath(?:room)?s?\b|Beds?\b|Baths?\b' .
             '|(?:Heated\s+)?Sq\.?\s*Ft\.?|Square\s+Feet|CDOM\b' .
@@ -119,11 +119,11 @@ class MlsListingImportService
             '|Application\s+Fee\b|Security\s+Deposit\b|Minimum\s+(?:Lease|Security)\b' .
             '|(?:Monthly|Lease)\s+(?:Rent|Amount)\b|Remarks?\b|Description\b' .
             '|Directions?\b|MLS\s*(?:#|Num|No\.?|Number)' .
-            '|List\s+Price|Price\b|City\b|County\b|State\b|Zip\b|Address\b' .
+            '|List\s+Price|Price\b|City\b(?=\s*:)|County\b|State\b|Zip\b|Address\b' .
             '|Kitchen\b|Living\s+Room\b|Primary\s+Bed(?:room)?\b|Rooms\b' .
             '|Community\s+Information\b|Housing\b' .
             '|Special\s+Assessment|Homeowners?\s+Assoc|Subdivision\b' .
-            '|Foundation\b|Sewer\b|Utilities\b|Roof\s+Type\b';
+            '|Foundation\b|Sewer\b(?=\s*:)|Utilities\b|Roof\s+Type\b';
 
         /**
          * Extract a value from $text matching one of $patterns.
@@ -349,15 +349,15 @@ class MlsListingImportService
         // Matches "Flood Zone Panel:", "FEMA Flood Zone Panel:", and short "Panel:" /
         // "FEMA Panel:" variants that appear in some MLS exports.
         if ($v = $extract([
-            '/Flood\s+Zone\s+Panel[\s:]+([A-Za-z0-9\s\-]{1,30})/i',
-            '/FEMA\s+(?:Flood\s+Zone\s+)?Panel[\s:]+([A-Za-z0-9\s\-]{1,30})/i',
-            '/\bPanel[\s:]+([A-Za-z0-9\s\-]{1,30})/i',
+            '/Flood\s+Zone\s+Panel[\s:]+([A-Za-z0-9\-]{1,30})/i',
+            '/FEMA\s+(?:Flood\s+Zone\s+)?Panel[\s:]+([A-Za-z0-9\-]{1,30})/i',
+            '/\bPanel[\s:]+([A-Za-z0-9\-]{1,30})/i',
         ], true)) {
             $data['flood_zone_panel'] = $v;
         }
 
         // ─── Zoning ───────────────────────────────────────────────────────────
-        if ($v = $extract(['/Zoning[\s:\*]+([A-Za-z0-9\-\/\s]{1,30})/i'], true)) {
+        if ($v = $extract(['/Zoning[\s:\*]+([A-Za-z0-9\-\/]{1,30})/i'], true)) {
             $data['zoning'] = $v;
         }
 
