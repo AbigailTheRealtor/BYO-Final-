@@ -909,7 +909,7 @@
 
     {{-- Possession Notes --}}
     <div class="mb-3">
-        <label class="form-label fw-semibold">Possession Notes <span class="text-muted small">(optional)</span></label>
+        <label class="form-label fw-semibold">Possession Notes</label>
         <textarea name="possession_notes" class="form-control" rows="3"
             placeholder="Enter possession details or special arrangements (e.g., Possession at closing, Delayed possession, Early occupancy request)">{{ old('possession_notes', $formData->get('possession_notes')) }}</textarea>
     </div>
@@ -1135,7 +1135,7 @@
             <label class="form-label fw-semibold">
                 Response Requested By
                 <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="The date by which the landlord should respond to this application. After this date the offer will be considered withdrawn.">
+                    title="The date by which the recipient should respond to this offer. After this date, the offer will be considered withdrawn.">
                     <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
                 </span>
             </label>
@@ -1148,7 +1148,9 @@
     </div>
 
     <div class="d-flex justify-content-end gap-2">
+        @if($mode !== 'draft_terms')
         <button type="submit" id="{{ $submitBtnId }}" class="btn btn-primary px-4">{{ $submitLabel }}</button>
+        @endif
         @if($mode === 'draft_terms')
         <button type="submit"
                 formaction="{{ route('offers.submit', $offer) }}"

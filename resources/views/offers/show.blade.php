@@ -202,6 +202,7 @@
                 .btn-warning:disabled  { background-color:#ffc107; border-color:#ffc107; color:#212529; }
                 .btn-outline-secondary:disabled { background-color:transparent; color:#6c757d; border-color:#6c757d; }
             </style>
+            @if($offer->status !== 'draft')
             <div class="card mb-4">
                 <div class="card-header">
                     <strong>Available Actions</strong>
@@ -209,7 +210,6 @@
                 <div class="card-body">
                     @php
                         $actionButtons = [
-                            'can_submit'        => ['label' => 'Submit Offer',  'btn' => 'btn-primary',           'reason_key' => 'submit',        'route' => 'offers.submit',   'hide_for_submitter' => false],
                             'can_accept'        => ['label' => 'Accept',         'btn' => 'btn-success',           'reason_key' => 'accept',        'route' => 'offers.accept',   'hide_for_submitter' => true],
                             'can_reject'        => ['label' => 'Reject',         'btn' => 'btn-danger',            'reason_key' => 'reject',        'route' => 'offers.reject',   'hide_for_submitter' => true],
                             'can_withdraw'      => ['label' => 'Withdraw',       'btn' => 'btn-outline-secondary', 'reason_key' => 'withdraw',      'route' => 'offers.withdraw', 'hide_for_submitter' => false],
@@ -351,6 +351,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
         </div>
     </div>
