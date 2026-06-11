@@ -171,6 +171,8 @@
                 #withdraw-offer-action-btn { background:transparent; border-color:#6c757d; color:#6c757d; font-weight:600; }
                 #withdraw-offer-action-btn:hover { background:#6c757d; color:#fff; }
                 #withdraw-offer-action-btn:disabled { background:transparent; color:#6c757d; border-color:#6c757d; opacity:.55; }
+                #counter-offer-action-btn { background:#ffc107; border-color:#ffc107; color:#212529; font-weight:600; }
+                #counter-offer-action-btn:hover { background:#ffca2c; border-color:#ffc720; color:#212529; }
                 .btn:disabled, .btn[disabled], .btn[aria-disabled="true"] { opacity:.55; cursor:not-allowed; }
                 .btn-success:disabled  { background-color:#198754; border-color:#198754; color:#fff; }
                 .btn-danger:disabled   { background-color:#dc3545; border-color:#dc3545; color:#fff; }
@@ -239,8 +241,12 @@
                         {{-- Counter: hidden entirely for the submitter. --}}
                         @if(!$actorIsSubmitter)
                             @if(!empty($actions['can_counter']))
-                                {{-- can_counter=true: full counter form pre-populated from current offer terms --}}
-                                <div class="w-100 mt-3">
+                                {{-- can_counter=true: Counter button in actions row; form revealed on click --}}
+                                <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
+                                    <button type="button" class="btn btn-warning btn-sm" id="counter-offer-action-btn"
+                                        onclick="document.getElementById('counter-form-panel').style.display='block';this.style.display='none';">Counter</button>
+                                </div>
+                                <div id="counter-form-panel" class="w-100 mt-3" style="display:none;">
                                     <div class="card border-warning">
                                         <div class="card-header bg-warning bg-opacity-10 fw-semibold">Submit Counter Offer</div>
                                         <div class="card-body">
