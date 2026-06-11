@@ -400,7 +400,10 @@
     <dt class="col-sm-3">Response Requested By</dt>
     <dd class="col-sm-9">{{ $safeDate($metas->get('expires_at')) }}</dd>
     @php
-        $_submittedAt = isset($offer) ? $offer->submitted_at : null;
+        // Use the root offer's submitted_at so multi-round counters always show
+        // the original application timestamp, not the counter record's timestamp.
+        $_submittedAt = isset($rootOffer) ? ($rootOffer->submitted_at ?? (isset($offer) ? $offer->submitted_at : null))
+                                          : (isset($offer) ? $offer->submitted_at : null);
         $_fmtDT = function ($v) {
             if (!$v) return '—';
             try { return \Carbon\Carbon::parse($v)->format('F j, Y \a\t g:i A'); }

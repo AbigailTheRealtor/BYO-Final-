@@ -980,6 +980,7 @@
 
     {{-- Rental/Lease-specific fields --}}
     @if(in_array($offerType, ['rental', 'lease']))
+    @if($mode !== 'counter_terms')
     {{-- ── Section: Pre-Screening Information ── --}}
     <h6 class="offer-section-header">Pre-Screening Information</h6>
     <div class="row g-3 mb-3">
@@ -1065,6 +1066,7 @@
         <textarea name="screening_notes" class="form-control" rows="3"
             placeholder="Enter a brief introduction about yourself (e.g., Employed 3+ years, Excellent rental history)">{{ old('screening_notes', $formData->get('screening_notes')) }}</textarea>
     </div>
+    @endif{{-- end @if($mode !== 'counter_terms') pre-screening --}}
 
     {{-- ── Section: Rental Application & Lease Terms ── --}}
     <h6 class="offer-section-header">Rental Application &amp; Lease Terms</h6>
@@ -1147,11 +1149,13 @@
         <textarea name="additional_lease_terms" class="form-control" rows="3"
             placeholder="Enter any additional terms or requests (e.g., Request to install EV charger, Month-to-month option after initial term)">{{ old('additional_lease_terms', $formData->get('additional_lease_terms')) }}</textarea>
     </div>
+    @if($mode !== 'counter_terms')
     <div class="mb-3">
         <label class="form-label fw-semibold">Additional Message to Landlord <span class="text-muted small">(optional)</span></label>
         <textarea name="message_to_landlord" class="form-control" rows="3"
             placeholder="Enter any additional message for the landlord (e.g., Available for a showing any weekday evening)">{{ old('message_to_landlord', $formData->get('message_to_landlord')) }}</textarea>
     </div>
+    @endif{{-- end @if($mode !== 'counter_terms') message_to_landlord --}}
     @endif
 
     {{-- ── Section 6: Additional Terms & Response Deadline ── --}}

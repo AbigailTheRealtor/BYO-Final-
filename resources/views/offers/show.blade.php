@@ -162,6 +162,15 @@
                 #submit-offer-action-btn { background:#2563eb; border-color:#2563eb; color:#fff; font-weight:600; }
                 #submit-offer-action-btn:hover { background:#1d4ed8; border-color:#1d4ed8; }
                 #submit-offer-action-btn:disabled { background:#93c5fd; border-color:#93c5fd; color:#fff; }
+                #accept-offer-action-btn { background:#198754; border-color:#198754; color:#fff; font-weight:600; }
+                #accept-offer-action-btn:hover { background:#157347; border-color:#146c43; color:#fff; }
+                #accept-offer-action-btn:disabled { background:#198754; border-color:#198754; color:#fff; opacity:.55; }
+                #reject-offer-action-btn { background:#dc3545; border-color:#dc3545; color:#fff; font-weight:600; }
+                #reject-offer-action-btn:hover { background:#bb2d3b; border-color:#b02a37; color:#fff; }
+                #reject-offer-action-btn:disabled { background:#dc3545; border-color:#dc3545; color:#fff; opacity:.55; }
+                #withdraw-offer-action-btn { background:transparent; border-color:#6c757d; color:#6c757d; font-weight:600; }
+                #withdraw-offer-action-btn:hover { background:#6c757d; color:#fff; }
+                #withdraw-offer-action-btn:disabled { background:transparent; color:#6c757d; border-color:#6c757d; opacity:.55; }
                 .btn:disabled, .btn[disabled], .btn[aria-disabled="true"] { opacity:.55; cursor:not-allowed; }
                 .btn-success:disabled  { background-color:#198754; border-color:#198754; color:#fff; }
                 .btn-danger:disabled   { background-color:#dc3545; border-color:#dc3545; color:#fff; }
@@ -213,7 +222,12 @@
                                     {{-- Enabled action with a route: POST form --}}
                                     <form method="POST" action="{{ route($cfg['route'], $offer) }}">
                                         @csrf
-                                        <button type="submit" class="btn {{ $cfg['btn'] }} btn-sm"@if($flag === 'can_submit') id="submit-offer-action-btn"@endif>{{ $cfg['label'] }}</button>
+                                        <button type="submit" class="btn {{ $cfg['btn'] }} btn-sm"
+                                            @if($flag === 'can_submit')   id="submit-offer-action-btn"
+                                            @elseif($flag === 'can_accept') id="accept-offer-action-btn"
+                                            @elseif($flag === 'can_reject') id="reject-offer-action-btn"
+                                            @elseif($flag === 'can_withdraw') id="withdraw-offer-action-btn"
+                                            @endif>{{ $cfg['label'] }}</button>
                                     </form>
                                 @else
                                     {{-- Enabled action with no route (e.g. View Timeline): anchor to on-page section --}}
@@ -230,6 +244,69 @@
                                     <div class="card border-warning">
                                         <div class="card-header bg-warning bg-opacity-10 fw-semibold">Submit Counter Offer</div>
                                         <div class="card-body">
+                                            {{-- Read-only pre-screening context from the root (original) application --}}
+                                            @if(in_array($offerType, ['rental', 'lease']))
+                                            @php
+                                                $_rsm = $rootMetas;
+                                                $_hasScreening = $_rsm->get('num_occupants') || $_rsm->get('has_pets') ||
+                                                    $_rsm->get('pet_details') || $_rsm->get('smoking_preference') ||
+                                                    $_rsm->get('monthly_income') || $_rsm->get('credit_score_range') ||
+                                                    $_rsm->get('screening_notes') || $_rsm->get('screening_concerns') ||
+                                                    $_rsm->get('screening_concerns_details') || $_rsm->get('message_to_landlord');
+                                                $_fmtMoneyRo = fn($v) => $v ? number_format((float) str_replace(',', '', $v)) : '—';
+                                            @endphp
+                                            @if($_hasScreening)
+                                            <div class="card bg-light border mb-4">
+                                                <div class="card-header fw-semibold text-secondary" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:.04em;">
+                                                    Original Application — Applicant Information
+                                                </div>
+                                                <div class="card-body py-2">
+                                                    <dl class="row mb-0" style="font-size:0.9rem;">
+                                                        @if($_rsm->get('num_occupants'))
+                                                        <dt class="col-sm-4">Number of Occupants</dt>
+                                                        <dd class="col-sm-8">{{ $_rsm->get('num_occupants') }}</dd>
+                                                        @endif
+                                                        @if($_rsm->get('has_pets'))
+                                                        <dt class="col-sm-4">Pets</dt>
+                                                        <dd class="col-sm-8">{{ $_rsm->get('has_pets') }}</dd>
+                                                        @endif
+                                                        @if($_rsm->get('pet_details'))
+                                                        <dt class="col-sm-4">Pet Details</dt>
+                                                        <dd class="col-sm-8">{{ $_rsm->get('pet_details') }}</dd>
+                                                        @endif
+                                                        @if($_rsm->get('smoking_preference'))
+                                                        <dt class="col-sm-4">Smoking</dt>
+                                                        <dd class="col-sm-8">{{ $_rsm->get('smoking_preference') === 'No' ? 'Non-smoker' : 'Smoker' }}</dd>
+                                                        @endif
+                                                        @if($_rsm->get('monthly_income'))
+                                                        <dt class="col-sm-4">Est. Monthly Income</dt>
+                                                        <dd class="col-sm-8">${{ $_fmtMoneyRo($_rsm->get('monthly_income')) }}</dd>
+                                                        @endif
+                                                        @if($_rsm->get('credit_score_range'))
+                                                        <dt class="col-sm-4">Credit Score Range</dt>
+                                                        <dd class="col-sm-8">{{ $_rsm->get('credit_score_range') }}</dd>
+                                                        @endif
+                                                        @if($_rsm->get('screening_concerns'))
+                                                        <dt class="col-sm-4">Screening Concerns</dt>
+                                                        <dd class="col-sm-8">{{ $_rsm->get('screening_concerns') }}</dd>
+                                                        @endif
+                                                        @if($_rsm->get('screening_concerns') === 'Yes' && $_rsm->get('screening_concerns_details'))
+                                                        <dt class="col-sm-4">Concern Details</dt>
+                                                        <dd class="col-sm-8" style="white-space:pre-wrap;">{{ $_rsm->get('screening_concerns_details') }}</dd>
+                                                        @endif
+                                                        @if($_rsm->get('screening_notes'))
+                                                        <dt class="col-sm-4">About Applicant</dt>
+                                                        <dd class="col-sm-8" style="white-space:pre-wrap;">{{ $_rsm->get('screening_notes') }}</dd>
+                                                        @endif
+                                                        @if($_rsm->get('message_to_landlord'))
+                                                        <dt class="col-sm-4">Message to Landlord</dt>
+                                                        <dd class="col-sm-8" style="white-space:pre-wrap;">{{ $_rsm->get('message_to_landlord') }}</dd>
+                                                        @endif
+                                                    </dl>
+                                                </div>
+                                            </div>
+                                            @endif
+                                            @endif
                                             @include('offers._offer_terms_form', ['mode' => 'counter_terms', 'formData' => $counterDefaults])
                                         </div>
                                     </div>

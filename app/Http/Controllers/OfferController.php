@@ -1007,6 +1007,27 @@ class OfferController extends Controller
             $offerType = 'sale';
         }
 
+        // Walk the parent_offer_id chain to find the root (original) offer.
+        // Used to pin the "Application Submitted" timestamp and display original
+        // pre-screening data as read-only context in counter mode.
+        $rootOffer = $offer;
+        $visited   = [$offer->id => true];
+        while ($rootOffer->parent_offer_id) {
+            if (isset($visited[$rootOffer->parent_offer_id])) {
+                break; // guard against circular references
+            }
+            $parent = Offer::with('metas')->find($rootOffer->parent_offer_id);
+            if (!$parent) {
+                break;
+            }
+            $visited[$parent->id] = true;
+            $rootOffer = $parent;
+        }
+        if (!$rootOffer->relationLoaded('metas')) {
+            $rootOffer->load('metas');
+        }
+        $rootMetas = $rootOffer->metas->pluck('meta_value', 'meta_key');
+
         $counterDefaults = $metas;
 
         // For landlord-role offers (rental applications), pre-populate form defaults
@@ -1037,6 +1058,6 @@ class OfferController extends Controller
             }
         }
 
-        return view('offers.show', compact('offer', 'timeline', 'actions', 'metas', 'offerType', 'counterDefaults'));
+        return view('offers.show', compact('offer', 'timeline', 'actions', 'metas', 'offerType', 'counterDefaults', 'rootOffer', 'rootMetas'));
     }
 }
