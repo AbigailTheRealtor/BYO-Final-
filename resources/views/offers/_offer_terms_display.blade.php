@@ -375,7 +375,7 @@
     @if($metas->get('screening_concerns') === 'Yes' && $metas->get('screening_concerns_details')) <dt class="col-sm-3">Screening Concern Details</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('screening_concerns_details') }}</dd> @endif
     @endif
 
-    <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Rental Application &amp; Lease Terms</dt>
+    <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Rental Offer Terms</dt>
     <dt class="col-sm-3">Proposed Monthly Rent</dt>
     <dd class="col-sm-9">{{ $metas->get('monthly_rent') ? '$' . number_format($metas->get('monthly_rent')) : '—' }}</dd>
 
@@ -385,15 +385,10 @@
     @if($metas->get('lease_term_months')) <dt class="col-sm-3">Lease Length</dt><dd class="col-sm-9">{{ $metas->get('lease_term_months') }} months</dd> @endif
     @if($metas->get('move_in_date')) <dt class="col-sm-3">Move-in / Lease Start Date</dt><dd class="col-sm-9">{{ $safeDate($metas->get('move_in_date')) }}</dd> @endif
     @if($metas->get('last_month_rent_offered')) <dt class="col-sm-3">Last Month's Rent Offered</dt><dd class="col-sm-9">{{ $metas->get('last_month_rent_offered') }}</dd> @endif
-    @if($metas->get('move_in_funds')) <dt class="col-sm-3">Total Move-in Funds</dt><dd class="col-sm-9">${{ number_format($metas->get('move_in_funds')) }}</dd> @endif
-    @if($metas->get('utilities_terms')) <dt class="col-sm-3">Utilities</dt><dd class="col-sm-9">{{ $metas->get('utilities_terms') }}</dd> @endif
-    @if($metas->get('maintenance_responsibility')) <dt class="col-sm-3">Maintenance</dt><dd class="col-sm-9">{{ $metas->get('maintenance_responsibility') }}</dd> @endif
-    @if($metas->get('parking_terms')) <dt class="col-sm-3">Parking</dt><dd class="col-sm-9">{{ $metas->get('parking_terms') }}</dd> @endif
 
-    @if($metas->get('additional_lease_terms') || $metas->get('message_to_landlord'))
-    <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Additional Terms</dt>
-    @if($metas->get('additional_lease_terms')) <dt class="col-sm-3">Additional Terms</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('additional_lease_terms') }}</dd> @endif
-    @if($metas->get('message_to_landlord')) <dt class="col-sm-3">Additional Message to Landlord</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('message_to_landlord') }}</dd> @endif
+    @if($metas->get('additional_lease_terms'))
+    <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Additional Terms &amp; Requests</dt>
+    <dt class="col-sm-3">Additional Terms &amp; Requests</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('additional_lease_terms') }}</dd>
     @endif
 
     <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Response Deadline</dt>

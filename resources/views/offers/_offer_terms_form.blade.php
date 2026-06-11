@@ -1068,8 +1068,8 @@
     </div>
     @endif{{-- end @if($mode !== 'counter_terms') pre-screening --}}
 
-    {{-- ── Section: Rental Application & Lease Terms ── --}}
-    <h6 class="offer-section-header">Rental Application &amp; Lease Terms</h6>
+    {{-- ── Section: Rental Offer Terms ── --}}
+    <h6 class="offer-section-header">Rental Offer Terms</h6>
     <div class="row g-3 mb-3">
         <div class="col-md-4">
             <label class="form-label fw-semibold">Proposed Monthly Rent</label>
@@ -1111,60 +1111,25 @@
                 <option value="No" {{ old('last_month_rent_offered', $formData->get('last_month_rent_offered')) === 'No' ? 'selected' : '' }}>No</option>
             </select>
         </div>
-        <div class="col-md-4">
-            <label class="form-label fw-semibold">Total Move-in Funds Available</label>
-            <div class="input-group">
-                <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                <input type="text" inputmode="numeric" name="move_in_funds" class="form-control" data-money-input="true"
-                    placeholder="Enter total move-in funds available (e.g., 6,600)"
-                    value="{{ $fmtMoney(old('move_in_funds', $formData->get('move_in_funds'))) }}">
-            </div>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label fw-semibold">Utilities Responsibility</label>
-            <input type="text" name="utilities_terms" class="form-control"
-                placeholder="Enter utilities arrangement (e.g., Tenant pays electric and gas; landlord pays water)"
-                value="{{ old('utilities_terms', $formData->get('utilities_terms')) }}">
-        </div>
-        <div class="col-md-4">
-            <label class="form-label fw-semibold">Maintenance Responsibility</label>
-            <select name="maintenance_responsibility" class="form-select">
-                <option value="">Select</option>
-                @foreach(['Landlord', 'Tenant', 'Shared'] as $_mr)
-                <option value="{{ $_mr }}" {{ old('maintenance_responsibility', $formData->get('maintenance_responsibility')) === $_mr ? 'selected' : '' }}>{{ $_mr }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label fw-semibold">Parking Terms <span class="text-muted small">(optional)</span></label>
-            <input type="text" name="parking_terms" class="form-control"
-                placeholder="Enter parking terms (e.g., 1 covered spot included)"
-                value="{{ old('parking_terms', $formData->get('parking_terms')) }}">
-        </div>
     </div>
     {{-- ── Section: Additional Terms ── --}}
     <h6 class="offer-section-header">Additional Terms</h6>
     <div class="mb-3">
-        <label class="form-label fw-semibold">Additional Lease Terms / Requests <span class="text-muted small">(optional)</span></label>
+        <label class="form-label fw-semibold">Additional Terms &amp; Requests</label>
         <textarea name="additional_lease_terms" class="form-control" rows="3"
-            placeholder="Enter any additional terms or requests (e.g., Request to install EV charger, Month-to-month option after initial term)">{{ old('additional_lease_terms', $formData->get('additional_lease_terms')) }}</textarea>
+            placeholder="Enter any additional requests, conditions, accommodations, or notes for the landlord.">{{ old('additional_lease_terms', $formData->get('additional_lease_terms')) }}</textarea>
     </div>
-    @if($mode !== 'counter_terms')
-    <div class="mb-3">
-        <label class="form-label fw-semibold">Additional Message to Landlord <span class="text-muted small">(optional)</span></label>
-        <textarea name="message_to_landlord" class="form-control" rows="3"
-            placeholder="Enter any additional message for the landlord (e.g., Available for a showing any weekday evening)">{{ old('message_to_landlord', $formData->get('message_to_landlord')) }}</textarea>
-    </div>
-    @endif{{-- end @if($mode !== 'counter_terms') message_to_landlord --}}
     @endif
 
     {{-- ── Section 6: Additional Terms & Response Deadline ── --}}
     <h6 class="offer-section-header">Additional Terms &amp; Response Deadline</h6>
+    @if($offerType === 'sale')
     <div class="mb-3">
         <label class="form-label fw-semibold">Custom Terms / Special Conditions</label>
         <textarea name="custom_terms" class="form-control" rows="4"
             placeholder="Enter any special conditions or custom terms">{{ old('custom_terms', $formData->get('custom_terms')) }}</textarea>
     </div>
+    @endif
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <label class="form-label fw-semibold">

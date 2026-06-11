@@ -146,6 +146,14 @@ class OfferTermsEntryTest extends TestCase
         $response->assertSee('name="monthly_rent"', false);
         $response->assertSee('name="security_deposit"', false);
         $response->assertDontSee('name="offer_price"', false);
+        $response->assertSee('Rental Offer Terms', false);
+        $response->assertSee('Additional Terms &amp; Requests', false);
+        $response->assertDontSee('name="parking_terms"', false);
+        $response->assertDontSee('name="utilities_terms"', false);
+        $response->assertDontSee('name="maintenance_responsibility"', false);
+        $response->assertDontSee('name="move_in_funds"', false);
+        $response->assertDontSee('name="message_to_landlord"', false);
+        $response->assertDontSee('name="custom_terms"', false);
     }
 
     // ── Test 4b: Draft lease offer shows lease-specific fields ───────────────
@@ -161,6 +169,13 @@ class OfferTermsEntryTest extends TestCase
         $response->assertSee('name="security_deposit"', false);
         $response->assertSee('name="lease_term_months"', false);
         $response->assertDontSee('name="offer_price"', false);
+        $response->assertSee('Rental Offer Terms', false);
+        $response->assertDontSee('name="parking_terms"', false);
+        $response->assertDontSee('name="utilities_terms"', false);
+        $response->assertDontSee('name="maintenance_responsibility"', false);
+        $response->assertDontSee('name="move_in_funds"', false);
+        $response->assertDontSee('name="message_to_landlord"', false);
+        $response->assertDontSee('name="custom_terms"', false);
     }
 
     // ── Test 5: Non-draft offer renders terms read-only, no form, no save button
