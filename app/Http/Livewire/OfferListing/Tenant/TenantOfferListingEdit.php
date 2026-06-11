@@ -3794,6 +3794,8 @@ class TenantOfferListingEdit extends Component
 
             DB::commit();
 
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently($this->user_type, $this->auctionId);
+
             if (!$this->_isDraftSave) {
                 // Final submit — flash success and redirect to listing view.
                 session()->flash('success', 'Listing updated successfully!');
@@ -3910,6 +3912,8 @@ class TenantOfferListingEdit extends Component
 
         $this->auctionId = $newDraft->id;
         $this->listingId = $newDraft->id;
+
+        app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently($this->user_type, $this->auctionId);
 
         session()->flash('success', 'Draft saved as new version (Version ' . ($previousVersion + 1) . ').');
         return redirect()->route('offer.listing.tenant.edit', [

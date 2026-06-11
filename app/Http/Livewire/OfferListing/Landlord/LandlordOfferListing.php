@@ -2208,6 +2208,8 @@ class LandlordOfferListing extends Component
 
             $this->hasDrafts = true;
 
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', $this->listingId);
+
             session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
             return redirect()->route('offer.listing.landlord.edit', ['auctionId' => $this->listingId]);
         } catch (\Exception $e) {
@@ -3868,6 +3870,8 @@ class LandlordOfferListing extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', $this->listingId);
 
             \Log::info('[LANDLORD LISTING SUBMITTED]', [
                 'record_id' => $auction->id,

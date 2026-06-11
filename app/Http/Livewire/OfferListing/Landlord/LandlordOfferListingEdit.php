@@ -2126,6 +2126,8 @@ class LandlordOfferListingEdit extends Component
             $this->isDraft        = true;
             $this->isListingDraft = true;
 
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', $this->listingId);
+
             session()->flash('success', 'Draft saved successfully.');
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving draft: ' . $e->getMessage());
@@ -2168,6 +2170,8 @@ class LandlordOfferListingEdit extends Component
             $auction->saveMeta('draft_version',      $previousVersion + 1);
             $auction->saveMeta('parent_draft_id',    $parentDraftId);
             $auction->saveMeta('draft_payload_hash', $newPayloadHash);
+
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', $this->listingId);
 
             $this->hasDrafts = true;
 
@@ -3619,6 +3623,8 @@ class LandlordOfferListingEdit extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', $this->listingId);
 
             session()->flash('success', 'Listing updated successfully!');
 

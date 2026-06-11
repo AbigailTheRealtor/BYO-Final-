@@ -3140,6 +3140,8 @@ class TenantOfferListing extends Component
             $auction->saveMeta('parent_draft_id', $parentDraftId);
             $auction->saveMeta('draft_payload_hash', $newPayloadHash);
 
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently($this->user_type, $this->listingId);
+
             session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
             return redirect()->route('offer.listing.tenant.edit', ['auctionId' => $this->listingId, 'user_type' => $this->user_type]);
         } catch (\Exception $e) {
@@ -4925,6 +4927,8 @@ class TenantOfferListing extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently($this->user_type, $this->listingId);
 
             \Log::info('[TENANT FORM LISTING SUBMITTED]', [
                 'record_id' => $auction->id,

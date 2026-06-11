@@ -1710,6 +1710,8 @@ class BuyerOfferListingEdit extends Component
             $this->isDraft        = true;
             $this->isListingDraft = true;
 
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('buyer', $this->listingId);
+
             session()->flash('success', 'Draft saved successfully.');
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving draft: ' . $e->getMessage());
@@ -1759,6 +1761,8 @@ class BuyerOfferListingEdit extends Component
             $auction->saveMeta('draft_version',      $previousVersion + 1);
             $auction->saveMeta('parent_draft_id',    $parentDraftId);
             $auction->saveMeta('draft_payload_hash', $newPayloadHash);
+
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('buyer', $this->listingId);
 
             session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
             return redirect()->route('offer.listing.buyer.edit', ['auctionId' => $this->listingId]);
@@ -2752,6 +2756,8 @@ class BuyerOfferListingEdit extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('buyer', $this->listingId);
 
             \Log::info('[BUYER LISTING UPDATED]', [
                 'record_id' => $auction->id,

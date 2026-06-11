@@ -2450,6 +2450,8 @@ class SellerOfferListing extends Component
             $auction->saveMeta('parent_draft_id',    $parentDraftId);
             $auction->saveMeta('draft_payload_hash', $newPayloadHash);
 
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('seller', $this->listingId);
+
             session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
             return redirect()->route('offer.listing.seller.edit', ['auctionId' => $this->listingId]);
         } catch (\Exception $e) {
@@ -4238,6 +4240,8 @@ class SellerOfferListing extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('seller', $this->listingId);
 
             \Log::info('[SELLER LISTING SUBMITTED]', [
                 'record_id' => $auction->id,
