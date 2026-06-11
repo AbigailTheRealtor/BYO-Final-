@@ -1,0 +1,51 @@
+MLS # T3456789
+Address: 4521 Sunridge Drive
+City: Tampa
+State: FL
+Zip Code: 33610
+County: Hillsborough
+List Price: $485,000
+Bedrooms: 4
+Bathrooms: 2.5
+Heated Sq. Ft.: 2,184
+Sq. Ft. Heated Source: Public Records
+Year Built: 1998
+Property Type: Single Family Residence
+Lot Dimensions: 80x120
+Lot Acres: 0.22
+Lot Sq. Ft.: 9,600
+Pool: Yes
+Garage: Yes
+Garage Spaces: 2
+Carport: No
+Furnished: Unfurnished
+Air Conditioning: Central Air
+Heating and Fuel: Central,Electric
+Interior Features: Ceiling Fans(s),Crown Molding,High Ceilings,Walk-In Closet(s)
+Appliances: Dishwasher,Disposal,Microwave,Refrigerator,Range
+Roof Type: Shingle
+Exterior Construction: Block,Stucco
+Foundation: Slab
+Water: Public
+Sewer: Public Sewer
+Utilities: BB/HS Internet Available,Cable Available,Electricity Connected,Public
+Waterfront: No
+Water Access: Lake,Pond
+Water View: Lake
+Flood Zone Code: X
+Flood Zone Date: 09/01/2021
+Flood Zone Panel: 12057C0215G
+Flood Insurance Req: No
+Association Y/N: Yes
+Association Name: Sunridge HOA
+Association Fee: $350
+Association Fee Freq: Monthly
+CDD Y/N: No
+Tax ID: 19-30-17-45612-000-1410
+Tax Year: 2023
+Taxes (Annual Amount): $5,842.00
+Legal Description: SUNRIDGE ESTATES LOT 14 BLOCK 2 PB 45 PG 12
+Additional Parcels Y/N: No
+Special Assessments Y/N: No
+Public Remarks: Beautiful 4-bedroom pool home in the sought-after Sunridge Estates community. Updated kitchen with granite counters, stainless appliances. Split floor plan. Master suite with walk-in closet and en-suite bath. Screened lanai overlooking sparkling pool. Two-car garage. Close to major highways, shopping and top-rated schools.
+Directions: From I-275 head east on Hillsborough Ave, left on 46th St, right on Sunridge Drive. Home on right.

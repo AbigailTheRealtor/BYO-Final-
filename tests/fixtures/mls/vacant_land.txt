@@ -1,0 +1,30 @@
+MLS # L4567890
+Address: 0 Riverside Road
+City: Dade City
+State: FL
+Zip Code: 33525
+County: Pasco
+List Price: $185,000
+Lot Dimensions: 200x500
+Lot Acres: 2.30
+Lot Sq. Ft.: 100,188
+Zoning: A-C
+Waterfront: Yes
+Water Access: Creek,River
+Water View: Creek
+Flood Zone Code: A
+Flood Zone Date: 11/02/2020
+Flood Zone Panel: 12101C0552G
+Flood Insurance Req: Yes
+Association Y/N: No
+CDD Y/N: No
+Tax ID: 21-24-21-0000-01800-0000
+Tax Year: 2023
+Taxes (Annual Amount): $1,240.00
+Legal Description: RIVERSIDE RANCH TRACT 18 OR 4521 PG 3320
+Additional Parcels Y/N: No
+Total Number of Parcels: 1
+Special Assessments Y/N: No
+Special Assessment Description: None
+Public Remarks: Beautiful 2.3-acre parcel with 200 feet of direct creek frontage and river access. Zoned Agricultural-Commercial. No deed restrictions. Utilities available at road. Great opportunity for residential development or recreational use. Seller to provide survey.
+Directions: From US-301 heading north, turn left on Riverside Road, property is approximately 1.2 miles on the right. Look for survey stakes.

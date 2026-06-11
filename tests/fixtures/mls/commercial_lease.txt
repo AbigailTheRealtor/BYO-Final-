@@ -1,0 +1,27 @@
+MLS # CL9834210
+Address: 7290 Executive Drive Suite 101
+City: Fort Myers
+State: FL
+Zip Code: 33907
+County: Lee
+Monthly Rent: $5,200
+Available: 09/01/2026
+Tenant Pays: Electricity,HVAC Maintenance,Janitorial
+Rent Includes: Taxes,Insurance,Common Area Maintenance
+Flood Zone Code: X
+Flood Zone Date: 06/18/2020
+Flood Zone Panel: 12071C0295G
+Flood Insurance Req: No
+Association Y/N: Yes
+Association Name: Executive Commerce Park Association
+Association Fee: $850
+Association Fee Freq: Monthly
+CDD Y/N: No
+Tax ID: 14-45-24-0000-07290-0000
+Tax Year: 2023
+Taxes (Annual Amount): $11,500.00
+Legal Description: EXECUTIVE COMMERCE PARK LOT 4 BLDG B UNIT 101 PB 67 PG 89
+Additional Parcels Y/N: No
+Special Assessments Y/N: No
+Public Remarks: Class-A office suite in the prestigious Executive Commerce Park. 2,800 sq ft with private offices, conference room, kitchenette, and open workspace. Fiber internet available. Ample covered parking ratio. Close to Southwest Florida International Airport and major retail. Landlord TI allowance negotiable for qualified tenant.
+Directions: From Colonial Blvd head south on US-41, right on Executive Dr. Suite 101 is in Building B on the right. Visitor parking in front.

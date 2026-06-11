@@ -1,0 +1,35 @@
+MLS # I8923456
+Address: 3340 Palms Avenue
+City: Clearwater
+State: FL
+Zip Code: 33759
+County: Pinellas
+List Price: $1,250,000
+Heated Sq. Ft.: 6,800
+Sq. Ft. Heated Source: Public Records
+Year Built: 1978
+Lot Dimensions: 150x200
+Lot Acres: 0.69
+Lot Sq. Ft.: 30,000
+Zoning: MF-2
+Pool: No
+Garage: No
+Carport: Yes
+Waterfront: No
+Flood Zone Code: X
+Flood Zone Date: 09/01/2021
+Flood Zone Panel: 12103C0161G
+Flood Insurance Req: No
+Association Y/N: No
+CDD Y/N: No
+Tax ID: 05-29-15-00000-310-0100
+Tax Year: 2023
+Taxes (Annual Amount): $14,320.00
+Legal Description: PALMS AVENUE MULTI-FAMILY LOT 10 BLK 3 PB 22 PG 44
+Additional Parcels Y/N: No
+Total Number of Parcels: 1
+Special Assessments Y/N: Yes
+Special Assessment Amount: 8,500
+Special Assessment Description: Road improvement district assessment, payable over 5 years.
+Public Remarks: Exceptional multi-family investment opportunity — 8-unit apartment complex in established Clearwater neighborhood. All units currently rented. Recent roof replacement (2021), updated electrical panels. On-site laundry, off-street parking. Strong rental history with long-term tenants. Cap rate approximately 7.2%.
+Directions: From US-19 head west on Drew St, left on Highland Ave, right on Palms Avenue. Property on left, large complex with parking lot.
