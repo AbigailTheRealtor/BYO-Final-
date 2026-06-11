@@ -252,7 +252,6 @@ class AskAiResponseContractService
                 // HOA / fees
                 'listing.hoa_association',
                 'listing.hoa_fee',
-                'listing.hoa_fee_requirement',
                 'listing.hoa_payment_schedule',
                 'listing.hoa_acceptable',
                 'listing.max_hoa_fee',
@@ -261,8 +260,6 @@ class AskAiResponseContractService
                 'listing.association_fee_amount',
                 'listing.association_fee_frequency',
                 'listing.association_amenities',
-                'listing.condo_fee',
-                'listing.condo_fee_schedule',
                 // Pets
                 'listing.pets_allowed',
                 'listing.number_of_pets_allowed',

@@ -2303,6 +2303,7 @@ class AskAiContextBuilderServiceTest extends TestCase
                     'leasing_restrictions'  => 'Yes',
                     'flood_zone_code'       => 'X',
                     'target_closing_date'   => '2026-09-01',
+                    'buy_now_price'         => '399000',
                     'annual_property_taxes' => '4200',
                     'service_type'          => 'Full Service',
                 ]
@@ -2319,7 +2320,10 @@ class AskAiContextBuilderServiceTest extends TestCase
             // Factual — native columns
             'address', 'description', 'auction_length', 'sold',
             // Factual — EAV (corrected from old property_auctions phantom keys)
-            'asking_price', 'bedrooms', 'bathrooms', 'square_feet', 'year_built',
+            'asking_price',
+            // buy_now_price: seller offer listing forms save via saveMeta('buy_now_price')
+            'buy_now_price',
+            'bedrooms', 'bathrooms', 'square_feet', 'year_built',
             'pool', 'pool_type', 'carport', 'garage', 'garage_spaces',
             // water_view: decoded from the seller 'view' JSON meta key
             'water_view',
@@ -2336,8 +2340,13 @@ class AskAiContextBuilderServiceTest extends TestCase
 
         // Phantom keys from old property_auctions schema must be absent
         $removedPhantomKeys = [
-            'buy_now_price', 'water_extras', 'hoa_fee_requirement',
-            'condo_fee', 'condo_fee_schedule', 'rental_restrictions_description',
+            // hoa_fee_requirement: never saved by any current seller form; phantom from legacy
+            // property_auctions schema; removed from extractor, LISTING_KEY_KEYWORD_MAP, and contract.
+            'hoa_fee_requirement',
+            // condo_fee / condo_fee_schedule: legacy property_auctions native columns;
+            // seller_agent_auctions has no such columns and no form saves them via EAV.
+            'condo_fee', 'condo_fee_schedule',
+            'water_extras', 'rental_restrictions_description',
             'is_in_flood_zone', 'lease_terms', 'tenant_pays', 'landlord_pays',
             'mls_id', 'showing_instructions',
         ];
@@ -3566,5 +3575,64 @@ class AskAiContextBuilderServiceTest extends TestCase
 
         $this->assertStringContainsString('6 Months', (string) $result['listing']['desired_lease_length'],
             'desired_lease_length must decode from lease_for JSON when desired_lease_length is absent');
+    }
+
+    // =========================================================================
+    // Case W — Phase 1 lineage remediation fixes (buy_now_price + phantom removal)
+    // =========================================================================
+
+    public function test_case_W_seller_buy_now_price_reads_buy_now_price_meta(): void
+    {
+        // Lineage fix (Phase 1): seller offer listing forms save buy_now_price via
+        // saveMeta('buy_now_price', ...) into seller_agent_auction_metas.
+        // The extractor must expose it as listing['buy_now_price'] so the
+        // LISTING_KEY_KEYWORD_MAP entry for 'listing.buy_now_price' can route correctly.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['buy_now_price' => '549000'])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('buy_now_price', $result['listing'],
+            'Seller context must contain buy_now_price key after Phase 1 lineage fix');
+        $this->assertSame('549000', $result['listing']['buy_now_price'],
+            'buy_now_price must be read from buy_now_price EAV meta key');
+    }
+
+    public function test_case_W_seller_hoa_fee_requirement_is_absent_from_context(): void
+    {
+        // Lineage fix (Phase 1): hoa_fee_requirement is a phantom key — no current
+        // seller form saves it via saveMeta(), and seller_agent_auctions has no such
+        // native column. The field was removed from LISTING_KEY_KEYWORD_MAP and the
+        // response contract. The context builder must NOT expose it.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayNotHasKey('hoa_fee_requirement', $result['listing'],
+            'hoa_fee_requirement is a phantom key and must not appear in seller context');
+    }
+
+    public function test_case_W_seller_condo_fee_is_absent_from_context(): void
+    {
+        // Lineage fix (Phase 1): condo_fee and condo_fee_schedule are phantom keys —
+        // legacy property_auctions native columns that have no equivalent in
+        // seller_agent_auctions and are not saved by any current seller form.
+        // Removed from response contract. Must not appear in seller context.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [])
+        );
+
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayNotHasKey('condo_fee', $result['listing'],
+            'condo_fee is a phantom key and must not appear in seller context');
+        $this->assertArrayNotHasKey('condo_fee_schedule', $result['listing'],
+            'condo_fee_schedule is a phantom key and must not appear in seller context');
     }
 }

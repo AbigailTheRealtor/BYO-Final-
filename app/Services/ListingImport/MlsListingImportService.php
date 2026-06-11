@@ -143,7 +143,7 @@ class MlsListingImportService
                         // Using \s* (not \s+) handles the no-separator case where a label
                         // immediately follows the captured value with no space
                         // (e.g. "1 SpacesCarport:No" or "Central AirFloor Covering:").
-                        if (preg_match('/^(.*?)(?:\s*(?:' . $labelStop . ')\b)/is', $val, $sm)) {
+                        if (preg_match('/^(.*?)(?:\s*(?:' . $labelStop . ')\s*:)/is', $val, $sm)) {
                             $val = trim($sm[1]);
                         }
                     }

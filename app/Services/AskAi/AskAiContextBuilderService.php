@@ -345,6 +345,10 @@ class AskAiContextBuilderService
                 'address'              => $nativeGet('address'),
                 'description'          => $nativeGet('description'),
                 'asking_price'         => $infoGet('maximum_budget'),
+                // buy_now_price: seller offer listing forms save this field via
+                // saveMeta('buy_now_price', ...) into seller_agent_auction_metas.
+                // Live-DB audit confirmed the key is present on offer-listing rows.
+                'buy_now_price'        => $infoGet('buy_now_price'),
                 'bedrooms'             => $this->resolveOtherValue(
                                              $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
                                              $infoGet,

@@ -14,7 +14,16 @@ use PHPUnit\Framework\TestCase;
  * AskAiApprovedFieldCoverageHarnessTest
  *
  * Comprehensive, data-driven coverage harness for every field registered in
- * AskAiRunnerV2Service::LISTING_KEY_KEYWORD_MAP (50 fields as of June 2026).
+ * AskAiRunnerV2Service::LISTING_KEY_KEYWORD_MAP (49 fields as of June 2026).
+ *
+ * Phase 1 lineage remediation (June 2026):
+ *   - listing.hoa_fee_requirement removed: phantom key — no current form saves it via
+ *     saveMeta(), and neither seller_agent_auctions nor buyer_agent_auctions has a
+ *     native column for it. Removed from LISTING_KEY_KEYWORD_MAP, context label map,
+ *     and AskAiResponseContractService allowed_context.
+ *   - listing.condo_fee / listing.condo_fee_schedule removed from response contract:
+ *     legacy property_auctions native columns not present in any current model.
+ *   - listing.buy_now_price now wired in seller extractor via infoGet('buy_now_price').
  *
  * For each approved field the harness asserts four properties:
  *
@@ -54,45 +63,44 @@ use PHPUnit\Framework\TestCase;
  * | 20 | listing.appliances                 | what appliances are included | list of appliances in the unit | Included appliances information |
  * | 21 | listing.hoa_association            | is there an hoa       | does it have an hoa   | HOA association information             |
  * | 22 | listing.hoa_fee                    | hoa fee               | monthly hoa dues      | HOA fee information                     |
- * | 23 | listing.hoa_fee_requirement        | is the hoa mandatory  | is hoa required       | HOA fee requirement information         |
- * | 24 | listing.hoa_acceptable             | is the buyer okay with hoa| buyer hoa preference| Buyer HOA acceptability information    |
- * | 25 | listing.has_hoa                    | does this rental have an hoa| hoa for this rental property| HOA status information         |
- * | 26 | listing.association_amenities      | association amenities | what does the community association offer| Association amenities information |
- * | 27 | listing.pets_allowed               | are pets allowed      | is this pet-friendly  | Pet policy information                  |
- * | 28 | listing.pet_policy                 | what is the pet policy for this rental| pet rules for this rental| Pet policy details information |
- * | 29 | listing.pet_deposit_fee_rent       | pet deposit           | pet fee amount        | Pet deposit and fee information         |
- * | 30 | listing.pet_information            | what pets does the tenant have| tenant pet details| Tenant pet information                |
- * | 31 | listing.lease_terms                | existing lease terms on this property| current tenant lease on property| Existing lease terms information |
- * | 32 | listing.lease_length               | what lease lengths are available| lease length options| Lease length information          |
- * | 33 | listing.desired_lease_length       | desired lease length  | what lease length is desired| Tenant desired lease length information |
- * | 34 | listing.renewal_option             | renewal option available| is lease renewal an option| Lease renewal option information  |
- * | 35 | listing.rental_restrictions        | rental restrictions on this property| can this property be used as a rental investment| Rental restrictions information |
- * | 36 | listing.utilities                  | what utilities are included| utilities included with rent| Included utilities information |
- * | 37 | listing.tenant_pays                | what utilities does the tenant pay| tenant utility responsibilities| Tenant utility responsibility information |
- * | 38 | listing.smoking_policy             | smoking policy for this rental unit| does this unit allow smoking| Smoking policy information |
- * | 39 | listing.subletting_policy          | subletting policy for this unit| subletting rules for this unit| Subletting policy information |
- * | 40 | listing.parking_terms              | parking terms for this rental| is parking included in rent| Parking terms information |
- * | 41 | listing.available_date             | move-in date          | when is this unit available| Available date information        |
- * | 42 | listing.closing_date               | closing date          | preferred closing date| Preferred closing date information      |
- * | 43 | listing.loan_pre_approved          | buyer pre-approved for a loan| is the buyer pre-approved| Loan pre-approval information   |
- * | 44 | listing.financing_type             | financing type        | what type of financing is the buyer using| Financing type information |
- * | 45 | listing.inspection_period          | inspection period     | how many days for inspection| Inspection period information    |
- * | 46 | listing.inspection_contingency_buyer| inspection contingency| does the buyer need an inspection contingency| Inspection contingency information |
- * | 47 | listing.appraisal_contingency_buyer| appraisal contingency | is there an appraisal contingency| Appraisal contingency information |
- * | 48 | listing.financing_contingency_buyer| financing contingency | is the offer contingent on financing| Financing contingency information |
- * | 49 | listing.flood_zone_code            | is this in a flood zone| flood zone designation | Flood zone status information          |
- * | 50 | listing.max_rent (rental_budget alt)| tenant's rental budget| what is your budget for rent| Tenant maximum rent budget information |
+ * | 23 | listing.hoa_acceptable             | is the buyer okay with hoa| buyer hoa preference| Buyer HOA acceptability information    |
+ * | 24 | listing.has_hoa                    | does this rental have an hoa| hoa for this rental property| HOA status information         |
+ * | 25 | listing.association_amenities      | association amenities | what does the community association offer| Association amenities information |
+ * | 26 | listing.pets_allowed               | are pets allowed      | is this pet-friendly  | Pet policy information                  |
+ * | 27 | listing.pet_policy                 | what is the pet policy for this rental| pet rules for this rental| Pet policy details information |
+ * | 28 | listing.pet_deposit_fee_rent       | pet deposit           | pet fee amount        | Pet deposit and fee information         |
+ * | 29 | listing.pet_information            | what pets does the tenant have| tenant pet details| Tenant pet information                |
+ * | 30 | listing.lease_terms                | existing lease terms on this property| current tenant lease on property| Existing lease terms information |
+ * | 31 | listing.lease_length               | what lease lengths are available| lease length options| Lease length information          |
+ * | 32 | listing.desired_lease_length       | desired lease length  | what lease length is desired| Tenant desired lease length information |
+ * | 33 | listing.renewal_option             | renewal option available| is lease renewal an option| Lease renewal option information  |
+ * | 34 | listing.rental_restrictions        | rental restrictions on this property| can this property be used as a rental investment| Rental restrictions information |
+ * | 35 | listing.utilities                  | what utilities are included| utilities included with rent| Included utilities information |
+ * | 36 | listing.tenant_pays                | what utilities does the tenant pay| tenant utility responsibilities| Tenant utility responsibility information |
+ * | 37 | listing.smoking_policy             | smoking policy for this rental unit| does this unit allow smoking| Smoking policy information |
+ * | 38 | listing.subletting_policy          | subletting policy for this unit| subletting rules for this unit| Subletting policy information |
+ * | 39 | listing.parking_terms              | parking terms for this rental| is parking included in rent| Parking terms information |
+ * | 40 | listing.available_date             | move-in date          | when is this unit available| Available date information        |
+ * | 41 | listing.closing_date               | closing date          | preferred closing date| Preferred closing date information      |
+ * | 42 | listing.loan_pre_approved          | buyer pre-approved for a loan| is the buyer pre-approved| Loan pre-approval information   |
+ * | 43 | listing.financing_type             | financing type        | what type of financing is the buyer using| Financing type information |
+ * | 44 | listing.inspection_period          | inspection period     | how many days for inspection| Inspection period information    |
+ * | 45 | listing.inspection_contingency_buyer| inspection contingency| does the buyer need an inspection contingency| Inspection contingency information |
+ * | 46 | listing.appraisal_contingency_buyer| appraisal contingency | is there an appraisal contingency| Appraisal contingency information |
+ * | 47 | listing.financing_contingency_buyer| financing contingency | is the offer contingent on financing| Financing contingency information |
+ * | 48 | listing.flood_zone_code            | is this in a flood zone| flood zone designation | Flood zone status information          |
+ * | 49 | listing.max_rent (rental_budget alt)| tenant's rental budget| what is your budget for rent| Tenant maximum rent budget information |
  *
  * Chip-vs-typed parity: Question A = chip text; Question B = typed variant. Both must
  * route to the same canonical key. Tests (A) and (B) together prove parity.
  *
- * Summary metrics (as of June 2026 after all fixes):
- *   Total approved fields:    50
- *   Covered by harness:       50
- *   Passed (A+B routing):     50
+ * Summary metrics (as of June 2026 after Phase 1 lineage remediation):
+ *   Total approved fields:    49  (was 50; hoa_fee_requirement removed as phantom)
+ *   Covered by harness:       49
+ *   Passed (A+B routing):     49
  *   Failed routing:            0
- *   Guard B covered:          50
- *   Direct-return covered:    50
+ *   Guard B covered:          49
+ *   Direct-return covered:    49
  *   Browser/service mismatch:  0 (both routes call same AskAiRunnerV2Service::run())
  *   Other leaks fixed:         1 (decodeJsonField "Other" filter)
  *
@@ -101,7 +109,7 @@ use PHPUnit\Framework\TestCase;
 class AskAiApprovedFieldCoverageHarnessTest extends TestCase
 {
     // =========================================================================
-    // Data provider — all 50 approved fields
+    // Data provider — all 49 approved fields
     // Columns: [canonicalKey, questionA, questionB, sampleValue, guardBLabel]
     // questionA = chip text; questionB = typed variant
     // Both must resolve to canonicalKey via AskAiQuestionClassifierService + detectListingFieldKey
@@ -273,13 +281,6 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
                 'What are the monthly HOA dues?',
                 '250',
                 'HOA fee information',
-            ],
-            'hoa_fee_requirement' => [
-                'listing.hoa_fee_requirement',
-                'Is the HOA mandatory?',
-                'Is HOA required?',
-                'Yes',
-                'HOA fee requirement information',
             ],
             'hoa_acceptable' => [
                 'listing.hoa_acceptable',

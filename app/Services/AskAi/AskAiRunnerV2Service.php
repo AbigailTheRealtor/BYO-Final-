@@ -1108,12 +1108,6 @@ class AskAiRunnerV2Service
             'hoa cost',
             'how much is the hoa',
         ],
-        'listing.hoa_fee_requirement' => [
-            'is the hoa mandatory',
-            'is hoa required',
-            'mandatory hoa fee',
-            'is the hoa fee required',
-        ],
         'listing.hoa_acceptable' => [
             'is the buyer okay with hoa',
             'buyer hoa preference',
@@ -2034,7 +2028,6 @@ class AskAiRunnerV2Service
             // Listing.* fields — HOA & Community
             'listing.hoa_association'                    => 'HOA association information',
             'listing.hoa_fee'                            => 'HOA fee information',
-            'listing.hoa_fee_requirement'                => 'HOA fee requirement information',
             'listing.hoa_acceptable'                     => 'Buyer HOA acceptability information',
             'listing.has_hoa'                            => 'HOA status information',
             'listing.association_amenities'              => 'Association amenities information',
