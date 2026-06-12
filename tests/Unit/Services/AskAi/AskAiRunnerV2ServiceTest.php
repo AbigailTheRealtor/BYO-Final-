@@ -8,6 +8,7 @@ use App\Services\AskAi\AskAiIntentNormalizerService;
 use App\Services\AskAi\AskAiInternalRunnerService;
 use App\Services\AskAi\AskAiOpenAiAdapterService;
 use App\Services\AskAi\AskAiQuestionClassifierService;
+use App\Services\AskAi\AskAiKnowledgeSearchService;
 use App\Services\AskAi\AskAiRunnerV2Service;
 use PHPUnit\Framework\TestCase;
 
@@ -90,8 +91,35 @@ class AskAiRunnerV2ServiceTest extends TestCase
             $mocks['adapter'],
             $mocks['finalBuilder'],
             $mocks['followUpService'],
-            $mocks['normalizer'] ?? null
+            $mocks['normalizer']       ?? null,
+            $mocks['knowledgeSearch']  ?? null
         );
+    }
+
+    /**
+     * Build a mock AskAiKnowledgeSearchService that returns the given outcome.
+     *
+     * @param  string      $outcome  database_hit|blank_information_not_provided|restricted|not_found
+     * @param  string|null $answer   Stored answer text (for hit/blank outcomes).
+     */
+    private function makeSearchMock(string $outcome, ?string $answer = 'Stored answer.'): AskAiKnowledgeSearchService
+    {
+        $source = [
+            'answer_source'    => ($outcome === 'database_hit' || $outcome === 'blank_information_not_provided' || $outcome === 'restricted') ? 'database' : null,
+            'snapshot_id'      => $outcome !== 'not_found' ? 1 : null,
+            'canonical_key'    => $outcome !== 'not_found' ? 'test_key' : null,
+            'match_type'       => $outcome !== 'not_found' ? 'faq_canonical_key' : null,
+            'snapshot_version' => $outcome !== 'not_found' ? 1 : null,
+        ];
+
+        $mock = $this->createMock(AskAiKnowledgeSearchService::class);
+        $mock->method('search')->willReturn([
+            'outcome' => $outcome,
+            'answer'  => in_array($outcome, ['database_hit', 'blank_information_not_provided']) ? $answer : null,
+            'source'  => $source,
+        ]);
+
+        return $mock;
     }
 
     /**
@@ -1968,7 +1996,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
             ['normalized_field_key' => 'listing.annual_property_taxes']
         );
 
-        $this->assertStringContainsString('has not been provided', $result['final_response']['answer'] ?? '');
+        $this->assertSame('Information not provided.', $result['final_response']['answer'] ?? '');
     }
 
     public function test_case_N2_listing_field_null_still_fires_guard_b(): void
@@ -2123,7 +2151,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
 
         $answer = $result['final_response']['answer'] ?? '';
         $this->assertStringNotContainsString('could not generate', $answer);
-        $this->assertStringContainsString('has not been provided', $answer);
+        $this->assertSame('Information not provided.', $answer);
     }
 
     public function test_case_N5_annual_property_taxes_populated_failed_adapter_returns_value_directly(): void
@@ -2504,5 +2532,308 @@ class AskAiRunnerV2ServiceTest extends TestCase
             $content,
             'run() must pass $listingType as the third argument to normalize()'
         );
+    }
+
+    // =========================================================================
+    // Case Q — Phase 4: database-first knowledge search short-circuit paths
+    //
+    //   Q1. database_hit   — adapter is never called; status=ready;
+    //                        outcome_category=database_hit; source.answer_source=database.
+    //   Q2. blank          — adapter is never called; status=insufficient_context;
+    //                        outcome_category=blank_information_not_provided.
+    //   Q3. restricted     — adapter is never called; status=blocked;
+    //                        outcome_category=blocked_restricted.
+    //   Q4. not_found      — adapter IS called (falls through to OpenAI);
+    //                        outcome_category=openai_fallback.
+    //   Q5. blocked pkg    — prompt_package is blocked (no search service);
+    //                        outcome_category=blocked_restricted (not openai_fallback).
+    //   Q6. unsupported pkg— prompt_package is unsupported;
+    //                        outcome_category=unsupported.
+    // =========================================================================
+
+    // ── Q1 ── database_hit short-circuit ──────────────────────────────────────
+
+    public function test_case_Q1_database_hit_adapter_never_called(): void
+    {
+        $mocks                   = $this->makeMocks();
+        $mocks['knowledgeSearch'] = $this->makeSearchMock('database_hit', 'Bedrooms: 3');
+        $runner                  = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => null,
+            ],
+        ]));
+        $mocks['adapter']->expects($this->never())->method('generate');
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $this->assertSame('ready', $result['status']);
+        $this->assertTrue($result['success']);
+    }
+
+    public function test_case_Q1_database_hit_outcome_category_is_database_hit(): void
+    {
+        $mocks                   = $this->makeMocks();
+        $mocks['knowledgeSearch'] = $this->makeSearchMock('database_hit', 'Bedrooms: 3');
+        $runner                  = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => null,
+            ],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $this->assertSame('database_hit', $result['outcome_category']);
+    }
+
+    public function test_case_Q1_database_hit_source_metadata_has_database_answer_source(): void
+    {
+        $mocks                   = $this->makeMocks();
+        $mocks['knowledgeSearch'] = $this->makeSearchMock('database_hit', 'Bedrooms: 3');
+        $runner                  = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => null,
+            ],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $source = $result['final_response']['source'] ?? null;
+        $this->assertNotNull($source, 'final_response must contain source key on database_hit');
+        $this->assertSame('database', $source['answer_source']);
+    }
+
+    // ── Q2 ── blank short-circuit ─────────────────────────────────────────────
+
+    public function test_case_Q2_blank_adapter_never_called(): void
+    {
+        $mocks                   = $this->makeMocks();
+        $mocks['knowledgeSearch'] = $this->makeSearchMock('blank_information_not_provided', 'Information not provided.');
+        $runner                  = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => null,
+            ],
+        ]));
+        $mocks['adapter']->expects($this->never())->method('generate');
+
+        $result = $runner->run('seller', 1, 'What is the lot size?');
+
+        $this->assertSame('insufficient_context', $result['status']);
+        $this->assertFalse($result['success']);
+    }
+
+    public function test_case_Q2_blank_outcome_category_is_blank_information_not_provided(): void
+    {
+        $mocks                   = $this->makeMocks();
+        $mocks['knowledgeSearch'] = $this->makeSearchMock('blank_information_not_provided', 'Information not provided.');
+        $runner                  = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => null,
+            ],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+
+        $result = $runner->run('seller', 1, 'What is the lot size?');
+
+        $this->assertSame('blank_information_not_provided', $result['outcome_category']);
+    }
+
+    // ── Q3 ── restricted short-circuit ───────────────────────────────────────
+
+    public function test_case_Q3_restricted_adapter_never_called(): void
+    {
+        $mocks                   = $this->makeMocks();
+        $mocks['knowledgeSearch'] = $this->makeSearchMock('restricted');
+        $runner                  = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => 'This information is restricted.',
+            ],
+        ]));
+        $mocks['adapter']->expects($this->never())->method('generate');
+
+        $result = $runner->run('seller', 1, 'What is the owner name?');
+
+        $this->assertSame('blocked', $result['status']);
+        $this->assertFalse($result['success']);
+    }
+
+    public function test_case_Q3_restricted_outcome_category_is_blocked_restricted(): void
+    {
+        $mocks                   = $this->makeMocks();
+        $mocks['knowledgeSearch'] = $this->makeSearchMock('restricted');
+        $runner                  = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => 'This information is restricted.',
+            ],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+
+        $result = $runner->run('seller', 1, 'What is the owner name?');
+
+        $this->assertSame('blocked_restricted', $result['outcome_category']);
+    }
+
+    // ── Q4 ── not_found falls through to OpenAI ───────────────────────────────
+
+    public function test_case_Q4_not_found_adapter_is_called(): void
+    {
+        $mocks                   = $this->makeMocks();
+        $mocks['knowledgeSearch'] = $this->makeSearchMock('not_found');
+        $runner                  = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->expects($this->once())->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property special?');
+
+        $this->assertSame('ready', $result['status']);
+    }
+
+    public function test_case_Q4_not_found_outcome_category_is_openai_fallback(): void
+    {
+        $mocks                   = $this->makeMocks();
+        $mocks['knowledgeSearch'] = $this->makeSearchMock('not_found');
+        $runner                  = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property special?');
+
+        $this->assertSame('openai_fallback', $result['outcome_category']);
+    }
+
+    public function test_case_Q4_not_found_source_metadata_has_openai_answer_source(): void
+    {
+        $mocks                   = $this->makeMocks();
+        $mocks['knowledgeSearch'] = $this->makeSearchMock('not_found');
+        $runner                  = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification());
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What makes this property special?');
+
+        $source = $result['final_response']['source'] ?? null;
+        $this->assertNotNull($source, 'final_response must contain source key on OpenAI path');
+        $this->assertSame('openai', $source['answer_source']);
+    }
+
+    // ── Q5 ── blocked prompt_package → outcome_category=blocked_restricted ────
+
+    public function test_case_Q5_blocked_prompt_package_outcome_category_is_blocked_restricted(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('prohibited'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'blocked',
+            'prompt_package' => [
+                'status'               => 'blocked',
+                'question_type'        => 'prohibited',
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => 'Cannot answer this question.',
+            ],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'blocked',
+        ]));
+
+        $result = $runner->run('seller', 1, 'What is the seller tax ID?');
+
+        $this->assertSame('blocked_restricted', $result['outcome_category'],
+            'A blocked prompt_package must produce outcome_category=blocked_restricted, not openai_fallback');
+    }
+
+    // ── Q6 ── unsupported prompt_package → outcome_category=unsupported ───────
+
+    public function test_case_Q6_unsupported_prompt_package_outcome_category_is_unsupported(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'unsupported',
+            'prompt_package' => [
+                'status'               => 'unsupported',
+                'question_type'        => 'unsupported',
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => null,
+            ],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'unsupported',
+        ]));
+
+        $result = $runner->run('seller', 1, 'What is the meaning of life?');
+
+        $this->assertSame('unsupported', $result['outcome_category'],
+            'An unsupported prompt_package must produce outcome_category=unsupported, not openai_fallback');
     }
 }

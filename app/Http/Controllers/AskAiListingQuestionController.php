@@ -101,6 +101,17 @@ class AskAiListingQuestionController extends Controller
             $totalTokens      = (int) ($adapterResult['total_tokens']      ?? 0);
             $apiRequestId     = $adapterResult['api_request_id']           ?? null;
 
+            // Phase 4: read outcome_category from runner result; derive for legacy paths.
+            $outcomeCategory = $result['outcome_category'] ?? null;
+            if ($outcomeCategory === null) {
+                $outcomeCategory = match ($status) {
+                    'blocked'              => 'blocked_restricted',
+                    'failed'               => 'error',
+                    'insufficient_context' => 'openai_fallback',
+                    default                => null,
+                };
+            }
+
             try {
                 $this->logger->logListingQuestion([
                     'listing_type'     => $listingType,
@@ -118,6 +129,7 @@ class AskAiListingQuestionController extends Controller
                     'completion_tokens' => $completionTokens,
                     'total_tokens'      => $totalTokens,
                     'api_request_id'    => $apiRequestId,
+                    'outcome_category'  => $outcomeCategory,
                 ]);
             } catch (\Throwable $logEx) {
             }
@@ -155,6 +167,7 @@ class AskAiListingQuestionController extends Controller
                 'refusal_message'     => $final['refusal_message']    ?? null,
                 'disclosures'         => $final['disclosures']        ?? null,
                 'source_attribution'  => $final['source_attribution'] ?? null,
+                'source'              => $final['source']             ?? null,
                 'error'               => null,
                 'follow_up_questions' => $followUpQuestions,
             ]);
@@ -179,6 +192,7 @@ class AskAiListingQuestionController extends Controller
                     'completion_tokens' => 0,
                     'total_tokens'      => 0,
                     'api_request_id'    => null,
+                    'outcome_category'  => 'error',
                 ]);
             } catch (\Throwable $logEx) {
             }
@@ -190,6 +204,7 @@ class AskAiListingQuestionController extends Controller
                 'refusal_message'     => null,
                 'disclosures'         => null,
                 'source_attribution'  => null,
+                'source'              => null,
                 'error'               => 'Ask AI could not generate a response right now. Please try again later.',
                 'follow_up_questions' => [],
             ]);

@@ -23,5 +23,6 @@ class AskAiUsageLog extends Model
         'total_tokens',
         'estimated_cost_usd',
         'api_request_id',
+        'outcome_category',
     ];
 }

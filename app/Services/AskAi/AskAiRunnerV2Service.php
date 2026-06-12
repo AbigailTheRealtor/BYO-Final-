@@ -1293,6 +1293,7 @@ class AskAiRunnerV2Service
     private AskAiFinalResponseBuilderService $finalResponseBuilder;
     private AskAiFollowUpQuestionService $followUpService;
     private ?AskAiIntentNormalizerService $normalizer;
+    private ?AskAiKnowledgeSearchService $knowledgeSearch;
 
     public function __construct(
         AskAiQuestionClassifierService $classifier,
@@ -1300,7 +1301,8 @@ class AskAiRunnerV2Service
         AskAiOpenAiAdapterService $adapter,
         AskAiFinalResponseBuilderService $finalResponseBuilder,
         AskAiFollowUpQuestionService $followUpService,
-        ?AskAiIntentNormalizerService $normalizer = null
+        ?AskAiIntentNormalizerService $normalizer = null,
+        ?AskAiKnowledgeSearchService $knowledgeSearch = null
     ) {
         $this->classifier           = $classifier;
         $this->internalRunner       = $internalRunner;
@@ -1308,6 +1310,7 @@ class AskAiRunnerV2Service
         $this->finalResponseBuilder = $finalResponseBuilder;
         $this->followUpService      = $followUpService;
         $this->normalizer           = $normalizer;
+        $this->knowledgeSearch      = $knowledgeSearch;
     }
 
     /**
@@ -1571,17 +1574,15 @@ class AskAiRunnerV2Service
                 && array_key_exists('allowed_context', $promptPackage)
                 && empty($promptPackage['allowed_context'])
             ) {
-                $fieldLabel        = $this->deriveFieldLabel($normalizedFieldKey);
-                $missingDataAnswer = $fieldLabel . ' has not been provided for this listing.';
-
                 $missingFinalResponse = [
                     'success'            => false,
                     'status'             => 'insufficient_context',
-                    'answer'             => $missingDataAnswer,
+                    'answer'             => AskAiKnowledgeSearchService::INFORMATION_NOT_PROVIDED,
                     'disclosures'        => $promptPackage['required_disclosures'] ?? [],
                     'source_attribution' => $promptPackage['source_attribution'] ?? [],
                     'refusal_message'    => null,
                     'error'              => null,
+                    'source'             => ['answer_source' => 'openai', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
                 ];
                 $missingFinalResponse['follow_up_questions'] = $this->followUpService->forResult(
                     $missingFinalResponse,
@@ -1593,16 +1594,17 @@ class AskAiRunnerV2Service
                 $this->emitTrace($trace);
 
                 return [
-                    'success'        => false,
-                    'status'         => 'insufficient_context',
-                    'classification' => $classification,
-                    'context'        => $context,
-                    'contract'       => $contract,
-                    'prompt_package' => $promptPackage,
-                    'adapter_result' => null,
-                    'final_response' => $missingFinalResponse,
-                    'error'          => null,
-                    'trace'          => $trace,
+                    'success'          => false,
+                    'status'           => 'insufficient_context',
+                    'classification'   => $classification,
+                    'context'          => $context,
+                    'contract'         => $contract,
+                    'prompt_package'   => $promptPackage,
+                    'adapter_result'   => null,
+                    'final_response'   => $missingFinalResponse,
+                    'error'            => null,
+                    'trace'            => $trace,
+                    'outcome_category' => 'blank_information_not_provided',
                 ];
             }
 
@@ -1619,17 +1621,15 @@ class AskAiRunnerV2Service
                     && array_key_exists($listingField, $listingData)
                     && ($listingData[$listingField] === null || $listingData[$listingField] === '')
                 ) {
-                    $fieldLabel        = $this->deriveFieldLabel($normalizedFieldKey);
-                    $missingDataAnswer = $fieldLabel . ' has not been provided for this listing.';
-
                     $missingListingResponse = [
                         'success'            => false,
                         'status'             => 'insufficient_context',
-                        'answer'             => $missingDataAnswer,
+                        'answer'             => AskAiKnowledgeSearchService::INFORMATION_NOT_PROVIDED,
                         'disclosures'        => $promptPackage['required_disclosures'] ?? [],
                         'source_attribution' => $promptPackage['source_attribution'] ?? [],
                         'refusal_message'    => null,
                         'error'              => null,
+                        'source'             => ['answer_source' => 'openai', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
                     ];
                     $missingListingResponse['follow_up_questions'] = $this->followUpService->forResult(
                         $missingListingResponse,
@@ -1641,18 +1641,162 @@ class AskAiRunnerV2Service
                     $this->emitTrace($trace);
 
                     return [
-                        'success'        => false,
-                        'status'         => 'insufficient_context',
-                        'classification' => $classification,
-                        'context'        => $context,
-                        'contract'       => $contract,
-                        'prompt_package' => $promptPackage,
-                        'adapter_result' => null,
-                        'final_response' => $missingListingResponse,
-                        'error'          => null,
-                        'trace'          => $trace,
+                        'success'          => false,
+                        'status'           => 'insufficient_context',
+                        'classification'   => $classification,
+                        'context'          => $context,
+                        'contract'         => $contract,
+                        'prompt_package'   => $promptPackage,
+                        'adapter_result'   => null,
+                        'final_response'   => $missingListingResponse,
+                        'error'            => null,
+                        'trace'            => $trace,
+                        'outcome_category' => 'blank_information_not_provided',
                     ];
                 }
+            }
+
+            // ----------------------------------------------------------------
+            // Phase 4: Database-first knowledge search.
+            //
+            // Before calling OpenAI, search the latest ready snapshot for a
+            // stored answer. Only fires when prompt_package is 'prompt_ready'
+            // (all governance gates passed) and the search service is injected.
+            //
+            // Short-circuit outcomes:
+            //   database_hit                 — return stored answer; skip OpenAI
+            //   blank_information_not_provided — return "not provided"; skip OpenAI
+            //   restricted                   — return blocked; skip OpenAI
+            //   not_found                    — fall through to OpenAI unchanged
+            // ----------------------------------------------------------------
+            // Initialized null; set explicitly by the Phase 4 block on short-circuit
+            // paths, or derived from the final response status at the end of the
+            // main path so that blocked/unsupported packages are never mis-labeled
+            // as 'openai_fallback'.
+            $outcomeCategory = null;
+
+            if (
+                $this->knowledgeSearch !== null
+                && ($promptPackage['status'] ?? '') === 'prompt_ready'
+            ) {
+                $knowledgeSearchResult = $this->knowledgeSearch->search(
+                    $listingType,
+                    $listingId,
+                    $question,
+                    $options
+                );
+
+                $searchOutcome = $knowledgeSearchResult['outcome'] ?? 'not_found';
+
+                if ($searchOutcome === 'database_hit') {
+                    $outcomeCategory = 'database_hit';
+                    $dbHitResponse = [
+                        'success'            => true,
+                        'status'             => 'ready',
+                        'answer'             => $knowledgeSearchResult['answer'],
+                        'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                        'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                        'refusal_message'    => null,
+                        'error'              => null,
+                        'source'             => $knowledgeSearchResult['source'],
+                    ];
+                    $dbHitResponse['follow_up_questions'] = $this->followUpService->forResult(
+                        $dbHitResponse,
+                        $classification
+                    );
+
+                    $trace['final_status']       = 'ready';
+                    $trace['source_attribution'] = $dbHitResponse['source_attribution'] ?? null;
+                    $this->emitTrace($trace);
+
+                    return [
+                        'success'          => true,
+                        'status'           => 'ready',
+                        'classification'   => $classification,
+                        'context'          => $context,
+                        'contract'         => $contract,
+                        'prompt_package'   => $promptPackage,
+                        'adapter_result'   => null,
+                        'final_response'   => $dbHitResponse,
+                        'error'            => null,
+                        'trace'            => $trace,
+                        'outcome_category' => $outcomeCategory,
+                    ];
+                }
+
+                if ($searchOutcome === 'blank_information_not_provided') {
+                    $outcomeCategory = 'blank_information_not_provided';
+                    $dbBlankResponse = [
+                        'success'            => false,
+                        'status'             => 'insufficient_context',
+                        'answer'             => $knowledgeSearchResult['answer'],
+                        'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                        'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                        'refusal_message'    => null,
+                        'error'              => null,
+                        'source'             => $knowledgeSearchResult['source'],
+                    ];
+                    $dbBlankResponse['follow_up_questions'] = $this->followUpService->forResult(
+                        $dbBlankResponse,
+                        $classification
+                    );
+
+                    $trace['final_status']       = 'insufficient_context';
+                    $trace['source_attribution'] = $dbBlankResponse['source_attribution'] ?? null;
+                    $this->emitTrace($trace);
+
+                    return [
+                        'success'          => false,
+                        'status'           => 'insufficient_context',
+                        'classification'   => $classification,
+                        'context'          => $context,
+                        'contract'         => $contract,
+                        'prompt_package'   => $promptPackage,
+                        'adapter_result'   => null,
+                        'final_response'   => $dbBlankResponse,
+                        'error'            => null,
+                        'trace'            => $trace,
+                        'outcome_category' => $outcomeCategory,
+                    ];
+                }
+
+                if ($searchOutcome === 'restricted') {
+                    $outcomeCategory = 'blocked_restricted';
+                    $dbRestrictedResponse = [
+                        'success'            => false,
+                        'status'             => 'blocked',
+                        'answer'             => null,
+                        'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                        'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                        'refusal_message'    => $promptPackage['refusal_template'] ?? null,
+                        'error'              => null,
+                        'source'             => $knowledgeSearchResult['source'],
+                    ];
+                    $dbRestrictedResponse['follow_up_questions'] = $this->followUpService->forResult(
+                        $dbRestrictedResponse,
+                        $classification
+                    );
+
+                    $trace['final_status']       = 'blocked';
+                    $trace['source_attribution'] = $dbRestrictedResponse['source_attribution'] ?? null;
+                    $this->emitTrace($trace);
+
+                    return [
+                        'success'          => false,
+                        'status'           => 'blocked',
+                        'classification'   => $classification,
+                        'context'          => $context,
+                        'contract'         => $contract,
+                        'prompt_package'   => $promptPackage,
+                        'adapter_result'   => null,
+                        'final_response'   => $dbRestrictedResponse,
+                        'error'            => null,
+                        'trace'            => $trace,
+                        'outcome_category' => $outcomeCategory,
+                    ];
+                }
+
+                // 'not_found' — fall through to OpenAI.
             }
 
             $adapterResult = $this->adapter->generate($promptPackage);
@@ -1695,6 +1839,7 @@ class AskAiRunnerV2Service
                         'source_attribution' => $promptPackage['source_attribution'] ?? [],
                         'refusal_message'    => null,
                         'error'              => null,
+                        'source'             => ['answer_source' => 'openai', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
                     ];
                     $faqFinalResponse['follow_up_questions'] = $this->followUpService->forResult(
                         $faqFinalResponse,
@@ -1706,16 +1851,17 @@ class AskAiRunnerV2Service
                     $this->emitTrace($trace);
 
                     return [
-                        'success'        => true,
-                        'status'         => 'ready',
-                        'classification' => $classification,
-                        'context'        => $context,
-                        'contract'       => $contract,
-                        'prompt_package' => $promptPackage,
-                        'adapter_result' => $adapterResult,
-                        'final_response' => $faqFinalResponse,
-                        'error'          => null,
-                        'trace'          => $trace,
+                        'success'          => true,
+                        'status'           => 'ready',
+                        'classification'   => $classification,
+                        'context'          => $context,
+                        'contract'         => $contract,
+                        'prompt_package'   => $promptPackage,
+                        'adapter_result'   => $adapterResult,
+                        'final_response'   => $faqFinalResponse,
+                        'error'            => null,
+                        'trace'            => $trace,
+                        'outcome_category' => 'openai_fallback',
                     ];
                 }
             }
@@ -1756,6 +1902,7 @@ class AskAiRunnerV2Service
                         'source_attribution' => $promptPackage['source_attribution'] ?? [],
                         'refusal_message'    => null,
                         'error'              => null,
+                        'source'             => ['answer_source' => 'openai', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
                     ];
                     $listingFallbackResponse['follow_up_questions'] = $this->followUpService->forResult(
                         $listingFallbackResponse,
@@ -1767,16 +1914,17 @@ class AskAiRunnerV2Service
                     $this->emitTrace($trace);
 
                     return [
-                        'success'        => true,
-                        'status'         => 'ready',
-                        'classification' => $classification,
-                        'context'        => $context,
-                        'contract'       => $contract,
-                        'prompt_package' => $promptPackage,
-                        'adapter_result' => $adapterResult,
-                        'final_response' => $listingFallbackResponse,
-                        'error'          => null,
-                        'trace'          => $trace,
+                        'success'          => true,
+                        'status'           => 'ready',
+                        'classification'   => $classification,
+                        'context'          => $context,
+                        'contract'         => $contract,
+                        'prompt_package'   => $promptPackage,
+                        'adapter_result'   => $adapterResult,
+                        'final_response'   => $listingFallbackResponse,
+                        'error'            => null,
+                        'trace'            => $trace,
+                        'outcome_category' => 'openai_fallback',
                     ];
                 }
             }
@@ -1819,6 +1967,7 @@ class AskAiRunnerV2Service
                     'source_attribution' => $promptPackage['source_attribution'] ?? [],
                     'refusal_message'    => null,
                     'error'              => null,
+                    'source'             => ['answer_source' => 'openai', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
                 ];
                 $unavailableFallbackResponse['follow_up_questions'] = $this->followUpService->forResult(
                     $unavailableFallbackResponse,
@@ -1830,16 +1979,17 @@ class AskAiRunnerV2Service
                 $this->emitTrace($trace);
 
                 return [
-                    'success'        => false,
-                    'status'         => 'insufficient_context',
-                    'classification' => $classification,
-                    'context'        => $context,
-                    'contract'       => $contract,
-                    'prompt_package' => $promptPackage,
-                    'adapter_result' => $adapterResult,
-                    'final_response' => $unavailableFallbackResponse,
-                    'error'          => null,
-                    'trace'          => $trace,
+                    'success'          => false,
+                    'status'           => 'insufficient_context',
+                    'classification'   => $classification,
+                    'context'          => $context,
+                    'contract'         => $contract,
+                    'prompt_package'   => $promptPackage,
+                    'adapter_result'   => $adapterResult,
+                    'final_response'   => $unavailableFallbackResponse,
+                    'error'            => null,
+                    'trace'            => $trace,
+                    'outcome_category' => 'openai_fallback',
                 ];
             }
 
@@ -1852,21 +2002,41 @@ class AskAiRunnerV2Service
 
             $error = ($finalResponse['error'] ?? null) ?: null;
 
+            // Derive outcome_category for paths that did not short-circuit (Phase 4
+            // not_found fall-through, or non-prompt_ready packages like blocked/unsupported).
+            if ($outcomeCategory === null) {
+                $outcomeCategory = match ($finalResponse['status'] ?? '') {
+                    'blocked'     => 'blocked_restricted',
+                    'unsupported' => 'unsupported',
+                    default       => 'openai_fallback',
+                };
+            }
+
             $trace['final_status']       = $finalResponse['status'];
             $trace['source_attribution'] = $finalResponse['source_attribution'] ?? null;
             $this->emitTrace($trace);
 
+            // Attach OpenAI source metadata to the final response.
+            $finalResponse['source'] = [
+                'answer_source'    => 'openai',
+                'snapshot_id'      => null,
+                'canonical_key'    => null,
+                'match_type'       => null,
+                'snapshot_version' => null,
+            ];
+
             return [
-                'success'        => $finalResponse['success'],
-                'status'         => $finalResponse['status'],
-                'classification' => $classification,
-                'context'        => $context,
-                'contract'       => $contract,
-                'prompt_package' => $promptPackage,
-                'adapter_result' => $adapterResult,
-                'final_response' => $finalResponse,
-                'error'          => $error,
-                'trace'          => $trace,
+                'success'          => $finalResponse['success'],
+                'status'           => $finalResponse['status'],
+                'classification'   => $classification,
+                'context'          => $context,
+                'contract'         => $contract,
+                'prompt_package'   => $promptPackage,
+                'adapter_result'   => $adapterResult,
+                'final_response'   => $finalResponse,
+                'error'            => $error,
+                'trace'            => $trace,
+                'outcome_category' => $outcomeCategory,
             ];
 
         } catch (\Throwable $e) {

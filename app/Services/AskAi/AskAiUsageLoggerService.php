@@ -40,6 +40,7 @@ class AskAiUsageLoggerService
             $log->total_tokens      = $totalTokens;
             $log->estimated_cost_usd = $estimatedCost;
             $log->api_request_id    = $payload['api_request_id']    ?? null;
+            $log->outcome_category  = $payload['outcome_category']  ?? null;
             $log->save();
 
             return $log;

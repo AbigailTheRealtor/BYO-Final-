@@ -26,6 +26,7 @@ use App\Services\AskAi\AskAiOpenAiAdapterService;
 use App\Services\AskAi\AskAiFinalResponseBuilderService;
 use App\Services\AskAi\AskAiFollowUpQuestionService;
 use App\Services\AskAi\AskAiIntentNormalizerService;
+use App\Services\AskAi\AskAiKnowledgeSearchService;
 
 
 
@@ -40,11 +41,10 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         // Explicit binding for AskAiRunnerV2Service to ensure AskAiIntentNormalizerService
-        // is always injected as a concrete non-null instance. Laravel's auto-wiring would
-        // also resolve this correctly today (both of the normalizer's deps — OpenAiClientService
-        // and AskAiResponseContractService — have no constructor parameters and auto-resolve),
-        // but explicit DI is safer: it is immune to future constructor changes in those
-        // dependencies and makes the intent clear to anyone reading the service graph.
+        // and AskAiKnowledgeSearchService are always injected as concrete non-null instances.
+        // Laravel's auto-wiring would also resolve this correctly today, but explicit DI is
+        // safer: it is immune to future constructor changes in those dependencies and makes
+        // the intent clear to anyone reading the service graph.
         $this->app->bind(AskAiRunnerV2Service::class, function ($app) {
             return new AskAiRunnerV2Service(
                 $app->make(AskAiQuestionClassifierService::class),
@@ -53,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(AskAiFinalResponseBuilderService::class),
                 $app->make(AskAiFollowUpQuestionService::class),
                 $app->make(AskAiIntentNormalizerService::class),
+                $app->make(AskAiKnowledgeSearchService::class),
             );
         });
     }
