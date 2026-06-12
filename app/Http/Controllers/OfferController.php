@@ -990,13 +990,22 @@ class OfferController extends Controller
             abort(403, 'You are not authorised to view this offer.');
         }
 
-        // Redirect stale parents to the active leaf so both parties always
-        // land on the offer they can actually act on.
-        $activeLeaf = $this->chainService->getActiveLeaf($offer);
-        if ($activeLeaf->id !== $offer->id) {
-            return redirect()
-                ->route('offers.show', $activeLeaf)
-                ->with('info', 'You have been redirected to the latest counter offer in this negotiation.');
+        // ── Terminal chain guard (must run before the active-leaf redirect) ────
+        // If this chain has already reached a terminal outcome, skip the
+        // active-leaf redirect entirely. Historical offers show in-place with a
+        // banner; the terminal offer shows the terminal UI directly.
+        $terminalLeafEarly = $this->chainService->getTerminalLeaf($offer);
+        $isInTerminalChain = $terminalLeafEarly !== null;
+
+        if (!$isInTerminalChain) {
+            // Redirect stale parents to the active leaf so both parties always
+            // land on the offer they can actually act on.
+            $activeLeaf = $this->chainService->getActiveLeaf($offer);
+            if ($activeLeaf->id !== $offer->id) {
+                return redirect()
+                    ->route('offers.show', $activeLeaf)
+                    ->with('info', 'You have been redirected to the latest counter offer in this negotiation.');
+            }
         }
 
         $timeline  = $this->timelineBuilder->buildForOffer($offer);
@@ -1069,6 +1078,68 @@ class OfferController extends Controller
             }
         }
 
-        return view('offers.show', compact('offer', 'timeline', 'actions', 'metas', 'offerType', 'counterDefaults', 'rootOffer', 'rootMetas'));
+        // ── Terminal negotiation state ─────────────────────────────────────────
+        // Reuse the terminal leaf resolved above (before the redirect guard).
+        $terminalLeaf = $terminalLeafEarly;
+        $isTerminal   = $terminalLeaf !== null && $terminalLeaf->id === $offer->id;
+        $isHistorical = $terminalLeaf !== null && $terminalLeaf->id !== $offer->id;
+
+        // Chain summary: ordered array of [offer_id, status, created_at_formatted].
+        $chainCollection = $this->chainService->getChainForOffer($offer);
+        $chainSummary    = $chainCollection->map(function ($chainOffer) {
+            return [
+                'offer_id'             => $chainOffer->id,
+                'status'               => $chainOffer->status,
+                'created_at_formatted' => $chainOffer->created_at?->format('M j, Y g:i A'),
+            ];
+        })->all();
+
+        // Terminal outcome timestamp — derived from the event log entry that recorded the
+        // terminal transition (event_type = 'offer_accepted', 'offer_rejected', etc.).
+        // Using the event log avoids drift caused by later updated_at mutations on the model.
+        // Falls back to the offer's created_at only as a last resort for legacy records.
+        $terminalOutcomeAt = null;
+        if ($terminalLeaf !== null) {
+            $expectedEventType = 'offer_' . $terminalLeaf->status; // e.g. offer_accepted
+            $terminalEvent = \App\Models\OfferEventLog::where('offer_id', $terminalLeaf->id)
+                ->where('event_type', $expectedEventType)
+                ->orderByDesc('created_at')
+                ->first();
+            $terminalOutcomeAt = $terminalEvent?->created_at ?? $terminalLeaf->created_at;
+        }
+
+        // Final terms: for accepted offers read exclusively from the immutable snapshot —
+        // live metas are never consulted so that post-acceptance edits cannot alter the record.
+        // For other terminal statuses (rejected/withdrawn/expired) the offer's live metas are used.
+        // $snapshotMissing is passed to the view so it can render a controlled notice when the
+        // snapshot has not been written yet (e.g. very old records predating this feature).
+        $finalTerms     = collect();
+        $snapshotMissing = false;
+        if ($terminalLeaf !== null) {
+            if ($terminalLeaf->status === 'accepted') {
+                $snapshotJson = \App\Models\OfferMeta::where('offer_id', $terminalLeaf->id)
+                    ->where('meta_key', 'accepted_terms_snapshot')
+                    ->value('meta_value');
+                if ($snapshotJson) {
+                    $decoded = json_decode($snapshotJson, true);
+                    if (is_array($decoded)) {
+                        $finalTerms = collect($decoded);
+                    }
+                }
+                if ($finalTerms->isEmpty()) {
+                    $snapshotMissing = true;
+                }
+            } else {
+                $terminalLeaf->loadMissing('metas');
+                $finalTerms = $terminalLeaf->metas->pluck('meta_value', 'meta_key');
+            }
+        }
+
+        return view('offers.show', compact(
+            'offer', 'timeline', 'actions', 'metas', 'offerType',
+            'counterDefaults', 'rootOffer', 'rootMetas',
+            'terminalLeaf', 'isTerminal', 'isHistorical', 'chainSummary',
+            'finalTerms', 'snapshotMissing', 'terminalOutcomeAt'
+        ));
     }
 }

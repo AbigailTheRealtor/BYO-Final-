@@ -45,4 +45,28 @@ class OfferFactory extends Factory
             'submitted_at' => now(),
         ]);
     }
+
+    public function rejected()
+    {
+        return $this->state(fn () => [
+            'status'       => 'rejected',
+            'submitted_at' => now(),
+        ]);
+    }
+
+    public function withdrawn()
+    {
+        return $this->state(fn () => [
+            'status'       => 'withdrawn',
+            'submitted_at' => now(),
+        ]);
+    }
+
+    public function expired()
+    {
+        return $this->state(fn () => [
+            'status'       => 'expired',
+            'submitted_at' => now(),
+        ]);
+    }
 }

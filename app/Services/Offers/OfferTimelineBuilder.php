@@ -21,18 +21,26 @@ class OfferTimelineBuilder
      */
     public function buildForOffer(Offer $offer): array
     {
-        $chain = $this->chainService->getChainForOffer($offer);
+        $chain        = $this->chainService->getChainForOffer($offer);
+        $terminalLeaf = $this->chainService->getTerminalLeaf($offer);
 
-        return $this->buildForChain($chain);
+        return $this->buildForChain($chain, $terminalLeaf?->id);
     }
 
     /**
      * Build a display-ready timeline from an already-assembled chain collection.
      *
-     * @param  Collection<int, Offer>  $offers  Offers in chain order (root first).
+     * Each item includes an `is_terminal` boolean flag. The flag is set by
+     * matching against $terminalLeafId (the actual deepest-path terminal offer
+     * resolved by OfferNegotiationChainService::getTerminalLeaf). Flagging by
+     * offer ID rather than by scanning for the last final-status item avoids
+     * misidentifying an older rejected sibling in a branching anomaly.
+     *
+     * @param  Collection<int, Offer>  $offers           Offers in chain order (root first).
+     * @param  int|null                $terminalLeafId   ID of the terminal leaf, or null if chain is active.
      * @return array<int, array>
      */
-    public function buildForChain(Collection $offers): array
+    public function buildForChain(Collection $offers, ?int $terminalLeafId = null): array
     {
         $items = [];
 
@@ -51,6 +59,7 @@ class OfferTimelineBuilder
                 'event_count'       => $eventCount,
                 'latest_event_type' => $latestLog?->event_type ?? null,
                 'latest_event_at'   => $latestLog ? $latestLog->created_at?->format('Y-m-d H:i:s') : null,
+                'is_terminal'       => $terminalLeafId !== null && $offer->id === $terminalLeafId,
             ];
         }
 

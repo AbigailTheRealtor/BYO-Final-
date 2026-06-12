@@ -293,6 +293,9 @@ class OfferWorkflowReadinessTest extends TestCase
         // target_closing_date / occupant_status persistence, video_link view fix,
         // MLS furnished→building_features, property_type/garage_spaces parsers,
         // AskAi context 32 new seller fields, LISTING_KEY_KEYWORD_MAP entries.
+        // Also files modified by the "Terminal Negotiation Experience" task:
+        // getTerminalLeaf/isHistoricalInTerminalChain, accepted_terms_snapshot capture,
+        // is_terminal flag on timeline items, OfferFactory terminal states.
         $taskAllowlist = [
             'app/Http/Controllers/DashboardController.php',
             'app/Http/Controllers/NotificationController.php',
@@ -312,6 +315,11 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/ListingImport/MlsFieldMap.php',
             'app/Services/ListingImport/MlsListingImportService.php',
             'resources/views/offer-listing/seller/view.blade.php',
+            // Terminal Negotiation Experience task
+            'app/Services/Offers/OfferDecisionService.php',
+            'app/Services/Offers/OfferNegotiationChainService.php',
+            'app/Services/Offers/OfferTimelineBuilder.php',
+            'database/factories/OfferFactory.php',
         ];
 
         $unexpected = array_values(array_filter(

@@ -4,6 +4,7 @@ namespace App\Services\Offers;
 
 use App\Models\Offer;
 use App\Models\OfferEventLog;
+use App\Models\OfferMeta;
 
 class OfferDecisionService
 {
@@ -59,6 +60,10 @@ class OfferDecisionService
             $offer->status = $toStatus;
             $offer->save();
 
+            if ($toStatus === 'accepted') {
+                $this->captureAcceptedTermsSnapshot($offer);
+            }
+
             $log = $this->eventLog->log(
                 $offer,
                 $actorId,
@@ -99,5 +104,43 @@ class OfferDecisionService
             'reason'      => $validation['reason'],
             'event_log'   => $log,
         ];
+    }
+
+    /**
+     * Write-once snapshot of the offer's meta bag at the moment of acceptance.
+     *
+     * Scope: the full meta bag is intentionally captured. Every key stored in
+     * offer_metas at acceptance time — including screening information submitted
+     * as part of a rental application, financing details, contingencies, and
+     * custom terms — is part of the legal record. Capturing everything avoids
+     * the risk of missing a key that is rendered on the accepted-offer page
+     * through future schema changes.
+     *
+     * The one exclusion is the snapshot key itself (accepted_terms_snapshot),
+     * which would cause circular serialisation.
+     *
+     * If a snapshot already exists, this method is a no-op — it must never
+     * overwrite or regenerate an existing snapshot entry.
+     */
+    private function captureAcceptedTermsSnapshot(Offer $offer): void
+    {
+        $exists = OfferMeta::where('offer_id', $offer->id)
+            ->where('meta_key', 'accepted_terms_snapshot')
+            ->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        $metas = OfferMeta::where('offer_id', $offer->id)
+            ->where('meta_key', '!=', 'accepted_terms_snapshot')
+            ->pluck('meta_value', 'meta_key')
+            ->toArray();
+
+        OfferMeta::create([
+            'offer_id'   => $offer->id,
+            'meta_key'   => 'accepted_terms_snapshot',
+            'meta_value' => json_encode($metas),
+        ]);
     }
 }
