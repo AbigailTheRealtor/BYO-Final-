@@ -33,10 +33,11 @@ class BuyerAgentHiredNotification extends Notification implements ShouldBroadcas
     public function toDatabase($notifiable)
     {
         $data = [
-            'message'      => "Agent Hired — You have successfully hired an agent for \"" . ($this->auction->title ?? '') . "\". Your Accepted Bid Summary is ready to review and sign.",
+            'message'      => 'You have successfully hired an agent.',
+            'context_line' => $this->auction->title ?? '',
             'bid_id'       => $this->bid->id,
             'auction_id'   => $this->auction->id,
-            'type'         => 'bid_accepted',
+            'type'         => 'agent_hired',
             'auction_type' => $this->auctionType,
         ];
 
@@ -50,22 +51,10 @@ class BuyerAgentHiredNotification extends Notification implements ShouldBroadcas
 
     public function toBroadcast($notifiable)
     {
-        $data = [
-            'message'      => "Agent Hired — You have successfully hired an agent for \"" . ($this->auction->title ?? '') . "\". Your Accepted Bid Summary is ready to review and sign.",
-            'bid_id'       => $this->bid->id,
-            'auction_id'   => $this->auction->id,
-            'auction_type' => $this->auctionType,
-        ];
-
-        if ($this->summaryId) {
-            $data['summary_id']   = $this->summaryId;
-            $data['summary_link'] = route('accepted-bid-summary.view', $this->summaryId);
-        }
-
         return new BroadcastMessage([
             'id'         => $this->id,
-            'type'       => 'bid_accepted',
-            'data'       => $data,
+            'type'       => 'agent_hired',
+            'data'       => $this->toDatabase($notifiable),
             'created_at' => now(),
         ]);
     }

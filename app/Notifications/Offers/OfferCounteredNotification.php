@@ -24,6 +24,7 @@ final class OfferCounteredNotification extends Notification
     public function toDatabase($notifiable): array
     {
         return [
+            'message'          => 'You received a counter offer.',
             'parent_offer_id'  => $this->parentOffer->id,
             'counter_offer_id' => $this->counterOffer->id,
             'status'           => $this->counterOffer->status,

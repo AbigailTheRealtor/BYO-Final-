@@ -22,10 +22,14 @@ class ShowingCanceledNotification extends Notification
     {
         $showing = $this->showing;
 
+        $address = $this->listingAddress();
+
         return [
+            'message'         => 'A showing was canceled.',
+            'context_line'    => $address,
             'type'            => 'showing_canceled',
             'showing_id'      => $showing->id,
-            'listing_address' => $this->listingAddress(),
+            'listing_address' => $address,
             'requested_date'  => optional($showing->requested_date)->format('M j, Y'),
             'canceled_at'     => optional($showing->canceled_at)->toDateTimeString(),
         ];

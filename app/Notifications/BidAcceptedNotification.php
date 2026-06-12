@@ -34,10 +34,11 @@ class BidAcceptedNotification extends Notification implements ShouldBroadcast
     public function toDatabase($notifiable)
     {
         $data = [
-            'message' => "Bid Accepted — Your bid for \"" . ($this->auction->title ?? '') . "\" has been accepted! Accepted Bid Summary is ready.",
-            'bid_id' => $this->bid->id,
-            'auction_id' => $this->auction->id,
-            'type' => 'bid_accepted',
+            'message'      => 'Your bid was accepted.',
+            'context_line' => $this->auction->title ?? '',
+            'bid_id'       => $this->bid->id,
+            'auction_id'   => $this->auction->id,
+            'type'         => 'bid_accepted',
             'auction_type' => $this->auctionType,
         ];
         
@@ -51,22 +52,10 @@ class BidAcceptedNotification extends Notification implements ShouldBroadcast
 
     public function toBroadcast($notifiable)
     {
-        $data = [
-            'message' => "Bid Accepted — Your bid for \"" . ($this->auction->title ?? '') . "\" has been accepted! Accepted Bid Summary is ready.",
-            'bid_id' => $this->bid->id,
-            'auction_id' => $this->auction->id,
-            'auction_type' => $this->auctionType,
-        ];
-        
-        if ($this->summaryId) {
-            $data['summary_id'] = $this->summaryId;
-            $data['summary_link'] = route('accepted-bid-summary.view', $this->summaryId);
-        }
-        
         return new BroadcastMessage([
-            'id' => $this->id,
-            'type' => 'bid_accepted',
-            'data' => $data,
+            'id'         => $this->id,
+            'type'       => 'bid_accepted',
+            'data'       => $this->toDatabase($notifiable),
             'created_at' => now(),
         ]);
     }

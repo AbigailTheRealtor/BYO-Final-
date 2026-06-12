@@ -31,37 +31,21 @@ class BidSubmittedNotification extends Notification implements ShouldBroadcast
     public function toDatabase($notifiable)
     {
         return [
-            'message' => "New bid submitted by user " .
-                ($this->bid->user->first_name ?? 'Unknown') . ' ' .
-                ($this->bid->user->last_name ?? 'User') .
-                " for your listing " .
-                ($this->auction->title ?? '') . "!",
-            'bid_id' => $this->bid->id,
-            'auction_id' => $this->auction->id,
-            'type' => 'bid_submitted',
+            'message'      => 'New bid received on your listing.',
+            'context_line' => $this->auction->title ?? '',
+            'bid_id'       => $this->bid->id,
+            'auction_id'   => $this->auction->id,
+            'type'         => 'bid_submitted',
             'auction_type' => $this->auctionType,
-            'created_at' => now()->toDateTimeString(),
         ];
     }
 
     public function toBroadcast($notifiable)
     {
         return new BroadcastMessage([
-            'id' => $this->id,
+            'id'   => $this->id,
             'type' => 'bid_submitted',
-            'read_at' => null,
-            'created_at' => now()->toDateTimeString(),
-            'data' => [
-                'message' => "New bid submitted by user " .
-                    ($this->bid->user->first_name ?? 'Unknown') . ' ' .
-                    ($this->bid->user->last_name ?? 'User') .
-                    " for your listing " .
-                    ($this->auction->title ?? '') . "!",
-                'bid_id' => $this->bid->id,
-                'auction_id' => $this->auction->id,
-                'auction_type' => $this->auctionType,
-                'created_at' => now()->toDateTimeString(),
-            ],
+            'data' => $this->toDatabase($notifiable),
         ]);
     }
 

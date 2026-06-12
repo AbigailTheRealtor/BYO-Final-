@@ -23,12 +23,17 @@ class ShowingRequestedNotification extends Notification
         $showing   = $this->showing;
         $requester = $showing->requester;
 
+        $address = $this->listingAddress();
+        $date    = optional($showing->requested_date)->format('M j, Y');
+
         return [
+            'message'         => 'New showing request received.',
+            'context_line'    => $date ? $address . ' • ' . $date : $address,
             'type'            => 'showing_requested',
             'showing_id'      => $showing->id,
-            'listing_address' => $this->listingAddress(),
+            'listing_address' => $address,
             'requester_name'  => trim(($requester->first_name ?? '') . ' ' . ($requester->last_name ?? '')),
-            'requested_date'  => optional($showing->requested_date)->format('M j, Y'),
+            'requested_date'  => $date,
             'requested_start' => $showing->requested_start_time,
             'requested_end'   => $showing->requested_end_time,
         ];

@@ -38,17 +38,16 @@ class OfferListingStatusNotification extends Notification implements ShouldBroad
     {
         $title = $this->listing->title ?? 'your listing';
 
-        if ($this->status === 'approved') {
-            $message = "Your offer listing \"{$title}\" has been approved and is now live.";
-        } else {
-            $message = "Your offer listing \"{$title}\" has been rejected by the admin.";
-        }
+        $message = $this->status === 'approved'
+            ? 'Your offer listing has been approved and is now live.'
+            : 'Your offer listing has been rejected by the admin.';
 
         return [
-            'message'    => $message,
-            'listing_id' => $this->listing->id,
-            'status'     => $this->status,
-            'type'       => 'offer_listing_status',
+            'message'      => $message,
+            'context_line' => $title,
+            'listing_id'   => $this->listing->id,
+            'status'       => $this->status,
+            'type'         => 'offer_listing_status',
         ];
     }
 

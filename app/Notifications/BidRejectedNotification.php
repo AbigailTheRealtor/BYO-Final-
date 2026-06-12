@@ -32,10 +32,11 @@ class BidRejectedNotification extends Notification implements ShouldBroadcast
     public function toDatabase($notifiable)
     {
         return [
-            'message' => "Your bid for the listing \"" . ($this->auction->title ?? '') . "\" has been rejected.",
-            'bid_id' => $this->bid->id,
-            'auction_id' => $this->auction->id,
-            'type' => 'bid_rejected',
+            'message'      => 'Your bid was rejected.',
+            'context_line' => $this->auction->title ?? '',
+            'bid_id'       => $this->bid->id,
+            'auction_id'   => $this->auction->id,
+            'type'         => 'bid_rejected',
             'auction_type' => $this->auctionType,
         ];
     }
@@ -43,14 +44,9 @@ class BidRejectedNotification extends Notification implements ShouldBroadcast
     public function toBroadcast($notifiable)
     {
         return new BroadcastMessage([
-            'id' => $this->id,
-            'type' => 'bid_rejected',
-            'data' => [
-                'message' => "Your bid for the listing \"" . ($this->auction->title ?? '') . "\" has been rejected.",
-                'bid_id' => $this->bid->id,
-                'auction_id' => $this->auction->id,
-                'auction_type' => $this->auctionType,
-            ],
+            'id'         => $this->id,
+            'type'       => 'bid_rejected',
+            'data'       => $this->toDatabase($notifiable),
             'created_at' => now(),
         ]);
     }

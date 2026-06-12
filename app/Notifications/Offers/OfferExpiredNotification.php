@@ -23,6 +23,7 @@ final class OfferExpiredNotification extends Notification
     public function toDatabase(mixed $notifiable): array
     {
         return [
+            'message'  => 'An offer has expired.',
             'offer_id' => $this->offer->id,
             'status'   => $this->offer->status,
             'link'     => route('offers.show', $this->offer),

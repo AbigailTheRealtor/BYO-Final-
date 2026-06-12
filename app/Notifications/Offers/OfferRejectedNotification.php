@@ -23,6 +23,7 @@ final class OfferRejectedNotification extends Notification
     public function toDatabase(mixed $notifiable): array
     {
         return [
+            'message'  => 'Your offer was rejected.',
             'offer_id' => $this->offer->id,
             'status'   => $this->offer->status,
             'link'     => route('offers.show', $this->offer),

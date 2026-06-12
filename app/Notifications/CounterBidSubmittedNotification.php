@@ -35,13 +35,11 @@ class CounterBidSubmittedNotification extends Notification implements ShouldBroa
     public function toDatabase($notifiable)
     {
         return [
-            'message' => "New counter bid submitted by " .
-                ($this->sender->first_name ?? 'Unknown') . " " .
-                ($this->sender->last_name ?? '') .
-                " for listing \"" . ($this->auction->title ?? '') . "\".",
-            'bid_id' => $this->bid->id,
-            'auction_id' => $this->auction->id,
-            'type' => 'counter_bid_submitted',
+            'message'      => 'You received a counter proposal.',
+            'context_line' => $this->auction->title ?? '',
+            'bid_id'       => $this->bid->id,
+            'auction_id'   => $this->auction->id,
+            'type'         => 'counter_bid_submitted',
             'auction_type' => $this->auctionType,
         ];
     }
@@ -49,16 +47,9 @@ class CounterBidSubmittedNotification extends Notification implements ShouldBroa
     public function toBroadcast($notifiable)
     {
         return new BroadcastMessage([
-            'id' => $this->id,
-            'type' => 'counter_bid_submitted',
-            'data' => [
-                'message' => "New counter bid submitted by " .
-                    ($this->sender->first_name ?? 'Unknown') . " " .
-                    ($this->sender->last_name ?? '') .
-                    " for listing \"" . ($this->auction->title ?? '') . "\".",
-                'bid_id' => $this->bid->id,
-                'auction_id' => $this->auction->id,
-            ],
+            'id'         => $this->id,
+            'type'       => 'counter_bid_submitted',
+            'data'       => $this->toDatabase($notifiable),
             'created_at' => now(),
         ]);
     }

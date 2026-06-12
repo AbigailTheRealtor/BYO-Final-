@@ -187,7 +187,10 @@
                                 @forelse($unread as $note)
                                     <li class="dropdown-item notification-item"
                                         onclick="markAsRead('{{ $note->id }}', this)" style="cursor:pointer;">
-                                        {{ $note->data['message'] ?? 'New Notification' }}
+                                        {{ $note->data['message'] ?? 'Account activity' }}
+                                        @if(!empty($note->data['context_line']))
+                                            <br><small class="text-muted">{{ $note->data['context_line'] }}</small>
+                                        @endif
                                         <br>
                                         <small class="text-muted">{{ $note->created_at->diffForHumans() }}</small>
                                     </li>
@@ -457,8 +460,10 @@
                 const li = document.createElement('li');
                 li.className = 'dropdown-item notification-item';
                 li.style.cursor = 'pointer';
+                const msg = note.data.message || 'Account activity';
+                const ctx = note.data.context_line ? `<br><small class="text-muted">${note.data.context_line}</small>` : '';
                 li.innerHTML =
-                    `${note.data.message}<br><small class="text-muted">${timeAgo(note.created_at)}</small>`;
+                    `${msg}${ctx}<br><small class="text-muted">${timeAgo(note.created_at)}</small>`;
                 li.onclick = () => markAsRead(note.id, li);
                 dropdown.appendChild(li);
             });

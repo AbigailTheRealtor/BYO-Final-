@@ -91,6 +91,8 @@ class HireAgentLeadNotification extends Notification implements ShouldBroadcast
         $presetName = $this->matchedPresetEntry['preset_name'] ?? null;
 
         return [
+            'message'                    => 'New agent hire request received.',
+            'context_line'               => $lead->representationTypeLabel() . ' • ' . $lead->selectedPropertyTypeLabel(),
             'type'                       => 'hire_agent_lead',
             'lead_id'                    => $lead->id,
             // Source attribution

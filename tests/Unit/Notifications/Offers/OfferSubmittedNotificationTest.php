@@ -102,6 +102,27 @@ class OfferSubmittedNotificationTest extends TestCase
         $this->assertSame('offer_submitted', $data['type']);
     }
 
+    // ── Case 9: toDatabase()['message'] is present and non-generic ───────────
+
+    public function test_to_database_message_is_non_generic(): void
+    {
+        $data = $this->notification->toDatabase(null);
+
+        $this->assertArrayHasKey('message', $data);
+        $this->assertNotEmpty($data['message']);
+        $this->assertNotSame('You have a notification', $data['message']);
+        $this->assertNotSame('New Notification', $data['message']);
+    }
+
+    // ── Case 10: Offer notifications intentionally omit context_line ─────────
+
+    public function test_to_database_has_no_context_line(): void
+    {
+        $data = $this->notification->toDatabase(null);
+
+        $this->assertArrayNotHasKey('context_line', $data);
+    }
+
     // ── Case 7: toMail() returns an instance of MailMessage ──────────────────
 
     public function test_to_mail_returns_mail_message_instance(): void

@@ -23,6 +23,7 @@ final class OfferSubmittedNotification extends Notification
     public function toDatabase(mixed $notifiable): array
     {
         return [
+            'message'  => 'New offer received on your listing.',
             'offer_id' => $this->offer->id,
             'status'   => $this->offer->status,
             'link'     => route('offers.show', $this->offer),

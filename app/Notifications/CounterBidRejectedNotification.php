@@ -29,23 +29,20 @@ class CounterBidRejectedNotification extends Notification implements ShouldBroad
     public function toDatabase($notifiable)
     {
         return [
-            'message' => "Your counter bid for the listing \"" . ($this->auction->title ?? '') . "\" has been rejected.",
+            'message'        => 'Your counter proposal was rejected.',
+            'context_line'   => $this->auction->title ?? '',
             'counter_bid_id' => $this->counterBid->id,
-            'auction_id' => $this->auction->id,
-            'type' => 'counter_bid_rejected',
+            'auction_id'     => $this->auction->id,
+            'type'           => 'counter_bid_rejected',
         ];
     }
 
     public function toBroadcast($notifiable)
     {
         return new BroadcastMessage([
-            'id' => $this->id,
-            'type' => 'counter_bid_rejected',
-            'data' => [
-                'message' => "Your counter bid for the listing \"" . ($this->auction->title ?? '') . "\" has been rejected.",
-                'counter_bid_id' => $this->counterBid->id,
-                'auction_id' => $this->auction->id,
-            ],
+            'id'         => $this->id,
+            'type'       => 'counter_bid_rejected',
+            'data'       => $this->toDatabase($notifiable),
             'created_at' => now(),
         ]);
     }

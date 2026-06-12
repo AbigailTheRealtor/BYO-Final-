@@ -735,27 +735,45 @@
                                     @else
                                         @foreach($notifications as $notification)
                                             @php
-                                                $data      = $notification->data;
-                                                $type      = $data['type'] ?? 'general';
-                                                $message   = $data['message'] ?? 'You have a notification';
-                                                $listingId = $data['listing_id'] ?? $data['auction_id'] ?? null;
+                                                $data        = $notification->data;
+                                                $type        = $data['type'] ?? 'general';
+                                                $message     = $data['message'] ?? 'Account activity — tap View for details.';
+                                                $contextLine = $data['context_line'] ?? null;
                                             @endphp
                                             <div class="alert alert-info d-flex justify-content-between align-items-center mb-2" role="alert" id="notification-{{ $notification->id }}">
                                                 <div>
                                                     @if($type === 'bid_accepted' || $type === 'counter_bid_accepted')
                                                         <i class="fa-solid fa-circle-check text-success me-2"></i>
-                                                    @elseif($type === 'bid_countered' || $type === 'counter_bid_submitted')
+                                                    @elseif($type === 'agent_hired')
+                                                        <i class="fa-solid fa-user-check text-success me-2"></i>
+                                                    @elseif($type === 'counter_bid_submitted')
                                                         <i class="fa-solid fa-right-left text-warning me-2"></i>
-                                                    @elseif($type === 'bid_rejected')
+                                                    @elseif($type === 'bid_rejected' || $type === 'counter_bid_rejected')
                                                         <i class="fa-solid fa-circle-xmark text-danger me-2"></i>
-                                                    @elseif($type === 'bid_submitted' || $type === 'bid_received')
+                                                    @elseif($type === 'bid_submitted' || $type === 'bid_modified')
                                                         <i class="fa-solid fa-gavel text-primary me-2"></i>
+                                                    @elseif($type === 'offer_submitted' || $type === 'offer_countered')
+                                                        <i class="fa-solid fa-file-contract text-primary me-2"></i>
+                                                    @elseif($type === 'offer_accepted')
+                                                        <i class="fa-solid fa-circle-check text-success me-2"></i>
+                                                    @elseif($type === 'offer_rejected' || $type === 'offer_withdrawn' || $type === 'offer_expired')
+                                                        <i class="fa-solid fa-circle-xmark text-danger me-2"></i>
+                                                    @elseif($type === 'offer_listing_status')
+                                                        <i class="fa-solid fa-house-circle-check text-info me-2"></i>
+                                                    @elseif($type === 'showing_requested')
+                                                        <i class="fa-solid fa-calendar-plus text-primary me-2"></i>
+                                                    @elseif($type === 'showing_approved')
+                                                        <i class="fa-solid fa-calendar-check text-success me-2"></i>
+                                                    @elseif($type === 'showing_declined' || $type === 'showing_canceled')
+                                                        <i class="fa-solid fa-calendar-xmark text-danger me-2"></i>
+                                                    @elseif($type === 'hire_agent_lead')
+                                                        <i class="fa-solid fa-handshake text-warning me-2"></i>
                                                     @else
                                                         <i class="fa-solid fa-bell me-2"></i>
                                                     @endif
                                                     <span>{{ $message }}</span>
-                                                    @if($listingId)
-                                                        <small class="text-muted ms-2">(Listing: {{ $listingId }})</small>
+                                                    @if($contextLine)
+                                                        <small class="text-muted d-block ms-4">{{ $contextLine }}</small>
                                                     @endif
                                                     <small class="text-muted ms-2">{{ $notification->created_at->diffForHumans() }}</small>
                                                 </div>

@@ -22,10 +22,14 @@ class ShowingDeclinedNotification extends Notification
     {
         $showing = $this->showing;
 
+        $address = $this->listingAddress();
+
         return [
+            'message'         => 'Your showing request was declined.',
+            'context_line'    => $address,
             'type'            => 'showing_declined',
             'showing_id'      => $showing->id,
-            'listing_address' => $this->listingAddress(),
+            'listing_address' => $address,
             'requested_date'  => optional($showing->requested_date)->format('M j, Y'),
             'owner_message'   => $showing->owner_message,
         ];

@@ -22,10 +22,16 @@ class ShowingApprovedNotification extends Notification
     {
         $showing = $this->showing;
 
+        $address = $this->listingAddress();
+        $date    = optional($showing->approved_date)->format('M j, Y')
+                ?? optional($showing->requested_date)->format('M j, Y');
+
         return [
+            'message'         => 'Your showing request was approved.',
+            'context_line'    => $date ? $address . ' • ' . $date : $address,
             'type'            => 'showing_approved',
             'showing_id'      => $showing->id,
-            'listing_address' => $this->listingAddress(),
+            'listing_address' => $address,
             'approved_date'   => optional($showing->approved_date)->format('M j, Y'),
             'approved_start'  => $showing->approved_start_time,
             'approved_end'    => $showing->approved_end_time,

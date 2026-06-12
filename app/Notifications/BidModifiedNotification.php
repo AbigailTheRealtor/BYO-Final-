@@ -28,36 +28,24 @@ class BidModifiedNotification extends Notification implements ShouldBroadcast
 
     public function toDatabase($notifiable)
     {
-        $agentName = ($this->bid->user->first_name ?? 'Unknown') . ' ' . ($this->bid->user->last_name ?? 'Agent');
         $listingId = $this->auction->listing_id ?? ('TAA-' . $this->auction->id);
-        
+
         return [
-            'message' => "Agent {$agentName} has modified their bid for listing {$listingId}. Please review the updated terms.",
-            'bid_id' => $this->bid->id,
-            'auction_id' => $this->auction->id,
-            'listing_id' => $listingId,
-            'type' => 'bid_modified',
-            'created_at' => now()->toDateTimeString(),
+            'message'      => 'A bid on your listing was updated.',
+            'context_line' => $this->auction->title ?? '',
+            'bid_id'       => $this->bid->id,
+            'auction_id'   => $this->auction->id,
+            'listing_id'   => $listingId,
+            'type'         => 'bid_modified',
         ];
     }
 
     public function toBroadcast($notifiable)
     {
-        $agentName = ($this->bid->user->first_name ?? 'Unknown') . ' ' . ($this->bid->user->last_name ?? 'Agent');
-        $listingId = $this->auction->listing_id ?? ('TAA-' . $this->auction->id);
-        
         return new BroadcastMessage([
-            'id' => $this->id,
+            'id'   => $this->id,
             'type' => 'bid_modified',
-            'read_at' => null,
-            'created_at' => now()->toDateTimeString(),
-            'data' => [
-                'message' => "Agent {$agentName} has modified their bid for listing {$listingId}. Please review the updated terms.",
-                'bid_id' => $this->bid->id,
-                'auction_id' => $this->auction->id,
-                'listing_id' => $listingId,
-                'created_at' => now()->toDateTimeString(),
-            ],
+            'data' => $this->toDatabase($notifiable),
         ]);
     }
 
