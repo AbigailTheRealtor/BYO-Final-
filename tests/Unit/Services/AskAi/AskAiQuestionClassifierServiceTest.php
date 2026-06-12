@@ -1569,4 +1569,40 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('buyer_tenant_match', $result['question_type'],
             '"preferred lease length" must remain in buyer_tenant_match — not swallowed by listing_facts');
     }
+
+    // --- Case Q — Move-in requirements (live-UI audit, June 2026) ---
+    // "What is required at move in?" previously returned unsupported because no
+    // listing_facts phrase covered move-in requirement questions.  Fixed by
+    // adding a move-in requirements block to the listing_facts keyword list.
+
+    /** @dataProvider moveInRequirementsProvider */
+    public function test_case_Q_move_in_requirements_classify_as_listing_facts(string $q): void
+    {
+        $result = $this->makeService()->classify($q);
+        $this->assertSame('listing_facts', $result['question_type'],
+            "\"$q\" must route to listing_facts so the pipeline can answer from listing context");
+    }
+
+    public static function moveInRequirementsProvider(): array
+    {
+        return [
+            'required at move in'          => ['What is required at move in?'],
+            'move in requirements'         => ['Move in requirements'],
+            'move hyphen in requirements'  => ['Move-in requirements'],
+            'what do you need to move in'  => ['What do you need to move in?'],
+            'what do i need to move in'    => ['What do I need to move in?'],
+            'what is needed to move in'    => ['What is needed to move in?'],
+            'required to move in'          => ['Required to move in'],
+            'what is required to move in'  => ['What is required to move in?'],
+            'what do i need to rent'       => ['What do I need to rent this place?'],
+        ];
+    }
+
+    public function test_case_Q_move_in_date_still_routes_to_listing_facts(): void
+    {
+        // move-in date is a listing field (already passing) — must not regress.
+        $result = $this->makeService()->classify('What is the move-in date?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What is the move-in date?" must remain listing_facts');
+    }
 }

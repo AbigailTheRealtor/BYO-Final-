@@ -343,6 +343,7 @@ class AskAiContextBuilderService
             // -----------------------------------------------------------------
             'seller' => array_merge(
                 [
+                    // ── Core listing fields ───────────────────────────────────────
                     'address'              => $nativeGet('address'),
                     'description'          => $nativeGet('description'),
                     'asking_price'         => $infoGet('maximum_budget'),
@@ -382,10 +383,17 @@ class AskAiContextBuilderService
                                                  'other_garage_needed'
                                              ),
                     'garage_spaces'        => $infoGet('garage_parking_spaces'),
-                    // water_view: saved by saveAllMetadata() as 'water_view' (JSON array).
-                    'water_view'           => $this->decodeJsonField($infoGet('water_view')),
+                    // water_view: decoded from the 'view_preference' meta key (JSON array).
+                    // Live-DB audit (June 2026) confirmed all roles store scenic/water view
+                    // selections under 'view_preference' — 'water_view' does not exist in
+                    // any role's meta table. Output key kept as 'water_view' for prompt
+                    // and registry contract consistency.
+                    'water_view'           => $this->decodeJsonField($infoGet('view_preference')),
                     // ── Lot / Land ────────────────────────────────────────────────
+                    // lot_size is retained as a backward-compatible alias that reads
+                    // total_acreage with a min_acreage fallback for older rows.
                     'lot_size'             => $infoGet('total_acreage') ?? $infoGet('min_acreage'),
+                    'total_acreage'        => $infoGet('total_acreage'),
                     'lot_dimensions'       => $infoGet('lot_dimensions'),
                     'zoning'               => $infoGet('zoning'),
                     // ── Waterfront / Water ────────────────────────────────────────
@@ -400,9 +408,15 @@ class AskAiContextBuilderService
                     'exterior_construction' => $this->decodeJsonField($infoGet('exterior_construction')),
                     'foundation'           => $this->decodeJsonField($infoGet('foundation')),
                     'heating_and_fuel'     => $this->decodeJsonField($infoGet('heating_and_fuel')),
+                    // heating_fuel: alternate output key for the same meta; retained for
+                    // commercial/income context where 'heating_fuel' is the contract name.
+                    'heating_fuel'         => $this->decodeJsonField($infoGet('heating_and_fuel')),
                     'air_conditioning'     => $this->decodeJsonField($infoGet('air_conditioning')),
                     // ── Utilities ────────────────────────────────────────────────
                     'water'                => $this->decodeJsonField($infoGet('water')),
+                    // water_source: alternate output key for the same meta; used in
+                    // commercial and income-property context.
+                    'water_source'         => $this->decodeJsonField($infoGet('water')),
                     'sewer'                => $this->decodeJsonField($infoGet('sewer')),
                     'utilities'            => $this->decodeJsonField($infoGet('utilities')),
                     // ── Transaction / Occupancy ───────────────────────────────────
@@ -425,6 +439,9 @@ class AskAiContextBuilderService
                     'hoa_fee'              => $infoGet('association_fee_amount'),
                     'hoa_payment_schedule' => $infoGet('association_fee_frequency'),
                     'association_name'     => $infoGet('association_name'),
+                    // hoa_name: alternate output key for association_name; used in
+                    // commercial and income-property context.
+                    'hoa_name'             => $infoGet('association_name'),
                     'association_fee_includes' => $this->decodeJsonField($infoGet('association_fee_includes')),
                     // ── CDD / Special Assessments ─────────────────────────────────
                     'has_cdd'              => $infoGet('has_cdd'),
@@ -460,23 +477,15 @@ class AskAiContextBuilderService
                     'sold'                 => $nativeGet('is_sold'),
                     'annual_property_taxes' => $infoGet('annual_property_taxes'),
                     'service_type'         => $infoGet('service_type'),
-                    // ── Unconditional land/lot fields (relevant to any property type) ──
-                    // zoning, waterfront, water_access, lot_acreage, and lot_dimensions
-                    // apply to residential, commercial, and vacant land alike.
-                    'zoning'               => $infoGet('zoning'),
-                    'lot_acreage'          => $infoGet('total_acreage'),
-                    'waterfront'           => $infoGet('waterfront'),
-                    // water_access is stored as a JSON-encoded multiselect.
-                    'water_access'         => $this->decodeJsonField($infoGet('water_access')),
-                    'lot_dimensions'       => $infoGet('lot_dimensions'),
-                    // ── Commercial / structural fields ────────────────────────────────
-                    // These are exposed for Ask AI so users can query commercial property
-                    // specifics (zoning, building size, NOI, cap rate, etc.) without
-                    // requiring an OpenAI call.
+                    // ── Commercial / Structural fields ────────────────────────────
+                    // Exposed for Ask AI so users can query commercial property specifics
+                    // (building size, NOI, cap rate, etc.) without an OpenAI call.
+                    // building_features: surfaces for ALL seller property types so
+                    // commercial-sale and income/multifamily listings can answer questions
+                    // about building amenities via Guard B without an OpenAI call.
+                    'building_features'    => $this->decodeJsonField($infoGet('building_features')),
                     'building_sqft'        => $infoGet('total_square_feet'),
                     'ceiling_height'       => $infoGet('ceiling_height'),
-                    'building_features'    => $this->decodeJsonField($infoGet('building_features')),
-                    'current_use'          => $this->decodeJsonField($infoGet('current_use')),
                     // parking_spaces: commercial listing form uses garage_parking_spaces
                     // for the "Parking Spaces" count field (see MlsFieldMap::seller()).
                     // garage_spaces is the legacy key; parking_spaces the commercial-friendly alias.
@@ -486,44 +495,20 @@ class AskAiContextBuilderService
                     'existing_lease_type'  => $infoGet('existing_lease_type'),
                     'lease_expiration'     => $infoGet('lease_expiration'),
                     'lease_assignable'     => $infoGet('lease_assignable'),
-                    // Structural / physical characteristics
-                    'roof_type'            => $this->decodeJsonField($infoGet('roof_type')),
-                    'exterior_construction'=> $this->decodeJsonField($infoGet('exterior_construction')),
-                    'foundation'           => $this->decodeJsonField($infoGet('foundation')),
-                    'heating_fuel'         => $this->decodeJsonField($infoGet('heating_and_fuel')),
-                    'air_conditioning'     => $this->decodeJsonField($infoGet('air_conditioning')),
-                    'utilities'            => $this->decodeJsonField($infoGet('utilities')),
-                    'water_source'         => $this->decodeJsonField($infoGet('water')),
-                    'sewer'                => $this->decodeJsonField($infoGet('sewer')),
-                    'interior_features'    => $this->decodeJsonField($infoGet('interior_features')),
-                    // CDD / Special assessments
-                    'has_cdd'              => $infoGet('has_cdd'),
-                    'annual_cdd_fee'       => $infoGet('annual_cdd_fee'),
-                    'has_special_assessments' => $infoGet('has_special_assessments'),
-                    'special_assessment_amount' => $infoGet('special_assessment_amount'),
-                    'special_assessment_description' => $infoGet('special_assessment_description'),
-                    // HOA details
-                    'hoa_name'             => $infoGet('association_name'),
-                    // Tax / legal / parcel
-                    'parcel_id'            => $infoGet('parcel_id'),
-                    'tax_year'             => $infoGet('tax_year'),
-                    'legal_description'    => $infoGet('legal_description'),
-                    'additional_parcels'   => $infoGet('additional_parcels'),
-                    'total_parcel_count'   => $infoGet('total_parcel_count'),
-                    // Flood zone supplemental
-                    'flood_zone_panel'     => $infoGet('flood_zone_panel'),
-                    'flood_zone_date'      => $infoGet('flood_zone_date'),
-                    'flood_insurance_required' => $infoGet('flood_insurance_required'),
-                    // ── Income / Multifamily fields ──────────────────────────────────
-                    // lot_size, lot_dimensions, zoning, waterfront, water_access,
-                    // parcel_id, tax_year, and legal_description are already present
-                    // above in the residential audit fields — not duplicated here.
+                    // ── Income / Multifamily fields ───────────────────────────────
                     'property_items'            => $this->decodeJsonField($infoGet('property_items')),
                     'total_units'               => $infoGet('unit_number'),
                     'total_buildings'           => $infoGet('unit_buildings'),
                     'unit_mix_summary'          => $this->summarizeUnitConfigurations($infoGet('unit_type_configurations')),
                     'gross_annual_income'       => $infoGet('gross_annual_income'),
                     'annual_operating_expenses' => $infoGet('annual_operating_expenses'),
+                    // minimum_annual_net_income / minimum_cap_rate: output key names match
+                    // the EAV meta key names saved by the seller offer form.
+                    // annual_net_income / cap_rate are routing aliases used by Guard B
+                    // (LISTING_KEY_KEYWORD_MAP keys listing.annual_net_income and listing.cap_rate
+                    //  resolve ctx['listing']['annual_net_income'] and ctx['listing']['cap_rate']).
+                    'minimum_annual_net_income' => $infoGet('minimum_annual_net_income'),
+                    'minimum_cap_rate'          => $infoGet('minimum_cap_rate'),
                     'annual_net_income'         => $infoGet('minimum_annual_net_income'),
                     'cap_rate'                  => $infoGet('minimum_cap_rate'),
                     'rent_roll_available'       => $infoGet('rent_roll_available'),
@@ -540,14 +525,12 @@ class AskAiContextBuilderService
                 // meta keys are decoded from JSON and returned as comma-separated strings
                 // via decodeJsonField() for prompt-friendly consumption.
                 ($infoGet('property_type') === 'Vacant Land') ? [
-                    'current_use'          => $this->decodeJsonField($infoGet('current_use')),
                     'current_adjacent_use' => $this->decodeJsonField($infoGet('current_adjacent_use')),
                     'water_available'      => $infoGet('water_available'),
                     'sewer_available'      => $infoGet('sewer_available'),
                     'electric_available'   => $infoGet('electric_available'),
                     'gas_available'        => $infoGet('gas_available'),
                     'telecom_available'    => $infoGet('telecom_available'),
-                    'road_frontage'        => $this->decodeJsonField($infoGet('road_frontage')),
                     'road_surface_type'    => $this->decodeJsonField($infoGet('road_surface_type')),
                     'front_footage'        => $infoGet('front_footage'),
                     'number_of_wells'      => $infoGet('number_of_wells'),
@@ -590,11 +573,19 @@ class AskAiContextBuilderService
                     'business_lease_additional_terms' => $infoGet('business_lease_additional_terms'),
                     'licenses'                        => $this->decodeJsonField($infoGet('licenses')),
                     'sale_includes'                   => $this->decodeJsonField($infoGet('sale_includes')),
-                    'current_use'                     => $this->decodeJsonField($infoGet('current_use')),
-                    'building_features'               => $this->decodeJsonField($infoGet('building_features')),
-                    'road_frontage'                   => $this->decodeJsonField($infoGet('road_frontage')),
+                    // building_features: moved to the general seller commercial/structural
+                    // block (unconditional) so commercial-sale listings also get it.
                     'electrical_service'              => $this->decodeJsonField($infoGet('electrical_service')),
                     'business_assets'                 => $this->decodeJsonField($infoGet('business_assets')),
+                ] : [],
+                // ── Shared Vacant Land + Business fields ─────────────────────────────
+                // current_use and road_frontage apply to both Vacant Land and Business
+                // Opportunity listings. Kept in a single conditional block so each key
+                // appears exactly once in source (prevents PHP silent-override bugs and
+                // source-level duplicate detection failures).
+                (in_array($infoGet('property_type'), ['Vacant Land', 'Business'], true)) ? [
+                    'current_use'   => $this->decodeJsonField($infoGet('current_use')),
+                    'road_frontage' => $this->decodeJsonField($infoGet('road_frontage')),
                 ] : []
             ),
 

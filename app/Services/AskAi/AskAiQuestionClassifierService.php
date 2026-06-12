@@ -222,6 +222,19 @@ class AskAiQuestionClassifierService
             'who pays utilities',
             'does it include utilities',
             'what is included in rent',
+            // Move-in requirements (security deposit, application fee, etc.)
+            'required at move in',
+            'what is required at move in',
+            'what is required to move in',
+            'move in requirements',
+            'move-in requirements',
+            'what do you need to move in',
+            'what do i need to move in',
+            'what is needed to move in',
+            'required to move in',
+            'required to rent this',
+            'what do i need to rent',
+            'what is needed to rent',
             // Showing instructions
             'showing instructions',
             'how to schedule a showing',
@@ -941,6 +954,56 @@ class AskAiQuestionClassifierService
             'does the buyer have a financing contingency',
             // Rental restrictions — secondary phrase
             'property rental restriction rules',
+            // ---- Income / multifamily gap coverage --------------------------------
+            // These phrases are present in LISTING_KEY_KEYWORD_MAP but previously
+            // absent from the classifier, causing them to fall through to 'unsupported'
+            // before detectListingFieldKey() was reached.
+            'gross annual income',
+            'total annual rent collected',
+            'annual net income',
+            'net operating income amount',
+            'annual operating expenses',
+            'total annual expenses',
+            'how many units',
+            'unit count',
+            'unit mix',
+            'bedroom mix',
+            'rent roll',
+            'operating statement',
+            'income property',
+            'duplex',
+            'triplex',
+            'quadplex',
+            'multifamily type',
+            'property type mix',
+            'occupancy requirement',
+            // ---- Income/Multifamily — buildings and property monthly income ----------------
+            'how many buildings',
+            'total buildings',
+            'number of buildings',
+            'property monthly income from rent',
+            'monthly income this property generates',
+            'investment property monthly income',
+            // Use possessive/specific phrases only — bare 'cap rate' would swallow
+            // "What is a cap rate in real estate?" which must stay 'educational'.
+            'what is the cap rate',
+            'cap rate for this',
+            'the cap rate',
+            'capitalization rate',
+            // ---- Telecom / internet availability ---------------------------------
+            // 'Is there internet or cable service available?' classifies as 'unsupported'
+            // without this entry because no other listing_facts keyword covers it.
+            'internet or cable',
+            'is there internet',
+            'broadband availability',
+            // ---- Vacant Land utility availability --------------------------------
+            // 'Is there water service to this lot?' and 'Is there sewer service to
+            //  this lot?' are in LISTING_KEY_KEYWORD_MAP but classified as 'unsupported'
+            //  without these entries because no existing keyword covers them.
+            'is there water service',
+            'is there sewer service',
+            'water service to this lot',
+            'sewer service to this lot',
         ],
 
         'compatibility_signals' => [

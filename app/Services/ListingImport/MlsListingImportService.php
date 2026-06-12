@@ -120,7 +120,9 @@ class MlsListingImportService
             // Flood Zone: match with or without a trailing qualifier word so that
             // "Flood Zone Date:", "Flood Zone Code:", and "Flood Zone Panel:" all stop
             // captures that run into them (e.g. interior_features bleed).
-            '|Legal\s+Desc|Flood\s+Zone(?:\s+\w+)?|HOA\b(?=\s*:)|Association\b(?=\s*:)|Homestead\b' .
+            // HOA Dues/Fee: must precede bare HOA\b so "HOA Dues:" stops captures
+            // before the shorter two-letter label would match.
+            '|Legal\s+Desc|Flood\s+Zone(?:\s+\w+)?|HOA\s+(?:Dues?|Fee)\b(?=\s*:)|HOA\b(?=\s*:)|Association\b(?=\s*:)|Homestead\b' .
             // CDD: allow optional Y/N so "CDD Y/N: No" stops association_fee_frequency.
             '|CDD(?:\s+Y\/N)?\b' .
             // Lot Size: accept an extra qualifier word ("Acres", "Sq", etc.) so
@@ -134,12 +136,18 @@ class MlsListingImportService
             '|Rent\s+(?:Includes?|Price)\b|Tenant\s+Pays?\b|Terms\s+of\s+Lease\b' .
             // Minimum Security Deposit (3-word label) must precede the 2-word fallback.
             '|Application\s+Fee\b|Security\s+Deposit\b|Minimum\s+Security\s+Deposit\b|Minimum\s+(?:Lease|Security)\b' .
-            '|(?:Monthly|Lease)\s+(?:Rent|Amount)\b|Remarks?\b|Description\b' .
+            // Monthly Fee: e.g. "Monthly Fee: $150" in condo/commercial exports.
+            '|Monthly\s+Fee\b|(?:Monthly|Lease)\s+(?:Rent|Amount)\b|Remarks?\b|Description\b' .
             '|Directions?\b|MLS\s*(?:#|Num|No\.?|Number)' .
             '|List\s+Price|Price\b|City\b(?=\s*:)|County\b|State\b|Zip\b|Address\b' .
             '|Kitchen\b|Living\s+Room\b|Primary\s+Bed(?:room)?\b|Rooms\b' .
             '|Community\s+Information\b|Housing\b' .
-            '|Special\s+Assessment|Homeowners?\s+Assoc|Subdivision\b' .
+            // Special Assessment: include Y/N variant so "Special Assessment Y/N: No"
+            // stops captures (bare ":" comes after Y/N in that MLS export form).
+            // School District and Neighborhood: not in the original list, causing city
+            // and carport fields to bleed into those following label words.
+            '|Special\s+Assessment(?:\s+Y\/N)?\b|Homeowners?\s+Assoc|Subdivision\b' .
+            '|School\s+District\b|Neighborhood\b(?=\s*:)' .
             '|Foundation\b|Sewer\b(?=\s*:)|Utilities\b|Roof\s+Type\b' .
             '|Number\s+of\s+Units\b|Total\s+Units\b|Cap\s+Rate\b' .
             // Commercial Sale specific labels
@@ -602,7 +610,9 @@ class MlsListingImportService
         }
 
         // ─── Rent Includes ────────────────────────────────────────────────────
-        if ($v = $extract(['/Rent\s+Includes?[\s:]+([^\|\n]{1,200})/i'])) {
+        // boundary=true required: without it the 200-char capture bleeds into
+        // Waterfront, Tax ID, Special Assessment, and other following fields.
+        if ($v = $extract(['/Rent\s+Includes?[\s:]+([^\|\n]{1,200})/i'], true)) {
             $data['rent_includes'] = $v;
         }
 

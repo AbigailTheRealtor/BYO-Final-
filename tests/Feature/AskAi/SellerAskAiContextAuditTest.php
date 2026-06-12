@@ -65,14 +65,16 @@ class SellerAskAiContextAuditTest extends TestCase
     }
 
     // =========================================================================
-    // 1 — water_view reads from 'water_view' EAV key (not 'view_preference')
+    // 1 — water_view decoded from 'view_preference' EAV key (live-DB audit fix)
+    // Live-DB audit (June 2026) confirmed all roles store view selections under
+    // 'view_preference'. The legacy 'water_view' EAV key does not exist in any
+    // role's meta table. Output key is kept as 'water_view' for prompt contract.
     // =========================================================================
 
-    public function test_water_view_reads_from_water_view_meta_key(): void
+    public function test_water_view_reads_from_view_preference_meta_key(): void
     {
         $auction = $this->makeAuction([
-            'water_view'      => json_encode(['Lake', 'Pond']),
-            'view_preference' => json_encode(['Mountain']),
+            'view_preference' => json_encode(['Lake', 'Pond']),
         ]);
 
         $listing = $this->getSellerListingContext($auction->id);
@@ -80,24 +82,22 @@ class SellerAskAiContextAuditTest extends TestCase
         $this->assertArrayHasKey('water_view', $listing,
             'Seller context must include water_view key');
         $this->assertNotNull($listing['water_view'],
-            'water_view must not be null when the water_view meta key is set');
+            'water_view must not be null when the view_preference meta key is set');
         $this->assertStringContainsStringIgnoringCase('Lake', (string) $listing['water_view'],
-            'water_view must read from the water_view meta key (not view_preference)');
-        $this->assertStringNotContainsStringIgnoringCase('Mountain', (string) $listing['water_view'],
-            'water_view must NOT read from the view_preference meta key');
+            'water_view must read from the view_preference meta key');
+        $this->assertStringContainsStringIgnoringCase('Pond', (string) $listing['water_view'],
+            'water_view must decode all values from the view_preference JSON array');
     }
 
-    public function test_water_view_is_null_when_only_view_preference_is_set(): void
+    public function test_water_view_is_null_when_no_view_meta_is_set(): void
     {
-        $auction = $this->makeAuction([
-            'view_preference' => json_encode(['Ocean']),
-        ]);
+        $auction = $this->makeAuction([]);
 
         $listing = $this->getSellerListingContext($auction->id);
 
         $this->assertArrayHasKey('water_view', $listing);
         $this->assertNull($listing['water_view'],
-            'water_view must be null when only view_preference is set (wrong key)');
+            'water_view must be null when no view_preference meta key is set');
     }
 
     // =========================================================================

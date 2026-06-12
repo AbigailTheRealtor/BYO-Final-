@@ -2153,4 +2153,71 @@ class MlsListingImportServiceTest extends TestCase
         $this->assertStringContainsString('Rejected Mapping Candidates', $content,
             'Report must contain Rejected Mapping Candidates section');
     }
+
+    // ─── Field bleed regression tests (live-UI audit, June 2026) ─────────────
+    // Each test confirms a specific bleed scenario that was observed in the
+    // browser MLS import preview and fixed by adding missing entries to the
+    // $labelStop pattern.
+
+    public function test_city_does_not_bleed_into_school_district_label(): void
+    {
+        // "School District:" was missing from $labelStop — city captured the
+        // entire following text including the school district name.
+        $result = $this->service->import('', 'City: SEMINOLE School District: Pinellas County Schools County: Pinellas');
+        $this->assertSame('SEMINOLE', $result['data']['city'] ?? null,
+            'city must stop at "School District:" and not bleed into the district name');
+    }
+
+    public function test_city_does_not_bleed_into_neighborhood_label(): void
+    {
+        // "Neighborhood:" was missing from $labelStop — city captured the
+        // neighborhood name and everything after it.
+        $result = $this->service->import('', 'City: LAKEWOOD RANCH Neighborhood: Heritage Harbour County: Manatee');
+        $this->assertSame('LAKEWOOD RANCH', $result['data']['city'] ?? null,
+            'city must stop at "Neighborhood:" and not bleed into the neighborhood name');
+    }
+
+    public function test_carport_does_not_bleed_into_hoa_dues_label(): void
+    {
+        // "HOA Dues:" was not stopped by the previous HOA\b(?=\s*:) pattern
+        // because "Dues" follows HOA before the colon.  Fixed by adding
+        // HOA\s+(?:Dues?|Fee)\b(?=\s*:) ahead of bare HOA\b in $labelStop.
+        $result = $this->service->import('', 'Carport: Yes HOA Dues: $200 Subdivision: PINE RIDGE');
+        $this->assertSame('yes', $result['data']['carport'] ?? null,
+            'carport must stop at "HOA Dues:" and not include the dues amount');
+    }
+
+    public function test_carport_does_not_bleed_into_monthly_fee_label(): void
+    {
+        // "Monthly Fee:" was not in $labelStop — carport captured the fee amount.
+        $result = $this->service->import('', 'Carport: No Monthly Fee: 150 Subdivision: RIVER OAKS');
+        $this->assertSame('no', $result['data']['carport'] ?? null,
+            'carport must stop at "Monthly Fee:" and not include the fee amount');
+    }
+
+    public function test_rent_includes_does_not_bleed_without_boundary(): void
+    {
+        // rent_includes previously had boundary=false, allowing a 200-char capture
+        // that swallowed Waterfront, Tax ID, and other following fields.
+        $result = $this->service->import('', 'Rent Includes: Water, Trash, Cable Waterfront: Yes Tax ID: 123');
+        $data = $result['data'];
+        $rentIncludes = $data['rent_includes'] ?? null;
+        $this->assertNotNull($rentIncludes, 'rent_includes must be parsed');
+        $this->assertStringNotContainsString('Waterfront', (string) $rentIncludes,
+            'rent_includes must stop before "Waterfront:" label');
+        $this->assertStringNotContainsString('Tax ID', (string) $rentIncludes,
+            'rent_includes must stop before "Tax ID:" label');
+    }
+
+    public function test_water_view_does_not_bleed_into_special_assessment_yn_label(): void
+    {
+        // "Special Assessment Y/N:" was not stopped because $labelStop had
+        // Special\s+Assessment\b but required \s*: after the boundary — the
+        // "Y/N" between the word and the colon prevented the stop from firing.
+        $result = $this->service->import('', 'Water View: Bay, Canal Special Assessment Y/N: No Waterfront: No');
+        $waterView = $result['data']['water_view'] ?? null;
+        $this->assertNotNull($waterView, 'water_view must be parsed');
+        $this->assertStringNotContainsString('Special Assessment', (string) $waterView,
+            'water_view must stop before "Special Assessment Y/N:" label');
+    }
 }

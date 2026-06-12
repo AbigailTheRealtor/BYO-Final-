@@ -29,11 +29,14 @@ class AskAiIncomeKeywordRoutingTest extends TestCase
         'listing.cap_rate',
         'listing.annual_operating_expenses',
         'listing.total_units',
+        'listing.total_buildings',
         'listing.unit_mix_summary',
         'listing.rent_roll_available',
         'listing.operating_statement_available',
         'listing.property_items',
         'listing.occupancy_requirement',
+        'listing.income_requirement',
+        'listing.min_income_requirement',
     ];
 
     /**
@@ -49,11 +52,14 @@ class AskAiIncomeKeywordRoutingTest extends TestCase
         'What is the cap rate?'                                     => 'listing.cap_rate',
         'What is the annual net income?'                            => 'listing.annual_net_income',
         'How many units does this property have?'                   => 'listing.total_units',
+        'How many buildings are on this property?'                  => 'listing.total_buildings',
         'What is the unit mix?'                                     => 'listing.unit_mix_summary',
         'Is a rent roll available?'                                 => 'listing.rent_roll_available',
         'Is an operating statement available?'                      => 'listing.operating_statement_available',
         'What property type mix exists (duplex/triplex/etc.)?'      => 'listing.property_items',
         'What occupancy requirements exist?'                        => 'listing.occupancy_requirement',
+        'How much monthly income does this property generate?'      => 'listing.income_requirement',
+        'What income is required?'                                  => 'listing.min_income_requirement',
     ];
 
     /**
@@ -72,6 +78,8 @@ class AskAiIncomeKeywordRoutingTest extends TestCase
         'total annual expenses'                 => 'listing.annual_operating_expenses',
         'how many units'                        => 'listing.total_units',
         'unit count'                            => 'listing.total_units',
+        'how many buildings'                    => 'listing.total_buildings',
+        'total buildings'                       => 'listing.total_buildings',
         'unit mix'                              => 'listing.unit_mix_summary',
         'bedroom mix'                           => 'listing.unit_mix_summary',
         'rent roll available'                   => 'listing.rent_roll_available',
@@ -84,6 +92,11 @@ class AskAiIncomeKeywordRoutingTest extends TestCase
         'occupancy requirement'                 => 'listing.occupancy_requirement',
         'what occupancy is required'            => 'listing.occupancy_requirement',
         'minimum occupancy'                     => 'listing.occupancy_requirement',
+        'property monthly income from rent'             => 'listing.income_requirement',
+        'monthly income this property generates'        => 'listing.income_requirement',
+        'income requirement'                            => 'listing.min_income_requirement',
+        'minimum income required'                       => 'listing.min_income_requirement',
+        'what income is required'                       => 'listing.min_income_requirement',
     ];
 
     // -------------------------------------------------------------------------
