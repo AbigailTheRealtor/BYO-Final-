@@ -1996,7 +1996,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
             ['normalized_field_key' => 'listing.annual_property_taxes']
         );
 
-        $this->assertSame('Information not provided.', $result['final_response']['answer'] ?? '');
+        $this->assertSame('Annual property tax information has not been provided for this listing.', $result['final_response']['answer'] ?? '');
     }
 
     public function test_case_N2_listing_field_null_still_fires_guard_b(): void
@@ -2151,7 +2151,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
 
         $answer = $result['final_response']['answer'] ?? '';
         $this->assertStringNotContainsString('could not generate', $answer);
-        $this->assertSame('Information not provided.', $answer);
+        $this->assertSame('Annual property tax information has not been provided for this listing.', $answer);
     }
 
     public function test_case_N5_annual_property_taxes_populated_failed_adapter_returns_value_directly(): void

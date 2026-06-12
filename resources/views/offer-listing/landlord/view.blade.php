@@ -803,7 +803,7 @@
     {{-- Pre-compute section-visibility flags for nav tab guards and section @if guards --}}
     @php
         /* Photos */
-        $navHasPhotos = count($propertyPhotos) > 0 || $str('video_tour_url') || $str('virtual_tour_url');
+        $navHasPhotos = count($propertyPhotos) > 0 || $str('video_tour_url') || $str('virtual_tour_url') || $str('video_link');
 
         /* Pricing */
         $navHasPricing = $str('desired_rental_amount') || $str('starting_rent') || $str('reserve_rent')
@@ -839,6 +839,18 @@
 
         /* Additional Details */
         $navHasAddl = $str('additional_details') || $str('preferance_details');
+
+        /* Tax, Legal, HOA & CDD */
+        $navHasTaxLegal = $str('parcel_id') || $str('annual_property_taxes') || $str('tax_year')
+            || $str('legal_description') || $str('total_parcel_count') || $str('additional_parcels')
+            || $str('flood_zone_code') || $str('has_cdd') || $str('has_special_assessments')
+            || $str('has_hoa');
+
+        /* Structural Details */
+        $navHasStructural = $str('year_built') || $str('lot_dimensions') || $str('zoning')
+            || $str('waterfront') || count($arr('water_access')) || count($arr('interior_features'))
+            || count($arr('roof_type')) || count($arr('exterior_construction')) || count($arr('foundation'))
+            || $str('sqft_heated_source') || $str('unit_size');
     @endphp
 
     {{-- Smooth-scroll nav tabs (each tab is only rendered when its section has content) --}}
@@ -869,8 +881,14 @@
             @if($navHasContact)
             <li><a href="#section-contact">Contact</a></li>
             @endif
+            @if($navHasStructural)
+            <li><a href="#section-structural">Structural</a></li>
+            @endif
             @if($navHasAddl)
             <li><a href="#section-additional">Additional Details</a></li>
+            @endif
+            @if($navHasTaxLegal)
+            <li><a href="#section-taxlegal">Tax &amp; Legal</a></li>
             @endif
         </ul>
     </div>
@@ -878,16 +896,22 @@
     {{-- ================================================================
          PHOTOS & TOURS
          ============================================================== --}}
-    @if(count($propertyPhotos) || $str('video_tour_url') || $str('virtual_tour_url'))
+    @if(count($propertyPhotos) || $str('video_tour_url') || $str('virtual_tour_url') || $str('video_link'))
     <div class="card section-card" id="section-photos">
         <div class="card-header"><i class="fa-solid fa-images me-2"></i>Photos &amp; Tours</div>
         <div class="card-body">
             @php
                 $videoUrl = $str('video_tour_url');
                 $virtualUrl = $str('virtual_tour_url');
+                $videoLinkUrl = $str('video_link');
                 $videoEmbedUrl = null;
                 $virtualEmbedUrl = null;
-                foreach ([['url' => $videoUrl, 'var' => &$videoEmbedUrl], ['url' => $virtualUrl, 'var' => &$virtualEmbedUrl]] as &$_tour) {
+                $videoLinkEmbedUrl = null;
+                foreach ([
+                    ['url' => $videoUrl,     'var' => &$videoEmbedUrl],
+                    ['url' => $virtualUrl,   'var' => &$virtualEmbedUrl],
+                    ['url' => $videoLinkUrl, 'var' => &$videoLinkEmbedUrl],
+                ] as &$_tour) {
                     if (!$_tour['url']) continue;
                     if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_\-]{11})/', $_tour['url'], $_m)) {
                         $_tour['var'] = 'https://www.youtube.com/embed/' . $_m[1];
@@ -915,6 +939,16 @@
                 @else
                     <p class="mb-3"><span style="font-weight:600;color:#64748b;font-size:.875rem;">3D / Virtual Tour:</span>
                         <a href="{{ $virtualUrl }}" target="_blank" rel="noopener" class="ms-1">{{ $virtualUrl }}</a></p>
+                @endif
+            @endif
+            @if($videoLinkUrl)
+                @if($videoLinkEmbedUrl)
+                    <div class="ratio ratio-16x9 mb-3" style="max-width:560px;">
+                        <iframe src="{{ $videoLinkEmbedUrl }}" title="Property Video" allowfullscreen allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                    </div>
+                @else
+                    <p class="mb-3"><span style="font-weight:600;color:#64748b;font-size:.875rem;">Property Video:</span>
+                        <a href="{{ $videoLinkUrl }}" target="_blank" rel="noopener" class="ms-1">{{ $videoLinkUrl }}</a></p>
                 @endif
             @endif
             @if(count($propertyPhotos))
@@ -1098,6 +1132,21 @@
                 @foreach($leasingSpaceFields as $f)
                 <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
                 @endforeach
+            </div>
+            @endif
+
+            {{-- Waterfront / Water Access --}}
+            @php
+                $waterAccessItems = $arr('water_access');
+                $hasWaterSection  = $str('waterfront') || count($waterAccessItems);
+            @endphp
+            @if($hasWaterSection)
+            <hr>
+            <div class="row">
+                <div class="col-md-6">{!! $row('Waterfront', $str('waterfront')) !!}</div>
+                @if(count($waterAccessItems))
+                <div class="col-md-6">{!! $listRow('Water Access', $waterAccessItems) !!}</div>
+                @endif
             </div>
             @endif
         </div>
@@ -1453,6 +1502,171 @@
             @if($str('preferance_details'))
                 <p class="mb-0" style="font-size:.925rem;">{!! nl2br(e($str('preferance_details'))) !!}</p>
             @endif
+        </div>
+    </div>
+    @endif
+
+    {{-- ================================================================
+         STRUCTURAL DETAILS
+         ============================================================== --}}
+    @if($navHasStructural)
+    <div class="card section-card" id="section-structural">
+        <div class="card-header"><i class="fa-solid fa-building me-2"></i>Structural Details</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Year Built', $str('year_built')) !!}
+                    {!! $row('Lot Dimensions', $str('lot_dimensions')) !!}
+                    {!! $row('Zoning', $str('zoning')) !!}
+                    {!! $row('Unit Size', $str('unit_size')) !!}
+                    {!! $row('Sq Ft Heated Source', $str('sqft_heated_source')) !!}
+                </div>
+                <div class="col-md-6">
+                    @php
+                        $roofTypeItems  = $arr('roof_type');
+                        $extConstrItems = $arr('exterior_construction');
+                        $foundItems     = $arr('foundation');
+                        $intFeatItems   = $arr('interior_features');
+                    @endphp
+                    @if(count($roofTypeItems))
+                        {!! $listRow('Roof Type', $roofTypeItems) !!}
+                    @endif
+                    @if(count($extConstrItems))
+                        {!! $listRow('Exterior Construction', $extConstrItems) !!}
+                    @endif
+                    @if(count($foundItems))
+                        {!! $listRow('Foundation', $foundItems) !!}
+                    @endif
+                </div>
+            </div>
+            @if(count($intFeatItems))
+            <hr>
+            <div class="row">
+                <div class="col-md-12">{!! $listRow('Interior Features', $intFeatItems) !!}</div>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
+    {{-- ================================================================
+         TAX, LEGAL, HOA & DISCLOSURES
+         ============================================================== --}}
+    @if($navHasTaxLegal)
+    <div class="card section-card" id="section-taxlegal">
+        <div class="card-header"><i class="fa-solid fa-landmark me-2"></i>Tax, Legal &amp; HOA</div>
+        <div class="card-body">
+
+            {{-- Tax & Legal / Parcel --}}
+            @php
+                $hasTaxParcel = $str('parcel_id') || $str('annual_property_taxes') || $str('tax_year')
+                    || $str('legal_description') || $str('additional_parcels') || $str('total_parcel_count');
+            @endphp
+            @if($hasTaxParcel)
+            <h6 class="fw-semibold mb-2" style="letter-spacing:0;">Tax &amp; Legal</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Parcel ID', $str('parcel_id')) !!}
+                    {!! $row('Tax Year', $str('tax_year')) !!}
+                    {!! $row('Annual Property Taxes', $fmtMoney($str('annual_property_taxes'))) !!}
+                    {!! $row('Total Parcel Count', $str('total_parcel_count')) !!}
+                    {!! $row('Additional Parcels', $yesNo($str('additional_parcels'))) !!}
+                    {!! $row('Additional Parcel IDs', $str('additional_parcel_ids')) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Legal Description', $str('legal_description')) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Flood Zone — gated on flood_zone_code being present --}}
+            @if($str('flood_zone_code'))
+            @if($hasTaxParcel)<hr>@endif
+            <h6 class="fw-semibold mb-2" style="letter-spacing:0;">Flood Zone</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Flood Zone Code', $orOther($str('flood_zone_code'), $str('flood_zone_code_other'))) !!}
+                    {!! $row('Flood Insurance Required', $yesNo($str('flood_insurance_required'))) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Flood Zone Panel', $str('flood_zone_panel')) !!}
+                    {!! $row('Flood Zone Date', $str('flood_zone_date')) !!}
+                </div>
+            </div>
+            @php $hasFlood = true; @endphp
+            @else
+            @php $hasFlood = false; @endphp
+            @endif
+
+            {{-- CDD --}}
+            @php $hasCdd = $str('has_cdd') || $str('annual_cdd_fee'); @endphp
+            @if($hasCdd)
+            @if($hasTaxParcel || $hasFlood)<hr>@endif
+            <h6 class="fw-semibold mb-2" style="letter-spacing:0;">Community Development District (CDD)</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Has CDD', $yesNo($str('has_cdd'))) !!}
+                    {!! $row('Annual CDD Fee', $fmtMoney($str('annual_cdd_fee'))) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Special Assessments — gated strictly on has_special_assessments truthy --}}
+            @php $hasSpecialAssess = (bool) $str('has_special_assessments'); @endphp
+            @if($hasSpecialAssess)
+            @if($hasTaxParcel || $hasFlood || $hasCdd)<hr>@endif
+            <h6 class="fw-semibold mb-2" style="letter-spacing:0;">Special Assessments</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Has Special Assessments', $yesNo($str('has_special_assessments'))) !!}
+                    {!! $row('Special Assessment Amount', $fmtMoney($str('special_assessment_amount'))) !!}
+                    {!! $row('Special Assessment Description', $str('special_assessment_description')) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- HOA / Association --}}
+            @if($str('has_hoa'))
+            @if($hasTaxParcel || $hasFlood || $hasCdd || $hasSpecialAssess)<hr>@endif
+            <h6 class="fw-semibold mb-2" style="letter-spacing:0;">HOA / Association</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Has HOA', $yesNo($str('has_hoa'))) !!}
+                    {!! $row('Association Type', $orOther($str('association_type'), $str('association_type_other'))) !!}
+                    {!! $row('Association Name', $str('association_name')) !!}
+                    @php
+                        $_freq = $str('association_fee_frequency');
+                        $_freqDisplay = $_freq ? (' / ' . $orOther($_freq, $str('association_fee_frequency_other'))) : '';
+                    @endphp
+                    {!! $row('Association Fee', $fmtMoney($str('association_fee_amount')) . $_freqDisplay) !!}
+                    {!! $row('Application Fee', $fmtMoney($str('association_application_fee'))) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Approval Required', $yesNo($str('association_approval_required'))) !!}
+                    {!! $row('Approval Process', $str('association_approval_process')) !!}
+                    {!! $row('Leasing Restrictions', $yesNo($str('leasing_restrictions'))) !!}
+                    {!! $row('Min Lease Period', $orOther($str('min_lease_period'), $str('min_lease_period_other'))) !!}
+                    {!! $row('Max Leases / Year', $str('max_leases_per_year')) !!}
+                    {!! $row('Pet Restrictions', $yesNo($str('pet_restrictions'))) !!}
+                    {!! $row('Pet Restriction Details', $str('pet_restrictions_detail')) !!}
+                </div>
+            </div>
+            @php
+                $assocAmenities = $subOther($arr('association_amenities'), $str('association_amenities_other'));
+                $assocIncludes  = $subOther($arr('association_fee_includes'), $str('association_fee_includes_other'));
+            @endphp
+            @if(count($assocIncludes))
+            <div class="row">
+                <div class="col-md-6">{!! $row('Fee Includes', implode(', ', $assocIncludes)) !!}</div>
+            </div>
+            @endif
+            @if(count($assocAmenities))
+            <div class="row">
+                <div class="col-md-6">{!! $row('Association Amenities', implode(', ', $assocAmenities)) !!}</div>
+            </div>
+            @endif
+            @endif
+
         </div>
     </div>
     @endif

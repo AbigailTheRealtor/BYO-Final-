@@ -546,6 +546,43 @@ class AskAiContextBuilderService
                 'renewal_option'            => $infoGet('renewal_option_offered'),
                 'number_of_occupants'       => $infoGet('number_occupant'),
                 'additional_lease_terms'    => $infoGet('additional_landlord_lease_terms'),
+                // lease_terms: alias for terms_of_lease — keeps context key in sync with
+                // listingFieldRegistry() which uses config_key 'lease_terms'.
+                'lease_terms'              => $this->decodeJsonField($infoGet('terms_of_lease')),
+                // ---- Tax / Legal / Parcel fields (Landlord Residential Rental audit) ----
+                // Note: annual_property_taxes already present above (line ~536); omitted here.
+                'parcel_id'                => $infoGet('parcel_id'),
+                'tax_year'                 => $infoGet('tax_year'),
+                'legal_description'        => $infoGet('legal_description'),
+                'additional_parcels'       => $infoGet('additional_parcels'),
+                'total_parcel_count'       => $infoGet('total_parcel_count'),
+                'additional_parcel_ids'    => $infoGet('additional_parcel_ids'),
+                // ---- Structural / water / leasing fields (Landlord Residential Rental audit) ----
+                'year_built'               => $infoGet('year_built'),
+                'lot_dimensions'           => $infoGet('lot_dimensions'),
+                'zoning'                   => $infoGet('zoning'),
+                'waterfront'               => $infoGet('waterfront'),
+                'water_access'             => $this->decodeJsonField($infoGet('water_access')),
+                'interior_features'        => $this->decodeJsonField($infoGet('interior_features')),
+                'roof_type'                => $this->decodeJsonField($infoGet('roof_type')),
+                'exterior_construction'    => $this->decodeJsonField($infoGet('exterior_construction')),
+                'foundation'               => $this->decodeJsonField($infoGet('foundation')),
+                'flood_zone_code'          => $infoGet('flood_zone_code'),
+                'flood_zone_panel'         => $infoGet('flood_zone_panel'),
+                'flood_zone_date'          => $infoGet('flood_zone_date'),
+                'flood_insurance_required' => $infoGet('flood_insurance_required'),
+                'security_deposit_amount'  => $infoGet('security_deposit_amount'),
+                'terms_of_lease'           => $this->decodeJsonField($infoGet('terms_of_lease')),
+                'tenant_pays'              => $this->decodeJsonField($infoGet('tenant_pays')),
+                'rent_includes'            => $this->decodeJsonField($infoGet('rent_includes')),
+                'heating_fuel'             => $this->decodeJsonField($infoGet('heating_fuel')),
+                'air_conditioning'         => $this->decodeJsonField($infoGet('air_conditioning')),
+                'water'                    => $this->decodeJsonField($infoGet('water')),
+                'sewer'                    => $this->decodeJsonField($infoGet('sewer')),
+                'lease_amount_frequency'   => $infoGet('lease_amount_frequency'),
+                'has_cdd'                  => $infoGet('has_cdd'),
+                'annual_cdd_fee'           => $infoGet('annual_cdd_fee'),
+                'sqft_heated_source'       => $infoGet('sqft_heated_source'),
             ],
 
             // -----------------------------------------------------------------

@@ -194,14 +194,6 @@ class AskAiRunnerV2Service
             'when can we close',
             'how soon can we close',
             'closing date flexibility',
-            'when can i move in',
-            'move-in date',
-            'earliest move-in date',
-            'when is this available',
-            'availability date',
-            'when can this property be occupied',
-            'occupancy date',
-            'how soon is this available',
         ],
         'faq_answers.items_excluded_from_sale' => [
             'items excluded',
@@ -1336,6 +1328,160 @@ class AskAiRunnerV2Service
         // The context builder stores the tenant's max budget under ctx['listing']['max_rent']
         // (cascade: EAV 'budget' → 'maximum_budget').  A separate rental_budget context key
         // does not exist, so a separate LISTING_KEY_KEYWORD_MAP entry would always miss.
+
+        // ---- Landlord: Tax / Legal / Parcel (added in Residential Rental audit) ----
+        // Note: listing.annual_property_taxes already exists earlier in this array.
+        'listing.parcel_id' => [
+            'what is the parcel id for this rental',
+            'parcel id for this property',
+            'parcel number for this rental',
+            'folio number for this property',
+        ],
+        'listing.tax_year' => [
+            'what tax year is used for this rental',
+            'tax year for this property',
+            'which year are the property taxes based on',
+        ],
+        'listing.legal_description' => [
+            'what is the legal description for this rental',
+            'legal description of this property',
+            'property legal description',
+        ],
+        'listing.additional_parcels' => [
+            'does this rental have additional parcels',
+            'are there additional parcels included',
+            'additional parcels for this property',
+        ],
+        'listing.total_parcel_count' => [
+            'how many parcels does this rental have',
+            'total parcel count for this property',
+            'number of parcels in this listing',
+        ],
+        'listing.additional_parcel_ids' => [
+            'what are the additional parcel ids for this rental',
+            'additional parcel numbers for this property',
+            'list the parcel ids for this rental',
+        ],
+
+        // ---- Landlord: Structural & Property Facts (added in Residential Rental audit) ----
+        // Note: listing.year_built, listing.tenant_pays, and listing.flood_zone_code
+        // already exist above — they are not duplicated here.
+        'listing.lot_dimensions' => [
+            'lot dimensions for this rental',
+            'size of the lot for this rental',
+            'what are the lot dimensions',
+            'lot size dimensions',
+        ],
+        'listing.zoning' => [
+            'what is the zoning for this rental',
+            'zoning designation for this property',
+            'how is this property zoned',
+            'property zoning classification',
+        ],
+        'listing.waterfront' => [
+            'is this rental on the waterfront',
+            'is this a waterfront property',
+            'waterfront status for this rental',
+            'does this property have waterfront access',
+        ],
+        'listing.water_access' => [
+            'water access at this rental',
+            'what type of water access does this property have',
+            'water access options for this rental',
+            'is there water access',
+        ],
+        'listing.interior_features' => [
+            'interior features of this rental',
+            'what interior features does this property have',
+            'interior amenities in this rental',
+            'special interior features',
+        ],
+        'listing.roof_type' => [
+            'what type of roof does this rental have',
+            'roof type for this rental property',
+            'roof material for this rental',
+            'what is the roof made of',
+        ],
+        'listing.exterior_construction' => [
+            'exterior construction of this rental',
+            'what is the exterior made of',
+            'exterior material for this rental',
+            'what is the exterior construction',
+        ],
+        'listing.foundation' => [
+            'foundation type of this rental',
+            'what type of foundation does this rental have',
+            'foundation for this rental property',
+            'is this on a slab or block foundation',
+        ],
+        'listing.flood_insurance_required' => [
+            'is flood insurance required for this rental',
+            'flood insurance requirement for this rental',
+            'does this rental require flood insurance',
+            'is flood insurance mandatory for this property',
+        ],
+        'listing.security_deposit_amount' => [
+            'how much is the security deposit',
+            'security deposit amount for this rental',
+            'what is the security deposit',
+            'deposit amount required',
+            'how much is the deposit',
+        ],
+        'listing.terms_of_lease' => [
+            'what are the terms of the lease',
+            'lease terms for this rental',
+            'rental lease terms listed',
+            'what terms apply to this lease',
+        ],
+        'listing.rent_includes' => [
+            'what is included in the rent',
+            'what does rent include',
+            'what is covered by the rent',
+            'what services are included in rent',
+        ],
+        'listing.heating_fuel' => [
+            'what type of heating fuel is used',
+            'heating fuel type for this rental',
+            'is it gas or electric heat',
+            'what fuel does the heater use',
+        ],
+        'listing.air_conditioning' => [
+            'what type of air conditioning does this rental have',
+            'air conditioning type for this rental',
+            'is there central air conditioning',
+            'what kind of ac does this rental have',
+        ],
+        'listing.water' => [
+            'what is the water source for this rental',
+            'water source type for this property',
+            'is there city water or well water',
+            'water supply for this rental',
+        ],
+        'listing.sewer' => [
+            'what type of sewer system does this rental use',
+            'sewer system for this rental',
+            'is there public sewer or septic',
+            'sewer type for this property',
+        ],
+        'listing.lease_amount_frequency' => [
+            'how often is rent paid',
+            'rent payment frequency',
+            'is rent monthly or weekly',
+            'lease amount frequency for this rental',
+        ],
+        'listing.has_cdd' => [
+            'does this rental have a cdd',
+            'community development district for this rental',
+            'is there a cdd fee for this rental',
+            'cdd status for this property',
+        ],
+        'listing.annual_cdd_fee' => [
+            'how much is the cdd fee',
+            'annual cdd fee for this rental',
+            'what is the cdd fee amount',
+            'cdd fee per year',
+        ],
+        // Note: listing.tenant_pays already exists earlier in this array (residential / utilities section).
     ];
 
     private AskAiQuestionClassifierService $classifier;
@@ -1625,10 +1771,11 @@ class AskAiRunnerV2Service
                 && array_key_exists('allowed_context', $promptPackage)
                 && empty($promptPackage['allowed_context'])
             ) {
+                $faqFieldLabel = $this->deriveFieldLabel($normalizedFieldKey);
                 $missingFinalResponse = [
                     'success'            => false,
                     'status'             => 'insufficient_context',
-                    'answer'             => AskAiKnowledgeSearchService::INFORMATION_NOT_PROVIDED,
+                    'answer'             => $faqFieldLabel . ' has not been provided for this listing.',
                     'disclosures'        => $promptPackage['required_disclosures'] ?? [],
                     'source_attribution' => $promptPackage['source_attribution'] ?? [],
                     'refusal_message'    => null,
@@ -1672,10 +1819,11 @@ class AskAiRunnerV2Service
                     && array_key_exists($listingField, $listingData)
                     && ($listingData[$listingField] === null || $listingData[$listingField] === '')
                 ) {
+                    $listingFieldLabel = $this->deriveFieldLabel($normalizedFieldKey);
                     $missingListingResponse = [
                         'success'            => false,
                         'status'             => 'insufficient_context',
-                        'answer'             => AskAiKnowledgeSearchService::INFORMATION_NOT_PROVIDED,
+                        'answer'             => $listingFieldLabel . ' has not been provided for this listing.',
                         'disclosures'        => $promptPackage['required_disclosures'] ?? [],
                         'source_attribution' => $promptPackage['source_attribution'] ?? [],
                         'refusal_message'    => null,
@@ -2281,6 +2429,34 @@ class AskAiRunnerV2Service
             'listing.financing_contingency_buyer'        => 'Financing contingency information',
             // Listing.* fields — Safety & Disclosure
             'listing.flood_zone_code'                    => 'Flood zone status information',
+            'listing.flood_insurance_required'           => 'Flood insurance requirement information',
+            // Listing.* fields — Tax, Legal & Parcel (Landlord)
+            'listing.parcel_id'                          => 'Parcel ID information',
+            'listing.tax_year'                           => 'Tax year information',
+            'listing.legal_description'                  => 'Legal description information',
+            'listing.additional_parcels'                 => 'Additional parcels information',
+            'listing.total_parcel_count'                 => 'Total parcel count information',
+            'listing.additional_parcel_ids'              => 'Additional parcel IDs information',
+            // Listing.* fields — Structural & Exterior (Landlord)
+            'listing.lot_dimensions'                     => 'Lot dimensions information',
+            'listing.zoning'                             => 'Zoning information',
+            'listing.waterfront'                         => 'Waterfront information',
+            'listing.water_access'                       => 'Water access information',
+            'listing.interior_features'                  => 'Interior features information',
+            'listing.roof_type'                          => 'Roof type information',
+            'listing.exterior_construction'              => 'Exterior construction information',
+            'listing.foundation'                         => 'Foundation information',
+            // Listing.* fields — Rental Financial & Terms (Landlord)
+            'listing.security_deposit_amount'            => 'Security deposit information',
+            'listing.terms_of_lease'                     => 'Terms of lease information',
+            'listing.rent_includes'                      => 'Included rent information',
+            'listing.heating_fuel'                       => 'Heating fuel information',
+            'listing.air_conditioning'                   => 'Air conditioning information',
+            'listing.water'                              => 'Water source information',
+            'listing.sewer'                              => 'Sewer information',
+            'listing.lease_amount_frequency'             => 'Lease payment frequency information',
+            'listing.has_cdd'                            => 'CDD status information',
+            'listing.annual_cdd_fee'                     => 'Annual CDD fee information',
             // Seller: Financial & Utility Insights
             'faq_answers.average_utility_costs'          => 'Utility cost information',
             'faq_answers.internet_utility_providers'     => 'Internet and utility provider information',
