@@ -56,7 +56,7 @@
                 @endif
 
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary"
+                    <button type="button" class="btn btn-primary" style="color:#fff;"
                             wire:click="importListingFromUrl"
                             wire:loading.attr="disabled"
                             wire:target="importListingFromUrl">
@@ -67,7 +67,7 @@
                             <span class="spinner-border spinner-border-sm me-1" role="status"></span>Fetching…
                         </span>
                     </button>
-                    <button type="button" class="btn btn-outline-secondary" wire:click="closeImportModal">Cancel</button>
+                    <button type="button" class="btn btn-outline-secondary" style="color:#6c757d;" wire:click="closeImportModal">Cancel</button>
                 </div>
 
                 {{-- ── Step 2: Preview Table ── --}}
@@ -148,7 +148,7 @@
                     </div>
 
                     <div class="d-flex gap-2 mt-3">
-                        <button type="button" class="btn btn-success"
+                        <button type="button" class="btn btn-success" style="color:#fff;"
                                 @click="$wire.applyImportedFields(selectedKeys(), overrideKeys())"
                                 wire:loading.attr="disabled"
                                 wire:target="applyImportedFields">
@@ -159,7 +159,7 @@
                                 <span class="spinner-border spinner-border-sm me-1" role="status"></span>Applying…
                             </span>
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" wire:click="closeImportModal">Cancel</button>
+                        <button type="button" class="btn btn-outline-secondary" style="color:#6c757d;" wire:click="closeImportModal">Cancel</button>
                     </div>
                 </div>
                 @endif

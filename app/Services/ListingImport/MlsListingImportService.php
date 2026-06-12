@@ -103,20 +103,34 @@ class MlsListingImportService
             'Pool\b|Spa\b|Garage\b|Carport\b|Appliances?\b' .
             '|Air\s+Conditioning|A\/C\b' .
             '|Heat(?:ing)?(?:\s+(?:and|&)\s+Fuel)?\b|Fuel\b' .
-            '|Fireplace\b|Heated\s+Area\b' .
+            // Fireplace: require Y/N suffix so "Fireplace Y/N:" stops heating_fuel;
+            // bare "Fireplace:" also still fires via the outer \s*: requirement.
+            '|Fireplace(?:\s+Y\/N)?\b|Heated\s+Area\b' .
             '|Interior\s+Features?|Exterior\s+Features?' .
             '|Exterior\s+Construction\b|Exterior\s+Feat\b|Exterior\s+Information\b' .
             '|Floor\s+Covering\b|Roof\b' .
             '|Furnishings?\b(?=\s*:)|Furnished\b(?=\s*:)|Available\b(?=\s*:)' .
             '|Tax\s+(?:ID|Year)|Annual\s+(?:CDD|Prop(?:erty)?|Tax)|Taxes\b|Parcel\b' .
-            '|Tax\b|List\b' .
-            '|Legal\s+Desc|Flood\s+Zone|HOA\b(?=\s*:)|Association\b(?=\s*:)|Homestead\b|CDD\b' .
-            '|Zoning\b|Lot\s+(?:Dim|Size|Sq|Acr|Feat)|Total\s+(?:Acreage|Number)' .
+            // No standalone Tax\b — it was too broad (matched "Tax" in parcel IDs like
+            // "1410Tax").  Tax\s+(ID|Year) above already covers the label forms we need.
+            '|List\b' .
+            // Flood Zone: match with or without a trailing qualifier word so that
+            // "Flood Zone Date:", "Flood Zone Code:", and "Flood Zone Panel:" all stop
+            // captures that run into them (e.g. interior_features bleed).
+            '|Legal\s+Desc|Flood\s+Zone(?:\s+\w+)?|HOA\b(?=\s*:)|Association\b(?=\s*:)|Homestead\b' .
+            // CDD: allow optional Y/N so "CDD Y/N: No" stops association_fee_frequency.
+            '|CDD(?:\s+Y\/N)?\b' .
+            // Lot Size: accept an extra qualifier word ("Acres", "Sq", etc.) so
+            // "Lot Size Acres:" stops lot_dimensions from bleeding.
+            '|Zoning\b|Lot\s+(?:Dim|Size(?:\s+\w+)?|Sq|Acr|Feat)' .
+            // Total Number of Parcels is more specific than Total Number; try it first.
+            '|Total\s+Number\s+of\s+Parcels\b|Total\s+(?:Acreage|Number)' .
             '|Year\s+Built|Bed(?:room)?s?\b|Bath(?:room)?s?\b|Beds?\b|Baths?\b' .
             '|(?:Heated\s+)?Sq\.?\s*Ft\.?|Square\s+Feet|CDOM\b' .
             '|Waterfront\b|Water\s+(?:Access|View|Extra|Front)\b' .
             '|Rent\s+(?:Includes?|Price)\b|Tenant\s+Pays?\b|Terms\s+of\s+Lease\b' .
-            '|Application\s+Fee\b|Security\s+Deposit\b|Minimum\s+(?:Lease|Security)\b' .
+            // Minimum Security Deposit (3-word label) must precede the 2-word fallback.
+            '|Application\s+Fee\b|Security\s+Deposit\b|Minimum\s+Security\s+Deposit\b|Minimum\s+(?:Lease|Security)\b' .
             '|(?:Monthly|Lease)\s+(?:Rent|Amount)\b|Remarks?\b|Description\b' .
             '|Directions?\b|MLS\s*(?:#|Num|No\.?|Number)' .
             '|List\s+Price|Price\b|City\b(?=\s*:)|County\b|State\b|Zip\b|Address\b' .
@@ -302,9 +316,10 @@ class MlsListingImportService
         }
 
         // ─── Tax / Parcel ID ──────────────────────────────────────────────────
-        // Boundary protection: prevents "19-30-17-45612-000-1410Tax" from bleeding
-        // "Tax" into the value when "Tax Year:" or "Tax:" immediately follows.
-        if ($v = $extract(['/(?:Tax\s+ID|Parcel\s+(?:ID|Number))[\s:]+([A-Za-z0-9\-\.]+)/i'], true)) {
+        // Non-greedy capture with a lookahead that stops before a Title Case label word
+        // (e.g. "Tax" in "1410Tax Year:") or whitespace.  This handles the Stellar MLS
+        // no-separator pattern where the parcel ID runs directly into the next label.
+        if ($v = $extract(['/(?:Tax\s+ID|Parcel\s+(?:ID|Number))[\s:]+([A-Za-z0-9\-\.]+?)(?=[A-Z][a-z]|\s|$|\||\n)/i'])) {
             $data['tax_id'] = $v;
         }
 
@@ -362,9 +377,13 @@ class MlsListingImportService
         }
 
         // ─── Additional Parcels ───────────────────────────────────────────────
-        // Capture limit 50 gives the boundary stop enough text to find "Total Number\b"
-        // when this field immediately precedes "Total Number of Parcels:".
-        if ($v = $extract(['/Additional\s+Parcels[\s:\*]+([^\|\n]{1,50})/i'], true)) {
+        // Tight boolean-only capture: MLS emits Yes/No/Y/N or the "Y/N:No" colon-prefix
+        // form.  Grabbing only the boolean token avoids bleed into "Total Number of
+        // Parcels:" which appears in the same line of many Stellar MLS exports.
+        if ($v = $extract([
+            '/Additional\s+Parcels\s+Y\/N[\s:*]+(Y\/N\s*:\s*[Yy]es|Y\/N\s*:\s*[Nn]o|[Yy]es|[Nn]o|[YyNn])\b/i',
+            '/Additional\s+Parcels[\s:*]+(Y\/N\s*:\s*[Yy]es|Y\/N\s*:\s*[Nn]o|[Yy]es|[Nn]o)\b/i',
+        ])) {
             $data['additional_parcels'] = MlsNormalizer::normalize('additional_parcels', $v);
         }
 
@@ -512,7 +531,9 @@ class MlsListingImportService
         }
 
         // ─── Flood Insurance Required ─────────────────────────────────────────
-        if ($v = $extract(['/Flood\s+Insurance\s+Req(?:uired)?[\s:]+([^\|\n]{1,30})/i'], true)) {
+        // Tight boolean-only capture avoids bleed into "Flood Zone Code:" which
+        // immediately follows this field in many Stellar MLS single-line exports.
+        if ($v = $extract(['/Flood\s+Insurance\s+Req(?:uired)?[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i'])) {
             $data['flood_insurance_required'] = MlsNormalizer::normalize('flood_insurance_required', $v);
         }
 
@@ -541,8 +562,14 @@ class MlsListingImportService
 
         // ─── Appliances ───────────────────────────────────────────────────────
         // Boundary protection: stops at the next known label (e.g. Interior Features).
+        // Post-extraction cleanup strips bare section headers (no colon) that the
+        // boundary-stop closure cannot catch: "Rooms", "Exterior Information", etc.
         if ($v = $extract(['/Appliances?(?:\s+Included)?[\s:]+([^\|\n]{1,300})/i'], true)) {
-            $data['appliances'] = $v;
+            $v = preg_replace('/\s*(?:Rooms|Exterior\s+Information|Interior\s+Information)\b.*$/i', '', $v);
+            $v = trim($v);
+            if ($v !== '') {
+                $data['appliances'] = $v;
+            }
         }
 
         // ─── Rent Includes ────────────────────────────────────────────────────
