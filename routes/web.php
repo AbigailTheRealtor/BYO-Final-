@@ -326,7 +326,7 @@ Route::get('/search/seller-listings', [SellerOfferListingController::class, 'sea
 Route::get('/search/buyer-listings', [BuyerOfferListingController::class, 'searchOfferListings'])->name('offer.listing.buyer.searchListing');
 Route::get('/search/rental-properties', [LandlordOfferListingController::class, 'searchOfferListings'])->name('offer.listing.landlord.searchListing');
 Route::get('/search/tenant-listings', [TenantOfferListingController::class, 'searchOfferListings'])->name('offer.listing.tenant.searchListing');
-Route::get('/offers/{offer}', [OfferController::class, 'show'])->name('offers.show')->middleware('auth');
+Route::get('/offers/{offer}', [OfferController::class, 'show'])->name('offers.show')->middleware('auth')->where('offer', '[0-9]+');
 
 Route::get('/offer-listing/tenant/view/{id}', [TenantOfferListingController::class, 'view'])->name('offer.listing.tenant.view');
 
