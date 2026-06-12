@@ -460,6 +460,60 @@ class AskAiContextBuilderService
                     'sold'                 => $nativeGet('is_sold'),
                     'annual_property_taxes' => $infoGet('annual_property_taxes'),
                     'service_type'         => $infoGet('service_type'),
+                    // ── Unconditional land/lot fields (relevant to any property type) ──
+                    // zoning, waterfront, water_access, lot_acreage, and lot_dimensions
+                    // apply to residential, commercial, and vacant land alike.
+                    'zoning'               => $infoGet('zoning'),
+                    'lot_acreage'          => $infoGet('total_acreage'),
+                    'waterfront'           => $infoGet('waterfront'),
+                    // water_access is stored as a JSON-encoded multiselect.
+                    'water_access'         => $this->decodeJsonField($infoGet('water_access')),
+                    'lot_dimensions'       => $infoGet('lot_dimensions'),
+                    // ── Commercial / structural fields ────────────────────────────────
+                    // These are exposed for Ask AI so users can query commercial property
+                    // specifics (zoning, building size, NOI, cap rate, etc.) without
+                    // requiring an OpenAI call.
+                    'building_sqft'        => $infoGet('total_square_feet'),
+                    'ceiling_height'       => $infoGet('ceiling_height'),
+                    'building_features'    => $this->decodeJsonField($infoGet('building_features')),
+                    'current_use'          => $this->decodeJsonField($infoGet('current_use')),
+                    // parking_spaces: commercial listing form uses garage_parking_spaces
+                    // for the "Parking Spaces" count field (see MlsFieldMap::seller()).
+                    // garage_spaces is the legacy key; parking_spaces the commercial-friendly alias.
+                    'parking_spaces'       => $infoGet('garage_parking_spaces'),
+                    'annual_noi'           => $infoGet('minimum_annual_net_income'),
+                    'price_per_sqft'       => $infoGet('price_per_sqft'),
+                    'existing_lease_type'  => $infoGet('existing_lease_type'),
+                    'lease_expiration'     => $infoGet('lease_expiration'),
+                    'lease_assignable'     => $infoGet('lease_assignable'),
+                    // Structural / physical characteristics
+                    'roof_type'            => $this->decodeJsonField($infoGet('roof_type')),
+                    'exterior_construction'=> $this->decodeJsonField($infoGet('exterior_construction')),
+                    'foundation'           => $this->decodeJsonField($infoGet('foundation')),
+                    'heating_fuel'         => $this->decodeJsonField($infoGet('heating_and_fuel')),
+                    'air_conditioning'     => $this->decodeJsonField($infoGet('air_conditioning')),
+                    'utilities'            => $this->decodeJsonField($infoGet('utilities')),
+                    'water_source'         => $this->decodeJsonField($infoGet('water')),
+                    'sewer'                => $this->decodeJsonField($infoGet('sewer')),
+                    'interior_features'    => $this->decodeJsonField($infoGet('interior_features')),
+                    // CDD / Special assessments
+                    'has_cdd'              => $infoGet('has_cdd'),
+                    'annual_cdd_fee'       => $infoGet('annual_cdd_fee'),
+                    'has_special_assessments' => $infoGet('has_special_assessments'),
+                    'special_assessment_amount' => $infoGet('special_assessment_amount'),
+                    'special_assessment_description' => $infoGet('special_assessment_description'),
+                    // HOA details
+                    'hoa_name'             => $infoGet('association_name'),
+                    // Tax / legal / parcel
+                    'parcel_id'            => $infoGet('parcel_id'),
+                    'tax_year'             => $infoGet('tax_year'),
+                    'legal_description'    => $infoGet('legal_description'),
+                    'additional_parcels'   => $infoGet('additional_parcels'),
+                    'total_parcel_count'   => $infoGet('total_parcel_count'),
+                    // Flood zone supplemental
+                    'flood_zone_panel'     => $infoGet('flood_zone_panel'),
+                    'flood_zone_date'      => $infoGet('flood_zone_date'),
+                    'flood_insurance_required' => $infoGet('flood_insurance_required'),
                     // ── Income / Multifamily fields ──────────────────────────────────
                     // lot_size, lot_dimensions, zoning, waterfront, water_access,
                     // parcel_id, tax_year, and legal_description are already present

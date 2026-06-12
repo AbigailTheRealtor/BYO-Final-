@@ -697,17 +697,19 @@ class MlsCoverageReporter
             [
                 ['form' => 'Commercial Sale', 'section' => 'PROPERTY DETAILS', 'mls_label' => 'Year Built',         'canonical_key' => 'year_built',  'norm_required' => false, 'notes' => ''],
                 // Commercial Sale specific — no canonical key yet
-                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Building Size (Sq Ft)', 'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial field — no app field or parser branch'],
-                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Number of Bays',        'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial field — no app field or parser branch'],
-                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Number of Dock Doors',  'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial field — no app field or parser branch'],
-                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Ceiling Height (Ft)',   'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial field — no app field or parser branch'],
-                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Office Area (Sq Ft)',   'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial field — no app field or parser branch'],
-                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Parking Spaces',        'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial field — no app field or parser branch'],
+                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Building Size (Sq Ft)', 'canonical_key' => 'building_size_sqft',   'norm_required' => false, 'notes' => 'Maps to seller total_square_feet (gross building area, distinct from heated sq ft)'],
+                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Number of Bays',        'canonical_key' => null,                   'norm_required' => false, 'notes' => 'No app field or parser branch — out of scope'],
+                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Number of Dock Doors',  'canonical_key' => null,                   'norm_required' => false, 'notes' => 'No app field or parser branch — out of scope'],
+                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Ceiling Height (Ft)',   'canonical_key' => 'ceiling_height_ft',    'norm_required' => false, 'notes' => 'Maps to seller ceiling_height'],
+                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Office Area (Sq Ft)',   'canonical_key' => null,                   'norm_required' => false, 'notes' => 'No app field or parser branch — out of scope'],
+                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Parking Spaces',        'canonical_key' => 'parking_spaces_count', 'norm_required' => false, 'notes' => 'Maps to seller garage_parking_spaces'],
+                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Building Features',     'canonical_key' => 'building_features_list','norm_required' => false, 'notes' => 'Multi-select; maps to seller building_features (JSON)'],
+                ['form' => 'Commercial Sale', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Current Use',           'canonical_key' => 'current_use_list',     'norm_required' => false, 'notes' => 'Multi-select; maps to seller current_use (JSON)'],
             ],
             $lotFields('Commercial Sale'),
             [
-                ['form' => 'Commercial Sale', 'section' => 'FINANCIAL', 'mls_label' => 'Net Operating Income (NOI)', 'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial field — no app field or parser branch'],
-                ['form' => 'Commercial Sale', 'section' => 'FINANCIAL', 'mls_label' => 'Cap Rate',                   'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial field — no app field or parser branch'],
+                ['form' => 'Commercial Sale', 'section' => 'FINANCIAL', 'mls_label' => 'Net Operating Income (NOI)', 'canonical_key' => 'net_operating_income', 'norm_required' => true,  'notes' => 'Maps to seller minimum_annual_net_income; normalizer strips $ and commas'],
+                ['form' => 'Commercial Sale', 'section' => 'FINANCIAL', 'mls_label' => 'Cap Rate',                   'canonical_key' => 'cap_rate',             'norm_required' => true,  'notes' => 'Maps to seller minimum_cap_rate; normalizer strips trailing %'],
             ],
             $waterfront('Commercial Sale'),
             $taxLegal('Commercial Sale'),
@@ -815,7 +817,7 @@ class MlsCoverageReporter
             '| `year_built` | `year_built` | Buyer | Property does not exist on `BuyerOfferListing`. |',
             '| `price` | `desired_rental_amount` | Tenant | MLS listing price is the landlord\'s asking rent, not a tenant\'s desired amount — semantically wrong direction. |',
             '| `tax_id` (canonical) | `tax_id` (property name) | All | App property is `parcel_id`, not `tax_id`. Using the wrong name silently skips the form field. |',
-            '| `directions` | `directions` | All | No supported user-facing form destination — consistent with Seller Residential, Vacant Land, and Commercial Sale treatment. Parsed but not mapped to any role. |',
+            '| `directions` | `directions` | All | No Livewire property named `directions` exists on any component. Parsed by the parser for completeness but intentionally not imported. |',
         ]);
     }
 }

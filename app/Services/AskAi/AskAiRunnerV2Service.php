@@ -1473,36 +1473,58 @@ class AskAiRunnerV2Service
             'lot acreage',
             'lot area',
         ],
-
-        // ---- Landlord: Tax / Legal / Parcel ----
+        // ---- Structural & Property Facts (Residential Rental + Commercial Sale audits) ----
+        // Keys shared by both audits have merged phrase sets covering rental and commercial contexts.
+        // Note: listing.year_built, listing.tenant_pays, and listing.flood_zone_code
+        // already exist above — they are not duplicated here.
         // Note: listing.annual_property_taxes already exists earlier in this array.
+
+        // ── Tax / Legal / Parcel ────────────────────────────────────────────
         'listing.parcel_id' => [
+            'parcel id',
+            'parcel identification number',
+            'tax parcel id',
+            'folio number',
+            'what is the parcel id',
             'what is the parcel id for this rental',
             'parcel id for this property',
             'parcel number for this rental',
             'folio number for this property',
-            'parcel id',
             'tax parcel',
             'property parcel identification',
         ],
         'listing.tax_year' => [
+            'tax year',
+            'what year are the taxes from',
+            'taxes for which year',
+            'property tax year',
             'what tax year is used for this rental',
             'tax year for this property',
             'which year are the property taxes based on',
         ],
         'listing.legal_description' => [
-            'what is the legal description for this rental',
-            'legal description of this property',
-            'property legal description',
             'legal description',
             'what is the legal description',
+            'property legal description',
+            'the legal description',
+            'subdivision legal description',
+            'what is the legal description for this rental',
+            'legal description of this property',
         ],
         'listing.additional_parcels' => [
+            'additional parcels',
+            'are there additional parcels',
+            'does this property have additional parcels',
+            'more than one parcel',
             'does this rental have additional parcels',
             'are there additional parcels included',
             'additional parcels for this property',
         ],
         'listing.total_parcel_count' => [
+            'total number of parcels',
+            'how many parcels',
+            'parcel count',
+            'total parcels for this property',
             'how many parcels does this rental have',
             'total parcel count for this property',
             'number of parcels in this listing',
@@ -1513,18 +1535,26 @@ class AskAiRunnerV2Service
             'list the parcel ids for this rental',
         ],
 
-        // ---- Landlord: Structural & Property Facts ----
-        // Note: listing.year_built, listing.tenant_pays, and listing.flood_zone_code
-        // already exist above — they are not duplicated here.
+        // ── Lot / Zoning ─────────────────────────────────────────────────────
         'listing.lot_dimensions' => [
             'lot dimensions',
             'what are the lot dimensions',
+            'size of the lot',
             'lot size in feet',
             'dimensions of the lot',
             'lot width and depth',
+            'lot size dimensions',
+            'what is the lot size',
             'lot dimensions for this rental',
             'size of the lot for this rental',
-            'lot size dimensions',
+        ],
+        'listing.lot_acreage' => [
+            'lot acreage',
+            'how many acres',
+            'total acreage',
+            'lot size in acres',
+            'acreage of the property',
+            'how big is the lot in acres',
         ],
         'listing.zoning' => [
             'zoning',
@@ -1533,6 +1563,10 @@ class AskAiRunnerV2Service
             'zoning classification',
             'zoning designation',
             'is it zoned residential',
+            'zoning for this property',
+            'property zoning',
+            'zoning code',
+            'what zone is this property in',
             'what is the zoning for this rental',
             'how is this property zoned',
             'property zoning classification',
@@ -1540,13 +1574,94 @@ class AskAiRunnerV2Service
             'what is the zoning',
             'what is this property zoned',
         ],
-        // ---- Waterfront ----
+        // ── Commercial Building ───────────────────────────────────────────────
+        'listing.building_sqft' => [
+            'building size',
+            'total building square footage',
+            'how big is the building',
+            'building square footage',
+            'total sq ft of the building',
+            'gross building area',
+        ],
+        'listing.ceiling_height' => [
+            'ceiling height',
+            'how high are the ceilings',
+            'clearance height',
+            'interior ceiling height',
+            'what is the ceiling height',
+        ],
+        'listing.parking_spaces' => [
+            'parking spaces',
+            'how many parking spaces',
+            'number of parking spaces',
+            'total parking available',
+            'parking count',
+        ],
+        'listing.annual_noi' => [
+            'net operating income',
+            'annual noi',
+            'what is the noi',
+            'what is the net operating income',
+            'annual net operating income',
+        ],
+        'listing.cap_rate' => [
+            'cap rate',
+            'what is the cap rate',
+            'capitalization rate',
+            'return rate on this property',
+            'what is the capitalization rate',
+        ],
+        'listing.price_per_sqft' => [
+            'price per square foot',
+            'cost per sq ft',
+            'price per sq ft',
+            'what is the price per square foot',
+        ],
+        'listing.existing_lease_type' => [
+            'existing lease type',
+            'what type of lease is in place',
+            'current lease structure',
+            'lease type on this property',
+            'what is the existing lease',
+        ],
+        'listing.lease_expiration' => [
+            'lease expiration',
+            'when does the lease expire',
+            'lease end date',
+            'expiration of the current lease',
+            'when is the lease up',
+        ],
+        'listing.lease_assignable' => [
+            'is the lease assignable',
+            'can the lease be assigned',
+            'lease assignment',
+            'is this lease transferable',
+        ],
+        'listing.building_features' => [
+            'building features',
+            'what building features are included',
+            'building amenities',
+            'what are the building features',
+            'commercial building features',
+        ],
+        'listing.current_use' => [
+            'current use',
+            'what is the current use',
+            'how is this property currently being used',
+            'property current use',
+            'present use of the property',
+        ],
+
+        // ── Water / Waterfront ────────────────────────────────────────────────
         'listing.waterfront' => [
             'is it on the waterfront',
             'waterfront property',
             'is this a waterfront home',
             'does it have waterfront access',
             'is the property waterfront',
+            'is this property on the waterfront',
+            'is this waterfront',
+            'does this have waterfront access',
             'is this rental on the waterfront',
             'is this a waterfront property',
             'waterfront status for this rental',
@@ -1558,17 +1673,22 @@ class AskAiRunnerV2Service
             'river access',
             'does it have water access',
             'what water bodies are accessible',
+            'water access type',
+            'what type of water access',
+            'water access for this property',
+            'what is the water access',
             'water access at this rental',
             'what type of water access does this property have',
             'water access options for this rental',
             'is there water access',
         ],
-        // ---- Interior ----
+        // ── Structural Characteristics ────────────────────────────────────────
         'listing.interior_features' => [
             'interior features',
             'what are the interior features',
             'inside features of the home',
             'home interior details',
+            'interior amenities',
             'what features are inside',
             'interior features of this rental',
             'what interior features does this property have',
@@ -1581,6 +1701,8 @@ class AskAiRunnerV2Service
             'what kind of roof',
             'what type of roof',
             'roof material',
+            'roofing material',
+            'type of roofing',
             'what is the roof made of',
             'what type of roof does this rental have',
             'roof type for this rental property',
@@ -1592,9 +1714,10 @@ class AskAiRunnerV2Service
             'exterior material',
             'home exterior type',
             'what is the house built with',
+            'building exterior type',
+            'what type of exterior construction',
             'exterior construction of this rental',
             'exterior material for this rental',
-            'what is the exterior construction',
         ],
         'listing.foundation' => [
             'foundation type',
@@ -1602,6 +1725,7 @@ class AskAiRunnerV2Service
             'foundation material',
             'what is the foundation',
             'slab foundation',
+            'foundation of this building',
             'foundation type of this rental',
             'what type of foundation does this rental have',
             'foundation for this rental property',
@@ -1624,6 +1748,12 @@ class AskAiRunnerV2Service
             'do i need flood insurance for this property',
         ],
         'listing.heating_fuel' => [
+            'heating type',
+            'what type of heating',
+            'heating system',
+            'how is this property heated',
+            'heat source',
+            'fuel type for heating',
             'what type of heating fuel is used',
             'heating fuel type for this rental',
             'is it gas or electric heat',
@@ -1631,19 +1761,30 @@ class AskAiRunnerV2Service
         ],
         'listing.air_conditioning' => [
             'air conditioning',
+            'air conditioning type',
             'what type of air conditioning',
             'how is it cooled',
+            'how is this property cooled',
             'does it have ac',
             'cooling system',
+            'a/c type',
             'what type of air conditioning does this rental have',
             'air conditioning type for this rental',
             'is there central air conditioning',
             'what kind of ac does this rental have',
         ],
         // ---- Utilities ----
-        'listing.water' => [
+        // listing.water_source: seller/commercial context key (EAV key: 'water').
+        // listing.water: landlord/rental context key (same underlying data, different context alias).
+        // Both are retained so Guard B works for both rental and commercial questions.
+        'listing.water_source' => [
             'water source',
             'what is the water source',
+            'where does the water come from',
+            'public water or well',
+            'type of water supply',
+        ],
+        'listing.water' => [
             'is it on public water',
             'well water',
             'water supply',
@@ -1654,10 +1795,14 @@ class AskAiRunnerV2Service
         ],
         'listing.sewer' => [
             'sewer',
+            'sewer type',
             'what type of sewer',
             'is it on public sewer',
+            'is this on public sewer',
             'septic system',
+            'septic or sewer',
             'sewage system',
+            'sewer system',
             'what type of sewer system does this rental use',
             'sewer system for this rental',
             'is there public sewer or septic',
@@ -1700,7 +1845,88 @@ class AskAiRunnerV2Service
             'is the home furnished',
             'what is the furnishing status',
         ],
-        // ---- Rental-specific (Landlord/Tenant) ----
+        // ── Flood Zone (supplemental) ─────────────────────────────────────────
+        'listing.flood_insurance_required' => [
+            'is flood insurance required',
+            'flood insurance required',
+            'required to have flood insurance',
+            'required flood insurance',
+            'do i need flood insurance',
+            'do i need flood insurance for this property',
+            'flood insurance requirement',
+            'is flood insurance mandatory for this property',
+            'is flood insurance required for this rental',
+            'flood insurance requirement for this rental',
+            'does this rental require flood insurance',
+        ],
+        'listing.flood_zone_panel' => [
+            'flood zone panel',
+            'fema map panel number',
+            'fema flood map panel',
+            'flood panel number',
+            'what is the flood zone panel',
+        ],
+        'listing.flood_zone_date' => [
+            'flood zone date',
+            'when was the flood zone last updated',
+            'when was the flood map updated',
+            'fema map date',
+            'fema flood map date',
+            'flood map date',
+            'flood zone effective date',
+        ],
+        // ── CDD / Special Assessments ─────────────────────────────────────────
+        'listing.has_cdd' => [
+            'cdd',
+            'is there a cdd',
+            'cdd fee',
+            'cdd status',
+            'does this property have a cdd',
+            'community development district',
+            'what is the cdd',
+            'does this rental have a cdd',
+            'community development district for this rental',
+            'is there a cdd fee for this rental',
+            'cdd status for this property',
+        ],
+        'listing.annual_cdd_fee' => [
+            'cdd fee',
+            'annual cdd fee',
+            'how much is the cdd fee',
+            'annual cdd fee amount',
+            'cdd fee amount',
+            'cdd assessment amount',
+            'cost of the cdd',
+            'annual cdd fee for this rental',
+            'what is the cdd fee amount',
+            'cdd fee per year',
+        ],
+        'listing.has_special_assessments' => [
+            'special assessments',
+            'are there special assessments',
+            'does it have special assessments',
+            'does this property have special assessments',
+            'special assessment on this property',
+            'any special assessments',
+            'special assessment status',
+        ],
+        'listing.special_assessment_amount' => [
+            'special assessment amount',
+            'how much are the special assessments',
+            'what is the special assessment fee',
+            'special assessment fee',
+            'cost of special assessments',
+            'total special assessment',
+        ],
+        // ── HOA ───────────────────────────────────────────────────────────────
+        'listing.hoa_name' => [
+            'hoa name',
+            'name of the hoa',
+            'what is the name of the homeowners association',
+            'association name',
+            'name of the association',
+        ],
+        // ── Residential Rental-specific ───────────────────────────────────────
         'listing.security_deposit_amount' => [
             'how much is the security deposit',
             'security deposit amount for this rental',
@@ -1739,7 +1965,7 @@ class AskAiRunnerV2Service
             'lease payment frequency',
             'rent payment schedule',
         ],
-        // ---- HOA / CDD ----
+        // ---- HOA sub-fields (rental context) ----
         'listing.association_name' => [
             'name of the hoa',
             'what is the association name',
@@ -1759,116 +1985,11 @@ class AskAiRunnerV2Service
             'association fee includes',
             'what services does the hoa cover',
         ],
-        'listing.has_cdd' => [
-            'is there a cdd',
-            'cdd fee',
-            'does this property have a cdd',
-            'community development district',
-            'what is the cdd',
-            'does this rental have a cdd',
-            'community development district for this rental',
-            'is there a cdd fee for this rental',
-            'cdd status for this property',
-            'cdd',
-            'community development district',
-            'does this property have a cdd',
-            'is there a cdd',
-        ],
-        'listing.annual_cdd_fee' => [
-            'how much is the cdd fee',
-            'annual cdd fee amount',
-            'cdd fee amount',
-            'cost of the cdd',
-            'annual cdd fee for this rental',
-            'what is the cdd fee amount',
-            'cdd fee per year',
-            'cdd fee',
-            'cdd annual amount',
-            'community development district fee',
-        ],
-        'listing.has_special_assessments' => [
-            'are there special assessments',
-            'does it have special assessments',
-            'special assessment on this property',
-            'any special assessments',
-        ],
-        'listing.special_assessment_amount' => [
-            'how much are the special assessments',
-            'special assessment amount',
-            'what is the special assessment fee',
-            'cost of special assessments',
-        ],
         'listing.special_assessment_description' => [
             'what are the special assessments for',
             'describe the special assessments',
             'what do the special assessments cover',
             'special assessment details',
-        ],
-        // ---- Flood Zone (sub-fields) ----
-        'listing.flood_zone_panel' => [
-            'flood zone panel',
-            'fema map panel number',
-            'flood panel number',
-            'what is the flood zone panel',
-        ],
-        'listing.flood_zone_date' => [
-            'flood zone date',
-            'when was the flood zone last updated',
-            'fema map date',
-            'flood map date',
-        ],
-        'listing.flood_insurance_required' => [
-            'is flood insurance required',
-            'required to have flood insurance',
-            'do i need flood insurance for this property',
-            'flood insurance requirement',
-            'is flood insurance required for this rental',
-            'flood insurance requirement for this rental',
-            'does this rental require flood insurance',
-            'is flood insurance mandatory for this property',
-        ],
-        // ---- Tax / Legal / Parcel ----
-        // Note: listing.annual_property_taxes already exists earlier in this array.
-        'listing.parcel_id' => [
-            'parcel id',
-            'tax id',
-            'parcel number',
-            'what is the parcel id',
-            'folio number',
-            'property identification number',
-            'what is the parcel id for this rental',
-            'parcel id for this property',
-            'parcel number for this rental',
-        ],
-        'listing.tax_year' => [
-            'tax year',
-            'what year are the taxes for',
-            'which year are the taxes based on',
-            'property tax year',
-            'what tax year is used for this rental',
-            'tax year for this property',
-        ],
-        'listing.legal_description' => [
-            'legal description',
-            'what is the legal description',
-            'property legal description',
-            'legal description of the property',
-            'what is the legal description for this rental',
-        ],
-        'listing.additional_parcels' => [
-            'does this rental have additional parcels',
-            'are there additional parcels included',
-            'additional parcels for this property',
-        ],
-        'listing.total_parcel_count' => [
-            'how many parcels does this rental have',
-            'total parcel count for this property',
-            'number of parcels in this listing',
-        ],
-        'listing.additional_parcel_ids' => [
-            'what are the additional parcel ids for this rental',
-            'additional parcel numbers for this property',
-            'list the parcel ids for this rental',
         ],
         // Note: listing.tenant_pays already exists earlier in this array (residential / utilities section).
 
@@ -2974,10 +3095,34 @@ class AskAiRunnerV2Service
             'listing.lease_amount_frequency'             => 'Lease payment frequency information',
             'listing.has_cdd'                            => 'CDD status information',
             'listing.annual_cdd_fee'                     => 'Annual CDD fee information',
-            // Listing.* fields — Land & Lot (Seller/Vacant Land)
+            // Listing.* fields — Commercial Sale: Building & Site
+            'listing.lot_acreage'                        => 'Lot acreage information',
+            'listing.building_sqft'                      => 'Building square footage information',
+            'listing.ceiling_height'                     => 'Ceiling height information',
+            'listing.parking_spaces'                     => 'Parking spaces information',
+            'listing.building_features'                  => 'Building features information',
+            // current_use covers both commercial and Vacant Land contexts
+            'listing.current_use'                        => 'Current use information',
+            // Listing.* fields — Commercial Sale: Financial
+            'listing.annual_noi'                         => 'Annual net operating income information',
+            'listing.cap_rate'                           => 'Cap rate information',
+            'listing.price_per_sqft'                     => 'Price per square foot information',
+            // Listing.* fields — Commercial Sale: Lease
+            'listing.existing_lease_type'                => 'Existing lease type information',
+            'listing.lease_expiration'                   => 'Lease expiration information',
+            'listing.lease_assignable'                   => 'Lease assignability information',
+            // Listing.* fields — Commercial Sale: Utilities
+            'listing.water_source'                       => 'Water source information',
+            // Listing.* fields — Commercial Sale: Flood Zone
+            'listing.flood_zone_panel'                   => 'Flood zone panel information',
+            'listing.flood_zone_date'                    => 'Flood zone map date information',
+            // Listing.* fields — Commercial Sale: Assessments & HOA
+            'listing.has_special_assessments'            => 'Special assessments status information',
+            'listing.special_assessment_amount'          => 'Special assessment amount information',
+            'listing.hoa_name'                           => 'HOA name information',
+            // Listing.* fields — Land & Lot (Seller / Vacant Land)
             'listing.total_acreage'                      => 'Acreage information',
             // Listing.* fields — Vacant Land specific
-            'listing.current_use'                        => 'Current land use information',
             'listing.current_adjacent_use'               => 'Adjacent land use information',
             'listing.water_available'                    => 'Water availability information',
             'listing.sewer_available'                    => 'Sewer availability information',
@@ -2996,7 +3141,6 @@ class AskAiRunnerV2Service
             // Listing.* fields — Income / Multifamily
             'listing.gross_annual_income'                => 'Gross annual rental income information',
             'listing.annual_net_income'                  => 'Annual net operating income information',
-            'listing.cap_rate'                           => 'Capitalization rate information',
             'listing.annual_operating_expenses'          => 'Annual operating expenses information',
             'listing.total_units'                        => 'Total unit count information',
             'listing.unit_mix_summary'                   => 'Unit mix and configuration information',

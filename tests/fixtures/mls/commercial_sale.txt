@@ -27,5 +27,12 @@ Legal Description: COMMERCE PARK LOT 21 PB 55 PG 112-114
 Additional Parcels Y/N: Yes
 Total Number of Parcels: 2
 Special Assessments Y/N: No
+Building Size: 14,200
+Ceiling Height: 18
+Parking Spaces: 45
+Net Operating Income (NOI): $185,000
+Cap Rate: 8.5%
+Building Features: Loading Dock, High Bay, Overhead Doors
+Current Use: Light Industrial, Warehouse
 Public Remarks: Prime commercial property on Commerce Parkway in the heart of Sarasota's business district. 12,500 sq ft flex-use building on 1.72 acres with heavy-duty parking. Currently operating as light industrial warehouse with office suite. Loading dock, 18-ft ceilings, 3-phase 400A electrical service. Excellent I-75 visibility. Ideal for owner-user or investor.
 Directions: From I-75 Exit 210, head west on Bee Ridge Rd, right on US-41 (Tamiami Trail), left on Commerce Pkwy. Property on right at 4800.

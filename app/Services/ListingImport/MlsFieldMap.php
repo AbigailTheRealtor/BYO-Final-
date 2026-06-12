@@ -104,6 +104,17 @@ class MlsFieldMap
             'water_view'        => '*water_view',
             // ── Interior ─────────────────────────────────────────────────────
             'interior_features' => '*interior_features',
+            // ── Commercial Sale specific fields ───────────────────────────────
+            // These fields are only visible on the form for property_type = 'Commercial'
+            // (and some also for 'Income' / 'Business'), but the Livewire properties
+            // exist on SellerOfferListing for all property types.
+            'building_size_sqft'   => 'total_square_feet',
+            'ceiling_height_ft'    => 'ceiling_height',
+            'parking_spaces_count' => 'garage_parking_spaces',
+            'net_operating_income' => 'minimum_annual_net_income',
+            'cap_rate'             => 'minimum_cap_rate',
+            'building_features_list' => '*building_features',
+            'current_use_list'     => '*current_use',
             // ── Business Opportunity fields ───────────────────────────────────
             'business_type'            => 'business_type',
             'annual_revenue'           => 'annual_revenue',
@@ -121,6 +132,9 @@ class MlsFieldMap
             //       the value is navigation text with no listing purpose.
             // NOTE: 'mls_number' intentionally omitted — property does not exist
             //       on SellerOfferListing (see Rejected Mapping Candidates).
+            // NOTE: 'directions' intentionally omitted — no seller Livewire property
+            //       accepts directions; field is dropped after import. Documented in
+            //       MlsCoverageReporter::rejectedMappingsSection().
             // ── Income / Multifamily ──────────────────────────────────────────
             'number_of_units'            => 'unit_number',
             'gross_annual_income'        => 'gross_annual_income',
@@ -399,6 +413,14 @@ class MlsFieldMap
             'flood_insurance_required' => 'Flood Insurance Required',
             'interior_features'   => 'Interior Features',
             'directions'          => 'Directions',
+            // Commercial Sale specific
+            'building_size_sqft'     => 'Building Size (Sq Ft)',
+            'ceiling_height_ft'      => 'Ceiling Height (Ft)',
+            'parking_spaces_count'   => 'Parking Spaces',
+            'net_operating_income'   => 'Net Operating Income (NOI)',
+            'cap_rate'               => 'Cap Rate',
+            'building_features_list' => 'Building Features',
+            'current_use_list'       => 'Current Use',
             // Commercial lease fields
             'lease_rate_type'      => 'Lease Rate Type',
             'pets_allowed'         => 'Pets Allowed',

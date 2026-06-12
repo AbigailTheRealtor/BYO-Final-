@@ -142,6 +142,10 @@ class MlsListingImportService
             '|Special\s+Assessment|Homeowners?\s+Assoc|Subdivision\b' .
             '|Foundation\b|Sewer\b(?=\s*:)|Utilities\b|Roof\s+Type\b' .
             '|Number\s+of\s+Units\b|Total\s+Units\b|Cap\s+Rate\b' .
+            // Commercial Sale specific labels
+            '|Building\s+Size\b|Ceiling\s+Height\b|Parking\s+Spaces\b' .
+            '|Net\s+Operating\s+Income\b|NOI\b' .
+            '|Building\s+Features?\b|Current\s+Use\b' .
             '|Lease\s+Rate\s+Type\b|Pets?\s+Allowed\b|Office\s+Area\b' .
             // Business Opportunity labels — stops greedy captures from bleeding
             // across business-specific fields.
@@ -691,18 +695,71 @@ class MlsListingImportService
             $data['net_operating_income_raw'] = trim($v);
         }
 
-        // ─── Cap Rate ─────────────────────────────────────────────────────────
-        if ($v = $extract([
-            '/Cap\s+Rate[\s:]+(\d+(?:\.\d{1,4})?)\s*%?/i',
-        ], true)) {
-            $data['cap_rate'] = preg_replace('/[^\d.]/', '', $v);
-        }
-
         // ─── Occupancy Rate (raw, preview-only) ───────────────────────────────
         if ($v = $extract([
             '/(?:Occupancy\s+Rate|Occupancy\s*%)[\s:]+([^\|\n]{1,50})/i',
         ], true)) {
             $data['occupancy_rate_raw'] = trim($v);
+        }
+
+        // ─── Building Size (Sq Ft) — Commercial Sale ──────────────────────────
+        // Distinct from Heated Sq. Ft. (minimum_heated_square).  The MLS Commercial
+        // Sale form has a "Building Size" field representing gross building area.
+        // Boundary protection: "Ceiling Height" and other Commercial labels can follow.
+        if ($v = $extract([
+            '/Building\s+Size(?:\s+\(Sq\.?\s*Ft\.?\))?[\s:]+(\d[\d,]*)/i',
+            '/Total\s+(?:Building\s+)?Sq(?:uare)?\s*Ft(?:\.)?[\s:]+(\d[\d,]*)/i',
+        ])) {
+            $data['building_size_sqft'] = preg_replace('/[^\d]/', '', $v);
+        }
+
+        // ─── Ceiling Height (Ft) — Commercial Sale ────────────────────────────
+        if ($v = $extract(['/Ceiling\s+Height(?:\s+\(Ft\.?\))?[\s:]+(\d+(?:\.\d+)?)/i'])) {
+            $data['ceiling_height_ft'] = $v;
+        }
+
+        // ─── Parking Spaces — Commercial Sale ────────────────────────────────
+        // Distinct from the Garage branch which handles residential garage spaces.
+        // "Parking Spaces:" is a standalone commercial count field on the MLS form.
+        if ($v = $extract(['/Parking\s+Spaces[\s:]+(\d+)/i'])) {
+            $data['parking_spaces_count'] = $v;
+        }
+
+        // ─── Net Operating Income (NOI) — Commercial Sale ─────────────────────
+        // Normalizer strips $ and commas; writes to 'net_operating_income' (mapped field).
+        // The income/multifamily branch above writes 'net_operating_income_raw' (preview-only).
+        if ($v = $extract([
+            '/Net\s+Operating\s+Income(?:\s+\(NOI\))?[\s:]+\$?([\d,]+(?:\.\d{2})?)/i',
+            '/\bNOI[\s:]+\$?([\d,]+(?:\.\d{2})?)/i',
+        ])) {
+            $data['net_operating_income'] = MlsNormalizer::normalize('net_operating_income', $v);
+        }
+
+        // ─── Cap Rate — Commercial Sale ───────────────────────────────────────
+        // Uses normalizer to strip trailing %; overwrites any raw cap_rate set by
+        // the income/multifamily branch above with the properly normalized value.
+        if ($v = $extract(['/Cap\s+Rate[\s:]+(\d+(?:\.\d+)?)\s*%?/i'])) {
+            $data['cap_rate'] = MlsNormalizer::normalize('cap_rate', $v);
+        }
+
+        // ─── Building Features — Commercial Sale ──────────────────────────────
+        // Comma-separated or pipe-separated feature list (Loading Dock, High Bay, etc.)
+        // Boundary protection stops at next recognized commercial label.
+        if ($v = $extract(['/Building\s+Features?(?:\s+\/\s+Amenities)?[\s:]+([^\|\n]{2,300})/i'], true)) {
+            $v = trim($v, ", \t");
+            if ($v !== '') {
+                $data['building_features_list'] = $v;
+            }
+        }
+
+        // ─── Current Use — Commercial Sale ───────────────────────────────────
+        // Multi-select: "Light Industrial, Warehouse" etc.
+        // Boundary protection stops at next recognized label.
+        if ($v = $extract(['/Current\s+Use[\s:]+([^\|\n]{2,200})/i'], true)) {
+            $v = trim($v, ", \t");
+            if ($v !== '') {
+                $data['current_use_list'] = $v;
+            }
         }
 
         // ─── Business Type ────────────────────────────────────────────────────

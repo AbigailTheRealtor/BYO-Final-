@@ -684,6 +684,10 @@ class MlsListingImportServiceTest extends TestCase
         $map = MlsFieldMap::forRole('seller');
 
         foreach ($map as $canonicalKey => $propName) {
+            if ($propName === null) {
+                // null-mapped entries are preview-only (no form property target); skip.
+                continue;
+            }
             $propName = ltrim($propName, '*');
             $this->assertTrue(
                 property_exists(SellerOfferListing::class, $propName),
@@ -1940,5 +1944,213 @@ class MlsListingImportServiceTest extends TestCase
                 "{$key} should appear in the PROPERTY CHARACTERISTICS section row"
             );
         }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Commercial Sale — parser branches (Task: Commercial Sale Full-Stack Audit)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private function commercialSaleFixture(): string
+    {
+        return file_get_contents(__DIR__ . '/../../fixtures/mls/commercial_sale.txt');
+    }
+
+    private function importRaw(string $rawText): array
+    {
+        $result = $this->service->import('', $rawText);
+        $this->assertTrue($result['success'], 'import() must succeed for raw text');
+        return $result['data'];
+    }
+
+    public function test_commercial_sale_building_size_parses_from_fixture(): void
+    {
+        $data = $this->importRaw($this->commercialSaleFixture());
+
+        $this->assertArrayHasKey('building_size_sqft', $data,
+            'building_size_sqft must be parsed from "Building Size:" label');
+        $this->assertSame('14200', $data['building_size_sqft'],
+            'building_size_sqft should strip commas and yield plain integer string');
+    }
+
+    public function test_commercial_sale_ceiling_height_parses_from_fixture(): void
+    {
+        $data = $this->importRaw($this->commercialSaleFixture());
+
+        $this->assertArrayHasKey('ceiling_height_ft', $data,
+            'ceiling_height_ft must be parsed from "Ceiling Height:" label');
+        $this->assertSame('18', $data['ceiling_height_ft']);
+    }
+
+    public function test_commercial_sale_parking_spaces_parses_from_fixture(): void
+    {
+        $data = $this->importRaw($this->commercialSaleFixture());
+
+        $this->assertArrayHasKey('parking_spaces_count', $data,
+            'parking_spaces_count must be parsed from "Parking Spaces:" label');
+        $this->assertSame('45', $data['parking_spaces_count']);
+    }
+
+    public function test_commercial_sale_noi_parses_and_normalizes_from_fixture(): void
+    {
+        $data = $this->importRaw($this->commercialSaleFixture());
+
+        $this->assertArrayHasKey('net_operating_income', $data,
+            'net_operating_income must be parsed from "Net Operating Income (NOI):" label');
+        // Normalizer strips $ and commas: "$185,000" → "185000"
+        $this->assertSame('185000', $data['net_operating_income']);
+    }
+
+    public function test_commercial_sale_cap_rate_parses_and_normalizes_from_fixture(): void
+    {
+        $data = $this->importRaw($this->commercialSaleFixture());
+
+        $this->assertArrayHasKey('cap_rate', $data,
+            'cap_rate must be parsed from "Cap Rate:" label');
+        // Normalizer strips trailing %: "8.5%" → "8.5"
+        $this->assertSame('8.5', $data['cap_rate']);
+    }
+
+    public function test_commercial_sale_building_features_parses_from_fixture(): void
+    {
+        $data = $this->importRaw($this->commercialSaleFixture());
+
+        $this->assertArrayHasKey('building_features_list', $data,
+            'building_features_list must be parsed from "Building Features:" label');
+        $this->assertStringContainsString('Loading Dock', $data['building_features_list'],
+            'building_features_list should contain "Loading Dock"');
+        $this->assertStringContainsString('Overhead Doors', $data['building_features_list'],
+            'building_features_list should contain "Overhead Doors"');
+    }
+
+    public function test_commercial_sale_current_use_parses_from_fixture(): void
+    {
+        $data = $this->importRaw($this->commercialSaleFixture());
+
+        $this->assertArrayHasKey('current_use_list', $data,
+            'current_use_list must be parsed from "Current Use:" label');
+        $this->assertStringContainsString('Light Industrial', $data['current_use_list'],
+            'current_use_list should contain "Light Industrial"');
+        $this->assertStringContainsString('Warehouse', $data['current_use_list'],
+            'current_use_list should contain "Warehouse"');
+    }
+
+    public function test_commercial_sale_building_size_does_not_bleed_into_ceiling_height(): void
+    {
+        $data = $this->importRaw("Building Size: 14,200\nCeiling Height: 18\nParking Spaces: 45\n");
+
+        $this->assertSame('14200', $data['building_size_sqft'] ?? null,
+            'building_size_sqft should be 14200, not bleed into Ceiling Height label');
+        $this->assertSame('18', $data['ceiling_height_ft'] ?? null,
+            'ceiling_height_ft should parse as distinct field after building_size_sqft');
+    }
+
+    public function test_commercial_sale_noi_does_not_bleed_into_cap_rate(): void
+    {
+        $data = $this->importRaw("Net Operating Income (NOI): \$185,000\nCap Rate: 8.5%\n");
+
+        $this->assertSame('185000', $data['net_operating_income'] ?? null,
+            'net_operating_income should be 185000 and not bleed into Cap Rate label');
+        $this->assertSame('8.5', $data['cap_rate'] ?? null,
+            'cap_rate should parse as distinct field after net_operating_income');
+    }
+
+    public function test_seller_field_map_has_building_size_sqft(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+        $this->assertArrayHasKey('building_size_sqft', $map,
+            'seller field map must include building_size_sqft');
+        $this->assertSame('total_square_feet', $map['building_size_sqft']);
+    }
+
+    public function test_seller_field_map_has_ceiling_height_ft(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+        $this->assertArrayHasKey('ceiling_height_ft', $map,
+            'seller field map must include ceiling_height_ft');
+        $this->assertSame('ceiling_height', $map['ceiling_height_ft']);
+    }
+
+    public function test_seller_field_map_has_parking_spaces_count(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+        $this->assertArrayHasKey('parking_spaces_count', $map,
+            'seller field map must include parking_spaces_count');
+        $this->assertSame('garage_parking_spaces', $map['parking_spaces_count']);
+    }
+
+    public function test_seller_field_map_has_net_operating_income(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+        $this->assertArrayHasKey('net_operating_income', $map,
+            'seller field map must include net_operating_income');
+        $this->assertSame('minimum_annual_net_income', $map['net_operating_income']);
+    }
+
+    public function test_seller_field_map_has_cap_rate(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+        $this->assertArrayHasKey('cap_rate', $map,
+            'seller field map must include cap_rate');
+        $this->assertSame('minimum_cap_rate', $map['cap_rate']);
+    }
+
+    public function test_seller_field_map_has_building_features_list(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+        $this->assertArrayHasKey('building_features_list', $map,
+            'seller field map must include building_features_list');
+        $this->assertSame('*building_features', $map['building_features_list']);
+    }
+
+    public function test_seller_field_map_has_current_use_list(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+        $this->assertArrayHasKey('current_use_list', $map,
+            'seller field map must include current_use_list');
+        $this->assertSame('*current_use', $map['current_use_list']);
+    }
+
+    public function test_normalizer_cap_rate_strips_percent(): void
+    {
+        $this->assertSame('8.5',  MlsNormalizer::normalize('cap_rate', '8.5%'));
+        $this->assertSame('10',   MlsNormalizer::normalize('cap_rate', '10%'));
+        $this->assertSame('7.25', MlsNormalizer::normalize('cap_rate', '7.25'));
+    }
+
+    public function test_normalizer_net_operating_income_strips_currency_formatting(): void
+    {
+        $this->assertSame('185000', MlsNormalizer::normalize('net_operating_income', '185,000'));
+        $this->assertSame('185000', MlsNormalizer::normalize('net_operating_income', '$185,000'));
+        $this->assertSame('185000', MlsNormalizer::normalize('net_operating_income', '185000'));
+    }
+
+    public function test_inventory_commercial_sale_building_details_have_canonical_keys(): void
+    {
+        $content = $this->generateReportContent();
+
+        foreach (['building_size_sqft', 'ceiling_height_ft', 'parking_spaces_count', 'building_features_list', 'current_use_list'] as $key) {
+            $this->assertStringContainsString($key, $content,
+                "fieldInventory() must contain canonical_key '{$key}' for Commercial Sale BUILDING DETAILS");
+        }
+    }
+
+    public function test_inventory_commercial_sale_financial_have_canonical_keys(): void
+    {
+        $content = $this->generateReportContent();
+
+        foreach (['net_operating_income', 'cap_rate'] as $key) {
+            $this->assertStringContainsString($key, $content,
+                "fieldInventory() must contain canonical_key '{$key}' for Commercial Sale FINANCIAL");
+        }
+    }
+
+    public function test_rejected_mappings_includes_directions(): void
+    {
+        $content = $this->generateReportContent();
+
+        $this->assertStringContainsString('directions', $content,
+            'rejectedMappingsSection() must document that "directions" is parsed but not imported');
+        $this->assertStringContainsString('Rejected Mapping Candidates', $content,
+            'Report must contain Rejected Mapping Candidates section');
     }
 }

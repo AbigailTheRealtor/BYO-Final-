@@ -38,6 +38,9 @@ class MlsNormalizer
             'association_fee_frequency' => self::normalizeHoaFeeFrequency($v),
             'lease_rate_type'           => self::normalizeLeaseRateType($v),
 
+            'cap_rate'              => self::normalizeCapRate($v),
+            'net_operating_income'  => self::normalizeNetOperatingIncome($v),
+
             default                 => $v,
         };
     }
@@ -154,6 +157,31 @@ class MlsNormalizer
                 str_replace([' ', '-'], '_', trim($value))
             ),
         };
+    }
+
+    // ─── Cap Rate ────────────────────────────────────────────────────────────
+
+    /**
+     * Normalize MLS Cap Rate value.
+     * Strips trailing % sign and returns a plain numeric string (e.g. "8.5" not "8.5%").
+     */
+    public static function normalizeCapRate(string $value): string
+    {
+        $v = trim($value);
+        // Strip trailing % sign
+        $v = rtrim($v, '%');
+        return trim($v);
+    }
+
+    // ─── Net Operating Income ─────────────────────────────────────────────────
+
+    /**
+     * Normalize MLS Net Operating Income (NOI) value.
+     * Strips leading $ sign and comma separators, returns plain numeric string.
+     */
+    public static function normalizeNetOperatingIncome(string $value): string
+    {
+        return preg_replace('/[^\d.]/', '', $value);
     }
 
     // ─── Lease Frequency ─────────────────────────────────────────────────────
