@@ -808,8 +808,8 @@
     @endif
     @php $ofv::row('Monthly Income', $d['monthly_income'] ? '$' . number_format((float)str_replace(',', '', $d['monthly_income'])) : null); @endphp
     @php $ofv::row('Number of Occupants', $fmt($getMeta('number_occupant') ?? $getMeta('number_of_occupants'))); @endphp
-    @php $ofv::badge('Screening Concerns', $fmtBool($d['screening_concerns'])); @endphp
-    @php $ofv::row('Screening Concerns Details', $fmt($d['screening_concerns_explanation'])); @endphp
+    @php $ofv::badge('Rental History Disclosure', $fmtBool($d['screening_concerns'])); @endphp
+    @php $ofv::row('Disclosure Details', $fmt($d['screening_concerns_explanation'])); @endphp
     @endif
     @php $ofv::row('Interested in Property Management', $fmtBool($d['interested_in_property_management'])); @endphp
     @php $ofv::row('Property Management Fee', $fmt($d['interested_in_property_management_fee'])); @endphp

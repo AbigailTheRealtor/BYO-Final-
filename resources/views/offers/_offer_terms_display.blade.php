@@ -301,19 +301,25 @@
 @if($metas->get('closing_date') || $metas->get('possession_date') || $metas->get('possession_notes') || $metas->get('expires_at'))
 <p class="fw-semibold text-muted mb-1 mt-3">Closing &amp; Possession</p>
 <dl class="row mb-0">
+    @if($metas->get('closing_date'))
     <dt class="col-sm-3">Closing Date</dt>
     <dd class="col-sm-9">{{ $safeDate($metas->get('closing_date')) }}</dd>
+    @endif
 
+    @if($metas->get('possession_date'))
     <dt class="col-sm-3">Possession Date</dt>
     <dd class="col-sm-9">{{ $safeDate($metas->get('possession_date')) }}</dd>
+    @endif
 
     @if($metas->get('possession_notes'))
     <dt class="col-sm-3">Possession Notes</dt>
     <dd class="col-sm-9" style="white-space: pre-wrap;">{{ $metas->get('possession_notes') }}</dd>
     @endif
 
+    @if($metas->get('expires_at'))
     <dt class="col-sm-3">Response Requested By</dt>
     <dd class="col-sm-9">{{ $safeDate($metas->get('expires_at')) }}</dd>
+    @endif
 </dl>
 @endif
 
@@ -371,8 +377,8 @@
     @if($metas->get('monthly_income')) <dt class="col-sm-3">Est. Monthly Income</dt><dd class="col-sm-9">${{ number_format($metas->get('monthly_income')) }}</dd> @endif
     @if($metas->get('credit_score_range')) <dt class="col-sm-3">Credit Score Range</dt><dd class="col-sm-9">{{ $metas->get('credit_score_range') }}</dd> @endif
     @if($metas->get('screening_notes')) <dt class="col-sm-3">About Yourself</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('screening_notes') }}</dd> @endif
-    @if($metas->get('screening_concerns')) <dt class="col-sm-3">Screening Concerns</dt><dd class="col-sm-9">{{ $metas->get('screening_concerns') }}</dd> @endif
-    @if($metas->get('screening_concerns') === 'Yes' && $metas->get('screening_concerns_details')) <dt class="col-sm-3">Screening Concern Details</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('screening_concerns_details') }}</dd> @endif
+    @if($metas->get('screening_concerns')) <dt class="col-sm-3">Rental History Disclosure</dt><dd class="col-sm-9">{{ $metas->get('screening_concerns') }}</dd> @endif
+    @if($metas->get('screening_concerns') === 'Yes' && $metas->get('screening_concerns_details')) <dt class="col-sm-3">Disclosure Details</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('screening_concerns_details') }}</dd> @endif
     @endif
 
     <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Rental Offer Terms</dt>
@@ -391,9 +397,11 @@
     <dt class="col-sm-3">Additional Terms &amp; Requests</dt><dd class="col-sm-9" style="white-space:pre-wrap;">{{ $metas->get('additional_lease_terms') }}</dd>
     @endif
 
+    @if($metas->get('expires_at'))
     <dt class="col-sm-12 mt-2" style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c757d;border-bottom:1px solid #dee2e6;padding-bottom:0.25rem;margin-bottom:0.5rem;">Response Deadline</dt>
     <dt class="col-sm-3">Response Requested By</dt>
     <dd class="col-sm-9">{{ $safeDate($metas->get('expires_at')) }}</dd>
+    @endif
     @php
         // Use the root offer's submitted_at so multi-round counters always show
         // the original application timestamp, not the counter record's timestamp.
@@ -405,7 +413,7 @@
             catch (\Throwable $e) { return '—'; }
         };
     @endphp
-    <dt class="col-sm-3">Application Submitted</dt>
+    <dt class="col-sm-3">Rental Offer Submitted</dt>
     <dd class="col-sm-9">{{ $_fmtDT($_submittedAt) }}</dd>
 </dl>
 @endif

@@ -316,11 +316,11 @@
                                                         <dd class="col-sm-8">{{ $_rsm->get('credit_score_range') }}</dd>
                                                         @endif
                                                         @if($_rsm->get('screening_concerns'))
-                                                        <dt class="col-sm-4">Screening Concerns</dt>
+                                                        <dt class="col-sm-4">Rental History Disclosure</dt>
                                                         <dd class="col-sm-8">{{ $_rsm->get('screening_concerns') }}</dd>
                                                         @endif
                                                         @if($_rsm->get('screening_concerns') === 'Yes' && $_rsm->get('screening_concerns_details'))
-                                                        <dt class="col-sm-4">Concern Details</dt>
+                                                        <dt class="col-sm-4">Disclosure Details</dt>
                                                         <dd class="col-sm-8" style="white-space:pre-wrap;">{{ $_rsm->get('screening_concerns_details') }}</dd>
                                                         @endif
                                                         @if($_rsm->get('screening_notes'))

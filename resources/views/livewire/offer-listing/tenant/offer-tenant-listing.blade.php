@@ -4434,7 +4434,7 @@ $lease_types = [
                 'leasing_spaces_tenant':   'Leasing Space',
                 'number_occupant':         'Number of Occupants',
                 'monthly_income':          'Estimated Monthly Net Household Income',
-                'screening_concerns':      'Screening Concerns That May Affect Rental Approval',
+                'screening_concerns':      'Rental History Disclosure',
                 'first_name':              'First Name',
                 'last_name':               'Last Name',
                 'phone_number':            'Phone Number',

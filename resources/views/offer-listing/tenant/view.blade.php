@@ -1267,7 +1267,7 @@
                     {!! $row('Monthly Income', $fmtMoney($str('monthly_income'))) !!}
                     {!! $row('Min Annual Net Income', $fmtMoney($str('minimum_annual_net_income'))) !!}
                     {!! $row('Credit Score Range', $str('credit_score_range')) !!}
-                    {!! $row('Credit / Screening Concerns', $str('screening_concerns')) !!}
+                    {!! $row('Rental History Disclosure', $str('screening_concerns')) !!}
                 </div>
                 <div class="col-md-6">
                     {!! $row('Current Status', $str('current_status')) !!}

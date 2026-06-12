@@ -189,10 +189,10 @@
 @endif
 <!-- Screening Concerns -->
 <div class="form-group mt-4">
-    <label class="fw-bold">Screening Concerns That May Affect Rental Approval:<span
+    <label class="fw-bold">Rental History Disclosure:<span
             class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Indicate whether the Tenant has any screening concerns that could affect rental approval (e.g., credit issues, prior eviction, background check). Disclosure is voluntary and reviewed in accordance with federal, state, and local law.">
+                title="Is there anything in your rental, credit, criminal, or background history that you would like the landlord to be aware of before reviewing this offer?">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>

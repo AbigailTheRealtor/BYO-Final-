@@ -1017,7 +1017,13 @@
         x-data="{ showConcerns: '{{ old('screening_concerns', $formData->get('screening_concerns')) }}' === 'Yes' }"
         @change="showConcerns = ($el.querySelector('[name=screening_concerns]') ? $el.querySelector('[name=screening_concerns]').value === 'Yes' : showConcerns)">
         <div class="col-md-4">
-            <label class="form-label fw-semibold">Screening Concerns That May Affect Rental Approval</label>
+            <label class="form-label fw-semibold">
+                Rental History Disclosure
+                <span class="ms-1" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Is there anything in your rental, credit, criminal, or background history that you would like the landlord to be aware of before reviewing this offer?">
+                    <i class="fa-solid fa-circle-info" style="color:#2563eb;cursor:pointer;font-size:0.85rem;"></i>
+                </span>
+            </label>
             <select name="screening_concerns" class="form-select"
                 x-data x-model="$el.value"
                 @change="$dispatch('rental-concerns-changed', {val: $el.value})">
@@ -1029,10 +1035,10 @@
         <div class="col-md-8"
             x-data="{ show: {{ old('screening_concerns', $formData->get('screening_concerns')) === 'Yes' ? 'true' : 'false' }} }"
             @rental-concerns-changed.window="show = ($event.detail.val === 'Yes')">
-            <label class="form-label fw-semibold" x-show="show">Screening Concern Details</label>
+            <label class="form-label fw-semibold" x-show="show">Disclosure Details</label>
             <textarea name="screening_concerns_details" class="form-control" rows="3"
                 x-show="show"
-                placeholder="Enter screening concerns (e.g., Low credit, Prior eviction, Background check issues)">{{ old('screening_concerns_details', $formData->get('screening_concerns_details')) }}</textarea>
+                placeholder="Please provide any details you would like the landlord to be aware of before reviewing this offer.">{{ old('screening_concerns_details', $formData->get('screening_concerns_details')) }}</textarea>
         </div>
     </div>{{-- end screening concerns row --}}
 

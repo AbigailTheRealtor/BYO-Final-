@@ -841,7 +841,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                 @if (@$auction->get->screening_concerns != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Screening Concerns That May Affect Rental Approval:
+                    Rental History Disclosure:
                     <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->screening_concerns, @$auction->get->screening_concerns_explanation) }}</span>
                 </div>
                 @endif
