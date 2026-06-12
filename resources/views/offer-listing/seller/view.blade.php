@@ -1714,7 +1714,7 @@
                 $_rawUTC = $val('unit_type_configurations');
                 $_utcRows = [];
                 if ($_rawUTC) {
-                    $_decoded = json_decode($_rawUTC, true);
+                    $_decoded = is_array($_rawUTC) ? $_rawUTC : json_decode($_rawUTC, true);
                     if (is_array($_decoded)) {
                         foreach ($_decoded as $_uc) {
                             if (is_array($_uc) && !empty(array_filter($_uc, fn($v) => $v !== '' && $v !== null))) {
