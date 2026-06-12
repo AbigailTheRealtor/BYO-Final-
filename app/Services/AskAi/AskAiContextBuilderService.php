@@ -644,15 +644,29 @@ class AskAiContextBuilderService
                 // lease_terms: alias for terms_of_lease — keeps context key in sync with
                 // listingFieldRegistry() which uses config_key 'lease_terms'.
                 'lease_terms'              => $this->decodeJsonField($infoGet('terms_of_lease')),
-                // ---- Tax / Legal / Parcel fields (Landlord Residential Rental audit) ----
-                // Note: annual_property_taxes already present above (line ~536); omitted here.
+                // ── Commercial lease terms ──────────────────────────────────────
+                'commercial_lease_type'              => $this->resolveOtherValue(
+                                                           $infoGet('commercial_lease_type'),
+                                                           $infoGet,
+                                                           'commercial_lease_type_other'
+                                                       ),
+                'cam_nnn_additional_rent_charges'    => $infoGet('cam_nnn_additional_rent_charges'),
+                'rent_escalation_terms'              => $infoGet('rent_escalation_terms'),
+                'tenant_improvement_buildout_terms'  => $infoGet('tenant_improvement_buildout_terms'),
+                'permitted_use_restrictions'         => $infoGet('permitted_use_restrictions'),
+                'signage_rights'                     => $infoGet('signage_rights'),
+                'commercial_parking_terms'           => $infoGet('commercial_parking_terms'),
+                'personal_guarantee_requirement'     => $infoGet('personal_guarantee_requirement'),
+                'commercial_approval_conditions'     => $infoGet('commercial_approval_conditions'),
+                // ── Tax / Legal / Parcel fields ─────────────────────────────────
+                // Note: annual_property_taxes already present above; omitted here.
                 'parcel_id'                => $infoGet('parcel_id'),
                 'tax_year'                 => $infoGet('tax_year'),
                 'legal_description'        => $infoGet('legal_description'),
                 'additional_parcels'       => $infoGet('additional_parcels'),
                 'total_parcel_count'       => $infoGet('total_parcel_count'),
                 'additional_parcel_ids'    => $infoGet('additional_parcel_ids'),
-                // ---- Structural / water / leasing fields (Landlord Residential Rental audit) ----
+                // ── Structural / water / residential property facts ──────────────
                 'year_built'               => $infoGet('year_built'),
                 'lot_dimensions'           => $infoGet('lot_dimensions'),
                 'zoning'                   => $infoGet('zoning'),
@@ -678,6 +692,45 @@ class AskAiContextBuilderService
                 'has_cdd'                  => $infoGet('has_cdd'),
                 'annual_cdd_fee'           => $infoGet('annual_cdd_fee'),
                 'sqft_heated_source'       => $infoGet('sqft_heated_source'),
+                // ── General lease terms (extended) ──────────────────────────────
+                'first_month_rent_required'          => $infoGet('first_month_rent_required'),
+                'last_month_rent_required'           => $infoGet('last_month_rent_required'),
+                'total_move_in_funds_required'       => $infoGet('total_move_in_funds_required'),
+                // ── Commercial building details ─────────────────────────────────
+                'total_buildings'                    => $infoGet('total_buildings'),
+                'total_units_on_property'            => $infoGet('total_units_on_property'),
+                'office_retail_sqft'                 => $infoGet('office_retail_sqft'),
+                'flex_space_sqft'                    => $infoGet('flex_space_sqft'),
+                'ceiling_height'                     => $infoGet('ceiling_height'),
+                'space_type'                         => $this->decodeJsonField($infoGet('space_type')),
+                'space_classification'               => $this->decodeJsonField($infoGet('space_classification')),
+                'space_features'                     => $infoGet('space_features'),
+                'number_of_restrooms'                => $infoGet('number_of_restrooms'),
+                'number_of_offices'                  => $infoGet('number_of_offices'),
+                'number_of_conference_rooms'         => $infoGet('number_of_conference_rooms'),
+                'electrical_service'                 => $this->decodeJsonField($infoGet('electrical_service')),
+                'building_features'                  => $this->decodeJsonField($infoGet('building_features')),
+                'road_surface_type'                  => $this->decodeJsonField($infoGet('road_surface_type')),
+                'number_electric_meters'             => $infoGet('number_electric_meters'),
+                'number_water_meters'                => $infoGet('number_water_meters'),
+                'number_gas_meters'                  => $infoGet('number_gas_meters'),
+                'building_hours'                     => $infoGet('building_hours'),
+                'access_24_7'                        => $infoGet('access_24_7'),
+                'zoning_allows'                      => $infoGet('zoning_allows'),
+                'neighboring_tenants'                => $infoGet('neighboring_tenants'),
+                'shared_amenities'                   => $infoGet('shared_amenities'),
+                // ── CDD and special assessments (extended) ─────────────────────
+                'has_special_assessments'            => $infoGet('has_special_assessments'),
+                'special_assessment_amount'          => $infoGet('special_assessment_amount'),
+                'special_assessment_description'     => $infoGet('special_assessment_description'),
+                // ── Additional landlord terms ───────────────────────────────────
+                'min_income_requirement'             => $infoGet('min_income_requirement'),
+                'll_maintenance_responsibility'      => $infoGet('ll_maintenance_responsibility'),
+                'renewal_option_details'             => $infoGet('renewal_option_details'),
+                'landlord_approval_conditions'       => $infoGet('landlord_approval_conditions'),
+                'pet_deposit_amount'                 => $infoGet('pet_deposit_amount'),
+                'pet_monthly_fee'                    => $infoGet('pet_monthly_fee'),
+                'number_of_occupants_allowed'        => $infoGet('number_of_occupants_allowed'),
             ],
 
             // -----------------------------------------------------------------

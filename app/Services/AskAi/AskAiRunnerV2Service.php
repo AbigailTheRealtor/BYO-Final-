@@ -1473,6 +1473,49 @@ class AskAiRunnerV2Service
             'lot acreage',
             'lot area',
         ],
+
+        // ---- Landlord: Tax / Legal / Parcel ----
+        // Note: listing.annual_property_taxes already exists earlier in this array.
+        'listing.parcel_id' => [
+            'what is the parcel id for this rental',
+            'parcel id for this property',
+            'parcel number for this rental',
+            'folio number for this property',
+            'parcel id',
+            'tax parcel',
+            'property parcel identification',
+        ],
+        'listing.tax_year' => [
+            'what tax year is used for this rental',
+            'tax year for this property',
+            'which year are the property taxes based on',
+        ],
+        'listing.legal_description' => [
+            'what is the legal description for this rental',
+            'legal description of this property',
+            'property legal description',
+            'legal description',
+            'what is the legal description',
+        ],
+        'listing.additional_parcels' => [
+            'does this rental have additional parcels',
+            'are there additional parcels included',
+            'additional parcels for this property',
+        ],
+        'listing.total_parcel_count' => [
+            'how many parcels does this rental have',
+            'total parcel count for this property',
+            'number of parcels in this listing',
+        ],
+        'listing.additional_parcel_ids' => [
+            'what are the additional parcel ids for this rental',
+            'additional parcel numbers for this property',
+            'list the parcel ids for this rental',
+        ],
+
+        // ---- Landlord: Structural & Property Facts ----
+        // Note: listing.year_built, listing.tenant_pays, and listing.flood_zone_code
+        // already exist above — they are not duplicated here.
         'listing.lot_dimensions' => [
             'lot dimensions',
             'what are the lot dimensions',
@@ -1493,6 +1536,9 @@ class AskAiRunnerV2Service
             'what is the zoning for this rental',
             'how is this property zoned',
             'property zoning classification',
+            'zoning',
+            'what is the zoning',
+            'what is this property zoned',
         ],
         // ---- Waterfront ----
         'listing.waterfront' => [
@@ -1568,6 +1614,14 @@ class AskAiRunnerV2Service
             'heating system',
             'type of heat',
             'heating fuel',
+        ],
+        'listing.flood_insurance_required' => [
+            'is flood insurance required for this rental',
+            'flood insurance requirement for this rental',
+            'does this rental require flood insurance',
+            'is flood insurance mandatory for this property',
+            'is flood insurance required',
+            'do i need flood insurance for this property',
         ],
         'listing.heating_fuel' => [
             'what type of heating fuel is used',
@@ -1653,24 +1707,37 @@ class AskAiRunnerV2Service
             'what is the security deposit',
             'deposit amount required',
             'how much is the deposit',
+            'security deposit',
+            'deposit amount',
+            'required security deposit',
         ],
         'listing.terms_of_lease' => [
             'what are the terms of the lease',
             'lease terms for this rental',
             'rental lease terms listed',
             'what terms apply to this lease',
+            'lease terms available',
+            'what lease terms are offered',
+            'available lease term lengths',
         ],
         'listing.rent_includes' => [
             'what is included in the rent',
             'what does rent include',
             'what is covered by the rent',
             'what services are included in rent',
+            'utilities included in rent',
+            'what comes with rent',
+            'what is covered in the lease',
+            'included in lease payment',
         ],
         'listing.lease_amount_frequency' => [
             'how often is rent paid',
             'rent payment frequency',
             'is rent monthly or weekly',
             'lease amount frequency for this rental',
+            'how often is rent due',
+            'lease payment frequency',
+            'rent payment schedule',
         ],
         // ---- HOA / CDD ----
         'listing.association_name' => [
@@ -1702,6 +1769,10 @@ class AskAiRunnerV2Service
             'community development district for this rental',
             'is there a cdd fee for this rental',
             'cdd status for this property',
+            'cdd',
+            'community development district',
+            'does this property have a cdd',
+            'is there a cdd',
         ],
         'listing.annual_cdd_fee' => [
             'how much is the cdd fee',
@@ -1711,6 +1782,9 @@ class AskAiRunnerV2Service
             'annual cdd fee for this rental',
             'what is the cdd fee amount',
             'cdd fee per year',
+            'cdd fee',
+            'cdd annual amount',
+            'community development district fee',
         ],
         'listing.has_special_assessments' => [
             'are there special assessments',
@@ -1797,6 +1871,134 @@ class AskAiRunnerV2Service
             'list the parcel ids for this rental',
         ],
         // Note: listing.tenant_pays already exists earlier in this array (residential / utilities section).
+
+        // ---- Commercial Lease Type ----
+        'listing.commercial_lease_type' => [
+            'lease type',
+            'what type of lease',
+            'nnn lease',
+            'triple net lease',
+            'gross lease',
+            'modified gross lease',
+            'what is the lease type',
+            'what kind of lease',
+            'commercial lease structure',
+        ],
+        // ---- CAM / NNN Charges ----
+        'listing.cam_nnn_additional_rent_charges' => [
+            'cam charges',
+            'common area maintenance charges',
+            'what are the cam charges',
+            'nnn charges',
+            'triple net charges',
+            'additional rent charges',
+        ],
+        // ---- First / Last Month Rent ----
+        'listing.first_month_rent_required' => [
+            'first month rent required',
+            'is first month rent required',
+            'first month payment required',
+        ],
+        'listing.last_month_rent_required' => [
+            'last month rent required',
+            'is last month rent required',
+            'last month deposit',
+        ],
+        // ---- Total Move-In Funds ----
+        'listing.total_move_in_funds_required' => [
+            'total move-in costs',
+            'how much is needed to move in',
+            'total move in amount',
+            'upfront costs to move in',
+            'what is the total move-in',
+        ],
+        // ---- CDD: Special Assessments ----
+        'listing.has_special_assessments' => [
+            'special assessments',
+            'are there special assessments',
+            'does this property have special assessments',
+        ],
+        // ---- Commercial Building Details ----
+        'listing.ceiling_height' => [
+            'ceiling height',
+            'how high are the ceilings',
+            'ceiling clearance',
+            'clear height',
+        ],
+        'listing.number_of_restrooms' => [
+            'how many restrooms',
+            'number of restrooms',
+            'restroom count',
+            'how many bathrooms in the commercial space',
+        ],
+        'listing.office_retail_sqft' => [
+            'office square footage',
+            'office area sq ft',
+            'how big is the office area',
+            'office space size',
+            'retail square footage',
+        ],
+        // ---- Pet Deposit / Monthly Fee ----
+        'listing.pet_deposit_amount' => [
+            'pet deposit amount',
+            'how much is the pet deposit',
+            'pet security deposit',
+        ],
+        'listing.pet_monthly_fee' => [
+            'monthly pet fee',
+            'pet monthly rent',
+            'pet rent amount',
+            'how much is the monthly pet fee',
+        ],
+        // ---- Occupancy ----
+        'listing.number_of_occupants_allowed' => [
+            'maximum number of occupants',
+            'how many people can live here',
+            'occupancy limit',
+            'max occupants allowed',
+        ],
+        // ---- Income Requirement ----
+        'listing.min_income_requirement' => [
+            'income requirement',
+            'minimum income required',
+            'income qualification',
+            'what income is required',
+        ],
+        // ---- Signage ----
+        'listing.signage_rights' => [
+            'signage rights',
+            'exterior signage',
+            'can i put up a sign',
+            'commercial signage rights',
+            'exterior signage rights for this lease',
+        ],
+        // ---- Building Hours / Access ----
+        'listing.building_hours' => [
+            'building hours',
+            'building access hours',
+            'what are the building access hours',
+            'suite access hours',
+        ],
+        'listing.access_24_7' => [
+            '24/7 access',
+            'is the building accessible 24 hours',
+            'round the clock access',
+            'always accessible',
+        ],
+        // ---- Shared Amenities ----
+        'listing.shared_amenities' => [
+            'shared amenities',
+            'what amenities are shared',
+            'common amenities for tenants',
+            'building amenities',
+        ],
+        // ---- Renewal Option Details ----
+        'listing.renewal_option_details' => [
+            'renewal option details',
+            'lease renewal option terms',
+            'what are the renewal option terms',
+            'can the lease be renewed',
+        ],
     ];
 
     private AskAiQuestionClassifierService $classifier;
@@ -2791,6 +2993,38 @@ class AskAiRunnerV2Service
             'listing.vegetation'                         => 'Vegetation information',
             'listing.buildable'                          => 'Buildability information',
             'listing.easements'                          => 'Easement information',
+            // Listing.* fields — Income / Multifamily
+            'listing.gross_annual_income'                => 'Gross annual rental income information',
+            'listing.annual_net_income'                  => 'Annual net operating income information',
+            'listing.cap_rate'                           => 'Capitalization rate information',
+            'listing.annual_operating_expenses'          => 'Annual operating expenses information',
+            'listing.total_units'                        => 'Total unit count information',
+            'listing.unit_mix_summary'                   => 'Unit mix and configuration information',
+            'listing.rent_roll_available'                => 'Rent roll availability information',
+            'listing.operating_statement_available'      => 'Operating statement availability information',
+            'listing.property_items'                     => 'Property type mix information',
+            'listing.occupancy_requirement'              => 'Occupancy requirement information',
+            // Landlord: Commercial Lease Terms
+            'listing.commercial_lease_type'              => 'Commercial lease type information',
+            'listing.cam_nnn_additional_rent_charges'    => 'CAM / NNN additional rent charge information',
+            'listing.first_month_rent_required'          => 'First month rent requirement information',
+            'listing.last_month_rent_required'           => 'Last month rent requirement information',
+            'listing.total_move_in_funds_required'       => 'Total move-in funds information',
+            'listing.has_special_assessments'            => 'Special assessment information',
+            // Landlord: Commercial Building Details
+            'listing.ceiling_height'                     => 'Ceiling height information',
+            'listing.number_of_restrooms'                => 'Number of restrooms information',
+            'listing.office_retail_sqft'                 => 'Office / retail square footage information',
+            // Landlord: Additional Terms
+            'listing.pet_deposit_amount'                 => 'Pet deposit information',
+            'listing.pet_monthly_fee'                    => 'Monthly pet fee information',
+            'listing.number_of_occupants_allowed'        => 'Maximum occupants allowed information',
+            'listing.min_income_requirement'             => 'Minimum income requirement information',
+            'listing.signage_rights'                     => 'Signage rights information',
+            'listing.building_hours'                     => 'Building access hours information',
+            'listing.access_24_7'                        => '24/7 building access information',
+            'listing.shared_amenities'                   => 'Shared amenities information',
+            'listing.renewal_option_details'             => 'Lease renewal option details information',
             // Seller: Financial & Utility Insights
             'faq_answers.average_utility_costs'          => 'Utility cost information',
             'faq_answers.internet_utility_providers'     => 'Internet and utility provider information',

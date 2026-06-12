@@ -141,7 +141,8 @@ class MlsListingImportService
             '|Community\s+Information\b|Housing\b' .
             '|Special\s+Assessment|Homeowners?\s+Assoc|Subdivision\b' .
             '|Foundation\b|Sewer\b(?=\s*:)|Utilities\b|Roof\s+Type\b' .
-            '|Number\s+of\s+Units\b|Total\s+Units\b|Cap\s+Rate\b';
+            '|Number\s+of\s+Units\b|Total\s+Units\b|Cap\s+Rate\b' .
+            '|Lease\s+Rate\s+Type\b|Pets?\s+Allowed\b|Office\s+Area\b';
 
         /**
          * Extract a value from $text matching one of $patterns.
@@ -596,6 +597,33 @@ class MlsListingImportService
             $data['rent_includes'] = $v;
         }
 
+        // ─── Lease Rate Type ──────────────────────────────────────────────────
+        // Captures NNN / Gross / Modified Gross and similar commercial lease rate
+        // type labels.  Boundary stop prevents bleed into following fields.
+        if ($v = $extract(['/Lease\s+Rate\s+Type[\s:]+([^\|\n]{1,50})/i'], true)) {
+            $data['lease_rate_type'] = MlsNormalizer::normalize('lease_rate_type', $v);
+        }
+
+        // ─── Pets Allowed ─────────────────────────────────────────────────────
+        // Tight boolean-only capture — avoids bleed into descriptive text.
+        if ($v = $extract(['/Pets?\s+Allowed[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i'])) {
+            $data['pets_allowed'] = MlsNormalizer::normalize('pets_allowed', $v);
+        }
+
+        // ─── Minimum Lease (Months) ───────────────────────────────────────────
+        // Captures numeric months value from "Minimum Lease: 12",
+        // "Minimum Lease (Months): 12", or "Minimum Lease Term: 12".
+        if ($v = $extract(['/Minimum\s+Lease(?:\s*\(Months?\)|\s+(?:Term|Months?))?[\s:]+(\d+)/i'])) {
+            $data['minimum_lease_months'] = $v;
+        }
+
+        // ─── Office Area (Sq Ft) ──────────────────────────────────────────────
+        // Captures numeric square footage from "Office Area (Sq Ft): 1800" or
+        // "Office Area: 1800".  Strips commas from the captured value.
+        if ($v = $extract(['/Office\s+Area(?:\s*\(?Sq\.?\s*Ft\.?\)?)?[\s:]+(\d[\d,]*)/i'])) {
+            $data['office_area_sqft'] = preg_replace('/[^\d]/', '', $v);
+        }
+
         // ─── Waterfront ───────────────────────────────────────────────────────
         if ($v = $extract(['/Waterfront[\s:]+([^\|\n]{1,50})/i'], true)) {
             $data['waterfront'] = MlsNormalizer::normalize('waterfront', $v);
@@ -680,7 +708,8 @@ class MlsListingImportService
         // ─── listing_type_hint derived from rental signals ────────────────────
         $isRental = isset($data['rental_rate_type'])
             || preg_match('/Rental\s+Rate\s+Type|Monthly\s+Rent|Rent\s+Price/i', $text)
-            || preg_match('/\bfor\s+rent\b|\bfor\s+lease\b/i', $text);
+            || preg_match('/\bfor\s+rent\b|\bfor\s+lease\b/i', $text)
+            || isset($data['lease_rate_type']);
 
         $data['listing_type_hint'] = $isRental ? 'rental' : 'sale';
 

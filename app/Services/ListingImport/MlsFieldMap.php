@@ -227,10 +227,17 @@ class MlsFieldMap
             'roof_type'             => '*roof_type',
             'exterior_construction' => '*exterior_construction',
             'foundation'            => '*foundation',
+            // ── Commercial lease fields ───────────────────────────────────────
+            'lease_rate_type'      => 'commercial_lease_type',
+            'pets_allowed'         => 'pet_policy',
+            'minimum_lease_months' => 'min_lease_period',
+            'office_area_sqft'     => 'office_retail_sqft',
             // NOTE: 'application_fee' intentionally omitted — property does not exist
             //       on LandlordOfferListing (see Rejected Mapping Candidates).
             // NOTE: 'mls_number' intentionally omitted — property does not exist
             //       on LandlordOfferListing (see Rejected Mapping Candidates).
+            // NOTE: 'directions' intentionally omitted — no supported user-facing
+            //       form destination (see Rejected Mapping Candidates).
         ];
     }
 
@@ -377,6 +384,11 @@ class MlsFieldMap
             'flood_insurance_required' => 'Flood Insurance Required',
             'interior_features'   => 'Interior Features',
             'directions'          => 'Directions',
+            // Commercial lease fields
+            'lease_rate_type'      => 'Lease Rate Type',
+            'pets_allowed'         => 'Pets Allowed',
+            'minimum_lease_months' => 'Minimum Lease (Months)',
+            'office_area_sqft'     => 'Office Area (Sq Ft)',
             // HOA / CDD
             'has_hoa'                   => 'HOA / Association',
             'association_name'          => 'Association Name',

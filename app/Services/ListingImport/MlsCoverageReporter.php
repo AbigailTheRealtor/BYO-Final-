@@ -313,7 +313,7 @@ class MlsCoverageReporter
         // Priority 2: parsed but no field map entry for any role
         if (empty($mappingParts)) {
             // Known intentional exclusions surface as intentionally_excluded
-            $intentional = ['mls_number', 'application_fee', 'listing_type_hint'];
+            $intentional = ['mls_number', 'application_fee', 'listing_type_hint', 'directions'];
             if (in_array($canonicalKey, $intentional, true)) {
                 return 'intentionally_excluded';
             }
@@ -346,7 +346,7 @@ class MlsCoverageReporter
 
         // Priority 5: intentionally excluded (parsed, mapped, prop and/or form exist,
         // but still not safe — likely a semantic exclusion documented elsewhere)
-        $intentional = ['mls_number', 'application_fee', 'listing_type_hint'];
+        $intentional = ['mls_number', 'application_fee', 'listing_type_hint', 'directions'];
         if (in_array($canonicalKey, $intentional, true)) {
             return 'intentionally_excluded';
         }
@@ -602,8 +602,8 @@ class MlsCoverageReporter
                 ['form' => 'Rental', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Application Fee',          'canonical_key' => 'application_fee',          'norm_required' => false, 'notes' => 'Parsed; not mapped for Landlord — property absent on LandlordOfferListing'],
                 ['form' => 'Rental', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Rent Includes',            'canonical_key' => 'rent_includes',            'norm_required' => false, 'notes' => ''],
                 // Rental-specific fields present on MLS form but not yet parsed
-                ['form' => 'Rental', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Pets Allowed',             'canonical_key' => null, 'norm_required' => false, 'notes' => 'MLS field present — no parser branch; no app field'],
-                ['form' => 'Rental', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Minimum Lease (Months)',   'canonical_key' => null, 'norm_required' => false, 'notes' => 'MLS field present — no parser branch; no app field'],
+                ['form' => 'Rental', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Pets Allowed',             'canonical_key' => 'pets_allowed',         'norm_required' => true,  'notes' => ''],
+                ['form' => 'Rental', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Minimum Lease (Months)',   'canonical_key' => 'minimum_lease_months', 'norm_required' => false, 'notes' => ''],
             ],
             $remarks('Rental')
         );
@@ -719,18 +719,17 @@ class MlsCoverageReporter
                 ['form' => 'Commercial Lease', 'section' => 'LISTING INFORMATION', 'mls_label' => 'Monthly Rent / Lease Rate', 'canonical_key' => 'price', 'norm_required' => false, 'notes' => 'Landlord→desired_rental_amount'],
             ],
             [
-                // Commercial Lease specific — no canonical key yet
+                // Commercial Lease specific — building detail fields
                 ['form' => 'Commercial Lease', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Building Size (Sq Ft)',  'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial Lease field — no app field or parser branch'],
-                ['form' => 'Commercial Lease', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Office Area (Sq Ft)',   'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial Lease field — no app field or parser branch'],
+                ['form' => 'Commercial Lease', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Office Area (Sq Ft)',   'canonical_key' => 'office_area_sqft', 'norm_required' => false, 'notes' => ''],
                 ['form' => 'Commercial Lease', 'section' => 'BUILDING DETAILS', 'mls_label' => 'Parking Spaces',        'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial Lease field — no app field or parser branch'],
             ],
             [
                 ['form' => 'Commercial Lease', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Available Date',         'canonical_key' => 'available_date', 'norm_required' => false, 'notes' => ''],
                 ['form' => 'Commercial Lease', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Tenant Pays',            'canonical_key' => 'tenant_pays',    'norm_required' => false, 'notes' => ''],
                 ['form' => 'Commercial Lease', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Rent Includes',          'canonical_key' => 'rent_includes',  'norm_required' => false, 'notes' => ''],
-                // Commercial Lease specific — no canonical key yet
-                ['form' => 'Commercial Lease', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Lease Rate Type',        'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial field — NNN/Gross/Modified Gross; no parser branch'],
-                ['form' => 'Commercial Lease', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Minimum Lease Term',     'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial Lease field — no app field or parser branch'],
+                ['form' => 'Commercial Lease', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Lease Rate Type',        'canonical_key' => 'lease_rate_type',      'norm_required' => true,  'notes' => 'Normalizer maps NNN/Gross/Modified Gross to canonical tokens'],
+                ['form' => 'Commercial Lease', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Minimum Lease Term',     'canonical_key' => 'minimum_lease_months', 'norm_required' => false, 'notes' => ''],
                 ['form' => 'Commercial Lease', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Rent Rate (per Sq Ft)',  'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial Lease field — no app field or parser branch'],
                 ['form' => 'Commercial Lease', 'section' => 'RENTAL / LEASE', 'mls_label' => 'Build-Out Allowance',    'canonical_key' => null, 'norm_required' => false, 'notes' => 'Commercial Lease field — no app field or parser branch'],
             ],
@@ -810,6 +809,7 @@ class MlsCoverageReporter
             '| `year_built` | `year_built` | Buyer | Property does not exist on `BuyerOfferListing`. |',
             '| `price` | `desired_rental_amount` | Tenant | MLS listing price is the landlord\'s asking rent, not a tenant\'s desired amount — semantically wrong direction. |',
             '| `tax_id` (canonical) | `tax_id` (property name) | All | App property is `parcel_id`, not `tax_id`. Using the wrong name silently skips the form field. |',
+            '| `directions` | `directions` | All | No supported user-facing form destination — consistent with Seller Residential, Vacant Land, and Commercial Sale treatment. Parsed but not mapped to any role. |',
         ]);
     }
 }

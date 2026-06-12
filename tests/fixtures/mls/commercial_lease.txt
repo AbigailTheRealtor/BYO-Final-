@@ -6,6 +6,10 @@ Zip Code: 33907
 County: Lee
 Monthly Rent: $5,200
 Available: 09/01/2026
+Lease Rate Type: NNN
+Pets Allowed: No
+Minimum Lease: 12
+Office Area (Sq Ft): 1,800
 Tenant Pays: Electricity,HVAC Maintenance,Janitorial
 Rent Includes: Taxes,Insurance,Common Area Maintenance
 Flood Zone Code: X

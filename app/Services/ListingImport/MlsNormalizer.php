@@ -27,12 +27,14 @@ class MlsNormalizer
             'has_hoa',
             'has_cdd',
             'flood_insurance_required',
-            'has_special_assessments'   => self::normalizeBoolean($v),
+            'has_special_assessments',
+            'pets_allowed'              => self::normalizeBoolean($v),
 
             'furnished'             => self::normalizeFurnishing($v),
             'flood_zone_code'       => self::normalizeFloodZone($v),
             'lease_amount_frequency'=> self::normalizeLeaseFrequency($v),
             'association_fee_frequency' => self::normalizeHoaFeeFrequency($v),
+            'lease_rate_type'           => self::normalizeLeaseRateType($v),
 
             default                 => $v,
         };
@@ -118,6 +120,37 @@ class MlsNormalizer
             'semiannually', 'bi-annual'       => 'semi_annually',
             'one-time', 'one time', 'onetime' => 'one_time',
             default                           => strtolower($value),
+        };
+    }
+
+    // ─── Lease Rate Type ─────────────────────────────────────────────────────
+
+    /**
+     * Normalize MLS Lease Rate Type to a canonical lowercase token.
+     *
+     * Common MLS values and their canonical forms:
+     *   NNN / Triple Net / Net Net Net  → 'nnn'
+     *   Gross / Full Service Gross      → 'gross'
+     *   Modified Gross / Mod. Gross     → 'modified_gross'
+     *   Absolute Net / Absolute NNN     → 'absolute_nnn'
+     *   Double Net / Net Net / NN       → 'double_net'
+     *   Net / Single Net                → 'net'
+     *
+     * Unrecognized values are lowercased with spaces replaced by underscores.
+     */
+    public static function normalizeLeaseRateType(string $value): string
+    {
+        return match (strtolower(trim($value))) {
+            'nnn', 'triple net', 'triple-net', 'net net net'    => 'nnn',
+            'gross', 'full service gross', 'full service'        => 'gross',
+            'modified gross', 'modified-gross', 'mod. gross',
+            'modified gross lease', 'mod gross'                  => 'modified_gross',
+            'absolute net', 'absolute nnn', 'absolute triple net' => 'absolute_nnn',
+            'double net', 'net net', 'nn'                        => 'double_net',
+            'net', 'single net'                                  => 'net',
+            default                                              => strtolower(
+                str_replace([' ', '-'], '_', trim($value))
+            ),
         };
     }
 
