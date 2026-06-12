@@ -70,15 +70,11 @@ class OfferPermissionService
         }
 
         if (!in_array($status, ['submitted', 'countered'], true)) {
-            return ['allowed' => false, 'action' => $action, 'reason' => "Cannot counter: offer status is '{$status}', expected 'submitted' or 'countered'."];
-        }
-
-        if (!in_array($actorRole, ['buyer', 'seller', 'agent', 'system'], true)) {
-            return ['allowed' => false, 'action' => $action, 'reason' => "Cannot counter: actor role '{$actorRole}' is not permitted for this action."];
+            return ['allowed' => false, 'action' => $action, 'reason' => 'This action is not available for this offer status.'];
         }
 
         if ($actorId !== null && $actorId === $offer->user_id) {
-            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot counter: you submitted this offer and must wait for the other party to respond.'];
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Waiting for the other party to respond.'];
         }
 
         // Guard: only the active leaf of the negotiation chain can be acted upon.
@@ -109,15 +105,11 @@ class OfferPermissionService
         }
 
         if (!in_array($status, ['submitted', 'countered'], true)) {
-            return ['allowed' => false, 'action' => $action, 'reason' => "Cannot accept: offer status is '{$status}', expected 'submitted' or 'countered'."];
-        }
-
-        if (!in_array($actorRole, ['buyer', 'seller', 'agent', 'system'], true)) {
-            return ['allowed' => false, 'action' => $action, 'reason' => "Cannot accept: actor role '{$actorRole}' is not permitted for this action."];
+            return ['allowed' => false, 'action' => $action, 'reason' => 'This action is not available for this offer status.'];
         }
 
         if ($actorId !== null && $actorId === $offer->user_id) {
-            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot accept: you submitted this offer and must wait for the other party to respond.'];
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Waiting for the other party to respond.'];
         }
 
         // Guard: only the active leaf of the negotiation chain can be acted upon.
@@ -147,15 +139,11 @@ class OfferPermissionService
         }
 
         if (!in_array($status, ['submitted', 'countered'], true)) {
-            return ['allowed' => false, 'action' => $action, 'reason' => "Cannot reject: offer status is '{$status}', expected 'submitted' or 'countered'."];
-        }
-
-        if (!in_array($actorRole, ['buyer', 'seller', 'agent', 'system'], true)) {
-            return ['allowed' => false, 'action' => $action, 'reason' => "Cannot reject: actor role '{$actorRole}' is not permitted for this action."];
+            return ['allowed' => false, 'action' => $action, 'reason' => 'This action is not available for this offer status.'];
         }
 
         if ($actorId !== null && $actorId === $offer->user_id) {
-            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot reject: you submitted this offer and must wait for the other party to respond.'];
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Waiting for the other party to respond.'];
         }
 
         // Guard: only the active leaf of the negotiation chain can be acted upon.

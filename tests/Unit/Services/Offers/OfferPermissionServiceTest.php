@@ -183,14 +183,17 @@ class OfferPermissionServiceTest extends TestCase
         $this->assertStringContainsString('accepted', $result['reason']);
     }
 
-    public function test_can_counter_denied_for_wrong_role(): void
+    public function test_can_counter_denied_for_self_submission(): void
     {
-        $offer = Offer::factory()->make(['status' => 'submitted']);
-        $result = $this->service->canCounter($offer, 1, 'tenant');
+        // The submitter of the offer cannot counter their own offer.
+        $offer = Offer::factory()->make(['status' => 'submitted', 'user_id' => 7]);
+        $result = $this->service->canCounter($offer, 7, 'tenant');
 
         $this->assertFalse($result['allowed']);
         $this->assertNotEmpty($result['reason']);
-        $this->assertStringContainsString('tenant', $result['reason']);
+        $this->assertStringContainsString('other party', $result['reason']);
+        $this->assertStringNotContainsString('actor role', $result['reason']);
+        $this->assertStringNotContainsString('not permitted for this action', $result['reason']);
     }
 
     public function test_can_counter_denied_for_wrong_status(): void
@@ -200,7 +203,7 @@ class OfferPermissionServiceTest extends TestCase
 
         $this->assertFalse($result['allowed']);
         $this->assertNotEmpty($result['reason']);
-        $this->assertStringContainsString('draft', $result['reason']);
+        $this->assertStringContainsString('not available', $result['reason']);
     }
 
     public function test_can_counter_return_shape(): void
@@ -244,17 +247,17 @@ class OfferPermissionServiceTest extends TestCase
         $this->assertStringContainsString('rejected', $result['reason']);
     }
 
-    public function test_can_accept_denied_for_wrong_role(): void
+    public function test_can_accept_denied_for_self_submission(): void
     {
-        // 'buyer' is now a permitted role for canAccept (supports counter-reversal where
-        // buyer must accept the seller's counter).  Use 'tenant' — genuinely not in the
-        // allowed-role list — to exercise the role-denial branch.
-        $offer = Offer::factory()->make(['status' => 'submitted']);
-        $result = $this->service->canAccept($offer, 1, 'tenant');
+        // The submitter of the offer cannot accept their own offer.
+        $offer = Offer::factory()->make(['status' => 'submitted', 'user_id' => 9]);
+        $result = $this->service->canAccept($offer, 9, 'tenant');
 
         $this->assertFalse($result['allowed']);
         $this->assertNotEmpty($result['reason']);
-        $this->assertStringContainsString('tenant', $result['reason']);
+        $this->assertStringContainsString('other party', $result['reason']);
+        $this->assertStringNotContainsString('actor role', $result['reason']);
+        $this->assertStringNotContainsString('not permitted for this action', $result['reason']);
     }
 
     public function test_can_accept_denied_for_wrong_status(): void
@@ -264,7 +267,7 @@ class OfferPermissionServiceTest extends TestCase
 
         $this->assertFalse($result['allowed']);
         $this->assertNotEmpty($result['reason']);
-        $this->assertStringContainsString('draft', $result['reason']);
+        $this->assertStringContainsString('not available', $result['reason']);
     }
 
     public function test_can_accept_return_shape(): void
@@ -308,16 +311,17 @@ class OfferPermissionServiceTest extends TestCase
         $this->assertStringContainsString('withdrawn', $result['reason']);
     }
 
-    public function test_can_reject_denied_for_wrong_role(): void
+    public function test_can_reject_denied_for_self_submission(): void
     {
-        // 'buyer' is now a permitted role for canReject (supports counter-reversal).
-        // Use 'tenant' — genuinely not in the allowed-role list — to test the role-denial branch.
-        $offer = Offer::factory()->make(['status' => 'submitted']);
-        $result = $this->service->canReject($offer, 1, 'tenant');
+        // The submitter of the offer cannot reject their own offer.
+        $offer = Offer::factory()->make(['status' => 'submitted', 'user_id' => 11]);
+        $result = $this->service->canReject($offer, 11, 'tenant');
 
         $this->assertFalse($result['allowed']);
         $this->assertNotEmpty($result['reason']);
-        $this->assertStringContainsString('tenant', $result['reason']);
+        $this->assertStringContainsString('other party', $result['reason']);
+        $this->assertStringNotContainsString('actor role', $result['reason']);
+        $this->assertStringNotContainsString('not permitted for this action', $result['reason']);
     }
 
     public function test_can_reject_denied_for_wrong_status(): void
@@ -327,7 +331,7 @@ class OfferPermissionServiceTest extends TestCase
 
         $this->assertFalse($result['allowed']);
         $this->assertNotEmpty($result['reason']);
-        $this->assertStringContainsString('draft', $result['reason']);
+        $this->assertStringContainsString('not available', $result['reason']);
     }
 
     public function test_can_reject_return_shape(): void
@@ -723,9 +727,9 @@ class OfferPermissionServiceTest extends TestCase
         $this->assertFalse($reject['allowed'],  'Sender of leaf C must not be able to reject.');
         $this->assertFalse($counter['allowed'], 'Sender of leaf C must not be able to counter.');
 
-        $this->assertStringContainsString('wait', $accept['reason']);
-        $this->assertStringContainsString('wait', $reject['reason']);
-        $this->assertStringContainsString('wait', $counter['reason']);
+        $this->assertStringContainsString('other party', $accept['reason']);
+        $this->assertStringContainsString('other party', $reject['reason']);
+        $this->assertStringContainsString('other party', $counter['reason']);
     }
 
     // Stale-parent guard fires on A: it has non-final child B.
@@ -761,6 +765,163 @@ class OfferPermissionServiceTest extends TestCase
                 $this->service->canAccept($offerB, $actorId, $role)['allowed'],
                 "Stale parent B must block accept for role '{$role}'."
             );
+        }
+    }
+
+    // ── Tenant / Landlord counter chains ──────────────────────────────────
+
+    /**
+     * Build a rental chain root offer: tenant submits to landlord's listing.
+     * Returns [$offer, $tenantId, $landlordId].
+     */
+    private function rentalOffer(string $status = 'submitted'): array
+    {
+        // 'landlord' is not a valid users.user_type enum value; use 'seller' in the DB
+        // while passing 'landlord' as the actorRole to the service (role is independent
+        // of the DB column in the permission service).
+        $tenant   = User::factory()->create(['user_type' => 'tenant']);
+        $landlord = User::factory()->create(['user_type' => 'seller']);
+        $auction  = OfferAuction::factory()->create(['user_id' => $landlord->id]);
+
+        $offer = Offer::factory()->create([
+            'offer_auction_id' => $auction->id,
+            'user_id'          => $tenant->id,
+            'status'           => $status,
+            'parent_offer_id'  => null,
+        ]);
+
+        return [$offer, $tenant->id, $landlord->id];
+    }
+
+    public function test_tenant_submits_landlord_can_accept(): void
+    {
+        [$offer, , $landlordId] = $this->rentalOffer('submitted');
+
+        $result = $this->service->canAccept($offer, $landlordId, 'landlord');
+
+        $this->assertTrue($result['allowed'], 'Landlord (responding party) must be able to accept tenant offer.');
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_tenant_submits_landlord_can_reject(): void
+    {
+        [$offer, , $landlordId] = $this->rentalOffer('submitted');
+
+        $result = $this->service->canReject($offer, $landlordId, 'landlord');
+
+        $this->assertTrue($result['allowed'], 'Landlord (responding party) must be able to reject tenant offer.');
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_tenant_submits_landlord_can_counter(): void
+    {
+        [$offer, , $landlordId] = $this->rentalOffer('submitted');
+
+        $result = $this->service->canCounter($offer, $landlordId, 'landlord');
+
+        $this->assertTrue($result['allowed'], 'Landlord (responding party) must be able to counter tenant offer.');
+        $this->assertSame('', $result['reason']);
+    }
+
+    public function test_landlord_counters_tenant_can_accept_reject_counter(): void
+    {
+        [$offerA, $tenantId, $landlordId] = $this->rentalOffer('countered');
+
+        $auction = $offerA->offerAuction;
+
+        // Landlord's counter (offerB) — submitted leaf
+        $offerB = Offer::factory()->create([
+            'offer_auction_id' => $auction->id,
+            'user_id'          => $landlordId,
+            'status'           => 'submitted',
+            'parent_offer_id'  => $offerA->id,
+        ]);
+
+        $accept  = $this->service->canAccept($offerB,  $tenantId, 'tenant');
+        $reject  = $this->service->canReject($offerB,  $tenantId, 'tenant');
+        $counter = $this->service->canCounter($offerB, $tenantId, 'tenant');
+
+        $this->assertTrue($accept['allowed'],  'Tenant must be able to accept landlord counter.');
+        $this->assertTrue($reject['allowed'],  'Tenant must be able to reject landlord counter.');
+        $this->assertTrue($counter['allowed'], 'Tenant must be able to counter landlord counter.');
+        $this->assertSame('', $accept['reason']);
+        $this->assertSame('', $reject['reason']);
+        $this->assertSame('', $counter['reason']);
+    }
+
+    public function test_tenant_cannot_respond_to_their_own_pending_offer(): void
+    {
+        [$offer, $tenantId] = $this->rentalOffer('submitted');
+
+        $accept  = $this->service->canAccept($offer,  $tenantId, 'tenant');
+        $reject  = $this->service->canReject($offer,  $tenantId, 'tenant');
+        $counter = $this->service->canCounter($offer, $tenantId, 'tenant');
+
+        $this->assertFalse($accept['allowed'],  'Tenant must not respond to their own pending offer (accept).');
+        $this->assertFalse($reject['allowed'],  'Tenant must not respond to their own pending offer (reject).');
+        $this->assertFalse($counter['allowed'], 'Tenant must not respond to their own pending offer (counter).');
+
+        $this->assertStringContainsString('other party', $accept['reason']);
+        $this->assertStringContainsString('other party', $reject['reason']);
+        $this->assertStringContainsString('other party', $counter['reason']);
+    }
+
+    public function test_landlord_cannot_respond_to_their_own_counter(): void
+    {
+        [$offerA, $tenantId, $landlordId] = $this->rentalOffer('countered');
+
+        $auction = $offerA->offerAuction;
+
+        $offerB = Offer::factory()->create([
+            'offer_auction_id' => $auction->id,
+            'user_id'          => $landlordId,
+            'status'           => 'submitted',
+            'parent_offer_id'  => $offerA->id,
+        ]);
+
+        $accept  = $this->service->canAccept($offerB,  $landlordId, 'landlord');
+        $reject  = $this->service->canReject($offerB,  $landlordId, 'landlord');
+        $counter = $this->service->canCounter($offerB, $landlordId, 'landlord');
+
+        $this->assertFalse($accept['allowed'],  'Landlord must not respond to their own counter (accept).');
+        $this->assertFalse($reject['allowed'],  'Landlord must not respond to their own counter (reject).');
+        $this->assertFalse($counter['allowed'], 'Landlord must not respond to their own counter (counter).');
+
+        $this->assertStringContainsString('other party', $accept['reason']);
+        $this->assertStringContainsString('other party', $reject['reason']);
+        $this->assertStringContainsString('other party', $counter['reason']);
+    }
+
+    public function test_sale_offer_buyer_submits_seller_can_accept_reject_counter(): void
+    {
+        [$offer, $actorId] = $this->partyOffer('submitted');
+
+        $accept  = $this->service->canAccept($offer,  $actorId, 'seller');
+        $reject  = $this->service->canReject($offer,  $actorId, 'seller');
+        $counter = $this->service->canCounter($offer, $actorId, 'seller');
+
+        $this->assertTrue($accept['allowed'],  'Seller (listing owner) must be able to accept buyer offer.');
+        $this->assertTrue($reject['allowed'],  'Seller (listing owner) must be able to reject buyer offer.');
+        $this->assertTrue($counter['allowed'], 'Seller (listing owner) must be able to counter buyer offer.');
+    }
+
+    public function test_no_role_based_message_for_tenant_or_landlord(): void
+    {
+        $forbiddenPhrases = ['actor role', 'not permitted for this action'];
+
+        [$tenantOffer, $tenantId, $landlordId] = $this->rentalOffer('submitted');
+
+        foreach (['canAccept', 'canReject', 'canCounter'] as $method) {
+            foreach ([[$tenantId, 'tenant'], [$landlordId, 'landlord']] as [$actorId, $role]) {
+                $result = $this->service->$method($tenantOffer, $actorId, $role);
+                foreach ($forbiddenPhrases as $phrase) {
+                    $this->assertStringNotContainsString(
+                        $phrase,
+                        $result['reason'],
+                        "Reason for {$method}({$role}) must not contain '{$phrase}'."
+                    );
+                }
+            }
         }
     }
 

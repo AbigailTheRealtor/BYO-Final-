@@ -413,6 +413,60 @@ class OfferActionVisibilityTest extends TestCase
         $this->assertStringNotContainsString('background:transparent', $surrounding, 'Save &amp; Submit Offer button must not have a transparent background override.');
     }
 
+    // ── Test 18: No role-based denial message shown to tenant who is the responding party ──
+
+    public function test_tenant_responding_party_page_shows_no_role_based_denial_message(): void
+    {
+        $tenant    = User::factory()->create(['user_type' => 'tenant']);
+        $submitter = User::factory()->create();
+
+        $this->actingAs($tenant);
+
+        $offerAuction = OfferAuction::factory()->create(['user_id' => $tenant->id]);
+        $offer        = Offer::factory()->submitted()->create([
+            'user_id'          => $submitter->id,
+            'offer_auction_id' => $offerAuction->id,
+        ]);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringNotContainsString('actor role', $content);
+        $this->assertStringNotContainsString('not permitted for this action', $content);
+        $this->assertStringNotContainsString("role 'tenant'", $content);
+        $this->assertStringNotContainsString("role 'landlord'", $content);
+    }
+
+    // ── Test 19: No role-based denial message shown to landlord who is the responding party ──
+
+    public function test_landlord_responding_party_page_shows_no_role_based_denial_message(): void
+    {
+        // 'landlord' is not a valid DB user_type enum value; the role label is passed
+        // separately via actorRole in the permission service.
+        $landlord  = User::factory()->create(['user_type' => 'seller']);
+        $submitter = User::factory()->create();
+
+        $this->actingAs($landlord);
+
+        $offerAuction = OfferAuction::factory()->create(['user_id' => $landlord->id]);
+        $offer        = Offer::factory()->submitted()->create([
+            'user_id'          => $submitter->id,
+            'offer_auction_id' => $offerAuction->id,
+        ]);
+
+        $response = $this->get(route('offers.show', $offer));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $this->assertStringNotContainsString('actor role', $content);
+        $this->assertStringNotContainsString('not permitted for this action', $content);
+        $this->assertStringNotContainsString("role 'tenant'", $content);
+        $this->assertStringNotContainsString("role 'landlord'", $content);
+    }
+
     // ── Test 17: Submitter of active offer sees Withdraw and View Timeline but not Accept or Reject ──
 
     public function test_submitter_of_active_offer_sees_withdraw_not_accept_or_reject(): void
