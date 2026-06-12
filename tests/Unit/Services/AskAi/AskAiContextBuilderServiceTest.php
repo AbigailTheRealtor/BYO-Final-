@@ -1693,6 +1693,513 @@ class AskAiContextBuilderServiceTest extends TestCase
         $this->assertSame('12 months', $result['listing']['desired_lease_length']);
     }
 
+    // ── Case R — Seller tax / legal disclosure fields ─────────────────────────
+
+    public function test_case_R_seller_parcel_id_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['parcel_id' => '0055-14-0024'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('parcel_id', $result['listing']);
+        $this->assertSame('0055-14-0024', $result['listing']['parcel_id']);
+    }
+
+    public function test_case_R_seller_tax_year_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['tax_year' => '2023'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('tax_year', $result['listing']);
+        $this->assertSame('2023', $result['listing']['tax_year']);
+    }
+
+    public function test_case_R_seller_legal_description_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['legal_description' => 'Lot 4, Block 7'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('legal_description', $result['listing']);
+        $this->assertSame('Lot 4, Block 7', $result['listing']['legal_description']);
+    }
+
+    public function test_case_R_seller_flood_zone_panel_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['flood_zone_panel' => '12115C0171G'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('flood_zone_panel', $result['listing']);
+        $this->assertSame('12115C0171G', $result['listing']['flood_zone_panel']);
+    }
+
+    public function test_case_R_seller_has_cdd_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['has_cdd' => 'yes'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('has_cdd', $result['listing']);
+        $this->assertSame('yes', $result['listing']['has_cdd']);
+    }
+
+    public function test_case_R_seller_annual_cdd_fee_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['annual_cdd_fee' => '950'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('annual_cdd_fee', $result['listing']);
+        $this->assertSame('950', $result['listing']['annual_cdd_fee']);
+    }
+
+    // ── Case R — Seller income / investment metrics (all seller property types) ─
+
+    public function test_case_R_seller_minimum_annual_net_income_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['minimum_annual_net_income' => '120000'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('minimum_annual_net_income', $result['listing']);
+        $this->assertSame('120000', $result['listing']['minimum_annual_net_income']);
+    }
+
+    public function test_case_R_seller_minimum_cap_rate_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['minimum_cap_rate' => '6.5'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('minimum_cap_rate', $result['listing']);
+        $this->assertSame('6.5', $result['listing']['minimum_cap_rate']);
+    }
+
+    // ── Case R — Seller special assessment fields (all seller property types) ─
+
+    public function test_case_R_seller_additional_parcels_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['additional_parcels' => 'yes'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('additional_parcels', $result['listing']);
+        $this->assertSame('yes', $result['listing']['additional_parcels']);
+    }
+
+    public function test_case_R_seller_total_parcel_count_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['total_parcel_count' => '3'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('total_parcel_count', $result['listing']);
+        $this->assertSame('3', $result['listing']['total_parcel_count']);
+    }
+
+    public function test_case_R_seller_special_assessment_amount_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['special_assessment_amount' => '3200'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('special_assessment_amount', $result['listing']);
+        $this->assertSame('3200', $result['listing']['special_assessment_amount']);
+    }
+
+    public function test_case_R_seller_special_assessment_description_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['special_assessment_description' => 'Stormwater improvement'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('special_assessment_description', $result['listing']);
+        $this->assertSame('Stormwater improvement', $result['listing']['special_assessment_description']);
+    }
+
+    // ── Case R — Seller business opportunity fields ───────────────────────────
+    // Business fields are only included when property_type meta === 'Business'.
+    // Each stub below sets that guard key alongside the field under test.
+
+    public function test_case_R_seller_business_type_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'business_type' => 'Retail'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('business_type', $result['listing']);
+        $this->assertSame('Retail', $result['listing']['business_type']);
+    }
+
+    public function test_case_R_seller_business_type_resolves_other_value(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'property_type'       => 'Business',
+                'business_type'       => 'Other',
+                'other_business_type' => 'Specialty Franchise',
+            ])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertSame('Specialty Franchise', $result['listing']['business_type']);
+    }
+
+    public function test_case_R_seller_business_name_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'business_name' => 'Sunrise Deli'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('business_name', $result['listing']);
+        $this->assertSame('Sunrise Deli', $result['listing']['business_name']);
+    }
+
+    public function test_case_R_seller_year_established_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'year_established' => '2010'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('year_established', $result['listing']);
+        $this->assertSame('2010', $result['listing']['year_established']);
+    }
+
+    public function test_case_R_seller_annual_revenue_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'annual_revenue' => '450000'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('annual_revenue', $result['listing']);
+        $this->assertSame('450000', $result['listing']['annual_revenue']);
+    }
+
+    public function test_case_R_seller_gross_profit_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'gross_profit' => '180000'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('gross_profit', $result['listing']);
+        $this->assertSame('180000', $result['listing']['gross_profit']);
+    }
+
+    public function test_case_R_seller_sde_ebitda_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'sde_ebitda' => '95000'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('sde_ebitda', $result['listing']);
+        $this->assertSame('95000', $result['listing']['sde_ebitda']);
+    }
+
+    public function test_case_R_seller_inventory_value_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'inventory_value' => '30000'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('inventory_value', $result['listing']);
+        $this->assertSame('30000', $result['listing']['inventory_value']);
+    }
+
+    public function test_case_R_seller_ffe_value_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'ffe_value' => '15000'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('ffe_value', $result['listing']);
+        $this->assertSame('15000', $result['listing']['ffe_value']);
+    }
+
+    public function test_case_R_seller_reason_for_sale_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'reason_for_sale' => 'Retirement'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('reason_for_sale', $result['listing']);
+        $this->assertSame('Retirement', $result['listing']['reason_for_sale']);
+    }
+
+    public function test_case_R_seller_reason_for_sale_resolves_other_value(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'property_type'         => 'Business',
+                'reason_for_sale'       => 'Other',
+                'other_reason_for_sale' => 'Relocation abroad',
+            ])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertSame('Relocation abroad', $result['listing']['reason_for_sale']);
+    }
+
+    public function test_case_R_seller_employee_count_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'employee_count' => '12'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('employee_count', $result['listing']);
+        $this->assertSame('12', $result['listing']['employee_count']);
+    }
+
+    public function test_case_R_seller_financial_statements_available_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'financial_statements_available' => 'Yes'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('financial_statements_available', $result['listing']);
+        $this->assertSame('Yes', $result['listing']['financial_statements_available']);
+    }
+
+    public function test_case_R_seller_tax_returns_available_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'tax_returns_available' => 'Yes'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('tax_returns_available', $result['listing']);
+        $this->assertSame('Yes', $result['listing']['tax_returns_available']);
+    }
+
+    public function test_case_R_seller_nda_required_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'nda_required' => 'Yes'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('nda_required', $result['listing']);
+        $this->assertSame('Yes', $result['listing']['nda_required']);
+    }
+
+    public function test_case_R_seller_business_location_leased_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'business_location_leased' => 'Yes'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('business_location_leased', $result['listing']);
+        $this->assertSame('Yes', $result['listing']['business_location_leased']);
+    }
+
+    public function test_case_R_seller_business_lease_monthly_rent_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'business_lease_monthly_rent' => '3500'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('business_lease_monthly_rent', $result['listing']);
+        $this->assertSame('3500', $result['listing']['business_lease_monthly_rent']);
+    }
+
+    public function test_case_R_seller_business_lease_expiration_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'business_lease_expiration' => '2026-12-31'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('business_lease_expiration', $result['listing']);
+        $this->assertSame('2026-12-31', $result['listing']['business_lease_expiration']);
+    }
+
+    public function test_case_R_seller_business_lease_renewal_options_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'business_lease_renewal_options' => '2 x 5-year options'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('business_lease_renewal_options', $result['listing']);
+        $this->assertSame('2 x 5-year options', $result['listing']['business_lease_renewal_options']);
+    }
+
+    public function test_case_R_seller_business_lease_assignable_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'business_lease_assignable' => 'Yes'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('business_lease_assignable', $result['listing']);
+        $this->assertSame('Yes', $result['listing']['business_lease_assignable']);
+    }
+
+    public function test_case_R_seller_business_lease_additional_terms_appears_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'business_lease_additional_terms' => 'Triple net'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('business_lease_additional_terms', $result['listing']);
+        $this->assertSame('Triple net', $result['listing']['business_lease_additional_terms']);
+    }
+
+    // ── Case R — Seller business opportunity JSON array fields ───────────────
+
+    public function test_case_R_seller_licenses_json_decoded_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'licenses' => '["Liquor License","Health Permit"]'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('licenses', $result['listing']);
+        $this->assertStringContainsString('Liquor License', (string) $result['listing']['licenses']);
+        $this->assertStringContainsString('Health Permit', (string) $result['listing']['licenses']);
+    }
+
+    public function test_case_R_seller_sale_includes_json_decoded_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'sale_includes' => '["Inventory","Equipment","Customer List"]'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('sale_includes', $result['listing']);
+        $this->assertStringContainsString('Inventory', (string) $result['listing']['sale_includes']);
+    }
+
+    public function test_case_R_seller_current_use_json_decoded_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'current_use' => '["Restaurant","Bar"]'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('current_use', $result['listing']);
+        $this->assertStringContainsString('Restaurant', (string) $result['listing']['current_use']);
+    }
+
+    public function test_case_R_seller_building_features_json_decoded_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'building_features' => '["Drive-Thru","Loading Dock"]'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('building_features', $result['listing']);
+        $this->assertStringContainsString('Drive-Thru', (string) $result['listing']['building_features']);
+    }
+
+    public function test_case_R_seller_road_frontage_json_decoded_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'road_frontage' => '["Highway","City Street"]'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('road_frontage', $result['listing']);
+        $this->assertStringContainsString('Highway', (string) $result['listing']['road_frontage']);
+    }
+
+    public function test_case_R_seller_electrical_service_json_decoded_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'electrical_service' => '["3-Phase","200 Amp"]'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('electrical_service', $result['listing']);
+        $this->assertStringContainsString('3-Phase', (string) $result['listing']['electrical_service']);
+    }
+
+    public function test_case_R_seller_business_assets_json_decoded_in_listing_context(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], ['property_type' => 'Business', 'business_assets' => '["POS System","Refrigeration Units"]'])
+        );
+        $result = $service->buildForListing('seller', 1);
+        $this->assertArrayHasKey('business_assets', $result['listing']);
+        $this->assertStringContainsString('POS System', (string) $result['listing']['business_assets']);
+    }
+
+    // ── Case R — Business-only guard: fields absent for non-Business listings ─
+
+    public function test_case_R_seller_business_fields_absent_when_property_type_is_residential(): void
+    {
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'property_type'  => 'Residential',
+                'annual_revenue' => '450000',
+                'business_type'  => 'Retail',
+            ])
+        );
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayNotHasKey('business_type', $result['listing'],
+            'business_type must be absent from context for non-Business property types');
+        $this->assertArrayNotHasKey('annual_revenue', $result['listing'],
+            'annual_revenue must be absent from context for non-Business property types');
+        $this->assertArrayNotHasKey('sde_ebitda', $result['listing'],
+            'sde_ebitda must be absent from context for non-Business property types');
+        $this->assertArrayNotHasKey('employee_count', $result['listing'],
+            'employee_count must be absent from context for non-Business property types');
+    }
+
+    public function test_case_R_seller_tax_legal_fields_present_for_non_business_listing(): void
+    {
+        // Tax/Legal disclosure fields must be surfaced for ALL seller property types,
+        // not gated by the Business-only guard.
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn(
+            $this->makeListingStubWithFields([], [
+                'property_type'    => 'Residential',
+                'parcel_id'        => 'RES-001',
+                'tax_year'         => '2024',
+                'flood_zone_panel' => '12103C0241G',
+                'has_cdd'          => 'no',
+            ])
+        );
+        $result = $service->buildForListing('seller', 1);
+
+        $this->assertArrayHasKey('parcel_id', $result['listing'],
+            'parcel_id must be present for Residential listing');
+        $this->assertSame('RES-001', $result['listing']['parcel_id']);
+        $this->assertArrayHasKey('tax_year', $result['listing']);
+        $this->assertArrayHasKey('flood_zone_panel', $result['listing']);
+        $this->assertArrayHasKey('has_cdd', $result['listing']);
+    }
+
     public function test_case_R_null_factual_fields_are_preserved_as_null_not_dropped(): void
     {
         $service = $this->makeService();
@@ -2549,15 +3056,19 @@ class AskAiContextBuilderServiceTest extends TestCase
 
         $source = file_get_contents($sourceFile);
 
-        // Isolate seller match arm: starts at "'seller' => [" and ends at the
-        // closing bracket of that arm (immediately before "'buyer' => [").
+        // Isolate the seller match arm inside extractFactualFields().
+        // The arm uses array_merge(...) so the pattern anchors on that keyword to
+        // avoid matching the role-constant map earlier in the file.
+        // Captured text runs from the opening '(' of array_merge up to (but not
+        // including) the "// Buyer" section comment that follows the arm.
         $matched = preg_match(
-            "/'seller'\s*=>\s*\[(.*?)\n\s+\],\s*\n\s+\/\/.*Buyer/s",
+            "/'seller'\s*=>\s*array_merge\((.*?)(?=\n\s+\/\/\s*Buyer)/s",
             $source,
             $m
         );
         $this->assertSame(1, $matched,
-            'Could not isolate seller match arm from source — check regex if the arm structure changed');
+            'Could not isolate seller match arm from source — check regex if the arm structure changed; '
+            . 'if the seller arm was changed from array_merge() back to a plain array, update this regex too');
 
         $sellerArmText = $m[1];
 

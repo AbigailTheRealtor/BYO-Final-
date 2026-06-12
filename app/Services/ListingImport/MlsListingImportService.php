@@ -142,7 +142,12 @@ class MlsListingImportService
             '|Special\s+Assessment|Homeowners?\s+Assoc|Subdivision\b' .
             '|Foundation\b|Sewer\b(?=\s*:)|Utilities\b|Roof\s+Type\b' .
             '|Number\s+of\s+Units\b|Total\s+Units\b|Cap\s+Rate\b' .
-            '|Lease\s+Rate\s+Type\b|Pets?\s+Allowed\b|Office\s+Area\b';
+            '|Lease\s+Rate\s+Type\b|Pets?\s+Allowed\b|Office\s+Area\b' .
+            // Business Opportunity labels — stops greedy captures from bleeding
+            // across business-specific fields.
+            '|Business\s+Type\b|Annual\s+Revenue\b|Annual\s+Net\s+Income\b' .
+            '|Number\s+of\s+Employees?\b|Inventory\s+Included\b' .
+            '|Seller\s+Financing\b|Lease\s+Type\b';
 
         /**
          * Extract a value from $text matching one of $patterns.
@@ -698,6 +703,50 @@ class MlsListingImportService
             '/(?:Occupancy\s+Rate|Occupancy\s*%)[\s:]+([^\|\n]{1,50})/i',
         ], true)) {
             $data['occupancy_rate_raw'] = trim($v);
+        }
+
+        // ─── Business Type ────────────────────────────────────────────────────
+        if ($v = $extract(['/Business\s+Type[\s:]+([^\|\n]{1,80})/i'], true)) {
+            $data['business_type'] = $v;
+        }
+
+        // ─── Annual Revenue ───────────────────────────────────────────────────
+        if ($v = $extract(['/Annual\s+Revenue[\s:\$]+([0-9,\.]+)/i'])) {
+            $data['annual_revenue'] = preg_replace('/[^\d.]/', '', $v);
+        }
+
+        // ─── Annual Net Income (Business) ─────────────────────────────────────
+        if ($v = $extract(['/Annual\s+Net\s+Income[\s:\$]+([0-9,\.]+)/i'])) {
+            $data['annual_net_income_business'] = preg_replace('/[^\d.]/', '', $v);
+        }
+
+        // ─── Number of Employees ──────────────────────────────────────────────
+        if ($v = $extract(['/Number\s+of\s+Employees?[\s:]+(\d+)/i'])) {
+            $data['employee_count'] = $v;
+        }
+
+        // ─── Inventory Included (Business) ───────────────────────────────────
+        // Tight boolean capture only.
+        if ($v = $extract([
+            '/Inventory\s+Included\s+Y\/N[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i',
+            '/Inventory\s+Included[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i',
+        ])) {
+            $data['inventory_included'] = MlsNormalizer::normalize('inventory_included', $v);
+        }
+
+        // ─── Seller Financing Y/N (Business) ─────────────────────────────────
+        // Tight boolean capture only.
+        if ($v = $extract([
+            '/Seller\s+Financing\s+Y\/N[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i',
+            '/Seller\s+Financing[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i',
+        ])) {
+            $data['seller_financing_yn'] = MlsNormalizer::normalize('seller_financing_yn', $v);
+        }
+
+        // ─── Business Lease Type ──────────────────────────────────────────────
+        // Boundary protection prevents bleed into subsequent labels.
+        if ($v = $extract(['/Lease\s+Type[\s:]+([^\|\n]{1,60})/i'], true)) {
+            $data['business_lease_type'] = $v;
         }
 
         // ─── Directions ───────────────────────────────────────────────────────

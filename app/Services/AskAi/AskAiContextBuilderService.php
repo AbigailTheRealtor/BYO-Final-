@@ -430,6 +430,8 @@ class AskAiContextBuilderService
                     'has_cdd'              => $infoGet('has_cdd'),
                     'annual_cdd_fee'       => $infoGet('annual_cdd_fee'),
                     'has_special_assessments' => $infoGet('has_special_assessments'),
+                    'additional_parcels'             => $infoGet('additional_parcels'),
+                    'total_parcel_count'             => $infoGet('total_parcel_count'),
                     'special_assessment_amount' => $infoGet('special_assessment_amount'),
                     'special_assessment_description' => $infoGet('special_assessment_description'),
                     // ── Pets / Restrictions ───────────────────────────────────────
@@ -500,6 +502,45 @@ class AskAiContextBuilderService
                     'vegetation'           => $this->decodeJsonField($infoGet('vegetation')),
                     'buildable'            => $infoGet('buildable'),
                     'easements'            => $this->decodeJsonField($infoGet('easements')),
+                ] : [],
+                // ── Business Opportunity fields ──────────────────────────────────────
+                // Only surfaced when property_type === 'Business'. All stored via
+                // saveMeta() in seller_agent_auction_metas.
+                ($infoGet('property_type') === 'Business') ? [
+                    'business_type'                   => $this->resolveOtherValue(
+                                                             $infoGet('business_type'),
+                                                             $infoGet,
+                                                             'other_business_type'
+                                                         ),
+                    'business_name'                   => $infoGet('business_name'),
+                    'year_established'                => $infoGet('year_established'),
+                    'annual_revenue'                  => $infoGet('annual_revenue'),
+                    'gross_profit'                    => $infoGet('gross_profit'),
+                    'sde_ebitda'                      => $infoGet('sde_ebitda'),
+                    'inventory_value'                 => $infoGet('inventory_value'),
+                    'ffe_value'                       => $infoGet('ffe_value'),
+                    'reason_for_sale'                 => $this->resolveOtherValue(
+                                                             $infoGet('reason_for_sale'),
+                                                             $infoGet,
+                                                             'other_reason_for_sale'
+                                                         ),
+                    'employee_count'                  => $infoGet('employee_count'),
+                    'financial_statements_available'  => $infoGet('financial_statements_available'),
+                    'tax_returns_available'           => $infoGet('tax_returns_available'),
+                    'nda_required'                    => $infoGet('nda_required'),
+                    'business_location_leased'        => $infoGet('business_location_leased'),
+                    'business_lease_monthly_rent'     => $infoGet('business_lease_monthly_rent'),
+                    'business_lease_expiration'       => $infoGet('business_lease_expiration'),
+                    'business_lease_renewal_options'  => $infoGet('business_lease_renewal_options'),
+                    'business_lease_assignable'       => $infoGet('business_lease_assignable'),
+                    'business_lease_additional_terms' => $infoGet('business_lease_additional_terms'),
+                    'licenses'                        => $this->decodeJsonField($infoGet('licenses')),
+                    'sale_includes'                   => $this->decodeJsonField($infoGet('sale_includes')),
+                    'current_use'                     => $this->decodeJsonField($infoGet('current_use')),
+                    'building_features'               => $this->decodeJsonField($infoGet('building_features')),
+                    'road_frontage'                   => $this->decodeJsonField($infoGet('road_frontage')),
+                    'electrical_service'              => $this->decodeJsonField($infoGet('electrical_service')),
+                    'business_assets'                 => $this->decodeJsonField($infoGet('business_assets')),
                 ] : []
             ),
 

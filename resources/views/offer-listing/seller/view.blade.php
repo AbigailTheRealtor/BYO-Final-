@@ -1765,6 +1765,46 @@
             </div>
             @endif
 
+            {{-- Business Array Fields (Group F) --}}
+            @php
+                $bizLicenses     = $subOther($arr('licenses'),          $str('other_licenses'));
+                $bizSaleIncludes = $subOther($arr('sale_includes'),     $str('other_sale_includes'));
+                $bizCurrentUse   = $subOther($arr('current_use'),       $str('other_current_use'));
+                $bizBuildingFeat = $subOther($arr('building_features'), $str('other_building_features'));
+                $bizRoadFrontage = $subOther($arr('road_frontage'),     $str('other_road_frontage'));
+                $bizElecService  = $subOther($arr('electrical_service'),$str('other_electrical_service'));
+                $bizAssets       = $arr('business_assets');
+                $hasBizArrays    = count($bizLicenses) || count($bizSaleIncludes) || count($bizCurrentUse)
+                    || count($bizBuildingFeat) || count($bizRoadFrontage) || count($bizElecService)
+                    || count($bizAssets);
+            @endphp
+            @if($hasBizArrays)
+            <hr>
+            <div class="row">
+                @if(count($bizLicenses))
+                <div class="col-md-6">{!! $row('Licenses Required', implode(', ', $bizLicenses)) !!}</div>
+                @endif
+                @if(count($bizSaleIncludes))
+                <div class="col-md-6">{!! $row('Sale Includes', implode(', ', $bizSaleIncludes)) !!}</div>
+                @endif
+                @if(count($bizCurrentUse))
+                <div class="col-md-6">{!! $row('Current Use', implode(', ', $bizCurrentUse)) !!}</div>
+                @endif
+                @if(count($bizBuildingFeat))
+                <div class="col-md-6">{!! $row('Building Features', implode(', ', $bizBuildingFeat)) !!}</div>
+                @endif
+                @if(count($bizRoadFrontage))
+                <div class="col-md-6">{!! $row('Road Frontage', implode(', ', $bizRoadFrontage)) !!}</div>
+                @endif
+                @if(count($bizElecService))
+                <div class="col-md-6">{!! $row('Electrical Service', implode(', ', $bizElecService)) !!}</div>
+                @endif
+                @if(count($bizAssets))
+                <div class="col-md-6">{!! $row('Business Assets', implode(', ', $bizAssets)) !!}</div>
+                @endif
+            </div>
+            @endif
+
             {{-- Site Utilities (land/commercial) --}}
             @php
                 $siteUtilFields = array_filter([

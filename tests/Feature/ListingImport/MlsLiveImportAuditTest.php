@@ -418,6 +418,125 @@ class MlsLiveImportAuditTest extends TestCase
         $this->assertSame('3200', $data['special_assessment_amount'] ?? null, 'special_assessment_amount');
     }
 
+    public function test_parser_business_opportunity_address_fields(): void
+    {
+        $result = $this->service->import('', $this->fixtures['business_opportunity']);
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertSame('2150 Gulf to Bay Boulevard', $data['address'] ?? null, 'address');
+        $this->assertSame('Clearwater', $data['city'] ?? null, 'city');
+        $this->assertSame('FL', $data['state'] ?? null, 'state');
+        $this->assertSame('33765', $data['zip'] ?? null, 'zip');
+        $this->assertSame('Pinellas', $data['county'] ?? null, 'county');
+    }
+
+    public function test_parser_business_opportunity_flood_zone_fields(): void
+    {
+        $result = $this->service->import('', $this->fixtures['business_opportunity']);
+        $data = $result['data'];
+
+        $this->assertSame('X', $data['flood_zone_code'] ?? null, 'flood_zone_code normalised');
+        $this->assertSame('no', $data['flood_insurance_required'] ?? null, 'flood_insurance_required normalised');
+        $this->assertSame('12103C0241G', $data['flood_zone_panel'] ?? null, 'flood_zone_panel');
+    }
+
+    public function test_parser_business_opportunity_tax_legal_fields(): void
+    {
+        $result = $this->service->import('', $this->fixtures['business_opportunity']);
+        $data = $result['data'];
+
+        // Parser uses canonical key 'tax_id' (matches "Tax ID:" label in MLS export).
+        $this->assertSame('16-29-15-00000-300-0170', $data['tax_id'] ?? null, 'tax_id');
+        $this->assertSame('2023', $data['tax_year'] ?? null, 'tax_year');
+        $this->assertSame('7200.00', $data['annual_taxes'] ?? null, 'annual_taxes');
+        $this->assertSame('no', $data['additional_parcels'] ?? null, 'additional_parcels normalised');
+    }
+
+    public function test_parser_business_opportunity_hoa_cdd_fields(): void
+    {
+        $result = $this->service->import('', $this->fixtures['business_opportunity']);
+        $data = $result['data'];
+
+        $this->assertSame('no', $data['has_hoa'] ?? null, 'has_hoa normalised to no');
+        $this->assertSame('no', $data['has_cdd'] ?? null, 'has_cdd normalised to no');
+    }
+
+    // ── Business Opportunity — new parser branches (inline text fixtures) ─────
+
+    public function test_parser_business_type_extracted_from_inline_text(): void
+    {
+        $result = $this->service->import('', "Business Type: Retail\nAnnual Revenue: \$0");
+        $this->assertSame('Retail', $result['data']['business_type'] ?? null, 'business_type');
+    }
+
+    public function test_parser_annual_revenue_stripped_to_numeric(): void
+    {
+        $result = $this->service->import('', "Annual Revenue: \$450,000");
+        $this->assertSame('450000', $result['data']['annual_revenue'] ?? null, 'annual_revenue');
+    }
+
+    public function test_parser_annual_net_income_business_stripped_to_numeric(): void
+    {
+        $result = $this->service->import('', "Annual Net Income: \$120,500");
+        $this->assertSame('120500', $result['data']['annual_net_income_business'] ?? null, 'annual_net_income_business');
+    }
+
+    public function test_parser_employee_count_extracted_as_numeric_string(): void
+    {
+        $result = $this->service->import('', "Number of Employees: 8");
+        $this->assertSame('8', $result['data']['employee_count'] ?? null, 'employee_count');
+    }
+
+    public function test_parser_inventory_included_normalised_to_yes(): void
+    {
+        $result = $this->service->import('', "Inventory Included Y/N: Yes");
+        $this->assertSame('yes', $result['data']['inventory_included'] ?? null, 'inventory_included yes');
+    }
+
+    public function test_parser_inventory_included_normalised_to_no(): void
+    {
+        $result = $this->service->import('', "Inventory Included: No");
+        $this->assertSame('no', $result['data']['inventory_included'] ?? null, 'inventory_included no');
+    }
+
+    public function test_parser_seller_financing_yn_normalised_to_yes(): void
+    {
+        $result = $this->service->import('', "Seller Financing Y/N: Yes");
+        $this->assertSame('yes', $result['data']['seller_financing_yn'] ?? null, 'seller_financing_yn yes');
+    }
+
+    public function test_parser_seller_financing_yn_normalised_to_no(): void
+    {
+        $result = $this->service->import('', "Seller Financing: No");
+        $this->assertSame('no', $result['data']['seller_financing_yn'] ?? null, 'seller_financing_yn no');
+    }
+
+    public function test_parser_business_lease_type_extracted(): void
+    {
+        $result = $this->service->import('', "Lease Type: NNN");
+        $this->assertSame('NNN', $result['data']['business_lease_type'] ?? null, 'business_lease_type');
+    }
+
+    /**
+     * Regression: the business_opportunity fixture has no business-specific fields
+     * (Annual Revenue, Business Type, etc.).  These keys must be absent from the
+     * parsed output so spurious values are never written to a listing.
+     */
+    public function test_parser_business_opportunity_fixture_has_no_business_specific_fields(): void
+    {
+        $result = $this->service->import('', $this->fixtures['business_opportunity']);
+        $data   = $result['data'];
+
+        $this->assertArrayNotHasKey('business_type',              $data, 'business_type must be absent from fixture');
+        $this->assertArrayNotHasKey('annual_revenue',             $data, 'annual_revenue must be absent from fixture');
+        $this->assertArrayNotHasKey('annual_net_income_business', $data, 'annual_net_income_business must be absent');
+        $this->assertArrayNotHasKey('employee_count',             $data, 'employee_count must be absent from fixture');
+        $this->assertArrayNotHasKey('inventory_included',         $data, 'inventory_included must be absent from fixture');
+        $this->assertArrayNotHasKey('seller_financing_yn',        $data, 'seller_financing_yn must be absent from fixture');
+        $this->assertArrayNotHasKey('business_lease_type',        $data, 'business_lease_type must be absent from fixture');
+    }
+
     // ── Commercial Lease ──────────────────────────────────────────────────────
 
     /**

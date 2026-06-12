@@ -313,7 +313,14 @@ class MlsCoverageReporter
         // Priority 2: parsed but no field map entry for any role
         if (empty($mappingParts)) {
             // Known intentional exclusions surface as intentionally_excluded
-            $intentional = ['mls_number', 'application_fee', 'listing_type_hint', 'directions'];
+            $intentional = [
+                'mls_number',
+                'application_fee',
+                'listing_type_hint',
+                // directions: parsed for completeness, intentionally not imported —
+                // app has no 'directions' property and the value has no listing purpose.
+                'directions',
+            ];
             if (in_array($canonicalKey, $intentional, true)) {
                 return 'intentionally_excluded';
             }
@@ -749,14 +756,13 @@ class MlsCoverageReporter
                 ['form' => 'Business Opportunity', 'section' => 'LISTING INFORMATION', 'mls_label' => 'Asking Price', 'canonical_key' => 'price', 'norm_required' => false, 'notes' => ''],
             ],
             [
-                // Business Opportunity specific — all no canonical key yet
-                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Business Type',         'canonical_key' => null, 'norm_required' => false, 'notes' => 'Business Opportunity field — no app field or parser branch'],
-                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Annual Revenue',        'canonical_key' => null, 'norm_required' => false, 'notes' => 'Business Opportunity field — no app field or parser branch'],
-                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Annual Net Income',     'canonical_key' => null, 'norm_required' => false, 'notes' => 'Business Opportunity field — no app field or parser branch'],
-                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Inventory Included Y/N','canonical_key' => null, 'norm_required' => false, 'notes' => 'Business Opportunity field — no app field or parser branch'],
-                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Number of Employees',   'canonical_key' => null, 'norm_required' => false, 'notes' => 'Business Opportunity field — no app field or parser branch'],
-                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Seller Financing Y/N',  'canonical_key' => null, 'norm_required' => false, 'notes' => 'Business Opportunity field — no app field or parser branch'],
-                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Lease Type',            'canonical_key' => null, 'norm_required' => false, 'notes' => 'Business Opportunity field — no app field or parser branch'],
+                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Business Type',         'canonical_key' => 'business_type',               'norm_required' => false, 'notes' => 'Seller→business_type'],
+                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Annual Revenue',        'canonical_key' => 'annual_revenue',              'norm_required' => false, 'notes' => 'Seller→annual_revenue'],
+                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Annual Net Income',     'canonical_key' => 'annual_net_income_business',  'norm_required' => false, 'notes' => 'Seller→minimum_annual_net_income (Income & Investment Metrics tab)'],
+                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Inventory Included Y/N','canonical_key' => 'inventory_included',          'norm_required' => true,  'notes' => 'Parsed; not mapped for Seller — no boolean property (inventory_value is a dollar field)'],
+                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Number of Employees',   'canonical_key' => 'employee_count',              'norm_required' => false, 'notes' => 'Seller→employee_count'],
+                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Seller Financing Y/N',  'canonical_key' => 'seller_financing_yn',         'norm_required' => true,  'notes' => 'Parsed; not mapped for Seller — offered_financing is a multiselect array, not a boolean Y/N'],
+                ['form' => 'Business Opportunity', 'section' => 'BUSINESS DETAILS', 'mls_label' => 'Lease Type',            'canonical_key' => 'business_lease_type',         'norm_required' => false, 'notes' => 'Parsed; not mapped for Seller — no matching Livewire property'],
             ],
             $taxLegal('Business Opportunity'),
             $remarks('Business Opportunity')

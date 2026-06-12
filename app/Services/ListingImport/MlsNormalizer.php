@@ -28,7 +28,9 @@ class MlsNormalizer
             'has_cdd',
             'flood_insurance_required',
             'has_special_assessments',
-            'pets_allowed'              => self::normalizeBoolean($v),
+            'pets_allowed',
+            'inventory_included',
+            'seller_financing_yn'       => self::normalizeBoolean($v),
 
             'furnished'             => self::normalizeFurnishing($v),
             'flood_zone_code'       => self::normalizeFloodZone($v),

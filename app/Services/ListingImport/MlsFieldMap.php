@@ -104,6 +104,21 @@ class MlsFieldMap
             'water_view'        => '*water_view',
             // ── Interior ─────────────────────────────────────────────────────
             'interior_features' => '*interior_features',
+            // ── Business Opportunity fields ───────────────────────────────────
+            'business_type'            => 'business_type',
+            'annual_revenue'           => 'annual_revenue',
+            // annual_net_income_business (MLS "Annual Net Income") maps to minimum_annual_net_income
+            // (Minimum Annual Net Income on the Income & Investment Metrics tab).
+            'annual_net_income_business' => 'minimum_annual_net_income',
+            'employee_count'           => 'employee_count',
+            // NOTE: 'inventory_included' intentionally omitted — no boolean property
+            //       exists on SellerOfferListing (inventory_value is a dollar amount).
+            // NOTE: 'seller_financing_yn' intentionally omitted — offered_financing is
+            //       an array multiselect, not a boolean Y/N property.
+            // NOTE: 'business_lease_type' intentionally omitted — no matching Livewire
+            //       property on SellerOfferListing.
+            // NOTE: 'directions' intentionally omitted — app has no 'directions' property;
+            //       the value is navigation text with no listing purpose.
             // NOTE: 'mls_number' intentionally omitted — property does not exist
             //       on SellerOfferListing (see Rejected Mapping Candidates).
             // ── Income / Multifamily ──────────────────────────────────────────
@@ -400,6 +415,14 @@ class MlsFieldMap
             'has_special_assessments'        => 'Special Assessments',
             'special_assessment_amount'      => 'Special Assessment Amount',
             'special_assessment_description' => 'Special Assessment Description',
+            // Business Opportunity
+            'business_type'                  => 'Business Type',
+            'annual_revenue'                 => 'Annual Revenue',
+            'annual_net_income_business'     => 'Annual Net Income',
+            'employee_count'                 => 'Number of Employees',
+            'inventory_included'             => 'Inventory Included Y/N',
+            'seller_financing_yn'            => 'Seller Financing Y/N',
+            'business_lease_type'            => 'Lease Type',
         ];
     }
 }
