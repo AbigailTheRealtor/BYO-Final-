@@ -341,72 +341,105 @@ class AskAiContextBuilderService
             // is_sold, bedroom_id (FK fallback), bathroom_id (FK fallback).
             // All other factual fields use infoGet() to read from seller_agent_auction_metas.
             // -----------------------------------------------------------------
-            'seller' => [
-                'address'              => $nativeGet('address'),
-                'description'          => $nativeGet('description'),
-                'asking_price'         => $infoGet('maximum_budget'),
-                // buy_now_price: seller offer listing forms save this field via
-                // saveMeta('buy_now_price', ...) into seller_agent_auction_metas.
-                // Live-DB audit confirmed the key is present on offer-listing rows.
-                'buy_now_price'        => $infoGet('buy_now_price'),
-                'bedrooms'             => $this->resolveOtherValue(
-                                             $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
-                                             $infoGet,
-                                             'other_bedrooms'
-                                         ),
-                'bathrooms'            => $this->resolveOtherValue(
-                                             $infoGet('bathrooms') ?? $nativeGet('bathroom_id'),
-                                             $infoGet,
-                                             'other_bathrooms'
-                                         ),
-                // square_feet: forms may save under 'minimum_heated_square' (wizard path),
-                // 'heated_square_footage' (full-service offer), or 'heated_square' (legacy).
-                // Live-DB audit (June 2026) confirmed 'minimum_heated_square' is populated
-                // for agent auctions; the two fallbacks cover offer-listing and legacy rows.
-                'square_feet'          => $infoGet('minimum_heated_square')
-                                              ?? $infoGet('heated_square_footage')
-                                              ?? $infoGet('heated_square'),
-                'year_built'           => $infoGet('year_built'),
-                'pool'                 => $infoGet('pool_needed'),
-                'pool_type'            => $this->decodeJsonField($infoGet('pool_type')),
-                'carport'              => $this->resolveOtherValue(
-                                             $infoGet('carport_needed'),
-                                             $infoGet,
-                                             'other_carport_needed'
-                                         ),
-                'garage'               => $this->resolveOtherValue(
-                                             $infoGet('garage_needed'),
-                                             $infoGet,
-                                             'other_garage',
-                                             'other_garage_needed'
-                                         ),
-                'garage_spaces'        => $infoGet('garage_parking_spaces'),
-                // view / water_view: the form stores scenic/water view selections as a
-                // JSON-encoded multiselect under the 'view_preference' meta key.
-                // Live-DB audit (June 2026) confirmed neither 'view' nor 'water_view' exists
-                // in seller_agent_auction_metas — the actual key is 'view_preference'.
-                'water_view'           => $this->decodeJsonField($infoGet('view_preference')),
-                'hoa_association'      => $infoGet('has_hoa'),
-                'hoa_fee'              => $infoGet('association_fee_amount'),
-                'hoa_payment_schedule' => $infoGet('association_fee_frequency'),
-                'pets_allowed'         => $infoGet('pets'),
-                'number_of_pets_allowed' => $infoGet('number_of_pets'),
-                'max_pet_weight'       => $infoGet('weight_of_pets'),
-                'pet_restrictions'     => $infoGet('pet_restrictions'),
-                'rental_restrictions'  => $infoGet('leasing_restrictions'),
-                'flood_zone_code'      => $infoGet('flood_zone_code'),
-                // disclosure_flags is a governance contract marker for the prompt layer.
-                // flood_zone => true does NOT mean the property is in a flood zone — the
-                // flood_zone_code scalar carries that data. This flag tells the AI that
-                // flood-zone data is present in this context and must be handled with
-                // the flood-zone disclosure template. Always set for seller listings.
-                'disclosure_flags'     => ['flood_zone' => true],
-                'closing_date'         => $infoGet('target_closing_date'),
-                'auction_length'       => $nativeGet('auction_length'),
-                'sold'                 => $nativeGet('is_sold'),
-                'annual_property_taxes' => $infoGet('annual_property_taxes'),
-                'service_type'         => $infoGet('service_type'),
-            ],
+            'seller' => array_merge(
+                [
+                    'address'              => $nativeGet('address'),
+                    'description'          => $nativeGet('description'),
+                    'asking_price'         => $infoGet('maximum_budget'),
+                    // buy_now_price: seller offer listing forms save this field via
+                    // saveMeta('buy_now_price', ...) into seller_agent_auction_metas.
+                    // Live-DB audit confirmed the key is present on offer-listing rows.
+                    'buy_now_price'        => $infoGet('buy_now_price'),
+                    'bedrooms'             => $this->resolveOtherValue(
+                                                 $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
+                                                 $infoGet,
+                                                 'other_bedrooms'
+                                             ),
+                    'bathrooms'            => $this->resolveOtherValue(
+                                                 $infoGet('bathrooms') ?? $nativeGet('bathroom_id'),
+                                                 $infoGet,
+                                                 'other_bathrooms'
+                                             ),
+                    // square_feet: forms may save under 'minimum_heated_square' (wizard path),
+                    // 'heated_square_footage' (full-service offer), or 'heated_square' (legacy).
+                    // Live-DB audit (June 2026) confirmed 'minimum_heated_square' is populated
+                    // for agent auctions; the two fallbacks cover offer-listing and legacy rows.
+                    'square_feet'          => $infoGet('minimum_heated_square')
+                                                  ?? $infoGet('heated_square_footage')
+                                                  ?? $infoGet('heated_square'),
+                    'year_built'           => $infoGet('year_built'),
+                    'pool'                 => $infoGet('pool_needed'),
+                    'pool_type'            => $this->decodeJsonField($infoGet('pool_type')),
+                    'carport'              => $this->resolveOtherValue(
+                                                 $infoGet('carport_needed'),
+                                                 $infoGet,
+                                                 'other_carport_needed'
+                                             ),
+                    'garage'               => $this->resolveOtherValue(
+                                                 $infoGet('garage_needed'),
+                                                 $infoGet,
+                                                 'other_garage',
+                                                 'other_garage_needed'
+                                             ),
+                    'garage_spaces'        => $infoGet('garage_parking_spaces'),
+                    // view / water_view: the form stores scenic/water view selections as a
+                    // JSON-encoded multiselect under the 'view_preference' meta key.
+                    // Live-DB audit (June 2026) confirmed neither 'view' nor 'water_view' exists
+                    // in seller_agent_auction_metas — the actual key is 'view_preference'.
+                    'water_view'           => $this->decodeJsonField($infoGet('view_preference')),
+                    'hoa_association'      => $infoGet('has_hoa'),
+                    'hoa_fee'             => $infoGet('association_fee_amount'),
+                    'hoa_payment_schedule' => $infoGet('association_fee_frequency'),
+                    'pets_allowed'         => $infoGet('pets'),
+                    'number_of_pets_allowed' => $infoGet('number_of_pets'),
+                    'max_pet_weight'       => $infoGet('weight_of_pets'),
+                    'pet_restrictions'     => $infoGet('pet_restrictions'),
+                    'rental_restrictions'  => $infoGet('leasing_restrictions'),
+                    'flood_zone_code'      => $infoGet('flood_zone_code'),
+                    // disclosure_flags is a governance contract marker for the prompt layer.
+                    // flood_zone => true does NOT mean the property is in a flood zone — the
+                    // flood_zone_code scalar carries that data. This flag tells the AI that
+                    // flood-zone data is present in this context and must be handled with
+                    // the flood-zone disclosure template. Always set for seller listings.
+                    'disclosure_flags'     => ['flood_zone' => true],
+                    'closing_date'         => $infoGet('target_closing_date'),
+                    'auction_length'       => $nativeGet('auction_length'),
+                    'sold'                 => $nativeGet('is_sold'),
+                    'annual_property_taxes' => $infoGet('annual_property_taxes'),
+                    'service_type'         => $infoGet('service_type'),
+                    // ── Unconditional land/lot fields (relevant to any property type) ──
+                    // zoning, waterfront, water_access, total_acreage, and lot_dimensions
+                    // apply to residential, commercial, and vacant land alike.
+                    'zoning'               => $infoGet('zoning'),
+                    'total_acreage'        => $infoGet('total_acreage'),
+                    'waterfront'           => $infoGet('waterfront'),
+                    // water_access is stored as a JSON-encoded multiselect.
+                    'water_access'         => $this->decodeJsonField($infoGet('water_access')),
+                    'lot_dimensions'       => $infoGet('lot_dimensions'),
+                ],
+                // ── Vacant Land-specific fields ─────────────────────────────────────
+                // Only populated when property_type === 'Vacant Land'. All array-valued
+                // meta keys are decoded from JSON and returned as comma-separated strings
+                // via decodeJsonField() for prompt-friendly consumption.
+                ($infoGet('property_type') === 'Vacant Land') ? [
+                    'current_use'          => $this->decodeJsonField($infoGet('current_use')),
+                    'current_adjacent_use' => $this->decodeJsonField($infoGet('current_adjacent_use')),
+                    'water_available'      => $infoGet('water_available'),
+                    'sewer_available'      => $infoGet('sewer_available'),
+                    'electric_available'   => $infoGet('electric_available'),
+                    'gas_available'        => $infoGet('gas_available'),
+                    'telecom_available'    => $infoGet('telecom_available'),
+                    'road_frontage'        => $this->decodeJsonField($infoGet('road_frontage')),
+                    'road_surface_type'    => $this->decodeJsonField($infoGet('road_surface_type')),
+                    'front_footage'        => $infoGet('front_footage'),
+                    'number_of_wells'      => $infoGet('number_of_wells'),
+                    'number_of_septics'    => $infoGet('number_of_septics'),
+                    'fences'               => $this->decodeJsonField($infoGet('fences')),
+                    'vegetation'           => $this->decodeJsonField($infoGet('vegetation')),
+                    'buildable'            => $infoGet('buildable'),
+                    'easements'            => $this->decodeJsonField($infoGet('easements')),
+                ] : []
+            ),
 
             // -----------------------------------------------------------------
             // Buyer — buyer_agent_auctions (native columns) + buyer_agent_auction_metas (EAV)

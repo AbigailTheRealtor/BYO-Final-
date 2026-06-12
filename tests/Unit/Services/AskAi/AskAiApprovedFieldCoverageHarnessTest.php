@@ -94,13 +94,14 @@ use PHPUnit\Framework\TestCase;
  * Chip-vs-typed parity: Question A = chip text; Question B = typed variant. Both must
  * route to the same canonical key. Tests (A) and (B) together prove parity.
  *
- * Summary metrics (as of June 2026 after Phase 1 lineage remediation):
- *   Total approved fields:    49  (was 50; hoa_fee_requirement removed as phantom)
- *   Covered by harness:       49
- *   Passed (A+B routing):     49
+ * Summary metrics (as of June 2026 after Vacant Land field additions):
+ *   Total approved fields:    70  (49 original + 21 Vacant Land fields)
+ *   Covered by harness:       70
+ *   Passed (A+B routing):     70
  *   Failed routing:            0
- *   Guard B covered:          49
- *   Direct-return covered:    49
+ *   Guard B covered:          70  (Guard B fires; label text is generic 'Information not provided.'
+ *                                  for listing.* fields — pre-existing gap in runner, not fixed here)
+ *   Direct-return covered:    70
  *   Browser/service mismatch:  0 (both routes call same AskAiRunnerV2Service::run())
  *   Other leaks fixed:         1 (decodeJsonField "Other" filter)
  *
@@ -479,6 +480,159 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
                 'What is your budget for rent?',
                 '1800',
                 'Tenant maximum rent budget information',
+            ],
+            // ----------------------------------------------------------------
+            // Vacant Land — shared lot fields
+            // ----------------------------------------------------------------
+            'zoning' => [
+                'listing.zoning',
+                'What is the zoning classification?',
+                'How is this land zoned?',
+                'Residential Single Family',
+                'Zoning information',
+            ],
+            'total_acreage' => [
+                'listing.total_acreage',
+                'How many acres does this property have?',
+                'What is the total acreage?',
+                '2.5',
+                'Acreage information',
+            ],
+            'waterfront' => [
+                'listing.waterfront',
+                'Is this a waterfront property?',
+                'Is it on the water?',
+                'Yes',
+                'Waterfront information',
+            ],
+            'water_access' => [
+                'listing.water_access',
+                'What is the water access type for this lot?',
+                'What type of water access does this property have?',
+                'Lake, River',
+                'Water access information',
+            ],
+            'lot_dimensions' => [
+                'listing.lot_dimensions',
+                'What are the lot dimensions?',
+                'What is the size of the lot?',
+                '100x200',
+                'Lot dimensions information',
+            ],
+            // ----------------------------------------------------------------
+            // Vacant Land — VL-only fields
+            // ----------------------------------------------------------------
+            'current_use' => [
+                'listing.current_use',
+                'What is the current land use?',
+                'How is the land currently used?',
+                'Agricultural, Pasture',
+                'Current land use information',
+            ],
+            'current_adjacent_use' => [
+                'listing.current_adjacent_use',
+                'What is the adjacent land use?',
+                'What is the surrounding land use of this property?',
+                'Residential',
+                'Adjacent land use information',
+            ],
+            'water_available' => [
+                'listing.water_available',
+                'Is water available on this land?',
+                'Is there water service to this lot?',
+                'Yes',
+                'Water availability information',
+            ],
+            'sewer_available' => [
+                'listing.sewer_available',
+                'Is sewer available on this land?',
+                'Is there sewer service to this lot?',
+                'No',
+                'Sewer availability information',
+            ],
+            'electric_available' => [
+                'listing.electric_available',
+                'Is electric available on this land?',
+                'Is electricity available to the lot?',
+                'Yes',
+                'Electric availability information',
+            ],
+            'gas_available' => [
+                'listing.gas_available',
+                'Is gas available on this land?',
+                'Is natural gas availability confirmed?',
+                'No',
+                'Gas availability information',
+            ],
+            'telecom_available' => [
+                'listing.telecom_available',
+                'What is the telecom availability on this land?',
+                'Is there internet or cable service available?',
+                'Fiber',
+                'Telecom and internet availability information',
+            ],
+            'road_frontage' => [
+                'listing.road_frontage',
+                'What is the road frontage type for this lot?',
+                'What type of road frontage does this property have?',
+                'County Road, Private',
+                'Road frontage information',
+            ],
+            'road_surface_type' => [
+                'listing.road_surface_type',
+                'What is the road surface type?',
+                'How is the road paved for this property?',
+                'Paved',
+                'Road surface type information',
+            ],
+            'front_footage' => [
+                'listing.front_footage',
+                'What is the front footage of this lot?',
+                'How many feet of frontage does this lot have?',
+                '150',
+                'Front footage information',
+            ],
+            'number_of_wells' => [
+                'listing.number_of_wells',
+                'How many wells are on this land?',
+                'Are there any wells on this property?',
+                '1',
+                'Well information',
+            ],
+            'number_of_septics' => [
+                'listing.number_of_septics',
+                'How many septic systems are on this property?',
+                'Are there any septic systems on this land?',
+                '1',
+                'Septic system information',
+            ],
+            'fences' => [
+                'listing.fences',
+                'Are there fences on this land?',
+                'What type of fencing is there on the property?',
+                'Wood, Chain Link',
+                'Fence information',
+            ],
+            'vegetation' => [
+                'listing.vegetation',
+                'What vegetation is on the land?',
+                'Are there trees or plants on the land?',
+                'Trees, Brush',
+                'Vegetation information',
+            ],
+            'buildable' => [
+                'listing.buildable',
+                'Is this land buildable?',
+                'Can you build on this lot?',
+                'Yes',
+                'Buildability information',
+            ],
+            'easements' => [
+                'listing.easements',
+                'Are there any easements on this property?',
+                'What easements are on this land?',
+                'Utility Easement',
+                'Easement information',
             ],
         ];
     }

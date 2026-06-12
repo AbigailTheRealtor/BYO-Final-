@@ -1648,6 +1648,27 @@
             </div>
             @endif
 
+            {{-- Vacant Land Details --}}
+            @php
+                $landDetailFields = array_filter([
+                    ['Current Use',          implode(', ', $subOther($arr('current_use'),          $str('other_current_use')))],
+                    ['Current Adjacent Use', implode(', ', $subOther($arr('current_adjacent_use'), $str('other_current_adjacent_use')))],
+                    ['Road Frontage',        implode(', ', $subOther($arr('road_frontage'),        $str('other_road_frontage')))],
+                    ['Road Surface Type',    implode(', ', $subOther($arr('road_surface_type'),    $str('other_road_surface_type')))],
+                    ['Fences',               implode(', ', $subOther($arr('fences'),              $str('other_fences')))],
+                    ['Vegetation',           implode(', ', $subOther($arr('vegetation'),           $str('other_vegetation')))],
+                    ['Easements',            implode(', ', $subOther($arr('easements'),            $str('other_easements')))],
+                ], fn($f) => !empty($f[1]));
+            @endphp
+            @if(count($landDetailFields))
+            <hr>
+            <div class="row">
+                @foreach($landDetailFields as $f)
+                <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
+                @endforeach
+            </div>
+            @endif
+
             {{-- Garage & Parking --}}
             @php
                 $garageFields = array_filter([
