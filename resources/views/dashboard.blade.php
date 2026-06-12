@@ -733,12 +733,46 @@
                                             </div>
                                         </div>
                                     @else
+                                        @php
+                                            $notificationTypeMessages = [
+                                                'bid_submitted'          => 'New bid received on your listing.',
+                                                'bid_accepted'           => 'Your bid was accepted.',
+                                                'bid_rejected'           => 'Your bid was rejected.',
+                                                'bid_modified'           => 'A bid on your listing was updated.',
+                                                'counter_bid_submitted'  => 'You received a counter proposal.',
+                                                'counter_bid_accepted'   => 'Your counter proposal was accepted.',
+                                                'counter_bid_rejected'   => 'Your counter proposal was rejected.',
+                                                'agent_hired'            => 'You have successfully hired an agent.',
+                                                'offer_submitted'        => 'New offer received on your listing.',
+                                                'offer_accepted'         => 'Your offer was accepted.',
+                                                'offer_rejected'         => 'Your offer was rejected.',
+                                                'offer_countered'        => 'You received a counter offer.',
+                                                'offer_withdrawn'        => 'An offer was withdrawn.',
+                                                'offer_expired'          => 'An offer has expired.',
+                                                'offer_listing_status'   => 'Your listing status has been updated.',
+                                                'showing_requested'      => 'New showing request received.',
+                                                'showing_approved'       => 'Your showing request was approved.',
+                                                'showing_declined'       => 'Your showing request was declined.',
+                                                'showing_canceled'       => 'A showing was canceled.',
+                                                'hire_agent_lead'        => 'New agent hire request received.',
+                                            ];
+                                        @endphp
                                         @foreach($notifications as $notification)
                                             @php
-                                                $data        = $notification->data;
-                                                $type        = $data['type'] ?? 'general';
-                                                $message     = $data['message'] ?? 'Account activity — tap View for details.';
-                                                $contextLine = $data['context_line'] ?? null;
+                                                $data              = $notification->data;
+                                                $type              = $data['type'] ?? 'general';
+                                                $contextLine       = $data['context_line'] ?? null;
+                                                $notificationClass = $notification->type ?? '';
+
+                                                if (!empty($data['message'])) {
+                                                    $message = $data['message'];
+                                                } elseif (($data['type'] ?? '') === 'bid_accepted' && str_contains($notificationClass, 'AgentHired')) {
+                                                    $message = $notificationTypeMessages['agent_hired'];
+                                                } elseif (isset($notificationTypeMessages[$data['type'] ?? ''])) {
+                                                    $message = $notificationTypeMessages[$data['type']];
+                                                } else {
+                                                    $message = 'Account activity — tap View for details.';
+                                                }
                                             @endphp
                                             <div class="alert alert-info d-flex justify-content-between align-items-center mb-2" role="alert" id="notification-{{ $notification->id }}">
                                                 <div>

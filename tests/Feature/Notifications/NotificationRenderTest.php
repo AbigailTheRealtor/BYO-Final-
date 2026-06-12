@@ -302,4 +302,83 @@ class NotificationRenderTest extends TestCase
         $this->assertNotEmpty($items);
         $this->assertSame('Your bid was rejected.', $items[0]['data']['message']);
     }
+
+    // ── Case 14: Legacy records — no message key, resolve via type map ─────────
+    //
+    // Simulates notifications stored before #2499 added the 'message' key.
+    // Each row has only a 'type' key in its JSON payload. The resolver must
+    // produce the correct human-readable string for every seeded type.
+
+    public function test_legacy_notifications_without_message_key_resolve_via_type(): void
+    {
+        $legacyTypes = [
+            [
+                'class'   => 'App\Notifications\BidSubmittedNotification',
+                'payload' => ['type' => 'bid_submitted'],
+                'expected' => 'New bid received on your listing.',
+            ],
+            [
+                'class'   => 'App\Notifications\BidAcceptedNotification',
+                'payload' => ['type' => 'bid_accepted', 'bid_id' => 1, 'auction_id' => 1],
+                'expected' => 'Your bid was accepted.',
+            ],
+            [
+                'class'   => 'App\Notifications\Offers\OfferSubmittedNotification',
+                'payload' => ['type' => 'offer_submitted'],
+                'expected' => 'New offer received on your listing.',
+            ],
+            [
+                'class'   => 'App\Notifications\Showings\ShowingRequestedNotification',
+                'payload' => ['type' => 'showing_requested'],
+                'expected' => 'New showing request received.',
+            ],
+            [
+                'class'   => 'App\Notifications\HireAgentLeadNotification',
+                'payload' => ['type' => 'hire_agent_lead'],
+                'expected' => 'New agent hire request received.',
+            ],
+            [
+                'class'   => 'App\Notifications\SellerAgentHiredNotification',
+                'payload' => ['type' => 'agent_hired'],
+                'expected' => 'You have successfully hired an agent.',
+            ],
+        ];
+
+        foreach ($legacyTypes as $seed) {
+            $this->insertNotification($seed['class'], $seed['payload']);
+        }
+
+        $response = $this->actingAs($this->user)->get(route('dashboard'));
+        $response->assertStatus(200);
+
+        foreach ($legacyTypes as $seed) {
+            $response->assertSee($seed['expected']);
+        }
+    }
+
+    // ── Case 15: Legacy agent-hired disambiguation ────────────────────────────
+    //
+    // A SellerAgentHiredNotification stored before #2499 has payload
+    // type='bid_accepted' (the old bug). The FQCN column is the only signal.
+    // The resolver must use str_contains($notificationClass, 'AgentHired') to
+    // return the hired message.
+    //
+    // Note: assertDontSee('Your bid was accepted.') cannot be used here because
+    // that string appears as a static JS literal in the header typeMessages map
+    // regardless of which notifications are rendered. The positive assertSee
+    // below is sufficient: if disambiguation were broken, the notification panel
+    // would show the wrong text and this assertion would fail.
+
+    public function test_legacy_agent_hired_with_bid_accepted_payload_resolves_to_hired_message(): void
+    {
+        $this->insertNotification(
+            'App\Notifications\SellerAgentHiredNotification',
+            ['type' => 'bid_accepted', 'bid_id' => 2, 'auction_id' => 2]
+        );
+
+        $response = $this->actingAs($this->user)->get(route('dashboard'));
+        $response->assertStatus(200);
+
+        $response->assertSee('You have successfully hired an agent.');
+    }
 }

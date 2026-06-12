@@ -184,12 +184,50 @@
 
                             <div id="notificationDropdown" class="dropdown-menu dropdown-menu-end"
                                 style="width:300px; max-height:350px; overflow-y:auto;">
+                                @php
+                                    $notificationTypeMessages = [
+                                        'bid_submitted'          => 'New bid received on your listing.',
+                                        'bid_accepted'           => 'Your bid was accepted.',
+                                        'bid_rejected'           => 'Your bid was rejected.',
+                                        'bid_modified'           => 'A bid on your listing was updated.',
+                                        'counter_bid_submitted'  => 'You received a counter proposal.',
+                                        'counter_bid_accepted'   => 'Your counter proposal was accepted.',
+                                        'counter_bid_rejected'   => 'Your counter proposal was rejected.',
+                                        'agent_hired'            => 'You have successfully hired an agent.',
+                                        'offer_submitted'        => 'New offer received on your listing.',
+                                        'offer_accepted'         => 'Your offer was accepted.',
+                                        'offer_rejected'         => 'Your offer was rejected.',
+                                        'offer_countered'        => 'You received a counter offer.',
+                                        'offer_withdrawn'        => 'An offer was withdrawn.',
+                                        'offer_expired'          => 'An offer has expired.',
+                                        'offer_listing_status'   => 'Your listing status has been updated.',
+                                        'showing_requested'      => 'New showing request received.',
+                                        'showing_approved'       => 'Your showing request was approved.',
+                                        'showing_declined'       => 'Your showing request was declined.',
+                                        'showing_canceled'       => 'A showing was canceled.',
+                                        'hire_agent_lead'        => 'New agent hire request received.',
+                                    ];
+                                @endphp
                                 @forelse($unread as $note)
+                                    @php
+                                        $noteData  = $note->data;
+                                        $noteClass = $note->type ?? '';
+
+                                        if (!empty($noteData['message'])) {
+                                            $noteMessage = $noteData['message'];
+                                        } elseif (($noteData['type'] ?? '') === 'bid_accepted' && str_contains($noteClass, 'AgentHired')) {
+                                            $noteMessage = $notificationTypeMessages['agent_hired'];
+                                        } elseif (isset($notificationTypeMessages[$noteData['type'] ?? ''])) {
+                                            $noteMessage = $notificationTypeMessages[$noteData['type']];
+                                        } else {
+                                            $noteMessage = 'Account activity — tap View for details.';
+                                        }
+                                    @endphp
                                     <li class="dropdown-item notification-item"
                                         onclick="markAsRead('{{ $note->id }}', this)" style="cursor:pointer;">
-                                        {{ $note->data['message'] ?? 'Account activity' }}
-                                        @if(!empty($note->data['context_line']))
-                                            <br><small class="text-muted">{{ $note->data['context_line'] }}</small>
+                                        {{ $noteMessage }}
+                                        @if(!empty($noteData['context_line']))
+                                            <br><small class="text-muted">{{ $noteData['context_line'] }}</small>
                                         @endif
                                         <br>
                                         <small class="text-muted">{{ $note->created_at->diffForHumans() }}</small>
@@ -456,11 +494,38 @@
                 return;
             }
 
+            const typeMessages = {
+                'bid_submitted':         'New bid received on your listing.',
+                'bid_accepted':          'Your bid was accepted.',
+                'bid_rejected':          'Your bid was rejected.',
+                'bid_modified':          'A bid on your listing was updated.',
+                'counter_bid_submitted': 'You received a counter proposal.',
+                'counter_bid_accepted':  'Your counter proposal was accepted.',
+                'counter_bid_rejected':  'Your counter proposal was rejected.',
+                'agent_hired':           'You have successfully hired an agent.',
+                'offer_submitted':       'New offer received on your listing.',
+                'offer_accepted':        'Your offer was accepted.',
+                'offer_rejected':        'Your offer was rejected.',
+                'offer_countered':       'You received a counter offer.',
+                'offer_withdrawn':       'An offer was withdrawn.',
+                'offer_expired':         'An offer has expired.',
+                'offer_listing_status':  'Your listing status has been updated.',
+                'showing_requested':     'New showing request received.',
+                'showing_approved':      'Your showing request was approved.',
+                'showing_declined':      'Your showing request was declined.',
+                'showing_canceled':      'A showing was canceled.',
+                'hire_agent_lead':       'New agent hire request received.',
+            };
+
             notifications.forEach(note => {
                 const li = document.createElement('li');
                 li.className = 'dropdown-item notification-item';
                 li.style.cursor = 'pointer';
-                const msg = note.data.message || 'Account activity';
+                let effectiveType = note.data.type || '';
+                if (!note.data.message && effectiveType === 'bid_accepted' && note.type && note.type.includes('AgentHired')) {
+                    effectiveType = 'agent_hired';
+                }
+                const msg = note.data.message || typeMessages[effectiveType] || 'Account activity — tap View for details.';
                 const ctx = note.data.context_line ? `<br><small class="text-muted">${note.data.context_line}</small>` : '';
                 li.innerHTML =
                     `${msg}${ctx}<br><small class="text-muted">${timeAgo(note.created_at)}</small>`;
