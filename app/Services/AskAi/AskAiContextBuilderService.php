@@ -388,7 +388,7 @@ class AskAiContextBuilderService
                     // in seller_agent_auction_metas — the actual key is 'view_preference'.
                     'water_view'           => $this->decodeJsonField($infoGet('view_preference')),
                     'hoa_association'      => $infoGet('has_hoa'),
-                    'hoa_fee'             => $infoGet('association_fee_amount'),
+                    'hoa_fee'              => $infoGet('association_fee_amount'),
                     'hoa_payment_schedule' => $infoGet('association_fee_frequency'),
                     'pets_allowed'         => $infoGet('pets'),
                     'number_of_pets_allowed' => $infoGet('number_of_pets'),
@@ -416,6 +416,26 @@ class AskAiContextBuilderService
                     // water_access is stored as a JSON-encoded multiselect.
                     'water_access'         => $this->decodeJsonField($infoGet('water_access')),
                     'lot_dimensions'       => $infoGet('lot_dimensions'),
+                    // ── Income / Multifamily fields ──────────────────────────────────
+                    'property_items'            => $this->decodeJsonField($infoGet('property_items')),
+                    'legal_description'         => $infoGet('legal_description'),
+                    'parcel_id'                 => $infoGet('parcel_id'),
+                    'tax_year'                  => $infoGet('tax_year'),
+                    'total_units'               => $infoGet('unit_number'),
+                    'total_buildings'           => $infoGet('unit_buildings'),
+                    'unit_mix_summary'          => $this->summarizeUnitConfigurations($infoGet('unit_type_configurations')),
+                    'gross_annual_income'       => $infoGet('gross_annual_income'),
+                    'annual_operating_expenses' => $infoGet('annual_operating_expenses'),
+                    'annual_net_income'         => $infoGet('minimum_annual_net_income'),
+                    'cap_rate'                  => $infoGet('minimum_cap_rate'),
+                    'rent_roll_available'       => $infoGet('rent_roll_available'),
+                    'operating_statement_available' => $infoGet('operating_statement_available'),
+                    'occupancy_requirement'     => $this->resolveOtherValue(
+                                                      $infoGet('assumable_occupancy_requirement'),
+                                                      $infoGet,
+                                                      'assumable_occupancy_other'
+                                                  ),
+                    'income_requirement'        => $infoGet('monthly_income'),
                 ],
                 // ── Vacant Land-specific fields ─────────────────────────────────────
                 // Only populated when property_type === 'Vacant Land'. All array-valued
@@ -702,6 +722,67 @@ class AskAiContextBuilderService
         }
 
         return null;
+    }
+
+    /**
+     * Summarize a `unit_type_configurations` JSON value into a human-readable string
+     * for the Ask AI prompt layer.
+     *
+     * Each entry in the JSON array may contain: unit_type, number_of_units,
+     * beds_unit, baths_unit, sqft_heated, expected_rent, number_occupied,
+     * garage_spaces, carport_spaces, other_spaces, unit_type_description.
+     *
+     * Returns null when the value is empty or contains no valid rows.
+     *
+     * @param  string|null $json  Raw JSON string from the unit_type_configurations meta key.
+     * @return string|null        E.g. "2× 2BR/1BA at $1,200/mo, 4× Studio at $850/mo"
+     */
+    private function summarizeUnitConfigurations(?string $json): ?string
+    {
+        if ($json === null || $json === '') {
+            return null;
+        }
+
+        $rows = json_decode($json, true);
+        if (!is_array($rows)) {
+            return null;
+        }
+
+        $parts = [];
+        foreach ($rows as $uc) {
+            if (!is_array($uc)) {
+                continue;
+            }
+
+            $count     = isset($uc['number_of_units']) && $uc['number_of_units'] !== '' ? (int) $uc['number_of_units'] : null;
+            $beds      = isset($uc['beds_unit'])   && $uc['beds_unit']   !== '' ? $uc['beds_unit']   : null;
+            $baths     = isset($uc['baths_unit'])  && $uc['baths_unit']  !== '' ? $uc['baths_unit']  : null;
+            $unitType  = isset($uc['unit_type'])   && $uc['unit_type']   !== '' ? $uc['unit_type']   : null;
+            $rent      = isset($uc['expected_rent']) && $uc['expected_rent'] !== '' ? (float) str_replace(',', '', (string) $uc['expected_rent']) : null;
+
+            if ($count === null && $beds === null && $unitType === null) {
+                continue;
+            }
+
+            $label = '';
+            if ($beds !== null && $baths !== null) {
+                $label = "{$beds}BR/{$baths}BA";
+            } elseif ($unitType !== null) {
+                $label = $unitType;
+            } elseif ($beds !== null) {
+                $label = "{$beds}BR";
+            }
+
+            $prefix = $count !== null ? "{$count}×" : '';
+            $suffix = $rent !== null ? ' at $' . number_format($rent) . '/mo' : '';
+            $part   = trim("{$prefix} {$label}{$suffix}");
+
+            if ($part !== '') {
+                $parts[] = $part;
+            }
+        }
+
+        return !empty($parts) ? implode(', ', $parts) : null;
     }
 
     /**

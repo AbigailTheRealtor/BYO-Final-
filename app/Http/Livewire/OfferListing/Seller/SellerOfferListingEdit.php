@@ -3188,15 +3188,14 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('unit_type_configurations', json_encode(array_values($configs)));
 
         // Additional multi-unit fields
+        // NOTE: number_occupied, expected_rent, beds_unit, baths_unit, garage_spaces,
+        // carport_spaces, and unit_type_description are persisted inside the
+        // unit_type_configurations JSON above. The standalone flat saves were
+        // duplicate_or_alias keys not written by the Create component — removed here
+        // for parity. number_of_units is kept as a legacy alias for backward
+        // read compatibility with records created before unit_number existed.
         $auction->saveMeta('number_of_units', $this->number_of_units);
-        $auction->saveMeta('number_occupied', $this->number_occupied);
-        $auction->saveMeta('expected_rent', $this->expected_rent);
         $auction->saveMeta('sqft_heated_source', $this->sqft_heated_source);
-        $auction->saveMeta('beds_unit', $this->beds_unit);
-        $auction->saveMeta('baths_unit', $this->baths_unit);
-        $auction->saveMeta('garage_spaces', $this->garage_spaces);
-        $auction->saveMeta('carport_spaces', $this->carport_spaces);
-        $auction->saveMeta('unit_type_description', $this->unit_type_description);
         $auction->saveMeta('breed_restrictions', $this->breed_restrictions);
 
         // MLS property detail fields

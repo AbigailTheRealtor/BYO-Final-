@@ -1690,22 +1690,60 @@
 
             {{-- Income / Multi-Unit Configuration --}}
             @php
-                $unitFields = array_filter([
+                $unitSummaryFields = array_filter([
                     ['Total Number of Units',     $str('unit_number')],
                     ['Total Number of Buildings', $str('unit_buildings')],
                     ['Unit Type',                 $orOther($str('number_of_unit'), $str('number_of_unit_other'))],
                     ['Number of Unit Types',      $str('number_of_units')],
                     ['Unit Type Description',     $str('unit_type_description')],
                     ['Value Determination',       $str('value_determination')],
+                    ['Occupancy Requirement',     $orOther($str('assumable_occupancy_requirement'), $str('assumable_occupancy_other'))],
                 ], fn($f) => !empty($f[1]));
             @endphp
-            @if(count($unitFields))
+            @if(count($unitSummaryFields))
             <hr>
             <div class="row">
-                @foreach($unitFields as $f)
+                @foreach($unitSummaryFields as $f)
                 <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
                 @endforeach
             </div>
+            @endif
+
+            {{-- Unit Type Configuration Rows (Income / Multifamily) --}}
+            @php
+                $_rawUTC = $getMeta('unit_type_configurations');
+                $_utcRows = [];
+                if ($_rawUTC) {
+                    $_decoded = json_decode($_rawUTC, true);
+                    if (is_array($_decoded)) {
+                        foreach ($_decoded as $_uc) {
+                            if (is_array($_uc) && !empty(array_filter($_uc, fn($v) => $v !== '' && $v !== null))) {
+                                $_utcRows[] = $_uc;
+                            }
+                        }
+                    }
+                }
+            @endphp
+            @if(count($_utcRows))
+            <hr>
+            <p class="fw-semibold mb-2" style="font-size:.85rem;">Unit Type Configurations</p>
+            @foreach($_utcRows as $_utcIndex => $_uc)
+            <div class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
+                <div class="row">
+                    @if(!empty($_uc['unit_type']))<div class="col-md-4">{!! $row('Unit Type', $_uc['unit_type']) !!}</div>@endif
+                    @if(!empty($_uc['number_of_units']))<div class="col-md-4">{!! $row('Count of This Type', $_uc['number_of_units']) !!}</div>@endif
+                    @if(!empty($_uc['number_occupied']))<div class="col-md-4">{!! $row('Units Occupied', $_uc['number_occupied']) !!}</div>@endif
+                    @if(!empty($_uc['beds_unit']))<div class="col-md-4">{!! $row('Bedrooms / Unit', $_uc['beds_unit']) !!}</div>@endif
+                    @if(!empty($_uc['baths_unit']))<div class="col-md-4">{!! $row('Bathrooms / Unit', $_uc['baths_unit']) !!}</div>@endif
+                    @if(!empty($_uc['sqft_heated']))<div class="col-md-4">{!! $row('Sq Ft / Unit', number_format((float)$_uc['sqft_heated'])) !!}</div>@endif
+                    @if(!empty($_uc['garage_spaces']))<div class="col-md-4">{!! $row('Garage Spaces', $_uc['garage_spaces']) !!}</div>@endif
+                    @if(!empty($_uc['carport_spaces']))<div class="col-md-4">{!! $row('Carport Spaces', $_uc['carport_spaces']) !!}</div>@endif
+                    @if(!empty($_uc['other_spaces']))<div class="col-md-4">{!! $row('Other Parking Spaces', $_uc['other_spaces']) !!}</div>@endif
+                    @if(!empty($_uc['expected_rent']))<div class="col-md-4">{!! $row('Expected Rent / Unit', '$'.number_format((float)str_replace(',','',$_uc['expected_rent']))) !!}</div>@endif
+                    @if(!empty($_uc['unit_type_description']))<div class="col-12">{!! $row('Unit Description', e($_uc['unit_type_description'])) !!}</div>@endif
+                </div>
+            </div>
+            @endforeach
             @endif
 
             {{-- Business Info --}}
@@ -1790,6 +1828,7 @@
                     {!! $row('Target Closing Timeframe', $str('target_closing_date')) !!}
                     {!! $row('Occupant Type', $str('occupant_status')) !!}
                     {!! $row('Occupied Until', $str('occupant_tenant')) !!}
+                    {!! $row('Buyer Income Requirement', $fmtMoney($str('monthly_income'))) !!}
                     {!! $row('Desired Sale Price', $fmtMoney($str('maximum_budget'))) !!}
                     {!! $row('Purchase Price', $fmtMoney($str('purchase_price'))) !!}
                     {!! $row('Starting Price', $fmtMoney($str('starting_price'))) !!}

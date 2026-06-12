@@ -104,6 +104,15 @@ class MlsFieldMap
             'interior_features' => '*interior_features',
             // NOTE: 'mls_number' intentionally omitted — property does not exist
             //       on SellerOfferListing (see Rejected Mapping Candidates).
+            // ── Income / Multifamily ──────────────────────────────────────────
+            'number_of_units'            => 'unit_number',
+            'gross_annual_income'        => 'gross_annual_income',
+            'annual_operating_expenses'  => 'annual_operating_expenses',
+            'cap_rate'                   => 'minimum_cap_rate',
+            // Preview-only: display in MLS modal but do not apply to form fields.
+            'net_operating_income_raw'   => null,
+            'unit_types_raw'             => null,
+            'occupancy_rate_raw'         => null,
         ];
     }
 

@@ -137,7 +137,8 @@ class MlsListingImportService
             '|Kitchen\b|Living\s+Room\b|Primary\s+Bed(?:room)?\b|Rooms\b' .
             '|Community\s+Information\b|Housing\b' .
             '|Special\s+Assessment|Homeowners?\s+Assoc|Subdivision\b' .
-            '|Foundation\b|Sewer\b(?=\s*:)|Utilities\b|Roof\s+Type\b';
+            '|Foundation\b|Sewer\b(?=\s*:)|Utilities\b|Roof\s+Type\b' .
+            '|Number\s+of\s+Units\b|Total\s+Units\b|Cap\s+Rate\b';
 
         /**
          * Extract a value from $text matching one of $patterns.
@@ -602,6 +603,55 @@ class MlsListingImportService
             '/Description[\s:]+(.{10,1000}?)(?=\s{2,}|(?:[A-Z][a-z]+\s*:)|$)/si',
         ])) {
             $data['description'] = trim($v);
+        }
+
+        // ─── Number of Units (Income / Multifamily) ───────────────────────────
+        if ($v = $extract([
+            '/(?:Number\s+of\s+Units|Total\s+Units)[\s:]+(\d+)/i',
+        ], true)) {
+            $data['number_of_units'] = preg_replace('/[^\d]/', '', $v);
+        }
+
+        // ─── Unit Types / Unit Mix (raw, preview-only) ────────────────────────
+        if ($v = $extract([
+            '/(?:Unit\s+(?:Types?|Mix))[\s:]+([^\|\n]{2,100})/i',
+        ], true)) {
+            $data['unit_types_raw'] = trim($v);
+        }
+
+        // ─── Gross Annual Income ──────────────────────────────────────────────
+        if ($v = $extract([
+            '/(?:Annual\s+Gross\s+Income|Gross\s+Annual\s+Income)[\s:]+\$?([\d,]+(?:\.\d{1,2})?)/i',
+        ], true)) {
+            $data['gross_annual_income'] = preg_replace('/[^\d.]/', '', str_replace(',', '', $v));
+        }
+
+        // ─── Annual Operating Expenses ────────────────────────────────────────
+        if ($v = $extract([
+            '/Annual\s+(?:Operating\s+)?Expenses[\s:]+\$?([\d,]+(?:\.\d{1,2})?)/i',
+        ], true)) {
+            $data['annual_operating_expenses'] = preg_replace('/[^\d.]/', '', str_replace(',', '', $v));
+        }
+
+        // ─── Net Operating Income / NOI (raw, preview-only) ──────────────────
+        if ($v = $extract([
+            '/(?:Net\s+Operating\s+Income|NOI)[\s:]+([^\|\n]{1,80})/i',
+        ], true)) {
+            $data['net_operating_income_raw'] = trim($v);
+        }
+
+        // ─── Cap Rate ─────────────────────────────────────────────────────────
+        if ($v = $extract([
+            '/Cap\s+Rate[\s:]+(\d+(?:\.\d{1,4})?)\s*%?/i',
+        ], true)) {
+            $data['cap_rate'] = preg_replace('/[^\d.]/', '', $v);
+        }
+
+        // ─── Occupancy Rate (raw, preview-only) ───────────────────────────────
+        if ($v = $extract([
+            '/(?:Occupancy\s+Rate|Occupancy\s*%)[\s:]+([^\|\n]{1,50})/i',
+        ], true)) {
+            $data['occupancy_rate_raw'] = trim($v);
         }
 
         // ─── Directions ───────────────────────────────────────────────────────

@@ -662,17 +662,15 @@ class MlsCoverageReporter
             [
                 ['form' => 'Income', 'section' => 'PROPERTY DETAILS', 'mls_label' => 'Year Built',     'canonical_key' => 'year_built',  'norm_required' => false, 'notes' => ''],
                 ['form' => 'Income', 'section' => 'PROPERTY DETAILS', 'mls_label' => 'Heated Sq Ft',   'canonical_key' => 'heated_sqft', 'norm_required' => false, 'notes' => ''],
-                // Income specific — no canonical key yet
-                ['form' => 'Income', 'section' => 'PROPERTY DETAILS', 'mls_label' => 'Number of Units', 'canonical_key' => null, 'norm_required' => false, 'notes' => 'Income field — multi-family unit count; no parser branch'],
-                ['form' => 'Income', 'section' => 'PROPERTY DETAILS', 'mls_label' => 'Unit Types',      'canonical_key' => null, 'norm_required' => false, 'notes' => 'Income field — 1BR/2BR mix; no parser branch'],
+                ['form' => 'Income', 'section' => 'PROPERTY DETAILS', 'mls_label' => 'Number of Units', 'canonical_key' => 'number_of_units', 'norm_required' => false, 'notes' => 'Maps to unit_number Livewire property'],
+                ['form' => 'Income', 'section' => 'PROPERTY DETAILS', 'mls_label' => 'Unit Types',      'canonical_key' => 'unit_types_raw',   'norm_required' => false, 'notes' => 'Preview-only; raw string, no structural parsing'],
             ],
             $lotFields('Income'),
             [
-                // Income financial metrics — no canonical key yet
-                ['form' => 'Income', 'section' => 'FINANCIAL', 'mls_label' => 'Net Operating Income (NOI)', 'canonical_key' => null, 'norm_required' => false, 'notes' => 'Income field — no app field or parser branch'],
-                ['form' => 'Income', 'section' => 'FINANCIAL', 'mls_label' => 'Annual Gross Income',       'canonical_key' => null, 'norm_required' => false, 'notes' => 'Income field — no app field or parser branch'],
-                ['form' => 'Income', 'section' => 'FINANCIAL', 'mls_label' => 'Annual Expenses',           'canonical_key' => null, 'norm_required' => false, 'notes' => 'Income field — no app field or parser branch'],
-                ['form' => 'Income', 'section' => 'FINANCIAL', 'mls_label' => 'Cap Rate',                  'canonical_key' => null, 'norm_required' => false, 'notes' => 'Income field — no app field or parser branch'],
+                ['form' => 'Income', 'section' => 'FINANCIAL', 'mls_label' => 'Net Operating Income (NOI)', 'canonical_key' => 'net_operating_income_raw', 'norm_required' => false, 'notes' => 'Preview-only; not mapped to a form field'],
+                ['form' => 'Income', 'section' => 'FINANCIAL', 'mls_label' => 'Annual Gross Income',        'canonical_key' => 'gross_annual_income',       'norm_required' => false, 'notes' => 'Maps to gross_annual_income Livewire property'],
+                ['form' => 'Income', 'section' => 'FINANCIAL', 'mls_label' => 'Annual Expenses',            'canonical_key' => 'annual_operating_expenses', 'norm_required' => false, 'notes' => 'Maps to annual_operating_expenses Livewire property'],
+                ['form' => 'Income', 'section' => 'FINANCIAL', 'mls_label' => 'Cap Rate',                   'canonical_key' => 'cap_rate',                  'norm_required' => false, 'notes' => 'Maps to minimum_cap_rate Livewire property'],
             ],
             $taxLegal('Income'),
             $floodZone('Income'),

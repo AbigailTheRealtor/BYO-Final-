@@ -657,8 +657,8 @@ class AskAiRunnerV2Service
         'faq_answers.current_cap_rate' => [
             'current cap rate',
             'capitalization rate',
-            'what is the cap rate',
             'property cap rate',
+            'historical cap rate',
         ],
         'faq_answers.existing_tenant_lease_terms' => [
             'existing tenant lease terms',
@@ -671,9 +671,9 @@ class AskAiRunnerV2Service
             'how occupied is the property',
         ],
         'faq_answers.annual_operating_expenses_detail' => [
-            'annual operating expenses',
             'operating expense breakdown',
             'property operating expenses',
+            'detailed expense analysis',
         ],
         'faq_answers.value_add_opportunities' => [
             'value add opportunities',
@@ -1091,6 +1091,21 @@ class AskAiRunnerV2Service
             'tell me about the garage',
             'garage type',
         ],
+        // ---- Income / Multifamily building type (must precede property_type so
+        //      duplex/triplex/quadplex and "property type mix" questions route here,
+        //      not to the generic listing.property_type entry below) ----
+        'listing.property_items' => [
+            'duplex',
+            'triplex',
+            'quadplex',
+            'what kind of building is this',
+            'five or more units',
+            'multi-family building type',
+            'property type mix',
+            'multifamily type',
+            'what types of units exist',
+            'building classification',
+        ],
         // ---- Property Type ----
         'listing.property_type' => [
             'property type',
@@ -1133,6 +1148,71 @@ class AskAiRunnerV2Service
             'appliances that come with the unit',
             'what appliances are in this unit',
             'appliances included in this unit',
+        ],
+        // ---- Income / Multifamily ----
+        'listing.gross_annual_income' => [
+            'gross annual income',
+            'total annual rent collected',
+            'gross income of the property',
+            'what is the gross annual income',
+            'annual gross rental income',
+        ],
+        'listing.annual_net_income' => [
+            'annual net income',
+            'net income after expenses',
+            'what is the annual net income',
+            'net operating income amount',
+        ],
+        'listing.cap_rate' => [
+            'cap rate',
+            'what is the cap rate',
+            'capitalization rate for this property',
+            'what cap rate is being targeted',
+            'what is the target cap rate',
+        ],
+        'listing.annual_operating_expenses' => [
+            'annual operating expenses',
+            'total annual expenses',
+            'what are the annual operating expenses',
+            'yearly expenses for this property',
+        ],
+        'listing.total_units' => [
+            'how many units',
+            'total units',
+            'number of units in the building',
+            'unit count',
+            'how many rental units',
+            'total number of units',
+        ],
+        'listing.unit_mix_summary' => [
+            'unit mix',
+            'types of units',
+            'duplex triplex unit breakdown',
+            'what unit types exist',
+            'unit configuration breakdown',
+            'bedroom mix',
+        ],
+        'listing.rent_roll_available' => [
+            'rent roll available',
+            'is a rent roll available',
+            'can i see the rent roll',
+            'rent roll for this property',
+        ],
+        'listing.operating_statement_available' => [
+            'operating statement available',
+            'is an operating statement available',
+            'income statement available',
+            'can i see the operating statement',
+            'financial statement for this property',
+        ],
+        'listing.occupancy_requirement' => [
+            'occupancy requirement',
+            'what occupancy is required',
+            'required occupancy level',
+            'assumable occupancy requirement',
+            'minimum occupancy',
+            'what is the occupancy requirement',
+            'occupancy rate requirement',
         ],
         // ---- HOA & Community ----
         'listing.hoa_association' => [
@@ -2611,6 +2691,17 @@ class AskAiRunnerV2Service
             'listing.vegetation'                         => 'Vegetation information',
             'listing.buildable'                          => 'Buildability information',
             'listing.easements'                          => 'Easement information',
+            // Listing.* fields — Income / Multifamily
+            'listing.gross_annual_income'                => 'Gross annual rental income information',
+            'listing.annual_net_income'                  => 'Annual net operating income information',
+            'listing.cap_rate'                           => 'Capitalization rate information',
+            'listing.annual_operating_expenses'          => 'Annual operating expenses information',
+            'listing.total_units'                        => 'Total unit count information',
+            'listing.unit_mix_summary'                   => 'Unit mix and configuration information',
+            'listing.rent_roll_available'                => 'Rent roll availability information',
+            'listing.operating_statement_available'      => 'Operating statement availability information',
+            'listing.property_items'                     => 'Property type mix information',
+            'listing.occupancy_requirement'              => 'Occupancy requirement information',
             // Seller: Financial & Utility Insights
             'faq_answers.average_utility_costs'          => 'Utility cost information',
             'faq_answers.internet_utility_providers'     => 'Internet and utility provider information',

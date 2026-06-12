@@ -309,7 +309,7 @@
     @if($d['real_estate_purchase'])
     @php $ofv::row('Real Estate Purchase', $fmt($d['real_estate_purchase'])); @endphp
     @endif
-    @php $ofv::row('Number of Units', $fmt($getMeta('number_of_unit') ?? $getMeta('number_of_units'))); @endphp
+    @php $ofv::row('Number of Units', $fmt($getMeta('number_of_unit') ?? $getMeta('number_of_units') ?? $getMeta('unit_number'))); @endphp
     @php $ofv::row('Other No. of Units', $fmt($d['number_of_unit_other'])); @endphp
     @if(!empty($d['number_of_unit_type'])) @php $ofv::tags('No. of Unit Types', $d['number_of_unit_type']); @endphp @endif
     @php $ofv::row('Other Unit Type', $fmt($d['number_of_unit_type_other'])); @endphp
@@ -322,7 +322,7 @@
         <div class="text-muted small mb-1">Unit Type Configurations</div>
         <div class="table-responsive">
             <table class="table table-sm table-bordered mb-0 small">
-                <thead class="table-light"><tr><th>Beds</th><th>Baths</th><th>Sq Ft</th><th>Expected Rent</th><th>Count</th></tr></thead>
+                <thead class="table-light"><tr><th>Beds</th><th>Baths</th><th>Sq Ft</th><th>Expected Rent</th><th>Count</th><th>Other Spaces</th></tr></thead>
                 <tbody>
                 @foreach($d['unit_type_configurations'] as $uc)
                     @if(is_array($uc))
@@ -332,6 +332,7 @@
                         <td>{{ isset($uc['total_square_feet']) ? number_format((float)$uc['total_square_feet']) : '-' }}</td>
                         <td>{{ isset($uc['expected_rent']) && $uc['expected_rent'] ? '$'.number_format((float)$uc['expected_rent']) : '-' }}</td>
                         <td>{{ $uc['number_occupied'] ?? '-' }}</td>
+                        <td>{{ $uc['other_spaces'] ?? '-' }}</td>
                     </tr>
                     @endif
                 @endforeach
