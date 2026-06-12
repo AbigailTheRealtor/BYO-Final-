@@ -109,4 +109,23 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Ask AI Cost Savings Estimation Constants (Phase 5)
+    |--------------------------------------------------------------------------
+    |
+    | avg_tokens_per_db_hit: Estimated average number of prompt + completion
+    |   tokens that would have been consumed if a DB hit had been an OpenAI call
+    |   instead. Used purely for cost-savings estimates on the admin dashboard.
+    |   Adjust this constant as real token-usage data accumulates.
+    |
+    | cost_per_1k_tokens: Blended USD rate used when computing savings estimates.
+    |   Mirrors the gpt-4o prompt rate. Update if the primary model changes.
+    |
+    */
+    'ask_ai_savings' => [
+        'avg_tokens_per_db_hit' => (int) env('ASK_AI_AVG_TOKENS_PER_DB_HIT', 800),
+        'cost_per_1k_tokens'    => (float) env('ASK_AI_SAVINGS_COST_PER_1K', 0.005),
+    ],
+
 ];

@@ -399,6 +399,7 @@ class TenantAgentAuctionController extends Controller
         $auction = TenantAgentAuction::find($id);
         $auction->is_approved = true;
         $auction->update();
+        app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('tenant', (int) $id);
         return redirect()->back()->with('success', 'Auction Approved Successfully!');
     }
 

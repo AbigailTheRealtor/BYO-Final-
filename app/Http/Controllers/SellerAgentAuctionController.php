@@ -714,6 +714,7 @@ class SellerAgentAuctionController extends Controller
         $auction = SellerAgentAuction::find($id);
         $auction->is_approved = true;
         $auction->update();
+        app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('seller', (int) $id);
         return redirect()->back()->with('success', 'Auction Approved Successfully!');
     }
 

@@ -418,6 +418,7 @@ class LandlordAgentAuctionController extends Controller
         $auction = LandlordAgentAuction::find($id);
         $auction->is_approved = true;
         $auction->update();
+        app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', (int) $id);
         return redirect()->back()->with('success', 'Auction Approved Successfully!');
     }
 
