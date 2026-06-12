@@ -289,6 +289,10 @@ class OfferWorkflowReadinessTest extends TestCase
         // Files intentionally modified by the "offer detail page bugs" fix task:
         // direction-aware permission gating, notification recipient fix,
         // dashboard filter, Private Notes removal, counter form prefill.
+        // Also files modified by the "Seller Residential Full-Stack Field Audit" task (#2524):
+        // target_closing_date / occupant_status persistence, video_link view fix,
+        // MLS furnished→building_features, property_type/garage_spaces parsers,
+        // AskAi context 32 new seller fields, LISTING_KEY_KEYWORD_MAP entries.
         $taskAllowlist = [
             'app/Http/Controllers/DashboardController.php',
             'app/Http/Controllers/NotificationController.php',
@@ -300,6 +304,14 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/offer-listing/landlord/view.blade.php',
             'resources/views/offers/_offer_terms_display.blade.php',
             'resources/views/offers/_offer_terms_form.blade.php',
+            // Task #2524 — Seller Residential Full-Stack Field Audit
+            'app/Http/Livewire/OfferListing/Concerns/HasMlsImport.php',
+            'app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php',
+            'app/Services/AskAi/AskAiContextBuilderService.php',
+            'app/Services/AskAi/AskAiRunnerV2Service.php',
+            'app/Services/ListingImport/MlsFieldMap.php',
+            'app/Services/ListingImport/MlsListingImportService.php',
+            'resources/views/offer-listing/seller/view.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

@@ -1253,12 +1253,12 @@
     </div>
 
     {{-- Photos & Tours --}}
-    @if(count($propertyPhotos) || $str('video_tour_url') || $str('virtual_tour_url'))
+    @if(count($propertyPhotos) || $str('video_tour_url') || $str('virtual_tour_url') || $str('video_link'))
     <div class="card section-card" id="section-photos">
         <div class="card-header"><i class="fa-solid fa-images me-2"></i>Photos &amp; Tours</div>
         <div class="card-body">
             @php
-                $videoUrl = $str('video_tour_url');
+                $videoUrl = $str('video_tour_url') ?: $str('video_link');
                 $videoEmbedUrl = null;
                 if ($videoUrl) {
                     if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_\-]{11})/', $videoUrl, $vm)) {

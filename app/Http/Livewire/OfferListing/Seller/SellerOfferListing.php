@@ -2667,6 +2667,8 @@ class SellerOfferListing extends Component
             $this->max_monthly_payment = $auction->get->max_monthly_payment;
             $this->gap_payment_type = $auction->get->gap_payment_type;
             $this->gap_payment_amount = $auction->get->gap_payment_amount;
+            $this->target_closing_date = $auction->get->target_closing_date ?? '';
+            $this->occupant_status = $auction->get->occupant_status ?? '';
 
             // Exchange/Trade
             $rawExchangeItem = $auction->get->exchange_item ?? '';
@@ -3275,6 +3277,8 @@ class SellerOfferListing extends Component
         $auction->saveMeta('max_monthly_payment', $this->stripCommas($this->max_monthly_payment));
         $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
         $auction->saveMeta('gap_payment_amount', $this->stripCommas($this->gap_payment_amount));
+        $auction->saveMeta('target_closing_date', $this->target_closing_date);
+        $auction->saveMeta('occupant_status', $this->occupant_status);
 
         // Exchange / Trade
         $exchangeItemVal = $this->exchange_item;

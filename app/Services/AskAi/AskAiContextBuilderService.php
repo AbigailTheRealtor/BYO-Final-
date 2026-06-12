@@ -382,45 +382,87 @@ class AskAiContextBuilderService
                                                  'other_garage_needed'
                                              ),
                     'garage_spaces'        => $infoGet('garage_parking_spaces'),
-                    // view / water_view: the form stores scenic/water view selections as a
-                    // JSON-encoded multiselect under the 'view_preference' meta key.
-                    // Live-DB audit (June 2026) confirmed neither 'view' nor 'water_view' exists
-                    // in seller_agent_auction_metas — the actual key is 'view_preference'.
-                    'water_view'           => $this->decodeJsonField($infoGet('view_preference')),
+                    // water_view: saved by saveAllMetadata() as 'water_view' (JSON array).
+                    'water_view'           => $this->decodeJsonField($infoGet('water_view')),
+                    // ── Lot / Land ────────────────────────────────────────────────
+                    'lot_size'             => $infoGet('total_acreage') ?? $infoGet('min_acreage'),
+                    'lot_dimensions'       => $infoGet('lot_dimensions'),
+                    'zoning'               => $infoGet('zoning'),
+                    // ── Waterfront / Water ────────────────────────────────────────
+                    'waterfront'           => $infoGet('waterfront'),
+                    // water_access is stored as a JSON-encoded multiselect.
+                    'water_access'         => $this->decodeJsonField($infoGet('water_access')),
+                    // ── Interior ─────────────────────────────────────────────────
+                    'interior_features'    => $this->decodeJsonField($infoGet('interior_features')),
+                    'appliances'           => $this->decodeJsonField($infoGet('appliances')),
+                    // ── Structural ───────────────────────────────────────────────
+                    'roof_type'            => $this->decodeJsonField($infoGet('roof_type')),
+                    'exterior_construction' => $this->decodeJsonField($infoGet('exterior_construction')),
+                    'foundation'           => $this->decodeJsonField($infoGet('foundation')),
+                    'heating_and_fuel'     => $this->decodeJsonField($infoGet('heating_and_fuel')),
+                    'air_conditioning'     => $this->decodeJsonField($infoGet('air_conditioning')),
+                    // ── Utilities ────────────────────────────────────────────────
+                    'water'                => $this->decodeJsonField($infoGet('water')),
+                    'sewer'                => $this->decodeJsonField($infoGet('sewer')),
+                    'utilities'            => $this->decodeJsonField($infoGet('utilities')),
+                    // ── Transaction / Occupancy ───────────────────────────────────
+                    'sale_provision'       => $this->decodeJsonField($infoGet('sale_provision')),
+                    'offered_financing'    => $this->decodeJsonField($infoGet('offered_financing')),
+                    'occupant_status'      => $infoGet('occupant_status'),
+                    // furnished: seller stores furnishing state inside building_features JSON
+                    // array (e.g. "Furnished", "Turnkey"). Extract only furnished-related values.
+                    'furnished'            => (static function (callable $ig): ?string {
+                        $raw = $ig('building_features');
+                        if (!$raw) {
+                            return null;
+                        }
+                        $arr = is_string($raw) ? (json_decode($raw, true) ?? []) : (array) $raw;
+                        $f   = array_filter($arr, fn ($v) => preg_match('/furnish|turnkey|negotiable|partial/i', (string) $v));
+                        return implode(', ', $f) ?: null;
+                    })($infoGet),
+                    // ── HOA ───────────────────────────────────────────────────────
                     'hoa_association'      => $infoGet('has_hoa'),
                     'hoa_fee'              => $infoGet('association_fee_amount'),
                     'hoa_payment_schedule' => $infoGet('association_fee_frequency'),
+                    'association_name'     => $infoGet('association_name'),
+                    'association_fee_includes' => $this->decodeJsonField($infoGet('association_fee_includes')),
+                    // ── CDD / Special Assessments ─────────────────────────────────
+                    'has_cdd'              => $infoGet('has_cdd'),
+                    'annual_cdd_fee'       => $infoGet('annual_cdd_fee'),
+                    'has_special_assessments' => $infoGet('has_special_assessments'),
+                    'special_assessment_amount' => $infoGet('special_assessment_amount'),
+                    'special_assessment_description' => $infoGet('special_assessment_description'),
+                    // ── Pets / Restrictions ───────────────────────────────────────
                     'pets_allowed'         => $infoGet('pets'),
                     'number_of_pets_allowed' => $infoGet('number_of_pets'),
                     'max_pet_weight'       => $infoGet('weight_of_pets'),
                     'pet_restrictions'     => $infoGet('pet_restrictions'),
                     'rental_restrictions'  => $infoGet('leasing_restrictions'),
+                    // ── Flood Zone ────────────────────────────────────────────────
                     'flood_zone_code'      => $infoGet('flood_zone_code'),
+                    'flood_zone_panel'     => $infoGet('flood_zone_panel'),
+                    'flood_zone_date'      => $infoGet('flood_zone_date'),
+                    'flood_insurance_required' => $infoGet('flood_insurance_required'),
                     // disclosure_flags is a governance contract marker for the prompt layer.
                     // flood_zone => true does NOT mean the property is in a flood zone — the
                     // flood_zone_code scalar carries that data. This flag tells the AI that
                     // flood-zone data is present in this context and must be handled with
                     // the flood-zone disclosure template. Always set for seller listings.
                     'disclosure_flags'     => ['flood_zone' => true],
+                    // ── Tax / Legal ───────────────────────────────────────────────
+                    'parcel_id'            => $infoGet('parcel_id'),
+                    'tax_year'             => $infoGet('tax_year'),
+                    'legal_description'    => $infoGet('legal_description'),
                     'closing_date'         => $infoGet('target_closing_date'),
                     'auction_length'       => $nativeGet('auction_length'),
                     'sold'                 => $nativeGet('is_sold'),
                     'annual_property_taxes' => $infoGet('annual_property_taxes'),
                     'service_type'         => $infoGet('service_type'),
-                    // ── Unconditional land/lot fields (relevant to any property type) ──
-                    // zoning, waterfront, water_access, total_acreage, and lot_dimensions
-                    // apply to residential, commercial, and vacant land alike.
-                    'zoning'               => $infoGet('zoning'),
-                    'total_acreage'        => $infoGet('total_acreage'),
-                    'waterfront'           => $infoGet('waterfront'),
-                    // water_access is stored as a JSON-encoded multiselect.
-                    'water_access'         => $this->decodeJsonField($infoGet('water_access')),
-                    'lot_dimensions'       => $infoGet('lot_dimensions'),
                     // ── Income / Multifamily fields ──────────────────────────────────
+                    // lot_size, lot_dimensions, zoning, waterfront, water_access,
+                    // parcel_id, tax_year, and legal_description are already present
+                    // above in the residential audit fields — not duplicated here.
                     'property_items'            => $this->decodeJsonField($infoGet('property_items')),
-                    'legal_description'         => $infoGet('legal_description'),
-                    'parcel_id'                 => $infoGet('parcel_id'),
-                    'tax_year'                  => $infoGet('tax_year'),
                     'total_units'               => $infoGet('unit_number'),
                     'total_buildings'           => $infoGet('unit_buildings'),
                     'unit_mix_summary'          => $this->summarizeUnitConfigurations($infoGet('unit_type_configurations')),

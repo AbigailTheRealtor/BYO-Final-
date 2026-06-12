@@ -125,6 +125,24 @@ trait HasMlsImport
                 continue;
             }
 
+            // Seller-specific: 'furnished' MLS value merges into building_features
+            // (not replaces), since seller stores furnishing status inside that JSON
+            // array. This check MUST appear before the hasExisting guard so that an
+            // already-populated building_features array is not skipped — we always
+            // want to merge, never to replace or skip. 'Unfurnished' is intentionally
+            // excluded because absence of the value implies unfurnished.
+            if ($canonicalKey === 'furnished' && $propName === 'building_features') {
+                $furnishedVal = strtolower(trim($rawValue));
+                if (in_array($furnishedVal, ['furnished', 'turnkey', 'partial', 'negotiable'], true)) {
+                    $label    = ucfirst($furnishedVal);
+                    $existing = is_array($this->building_features) ? $this->building_features : [];
+                    if (!in_array($label, $existing, true)) {
+                        $this->building_features = array_merge($existing, [$label]);
+                    }
+                }
+                continue;
+            }
+
             $existingValue = $this->{$propName};
             $hasExisting   = is_array($existingValue)
                 ? !empty($existingValue)

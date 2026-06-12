@@ -100,7 +100,10 @@ class MlsListingImportService
         // Used to terminate greedy captures (Pool, A/C, Appliances, Carport, etc.)
         // so they do not bleed into the next label's text.
         $labelStop =
-            'Pool\b|Spa\b|Garage\b|Carport\b|Appliances?\b' .
+            // Garage\s+Spaces? must appear BEFORE bare Garage\b so the more-specific
+            // two-word label "Garage Spaces:" is caught first; otherwise "Garage\b\s*:"
+            // would require a colon directly after "Garage" and miss "Garage Spaces: 2".
+            'Pool\b|Spa\b|Garage\s+Spaces?\b|Garage\b|Carport\b|Appliances?\b' .
             '|Air\s+Conditioning|A\/C\b' .
             '|Heat(?:ing)?(?:\s+(?:and|&)\s+Fuel)?\b|Fuel\b' .
             // Fireplace: require Y/N suffix so "Fireplace Y/N:" stops heating_fuel;
@@ -173,6 +176,21 @@ class MlsListingImportService
         // ─── MLS Number ───────────────────────────────────────────────────────
         if ($v = $extract(['/MLS\s*(?:#|Number|Num\.?|No\.?)[\s:]+([A-Za-z0-9\-]+)/i'])) {
             $data['mls_number'] = $v;
+        }
+
+        // ─── Property Type ────────────────────────────────────────────────────
+        // Must appear before address/price parsers so "Property Type:" is captured
+        // before the address regex can consume "Property" as a prefix.
+        if ($v = $extract(['/Property\s+Type[\s:]+([^\|\n]{1,80})/i'], true)) {
+            $data['property_type'] = $v;
+        }
+
+        // ─── Garage Spaces ────────────────────────────────────────────────────
+        // Dedicated parser for the numeric garage-spaces count. Must appear before
+        // the general Garage (boolean) parser so "Garage Spaces: 2" does not get
+        // absorbed by the broader Garage branch.
+        if ($v = $extract(['/Garage\s+Spaces?[\s:]+(\d+)/i'])) {
+            $data['garage_spaces'] = (int) $v;
         }
 
         // ─── Address ──────────────────────────────────────────────────────────
