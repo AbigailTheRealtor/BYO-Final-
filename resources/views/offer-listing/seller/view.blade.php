@@ -1711,7 +1711,7 @@
 
             {{-- Unit Type Configuration Rows (Income / Multifamily) --}}
             @php
-                $_rawUTC = $getMeta('unit_type_configurations');
+                $_rawUTC = $val('unit_type_configurations');
                 $_utcRows = [];
                 if ($_rawUTC) {
                     $_decoded = json_decode($_rawUTC, true);
