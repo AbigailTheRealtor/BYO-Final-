@@ -171,6 +171,8 @@
 
     {{-- ===== BODY ===== --}}
     @include('partials.bid_detail_body.buyer')
+    @php $p5BreakdownBuyer = \App\Services\ScoreBreakdownService::breakdown($listingBaselineData, $currentBidData, 'buyer', $auctionPropType); @endphp
+    <x-score-breakdown-panel :breakdown="$p5BreakdownBuyer" />
 
     {{-- ===== FOOTER BANNERS (w-100 status rows) ===== --}}
     <x-slot name="footerBanners">

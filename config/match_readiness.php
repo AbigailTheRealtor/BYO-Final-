@@ -20,6 +20,12 @@
  *
  * Quick Match: high-signal subset; fast initial sort.
  * Full Match:  all scored fields; detailed side-by-side. Supersedes Quick Match.
+ *
+ * Weighting framework (P5 — weights inactive until explicitly enabled):
+ *   See 'weights' key below. All weights default to 1.0 (equal weighting).
+ *   The '_enabled' flag must be set to true in a future phase before weights
+ *   are applied to scoring calculations. ScoreBreakdownService and
+ *   CompatibilityScoreService must not read or apply these weights until then.
  */
 
 return [
@@ -195,6 +201,96 @@ return [
                 'parent_values'     => ['other'],
                 'required_children' => ['broker_fee_timing_other'],
             ],
+        ],
+    ],
+
+    /*
+     * ── Weighting Framework (P5 — INACTIVE) ─────────────────────────────────
+     *
+     * Per-field weights for future weighted scoring. All values default to 1.0
+     * (equal weight across all fields).
+     *
+     * ACTIVATION RULES:
+     *   - '_enabled' is false. Score calculations in CompatibilityScoreService
+     *     and ScoreBreakdownService MUST NOT read or apply these weights until
+     *     '_enabled' is explicitly set to true in a future phase.
+     *   - Changing individual weight values while '_enabled' is false has no
+     *     effect on any score.
+     *   - To activate: set '_enabled' => true AND update the scoring services
+     *     to read config('match_readiness.weights.<role>.<field>').
+     *
+     * Weight semantics (for future use):
+     *   - 1.0  = standard weight (default for all fields)
+     *   - >1.0 = field has more influence on the overall score
+     *   - <1.0 = field has less influence on the overall score
+     *   - 0.0  = field excluded from scoring entirely
+     */
+    'weights' => [
+        '_enabled' => false,
+
+        'seller' => [
+            'services'                     => 1.0,
+            'commission_structure'         => 1.0,
+            'purchase_fee_type'            => 1.0,
+            'purchase_fee_percentage'      => 1.0,
+            'protection_period'            => 1.0,
+            'agency_agreement_timeframe'   => 1.0,
+            'brokerage_relationship'       => 1.0,
+            'purchase_fee_flat'            => 1.0,
+            'early_termination_fee_option' => 1.0,
+            'retainer_fee_option'          => 1.0,
+            'nominal'                      => 1.0,
+            'commission_structure_type'    => 1.0,
+            'seller_leasing_fee_type'      => 1.0,
+        ],
+
+        'buyer' => [
+            'services'                     => 1.0,
+            'commission_structure'         => 1.0,
+            'purchase_fee_type'            => 1.0,
+            'purchase_fee_percentage'      => 1.0,
+            'lease_fee_type'               => 1.0,
+            'protection_period'            => 1.0,
+            'agency_agreement_timeframe'   => 1.0,
+            'brokerage_relationship'       => 1.0,
+            'purchase_fee_flat'            => 1.0,
+            'lease_fee_percentage'         => 1.0,
+            'early_termination_fee_option' => 1.0,
+            'retainer_fee_option'          => 1.0,
+        ],
+
+        'landlord' => [
+            'services'                            => 1.0,
+            'commission_structure'                => 1.0,
+            'purchase_fee_type'                   => 1.0,
+            'purchase_fee_percentage'             => 1.0,
+            'protection_period'                   => 1.0,
+            'agency_agreement_timeframe'          => 1.0,
+            'brokerage_relationship'              => 1.0,
+            'purchase_fee_flat'                   => 1.0,
+            'early_termination_fee_option'        => 1.0,
+            'renewal_fee_type'                    => 1.0,
+            'broker_fee_timing'                   => 1.0,
+            'tenant_broker_commission_structure'  => 1.0,
+            'expansion_commission_percentage'     => 1.0,
+            'interested_in_property_management'   => 1.0,
+            'interested_in_selling'               => 1.0,
+        ],
+
+        'tenant' => [
+            'services'                     => 1.0,
+            'commission_structure'         => 1.0,
+            'purchase_fee_type'            => 1.0,
+            'purchase_fee_percentage'      => 1.0,
+            'lease_fee_type'               => 1.0,
+            'protection_period'            => 1.0,
+            'agency_agreement_timeframe'   => 1.0,
+            'brokerage_relationship'       => 1.0,
+            'purchase_fee_flat'            => 1.0,
+            'lease_fee_percentage'         => 1.0,
+            'early_termination_fee_option' => 1.0,
+            'retainer_fee_option'          => 1.0,
+            'broker_fee_timing'            => 1.0,
         ],
     ],
 

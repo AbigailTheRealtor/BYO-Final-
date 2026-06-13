@@ -133,6 +133,8 @@
     :bidStatusColor="$bidStatusColorForLayout">
 
             @include('partials.bid_detail_body.match_score_panel')
+            @php $p5BreakdownTenant = \App\Services\ScoreBreakdownService::breakdown($auctionBaselineData, $bidData, 'tenant', $propType); @endphp
+            <x-score-breakdown-panel :breakdown="$p5BreakdownTenant" />
 
             <div class="mb-5">
                 <h6 class="section-header">

@@ -165,6 +165,8 @@
 
     {{-- ===== BODY ===== --}}
     @include('partials.bid_detail_body.seller')
+    @php $p5BreakdownSeller = \App\Services\ScoreBreakdownService::breakdown($auctionDataArr, $bidDataArr, 'seller', $propertyType); @endphp
+    <x-score-breakdown-panel :breakdown="$p5BreakdownSeller" />
 
     {{-- ===== FOOTER BANNERS (w-100 status rows) ===== --}}
     <x-slot name="footerBanners">
