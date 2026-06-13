@@ -407,6 +407,97 @@ class MlsImportWorkflowTest extends TestCase
     }
 
     /**
+     * Seller: Public Remarks → additional_details prop after applyImportedFields.
+     *
+     * The description field in the parsed data maps to the additional_details Livewire
+     * property (via MlsFieldMap seller: 'description' => 'additional_details').
+     * Both components have public $additional_details = '' and the textarea uses
+     * wire:model="additional_details", so this is the full pipeline verification.
+     */
+    public function test_seller_apply_selected_populates_additional_details_from_public_remarks(): void
+    {
+        $raw =
+            'City: Tampa County: Hillsborough State: FL Zip: 33610 ' .
+            'Bedrooms: 3 Bathrooms: 2 ' .
+            'Public Remarks: Stunning updated home with open floor plan. ' .
+            'Recently renovated kitchen, hardwood floors throughout. ' .
+            'Waterfront: No';
+
+        $component = Livewire::actingAs($this->sellerUser)
+            ->test(SellerOfferListing::class)
+            ->set('importRawText', $raw)
+            ->call('importListingFromUrl');
+
+        $component->assertSet('importError', '');
+        $preview = $component->get('importPreviewData');
+        $this->assertNotEmpty($preview);
+
+        // description key must appear in preview
+        $byKey = [];
+        foreach ($preview as $row) {
+            $byKey[$row['canonical_key']] = $row['value'];
+        }
+        $this->assertArrayHasKey('description', $byKey,
+            'description canonical key must appear in importPreviewData after parsing Public Remarks.');
+        $this->assertStringContainsStringIgnoringCase('Stunning', $byKey['description'],
+            'description preview value must contain text from the Public Remarks block.');
+
+        // Apply and verify additional_details is populated
+        $selectedKeys = array_column($preview, 'canonical_key');
+        $component->call('applyImportedFields', $selectedKeys, []);
+
+        $additionalDetails = $component->get('additional_details');
+        $this->assertNotEmpty($additionalDetails,
+            'additional_details must be populated after applyImportedFields when Public Remarks is in the MLS text.');
+        $this->assertStringContainsStringIgnoringCase('Stunning', $additionalDetails,
+            'additional_details must contain the Public Remarks text after apply.');
+        $this->assertStringContainsStringIgnoringCase('renovated', $additionalDetails,
+            'additional_details must contain more text from the Public Remarks block.');
+    }
+
+    /**
+     * Landlord: Public Remarks → additional_details prop after applyImportedFields.
+     */
+    public function test_landlord_apply_selected_populates_additional_details_from_public_remarks(): void
+    {
+        $raw =
+            'City: St. Petersburg County: Pinellas State: FL Zip: 33705 ' .
+            'Monthly Rent: $1,800 Bedrooms: 2 Bathrooms: 1 ' .
+            'Public Remarks: Cozy updated condo steps from the beach. ' .
+            'Community pool, updated kitchen, in-unit washer/dryer. ' .
+            'Waterfront: No';
+
+        $component = Livewire::actingAs($this->landlordUser)
+            ->test(LandlordOfferListing::class)
+            ->set('importRawText', $raw)
+            ->call('importListingFromUrl');
+
+        $component->assertSet('importError', '');
+        $preview = $component->get('importPreviewData');
+        $this->assertNotEmpty($preview);
+
+        $byKey = [];
+        foreach ($preview as $row) {
+            $byKey[$row['canonical_key']] = $row['value'];
+        }
+        $this->assertArrayHasKey('description', $byKey,
+            'description canonical key must appear in importPreviewData for landlord role.');
+        $this->assertStringContainsStringIgnoringCase('Cozy', $byKey['description'],
+            'description preview value must contain text from Public Remarks.');
+
+        $selectedKeys = array_column($preview, 'canonical_key');
+        $component->call('applyImportedFields', $selectedKeys, []);
+
+        $additionalDetails = $component->get('additional_details');
+        $this->assertNotEmpty($additionalDetails,
+            'additional_details must be populated after applyImportedFields (landlord).');
+        $this->assertStringContainsStringIgnoringCase('Cozy', $additionalDetails,
+            'additional_details must contain the Public Remarks text after apply (landlord).');
+        $this->assertStringContainsStringIgnoringCase('beach', $additionalDetails,
+            'additional_details must contain more text from the Public Remarks block.');
+    }
+
+    /**
      * Landlord: verify every field maps to correct prop after applyImportedFields.
      */
     public function test_landlord_apply_selected_maps_all_fields_to_correct_props(): void

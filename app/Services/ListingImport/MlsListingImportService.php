@@ -103,7 +103,7 @@ class MlsListingImportService
             // Garage\s+Spaces? must appear BEFORE bare Garage\b so the more-specific
             // two-word label "Garage Spaces:" is caught first; otherwise "Garage\b\s*:"
             // would require a colon directly after "Garage" and miss "Garage Spaces: 2".
-            'Pool\b|Spa\b|Garage\s+Spaces?\b|Garage\b|Carport\b|Appliances?\b' .
+            'Pool\b|Spa\b|Garage\s+Spaces?\b|Garage\b|Carport\b|Appliances?\s+Included\b|Appliances?\b' .
             '|Air\s+Conditioning|A\/C\b' .
             '|Heat(?:ing)?(?:\s+(?:and|&)\s+Fuel)?\b|Fuel\b' .
             // Fireplace: require Y/N suffix so "Fireplace Y/N:" stops heating_fuel;
@@ -114,8 +114,11 @@ class MlsListingImportService
             '|Floor\s+Covering\b|Roof\b' .
             '|Furnishings?\b(?=\s*:)|Furnished\b(?=\s*:)|Available\b(?=\s*:)' .
             '|Tax\s+(?:ID|Year)|Annual\s+(?:CDD|Prop(?:erty)?|Tax)|Taxes\b|Parcel\b' .
-            // No standalone Tax\b — it was too broad (matched "Tax" in parcel IDs like
-            // "1410Tax").  Tax\s+(ID|Year) above already covers the label forms we need.
+            // Tax\b(?=\s*:) — stops "Tax: $3,908" style bare Tax labels (e.g. some
+            // Stellar MLS exports use "Tax:" instead of "Tax Year:" or "Tax Amount:").
+            // The colon lookahead prevents firing on mid-word occurrences like
+            // "1410Tax Year:" where " Year:" follows rather than ":" directly.
+            '|Tax\b(?=\s*:)' .
             '|List\b' .
             // Flood Zone: match with or without a trailing qualifier word so that
             // "Flood Zone Date:", "Flood Zone Code:", and "Flood Zone Panel:" all stop
@@ -181,6 +184,11 @@ class MlsListingImportService
         $sectionHeaderStop =
             'Exterior\s+Information|Interior\s+Information' .
             '|Rooms\b|Neighborhood\b|School\s+District\b' .
+            // Assessment: stops Water View and other fields from bleeding into bare
+            // "Assessment" or "Tax Assessment" when they appear without a colon
+            // (section-header style). The labelStop already handles "Tax Assessment:"
+            // with a colon; this catches the colon-free variant.
+            '|(?:Tax\s+)?Assessment\b' .
             // County appears without a colon in some Stellar MLS exports when the
             // school district block is embedded in the address line
             // (e.g. "City: SEMINOLE Pinellas County Unified State: FL").
@@ -668,14 +676,25 @@ class MlsListingImportService
         }
 
         // ─── Water Frontage ───────────────────────────────────────────────────
+        // Some Stellar MLS exports emit "Water Frontage Y/N: Yes/No" as a boolean
+        // before the "Water Frontage:" water-body-name field.  Parse the Y/N variant
+        // first and store it in its own key so that the free-text branch below does
+        // not capture "Y/N: No" as a water body description.
+        // NOTE: waterfront_yn is not in any field map and is never applied to the form.
+        if ($v = $extract(['/Water\s+Frontage\s+Y\/N[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i'])) {
+            $data['waterfront_yn'] = MlsNormalizer::normalize('waterfront', $v);
+        }
+
         // "Water Frontage:" describes the type of water body the property fronts
         // (e.g. "Intracoastal Waterway", "Bay/Harbor", "Canal").
         // Must appear BEFORE Waterfront parser to prevent the Waterfront regex from
         // consuming "Water Frontage: <value> Waterfront: <bool>".
+        // Negative lookahead (?!\s+Y\/N) ensures the Y/N boolean variant above is
+        // not re-matched here even if the boolean branch did not fire.
         // NOTE: No Livewire property exists on Seller/Landlord for this field yet;
         //       it is parsed and stored in $data but does not apply to the form.
         //       A human-readable label is registered in MlsFieldMap::fieldLabels().
-        if ($v = $extract(['/Water\s+Frontage[\s:]+([^\|\n]{1,100})/i'], true)) {
+        if ($v = $extract(['/Water\s+Frontage(?!\s+Y\/N)[\s:]+([^\|\n]{1,100})/i'], true)) {
             $data['water_frontage'] = $v;
         }
 

@@ -56,7 +56,7 @@
                 @endif
 
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary" style="color:#fff;"
+                    <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;"
                             wire:click="importListingFromUrl"
                             wire:loading.attr="disabled"
                             wire:target="importListingFromUrl">
@@ -148,7 +148,7 @@
                     </div>
 
                     <div class="d-flex gap-2 mt-3">
-                        <button type="button" class="btn btn-success" style="color:#fff;"
+                        <button type="button" class="btn btn-success" style="background-color:#198754; border-color:#198754; color:#fff;"
                                 @click="$wire.applyImportedFields(selectedKeys(), overrideKeys())"
                                 wire:loading.attr="disabled"
                                 wire:target="applyImportedFields">

@@ -330,6 +330,157 @@ class MlsRealListingRegressionTest extends TestCase
     }
 
     // =========================================================================
+    // NEW inline regressions — four browser-confirmed bugs fixed in this batch
+    // =========================================================================
+
+    /**
+     * NEW-A: Carport bleeds into "Tax: $3,908" when some Stellar MLS exports emit
+     * the annual tax as a bare "Tax:" label (not "Tax Year:" or "Tax Amount:").
+     * Fix: Tax\b(?=\s*:) added to labelStop — colon lookahead prevents firing on
+     * mid-word "Tax" inside parcel IDs like "1410Tax Year:".
+     */
+    public function test_inline_carport_stops_at_bare_tax_colon_label(): void
+    {
+        $data = $this->parse('Carport: No Tax: $3,908 Assessments: $0 Homestead: Yes');
+
+        $carport = strtolower(trim($data['carport'] ?? ''));
+        $this->assertEquals('no', $carport,
+            'Carport must be "no" — must not bleed into "Tax: $3,908" bare-Tax label.');
+        $this->assertStringNotContainsStringIgnoringCase('Tax', $data['carport'] ?? '',
+            'Carport must not contain any "Tax" text from the adjacent Tax: label.');
+        $this->assertStringNotContainsStringIgnoringCase('$3', $data['carport'] ?? '',
+            'Carport must not capture the dollar amount from the Tax: label.');
+    }
+
+    /**
+     * NEW-B: Interior Features bleeds into Appliances when the MLS uses the label
+     * "Appliances Included:" (two-word variant) instead of the shorter "Appliances:".
+     * The old labelStop had only "Appliances?\b", which required the colon to follow
+     * immediately after the final "s".  Fix: Appliances?\s+Included\b added BEFORE
+     * Appliances?\b so the longer two-word form is caught first.
+     */
+    public function test_inline_interior_features_stop_at_appliances_included_variant(): void
+    {
+        $data = $this->parse(
+            'Interior Features: Ceiling Fans(s),Crown Molding,Walk-In Closet(s) ' .
+            'Appliances Included: Dishwasher,Range,Refrigerator ' .
+            'Exterior Construction: Block'
+        );
+
+        $interior = is_array($data['interior_features'] ?? null)
+            ? implode(',', $data['interior_features'])
+            : (string) ($data['interior_features'] ?? '');
+
+        $this->assertStringNotContainsStringIgnoringCase('Dishwasher', $interior,
+            'interior_features must stop at "Appliances Included:" and not capture appliance names.');
+        $this->assertStringNotContainsStringIgnoringCase('Range', $interior,
+            'interior_features must not bleed into the Appliances Included list.');
+        $this->assertStringContainsStringIgnoringCase('Crown Molding', $interior,
+            'interior_features must contain its own actual value.');
+    }
+
+    /**
+     * NEW-B2: Appliances parses correctly from the "Appliances Included:" label variant.
+     * Confirms the longer label is recognised by the appliances parser (not just blocked
+     * from bleeding into interior_features).
+     */
+    public function test_inline_appliances_parsed_from_appliances_included_label(): void
+    {
+        $data = $this->parse(
+            'Interior Features: Ceiling Fans(s) ' .
+            'Appliances Included: Dishwasher,Range,Refrigerator ' .
+            'Exterior Construction: Block'
+        );
+
+        $appliances = is_array($data['appliances'] ?? null)
+            ? implode(',', $data['appliances'])
+            : (string) ($data['appliances'] ?? '');
+
+        $this->assertNotEmpty($appliances,
+            'appliances must be parsed from the "Appliances Included:" label variant.');
+        $this->assertStringContainsStringIgnoringCase('Dishwasher', $appliances,
+            'appliances must contain Dishwasher from the "Appliances Included:" label.');
+        $this->assertStringNotContainsStringIgnoringCase('Block', $appliances,
+            'appliances must stop before "Exterior Construction:".');
+    }
+
+    /**
+     * NEW-C: "Water Frontage Y/N: No" — some MLS exports emit a boolean Y/N variant
+     * of the Water Frontage field.  The old text branch captured "Y/N: No" as if it
+     * were a water body name.
+     * Fix: a dedicated boolean branch parses "Water Frontage Y/N:" first, and a
+     * negative lookahead (?!\s+Y\/N) in the text branch prevents re-matching.
+     */
+    public function test_inline_water_frontage_yn_not_captured_as_body_name(): void
+    {
+        $data = $this->parse(
+            'Rent Includes: Cable TV,Internet ' .
+            'Water Frontage Y/N: No ' .
+            'Waterfront Feet: 0 Waterfront: No'
+        );
+
+        $wf = (string) ($data['water_frontage'] ?? '');
+        $this->assertStringNotContainsStringIgnoringCase('Y/N', $wf,
+            'water_frontage must not capture "Y/N" from the boolean Water Frontage Y/N label.');
+        $this->assertStringNotContainsStringIgnoringCase('No', $wf,
+            'water_frontage must not capture the boolean "No" value as a water body name.');
+    }
+
+    /**
+     * NEW-C2: "Water Frontage Y/N: No" is stored under waterfront_yn (separate key),
+     * and the boolean is normalized correctly.
+     */
+    public function test_inline_water_frontage_yn_stored_as_separate_key(): void
+    {
+        $data = $this->parse('Water Frontage Y/N: No Waterfront Feet: 0 Waterfront: No');
+
+        $this->assertArrayHasKey('waterfront_yn', $data,
+            'waterfront_yn key must be present when "Water Frontage Y/N:" appears in MLS text.');
+        $this->assertEquals('no', strtolower(trim($data['waterfront_yn'])),
+            'waterfront_yn must normalize to "no".');
+    }
+
+    /**
+     * NEW-D: Water View bleeds into bare "Assessment" text when the MLS emits the
+     * assessment section without the "Tax" prefix (i.e. "Assessment:" not "Tax Assessment:").
+     * Fix: (?:Tax\s+)?Assessment\b added to sectionHeaderStop so the bare word
+     * "Assessment" terminates captures even without a preceding "Tax " prefix.
+     */
+    public function test_inline_water_view_stops_at_bare_assessment_word(): void
+    {
+        $data = $this->parse('Water View: Intracoastal Waterway Assessment: $2,400 Tax Year: 2024');
+
+        $wv = $data['water_view'] ?? '';
+        if (is_array($wv)) {
+            $wv = implode(',', $wv);
+        }
+        $this->assertStringNotContainsStringIgnoringCase('Assessment', $wv,
+            'Water View must stop at bare "Assessment" even without a "Tax " prefix.');
+        $this->assertStringContainsStringIgnoringCase('Intracoastal', $wv,
+            'Water View must retain its actual Intracoastal Waterway value.');
+    }
+
+    /**
+     * NEW-D2: Combined "Assessment & Tax Assessment:" compound label — Water View stops
+     * at the first recognised word ("Assessment"), not at the full compound form.
+     */
+    public function test_inline_water_view_stops_at_compound_assessment_tax_assessment(): void
+    {
+        $data = $this->parse(
+            'Water View: Intracoastal Water Assessment & Tax Assessment: $2,400 Tax Year: 2024'
+        );
+
+        $wv = $data['water_view'] ?? '';
+        if (is_array($wv)) {
+            $wv = implode(',', $wv);
+        }
+        $this->assertStringNotContainsStringIgnoringCase('Assessment', $wv,
+            'Water View must stop at "Assessment" in the compound "Assessment & Tax Assessment:" label.');
+        $this->assertStringContainsStringIgnoringCase('Intracoastal', $wv,
+            'Water View must retain its actual value.');
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
 
