@@ -1996,7 +1996,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
             ['normalized_field_key' => 'listing.annual_property_taxes']
         );
 
-        $this->assertSame('Annual property tax information has not been provided for this listing.', $result['final_response']['answer'] ?? '');
+        $this->assertSame('This information was not provided in the listing.', $result['final_response']['answer'] ?? '');
     }
 
     public function test_case_N2_listing_field_null_still_fires_guard_b(): void
@@ -2151,7 +2151,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
 
         $answer = $result['final_response']['answer'] ?? '';
         $this->assertStringNotContainsString('could not generate', $answer);
-        $this->assertSame('Annual property tax information has not been provided for this listing.', $answer);
+        $this->assertSame('This information was not provided in the listing.', $answer);
     }
 
     public function test_case_N5_annual_property_taxes_populated_failed_adapter_returns_value_directly(): void
@@ -2564,6 +2564,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
             'prompt_package' => [
                 'status'               => 'prompt_ready',
                 'question_type'        => 'listing_facts',
+                'allowed_context'      => ['listing' => ['bedrooms' => '3']],
                 'required_disclosures' => [],
                 'source_attribution'   => [],
                 'refusal_template'     => null,
@@ -2588,6 +2589,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
             'prompt_package' => [
                 'status'               => 'prompt_ready',
                 'question_type'        => 'listing_facts',
+                'allowed_context'      => ['listing' => ['bedrooms' => '3']],
                 'required_disclosures' => [],
                 'source_attribution'   => [],
                 'refusal_template'     => null,
@@ -2611,6 +2613,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
             'prompt_package' => [
                 'status'               => 'prompt_ready',
                 'question_type'        => 'listing_facts',
+                'allowed_context'      => ['listing' => ['bedrooms' => '3']],
                 'required_disclosures' => [],
                 'source_attribution'   => [],
                 'refusal_template'     => null,
@@ -2835,5 +2838,214 @@ class AskAiRunnerV2ServiceTest extends TestCase
 
         $this->assertSame('unsupported', $result['outcome_category'],
             'An unsupported prompt_package must produce outcome_category=unsupported, not openai_fallback');
+    }
+
+    // =========================================================================
+    // Case R — Regression tests for three-path listing.* graceful-failure fix
+    //
+    // Root Cause A: fields absent from response contract allowed_context
+    //   → Guard B now fires when key is absent from listing subarray (not just null).
+    // Root Cause B: universal backstop returned generic error for listing.* questions
+    //   → backstop now returns "not provided" phrase when normalized_field_key starts with listing.
+    // Root Cause C: direct-return fallback fell through to backstop on absent/null fields
+    //   → direct-return else branch now returns "not provided" phrase.
+    //
+    // All three root causes share the same user-visible outcome for the fix:
+    //   "This information was not provided in the listing."
+    // =========================================================================
+
+    /**
+     * R1 — field key is completely absent from listing subarray in allowed_context.
+     * This is Root Cause A: fields not declared in the response contract are excluded
+     * from allowed_context by filterAllowedContext(), so their key never appears in
+     * allowed_context['listing']. Guard B must now fire for the absent-key case.
+     */
+    public function test_case_R1_listing_field_absent_from_listing_subarray_fires_guard_b(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [
+                'listing' => ['bedrooms' => '3'],
+            ],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackage,
+        ]));
+
+        $mocks['adapter']->expects($this->never())->method('generate');
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'What is the zoning?',
+            ['normalized_field_key' => 'listing.zoning']
+        );
+
+        $this->assertSame(false, $result['success']);
+        $this->assertSame('insufficient_context', $result['status']);
+        $this->assertSame(
+            'This information was not provided in the listing.',
+            $result['final_response']['answer'] ?? '',
+            'R1: absent listing field must return standard not-provided phrase, not generic error.'
+        );
+    }
+
+    /**
+     * R1b — listing subarray itself is absent from allowed_context entirely.
+     * Edge-case variant: allowed_context has no 'listing' key at all.
+     */
+    public function test_case_R1b_no_listing_subarray_in_allowed_context_fires_guard_b(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackage,
+        ]));
+
+        $mocks['adapter']->expects($this->never())->method('generate');
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'What is the zoning?',
+            ['normalized_field_key' => 'listing.zoning']
+        );
+
+        $this->assertSame(false, $result['success']);
+        $this->assertSame('insufficient_context', $result['status']);
+        $this->assertSame(
+            'This information was not provided in the listing.',
+            $result['final_response']['answer'] ?? '',
+            'R1b: absent listing subarray must return standard not-provided phrase, not generic error.'
+        );
+    }
+
+    /**
+     * R2 — Root Cause C: direct-return else branch fires for null value.
+     * This scenario is now largely prevented by Guard B (which fires before the adapter),
+     * but the direct-return else branch provides belt-and-suspenders coverage in case
+     * a future code path bypasses Guard B.
+     *
+     * Simulated: allowed_context is non-empty (so direct-return outer condition passes)
+     * but zoning value is null (so the if-branch does not return the value).
+     * Guard B fires first in real usage; this test verifies the else branch returns the
+     * correct phrase and not the generic "could not generate" error.
+     */
+    public function test_case_R2_listing_field_null_never_surfaces_generic_error(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+
+        $promptPackage = [
+            'status'               => 'prompt_ready',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'allowed_context'      => [
+                'listing' => ['zoning' => null],
+            ],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => true,
+            'status'         => 'prompt_ready',
+            'prompt_package' => $promptPackage,
+        ]));
+
+        $result = $runner->run(
+            'seller',
+            1,
+            'What is the zoning?',
+            ['normalized_field_key' => 'listing.zoning']
+        );
+
+        $answer = $result['final_response']['answer'] ?? '';
+        $this->assertStringNotContainsString(
+            'could not be generated right now',
+            $answer,
+            'R2: null listing field must never return the generic "could not generate" error message.'
+        );
+        $this->assertSame(
+            'This information was not provided in the listing.',
+            $answer,
+            'R2: null listing field must return the standard not-provided phrase.'
+        );
+    }
+
+    /**
+     * R3 — Standard phrase is consistent across all three Guard B input states.
+     * Verifies that null value, empty string, and absent key all produce the
+     * exact same "not provided" phrase — no variation permitted.
+     */
+    public function test_case_R3_guard_b_phrase_is_identical_for_null_empty_and_absent(): void
+    {
+        $makePromptPackage = static function (mixed $value, bool $includeKey): array {
+            $listing = $includeKey ? ['zoning' => $value] : [];
+            return [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'allowed_context'      => ['listing' => $listing],
+                'refusal_template'     => null,
+            ];
+        };
+
+        $runWithPackage = function (array $promptPackage): string {
+            $mocks  = $this->makeMocks();
+            $runner = $this->makeRunner($mocks);
+            $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+            $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+                'success'        => true,
+                'status'         => 'prompt_ready',
+                'prompt_package' => $promptPackage,
+            ]));
+            $result = $runner->run('seller', 1, 'What is the zoning?', ['normalized_field_key' => 'listing.zoning']);
+            return $result['final_response']['answer'] ?? '';
+        };
+
+        $nullAnswer   = $runWithPackage($makePromptPackage(null, true));
+        $emptyAnswer  = $runWithPackage($makePromptPackage('', true));
+        $absentAnswer = $runWithPackage($makePromptPackage(null, false));
+
+        $this->assertSame('This information was not provided in the listing.', $nullAnswer,
+            'R3: null value must return standard not-provided phrase.');
+        $this->assertSame('This information was not provided in the listing.', $emptyAnswer,
+            'R3: empty string must return standard not-provided phrase.');
+        $this->assertSame('This information was not provided in the listing.', $absentAnswer,
+            'R3: absent key must return standard not-provided phrase.');
+        $this->assertSame($nullAnswer, $emptyAnswer,
+            'R3: null and empty-string must produce identical answers.');
+        $this->assertSame($nullAnswer, $absentAnswer,
+            'R3: null and absent-key must produce identical answers.');
     }
 }

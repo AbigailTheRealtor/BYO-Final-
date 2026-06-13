@@ -176,9 +176,9 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
         $this->assertFalse($result['success'], 'Guard B must short-circuit pipeline (success=false).');
         $this->assertSame('insufficient_context', $result['status'], 'Guard B status must be insufficient_context.');
         $this->assertSame(
-            $expectedLabel . ' has not been provided for this listing.',
+            'This information was not provided in the listing.',
             $result['final_response']['answer'],
-            "Guard B message must use specific label for listing.{$field}."
+            "Guard B message must be the standard not-provided phrase for listing.{$field}."
         );
         $this->assertSame('listing.' . $field, $result['classification']['normalized_field_key'] ?? null,
             "normalized_field_key must be listing.{$field}.");
@@ -975,7 +975,7 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, 'What are the seller financing terms?');
+        $result = $runner->run('seller', 1, 'How old is the roof on this home?');
 
         $this->assertFalse(
             $result['success'],

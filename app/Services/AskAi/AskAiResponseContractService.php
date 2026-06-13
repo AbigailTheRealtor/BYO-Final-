@@ -235,6 +235,9 @@ class AskAiResponseContractService
                 'listing.year_built',
                 'listing.unit_size',
                 'listing.number_of_units',
+                'listing.total_units',
+                'listing.roof_type',
+                'listing.air_conditioning',
                 'listing.condition_prop',
                 // Property sub-types (JSON decoded, landlord / tenant)
                 'listing.property_items',
@@ -256,6 +259,7 @@ class AskAiResponseContractService
                 'listing.hoa_acceptable',
                 'listing.max_hoa_fee',
                 'listing.has_hoa',
+                'listing.has_cdd',
                 'listing.association_name',
                 'listing.association_fee_amount',
                 'listing.association_fee_frequency',
@@ -301,6 +305,8 @@ class AskAiResponseContractService
                 // Compliance-sensitive (carry disclosure requirement)
                 'listing.is_in_flood_zone',
                 'listing.flood_zone_code',
+                'listing.flood_insurance_required',
+                'listing.zoning',
                 'listing.disclosure_flags',
                 // Availability / dates
                 'listing.available_date',
@@ -319,6 +325,35 @@ class AskAiResponseContractService
                 'listing.mls_id',
                 'listing.sold',
                 'listing.service_type',
+                // Landlord: Approval / Leasing
+                'listing.landlord_approval_conditions',
+                // Multifamily / Commercial: Building & Unit Mix
+                'listing.unit_mix_summary',
+                'listing.total_buildings',
+                // Commercial: Fees & Assessments
+                'listing.annual_cdd_fee',
+                'listing.annual_noi',
+                'listing.gross_annual_income',
+                // Business Opportunity: Identity & People
+                'listing.annual_revenue',
+                'listing.employee_count',
+                'listing.year_established',
+                'listing.business_name',
+                'listing.business_location_leased',
+                // Business Opportunity: Diligence & Disclosures
+                'listing.nda_required',
+                'listing.financial_statements_available',
+                'listing.reason_for_sale',
+                // Business Opportunity: Sale Terms & Assets
+                'listing.sale_includes',
+                'listing.business_assets',
+                'listing.business_lease_monthly_rent',
+                'listing.ffe_value',
+                'listing.gross_profit',
+                'listing.sde_ebitda',
+                'listing.inventory_value',
+                'listing.licenses',
+                'listing.business_lease_assignable',
                 // FAQ answers — seller/landlord-provided answers to common questions
                 'faq_answers',
             ],

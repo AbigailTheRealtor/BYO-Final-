@@ -180,7 +180,7 @@ class AskAiLiveUiRegressionTest extends TestCase
     }
 
     /**
-     * Assert that Guard B surfaces the expected field-label message when the
+     * Assert that Guard B surfaces the standard "not provided" phrase when the
      * listing field is null in the allowed_context.
      */
     private function assertGuardBFiresWithLabel(
@@ -200,10 +200,10 @@ class AskAiLiveUiRegressionTest extends TestCase
 
         $this->assertSame('insufficient_context', $result['status'],
             "Guard B must fire for {$role} listing.{$field} — status must be insufficient_context.");
-        $this->assertStringContainsString(
-            $expectedLabel,
+        $this->assertSame(
+            'This information was not provided in the listing.',
             $result['final_response']['answer'] ?? '',
-            "Guard B answer must reference the field label '{$expectedLabel}' for {$role} listing.{$field}."
+            "Guard B answer must be the standard not-provided phrase for {$role} listing.{$field}."
         );
         $this->assertSame(
             'listing.' . $field,

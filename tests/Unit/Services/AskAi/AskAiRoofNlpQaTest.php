@@ -657,14 +657,10 @@ class AskAiRoofNlpQaTest extends TestCase
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
-        $this->assertStringContainsString(
-            'Bedroom information',
+        $this->assertSame(
+            'This information was not provided in the listing.',
             $result['final_response']['answer'],
-            'Guard B must produce a field-specific "Bedroom information has not been provided" message.'
-        );
-        $this->assertStringContainsString(
-            'has not been provided for this listing',
-            $result['final_response']['answer']
+            'Guard B must return the standard not-provided phrase for null listing.bedrooms.'
         );
     }
 

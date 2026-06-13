@@ -1038,6 +1038,7 @@ class AskAiRunnerV2Service
             'square foot of the home',
             'how big is the home',
             'how large is the home',
+            'what is the square footage',
         ],
         'listing.year_built' => [
             'year built',
@@ -2671,16 +2672,16 @@ class AskAiRunnerV2Service
                 $listingField = substr($normalizedFieldKey, strlen('listing.'));
                 $listingData  = $promptPackage['allowed_context']['listing'] ?? null;
 
-                if (
-                    is_array($listingData)
+                $fieldAbsent = !is_array($listingData) || !array_key_exists($listingField, $listingData);
+                $fieldBlank  = is_array($listingData)
                     && array_key_exists($listingField, $listingData)
-                    && ($listingData[$listingField] === null || $listingData[$listingField] === '')
-                ) {
-                    $listingFieldLabel = $this->deriveFieldLabel($normalizedFieldKey);
+                    && ($listingData[$listingField] === null || $listingData[$listingField] === '');
+
+                if ($fieldAbsent || $fieldBlank) {
                     $missingListingResponse = [
                         'success'            => false,
                         'status'             => 'insufficient_context',
-                        'answer'             => $listingFieldLabel . ' has not been provided for this listing.',
+                        'answer'             => 'This information was not provided in the listing.',
                         'disclosures'        => $promptPackage['required_disclosures'] ?? [],
                         'source_attribution' => $promptPackage['source_attribution'] ?? [],
                         'refusal_message'    => null,
@@ -2982,6 +2983,39 @@ class AskAiRunnerV2Service
                         'trace'            => $trace,
                         'outcome_category' => 'openai_fallback',
                     ];
+                } else {
+                    $notProvidedFallbackResponse = [
+                        'success'            => false,
+                        'status'             => 'insufficient_context',
+                        'answer'             => 'This information was not provided in the listing.',
+                        'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                        'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                        'refusal_message'    => null,
+                        'error'              => null,
+                        'source'             => ['answer_source' => 'openai', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
+                    ];
+                    $notProvidedFallbackResponse['follow_up_questions'] = $this->followUpService->forResult(
+                        $notProvidedFallbackResponse,
+                        $classification
+                    );
+
+                    $trace['final_status']       = 'insufficient_context';
+                    $trace['source_attribution'] = $notProvidedFallbackResponse['source_attribution'] ?? null;
+                    $this->emitTrace($trace);
+
+                    return [
+                        'success'          => false,
+                        'status'           => 'insufficient_context',
+                        'classification'   => $classification,
+                        'context'          => $context,
+                        'contract'         => $contract,
+                        'prompt_package'   => $promptPackage,
+                        'adapter_result'   => $adapterResult,
+                        'final_response'   => $notProvidedFallbackResponse,
+                        'error'            => null,
+                        'trace'            => $trace,
+                        'outcome_category' => 'blank_information_not_provided',
+                    ];
                 }
             }
 
@@ -3015,10 +3049,13 @@ class AskAiRunnerV2Service
                 !($adapterResult['success'] ?? false)
                 && ($promptPackage['status'] ?? '') === 'prompt_ready'
             ) {
+                $unavailableFallbackAnswer = ($normalizedFieldKey !== null && str_starts_with($normalizedFieldKey, 'listing.'))
+                    ? 'This information was not provided in the listing.'
+                    : 'A response could not be generated right now. Please try again shortly.';
                 $unavailableFallbackResponse = [
                     'success'            => false,
                     'status'             => 'insufficient_context',
-                    'answer'             => 'A response could not be generated right now. Please try again shortly.',
+                    'answer'             => $unavailableFallbackAnswer,
                     'disclosures'        => $promptPackage['required_disclosures'] ?? [],
                     'source_attribution' => $promptPackage['source_attribution'] ?? [],
                     'refusal_message'    => null,
@@ -3402,6 +3439,28 @@ class AskAiRunnerV2Service
             'listing.access_24_7'                        => '24/7 building access information',
             'listing.shared_amenities'                   => 'Shared amenities information',
             'listing.renewal_option_details'             => 'Lease renewal option details information',
+            // Landlord: Approval / Leasing
+            'listing.landlord_approval_conditions'       => 'Landlord approval conditions information',
+            // Business Opportunity: Identity & People
+            'listing.annual_revenue'                     => 'Annual revenue information',
+            'listing.employee_count'                     => 'Employee count information',
+            'listing.year_established'                   => 'Year established information',
+            'listing.business_name'                      => 'Business name information',
+            'listing.business_location_leased'           => 'Business location information',
+            // Business Opportunity: Diligence & Disclosures
+            'listing.nda_required'                       => 'NDA requirement information',
+            'listing.financial_statements_available'     => 'Financial statements information',
+            'listing.reason_for_sale'                    => 'Reason for sale information',
+            // Business Opportunity: Sale Terms & Assets
+            'listing.sale_includes'                      => 'Sale includes information',
+            'listing.business_assets'                    => 'Business assets information',
+            'listing.business_lease_monthly_rent'        => 'Business lease rent information',
+            'listing.ffe_value'                          => 'Furniture, fixtures, and equipment value information',
+            'listing.gross_profit'                       => 'Gross profit information',
+            'listing.sde_ebitda'                         => 'SDE / EBITDA information',
+            'listing.inventory_value'                    => 'Inventory value information',
+            'listing.licenses'                           => 'Business licenses information',
+            'listing.business_lease_assignable'          => 'Business lease assignability information',
             // Seller: Financial & Utility Insights
             'faq_answers.average_utility_costs'          => 'Utility cost information',
             'faq_answers.internet_utility_providers'     => 'Internet and utility provider information',

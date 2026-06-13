@@ -206,6 +206,20 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
                 'Excellent',
                 'Property condition information',
             ],
+            'roof_type' => [
+                'listing.roof_type',
+                'What type of roof does this property have?',
+                'What is the roof material?',
+                'Shingle',
+                'Roof type information',
+            ],
+            'air_conditioning' => [
+                'listing.air_conditioning',
+                'Does this property have air conditioning?',
+                'Is there central air conditioning in this home?',
+                'Central Air',
+                'Air conditioning information',
+            ],
             // Location
             'address' => [
                 'listing.address',
@@ -837,14 +851,14 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
     }
 
     // =========================================================================
-    // (C) Guard B fires when the field is null — field-specific label, no adapter call
+    // (C) Guard B fires when the field is null — standard "not provided" phrase, no adapter call
     // =========================================================================
 
     /**
      * @dataProvider approvedFieldProvider
      * @group AskAi
      */
-    public function test_null_field_triggers_guard_b_with_field_specific_label(
+    public function test_null_field_triggers_guard_b_with_not_provided_phrase(
         string $canonicalKey,
         string $questionA,
         string $questionB,
@@ -867,10 +881,10 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
             $result['status'],
             "Guard B must fire for null {$canonicalKey} — status must be insufficient_context."
         );
-        $this->assertStringContainsString(
-            $guardBLabel,
+        $this->assertSame(
+            'This information was not provided in the listing.',
             $result['final_response']['answer'] ?? '',
-            "Guard B answer must reference field label '{$guardBLabel}' for null {$canonicalKey}."
+            "Guard B answer must be the standard not-provided phrase for null {$canonicalKey}."
         );
         $this->assertSame(
             $canonicalKey,
