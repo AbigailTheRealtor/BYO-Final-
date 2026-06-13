@@ -685,7 +685,7 @@
                                 $rft = $counterData['renewal_fee_type'] ?? '';
                                 $rfDisplay = $rft;
                                 if ($rft === 'Flat Fee') {
-                                    $rfDisplay = ($fmtMoney($counterData['renewal_fee_flat_free'] ?? null) ?? '—') . ' Flat Fee';
+                                    $rfDisplay = ($fmtMoney($counterData['renewal_fee_flat_fee'] ?? null) ?? '—') . ' Flat Fee';
                                 } elseif ($rft === 'Percentage of the Rent Due Each Rental Period') {
                                     $rfDisplay = ($fmtPercent($counterData['renewal_fee_percentage'] ?? null) ?? '—') . ' of Rent Due Each Rental Period';
                                 } elseif ($rft === 'Percentage of the Net Aggregate Rent') {

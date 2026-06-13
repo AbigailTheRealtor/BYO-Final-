@@ -104,7 +104,7 @@ class LandlordAgentAuctionCounterTerm extends Component
     public $renewal_fee_percentage = '';             // %
     public $renewal_fee_lease_value = '';            // %
     public $renewal_fee_first_month = '';            // %
-    public $renewal_fee_flat_free = '';              // $
+    public $renewal_fee_flat_fee = '';               // $
     public $renewal_fee_custom = '';                 // text
     // Commercial extras
     public $renewal_fee_sales_tax_lease_value = '';  // including | excluding
@@ -338,7 +338,7 @@ class LandlordAgentAuctionCounterTerm extends Component
             'renewal_fee_percentage',
             'renewal_fee_lease_value',
             'renewal_fee_first_month',
-            'renewal_fee_flat_free',
+            'renewal_fee_flat_fee',
             'renewal_fee_custom',
             'renewal_fee_sales_tax_lease_value',
             'renewal_fee_no_of_months',
@@ -634,7 +634,7 @@ class LandlordAgentAuctionCounterTerm extends Component
             'renewal_fee_percentage',
             'renewal_fee_lease_value',
             'renewal_fee_first_month',
-            'renewal_fee_flat_free',
+            'renewal_fee_flat_fee',
             'renewal_fee_custom',
             'renewal_fee_sales_tax_lease_value',
             'renewal_fee_sales_tax_flat_fee',
@@ -933,7 +933,7 @@ class LandlordAgentAuctionCounterTerm extends Component
         $counterTerm->saveMeta('renewal_fee_percentage', $this->renewal_fee_percentage);
         $counterTerm->saveMeta('renewal_fee_lease_value', $this->renewal_fee_lease_value);
         $counterTerm->saveMeta('renewal_fee_first_month', $this->renewal_fee_first_month);
-        $counterTerm->saveMeta('renewal_fee_flat_free', $this->renewal_fee_flat_free);
+        $counterTerm->saveMeta('renewal_fee_flat_fee', $this->renewal_fee_flat_fee);
         $counterTerm->saveMeta('renewal_fee_custom', $this->renewal_fee_custom);
         // Commercial extras
         $counterTerm->saveMeta('renewal_fee_sales_tax_lease_value', $this->renewal_fee_sales_tax_lease_value);

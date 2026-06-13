@@ -6,6 +6,8 @@ use Tests\TestCase;
 use ReflectionClass;
 use ReflectionProperty;
 use App\Http\Livewire\Landlord\LandlordAgentAuctionBid;
+use App\Http\Livewire\Landlord\LandlordAgentAuctionBidCounter;
+use App\Http\Livewire\Landlord\LandlordAgentAuctionCounterTerm;
 use App\Services\AgentBidMapperService;
 
 /**
@@ -194,5 +196,39 @@ class LandlordMapperTest extends TestCase
         ] as $key) {
             $this->assertKeyAligns($key);
         }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // P1A Counter-component regression guards
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /** @test */
+    public function counter_bid_component_has_canonical_renewal_fee_flat_fee(): void
+    {
+        $rc = new ReflectionClass(LandlordAgentAuctionBidCounter::class);
+        $props = array_map(
+            fn(ReflectionProperty $p) => $p->getName(),
+            $rc->getProperties(ReflectionProperty::IS_PUBLIC)
+        );
+
+        $this->assertContains('renewal_fee_flat_fee', $props,
+            'LandlordAgentAuctionBidCounter must declare public $renewal_fee_flat_fee');
+        $this->assertNotContains('renewal_fee_flat_free', $props,
+            'LandlordAgentAuctionBidCounter must not declare the misspelled $renewal_fee_flat_free');
+    }
+
+    /** @test */
+    public function counter_term_component_has_canonical_renewal_fee_flat_fee(): void
+    {
+        $rc = new ReflectionClass(LandlordAgentAuctionCounterTerm::class);
+        $props = array_map(
+            fn(ReflectionProperty $p) => $p->getName(),
+            $rc->getProperties(ReflectionProperty::IS_PUBLIC)
+        );
+
+        $this->assertContains('renewal_fee_flat_fee', $props,
+            'LandlordAgentAuctionCounterTerm must declare public $renewal_fee_flat_fee');
+        $this->assertNotContains('renewal_fee_flat_free', $props,
+            'LandlordAgentAuctionCounterTerm must not declare the misspelled $renewal_fee_flat_free');
     }
 }
