@@ -26,6 +26,7 @@ class BuyerAgentAuction extends Component
 
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
+    public bool $defaultProfileLoaded = false;
     public $isLoadingData = false; // Flag to prevent reset during draft/edit load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
