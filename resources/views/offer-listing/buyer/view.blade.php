@@ -2019,9 +2019,20 @@
         if (resultDiv) {
             resultDiv.addEventListener('click', function (e) {
                 var chip = e.target.closest ? e.target.closest('.ask-ai-chip') : (e.target.classList && e.target.classList.contains('ask-ai-chip') ? e.target : null);
-                if (!chip) return;
-                var q = chip.getAttribute('data-question');
-                if (q && textarea) { textarea.value = q; textarea.focus(); }
+                if (chip) {
+                    var q = chip.getAttribute('data-question');
+                    if (q && textarea) { textarea.value = q; textarea.focus(); }
+                    return;
+                }
+                var ctaBtn = e.target.closest ? e.target.closest('.ask-ai-escalate-cta') : (e.target.classList && e.target.classList.contains('ask-ai-escalate-cta') ? e.target : null);
+                if (ctaBtn) {
+                    var aiQuestion = textarea ? textarea.value : '';
+                    var qModalEl = document.getElementById('bolQuestionModal');
+                    var qTextarea = qModalEl ? qModalEl.querySelector('textarea[name="question"]') : null;
+                    if (qTextarea && aiQuestion) { qTextarea.value = aiQuestion; }
+                    if (modalEl && typeof bootstrap !== 'undefined') { bootstrap.Modal.getOrCreateInstance(modalEl).hide(); }
+                    if (qModalEl && typeof bootstrap !== 'undefined') { bootstrap.Modal.getOrCreateInstance(qModalEl).show(); }
+                }
             });
         }
 
@@ -2084,6 +2095,10 @@
                         html += '<div style="font-size:.75rem;color:#64748b;margin-top:.4rem;padding:.5rem .75rem;background:#f8fafc;border-radius:.4rem;border:1px solid #e2e8f0;">' + escHtml(disc2) + '</div>';
                     }
                 }
+                html += '<div style="margin-top:.75rem;padding-top:.6rem;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">';
+                html += '<span style="font-size:.8rem;color:#64748b;">Need a definitive answer?</span>';
+                html += '<button type="button" class="ask-ai-escalate-cta" style="display:inline-flex;align-items:center;gap:5px;font-size:.8rem;font-weight:600;padding:.35rem .75rem;border-radius:7px;border:1px solid #2563eb;background:#eff6ff;color:#2563eb;cursor:pointer;transition:background .15s,color .15s;"><i class="fa-solid fa-circle-question" style="font-size:.8rem;pointer-events:none;"></i>Ask a Question</button>';
+                html += '</div>';
             } else {
                 html += '<div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:.5rem;padding:.9rem 1rem;">';
                 html += '<div style="font-size:.875rem;color:#be123c;">Ask AI could not generate a response right now. Please try again later.</div>';
