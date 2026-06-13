@@ -148,6 +148,7 @@ Route::get('/test-notification', function () {
 
 // web.php
 
+
 Route::middleware(['auth', 'verified'])->group(function () {
     // Seller Agent Auction — Counter Terms (accessible by both seller and agent)
     Route::get('hire/seller/agent/auction/bid/{bid_id}/view-counter', [SellerAgentAuctionController::class, 'view_counter_terms'])->name('hire.seller.agent.auction.bid.view-counter');

@@ -218,6 +218,13 @@ class BuyerCriteriaAuctionController extends Controller
             $auction->saveMeta('road_surface_type', json_encode($request->road_surface_type));
             $auction->saveMeta('lot_features', json_encode($request->lot_features));
             $auction->saveMeta("otherFeature", $request->otherFeature);
+            $ldnaValue = $request->input('location_dna_preferences');
+            if ($ldnaValue !== null && $ldnaValue !== '') {
+                json_decode($ldnaValue);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $auction->saveMeta('location_dna_preferences', $ldnaValue);
+                }
+            }
             $aiFaqKeys = [
                 'buyer_active_now','buyer_timeline','buyer_motivation','buyer_current_situation',
                 'buyer_area_familiarity','buyer_flexibility','buyer_deal_breakers','buyer_lost_deal',
@@ -330,6 +337,15 @@ class BuyerCriteriaAuctionController extends Controller
         $page_data['financings'] = Financing::orderBy('sort', 'ASC')->get();
         $page_data['title'] = 'Buyer Criteria';
         $page_data['id'] = $id;
+        $auction = $page_data['auction'];
+        $ldnaRaw = $auction->info('location_dna_preferences');
+        $page_data['locationDnaPreferences'] = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? null) : null;
+        $page_data['legacyLocation'] = [
+            'cities'   => json_decode($auction->info('cities')   ?: '[]', true) ?? [],
+            'counties' => json_decode($auction->info('counties') ?: '[]', true) ?? [],
+            'states'   => json_decode($auction->info('states')   ?: '[]', true) ?? [],
+            'zip_codes' => [],
+        ];
         return view('buyer_criteria.view', $page_data);
     }
 
@@ -353,6 +369,8 @@ class BuyerCriteriaAuctionController extends Controller
         $page_data['property_types'] = PropertyType::orderBy('sort', 'ASC')->get();
         $page_data['auction'] = BuyerCriteriaAuction::find($id);
         $page_data['id'] = $id;
+        $ldnaRaw = $page_data['auction']->info('location_dna_preferences');
+        $page_data['existingLocationDna'] = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
         return view('buyer_criteria.edit', $page_data);
     }
 
@@ -542,6 +560,13 @@ class BuyerCriteriaAuctionController extends Controller
             $auction->saveMeta('road_surface_type', json_encode($request->road_surface_type));
             $auction->saveMeta('lot_features', json_encode($request->lot_features));
             $auction->saveMeta("otherFeature", $request->otherFeature);
+            $ldnaValueUpdate = $request->input('location_dna_preferences');
+            if ($ldnaValueUpdate !== null && $ldnaValueUpdate !== '') {
+                json_decode($ldnaValueUpdate);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $auction->saveMeta('location_dna_preferences', $ldnaValueUpdate);
+                }
+            }
             $aiFaqKeysUpdate = [
                 'buyer_active_now','buyer_timeline','buyer_motivation','buyer_current_situation',
                 'buyer_area_familiarity','buyer_flexibility','buyer_deal_breakers','buyer_lost_deal',

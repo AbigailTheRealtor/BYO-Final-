@@ -132,6 +132,14 @@ class TenantCriteriaAuctionController extends Controller
             $auction->saveMeta("agent_mls_id",$request->agent_mls_id);
             $auction->saveMeta("realStateAgent",$request->realStateAgent);
 
+            $ldnaTenantStore = $request->input('location_dna_preferences');
+            if ($ldnaTenantStore !== null && $ldnaTenantStore !== '') {
+                json_decode($ldnaTenantStore);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $auction->saveMeta('location_dna_preferences', $ldnaTenantStore);
+                }
+            }
+
             // AI FAQ / Chatbot Knowledge Base — stored privately, never shown publicly
             if ($request->has('ai_faq')) {
                 $request->validate([
@@ -303,6 +311,8 @@ class TenantCriteriaAuctionController extends Controller
     {
         $page_data['auction'] = TenantCriteriaAuction::findOrFail($id);
         $page_data['title'] = 'Edit Tenant\'s Criteria';
+        $ldnaRaw = $page_data['auction']->info('location_dna_preferences');
+        $page_data['existingLocationDna'] = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
         return view('tenant_criteria.edit', $page_data);
     }
 
@@ -415,6 +425,14 @@ class TenantCriteriaAuctionController extends Controller
         $auction->saveMeta("agent_license_no",$request->agent_license_no);
         $auction->saveMeta("agent_mls_id",$request->agent_mls_id);
         $auction->saveMeta("realStateAgent",$request->realStateAgent);
+
+        $ldnaTenantUpdate = $request->input('location_dna_preferences');
+        if ($ldnaTenantUpdate !== null && $ldnaTenantUpdate !== '') {
+            json_decode($ldnaTenantUpdate);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $auction->saveMeta('location_dna_preferences', $ldnaTenantUpdate);
+            }
+        }
 
         // AI FAQ / Chatbot Knowledge Base — stored privately, never shown publicly
         if ($request->has('ai_faq')) {
@@ -583,15 +601,18 @@ class TenantCriteriaAuctionController extends Controller
     public function view($id, Request $request)
     {
         $page_data['auction'] = TenantCriteriaAuction::whereId($id)->first();
-        // $page_data['counties'] = County::all();
-        // $page_data['cities'] = City::where('state_id', '3930')->get();
-        // $page_data['property_types'] = PropertyType::orderBy('sort', 'ASC')->get();
-        // $page_data['bedrooms'] = Bedroom::all();
-        // $page_data['bathrooms'] = Bathroom::all();
-        // $page_data['financings'] = Financing::orderBy('sort', 'ASC')->get();
         $page_data['title'] = 'Tenant Criteria';
         $page_data['id'] = $id;
         $page_data['bids'] = TenantCriteriaAuctionBid::with('meta')->where('tenant_criteria_auction_id', $id)->whereNull('counter_id')->get();
+        $auction = $page_data['auction'];
+        $ldnaRaw = $auction->info('location_dna_preferences');
+        $page_data['locationDnaPreferences'] = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? null) : null;
+        $page_data['legacyLocation'] = [
+            'cities'   => json_decode($auction->info('cities')   ?: '[]', true) ?? [],
+            'counties' => json_decode($auction->info('counties') ?: '[]', true) ?? [],
+            'states'   => json_decode($auction->info('state')    ?: '[]', true) ?? [],
+            'zip_codes' => [],
+        ];
         return view('tenant_criteria.view', $page_data);
     }
 

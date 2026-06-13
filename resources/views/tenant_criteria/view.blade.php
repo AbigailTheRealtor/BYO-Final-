@@ -124,6 +124,11 @@
             :share-token="$auction->ai_share_token"
             :property-type="$auction->get->property_type ?? ''"
         />
+        <!-- Location DNA Map Hero -->
+        <x-location-dna-map
+          :preferences="$locationDnaPreferences ?? null"
+          :legacyLocation="$legacyLocation ?? []"
+        />
         <!-- Description Box  -->
         <div class="card description">
           <div class="card-body">

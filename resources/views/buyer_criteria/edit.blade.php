@@ -436,6 +436,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        @include('partials.location-dna.map-input', ['existingLocationDna' => $existingLocationDna ?? []])
                     </div>
                     <div class="wizard-step" data-step="2">
                         <div class="form-group">
@@ -8323,6 +8324,6 @@
         // })
     </script>
     <script
-        src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_PLACES_API_KEY') }}&libraries=places&callback=initialize">
+        src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_PLACES_API_KEY') }}&libraries=places,drawing&callback=initialize">
     </script>
 @endpush
