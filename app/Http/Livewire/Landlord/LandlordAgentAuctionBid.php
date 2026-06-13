@@ -140,6 +140,9 @@ class LandlordAgentAuctionBid extends Component
     public $protection_period = '';
     public $early_termination_fee_option = '';
     public $early_termination_fee_amount = '';
+    public $retainer_fee_option = '';
+    public $retainer_fee_amount = '';
+    public $retainer_fee_application = '';
     public $agency_agreement_timeframe = '';
     public $agency_agreement_custom = '';
     public $referral_fee_percent = '';
@@ -769,32 +772,34 @@ class LandlordAgentAuctionBid extends Component
             $this->nar_id     = $user->nar_id ?? '';
 
             // Auto-load Default Profile for new bids
-            $mapped = AgentBidMapperService::findAndMap(
+            $profile = AgentDefaultProfile::findForAgentWithFallback(
                 $user->id,
                 'landlord',
                 $this->property_type ?: 'residential'
             );
+            $mapped = $profile ? AgentBidMapperService::mapFromProfile($profile->profile_data ?? []) : null;
             if ($mapped !== null) {
                 $this->defaultProfileExists  = true;
-                $this->bio                   = $mapped['bio'];
-                $this->why_hire_you          = $mapped['why_hire_you'];
-                $this->what_sets_you_apart   = $mapped['what_sets_you_apart'];
-                $this->marketing_plan        = $mapped['marketing_plan'];
-                $this->year_licensed         = $mapped['year_licensed'];
+                $presetFieldsApplied          = 0;
+                $this->applyPresetField('bio', $mapped['bio'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('why_hire_you', $mapped['why_hire_you'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('what_sets_you_apart', $mapped['what_sets_you_apart'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('marketing_plan', $mapped['marketing_plan'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('year_licensed', $mapped['year_licensed'] ?? null, $presetFieldsApplied);
                 if (!empty($mapped['reviews_links']))             $this->reviews_links             = $mapped['reviews_links'];
                 if (!empty($mapped['website_link']))              $this->website_link              = $mapped['website_link'];
                 if (!empty($mapped['social_media']))              $this->social_media              = $mapped['social_media'];
-                if (!empty($mapped['additional_details']))        $this->additional_details        = $mapped['additional_details'];
-                if (!empty($mapped['first_name']))                $this->first_name                = $mapped['first_name'];
-                if (!empty($mapped['last_name']))                 $this->last_name                 = $mapped['last_name'];
-                if (!empty($mapped['phone']))                     $this->phone                     = $mapped['phone'];
-                if (!empty($mapped['email']))                     $this->email                     = $mapped['email'];
-                if (!empty($mapped['brokerage']))                 $this->brokerage                 = $mapped['brokerage'];
-                if (!empty($mapped['license_no']))                $this->license_no                = $mapped['license_no'];
-                if (!empty($mapped['nar_id']))                    $this->nar_id                    = $mapped['nar_id'];
-                if (!empty($mapped['presentation_link']))         $this->presentation_link         = $mapped['presentation_link'];
-                if (!empty($mapped['business_card_link']))        $this->business_card_link        = $mapped['business_card_link'];
-                if (!empty($mapped['business_card_stored_path'])) $this->business_card_stored_path = $mapped['business_card_stored_path'];
+                $this->applyPresetField('additional_details', $mapped['additional_details'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('first_name', $mapped['first_name'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('last_name', $mapped['last_name'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('phone', $mapped['phone'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('email', $mapped['email'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('brokerage', $mapped['brokerage'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('license_no', $mapped['license_no'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('nar_id', $mapped['nar_id'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('presentation_link', $mapped['presentation_link'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('business_card_link', $mapped['business_card_link'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('business_card_stored_path', $mapped['business_card_stored_path'] ?? null, $presetFieldsApplied);
                 if (!empty($mapped['promoMaterials']))            $this->promoMaterials            = $mapped['promoMaterials'];
                 if (!empty($mapped['services'])) {
                     $filtered = $this->filterServicesToCurrentCatalog($mapped['services']);
@@ -805,70 +810,84 @@ class LandlordAgentAuctionBid extends Component
                 }
                 if (!empty($mapped['other_services']))            $this->other_services            = $mapped['other_services'];
                 // Broker Compensation fields from preset
-                if (!empty($mapped['purchase_fee_type']))                   $this->purchase_fee_type                   = $mapped['purchase_fee_type'];
-                if (!empty($mapped['purchase_fee_flat']))                   $this->purchase_fee_flat                   = $mapped['purchase_fee_flat'];
-                if (!empty($mapped['purchase_fee_rental_period']))          $this->purchase_fee_rental_period          = $mapped['purchase_fee_rental_period'];
-                if (!empty($mapped['purchase_fee_percentage_combo']))       $this->purchase_fee_percentage_combo       = $mapped['purchase_fee_percentage_combo'];
-                if (!empty($mapped['purchase_fee_flat_combo']))             $this->purchase_fee_flat_combo             = $mapped['purchase_fee_flat_combo'];
-                if (!empty($mapped['purchase_fee_net_aggregate']))          $this->purchase_fee_net_aggregate          = $mapped['purchase_fee_net_aggregate'];
-                if (!empty($mapped['purchase_fee_gross_rent']))             $this->purchase_fee_gross_rent             = $mapped['purchase_fee_gross_rent'];
-                if (!empty($mapped['sales_tax_option_gross']))              $this->sales_tax_option_gross              = $mapped['sales_tax_option_gross'];
-                if (!empty($mapped['purchase_fee_monthly_percentage']))     $this->purchase_fee_monthly_percentage     = $mapped['purchase_fee_monthly_percentage'];
-                if (!empty($mapped['purchase_fee_months']))                 $this->purchase_fee_months                 = $mapped['purchase_fee_months'];
-                if (!empty($mapped['sales_tax_option_monthly']))            $this->sales_tax_option_monthly            = $mapped['sales_tax_option_monthly'];
-                if (!empty($mapped['purchase_fee_flat_commercial']))        $this->purchase_fee_flat_commercial        = $mapped['purchase_fee_flat_commercial'];
-                if (!empty($mapped['sales_tax_option_flat']))               $this->sales_tax_option_flat               = $mapped['sales_tax_option_flat'];
-                if (!empty($mapped['purchase_fee_other_commercial']))       $this->purchase_fee_other_commercial       = $mapped['purchase_fee_other_commercial'];
-                if (!empty($mapped['tenant_broker_commission_structure']))  $this->tenant_broker_commission_structure  = $mapped['tenant_broker_commission_structure'];
-                if (!empty($mapped['tenant_broker_fee_structure']))         $this->tenant_broker_fee_structure         = $mapped['tenant_broker_fee_structure'];
-                if (!empty($mapped['tenant_broker_percentage']))            $this->tenant_broker_percentage            = $mapped['tenant_broker_percentage'];
-                if (!empty($mapped['tenant_broker_gross_lease']))           $this->tenant_broker_gross_lease           = $mapped['tenant_broker_gross_lease'];
-                if (!empty($mapped['tenant_broker_first_month_rent']))      $this->tenant_broker_first_month_rent      = $mapped['tenant_broker_first_month_rent'];
-                if (!empty($mapped['tenant_broker_flat_fee']))              $this->tenant_broker_flat_fee              = $mapped['tenant_broker_flat_fee'];
-                if (!empty($mapped['tenant_broker_other']))                 $this->tenant_broker_other                 = $mapped['tenant_broker_other'];
-                if (!empty($mapped['broker_fee_timing']))                   $this->broker_fee_timing                   = $mapped['broker_fee_timing'];
-                if (!empty($mapped['broker_fee_days_from_rent']))           $this->broker_fee_days_from_rent           = $mapped['broker_fee_days_from_rent'];
-                if (!empty($mapped['broker_fee_days_after_lease']))         $this->broker_fee_days_after_lease         = $mapped['broker_fee_days_after_lease'];
-                if (!empty($mapped['broker_fee_days_after_rent']))          $this->broker_fee_days_after_rent          = $mapped['broker_fee_days_after_rent'];
-                if (!empty($mapped['broker_fee_timing_other']))             $this->broker_fee_timing_other             = $mapped['broker_fee_timing_other'];
-                if (!empty($mapped['renewal_fee_type']))                    $this->renewal_fee_type                    = $mapped['renewal_fee_type'];
-                if (!empty($mapped['renewal_fee_percentage']))              $this->renewal_fee_percentage              = $mapped['renewal_fee_percentage'];
-                if (!empty($mapped['renewal_fee_lease_value']))             $this->renewal_fee_lease_value             = $mapped['renewal_fee_lease_value'];
-                if (!empty($mapped['renewal_fee_first_month']))             $this->renewal_fee_first_month             = $mapped['renewal_fee_first_month'];
-                if (!empty($mapped['renewal_fee_flat_fee']))                $this->renewal_fee_flat_fee                = $mapped['renewal_fee_flat_fee'];
-                if (!empty($mapped['renewal_fee_custom']))                  $this->renewal_fee_custom                  = $mapped['renewal_fee_custom'];
-                if (!empty($mapped['renewal_fee_sales_tax_lease_value']))   $this->renewal_fee_sales_tax_lease_value   = $mapped['renewal_fee_sales_tax_lease_value'];
-                if (!empty($mapped['renewal_fee_no_of_months']))            $this->renewal_fee_no_of_months            = $mapped['renewal_fee_no_of_months'];
-                if (!empty($mapped['renewal_fee_sales_tax_first_month']))   $this->renewal_fee_sales_tax_first_month   = $mapped['renewal_fee_sales_tax_first_month'];
-                if (!empty($mapped['renewal_fee_sales_tax_flat_fee']))      $this->renewal_fee_sales_tax_flat_fee      = $mapped['renewal_fee_sales_tax_flat_fee'];
-                if (!empty($mapped['expansion_commission_percentage']))     $this->expansion_commission_percentage     = $mapped['expansion_commission_percentage'];
-                if (!empty($mapped['interested_in_property_management']))                      $this->interested_in_property_management                      = $mapped['interested_in_property_management'];
-                if (!empty($mapped['interested_in_property_management_fee']))                  $this->interested_in_property_management_fee                  = $mapped['interested_in_property_management_fee'];
-                if (!empty($mapped['interested_in_property_management_fee_gross_lease']))      $this->interested_in_property_management_fee_gross_lease      = $mapped['interested_in_property_management_fee_gross_lease'];
-                if (!empty($mapped['interested_in_property_management_fee_rental_periord']))   $this->interested_in_property_management_fee_rental_periord   = $mapped['interested_in_property_management_fee_rental_periord'];
-                if (!empty($mapped['interested_in_property_management_fee_flate_free']))       $this->interested_in_property_management_fee_flate_free       = $mapped['interested_in_property_management_fee_flate_free'];
-                if (!empty($mapped['interested_in_property_management_fee_other']))            $this->interested_in_property_management_fee_other            = $mapped['interested_in_property_management_fee_other'];
-                if (!empty($mapped['interested_in_selling']))               $this->interested_in_selling               = $mapped['interested_in_selling'];
-                if (!empty($mapped['interested_in_selling_type']))          $this->interested_in_selling_type          = $mapped['interested_in_selling_type'];
-                if (!empty($mapped['landlord_broker_purchase_price']))      $this->landlord_broker_purchase_price      = $mapped['landlord_broker_purchase_price'];
-                if (!empty($mapped['landlord_broker_percentage_price']))    $this->landlord_broker_percentage_price    = $mapped['landlord_broker_percentage_price'];
-                if (!empty($mapped['landlord_broker_dollar_price']))        $this->landlord_broker_dollar_price        = $mapped['landlord_broker_dollar_price'];
-                if (!empty($mapped['landlord_broker_flate_fee']))           $this->landlord_broker_flate_fee           = $mapped['landlord_broker_flate_fee'];
-                if (!empty($mapped['landlord_broker_other']))               $this->landlord_broker_other               = $mapped['landlord_broker_other'];
-                if (!empty($mapped['purchase_fee_purchase_price']))         $this->purchase_fee_purchase_price         = $mapped['purchase_fee_purchase_price'];
-                if (!empty($mapped['interested_lease_option_agreement']))   $this->interested_lease_option_agreement   = $mapped['interested_lease_option_agreement'];
-                if (!empty($mapped['lease_type']))                          $this->lease_type                          = $mapped['lease_type'];
-                if (!empty($mapped['lease_value']))                         $this->lease_value                         = $mapped['lease_value'];
-                if (!empty($mapped['purchase_type']))                       $this->purchase_type                       = $mapped['purchase_type'];
-                if (!empty($mapped['purchase_value']))                      $this->purchase_value                      = $mapped['purchase_value'];
-                if (!empty($mapped['protection_period']))                   $this->protection_period                   = $mapped['protection_period'];
-                if (!empty($mapped['early_termination_fee_option']))        $this->early_termination_fee_option        = $mapped['early_termination_fee_option'];
-                if (!empty($mapped['early_termination_fee_amount']))        $this->early_termination_fee_amount        = $mapped['early_termination_fee_amount'];
-                if (!empty($mapped['agency_agreement_timeframe']))          $this->agency_agreement_timeframe          = $mapped['agency_agreement_timeframe'];
-                if (!empty($mapped['agency_agreement_custom']))             $this->agency_agreement_custom             = $mapped['agency_agreement_custom'];
-                if (!empty($mapped['brokerage_relationship']))              $this->brokerage_relationship              = $mapped['brokerage_relationship'];
-                if (!empty($mapped['additional_details_broker']))           $this->additional_details_broker           = $mapped['additional_details_broker'];
-                $this->defaultProfileLoaded  = true;
+                $this->applyPresetField('purchase_fee_type', $mapped['purchase_fee_type'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_fee_flat', $mapped['purchase_fee_flat'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_fee_rental_period', $mapped['purchase_fee_rental_period'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_fee_percentage_combo', $mapped['purchase_fee_percentage_combo'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_fee_flat_combo', $mapped['purchase_fee_flat_combo'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_fee_net_aggregate', $mapped['purchase_fee_net_aggregate'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_fee_gross_rent', $mapped['purchase_fee_gross_rent'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('sales_tax_option_gross', $mapped['sales_tax_option_gross'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_fee_monthly_percentage', $mapped['purchase_fee_monthly_percentage'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_fee_months', $mapped['purchase_fee_months'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('sales_tax_option_monthly', $mapped['sales_tax_option_monthly'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_fee_flat_commercial', $mapped['purchase_fee_flat_commercial'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('sales_tax_option_flat', $mapped['sales_tax_option_flat'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_fee_other_commercial', $mapped['purchase_fee_other_commercial'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('tenant_broker_commission_structure', $mapped['tenant_broker_commission_structure'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('tenant_broker_fee_structure', $mapped['tenant_broker_fee_structure'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('tenant_broker_percentage', $mapped['tenant_broker_percentage'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('tenant_broker_gross_lease', $mapped['tenant_broker_gross_lease'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('tenant_broker_first_month_rent', $mapped['tenant_broker_first_month_rent'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('tenant_broker_flat_fee', $mapped['tenant_broker_flat_fee'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('tenant_broker_other', $mapped['tenant_broker_other'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('broker_fee_timing', $mapped['broker_fee_timing'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('broker_fee_days_from_rent', $mapped['broker_fee_days_from_rent'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('broker_fee_days_after_lease', $mapped['broker_fee_days_after_lease'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('broker_fee_days_after_rent', $mapped['broker_fee_days_after_rent'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('broker_fee_timing_other', $mapped['broker_fee_timing_other'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('renewal_fee_type', $mapped['renewal_fee_type'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('renewal_fee_percentage', $mapped['renewal_fee_percentage'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('renewal_fee_lease_value', $mapped['renewal_fee_lease_value'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('renewal_fee_first_month', $mapped['renewal_fee_first_month'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('renewal_fee_flat_fee', $mapped['renewal_fee_flat_fee'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('renewal_fee_custom', $mapped['renewal_fee_custom'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('renewal_fee_sales_tax_lease_value', $mapped['renewal_fee_sales_tax_lease_value'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('renewal_fee_no_of_months', $mapped['renewal_fee_no_of_months'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('renewal_fee_sales_tax_first_month', $mapped['renewal_fee_sales_tax_first_month'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('renewal_fee_sales_tax_flat_fee', $mapped['renewal_fee_sales_tax_flat_fee'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('expansion_commission_percentage', $mapped['expansion_commission_percentage'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('interested_in_property_management', $mapped['interested_in_property_management'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('interested_in_property_management_fee', $mapped['interested_in_property_management_fee'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('interested_in_property_management_fee_gross_lease', $mapped['interested_in_property_management_fee_gross_lease'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('interested_in_property_management_fee_rental_periord', $mapped['interested_in_property_management_fee_rental_periord'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('interested_in_property_management_fee_flate_free', $mapped['interested_in_property_management_fee_flate_free'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('interested_in_property_management_fee_other', $mapped['interested_in_property_management_fee_other'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('interested_in_selling', $mapped['interested_in_selling'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('interested_in_selling_type', $mapped['interested_in_selling_type'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('landlord_broker_purchase_price', $mapped['landlord_broker_purchase_price'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('landlord_broker_percentage_price', $mapped['landlord_broker_percentage_price'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('landlord_broker_dollar_price', $mapped['landlord_broker_dollar_price'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('landlord_broker_flate_fee', $mapped['landlord_broker_flate_fee'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('landlord_broker_other', $mapped['landlord_broker_other'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_fee_purchase_price', $mapped['purchase_fee_purchase_price'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('interested_lease_option_agreement', $mapped['interested_lease_option_agreement'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('lease_type', $mapped['lease_type'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('lease_value', $mapped['lease_value'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_type', $mapped['purchase_type'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('purchase_value', $mapped['purchase_value'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('protection_period', $mapped['protection_period'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('early_termination_fee_option', $mapped['early_termination_fee_option'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('early_termination_fee_amount', $mapped['early_termination_fee_amount'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('brokerage_relationship', $mapped['brokerage_relationship'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('additional_details_broker', $mapped['additional_details_broker'] ?? null, $presetFieldsApplied);
+                if ($presetFieldsApplied > 0) {
+                    $this->defaultProfileLoaded = true;
+                    try {
+                        DB::table('agent_preset_events')->insert([
+                            'user_id'               => Auth::id(),
+                            'role'                  => 'landlord',
+                            'property_type'         => $this->property_type,
+                            'preset_id'             => $profile->id,
+                            'listing_id'            => $this->auctionId,
+                            'event'                 => 'preset_applied',
+                            'field_count_populated' => $presetFieldsApplied,
+                            'created_at'            => now(),
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::warning('preset_applied analytics failed', ['error' => $e->getMessage()]);
+                    }
+                }
             }
         }
 
@@ -1565,6 +1584,21 @@ class LandlordAgentAuctionBid extends Component
 
 
 
+
+    /**
+     * Write a scalar preset value to a component property only when:
+     *   (a) the preset value is non-empty, AND
+     *   (b) the component property is currently blank (blank-field protection —
+     *       never overwrites listing-prefilled or agent-entered values).
+     * Increments $count for every field actually written (used for analytics).
+     */
+    private function applyPresetField(string $field, mixed $value, int &$count): void
+    {
+        if (!empty($value) && trim((string)($this->$field ?? '')) === '') {
+            $this->$field = $value;
+            $count++;
+        }
+    }
     public function render()
     {
         return view('livewire.landlord.landlord-agent-auction-bid', [
