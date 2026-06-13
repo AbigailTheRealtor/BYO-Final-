@@ -15,9 +15,10 @@ namespace App\Services;
  *   - 'full_match_ready'  — all Full Match required fields populated
  *
  * Population rules (mirrors bid form normalisation):
- *   - null, '', whitespace-only string → not populated
- *   - [] (empty array)                 → not populated
- *   - any other non-empty value        → populated
+ *   - null, '', whitespace-only string  → not populated
+ *   - [] (empty array)                  → not populated
+ *   - global_placeholders ('0','0.00')  → not populated (config-driven)
+ *   - any other non-empty value         → populated
  *
  * No database access, no side effects. Pure transformation.
  */
@@ -48,12 +49,13 @@ class MatchReadinessService
             ];
         }
 
-        $quickFields = $config['quick_match']  ?? [];
-        $fullFields  = $config['full_match']   ?? [];
-        $arrayFields = $config['array_fields'] ?? [];
+        $quickFields        = $config['quick_match']  ?? [];
+        $fullFields         = $config['full_match']   ?? [];
+        $arrayFields        = $config['array_fields'] ?? [];
+        $globalPlaceholders = config('match_readiness.global_placeholders', []);
 
-        $missingQuick = self::missingFields($bidData, $quickFields, $arrayFields);
-        $missingFull  = self::missingFields($bidData, $fullFields,  $arrayFields);
+        $missingQuick = self::missingFields($bidData, $quickFields, $arrayFields, $globalPlaceholders);
+        $missingFull  = self::missingFields($bidData, $fullFields,  $arrayFields, $globalPlaceholders);
 
         if (empty($missingFull)) {
             $state = 'full_match_ready';
@@ -76,11 +78,16 @@ class MatchReadinessService
      *
      * @param  array    $bidData
      * @param  string[] $required
-     * @param  string[] $arrayFields  Fields whose values must be non-empty arrays.
+     * @param  string[] $arrayFields        Fields whose values must be non-empty arrays.
+     * @param  string[] $globalPlaceholders Scalar values treated as "not populated" (e.g. '0').
      * @return string[]
      */
-    private static function missingFields(array $bidData, array $required, array $arrayFields): array
-    {
+    private static function missingFields(
+        array $bidData,
+        array $required,
+        array $arrayFields,
+        array $globalPlaceholders = []
+    ): array {
         $missing = [];
         foreach ($required as $field) {
             $value = $bidData[$field] ?? null;
@@ -89,7 +96,7 @@ class MatchReadinessService
                     $missing[] = $field;
                 }
             } else {
-                if (!self::isPopulatedScalar($value)) {
+                if (!self::isPopulatedScalar($value, $globalPlaceholders)) {
                     $missing[] = $field;
                 }
             }
@@ -102,8 +109,11 @@ class MatchReadinessService
      *   - not null
      *   - not empty string
      *   - not whitespace-only
+     *   - not a global placeholder value (e.g. '0', '0.00')
+     *
+     * @param  string[] $placeholders  Values to treat as not populated.
      */
-    private static function isPopulatedScalar(mixed $value): bool
+    private static function isPopulatedScalar(mixed $value, array $placeholders = []): bool
     {
         if ($value === null) {
             return false;
@@ -111,7 +121,14 @@ class MatchReadinessService
         if (is_array($value)) {
             return !empty($value);
         }
-        return trim((string) $value) !== '';
+        $trimmed = trim((string) $value);
+        if ($trimmed === '') {
+            return false;
+        }
+        if (!empty($placeholders) && in_array($trimmed, $placeholders, true)) {
+            return false;
+        }
+        return true;
     }
 
     /**

@@ -381,6 +381,67 @@ class MatchReadinessServiceTest extends TestCase
         $this->assertContains('interested_in_selling', $result['missing_full']);
     }
 
+    // ── Global placeholder/default normalization ─────────────────────────────
+
+    /** @test */
+    public function string_zero_purchase_fee_percentage_is_treated_as_not_populated(): void
+    {
+        $bid = $this->sellerQuickBid();
+        $bid['purchase_fee_percentage'] = '0';
+
+        $result = MatchReadinessService::evaluate($bid, 'seller');
+
+        $this->assertSame('not_ready', $result['state']);
+        $this->assertContains('purchase_fee_percentage', $result['missing_quick']);
+    }
+
+    /** @test */
+    public function decimal_zero_purchase_fee_percentage_is_treated_as_not_populated(): void
+    {
+        $bid = $this->sellerQuickBid();
+        $bid['purchase_fee_percentage'] = '0.00';
+
+        $result = MatchReadinessService::evaluate($bid, 'seller');
+
+        $this->assertSame('not_ready', $result['state']);
+        $this->assertContains('purchase_fee_percentage', $result['missing_quick']);
+    }
+
+    /** @test */
+    public function integer_zero_purchase_fee_percentage_is_treated_as_not_populated(): void
+    {
+        $bid = $this->sellerQuickBid();
+        $bid['purchase_fee_percentage'] = 0;
+
+        $result = MatchReadinessService::evaluate($bid, 'seller');
+
+        $this->assertSame('not_ready', $result['state']);
+        $this->assertContains('purchase_fee_percentage', $result['missing_quick']);
+    }
+
+    /** @test */
+    public function nonzero_numeric_value_is_treated_as_populated(): void
+    {
+        $bid = $this->sellerQuickBid();
+        $bid['purchase_fee_percentage'] = '3';
+
+        $result = MatchReadinessService::evaluate($bid, 'seller');
+
+        $this->assertNotContains('purchase_fee_percentage', $result['missing_quick']);
+    }
+
+    /** @test */
+    public function string_zero_in_full_match_field_is_treated_as_not_populated(): void
+    {
+        $bid = $this->sellerFullBid();
+        $bid['nominal'] = '0';
+
+        $result = MatchReadinessService::evaluate($bid, 'seller');
+
+        $this->assertNotSame('full_match_ready', $result['state']);
+        $this->assertContains('nominal', $result['missing_full']);
+    }
+
     // ── Configuration-driven behaviour ───────────────────────────────────────
 
     /** @test */

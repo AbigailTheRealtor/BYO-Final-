@@ -12,6 +12,7 @@
  *   - ''              → not populated
  *   - whitespace-only → not populated
  *   - []              → not populated (array fields)
+ *   - global_placeholders (see below) → not populated
  *   - any other value → populated
  *
  * Keys in 'array_fields' receive the empty-array check; all others use the
@@ -22,6 +23,14 @@
  */
 
 return [
+
+    /*
+     * Global placeholder/default values that are treated as "not populated"
+     * for all scalar fields across all roles.
+     * This covers numeric inputs where a user may have typed 0 without
+     * actually intending to specify a zero value.
+     */
+    'global_placeholders' => ['0', '0.00'],
 
     // ── Seller ──────────────────────────────────────────────────────────────
     'seller' => [

@@ -143,9 +143,11 @@
                                             <span class="badge" style="{{ $statusStyles[$bidStatus] ?? $statusStyles['Active'] }}padding:6px 12px;border-radius:4px;">
                                                 {{ $bidStatus }}
                                             </span>
+                                            @if($readiness['state'] !== 'not_ready')
                                             <span class="badge" style="background:{{ $totalScoreColor }};color:#fff;padding:6px 12px;border-radius:4px;">
                                                 <i class="fa-solid fa-chart-pie me-1"></i>{{ $totalScore }}% Match
                                             </span>
+                                            @endif
                                             @include('partials.match_readiness_badge', ['readiness' => $readiness, 'hasBid' => true])
                                             @else
                                             <span class="badge bg-secondary" style="padding:6px 12px;border-radius:4px;">No Bid Placed</span>
@@ -161,6 +163,7 @@
                                                 <small class="text-muted d-block">Bid Submitted</small>
                                                 <div>{{ $userBid->created_at->format('M d, Y') }}</div>
                                             </div>
+                                            @if($readiness['state'] !== 'not_ready')
                                             <div class="col-md-4 mb-2">
                                                 <small class="text-muted d-block">Broker Terms</small>
                                                 <span style="color:{{ $brokerScoreColor }};font-weight:600;">{{ $brokerScore }}%</span>
@@ -171,9 +174,17 @@
                                                 <span style="color:{{ $servicesScoreColor }};font-weight:600;">{{ $servicesScore }}%</span>
                                                 <small class="text-muted ms-1">{{ $servicesTotal > 0 ? '('.$servicesMatched.'/'.$servicesTotal.')' : 'No services requested' }}</small>
                                             </div>
+                                            @else
+                                            <div class="col-md-8 mb-2 d-flex align-items-center">
+                                                <small class="text-muted">
+                                                    <i class="fa-solid fa-circle-exclamation me-1"></i>
+                                                    Complete the required bid fields to see match scores.
+                                                </small>
+                                            </div>
+                                            @endif
                                         </div>
 
-                                        @if(count($brokerMismatches) > 0 || count($servicesAdded) > 0 || count($servicesMissing) > 0)
+                                        @if($readiness['state'] !== 'not_ready' && (count($brokerMismatches) > 0 || count($servicesAdded) > 0 || count($servicesMissing) > 0))
                                         <div class="mt-3 pt-3" style="border-top:1px solid #eee;">
                                             <div class="row">
                                                 @if(count($brokerMismatches) > 0)
