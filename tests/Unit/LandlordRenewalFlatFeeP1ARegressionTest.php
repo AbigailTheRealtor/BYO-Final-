@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use ReflectionClass;
+use App\Services\AgentBidMapperService;
 use App\Services\LandlordAcceptedBidSummaryService;
 
 /**
@@ -67,6 +68,47 @@ class LandlordRenewalFlatFeeP1ARegressionTest extends TestCase
 
         $this->assertNull($result,
             'resolveRenewalFeeDisplay must return null when no renewal_fee_type is set');
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Preset → mapper value-transfer regression
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /** @test */
+    public function mapper_emits_renewal_fee_flat_fee_value_from_canonical_preset_key(): void
+    {
+        $mapped = AgentBidMapperService::mapFromProfile([
+            'renewal_fee_flat_fee' => '3500',
+        ]);
+
+        $this->assertSame('3500', $mapped['renewal_fee_flat_fee'],
+            'Mapper must propagate renewal_fee_flat_fee value from preset profileData');
+    }
+
+    /** @test */
+    public function mapper_falls_back_to_old_key_for_legacy_preset_data(): void
+    {
+        // Profiles saved before the P1A rename stored the value under the old key.
+        // The mapper backward-compat fallback must rescue this value.
+        $mapped = AgentBidMapperService::mapFromProfile([
+            'renewal_fee_flat_free' => '1500',  // legacy key — no canonical key present
+        ]);
+
+        $this->assertSame('1500', $mapped['renewal_fee_flat_fee'],
+            'Mapper must fall back to renewal_fee_flat_free for legacy presets that pre-date P1A');
+    }
+
+    /** @test */
+    public function mapper_prefers_canonical_key_over_legacy_fallback(): void
+    {
+        // When both keys are present, canonical takes priority.
+        $mapped = AgentBidMapperService::mapFromProfile([
+            'renewal_fee_flat_fee'  => '2500',
+            'renewal_fee_flat_free' => '9999',  // stale/conflicting — must be ignored
+        ]);
+
+        $this->assertSame('2500', $mapped['renewal_fee_flat_fee'],
+            'Mapper must prefer renewal_fee_flat_fee over the legacy fallback key');
     }
 
     // ──────────────────────────────────────────────────────────────────────────

@@ -168,7 +168,7 @@ class AgentBidMapperService
             'renewal_fee_percentage'              => $profileData['renewal_fee_percentage']              ?? '',
             'renewal_fee_lease_value'             => $profileData['renewal_fee_lease_value']             ?? '',
             'renewal_fee_first_month'             => $profileData['renewal_fee_first_month']             ?? '',
-            'renewal_fee_flat_fee'                => $profileData['renewal_fee_flat_fee']                ?? '',
+            'renewal_fee_flat_fee'                => $profileData['renewal_fee_flat_fee'] ?? $profileData['renewal_fee_flat_free'] ?? '',
             'renewal_fee_custom'                  => $profileData['renewal_fee_custom']                  ?? '',
             'renewal_fee_sales_tax_lease_value'   => $profileData['renewal_fee_sales_tax_lease_value']   ?? '',
             'renewal_fee_no_of_months'            => $profileData['renewal_fee_no_of_months']            ?? '',

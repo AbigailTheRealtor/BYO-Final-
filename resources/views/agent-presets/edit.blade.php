@@ -1366,7 +1366,7 @@
                                     <div class="input-group"><input type="number" name="renewal_fee_first_month" class="form-control" value="{{ old('renewal_fee_first_month', $data['renewal_fee_first_month'] ?? '') }}" placeholder="Enter percentage of first month's rent (e.g., 100)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div data-cp-parent="cp_renewal_fee_type_res" data-cp-values="Flat Fee">
-                                    <div class="input-group"><span class="input-group-text">$</span><input type="text" name="renewal_fee_flat_free" class="form-control" value="{{ old('renewal_fee_flat_free', $data['renewal_fee_flat_free'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 2,000)"></div>
+                                    <div class="input-group"><span class="input-group-text">$</span><input type="text" name="renewal_fee_flat_fee" class="form-control" value="{{ old('renewal_fee_flat_fee', $data['renewal_fee_flat_fee'] ?? $data['renewal_fee_flat_free'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 2,000)"></div>
                                 </div>
                                 <div data-cp-parent="cp_renewal_fee_type_res" data-cp-values="other">
                                     <input type="text" name="renewal_fee_custom" class="form-control" value="{{ old('renewal_fee_custom', $data['renewal_fee_custom'] ?? '') }}" placeholder="Enter commission structure (e.g., $500 flat fee plus 5% of the gross lease value)">
@@ -1466,7 +1466,7 @@
                                 </div>
                                 <div data-cp-parent="cp_renewal_fee_type_com" data-cp-values="Flat Fee">
                                     <div class="row gy-2">
-                                        <div class="col-12"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="renewal_fee_flat_free" class="form-control" value="{{ old('renewal_fee_flat_free', $data['renewal_fee_flat_free'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div></div>
+                                        <div class="col-12"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="renewal_fee_flat_fee" class="form-control" value="{{ old('renewal_fee_flat_fee', $data['renewal_fee_flat_fee'] ?? $data['renewal_fee_flat_free'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div></div>
                                         <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="renewal_fee_sales_tax_flat_fee" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option>@foreach(config('agent_preset_compensation.common.sales_tax') as $stOptVal => $stOptLabel)<option value="{{ $stOptVal }}" @selected(old('renewal_fee_sales_tax_flat_fee', $data['renewal_fee_sales_tax_flat_fee'] ?? '') === $stOptVal)>{{ $stOptLabel }}</option>@endforeach</select></div></div>
                                     </div>
                                 </div>
