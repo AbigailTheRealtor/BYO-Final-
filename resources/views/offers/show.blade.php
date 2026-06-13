@@ -254,7 +254,6 @@
                 <div class="card-header"><strong>Actions</strong></div>
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-3">
-                        <a href="#offer-timeline" class="btn btn-outline-info btn-sm">View Negotiation Summary</a>
                         <a href="{{ route('offers.pdf', $terminalLeaf) }}" class="btn btn-outline-secondary btn-sm" target="_blank">
                             Download PDF
                         </a>
@@ -379,10 +378,9 @@
                 <div class="card-body">
                     @php
                         $actionButtons = [
-                            'can_accept'        => ['label' => 'Accept',         'btn' => 'btn-success',           'reason_key' => 'accept',        'route' => 'offers.accept',   'hide_for_submitter' => true],
-                            'can_reject'        => ['label' => 'Reject',         'btn' => 'btn-danger',            'reason_key' => 'reject',        'route' => 'offers.reject',   'hide_for_submitter' => true],
-                            'can_withdraw'      => ['label' => 'Withdraw',       'btn' => 'btn-outline-secondary', 'reason_key' => 'withdraw',      'route' => 'offers.withdraw', 'hide_for_submitter' => false],
-                            'can_view_timeline' => ['label' => 'View Timeline',  'btn' => 'btn-outline-info',      'reason_key' => 'view_timeline', 'route' => null,              'hide_for_submitter' => false],
+                            'can_accept'   => ['label' => 'Accept',   'btn' => 'btn-success',           'reason_key' => 'accept',   'route' => 'offers.accept',   'hide_for_submitter' => true],
+                            'can_reject'   => ['label' => 'Reject',   'btn' => 'btn-danger',            'reason_key' => 'reject',   'route' => 'offers.reject',   'hide_for_submitter' => true],
+                            'can_withdraw' => ['label' => 'Withdraw', 'btn' => 'btn-outline-secondary', 'reason_key' => 'withdraw', 'route' => 'offers.withdraw', 'hide_for_submitter' => false],
                         ];
                         $counterReason    = $actions['reasons']['counter'] ?? '';
                         $actorIsSubmitter = auth()->id() !== null && (int) auth()->id() === (int) $offer->user_id;
@@ -412,21 +410,15 @@
                                 @continue
                             @endif
                             <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
-                                @if($cfg['route'])
-                                    {{-- Enabled action with a route: POST form --}}
-                                    <form method="POST" action="{{ route($cfg['route'], $offer) }}">
-                                        @csrf
-                                        <button type="submit" class="btn {{ $cfg['btn'] }} btn-sm"
-                                            @if($flag === 'can_submit')   id="submit-offer-action-btn"
-                                            @elseif($flag === 'can_accept') id="accept-offer-action-btn"
-                                            @elseif($flag === 'can_reject') id="reject-offer-action-btn"
-                                            @elseif($flag === 'can_withdraw') id="withdraw-offer-action-btn"
-                                            @endif>{{ $cfg['label'] }}</button>
-                                    </form>
-                                @else
-                                    {{-- Enabled action with no route (e.g. View Timeline): anchor to on-page section --}}
-                                    <a href="#offer-timeline" class="btn {{ $cfg['btn'] }} btn-sm">{{ $cfg['label'] }}</a>
-                                @endif
+                                <form method="POST" action="{{ route($cfg['route'], $offer) }}">
+                                    @csrf
+                                    <button type="submit" class="btn {{ $cfg['btn'] }} btn-sm"
+                                        @if($flag === 'can_submit')    id="submit-offer-action-btn"
+                                        @elseif($flag === 'can_accept')  id="accept-offer-action-btn"
+                                        @elseif($flag === 'can_reject')  id="reject-offer-action-btn"
+                                        @elseif($flag === 'can_withdraw') id="withdraw-offer-action-btn"
+                                        @endif>{{ $cfg['label'] }}</button>
+                                </form>
                             </div>
                         @endforeach
 
