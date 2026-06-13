@@ -82,7 +82,8 @@
                                     $listingId = $auction->listing_id ?? 'SAA-'.$auction->id;
 
                                     // Match score
-                                    $auctionBaselineData = json_decode(json_encode($auction->get ?? []), true) ?: [];
+                                    $_auctionGetAcc = $auction->get;
+                                    $auctionBaselineData = method_exists($_auctionGetAcc, 'toArray') ? $_auctionGetAcc->toArray() : [];
                                     $bidData = $userBid ? (json_decode(json_encode($userBid->get ?? []), true) ?: []) : [];
                                     $propType = $auction->get->property_type ?? 'Residential Property';
 

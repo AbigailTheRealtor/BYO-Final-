@@ -59,7 +59,8 @@
   $getScoreColor   = fn($s) => \App\Helpers\SellerBidMatchScoreHelper::scoreColor((int)$s);
   $propertyType    = data_get($auction, 'get.property_type', '');
   $bidDataArr      = (array) data_get($bid, 'get', []);
-  $auctionDataArr  = (array) data_get($auction, 'get', []);
+  $_auctionGetAcc  = $auction->get;
+  $auctionDataArr  = method_exists($_auctionGetAcc, 'toArray') ? $_auctionGetAcc->toArray() : [];
   $baselineData    = $auctionDataArr;
   $baselineLabel   = $isListingOwner ? 'Your Original Terms' : "Seller's Original Terms";
 
