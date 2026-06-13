@@ -105,7 +105,8 @@
                                     $brokerScoreColor   = $getScoreColor($brokerScore);
                                     $servicesScoreColor = $getScoreColor($servicesScore);
 
-                                    $readiness = \App\Services\MatchReadinessService::evaluate($bidData, 'seller');
+                                    $readiness    = \App\Services\MatchReadinessService::evaluate($bidData, 'seller');
+                                    $compatScore  = \App\Services\CompatibilityScoreService::score($auctionBaselineData, $bidData, 'seller', $propType);
                                 @endphp
 
                                 <div class="card mb-3 agent-bid-card" style="border-radius:8px;border:1px solid #dee2e6;">
@@ -121,12 +122,7 @@
                                             <span class="badge" style="{{ $statusStyles[$bidStatus] ?? $statusStyles['Active'] }}padding:6px 12px;border-radius:4px;">
                                                 {{ $bidStatus }}
                                             </span>
-                                            @if($readiness['state'] !== 'not_ready')
-                                            <span class="badge" style="background:{{ $totalScoreColor }};color:#fff;padding:6px 12px;border-radius:4px;">
-                                                <i class="fa-solid fa-chart-pie me-1"></i>{{ $totalScore }}% Match
-                                            </span>
-                                            @endif
-                                            @include('partials.match_readiness_badge', ['readiness' => $readiness, 'hasBid' => true])
+                                            @include('partials.match_readiness_badge', ['readiness' => $readiness, 'hasBid' => true, 'compatScore' => $compatScore])
                                             @else
                                             <span class="badge bg-secondary" style="padding:6px 12px;border-radius:4px;">No Bid Placed</span>
                                             @endif
@@ -141,25 +137,6 @@
                                                 <small class="text-muted d-block">Bid Submitted</small>
                                                 <div>{{ $userBid->created_at->format('M d, Y') }}</div>
                                             </div>
-                                            @if($readiness['state'] !== 'not_ready')
-                                            <div class="col-md-4 mb-2">
-                                                <small class="text-muted d-block">Broker Terms</small>
-                                                <span style="color:{{ $brokerScoreColor }};font-weight:600;">{{ $brokerScore }}%</span>
-                                                <small class="text-muted ms-1">{{ $brokerTotal > 0 ? '('.$brokerMatched.'/'.$brokerTotal.')' : 'No terms provided' }}</small>
-                                            </div>
-                                            <div class="col-md-4 mb-2">
-                                                <small class="text-muted d-block">Services</small>
-                                                <span style="color:{{ $servicesScoreColor }};font-weight:600;">{{ $servicesScore }}%</span>
-                                                <small class="text-muted ms-1">{{ $servicesTotal > 0 ? '('.$servicesMatched.'/'.$servicesTotal.')' : 'No services requested' }}</small>
-                                            </div>
-                                            @else
-                                            <div class="col-md-8 mb-2 d-flex align-items-center">
-                                                <small class="text-muted">
-                                                    <i class="fa-solid fa-circle-exclamation me-1"></i>
-                                                    Complete the required bid fields to see match scores.
-                                                </small>
-                                            </div>
-                                            @endif
                                         </div>
 
                                         @if($readiness['state'] !== 'not_ready' && (count($brokerMismatches) > 0 || count($servicesAdded) > 0 || count($servicesMissing) > 0))

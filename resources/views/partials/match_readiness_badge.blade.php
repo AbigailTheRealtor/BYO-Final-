@@ -2,8 +2,11 @@
     Match Readiness Badge
     ─────────────────────
     Variables expected:
-      $readiness  array   Result from MatchReadinessService::evaluate()
-      $hasBid     bool    Whether the agent has placed a bid on this listing
+      $readiness    array        Result from MatchReadinessService::evaluate()
+      $hasBid       bool         Whether the agent has placed a bid on this listing
+      $compatScore  array|null   (optional) Result from CompatibilityScoreService::score().
+                                 When provided and score_type is not 'none', the score is
+                                 appended to the label: "Full Match Ready • 92%"
 --}}
 @if($hasBid ?? false)
 @php
@@ -24,12 +27,16 @@
         $mrLabel   = 'Not Ready';
         $mrTooltip = 'This bid is missing key compensation fields required for matching. Complete the broker compensation section to become Quick Match Ready.';
     }
+
+    $csType  = $compatScore['score_type'] ?? 'none';
+    $csScore = $compatScore['score'] ?? null;
+    $showScore = ($csType !== 'none' && $csScore !== null);
 @endphp
 <span class="badge"
       style="{{ $mrStyle }}padding:6px 10px;border-radius:4px;cursor:default;"
       data-bs-toggle="tooltip"
       data-bs-placement="top"
       title="{{ $mrTooltip }}">
-    <i class="{{ $mrIcon }} me-1"></i>{{ $mrLabel }}
+    <i class="{{ $mrIcon }} me-1"></i>{{ $mrLabel }}@if($showScore) &bull; {{ $csScore }}%@endif
 </span>
 @endif
