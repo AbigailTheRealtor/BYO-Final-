@@ -42,6 +42,10 @@ return new class extends Migration
     public function up(): void
     {
         foreach (self::TABLES as $table => $fkColumn) {
+            if (!Schema::hasTable($table)) {
+                Log::info("P1A migration up: skipping {$table} (table does not exist)");
+                continue;
+            }
             $this->renameKey($table, $fkColumn, self::OLD_KEY, self::NEW_KEY, 'up');
         }
     }
@@ -49,6 +53,10 @@ return new class extends Migration
     public function down(): void
     {
         foreach (self::TABLES as $table => $fkColumn) {
+            if (!Schema::hasTable($table)) {
+                Log::info("P1A migration down: skipping {$table} (table does not exist)");
+                continue;
+            }
             $this->renameKey($table, $fkColumn, self::NEW_KEY, self::OLD_KEY, 'down');
         }
     }

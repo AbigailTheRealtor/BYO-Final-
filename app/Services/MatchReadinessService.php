@@ -38,7 +38,7 @@ class MatchReadinessService
      */
     public static function evaluate(array $bidData, string $role): array
     {
-        $config = config('match_readiness.' . strtolower($role));
+        $config = config('match_readiness.' . strtolower($role), []);
 
         if (empty($config)) {
             return [
