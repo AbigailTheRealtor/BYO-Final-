@@ -22,14 +22,15 @@ class BidModifiedNotificationTest extends TestCase
     {
         parent::setUp();
 
-        $this->bid    = Mockery::mock()->makePartial();
-        $this->bid->id = 13;
+        $this->bid          = Mockery::mock()->makePartial();
+        $this->bid->id      = 13;
+        $this->bid->user_id = 6;
 
-        $this->auction           = Mockery::mock()->makePartial();
-        $this->auction->id       = 23;
-        $this->auction->title    = 'Modified Auction';
+        $this->auction             = Mockery::mock()->makePartial();
+        $this->auction->id         = 23;
+        $this->auction->title      = 'Modified Auction';
         $this->auction->listing_id = null;
-        $this->auction->user_id  = 7;
+        $this->auction->user_id    = 7;
 
         $this->notification = new BidModifiedNotification($this->bid, $this->auction);
     }
@@ -54,10 +55,10 @@ class BidModifiedNotificationTest extends TestCase
         $this->assertNotSame('New Notification', $data['message']);
     }
 
-    public function test_to_database_message_is_concise(): void
+    public function test_to_database_owner_message_is_concise(): void
     {
         $data = $this->notification->toDatabase(null);
-        $this->assertSame('A bid on your listing was updated.', $data['message']);
+        $this->assertSame('A bid was updated.', $data['message']);
     }
 
     public function test_to_database_has_context_line(): void
@@ -77,5 +78,44 @@ class BidModifiedNotificationTest extends TestCase
     {
         $data = $this->notification->toDatabase(null);
         $this->assertSame('bid_modified', $data['type']);
+    }
+
+    public function test_to_database_has_recipient_context(): void
+    {
+        $data = $this->notification->toDatabase(null);
+        $this->assertArrayHasKey('recipient_context', $data);
+        $this->assertSame('owner', $data['recipient_context']);
+    }
+
+    public function test_to_database_submitter_receives_submitter_message(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 6;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('submitter', $data['recipient_context']);
+        $this->assertSame('Your bid was updated.', $data['message']);
+    }
+
+    public function test_to_database_owner_receives_owner_message(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 7;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('owner', $data['recipient_context']);
+        $this->assertSame('A bid was updated.', $data['message']);
+    }
+
+    public function test_to_database_unrelated_user_defaults_to_owner(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 999;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('owner', $data['recipient_context']);
     }
 }

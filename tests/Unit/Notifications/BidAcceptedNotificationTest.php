@@ -26,9 +26,10 @@ class BidAcceptedNotificationTest extends TestCase
         $this->bid->id      = 11;
         $this->bid->user_id = 5;
 
-        $this->auction        = Mockery::mock()->makePartial();
-        $this->auction->id    = 21;
-        $this->auction->title = 'Bid Accepted Auction';
+        $this->auction          = Mockery::mock()->makePartial();
+        $this->auction->id      = 21;
+        $this->auction->title   = 'Bid Accepted Auction';
+        $this->auction->user_id = 99;
 
         $this->notification = new BidAcceptedNotification($this->bid, $this->auction, null, 'seller_agent');
     }
@@ -53,10 +54,10 @@ class BidAcceptedNotificationTest extends TestCase
         $this->assertNotSame('New Notification', $data['message']);
     }
 
-    public function test_to_database_message_is_concise(): void
+    public function test_to_database_owner_message_is_concise(): void
     {
         $data = $this->notification->toDatabase(null);
-        $this->assertSame('Your bid was accepted.', $data['message']);
+        $this->assertSame('A bid was accepted.', $data['message']);
     }
 
     public function test_to_database_has_context_line(): void
@@ -76,5 +77,44 @@ class BidAcceptedNotificationTest extends TestCase
     {
         $data = $this->notification->toDatabase(null);
         $this->assertSame('bid_accepted', $data['type']);
+    }
+
+    public function test_to_database_has_recipient_context(): void
+    {
+        $data = $this->notification->toDatabase(null);
+        $this->assertArrayHasKey('recipient_context', $data);
+        $this->assertSame('owner', $data['recipient_context']);
+    }
+
+    public function test_to_database_submitter_receives_submitter_message(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 5;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('submitter', $data['recipient_context']);
+        $this->assertSame('Your bid was accepted.', $data['message']);
+    }
+
+    public function test_to_database_owner_receives_owner_message(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 99;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('owner', $data['recipient_context']);
+        $this->assertSame('A bid was accepted.', $data['message']);
+    }
+
+    public function test_to_database_unrelated_user_defaults_to_owner(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 999;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('owner', $data['recipient_context']);
     }
 }

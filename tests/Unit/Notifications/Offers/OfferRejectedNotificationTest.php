@@ -20,6 +20,7 @@ class OfferRejectedNotificationTest extends TestCase
         $this->offer = Mockery::mock(Offer::class)->makePartial();
         $this->offer->shouldReceive('getAttribute')->with('id')->andReturn(42);
         $this->offer->shouldReceive('getAttribute')->with('status')->andReturn('rejected');
+        $this->offer->shouldReceive('getAttribute')->with('user_id')->andReturn(8);
         $this->offer->shouldReceive('getRouteKey')->andReturn(42);
         $this->offer->shouldReceive('getRouteKeyName')->andReturn('id');
 
@@ -47,6 +48,7 @@ class OfferRejectedNotificationTest extends TestCase
         $this->assertArrayHasKey('status', $data);
         $this->assertArrayHasKey('link', $data);
         $this->assertArrayHasKey('type', $data);
+        $this->assertArrayHasKey('recipient_context', $data);
     }
 
     // Case 3: toDatabase()['offer_id'] matches the mocked offer's id
@@ -108,11 +110,38 @@ class OfferRejectedNotificationTest extends TestCase
         $this->assertInstanceOf(MailMessage::class, $mail);
     }
 
-    // Case 8: toMail() subject contains the offer id
-    public function test_to_mail_subject_contains_offer_id(): void
+    // Case 8: submitter-side toMail() subject contains the offer id
+    public function test_to_mail_submitter_subject_contains_offer_id(): void
     {
-        $mail = $this->notification->toMail(null);
+        $notifiable     = new \stdClass();
+        $notifiable->id = 8;
+
+        $mail = $this->notification->toMail($notifiable);
 
         $this->assertStringContainsString('42', $mail->subject);
+    }
+
+    // Case 11: listing owner receives the owner-side message
+    public function test_to_database_owner_receives_owner_message(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 99;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('owner', $data['recipient_context']);
+        $this->assertSame('An offer was declined.', $data['message']);
+    }
+
+    // Case 12: offer submitter receives the submitter-side message
+    public function test_to_database_submitter_receives_submitter_message(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 8;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('submitter', $data['recipient_context']);
+        $this->assertSame('Your offer was declined.', $data['message']);
     }
 }

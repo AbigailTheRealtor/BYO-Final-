@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasRecipientContext;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -12,6 +13,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 class BidRejectedNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
+    use HasRecipientContext;
 
     public $bid;
     public $auction;
@@ -31,13 +33,24 @@ class BidRejectedNotification extends Notification implements ShouldBroadcast
 
     public function toDatabase($notifiable)
     {
+        $context = $this->resolveRecipientContext(
+            $notifiable,
+            $this->bid->user_id ?? null,
+            $this->auction->user_id ?? null,
+        );
+
+        $message = $context === 'submitter'
+            ? 'Your bid was declined.'
+            : 'A bid was declined.';
+
         return [
-            'message'      => 'Your bid was rejected.',
-            'context_line' => $this->auction->title ?? '',
-            'bid_id'       => $this->bid->id,
-            'auction_id'   => $this->auction->id,
-            'type'         => 'bid_rejected',
-            'auction_type' => $this->auctionType,
+            'message'           => $message,
+            'context_line'      => $this->auction->title ?? '',
+            'bid_id'            => $this->bid->id,
+            'auction_id'        => $this->auction->id,
+            'type'              => 'bid_rejected',
+            'auction_type'      => $this->auctionType,
+            'recipient_context' => $context,
         ];
     }
 

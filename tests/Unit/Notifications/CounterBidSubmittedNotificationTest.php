@@ -23,14 +23,16 @@ class CounterBidSubmittedNotificationTest extends TestCase
     {
         parent::setUp();
 
-        $this->bid    = Mockery::mock()->makePartial();
+        $this->bid     = Mockery::mock()->makePartial();
         $this->bid->id = 14;
 
-        $this->auction        = Mockery::mock()->makePartial();
-        $this->auction->id    = 24;
-        $this->auction->title = 'Counter Bid Auction';
+        $this->auction          = Mockery::mock()->makePartial();
+        $this->auction->id      = 24;
+        $this->auction->title   = 'Counter Bid Auction';
+        $this->auction->user_id = 77;
 
         $this->sender             = Mockery::mock()->makePartial();
+        $this->sender->id         = 55;
         $this->sender->first_name = 'Jane';
         $this->sender->last_name  = 'Doe';
 
@@ -59,10 +61,10 @@ class CounterBidSubmittedNotificationTest extends TestCase
         $this->assertNotSame('New Notification', $data['message']);
     }
 
-    public function test_to_database_message_is_concise(): void
+    public function test_to_database_receiver_message_is_concise(): void
     {
         $data = $this->notification->toDatabase(null);
-        $this->assertSame('You received a counter proposal.', $data['message']);
+        $this->assertSame('You received a counter bid.', $data['message']);
     }
 
     public function test_to_database_has_context_line(): void
@@ -82,5 +84,55 @@ class CounterBidSubmittedNotificationTest extends TestCase
     {
         $data = $this->notification->toDatabase(null);
         $this->assertSame('counter_bid_submitted', $data['type']);
+    }
+
+    public function test_to_database_has_recipient_context(): void
+    {
+        $data = $this->notification->toDatabase(null);
+        $this->assertArrayHasKey('recipient_context', $data);
+        $this->assertSame('owner', $data['recipient_context']);
+    }
+
+    public function test_to_database_sender_receives_submitter_message(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 55;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('submitter', $data['recipient_context']);
+        $this->assertSame('Your counter bid was submitted.', $data['message']);
+    }
+
+    public function test_to_database_auction_owner_receives_owner_message(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 77;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('owner', $data['recipient_context']);
+        $this->assertSame('You received a counter bid.', $data['message']);
+    }
+
+    public function test_to_database_receiver_receives_owner_message(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 99;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('owner', $data['recipient_context']);
+        $this->assertSame('You received a counter bid.', $data['message']);
+    }
+
+    public function test_to_database_unrelated_user_defaults_to_owner(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 999;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('owner', $data['recipient_context']);
     }
 }

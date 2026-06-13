@@ -556,6 +556,55 @@ class NotificationPayloadContractTest extends TestCase
         }
     }
 
+    // ── recipient_context guard ───────────────────────────────────────────────
+
+    /**
+     * All bid and offer notification classes must include 'recipient_context'
+     * in their toDatabase() payload so that the dashboard resolver and future
+     * callers can distinguish owner-side from submitter-side wording.
+     *
+     * Showing, listing-status, agent-hired, and hire-lead notifications are
+     * intentionally excluded — they go to a single unambiguous recipient.
+     */
+    public function test_bid_and_offer_notifications_include_recipient_context(): void
+    {
+        $affected = [
+            'BidSubmittedNotification',
+            'BidAcceptedNotification',
+            'BidRejectedNotification',
+            'BidModifiedNotification',
+            'CounterBidSubmittedNotification',
+            'CounterBidAcceptedNotification',
+            'CounterBidRejectedNotification',
+            'OfferSubmittedNotification',
+            'OfferAcceptedNotification',
+            'OfferRejectedNotification',
+            'OfferCounteredNotification',
+            'OfferWithdrawnNotification',
+            'OfferExpiredNotification',
+        ];
+
+        $provider = static::notificationPayloadProvider();
+
+        foreach ($affected as $className) {
+            $factory      = $provider[$className][0];
+            $notification = $factory();
+            $data         = $notification->toDatabase(new \stdClass());
+
+            $this->assertArrayHasKey(
+                'recipient_context',
+                $data,
+                "Notification [{$className}] is missing 'recipient_context' in its toDatabase() payload."
+            );
+
+            $this->assertContains(
+                $data['recipient_context'],
+                ['owner', 'submitter'],
+                "Notification [{$className}] has an invalid 'recipient_context' value: [{$data['recipient_context']}]. Must be 'owner' or 'submitter'."
+            );
+        }
+    }
+
     protected function tearDown(): void
     {
         \Mockery::close();

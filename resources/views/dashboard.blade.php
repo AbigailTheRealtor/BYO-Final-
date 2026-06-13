@@ -734,21 +734,43 @@
                                         </div>
                                     @else
                                         @php
-                                            $notificationTypeMessages = [
+                                            $ownerMessages = [
                                                 'bid_submitted'          => 'New bid received on your listing.',
-                                                'bid_accepted'           => 'Your bid was accepted.',
-                                                'bid_rejected'           => 'Your bid was rejected.',
-                                                'bid_modified'           => 'A bid on your listing was updated.',
-                                                'counter_bid_submitted'  => 'You received a counter proposal.',
-                                                'counter_bid_accepted'   => 'Your counter proposal was accepted.',
-                                                'counter_bid_rejected'   => 'Your counter proposal was rejected.',
+                                                'bid_accepted'           => 'A bid was accepted.',
+                                                'bid_rejected'           => 'A bid was declined.',
+                                                'bid_modified'           => 'A bid was updated.',
+                                                'counter_bid_submitted'  => 'You received a counter bid.',
+                                                'counter_bid_accepted'   => 'A counter bid was accepted.',
+                                                'counter_bid_rejected'   => 'A counter bid was declined.',
                                                 'agent_hired'            => 'You have successfully hired an agent.',
                                                 'offer_submitted'        => 'New offer received on your listing.',
-                                                'offer_accepted'         => 'Your offer was accepted.',
-                                                'offer_rejected'         => 'Your offer was rejected.',
+                                                'offer_accepted'         => 'An offer was accepted.',
+                                                'offer_rejected'         => 'An offer was declined.',
                                                 'offer_countered'        => 'You received a counter offer.',
                                                 'offer_withdrawn'        => 'An offer was withdrawn.',
-                                                'offer_expired'          => 'An offer has expired.',
+                                                'offer_expired'          => 'Action is needed on an offer.',
+                                                'offer_listing_status'   => 'Your listing status has been updated.',
+                                                'showing_requested'      => 'New showing request received.',
+                                                'showing_approved'       => 'Your showing request was approved.',
+                                                'showing_declined'       => 'Your showing request was declined.',
+                                                'showing_canceled'       => 'A showing was canceled.',
+                                                'hire_agent_lead'        => 'New agent hire request received.',
+                                            ];
+                                            $submitterMessages = [
+                                                'bid_submitted'          => 'Your bid was submitted.',
+                                                'bid_accepted'           => 'Your bid was accepted.',
+                                                'bid_rejected'           => 'Your bid was declined.',
+                                                'bid_modified'           => 'Your bid was updated.',
+                                                'counter_bid_submitted'  => 'Your counter bid was submitted.',
+                                                'counter_bid_accepted'   => 'Your counter bid was accepted.',
+                                                'counter_bid_rejected'   => 'Your counter bid was declined.',
+                                                'agent_hired'            => 'You have successfully hired an agent.',
+                                                'offer_submitted'        => 'Your offer was submitted.',
+                                                'offer_accepted'         => 'Your offer was accepted.',
+                                                'offer_rejected'         => 'Your offer was declined.',
+                                                'offer_countered'        => 'Your offer received a counter offer.',
+                                                'offer_withdrawn'        => 'Your offer was withdrawn.',
+                                                'offer_expired'          => 'Action is needed on your offer.',
                                                 'offer_listing_status'   => 'Your listing status has been updated.',
                                                 'showing_requested'      => 'New showing request received.',
                                                 'showing_approved'       => 'Your showing request was approved.',
@@ -767,9 +789,13 @@
                                                 if (!empty($data['message'])) {
                                                     $message = $data['message'];
                                                 } elseif (($data['type'] ?? '') === 'bid_accepted' && str_contains($notificationClass, 'AgentHired')) {
-                                                    $message = $notificationTypeMessages['agent_hired'];
-                                                } elseif (isset($notificationTypeMessages[$data['type'] ?? ''])) {
-                                                    $message = $notificationTypeMessages[$data['type']];
+                                                    $message = $ownerMessages['agent_hired'];
+                                                } elseif (isset($data['recipient_context']) && $data['recipient_context'] === 'submitter' && isset($submitterMessages[$data['type'] ?? ''])) {
+                                                    $message = $submitterMessages[$data['type']];
+                                                } elseif (isset($data['recipient_context']) && $data['recipient_context'] === 'owner' && isset($ownerMessages[$data['type'] ?? ''])) {
+                                                    $message = $ownerMessages[$data['type']];
+                                                } elseif (isset($ownerMessages[$data['type'] ?? ''])) {
+                                                    $message = $ownerMessages[$data['type']];
                                                 } else {
                                                     $message = 'Account activity — tap View for details.';
                                                 }

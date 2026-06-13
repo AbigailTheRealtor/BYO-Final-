@@ -3,6 +3,7 @@
 namespace App\Notifications\Offers;
 
 use App\Models\Offer;
+use App\Notifications\Concerns\HasRecipientContext;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -10,6 +11,7 @@ use Illuminate\Notifications\Notification;
 final class OfferRejectedNotification extends Notification
 {
     use Queueable;
+    use HasRecipientContext;
 
     public function __construct(
         private readonly Offer $offer,
@@ -22,20 +24,49 @@ final class OfferRejectedNotification extends Notification
 
     public function toDatabase(mixed $notifiable): array
     {
+        $context = $this->resolveRecipientContext(
+            $notifiable,
+            $this->offer->user_id,
+            $this->offer->relationLoaded('offerAuction')
+                ? ($this->offer->offerAuction?->user_id ?? null)
+                : null,
+        );
+
+        $message = $context === 'submitter'
+            ? 'Your offer was declined.'
+            : 'An offer was declined.';
+
         return [
-            'message'  => 'Your offer was rejected.',
-            'offer_id' => $this->offer->id,
-            'status'   => $this->offer->status,
-            'link'     => route('offers.show', $this->offer),
-            'type'     => 'offer_rejected',
+            'message'            => $message,
+            'offer_id'           => $this->offer->id,
+            'status'             => $this->offer->status,
+            'link'               => route('offers.show', $this->offer),
+            'type'               => 'offer_rejected',
+            'recipient_context'  => $context,
         ];
     }
 
     public function toMail(mixed $notifiable): MailMessage
     {
+        $context = $this->resolveRecipientContext(
+            $notifiable,
+            $this->offer->user_id,
+            $this->offer->relationLoaded('offerAuction')
+                ? ($this->offer->offerAuction?->user_id ?? null)
+                : null,
+        );
+
+        if ($context === 'submitter') {
+            return (new MailMessage)
+                ->subject("Offer #{$this->offer->id} Declined")
+                ->line("Your offer (ID: {$this->offer->id}) has been declined.")
+                ->line("Current status: {$this->offer->status}")
+                ->action('View Offer', route('offers.show', $this->offer));
+        }
+
         return (new MailMessage)
-            ->subject("Offer #{$this->offer->id} Rejected")
-            ->line("Your offer (ID: {$this->offer->id}) has been rejected.")
+            ->subject("An Offer on Your Listing Was Declined")
+            ->line("An offer (ID: {$this->offer->id}) on your listing has been declined.")
             ->line("Current status: {$this->offer->status}")
             ->action('View Offer', route('offers.show', $this->offer));
     }

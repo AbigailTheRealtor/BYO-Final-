@@ -15,15 +15,19 @@ use Tests\TestCase;
  * Verifies OfferWithdrawnNotification using a mocked Offer model only.
  * No database, no factories, no RefreshDatabase, no DatabaseTransactions.
  *
- * Test coverage (8 cases):
- *   (1) via() returns exactly ['database', 'mail']
- *   (2) toDatabase() contains keys offer_id, status, link, type
- *   (3) toDatabase()['offer_id'] matches the mocked offer's id
- *   (4) toDatabase()['status'] matches the mocked offer's status
- *   (5) toDatabase()['link'] contains the expected offer id
- *   (6) toDatabase()['type'] equals 'offer_withdrawn'
- *   (7) toMail() returns an instance of MailMessage
- *   (8) toMail() subject contains the offer id
+ * Test coverage:
+ *   (1)  via() returns exactly ['database', 'mail']
+ *   (2)  toDatabase() contains keys offer_id, status, link, type, recipient_context
+ *   (3)  toDatabase()['offer_id'] matches the mocked offer's id
+ *   (4)  toDatabase()['status'] matches the mocked offer's status
+ *   (5)  toDatabase()['link'] contains the expected offer id
+ *   (6)  toDatabase()['type'] equals 'offer_withdrawn'
+ *   (7)  toMail() returns an instance of MailMessage
+ *   (8)  submitter-side toMail() subject contains the offer id
+ *   (9)  toDatabase()['message'] is present and non-generic
+ *   (10) toDatabase() has no context_line key
+ *   (11) listing owner receives the owner-side message
+ *   (12) offer submitter receives the submitter-side message
  */
 class OfferWithdrawnNotificationTest extends TestCase
 {
@@ -34,9 +38,10 @@ class OfferWithdrawnNotificationTest extends TestCase
     {
         parent::setUp();
 
-        $this->offer = Mockery::mock(Offer::class)->makePartial();
-        $this->offer->id     = 42;
-        $this->offer->status = 'withdrawn';
+        $this->offer          = Mockery::mock(Offer::class)->makePartial();
+        $this->offer->id      = 42;
+        $this->offer->status  = 'withdrawn';
+        $this->offer->user_id = 9;
 
         $this->notification = new OfferWithdrawnNotification($this->offer);
     }
@@ -64,6 +69,7 @@ class OfferWithdrawnNotificationTest extends TestCase
         $this->assertArrayHasKey('status', $data);
         $this->assertArrayHasKey('link', $data);
         $this->assertArrayHasKey('type', $data);
+        $this->assertArrayHasKey('recipient_context', $data);
     }
 
     // ── Case 3: toDatabase()['offer_id'] matches the mocked offer's id ───────
@@ -132,12 +138,41 @@ class OfferWithdrawnNotificationTest extends TestCase
         $this->assertInstanceOf(MailMessage::class, $mail);
     }
 
-    // ── Case 8: toMail() subject contains the offer id ───────────────────────
+    // ── Case 8: submitter-side toMail() subject contains the offer id ─────────
 
-    public function test_to_mail_subject_contains_offer_id(): void
+    public function test_to_mail_submitter_subject_contains_offer_id(): void
     {
-        $mail = $this->notification->toMail(null);
+        $notifiable     = new \stdClass();
+        $notifiable->id = 9;
+
+        $mail = $this->notification->toMail($notifiable);
 
         $this->assertStringContainsString('42', $mail->subject);
+    }
+
+    // ── Case 11: listing owner receives the owner-side message ────────────────
+
+    public function test_to_database_owner_receives_owner_message(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 99;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('owner', $data['recipient_context']);
+        $this->assertSame('An offer was withdrawn.', $data['message']);
+    }
+
+    // ── Case 12: offer submitter receives the submitter-side message ──────────
+
+    public function test_to_database_submitter_receives_submitter_message(): void
+    {
+        $notifiable     = new \stdClass();
+        $notifiable->id = 9;
+
+        $data = $this->notification->toDatabase($notifiable);
+
+        $this->assertSame('submitter', $data['recipient_context']);
+        $this->assertSame('Your offer was withdrawn.', $data['message']);
     }
 }

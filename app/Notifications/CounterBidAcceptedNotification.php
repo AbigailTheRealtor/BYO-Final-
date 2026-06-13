@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasRecipientContext;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -11,6 +12,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 class CounterBidAcceptedNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
+    use HasRecipientContext;
 
     public $counterBid;
     public $auction;
@@ -28,12 +30,23 @@ class CounterBidAcceptedNotification extends Notification implements ShouldBroad
 
     public function toDatabase($notifiable)
     {
+        $context = $this->resolveRecipientContext(
+            $notifiable,
+            $this->counterBid->user_id ?? null,
+            $this->auction->user_id ?? null,
+        );
+
+        $message = $context === 'submitter'
+            ? 'Your counter bid was accepted.'
+            : 'A counter bid was accepted.';
+
         return [
-            'message'        => 'Your counter proposal was accepted.',
-            'context_line'   => $this->auction->title ?? '',
-            'counter_bid_id' => $this->counterBid->id,
-            'auction_id'     => $this->auction->id,
-            'type'           => 'counter_bid_accepted',
+            'message'           => $message,
+            'context_line'      => $this->auction->title ?? '',
+            'counter_bid_id'    => $this->counterBid->id,
+            'auction_id'        => $this->auction->id,
+            'type'              => 'counter_bid_accepted',
+            'recipient_context' => $context,
         ];
     }
 
