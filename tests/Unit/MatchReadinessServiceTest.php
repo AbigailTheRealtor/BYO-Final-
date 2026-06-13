@@ -594,6 +594,30 @@ class MatchReadinessServiceTest extends TestCase
     // ── missing_fields return value ──────────────────────────────────────────
 
     /** @test */
+    public function missing_fields_is_non_empty_for_not_ready_state(): void
+    {
+        // A completely empty bid is not_ready; missing_fields must be non-empty
+        // so callers can surface actionable guidance.
+        $result = MatchReadinessService::evaluate([], 'seller');
+
+        $this->assertSame('not_ready', $result['state']);
+        $this->assertNotEmpty($result['missing_fields'],
+            'missing_fields must be non-empty when state is not_ready');
+    }
+
+    /** @test */
+    public function missing_fields_is_non_empty_for_quick_match_ready_state(): void
+    {
+        // A bid at Quick Match Ready is missing Full Match fields;
+        // missing_fields must be non-empty so callers know what remains.
+        $result = MatchReadinessService::evaluate($this->sellerQuickBid(), 'seller');
+
+        $this->assertSame('quick_match_ready', $result['state']);
+        $this->assertNotEmpty($result['missing_fields'],
+            'missing_fields must be non-empty when state is quick_match_ready');
+    }
+
+    /** @test */
     public function missing_fields_equals_missing_full_in_result(): void
     {
         $bid    = $this->sellerQuickBid(); // Quick Match only
