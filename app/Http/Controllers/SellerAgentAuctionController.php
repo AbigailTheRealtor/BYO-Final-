@@ -1019,6 +1019,21 @@ class SellerAgentAuctionController extends Controller
 
             DB::commit();
 
+            // Record recommendation attribution for bid_accepted.
+            // getRecContext() looks up session context stored when the bid was viewed
+            // via a recommendation link (?from_rec=1&surface=...).
+            try {
+                $recCtx = \App\Services\BidAnalyticsService::getRecContext('seller_agent', (int) $bid->id);
+                \App\Services\BidAnalyticsService::recordRecommendationInteraction(
+                    'bid_accepted', 'seller',
+                    $recCtx['from_recommendation'], $recCtx['surface'],
+                    'seller_agent', (int) $bid->id,
+                    $auction->property_type ?? null, Auth::id()
+                );
+            } catch (\Throwable $e) {
+                // Analytics failure must not disrupt bid acceptance
+            }
+
             $summaryId = null;
             try {
                 $summaryService = new SellerAcceptedBidSummaryService();
@@ -1265,6 +1280,21 @@ class SellerAgentAuctionController extends Controller
         if (!$authId || ((int)$authId !== (int)$auction->user_id && (int)$authId !== (int)$bid->user_id)) {
             abort(403);
         }
+
+        // Track bid_viewed for Matching Analytics recommendation attribution.
+        // Pass ?from_rec=1&surface=<surface_name> to attribute the view to a recommendation surface.
+        try {
+            $fromRec = (bool) request()->query('from_rec', false);
+            $surface = $fromRec ? (request()->query('surface') ?: 'direct') : null;
+            \App\Services\BidAnalyticsService::recordRecommendationInteraction(
+                'bid_viewed', 'seller', $fromRec, $surface,
+                'seller_agent', (int) $bid->id,
+                $auction->property_type ?? null, Auth::id()
+            );
+        } catch (\Throwable $e) {
+            // Analytics failure must not disrupt bid viewing
+        }
+
         return view('hire_seller_agent.bid_detail', compact('bid', 'auction'));
     }
 }

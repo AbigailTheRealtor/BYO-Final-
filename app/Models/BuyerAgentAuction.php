@@ -147,6 +147,7 @@ class BuyerAgentAuction extends Model
             public function __isset($name) {
                 return isset($this->data[$name]);
             }
+            public function toArray(): array { return $this->data; }
         };
     }
 }

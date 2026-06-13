@@ -41,6 +41,13 @@ namespace App\Services;
 class CompatibilityScoreService
 {
     /**
+     * Scoring rules version. Bump this string whenever the scoring logic,
+     * field weights, or normalization rules change so that historical
+     * snapshots in bid_score_snapshots remain unambiguously versioned.
+     */
+    public const SCORING_VERSION = '1.0';
+
+    /**
      * Compute the compatibility score between a listing and an agent bid.
      *
      * @param  array       $listingData  Decoded listing/criteria data array.

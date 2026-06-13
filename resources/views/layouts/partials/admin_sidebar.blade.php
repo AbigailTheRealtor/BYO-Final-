@@ -62,6 +62,7 @@
                     </ul>
                 </li>
                 <li><a class="nav-link" href="{{ route('admin.bya.preview.index') }}"><i class="fa-solid fa-shield-halved me-2"></i> <span>BYA Preview</span></a></li>
+                <li><a class="nav-link" href="{{ route('admin.matching.analytics') }}"><i class="fa-solid fa-chart-bar me-2"></i> <span>Matching Analytics</span></a></li>
                 <li><a class="nav-link" href="{{ route('admin.settings') }}"><i class="icofont icofont-wheel me-2"></i> <span>Settings</span></a></li>
             </ul>
         </div>

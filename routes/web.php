@@ -942,6 +942,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Ask AI Analytics Dashboard (admin-only, read-only, direct URL only)
         Route::get('ask-ai/analytics', [\App\Http\Controllers\Admin\AskAiAnalyticsController::class, 'index'])->name('ask-ai.analytics');
+
+        // P7 Matching Analytics Dashboard (admin-only)
+        Route::get('matching/analytics', [\App\Http\Controllers\Admin\MatchingAnalyticsController::class, 'index'])->name('matching.analytics');
     });
 });
 

@@ -425,6 +425,19 @@ class TenantAgentAuctionController extends Controller
         if (Auth::id() !== $auction->user_id) {
             abort(403, 'Unauthorized access');
         }
+
+        // Track bid_viewed for Matching Analytics recommendation attribution.
+        try {
+            $fromRec = (bool) request()->query('from_rec', false);
+            $surface = $fromRec ? (request()->query('surface') ?: 'direct') : null;
+            \App\Services\BidAnalyticsService::recordRecommendationInteraction(
+                'bid_viewed', 'tenant', $fromRec, $surface,
+                'tenant_agent', (int) $bid->id,
+                null, Auth::id()
+            );
+        } catch (\Throwable $e) {
+            // Analytics failure must not disrupt bid viewing
+        }
         
         $page_data['title'] = 'Agent Bid Preview';
         $page_data['bid'] = $bid;

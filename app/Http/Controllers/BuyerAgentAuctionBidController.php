@@ -233,6 +233,19 @@ class BuyerAgentAuctionBidController extends Controller
 
             DB::commit();
 
+            // Record recommendation attribution for bid_accepted.
+            try {
+                $recCtx = \App\Services\BidAnalyticsService::getRecContext('buyer_agent', (int) $bid->id);
+                \App\Services\BidAnalyticsService::recordRecommendationInteraction(
+                    'bid_accepted', 'buyer',
+                    $recCtx['from_recommendation'], $recCtx['surface'],
+                    'buyer_agent', (int) $bid->id,
+                    $auction->property_type ?? null, Auth::id()
+                );
+            } catch (\Throwable $e) {
+                // Analytics failure must not disrupt bid acceptance
+            }
+
             // Generate accepted bid summary
             $summaryId = null;
             try {

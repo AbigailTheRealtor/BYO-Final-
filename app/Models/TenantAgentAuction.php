@@ -137,6 +137,7 @@ class TenantAgentAuction extends Model
             public function __construct($data) { $this->data = $data; }
             public function __get($name) { return $this->data[$name] ?? null; }
             public function __isset($name) { return isset($this->data[$name]); }
+            public function toArray(): array { return $this->data; }
         };
     }
 }

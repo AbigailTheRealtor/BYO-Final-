@@ -185,6 +185,19 @@ class TenantAgentAuctionBidController extends Controller
             $ua->save();
             
             DB::commit();
+
+            // Record recommendation attribution for bid_accepted.
+            try {
+                $recCtx = \App\Services\BidAnalyticsService::getRecContext('tenant_agent', (int) $pab->id);
+                \App\Services\BidAnalyticsService::recordRecommendationInteraction(
+                    'bid_accepted', 'tenant',
+                    $recCtx['from_recommendation'], $recCtx['surface'],
+                    'tenant_agent', (int) $pab->id,
+                    null, Auth::id()
+                );
+            } catch (\Throwable $e) {
+                // Analytics failure must not disrupt bid acceptance
+            }
             
             $summaryId = null;
             try {
