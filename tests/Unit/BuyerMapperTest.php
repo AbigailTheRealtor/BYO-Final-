@@ -65,6 +65,7 @@ class BuyerMapperTest extends TestCase
         foreach ([
             'presentation_link', 'business_card_link', 'business_card_stored_path',
             'promoMaterials', 'reviews_links', 'website_link', 'social_media',
+            'services', 'other_services',
         ] as $key) {
             $this->assertKeyAligns($key);
         }
@@ -115,5 +116,11 @@ class BuyerMapperTest extends TestCase
         ] as $key) {
             $this->assertKeyAligns($key);
         }
+    }
+
+    /** @test */
+    public function referral_fee_percent_is_aligned(): void
+    {
+        $this->assertKeyAligns('referral_fee_percent');
     }
 }

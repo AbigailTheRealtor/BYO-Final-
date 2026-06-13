@@ -198,6 +198,12 @@ class LandlordMapperTest extends TestCase
         }
     }
 
+    /** @test */
+    public function referral_fee_percent_is_aligned(): void
+    {
+        $this->assertKeyAligns('referral_fee_percent');
+    }
+
     // ──────────────────────────────────────────────────────────────────────────
     // P1A Counter-component regression guards
     // ──────────────────────────────────────────────────────────────────────────

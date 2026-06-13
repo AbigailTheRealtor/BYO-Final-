@@ -128,4 +128,10 @@ class TenantMapperTest extends TestCase
             $this->assertKeyAligns($key);
         }
     }
+
+    /** @test */
+    public function referral_fee_percent_is_aligned(): void
+    {
+        $this->assertKeyAligns('referral_fee_percent');
+    }
 }
