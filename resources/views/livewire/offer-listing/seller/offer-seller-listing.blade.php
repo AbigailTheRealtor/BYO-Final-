@@ -726,6 +726,7 @@
                 <div class="container pt-3 pb-0">
                     <div class="d-flex align-items-center justify-content-end">
                         <button type="button" class="btn btn-outline-primary btn-sm"
+                                style="color:#0d6efd;"
                                 wire:click="$set('showImportModal', true)">
                             <i class="fas fa-file-import me-1"></i>Have an MLS listing? Import it to pre-fill this form &rarr;
                         </button>

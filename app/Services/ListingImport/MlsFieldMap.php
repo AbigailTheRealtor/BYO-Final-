@@ -144,6 +144,8 @@ class MlsFieldMap
             'net_operating_income_raw'   => null,
             'unit_types_raw'             => null,
             'occupancy_rate_raw'         => null,
+            'water_frontage'             => 'water_frontage',
+            'waterfront_feet'            => 'waterfront_feet',
         ];
     }
 
@@ -267,6 +269,8 @@ class MlsFieldMap
             //       on LandlordOfferListing (see Rejected Mapping Candidates).
             // NOTE: 'directions' intentionally omitted — no supported user-facing
             //       form destination (see Rejected Mapping Candidates).
+            'water_frontage'             => 'water_frontage',
+            'waterfront_feet'            => 'waterfront_feet',
         ];
     }
 
@@ -401,6 +405,8 @@ class MlsFieldMap
             'waterfront'          => 'Waterfront',
             'water_access'        => 'Water Access',
             'water_view'          => 'Water View',
+            'water_frontage'      => 'Water Frontage',
+            'waterfront_feet'     => 'Waterfront Feet',
             'heating'             => 'Heating',
             'heating_fuel'        => 'Heating & Fuel',
             'roof_type'           => 'Roof Type',

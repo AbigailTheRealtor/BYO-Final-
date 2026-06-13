@@ -1144,6 +1144,77 @@ Route::middleware(['auth', 'offerPlayoffAccess'])->group(function () {
 // Remove or gate behind feature flag before any production deployment.
 // ===========================================================================
 if (app()->environment('local', 'development')) {
+    // Dev-only instant login — logs in as the given user ID for screenshot/demo purposes.
+    Route::get('/dev/login/{id}', function ($id) {
+        $user = \App\Models\User::findOrFail($id);
+        auth()->login($user, true);
+        return redirect()->intended('/dev/offer-listing/seller');
+    })->name('dev.login');
+
+    // Dev-only MLS demo — parses the fixture file for the given role and renders
+    // the import preview table so parser output can be verified in the browser.
+    Route::get('/dev/mls-demo/{role}', function ($role) {
+        $fixturePath = base_path("tests/fixtures/mls/{$role}_regression.txt");
+        if (!file_exists($fixturePath)) {
+            abort(404, "No fixture found for role: $role");
+        }
+        $rawText = file_get_contents($fixturePath);
+        $service  = app(\App\Services\ListingImport\MlsListingImportService::class);
+        $result   = $service->import('', $rawText);
+        $fieldMap = \App\Services\ListingImport\MlsFieldMap::forRole($role);
+        $labels   = \App\Services\ListingImport\MlsFieldMap::fieldLabels();
+        // Fields surfaced first in the demo table for easy screenshot verification.
+        $pinned = ['city', 'carport', 'waterfront', 'water_view', 'water_frontage',
+                   'waterfront_feet', 'interior_features', 'description'];
+        $preview  = [];
+        foreach (($result['data'] ?? []) as $key => $value) {
+            if ($key === 'listing_type_hint') continue;
+            $inMap    = array_key_exists($key, $fieldMap);
+            $propRaw  = $inMap ? $fieldMap[$key] : null;
+            $propName = ($propRaw && str_starts_with($propRaw, '*')) ? ltrim($propRaw, '*') : $propRaw;
+            $preview[] = [
+                'key'      => $key,
+                'label'    => $labels[$key] ?? ucfirst(str_replace('_', ' ', $key)),
+                'prop'     => $propName ?? '—',
+                'value'    => is_array($value) ? implode(', ', $value) : (string) $value,
+                'mapped'   => $inMap && $propName !== null,
+                'preview_only' => $inMap && $propName === null,
+                'unmapped' => !$inMap,
+                'sort'     => array_search($key, $pinned, true) !== false
+                              ? array_search($key, $pinned, true)
+                              : 999,
+            ];
+        }
+        usort($preview, fn($a, $b) => $a['sort'] <=> $b['sort']);
+        $listingHint = $result['data']['listing_type_hint'] ?? '?';
+        $html = '<!doctype html><html><head><meta charset="utf-8">
+<title>MLS Demo – ' . e($role) . '</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head><body class="p-4">
+<h4 class="mb-1">MLS Import Preview — <strong>' . e(ucfirst($role)) . '</strong></h4>
+<p class="text-muted small mb-3">Fixture: tests/fixtures/mls/' . e($role) . '_regression.txt &nbsp;|&nbsp; Listing type hint: <strong>' . e($listingHint) . '</strong></p>
+<table class="table table-bordered table-sm align-middle">
+<thead class="table-dark"><tr><th>MLS Field</th><th>Form Property</th><th>Parsed Value</th><th>Status</th></tr></thead><tbody>';
+        foreach ($preview as $row) {
+            $badge = $row['mapped']
+                ? '<span class="badge bg-success">Mapped — will apply</span>'
+                : ($row['preview_only']
+                    ? '<span class="badge bg-warning text-dark">Preview only</span>'
+                    : '<span class="badge bg-secondary">Not in field map</span>');
+            $html .= '<tr><td class="fw-semibold">' . e($row['label']) . '<br><code class="text-muted small">' . e($row['key']) . '</code></td>'
+                   . '<td><code>' . e($row['prop']) . '</code></td>'
+                   . '<td class="text-break" style="max-width:320px;">' . e($row['value']) . '</td>'
+                   . '<td>' . $badge . '</td></tr>';
+        }
+        $html .= '</tbody></table>
+<div class="mt-3 d-flex gap-2">
+  <button class="btn btn-success" style="color:#fff;"><i class="me-1">✓</i> Apply Selected</button>
+  <button class="btn btn-outline-secondary" style="color:#6c757d;">Cancel</button>
+</div>
+</body></html>';
+        return response($html);
+    })->name('dev.mls-demo');
+
     Route::middleware(['auth'])->group(function () {
         // Tenant Offer Listing (create)
         Route::get('/dev/offer-listing/tenant/{user_type?}',

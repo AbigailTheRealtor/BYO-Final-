@@ -122,6 +122,14 @@ class MlsListingImportService
             // captures that run into them (e.g. interior_features bleed).
             // HOA Dues/Fee: must precede bare HOA\b so "HOA Dues:" stops captures
             // before the shorter two-letter label would match.
+            // Tax Legal Desc: full three-word compound label used by some Stellar MLS
+            // exports instead of separate "Legal Description:". Must be the FULL label
+            // "Tax Legal Desc\b" (not just "Tax Legal\b") because the boundary closure
+            // requires \s*: immediately after the matched label word — "Tax Legal\b\s*:"
+            // would need a colon after "Legal" but the actual label has " Desc:" instead.
+            // Tax Assessment: stops Water View / other fields from bleeding into
+            // "Tax Assessment:" labels in MLS exports.
+            '|Tax\s+Legal\s+Desc(?:ription)?\b|Tax\s+Assessment\b' .
             '|Legal\s+Desc(?:ription)?\b|Flood\s+Zone(?:\s+\w+)?|HOA\s+(?:Dues?|Fee)\b(?=\s*:)|HOA\b(?=\s*:)|Association\b(?=\s*:)|Homestead\b' .
             // CDD: allow optional Y/N so "CDD Y/N: No" stops association_fee_frequency.
             '|CDD(?:\s+Y\/N)?\b' .
@@ -132,7 +140,9 @@ class MlsListingImportService
             '|Total\s+Number\s+of\s+Parcels\b|Total\s+(?:Acreage|Number)' .
             '|Year\s+Built|Bed(?:room)?s?\b|Bath(?:room)?s?\b|Beds?\b|Baths?\b' .
             '|(?:Heated\s+)?Sq\.?\s*Ft\.?|Square\s+Feet|CDOM\b' .
-            '|Waterfront\b|Water\s+Frontage\b|Water\s+(?:Access|View|Extra|Front)\b' .
+            // Waterfront Feet must appear BEFORE bare Waterfront so "Waterfront Feet:"
+            // terminates captures before "Waterfront\b" fires on the shorter prefix.
+            '|Waterfront\s+Feet\b|Waterfront\b|Water\s+Frontage\b|Water\s+(?:Access|View|Extra|Front)\b' .
             '|Rent\s+(?:Includes?|Price)\b|Tenant\s+Pays?\b|Terms\s+of\s+Lease\b' .
             // Minimum Security Deposit (3-word label) must precede the 2-word fallback.
             '|Application\s+Fee\b|Security\s+Deposit\b|Minimum\s+Security\s+Deposit\b|Minimum\s+(?:Lease|Security)\b' .
@@ -170,7 +180,12 @@ class MlsListingImportService
         // part of a legitimate field value.
         $sectionHeaderStop =
             'Exterior\s+Information|Interior\s+Information' .
-            '|Rooms\b|Neighborhood\b|School\s+District\b';
+            '|Rooms\b|Neighborhood\b|School\s+District\b' .
+            // County appears without a colon in some Stellar MLS exports when the
+            // school district block is embedded in the address line
+            // (e.g. "City: SEMINOLE Pinellas County Unified State: FL").
+            // Adding it here stops city and other fields from capturing "County Unified".
+            '|County\b';
 
         /**
          * Extract a value from $text matching one of $patterns.
@@ -652,8 +667,37 @@ class MlsListingImportService
             $data['office_area_sqft'] = preg_replace('/[^\d]/', '', $v);
         }
 
+        // ─── Water Frontage ───────────────────────────────────────────────────
+        // "Water Frontage:" describes the type of water body the property fronts
+        // (e.g. "Intracoastal Waterway", "Bay/Harbor", "Canal").
+        // Must appear BEFORE Waterfront parser to prevent the Waterfront regex from
+        // consuming "Water Frontage: <value> Waterfront: <bool>".
+        // NOTE: No Livewire property exists on Seller/Landlord for this field yet;
+        //       it is parsed and stored in $data but does not apply to the form.
+        //       A human-readable label is registered in MlsFieldMap::fieldLabels().
+        if ($v = $extract(['/Water\s+Frontage[\s:]+([^\|\n]{1,100})/i'], true)) {
+            $data['water_frontage'] = $v;
+        }
+
+        // ─── Waterfront Feet ─────────────────────────────────────────────────
+        // "Waterfront Feet:" is the numeric linear-footage of water frontage.
+        // Must appear BEFORE Waterfront parser: "/Waterfront[\s:]+/" would otherwise
+        // match "Waterfront Feet:" and capture the feet value into $data['waterfront'].
+        // NOTE: No Livewire property exists on Seller/Landlord for this field yet;
+        //       it is parsed and stored in $data but does not apply to the form.
+        //       A human-readable label is registered in MlsFieldMap::fieldLabels().
+        // Note: use !== null (not truthiness) because a valid value of "0" is falsy
+        // in PHP and would incorrectly cause the assignment to short-circuit.
+        if (($v = $extract(['/Waterfront\s+Feet[\s:]+(\d+(?:\.\d+)?)/i'])) !== null) {
+            $data['waterfront_feet'] = $v;
+        }
+
         // ─── Waterfront ───────────────────────────────────────────────────────
-        if ($v = $extract(['/Waterfront[\s:]+([^\|\n]{1,50})/i'], true)) {
+        // Requires a colon immediately after "Waterfront" (with optional spaces) so
+        // that "Waterfront Feet: 0 Waterfront: No" is not matched on "Waterfront Feet:"
+        // first — the old pattern `/Waterfront[\s:]+/` would consume "Waterfront "
+        // (with trailing space) and then capture "Feet: 0" as the boolean value.
+        if ($v = $extract(['/Waterfront\s*:\s*([^\|\n]{1,50})/i'], true)) {
             $data['waterfront'] = MlsNormalizer::normalize('waterfront', $v);
         }
 

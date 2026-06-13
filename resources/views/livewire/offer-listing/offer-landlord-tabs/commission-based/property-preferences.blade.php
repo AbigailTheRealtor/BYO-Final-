@@ -739,6 +739,34 @@
     </div>
 </div>
 
+<!-- Water Frontage -->
+<div class="form-group">
+    <label class="fw-bold">Water Frontage:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Type of water body the property fronts (e.g., Intracoastal Waterway, Gulf/Ocean, Lake).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="text" wire:model="water_frontage" class="form-control has-icon"
+            data-icon="fa-solid fa-water"
+            placeholder="e.g., Intracoastal Waterway, Gulf/Ocean, Lake">
+    </div>
+</div>
+
+<!-- Waterfront Feet -->
+<div class="form-group">
+    <label class="fw-bold">Waterfront Feet:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Linear footage of waterfront the property has.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="number" wire:model="waterfront_feet" class="form-control has-icon"
+            data-icon="fa-solid fa-ruler-horizontal"
+            placeholder="e.g., 75" min="0">
+    </div>
+</div>
+
 <!-- Interior Features -->
 <div class="form-group">
     <label class="fw-bold">Interior Features:</label>

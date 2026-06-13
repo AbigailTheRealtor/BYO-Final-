@@ -701,6 +701,10 @@ class MlsListingImportServiceTest extends TestCase
         $map = MlsFieldMap::forRole('landlord');
 
         foreach ($map as $canonicalKey => $propName) {
+            if ($propName === null) {
+                // null-mapped entries are preview-only (no form property target); skip.
+                continue;
+            }
             $propName = ltrim($propName, '*');
             $this->assertTrue(
                 property_exists(LandlordOfferListing::class, $propName),
