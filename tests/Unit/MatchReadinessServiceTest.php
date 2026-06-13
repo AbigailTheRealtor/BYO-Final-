@@ -454,6 +454,143 @@ class MatchReadinessServiceTest extends TestCase
         $this->assertEmpty($result['missing_full']);
     }
 
+    // ── Conditional groups ───────────────────────────────────────────────────
+
+    /**
+     * Landlord: interested_in_selling = 'Yes' → interested_in_selling_type required.
+     * @test
+     */
+    public function landlord_interested_in_selling_yes_requires_selling_type(): void
+    {
+        $bid = $this->landlordFullBid();
+        $bid['interested_in_selling']      = 'Yes';
+        $bid['interested_in_selling_type'] = '';  // not populated
+
+        $result = MatchReadinessService::evaluate($bid, 'landlord');
+
+        $this->assertNotSame('full_match_ready', $result['state']);
+        $this->assertContains('interested_in_selling_type', $result['missing_full']);
+    }
+
+    /**
+     * Landlord: interested_in_selling = 'No' → interested_in_selling_type is NOT required.
+     * @test
+     */
+    public function landlord_interested_in_selling_no_does_not_require_selling_type(): void
+    {
+        $bid = $this->landlordFullBid();
+        $bid['interested_in_selling'] = 'No';
+        unset($bid['interested_in_selling_type']);
+
+        $result = MatchReadinessService::evaluate($bid, 'landlord');
+
+        $this->assertNotContains('interested_in_selling_type', $result['missing_full']);
+    }
+
+    /**
+     * Landlord: interested_in_selling = 'Yes' + type populated → no missing child.
+     * @test
+     */
+    public function landlord_interested_in_selling_yes_with_type_is_full_match_ready(): void
+    {
+        $bid = $this->landlordFullBid();
+        $bid['interested_in_selling']      = 'Yes';
+        $bid['interested_in_selling_type'] = 'Percentage';
+
+        $result = MatchReadinessService::evaluate($bid, 'landlord');
+
+        $this->assertNotContains('interested_in_selling_type', $result['missing_full']);
+    }
+
+    /**
+     * Landlord: broker_fee_timing = 'other' → broker_fee_timing_other required.
+     * @test
+     */
+    public function landlord_broker_fee_timing_other_requires_timing_other_text(): void
+    {
+        $bid = $this->landlordFullBid();
+        $bid['broker_fee_timing']       = 'other';
+        $bid['broker_fee_timing_other'] = '';
+
+        $result = MatchReadinessService::evaluate($bid, 'landlord');
+
+        $this->assertNotSame('full_match_ready', $result['state']);
+        $this->assertContains('broker_fee_timing_other', $result['missing_full']);
+    }
+
+    /**
+     * Landlord: broker_fee_timing = 'other' + other text populated → no missing child.
+     * @test
+     */
+    public function landlord_broker_fee_timing_other_populated_does_not_block_full_match(): void
+    {
+        $bid = $this->landlordFullBid();
+        $bid['broker_fee_timing']       = 'other';
+        $bid['broker_fee_timing_other'] = 'Invoice 30 days after signed lease';
+
+        $result = MatchReadinessService::evaluate($bid, 'landlord');
+
+        $this->assertNotContains('broker_fee_timing_other', $result['missing_full']);
+    }
+
+    /**
+     * Landlord: broker_fee_timing = non-'other' → broker_fee_timing_other NOT required.
+     * @test
+     */
+    public function landlord_broker_fee_timing_non_other_does_not_require_timing_other(): void
+    {
+        $bid = $this->landlordFullBid();
+        $bid['broker_fee_timing'] = 'Upon execution';
+        unset($bid['broker_fee_timing_other']);
+
+        $result = MatchReadinessService::evaluate($bid, 'landlord');
+
+        $this->assertNotContains('broker_fee_timing_other', $result['missing_full']);
+    }
+
+    /**
+     * Tenant: broker_fee_timing = 'other' → broker_fee_timing_other required.
+     * @test
+     */
+    public function tenant_broker_fee_timing_other_requires_timing_other_text(): void
+    {
+        $bid = $this->tenantFullBid();
+        $bid['broker_fee_timing']       = 'other';
+        $bid['broker_fee_timing_other'] = '';
+
+        $result = MatchReadinessService::evaluate($bid, 'tenant');
+
+        $this->assertNotSame('full_match_ready', $result['state']);
+        $this->assertContains('broker_fee_timing_other', $result['missing_full']);
+    }
+
+    /**
+     * Tenant: broker_fee_timing = 'other' + other text populated → no missing child.
+     * @test
+     */
+    public function tenant_broker_fee_timing_other_populated_does_not_block_full_match(): void
+    {
+        $bid = $this->tenantFullBid();
+        $bid['broker_fee_timing']       = 'other';
+        $bid['broker_fee_timing_other'] = 'Custom arrangement';
+
+        $result = MatchReadinessService::evaluate($bid, 'tenant');
+
+        $this->assertNotContains('broker_fee_timing_other', $result['missing_full']);
+    }
+
+    /**
+     * Seller has no conditional groups — conditional-group infrastructure must not
+     * affect roles that don't define it.
+     * @test
+     */
+    public function seller_has_no_conditional_groups_and_is_not_affected(): void
+    {
+        $result = MatchReadinessService::evaluate($this->sellerFullBid(), 'seller');
+
+        $this->assertSame('full_match_ready', $result['state']);
+    }
+
     // ── missing_fields return value ──────────────────────────────────────────
 
     /** @test */

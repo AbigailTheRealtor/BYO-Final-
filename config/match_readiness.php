@@ -131,6 +131,24 @@ return [
             'interested_in_property_management',
             'interested_in_selling',
         ],
+
+        /*
+         * Conditional groups (Full Match only):
+         * If parent_field has one of parent_values, required_children must
+         * also be populated or they are added to missing_full.
+         */
+        'conditional_groups' => [
+            [
+                'parent_field'      => 'broker_fee_timing',
+                'parent_values'     => ['other'],
+                'required_children' => ['broker_fee_timing_other'],
+            ],
+            [
+                'parent_field'      => 'interested_in_selling',
+                'parent_values'     => ['Yes'],
+                'required_children' => ['interested_in_selling_type'],
+            ],
+        ],
     ],
 
     // ── Tenant ───────────────────────────────────────────────────────────────
@@ -164,6 +182,19 @@ return [
             'early_termination_fee_option',
             'retainer_fee_option',
             'broker_fee_timing',
+        ],
+
+        /*
+         * Conditional groups (Full Match only):
+         * If parent_field has one of parent_values, required_children must
+         * also be populated or they are added to missing_full.
+         */
+        'conditional_groups' => [
+            [
+                'parent_field'      => 'broker_fee_timing',
+                'parent_values'     => ['other'],
+                'required_children' => ['broker_fee_timing_other'],
+            ],
         ],
     ],
 

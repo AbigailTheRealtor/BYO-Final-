@@ -49,13 +49,39 @@ class MatchReadinessService
             ];
         }
 
-        $quickFields        = $config['quick_match']  ?? [];
-        $fullFields         = $config['full_match']   ?? [];
-        $arrayFields        = $config['array_fields'] ?? [];
+        $quickFields        = $config['quick_match']       ?? [];
+        $fullFields         = $config['full_match']        ?? [];
+        $arrayFields        = $config['array_fields']      ?? [];
+        $conditionalGroups  = $config['conditional_groups'] ?? [];
         $globalPlaceholders = config('match_readiness.global_placeholders', []);
 
         $missingQuick = self::missingFields($bidData, $quickFields, $arrayFields, $globalPlaceholders);
         $missingFull  = self::missingFields($bidData, $fullFields,  $arrayFields, $globalPlaceholders);
+
+        // Evaluate conditional groups (Full Match only).
+        // If a parent field has one of its trigger values, required child fields
+        // are added to missing_full when absent.
+        foreach ($conditionalGroups as $group) {
+            $parentValue = $bidData[$group['parent_field']] ?? null;
+            if ($parentValue === null) {
+                continue;
+            }
+            $trimmed = trim((string) $parentValue);
+            if (!in_array($trimmed, $group['parent_values'], true)) {
+                continue;
+            }
+            $childMissing = self::missingFields(
+                $bidData,
+                $group['required_children'],
+                $arrayFields,
+                $globalPlaceholders
+            );
+            foreach ($childMissing as $child) {
+                if (!in_array($child, $missingFull, true)) {
+                    $missingFull[] = $child;
+                }
+            }
+        }
 
         if (empty($missingFull)) {
             $state = 'full_match_ready';
