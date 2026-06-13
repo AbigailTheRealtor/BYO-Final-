@@ -463,6 +463,52 @@
                                         <span class="text-muted">No preset saved yet. Click Edit to create one.</span>
                                     @endif
                                 </div>
+                                {{-- ── Readiness coaching hints (P6) ── --}}
+                                @if ($info['exists'])
+                                @php
+                                    $coaching        = $info['coaching'] ?? [];
+                                    $coachMissQ      = $coaching['missing_quick_labels'] ?? [];
+                                    $coachMissF      = $coaching['missing_full_labels']  ?? [];
+                                    $coachImpact     = $coaching['impact'] ?? '';
+                                    $coachAllReady   = (empty($coachMissQ) && empty($coachMissF));
+                                    $coachHasMissing = (!empty($coachMissQ) || !empty($coachMissF));
+                                    $coachBlockingQ  = !empty($coachMissQ);
+                                    $coachPanelId    = 'coachHints_' . $role . '_' . $propertyType;
+                                @endphp
+                                @if($coachAllReady)
+                                <div class="mt-2" style="font-size:.76rem;color:#198754;">
+                                    <i class="fa-solid fa-circle-check me-1"></i>
+                                    All match readiness fields set
+                                </div>
+                                @elseif($coachHasMissing)
+                                <div class="mt-2">
+                                    <button type="button"
+                                            class="btn btn-sm p-0 d-flex align-items-center gap-1"
+                                            style="font-size:.76rem;color:{{ $coachBlockingQ ? '#856404' : '#004085' }};background:transparent;border:none;"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#{{ $coachPanelId }}"
+                                            aria-expanded="false">
+                                        <i class="fa-solid fa-lightbulb me-1"
+                                           style="color:{{ $coachBlockingQ ? '#856404' : '#0d6efd' }};"></i>
+                                        {{ $coachBlockingQ ? 'Fields needed for Quick Match Ready' : 'Fields to reach Full Match Ready' }}
+                                        <i class="fa-solid fa-chevron-down ms-1" style="font-size:.65rem;"></i>
+                                    </button>
+                                    <div class="collapse" id="{{ $coachPanelId }}">
+                                        <div class="mt-1 p-2"
+                                             style="background:{{ $coachBlockingQ ? '#fff3cd' : '#e8f4ff' }};border-radius:6px;font-size:.75rem;color:{{ $coachBlockingQ ? '#856404' : '#004085' }};">
+                                            <div style="font-weight:600;margin-bottom:3px;">
+                                                <i class="fa-solid fa-circle-info me-1"></i>{{ $coachImpact }}
+                                            </div>
+                                            <ul class="mb-0 ps-3" style="line-height:1.7;">
+                                                @foreach(($coachBlockingQ ? $coachMissQ : $coachMissF) as $coachField)
+                                                <li>{{ $coachField }}</li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+                                @endif
                             </div>
                             <div class="preset-actions">
                                 <a href="{{ route('agent.presets.edit', [$role, $propertyType]) }}"

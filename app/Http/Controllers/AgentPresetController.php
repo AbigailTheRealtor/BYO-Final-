@@ -82,13 +82,15 @@ class AgentPresetController extends Controller
         $presets = [];
         foreach ($roles as $role) {
             foreach (AgentPresetCatalog::getPropertyTypes($role) as $propertyType) {
-                $profile = AgentDefaultProfile::findForAgent($userId, $role, $propertyType);
+                $profile     = AgentDefaultProfile::findForAgent($userId, $role, $propertyType);
+                $profileData = $profile?->profile_data ?? [];
                 $presets[$role][$propertyType] = [
                     'exists'     => $profile !== null,
-                    'services'   => count($profile?->profile_data['services'] ?? []),
-                    'has_bio'    => !empty($profile?->profile_data['bio']),
-                    'has_creds'  => !empty($profile?->profile_data['first_name']),
+                    'services'   => count($profileData['services'] ?? []),
+                    'has_bio'    => !empty($profileData['bio']),
+                    'has_creds'  => !empty($profileData['first_name']),
                     'updated_at' => $profile?->updated_at,
+                    'coaching'   => \App\Services\RecommendationService::presetCompletionAnalysis($profileData, $role),
                 ];
             }
         }

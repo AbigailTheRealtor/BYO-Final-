@@ -133,7 +133,11 @@
     :bidStatusColor="$bidStatusColorForLayout">
 
             @include('partials.bid_detail_body.match_score_panel')
-            @php $p5BreakdownTenant = \App\Services\ScoreBreakdownService::breakdown($auctionBaselineData, $bidData, 'tenant', $propType); @endphp
+            @php
+                $p5BreakdownTenant  = \App\Services\ScoreBreakdownService::breakdown($auctionBaselineData, $bidData, 'tenant', $propType);
+                $p6RecommendTenant  = \App\Services\RecommendationService::consumerFitRecommendation($p5BreakdownTenant, 'tenant');
+            @endphp
+            <x-recommendation-panel :recommendation="$p6RecommendTenant" />
             <x-score-breakdown-panel :breakdown="$p5BreakdownTenant" />
 
             <div class="mb-5">

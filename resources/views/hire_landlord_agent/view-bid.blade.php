@@ -174,7 +174,11 @@
 
     {{-- ===== BODY ===== --}}
     @include('partials.bid_detail_body.landlord')
-    @php $p5BreakdownLandlord = \App\Services\ScoreBreakdownService::breakdown($landlordBaselineData, $currentBidData, 'landlord', $auctionPropType); @endphp
+    @php
+        $p5BreakdownLandlord  = \App\Services\ScoreBreakdownService::breakdown($landlordBaselineData, $currentBidData, 'landlord', $auctionPropType);
+        $p6RecommendLandlord  = \App\Services\RecommendationService::consumerFitRecommendation($p5BreakdownLandlord, 'landlord');
+    @endphp
+    <x-recommendation-panel :recommendation="$p6RecommendLandlord" />
     <x-score-breakdown-panel :breakdown="$p5BreakdownLandlord" />
 
     {{-- ===== FOOTER BANNERS (w-100 status rows) ===== --}}

@@ -171,7 +171,11 @@
 
     {{-- ===== BODY ===== --}}
     @include('partials.bid_detail_body.buyer')
-    @php $p5BreakdownBuyer = \App\Services\ScoreBreakdownService::breakdown($listingBaselineData, $currentBidData, 'buyer', $auctionPropType); @endphp
+    @php
+        $p5BreakdownBuyer  = \App\Services\ScoreBreakdownService::breakdown($listingBaselineData, $currentBidData, 'buyer', $auctionPropType);
+        $p6RecommendBuyer  = \App\Services\RecommendationService::consumerFitRecommendation($p5BreakdownBuyer, 'buyer');
+    @endphp
+    <x-recommendation-panel :recommendation="$p6RecommendBuyer" />
     <x-score-breakdown-panel :breakdown="$p5BreakdownBuyer" />
 
     {{-- ===== FOOTER BANNERS (w-100 status rows) ===== --}}
