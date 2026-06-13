@@ -104,6 +104,8 @@
                                     $totalScoreColor    = $getScoreColor($totalScore);
                                     $brokerScoreColor   = $getScoreColor($brokerScore);
                                     $servicesScoreColor = $getScoreColor($servicesScore);
+
+                                    $readiness = \App\Services\MatchReadinessService::evaluate($bidData, 'buyer');
                                 @endphp
 
                                 <div class="card mb-3 agent-bid-card" style="border-radius:8px;border:1px solid #dee2e6;">
@@ -122,6 +124,7 @@
                                             <span class="badge" style="background:{{ $totalScoreColor }};color:#fff;padding:6px 12px;border-radius:4px;">
                                                 <i class="fa-solid fa-chart-pie me-1"></i>{{ $totalScore }}% Match
                                             </span>
+                                            @include('partials.match_readiness_badge', ['readiness' => $readiness, 'hasBid' => true])
                                             @else
                                             <span class="badge bg-secondary" style="padding:6px 12px;border-radius:4px;">No Bid Placed</span>
                                             @endif

@@ -121,6 +121,8 @@
                                     $brokerScoreColor   = $getScoreColor($brokerScore);
                                     $servicesScoreColor = $getScoreColor($servicesScore);
 
+                                    $readiness = \App\Services\MatchReadinessService::evaluate($bidData, 'tenant');
+
                                     // Action eligibility
                                     $endDate = strtotime($auction->end_date . ' ' . ($auction->end_time ?? '23:59:59'));
                                     $isExpired = time() > $endDate;
@@ -144,6 +146,7 @@
                                             <span class="badge" style="background:{{ $totalScoreColor }};color:#fff;padding:6px 12px;border-radius:4px;">
                                                 <i class="fa-solid fa-chart-pie me-1"></i>{{ $totalScore }}% Match
                                             </span>
+                                            @include('partials.match_readiness_badge', ['readiness' => $readiness, 'hasBid' => true])
                                             @else
                                             <span class="badge bg-secondary" style="padding:6px 12px;border-radius:4px;">No Bid Placed</span>
                                             @endif
