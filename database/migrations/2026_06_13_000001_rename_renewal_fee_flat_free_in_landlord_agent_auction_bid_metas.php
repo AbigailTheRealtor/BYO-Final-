@@ -83,8 +83,13 @@ return new class extends Migration
 
             if ($canonicalRow) {
                 // Collision: canonical key already exists for this owner row.
-                // Preserve value if canonical is empty but stale has a value.
-                if (empty($canonicalRow->meta_value) && !empty($staleRow->meta_value)) {
+                // Preserve value if canonical is blank/null but stale has a value.
+                // Strict checks are used so that '0' (a valid flat fee) is never
+                // treated as missing/empty and accidentally discarded or overwritten.
+                $canonicalIsBlank = ($canonicalRow->meta_value === null || $canonicalRow->meta_value === '');
+                $staleHasValue    = ($staleRow->meta_value !== null && $staleRow->meta_value !== '');
+
+                if ($canonicalIsBlank && $staleHasValue) {
                     DB::table($table)
                         ->where('id', $canonicalRow->id)
                         ->update(['meta_value' => $staleRow->meta_value]);

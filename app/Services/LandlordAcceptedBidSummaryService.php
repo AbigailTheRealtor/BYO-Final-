@@ -633,7 +633,7 @@ class LandlordAcceptedBidSummaryService
 
         // Exact matches in the same order as the Landlord view blade (lines 1648-1667)
         if ($type === 'Flat Fee') {
-            return $money($g('renewal_fee_flat_free'));
+            return $money($g('renewal_fee_flat_fee'));
         }
         if ($type === 'Percentage of the Rent Due Each Rental Period') {
             $pct = $g('renewal_fee_percentage');
