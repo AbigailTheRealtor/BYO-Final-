@@ -273,6 +273,7 @@
                 <x-location-dna-map
                     :preferences="$locationDnaPreferences ?? null"
                     :legacyLocation="$legacyLocation ?? []"
+                    :boundaryData="$boundaryData ?? null"
                 />
                 <!-- Description Box  -->
                 <div class="card description">

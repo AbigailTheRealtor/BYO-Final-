@@ -1,28 +1,32 @@
 {{--
   Location DNA Map Display Component
   ====================================
-  Usage:  <x-location-dna-map :preferences="$locationDnaPreferences" :legacyLocation="$legacyLocation" />
+  Usage:  <x-location-dna-map :preferences="$locationDnaPreferences" :legacyLocation="$legacyLocation" :boundaryData="$boundaryData ?? null" />
 
   Props:
     $preferences   – decoded array from `location_dna_preferences` meta key, or null
     $legacyLocation – array with keys: cities[], counties[], states[], zip_codes[]
                       pulled from the older separate meta fields
+    $boundaryData  – optional; resolved by BoundaryLookupService in the controller:
+                       ['geojson_polygons' => [...], 'fallback' => bool]
+                     When absent or fallback=true, chip display is used for Tiers 3-5.
 
   Priority chain — STRICTLY one tier renders; the first non-empty tier wins:
     1. Custom drawn polygons   → Google Maps Polygon overlays
     2. Radius circles          → Google Maps Circle overlays
-    3. City labels/chips       → Phase 1 chip adapter (no GeoJSON)
-    4. ZIP code labels/chips   → same
-    5. County labels/chips     → same
+    3. City labels/chips       → GeoJSON boundary polygons (or chip fallback)
+    4. ZIP code labels/chips   → GeoJSON boundary polygons (or chip fallback)
+    5. County labels/chips     → GeoJSON boundary polygons (or chip fallback)
     6. Text-only fallback      → when tiers 1-5 all empty
 
   Neighborhoods are supplemental text — they are NOT a tier trigger.
   They appear alongside whichever tier renders, or in the fallback block.
 
-  Phase 1 boundary adapter:
-    City / ZIP / county values render as labeled text chips (NOT GeoJSON polygons).
-    The adapter interface is isolated at tiers 3-5 so a future phase can wire in
-    real GeoJSON boundary data without touching the rest of this component.
+  Phase 2 boundary adapter (Tiers 3-5):
+    BoundaryLookupService fetches GeoJSON polygon coordinates from the Census TIGER/Line
+    REST API and passes them as $boundaryData. When the API returns no data (unknown area,
+    network error, timeout), $boundaryData['fallback'] is true and the chip display renders
+    unchanged. This ensures the map never goes blank.
 
   XSS:
     All user-supplied label content rendered via JavaScript uses textContent, not
@@ -70,6 +74,12 @@
   elseif ($hasZips)       $tier = 'zips';
   elseif ($hasCounties)   $tier = 'counties';
   else                    $tier = 'fallback';
+
+  /* Boundary polygon data from Phase 2 service (Tiers 3-5 only) */
+  $bd = isset($boundaryData) && is_array($boundaryData) ? $boundaryData : null;
+  $geoPolygons   = ($bd && !empty($bd['geojson_polygons'])) ? $bd['geojson_polygons'] : [];
+  $useBoundaryMap = !empty($geoPolygons)
+                    && in_array($tier, ['cities', 'zips', 'counties'], true);
 
   $componentId = 'ldna-display-' . uniqid();
   $mapsKey     = config('services.google.places_key') ?: env('GOOGLE_PLACES_API_KEY', '');
@@ -247,29 +257,134 @@
   })();
   </script>
 
-  {{-- Ensure Maps API is available on public view pages --}}
-  @once
-  @push('scripts')
+@elseif($useBoundaryMap)
+  {{-- ─── Tiers 3-5: GeoJSON boundary polygon map (Phase 2) ───────────────────────
+       Renders a full Google Maps canvas with polygon outlines from Census TIGER data.
+       Falls back to chip display when $boundaryData['fallback'] is true (handled by
+       the $useBoundaryMap flag above — this block only runs when polygons are available).
+       Supplemental neighborhoods and notes continue to appear below the map.          --}}
+  <div class="ldna-hero mb-3">
+    @if($flex)
+      <span class="ldna-flex-badge mb-2">
+        <i class="fa-solid fa-arrows-left-right"></i> Location Flexible
+      </span>
+    @endif
+    <div id="{{ $componentId }}" class="ldna-hero-map"></div>
+
+    @if($dnaNeigh)
+      <div class="ldna-neigh-supplement">
+        <span style="font-size:.78rem;color:#64748b;font-weight:600;">NEIGHBORHOODS</span><br>
+        @foreach($dnaNeigh as $n)
+          <span class="ldna-area-chip neigh">
+            <i class="fa-solid fa-map-pin" style="font-size:.75rem;"></i> {{ $n }}
+          </span>
+        @endforeach
+      </div>
+    @endif
+
+    @if($notes)
+      <div class="ldna-notes-box mt-2">
+        <i class="fa-solid fa-note-sticky me-1 text-info"></i> {{ $notes }}
+      </div>
+    @endif
+  </div>
+
   <script>
   (function () {
-    if (typeof google !== 'undefined' && google.maps) return;
-    var existing = document.querySelector('script[src*="maps.googleapis.com"]');
-    if (existing) return; /* already loading */
-    var s = document.createElement('script');
-    s.async = true; s.defer = true;
-    s.src = 'https://maps.googleapis.com/maps/api/js?key={{ $mapsKey }}&libraries=places';
-    document.head.appendChild(s);
+    /*
+     * Data structure (matches CensusTigerBoundaryAdapter::extractCoordinates()):
+     *
+     *   geoRings — array indexed by boundary name (one entry per city/ZIP/county)
+     *     Each entry is an array of polygons:
+     *       Polygon      → [ [exterior_ring, hole_ring?, ...] ]      (one polygon)
+     *       MultiPolygon → [ [exterior1, hole1?], [exterior2], ... ] (N polygons)
+     *
+     *   A ring is an array of GeoJSON [lng, lat] pairs (NOT {lat,lng} — swap on use).
+     *
+     * We create one google.maps.Polygon per disconnected polygon piece so that
+     * islands and exclaves render as separate shapes rather than as holes.
+     */
+    var geoRings = @json($geoPolygons);
+    var mapElId  = @json($componentId);
+
+    function ringToPath(ring) {
+      return ring.map(function (pt) {
+        return { lat: pt[1], lng: pt[0] };
+      });
+    }
+
+    function initLdnaBoundaryMap() {
+      if (typeof google === 'undefined' || !google.maps) {
+        setTimeout(initLdnaBoundaryMap, 200); return;
+      }
+
+      var mapEl = document.getElementById(mapElId);
+      if (!mapEl) return;
+
+      var bounds    = new google.maps.LatLngBounds();
+      var hasBounds = false;
+
+      var gMap = new google.maps.Map(mapEl, {
+        zoom: 8,
+        center: { lat: 27.9944024, lng: -81.7602544 },
+        mapTypeId: 'roadmap',
+        disableDefaultUI: true,
+        zoomControl: true,
+      });
+
+      /* Outer loop: each boundary name (city, ZIP, or county) */
+      geoRings.forEach(function (polygons) {
+        if (!polygons || !polygons.length) return;
+
+        /* Inner loop: each disconnected polygon piece within that boundary.
+         * For a simple Polygon this is always length 1.
+         * For a MultiPolygon (county with islands, etc.) this is N separate shapes. */
+        polygons.forEach(function (rings) {
+          if (!rings || !rings.length) return;
+
+          /* rings[0] = exterior ring; rings[1..] = interior holes (GeoJSON convention).
+           * Google Maps Polygon with multiple paths uses the same convention,
+           * so we pass the rings array directly as paths. */
+          var paths = rings.map(function (ring) { return ringToPath(ring); });
+
+          new google.maps.Polygon({
+            paths: paths,
+            fillColor: '#0369a1',
+            fillOpacity: 0.18,
+            strokeColor: '#0369a1',
+            strokeWeight: 2,
+            map: gMap,
+          });
+
+          /* Extend bounds using only the exterior ring (rings[0]) to avoid
+           * hole coordinates skewing the fit. */
+          var exterior = paths[0] || [];
+          exterior.forEach(function (pt) {
+            bounds.extend(new google.maps.LatLng(pt.lat, pt.lng));
+            hasBounds = true;
+          });
+        });
+      });
+
+      if (hasBounds) {
+        gMap.fitBounds(bounds);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initLdnaBoundaryMap);
+    } else {
+      initLdnaBoundaryMap();
+    }
   })();
   </script>
-  @endpush
-  @endonce
 
 @else
-  {{-- ─── Tiers 3-5: Chip-based boundary adapter (Phase 1) ────────────────────────
+  {{-- ─── Tiers 3-5: Chip-based boundary adapter (Phase 1 fallback) ───────────────
+       Renders when $boundaryData is absent, fallback=true, or boundary polygons are
+       empty (network failure, unknown area, Census API timeout, etc.).
        STRICT single-tier: only the winning tier's chips are shown.
-       Neighborhoods are supplemental and always shown at the bottom.
-       Interface contract: only chips for $tier are rendered in the main section.
-       Future phases can replace this chip display with a GeoJSON polygon renderer.  --}}
+       Neighborhoods are supplemental and always shown at the bottom.                 --}}
   <div class="ldna-hero mb-3">
     @if($flex)
       <span class="ldna-flex-badge">
@@ -281,9 +396,6 @@
       <div class="d-flex align-items-center gap-2 mb-3">
         <i class="fa-solid fa-map-location-dot" style="color:#0369a1;font-size:1.25rem;"></i>
         <span class="ldna-chip-map-title">Preferred Locations</span>
-        <small class="text-muted ms-auto" style="font-size:.75rem;">
-          <i class="fa-solid fa-circle-info"></i> Map boundary outlines coming soon
-        </small>
       </div>
 
       {{-- ── Active tier only ── --}}
@@ -339,4 +451,27 @@
       </div>
     @endif
   </div>
+@endif
+
+{{-- ── Maps API loader — one instance regardless of which tier rendered ──────────
+     @once ensures this script tag is emitted at most once per page, even when
+     multiple location-dna-map components appear on the same view.
+     The runtime guard (typeof google check + existing-script check) provides a
+     second layer of defence against duplicate network requests.                   --}}
+@if($hasMapData && ($tier === 'polygons' || $tier === 'radii' || $useBoundaryMap))
+@once
+@push('scripts')
+<script>
+(function () {
+  if (typeof google !== 'undefined' && google.maps) return;
+  var existing = document.querySelector('script[src*="maps.googleapis.com"]');
+  if (existing) return; /* already loading */
+  var s = document.createElement('script');
+  s.async = true; s.defer = true;
+  s.src = 'https://maps.googleapis.com/maps/api/js?key={{ $mapsKey }}&libraries=places';
+  document.head.appendChild(s);
+})();
+</script>
+@endpush
+@endonce
 @endif

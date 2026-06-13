@@ -27,8 +27,9 @@ use App\Services\AskAi\AskAiFinalResponseBuilderService;
 use App\Services\AskAi\AskAiFollowUpQuestionService;
 use App\Services\AskAi\AskAiIntentNormalizerService;
 use App\Services\AskAi\AskAiKnowledgeSearchService;
-
-
+use App\Contracts\BoundaryAdapterInterface;
+use App\Services\LocationDna\CensusTigerBoundaryAdapter;
+use App\Services\LocationDna\BoundaryLookupService;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -45,6 +46,12 @@ class AppServiceProvider extends ServiceProvider
         // Laravel's auto-wiring would also resolve this correctly today, but explicit DI is
         // safer: it is immune to future constructor changes in those dependencies and makes
         // the intent clear to anyone reading the service graph.
+        $this->app->bind(BoundaryAdapterInterface::class, CensusTigerBoundaryAdapter::class);
+
+        $this->app->bind(BoundaryLookupService::class, function ($app) {
+            return new BoundaryLookupService($app->make(BoundaryAdapterInterface::class));
+        });
+
         $this->app->bind(AskAiRunnerV2Service::class, function ($app) {
             return new AskAiRunnerV2Service(
                 $app->make(AskAiQuestionClassifierService::class),

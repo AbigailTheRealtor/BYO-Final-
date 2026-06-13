@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\TenantCriteriaAuction;
 use App\Models\TenantCriteriaAuctionBid;
+use App\Services\LocationDna\BoundaryLookupService;
 
 class TenantCriteriaAuctionController extends Controller
 {
@@ -598,7 +599,7 @@ class TenantCriteriaAuctionController extends Controller
         return redirect()->back()->with('success', 'Auction Approved Successfully!');
     }
 
-    public function view($id, Request $request)
+    public function view($id, Request $request, BoundaryLookupService $boundaryLookupService)
     {
         $page_data['auction'] = TenantCriteriaAuction::whereId($id)->first();
         $page_data['title'] = 'Tenant Criteria';
@@ -613,6 +614,10 @@ class TenantCriteriaAuctionController extends Controller
             'states'   => json_decode($auction->info('state')    ?: '[]', true) ?? [],
             'zip_codes' => [],
         ];
+        $page_data['boundaryData'] = $boundaryLookupService->resolve(
+            $page_data['locationDnaPreferences'],
+            $page_data['legacyLocation']
+        );
         return view('tenant_criteria.view', $page_data);
     }
 

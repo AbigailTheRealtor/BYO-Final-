@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Models\State;
 use App\Models\WaterExtra;
 use App\Models\WaterViewType;
+use App\Services\LocationDna\BoundaryLookupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -325,7 +326,7 @@ class BuyerCriteriaAuctionController extends Controller
         return view('buyer_criteria.add-counter-bid', $page_data);
     }
 
-    public function view($id)
+    public function view($id, BoundaryLookupService $boundaryLookupService)
     {
         $page_data['auction'] = BuyerCriteriaAuction::whereId($id)->first();
         $page_data['created_by'] = User::whereId($page_data['auction']->user_id)->get()->first();
@@ -346,6 +347,10 @@ class BuyerCriteriaAuctionController extends Controller
             'states'   => json_decode($auction->info('states')   ?: '[]', true) ?? [],
             'zip_codes' => [],
         ];
+        $page_data['boundaryData'] = $boundaryLookupService->resolve(
+            $page_data['locationDnaPreferences'],
+            $page_data['legacyLocation']
+        );
         return view('buyer_criteria.view', $page_data);
     }
 
