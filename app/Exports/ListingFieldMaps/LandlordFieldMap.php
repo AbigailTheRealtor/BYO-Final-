@@ -328,7 +328,7 @@ class LandlordFieldMap
                 'Renewal Fee Type' => 'renewal_fee_type',
                 'Renewal Fee (%)' => 'renewal_fee_percentage',
                 'Renewal Fee (First Month)' => 'renewal_fee_first_month',
-                'Renewal Fee (Flat Fee)' => 'renewal_fee_flat_free',
+                'Renewal Fee (Flat Fee)' => 'renewal_fee_flat_fee',
                 'Renewal Fee (Lease Value)' => 'renewal_fee_lease_value',
                 'Renewal Fee (Number of Months)' => 'renewal_fee_no_of_months',
                 'Renewal Fee Sales Tax (First Month)' => 'renewal_fee_sales_tax_first_month',

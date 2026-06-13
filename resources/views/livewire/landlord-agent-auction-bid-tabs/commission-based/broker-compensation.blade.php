@@ -458,7 +458,7 @@
 @endif
 @endif
 
-@if (!isset($isCounterMode) || !$isCounterMode || !empty($renewal_fee_type) || !empty($renewal_fee_percentage) || !empty($renewal_fee_lease_value) || !empty($renewal_fee_first_month) || !empty($renewal_fee_flat_free) || !empty($renewal_fee_custom) || !empty($renewal_fee_sales_tax_lease_value) || !empty($renewal_fee_no_of_months) || !empty($renewal_fee_sales_tax_first_month) || !empty($renewal_fee_sales_tax_flat_fee))
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($renewal_fee_type) || !empty($renewal_fee_percentage) || !empty($renewal_fee_lease_value) || !empty($renewal_fee_first_month) || !empty($renewal_fee_flat_fee) || !empty($renewal_fee_custom) || !empty($renewal_fee_sales_tax_lease_value) || !empty($renewal_fee_no_of_months) || !empty($renewal_fee_sales_tax_first_month) || !empty($renewal_fee_sales_tax_flat_fee))
 <!--. Lease Renewal/Extension Fee -->
 @if ($property_type === 'Residential Property')
 
@@ -522,7 +522,7 @@
                     {{-- <label class="form-label">Percentage of the First Month's Rent</label> --}}
                     <div class="input-group">
                         <span class="input-group-text">$</span>
-                        <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
+                        <input type="text" wire:model.lazy="renewal_fee_flat_fee" class="form-control"
                             placeholder="Enter flat fee amount (e.g., 2,000)"
                             data-error-id="renewal_fee_percentage_error" oninput="validateInput(this)"
                             onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -637,7 +637,7 @@
                     {{-- <label class="form-label">Flat Fee Amount</label> --}}
                     <div class="input-group">
                         <span class="input-group-text">$</span>
-                        <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
+                        <input type="text" wire:model.lazy="renewal_fee_flat_fee" class="form-control"
                             placeholder="Enter flat fee amount (e.g., 5,000)" data-error-id="flat_fee_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>

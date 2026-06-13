@@ -249,7 +249,7 @@ class ListingDownloadController extends Controller
             'purchase_fee_flat_exercised' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'purchase_pice_commercial' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'renewal_fee_first_month' => fn($v) => ListingExportFormatter::fmtMoney($v),
-            'renewal_fee_flat_free' => fn($v) => ListingExportFormatter::fmtMoney($v),
+            'renewal_fee_flat_fee' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'commission_structure_type_fee_flat' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'commission_structure_type_fee_flat_combo' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'lease_fee_flat_combo_net' => fn($v) => ListingExportFormatter::fmtMoney($v),

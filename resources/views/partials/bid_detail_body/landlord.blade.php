@@ -428,7 +428,7 @@
                                                         $renewalFeeType = data_get($bid,'get.renewal_fee_type','');
                                                         $renewalFeeDisplay = $renewalFeeType;
                                                         if ($renewalFeeType === 'Flat Fee') {
-                                                            $flat = data_get($bid,'get.renewal_fee_flat_free');
+                                                            $flat = data_get($bid,'get.renewal_fee_flat_fee');
                                                             if ($flat) $renewalFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
                                                         } elseif ($renewalFeeType === 'Percentage of the Rent Due Each Rental Period') {
                                                             $pct = data_get($bid,'get.renewal_fee_percentage');

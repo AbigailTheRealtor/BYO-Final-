@@ -117,7 +117,7 @@ class LandlordAgentAuctionBid extends Component
     public $renewal_fee_percentage = '';
     public $renewal_fee_lease_value = '';
     public $renewal_fee_first_month = '';
-    public $renewal_fee_flat_free = '';
+    public $renewal_fee_flat_fee = '';
     public $renewal_fee_custom = '';
     public $renewal_fee_sales_tax_lease_value = '';
     public $renewal_fee_no_of_months = '';
@@ -356,7 +356,7 @@ class LandlordAgentAuctionBid extends Component
             'renewal_fee_percentage',
             'renewal_fee_lease_value',
             'renewal_fee_first_month',
-            'renewal_fee_flat_free',
+            'renewal_fee_flat_fee',
             'renewal_fee_custom',
             'renewal_fee_sales_tax_lease_value',
             'renewal_fee_no_of_months',
@@ -715,7 +715,7 @@ class LandlordAgentAuctionBid extends Component
         $this->renewal_fee_percentage = $auction->get->renewal_fee_percentage ?? '';
         $this->renewal_fee_lease_value = $auction->get->renewal_fee_lease_value ?? '';
         $this->renewal_fee_first_month = $auction->get->renewal_fee_first_month ?? '';
-        $this->renewal_fee_flat_free = $auction->get->renewal_fee_flat_free ?? '';
+        $this->renewal_fee_flat_fee = $auction->get->renewal_fee_flat_fee ?? '';
         $this->renewal_fee_custom = $auction->get->renewal_fee_custom ?? '';
         $this->renewal_fee_sales_tax_lease_value = $auction->get->renewal_fee_sales_tax_lease_value ?? '';
         $this->renewal_fee_no_of_months = $auction->get->renewal_fee_no_of_months ?? '';
@@ -835,7 +835,7 @@ class LandlordAgentAuctionBid extends Component
                 if (!empty($mapped['renewal_fee_percentage']))              $this->renewal_fee_percentage              = $mapped['renewal_fee_percentage'];
                 if (!empty($mapped['renewal_fee_lease_value']))             $this->renewal_fee_lease_value             = $mapped['renewal_fee_lease_value'];
                 if (!empty($mapped['renewal_fee_first_month']))             $this->renewal_fee_first_month             = $mapped['renewal_fee_first_month'];
-                if (!empty($mapped['renewal_fee_flat_free']))               $this->renewal_fee_flat_free               = $mapped['renewal_fee_flat_free'];
+                if (!empty($mapped['renewal_fee_flat_fee']))                $this->renewal_fee_flat_fee                = $mapped['renewal_fee_flat_fee'];
                 if (!empty($mapped['renewal_fee_custom']))                  $this->renewal_fee_custom                  = $mapped['renewal_fee_custom'];
                 if (!empty($mapped['renewal_fee_sales_tax_lease_value']))   $this->renewal_fee_sales_tax_lease_value   = $mapped['renewal_fee_sales_tax_lease_value'];
                 if (!empty($mapped['renewal_fee_no_of_months']))            $this->renewal_fee_no_of_months            = $mapped['renewal_fee_no_of_months'];
@@ -1007,7 +1007,7 @@ class LandlordAgentAuctionBid extends Component
                 $this->renewal_fee_percentage              = $bidData->renewal_fee_percentage ?? '';
                 $this->renewal_fee_lease_value             = $bidData->renewal_fee_lease_value ?? '';
                 $this->renewal_fee_first_month             = $bidData->renewal_fee_first_month ?? '';
-                $this->renewal_fee_flat_free               = $bidData->renewal_fee_flat_free ?? '';
+                $this->renewal_fee_flat_fee                = $bidData->renewal_fee_flat_fee ?? '';
                 $this->renewal_fee_custom                  = $bidData->renewal_fee_custom ?? '';
                 $this->renewal_fee_sales_tax_lease_value   = $bidData->renewal_fee_sales_tax_lease_value ?? '';
                 $this->renewal_fee_no_of_months            = $bidData->renewal_fee_no_of_months ?? '';
@@ -1377,7 +1377,7 @@ class LandlordAgentAuctionBid extends Component
             $bid->saveMeta('renewal_fee_percentage', $this->renewal_fee_percentage);
             $bid->saveMeta('renewal_fee_lease_value', $this->renewal_fee_lease_value);
             $bid->saveMeta('renewal_fee_first_month', $this->renewal_fee_first_month);
-            $bid->saveMeta('renewal_fee_flat_free', $this->renewal_fee_flat_free);
+            $bid->saveMeta('renewal_fee_flat_fee', $this->renewal_fee_flat_fee);
             $bid->saveMeta('renewal_fee_custom', $this->renewal_fee_custom);
             $bid->saveMeta('renewal_fee_sales_tax_lease_value', $this->renewal_fee_sales_tax_lease_value);
             $bid->saveMeta('renewal_fee_sales_tax_flat_fee', $this->renewal_fee_sales_tax_flat_fee);

@@ -84,7 +84,7 @@ class LandlordBidMatchScoreHelper
                 'renewal_fee_percentage',
                 'renewal_fee_lease_value',
                 'renewal_fee_first_month',
-                'renewal_fee_flat_free',
+                'renewal_fee_flat_fee',
                 'renewal_fee_custom',
                 'renewal_fee_no_of_months',
             ],
