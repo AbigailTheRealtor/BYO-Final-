@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * P1A — Safe Mapping Defect Fix
@@ -63,6 +64,11 @@ return new class extends Migration
      */
     private function renameKey(string $table, string $fkColumn, string $fromKey, string $toKey, string $direction): void
     {
+        if (!Schema::hasTable($table)) {
+            Log::warning("P1A migration {$direction}: skipping {$table} (table does not exist)");
+            return;
+        }
+
         $renamed = 0;
         $deleted = 0;
         $valueRescued = 0;
