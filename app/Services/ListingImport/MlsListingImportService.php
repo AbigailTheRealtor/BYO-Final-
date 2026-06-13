@@ -110,7 +110,7 @@ class MlsListingImportService
             // bare "Fireplace:" also still fires via the outer \s*: requirement.
             '|Fireplace(?:\s+Y\/N)?\b|Heated\s+Area\b' .
             '|Interior\s+Features?|Exterior\s+Features?' .
-            '|Exterior\s+Construction\b|Exterior\s+Feat\b|Exterior\s+Information\b' .
+            '|Exterior\s+Construction\b|Exterior\s+Feat\b|Exterior\s+Information\b|Interior\s+Information\b' .
             '|Floor\s+Covering\b|Roof\b' .
             '|Furnishings?\b(?=\s*:)|Furnished\b(?=\s*:)|Available\b(?=\s*:)' .
             '|Tax\s+(?:ID|Year)|Annual\s+(?:CDD|Prop(?:erty)?|Tax)|Taxes\b|Parcel\b' .
@@ -122,7 +122,7 @@ class MlsListingImportService
             // captures that run into them (e.g. interior_features bleed).
             // HOA Dues/Fee: must precede bare HOA\b so "HOA Dues:" stops captures
             // before the shorter two-letter label would match.
-            '|Legal\s+Desc|Flood\s+Zone(?:\s+\w+)?|HOA\s+(?:Dues?|Fee)\b(?=\s*:)|HOA\b(?=\s*:)|Association\b(?=\s*:)|Homestead\b' .
+            '|Legal\s+Desc(?:ription)?\b|Flood\s+Zone(?:\s+\w+)?|HOA\s+(?:Dues?|Fee)\b(?=\s*:)|HOA\b(?=\s*:)|Association\b(?=\s*:)|Homestead\b' .
             // CDD: allow optional Y/N so "CDD Y/N: No" stops association_fee_frequency.
             '|CDD(?:\s+Y\/N)?\b' .
             // Lot Size: accept an extra qualifier word ("Acres", "Sq", etc.) so
@@ -132,7 +132,7 @@ class MlsListingImportService
             '|Total\s+Number\s+of\s+Parcels\b|Total\s+(?:Acreage|Number)' .
             '|Year\s+Built|Bed(?:room)?s?\b|Bath(?:room)?s?\b|Beds?\b|Baths?\b' .
             '|(?:Heated\s+)?Sq\.?\s*Ft\.?|Square\s+Feet|CDOM\b' .
-            '|Waterfront\b|Water\s+(?:Access|View|Extra|Front)\b' .
+            '|Waterfront\b|Water\s+Frontage\b|Water\s+(?:Access|View|Extra|Front)\b' .
             '|Rent\s+(?:Includes?|Price)\b|Tenant\s+Pays?\b|Terms\s+of\s+Lease\b' .
             // Minimum Security Deposit (3-word label) must precede the 2-word fallback.
             '|Application\s+Fee\b|Security\s+Deposit\b|Minimum\s+Security\s+Deposit\b|Minimum\s+(?:Lease|Security)\b' .
@@ -147,19 +147,30 @@ class MlsListingImportService
             // School District and Neighborhood: not in the original list, causing city
             // and carport fields to bleed into those following label words.
             '|Special\s+Assessment(?:\s+Y\/N)?\b|Homeowners?\s+Assoc|Subdivision\b' .
-            '|School\s+District\b|Neighborhood\b(?=\s*:)' .
+            '|School\s+District\b|Neighborhood\b' .
             '|Foundation\b|Sewer\b(?=\s*:)|Utilities\b|Roof\s+Type\b' .
             '|Number\s+of\s+Units\b|Total\s+Units\b|Cap\s+Rate\b' .
             // Commercial Sale specific labels
             '|Building\s+Size\b|Ceiling\s+Height\b|Parking\s+Spaces\b' .
             '|Net\s+Operating\s+Income\b|NOI\b' .
             '|Building\s+Features?\b|Current\s+Use\b' .
-            '|Lease\s+Rate\s+Type\b|Pets?\s+Allowed\b|Office\s+Area\b' .
+            '|Lease\s+Rate\s+Type\b|Rental\s+Rate\s+Type\b|Pets?\s+Allowed\b|Office\s+Area\b' .
             // Business Opportunity labels — stops greedy captures from bleeding
             // across business-specific fields.
             '|Business\s+Type\b|Annual\s+Revenue\b|Annual\s+Net\s+Income\b' .
             '|Number\s+of\s+Employees?\b|Inventory\s+Included\b' .
             '|Seller\s+Financing\b|Lease\s+Type\b';
+
+        // ─── Bare section-header stop pattern ────────────────────────────────
+        // Some MLS exports emit section headers (e.g. "Interior Information",
+        // "Rooms") as bare words WITHOUT a trailing colon.  The main boundary
+        // closure requires label + colon, so these headers must be caught by a
+        // separate alternation that does NOT require the colon suffix.
+        // Only include multi-word or unambiguous labels that can never appear as
+        // part of a legitimate field value.
+        $sectionHeaderStop =
+            'Exterior\s+Information|Interior\s+Information' .
+            '|Rooms\b|Neighborhood\b|School\s+District\b';
 
         /**
          * Extract a value from $text matching one of $patterns.
@@ -167,10 +178,11 @@ class MlsListingImportService
          * @param  string[] $patterns   PCRE patterns; capture group 1 is the raw value.
          * @param  bool     $boundary   When true, trim the captured value at the next
          *                              recognized MLS label (prevents field bleed).
-         *                              Terminates at `\b` so colon/space presence after
-         *                              the label word is not required.
+         *                              Two alternations fire:
+         *                              1. label + \s*: (colon-delimited field labels)
+         *                              2. bare section headers (no colon required)
          */
-        $extract = function (array $patterns, bool $boundary = false) use ($text, $labelStop): ?string {
+        $extract = function (array $patterns, bool $boundary = false) use ($text, $labelStop, $sectionHeaderStop): ?string {
             foreach ($patterns as $pattern) {
                 if (preg_match($pattern, $text, $m)) {
                     $val = trim($m[1] ?? '');
@@ -179,7 +191,8 @@ class MlsListingImportService
                         // Using \s* (not \s+) handles the no-separator case where a label
                         // immediately follows the captured value with no space
                         // (e.g. "1 SpacesCarport:No" or "Central AirFloor Covering:").
-                        if (preg_match('/^(.*?)(?:\s*(?:' . $labelStop . ')\s*:)/is', $val, $sm)) {
+                        // Second alternation catches bare section headers without colons.
+                        if (preg_match('/^(.*?)(?:\s*(?:' . $labelStop . ')\s*:|\s*(?:' . $sectionHeaderStop . '))/is', $val, $sm)) {
                             $val = trim($sm[1]);
                         }
                     }
@@ -598,15 +611,11 @@ class MlsListingImportService
         }
 
         // ─── Appliances ───────────────────────────────────────────────────────
-        // Boundary protection: stops at the next known label (e.g. Interior Features).
-        // Post-extraction cleanup strips bare section headers (no colon) that the
-        // boundary-stop closure cannot catch: "Rooms", "Exterior Information", etc.
+        // Boundary protection: stops at the next known label (colon-delimited) or
+        // at a bare section header (e.g. "Rooms", "Exterior Information") caught
+        // by the $sectionHeaderStop alternation in the boundary closure.
         if ($v = $extract(['/Appliances?(?:\s+Included)?[\s:]+([^\|\n]{1,300})/i'], true)) {
-            $v = preg_replace('/\s*(?:Rooms|Exterior\s+Information|Interior\s+Information)\b.*$/i', '', $v);
-            $v = trim($v);
-            if ($v !== '') {
-                $data['appliances'] = $v;
-            }
+            $data['appliances'] = $v;
         }
 
         // ─── Rent Includes ────────────────────────────────────────────────────

@@ -73,6 +73,11 @@ return new class extends Migration
         $deleted = 0;
         $valueRescued = 0;
 
+        if (!Schema::hasTable($table)) {
+            Log::info("P1A migration {$direction}: skipping {$table} (table does not exist)");
+            return;
+        }
+
         $staleRows = DB::table($table)
             ->where('meta_key', $fromKey)
             ->select(['id', $fkColumn, 'meta_value'])

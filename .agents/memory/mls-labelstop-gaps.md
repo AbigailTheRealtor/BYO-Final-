@@ -11,7 +11,9 @@ When adding or auditing MLS parser fields, check all of these gap patterns befor
 
 2. **Y/N suffix variants** — `Special\s+Assessment\b` catches "Special Assessment:" but NOT "Special Assessment Y/N:". The boundary check requires `\s*:` immediately after the word boundary; "Y/N" between the word and colon breaks the match. Fix: `Special\s+Assessment(?:\s+Y\/N)?\b`.
 
-3. **Common label words absent entirely** — confirmed missing entries that caused bleed: `School\s+District\b`, `Neighborhood\b(?=\s*:)`, `Monthly\s+Fee\b`. These should be considered part of the standard stop list for any MLS export.
+3. **Common label words absent entirely** — confirmed missing entries that caused bleed: `School\s+District\b`, `Neighborhood\b` (no lookahead needed when used in boundary alternation), `Monthly\s+Fee\b`, `Water\s+Frontage\b`, `Rental\s+Rate\s+Type\b`. These should be considered part of the standard stop list for any MLS export.
+
+4. **Prefix-match trap in labelStop** — `Legal\s+Desc` matches the START of "Legal Description:" but `\s*:` then fails because "ription:" follows. Always use `Legal\s+Desc(?:ription)?\b` (or `\w*\b`) so the full word matches before the colon is required. Rule: any `labelStop` entry that is a prefix abbreviation of a longer real label MUST include `(?:ription)?` or similar suffix to cover the full-word form.
 
 4. **`boundary=false` on long-capture parsers** — any parser with a `{1,200}` or similar long capture that does NOT pass `boundary=true` will bleed across the entire line in single-line MLS exports. `rent_includes` was the confirmed offender (fixed Phase 2). Audit all parsers with capture length > 60 chars for missing `boundary=true`.
 

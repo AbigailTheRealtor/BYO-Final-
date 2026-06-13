@@ -216,6 +216,197 @@ class SellerMlsFieldRoundTripTest extends TestCase
         $component->assertSet('interior_features', ['Open Floorplan']);
     }
 
+    // ── applyImportedFields — field application on Seller ────────────────────
+
+    /** Apply waterfront (scalar) to an empty Seller component. */
+    public function test_apply_sets_waterfront_on_seller(): void
+    {
+        $this->actingAs(User::factory()->make(['id' => 1]));
+
+        $component = new SellerOfferListing();
+        $component->waterfront = '';
+        $component->importPreviewData = [[
+            'canonical_key' => 'waterfront', 'prop_name' => 'waterfront',
+            'label' => 'Waterfront', 'value' => 'no',
+            'is_array_prop' => false, 'has_existing_value' => false, 'checked' => true,
+        ]];
+
+        $component->applyImportedFields(['waterfront'], []);
+        $this->assertEquals('no', $component->waterfront);
+    }
+
+    /** Apply water_view (array) to an empty Seller component. */
+    public function test_apply_sets_water_view_on_seller(): void
+    {
+        $this->actingAs(User::factory()->make(['id' => 1]));
+
+        $component = new SellerOfferListing();
+        $component->water_view = [];
+        $component->importPreviewData = [[
+            'canonical_key' => 'water_view', 'prop_name' => 'water_view',
+            'label' => 'Water View', 'value' => 'Lake,Gulf/Ocean - Full',
+            'is_array_prop' => true, 'has_existing_value' => false, 'checked' => true,
+        ]];
+
+        $component->applyImportedFields(['water_view'], []);
+        $this->assertEquals(['Lake', 'Gulf/Ocean - Full'], $component->water_view);
+    }
+
+    /** Apply interior_features (array) to an empty Seller component. */
+    public function test_apply_sets_interior_features_on_seller(): void
+    {
+        $this->actingAs(User::factory()->make(['id' => 1]));
+
+        $component = new SellerOfferListing();
+        $component->interior_features = [];
+        $component->importPreviewData = [[
+            'canonical_key' => 'interior_features', 'prop_name' => 'interior_features',
+            'label' => 'Interior Features', 'value' => 'Ceiling Fans(s),Crown Molding,Walk-In Closet(s)',
+            'is_array_prop' => true, 'has_existing_value' => false, 'checked' => true,
+        ]];
+
+        $component->applyImportedFields(['interior_features'], []);
+        $this->assertEquals(['Ceiling Fans(s)', 'Crown Molding', 'Walk-In Closet(s)'], $component->interior_features);
+    }
+
+    /** Apply appliances (array) to an empty Seller component. */
+    public function test_apply_sets_appliances_on_seller(): void
+    {
+        $this->actingAs(User::factory()->make(['id' => 1]));
+
+        $component = new SellerOfferListing();
+        $component->appliances = [];
+        $component->importPreviewData = [[
+            'canonical_key' => 'appliances', 'prop_name' => 'appliances',
+            'label' => 'Appliances', 'value' => 'Dishwasher,Microwave,Refrigerator',
+            'is_array_prop' => true, 'has_existing_value' => false, 'checked' => true,
+        ]];
+
+        $component->applyImportedFields(['appliances'], []);
+        $this->assertEquals(['Dishwasher', 'Microwave', 'Refrigerator'], $component->appliances);
+    }
+
+    /** Apply flood_zone_code (scalar) to an empty Seller component. */
+    public function test_apply_sets_flood_zone_code_on_seller(): void
+    {
+        $this->actingAs(User::factory()->make(['id' => 1]));
+
+        $component = new SellerOfferListing();
+        $component->flood_zone_code = '';
+        $component->importPreviewData = [[
+            'canonical_key' => 'flood_zone_code', 'prop_name' => 'flood_zone_code',
+            'label' => 'Flood Zone Code', 'value' => 'X',
+            'is_array_prop' => false, 'has_existing_value' => false, 'checked' => true,
+        ]];
+
+        $component->applyImportedFields(['flood_zone_code'], []);
+        $this->assertEquals('X', $component->flood_zone_code);
+    }
+
+    /** Apply lot_dimensions (scalar) to an empty Seller component. */
+    public function test_apply_sets_lot_dimensions_on_seller(): void
+    {
+        $this->actingAs(User::factory()->make(['id' => 1]));
+
+        $component = new SellerOfferListing();
+        $component->lot_dimensions = '';
+        $component->importPreviewData = [[
+            'canonical_key' => 'lot_dimensions', 'prop_name' => 'lot_dimensions',
+            'label' => 'Lot Dimensions', 'value' => '80x120',
+            'is_array_prop' => false, 'has_existing_value' => false, 'checked' => true,
+        ]];
+
+        $component->applyImportedFields(['lot_dimensions'], []);
+        $this->assertEquals('80x120', $component->lot_dimensions);
+    }
+
+    /** Apply roof_type (array) to an empty Seller component. */
+    public function test_apply_sets_roof_type_on_seller(): void
+    {
+        $this->actingAs(User::factory()->make(['id' => 1]));
+
+        $component = new SellerOfferListing();
+        $component->roof_type = [];
+        $component->importPreviewData = [[
+            'canonical_key' => 'roof_type', 'prop_name' => 'roof_type',
+            'label' => 'Roof Type', 'value' => 'Shingle,Tile',
+            'is_array_prop' => true, 'has_existing_value' => false, 'checked' => true,
+        ]];
+
+        $component->applyImportedFields(['roof_type'], []);
+        $this->assertEquals(['Shingle', 'Tile'], $component->roof_type);
+    }
+
+    /** Apply exterior_construction (array) to an empty Seller component. */
+    public function test_apply_sets_exterior_construction_on_seller(): void
+    {
+        $this->actingAs(User::factory()->make(['id' => 1]));
+
+        $component = new SellerOfferListing();
+        $component->exterior_construction = [];
+        $component->importPreviewData = [[
+            'canonical_key' => 'exterior_construction', 'prop_name' => 'exterior_construction',
+            'label' => 'Exterior Construction', 'value' => 'Block,Stucco',
+            'is_array_prop' => true, 'has_existing_value' => false, 'checked' => true,
+        ]];
+
+        $component->applyImportedFields(['exterior_construction'], []);
+        $this->assertEquals(['Block', 'Stucco'], $component->exterior_construction);
+    }
+
+    /** Apply foundation (array) to an empty Seller component. */
+    public function test_apply_sets_foundation_on_seller(): void
+    {
+        $this->actingAs(User::factory()->make(['id' => 1]));
+
+        $component = new SellerOfferListing();
+        $component->foundation = [];
+        $component->importPreviewData = [[
+            'canonical_key' => 'foundation', 'prop_name' => 'foundation',
+            'label' => 'Foundation', 'value' => 'Slab',
+            'is_array_prop' => true, 'has_existing_value' => false, 'checked' => true,
+        ]];
+
+        $component->applyImportedFields(['foundation'], []);
+        $this->assertEquals(['Slab'], $component->foundation);
+    }
+
+    /** Existing value must not be overwritten without override confirmation. */
+    public function test_apply_does_not_overwrite_waterfront_without_override(): void
+    {
+        $this->actingAs(User::factory()->make(['id' => 1]));
+
+        $component = new SellerOfferListing();
+        $component->waterfront = 'Yes';
+        $component->importPreviewData = [[
+            'canonical_key' => 'waterfront', 'prop_name' => 'waterfront',
+            'label' => 'Waterfront', 'value' => 'no',
+            'is_array_prop' => false, 'has_existing_value' => true, 'checked' => true,
+        ]];
+
+        $component->applyImportedFields(['waterfront'], []);
+        $this->assertEquals('Yes', $component->waterfront,
+            'waterfront must not be overwritten without override confirmation');
+    }
+
+    /** Existing value must be overwritten when in overrideKeys. */
+    public function test_apply_overwrites_waterfront_with_override(): void
+    {
+        $this->actingAs(User::factory()->make(['id' => 1]));
+
+        $component = new SellerOfferListing();
+        $component->waterfront = 'Yes';
+        $component->importPreviewData = [[
+            'canonical_key' => 'waterfront', 'prop_name' => 'waterfront',
+            'label' => 'Waterfront', 'value' => 'no',
+            'is_array_prop' => false, 'has_existing_value' => true, 'checked' => true,
+        ]];
+
+        $component->applyImportedFields(['waterfront'], ['waterfront']);
+        $this->assertEquals('no', $component->waterfront,
+            'waterfront should be overwritten when in override list');
+    }
+
     // ── SellerOfferListingEdit — save path ────────────────────────────────────
 
     public function test_seller_edit_saves_all_five_new_fields(): void
