@@ -187,18 +187,26 @@
                 </div>
             </div>
 
-            {{-- Final Negotiated Terms (read-only for all four terminal outcomes) --}}
+            {{-- Terms Snapshot Section (read-only for all four terminal outcomes) --}}
+            @php
+                $terminalHeadings = [
+                    'accepted'  => 'Accepted Offer Terms',
+                    'rejected'  => 'Rejected Offer Terms',
+                    'withdrawn' => 'Withdrawn Offer Terms',
+                    'expired'   => 'Expired Offer Terms',
+                    'cancelled' => 'Cancelled Offer Terms',
+                ];
+                $terminalSectionHeading = $terminalHeadings[$tLeafStatus] ?? 'Offer Terms at Conclusion';
+            @endphp
             <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <strong>Final Negotiated Terms</strong>
-                    <span class="badge bg-secondary">Read-Only</span>
+                <div class="card-header">
+                    <strong>{{ $terminalSectionHeading }}</strong>
                 </div>
                 <div class="card-body">
-                    @if($tLeafStatus === 'accepted' && $snapshotMissing)
+                    @if($snapshotMissing)
                     <div class="alert alert-secondary mb-0" role="alert" data-testid="snapshot-unavailable-notice">
-                        <strong>Terms snapshot not available.</strong>
-                        The accepted-terms record for this offer pre-dates the snapshot feature and cannot be displayed here.
-                        Please contact support if you need a copy of the agreed terms.
+                        <strong>Terms not available.</strong>
+                        No terms were recorded for this offer. This may occur for offers that were resolved before any terms were entered.
                     </div>
                     @else
                     @include('offers._offer_terms_display', ['metas' => $finalTerms, 'offerType' => $terminalOfferType])
@@ -226,7 +234,7 @@
                             <small class="text-muted me-1">↓</small>
                             @endif
                             <span class="fw-{{ $isTerminalStep ? 'bold' : 'normal' }}">
-                                Offer #{{ $step['offer_id'] }}
+                                <a href="{{ route('offers.show', $step['offer_id']) }}" class="text-decoration-none">Offer #{{ $step['offer_id'] }}</a>
                                 &mdash;
                                 <span class="badge bg-{{ $stepColor }} text-capitalize">{{ $step['status'] }}</span>
                                 &mdash;
@@ -246,17 +254,10 @@
                 <div class="card-header"><strong>Actions</strong></div>
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-3">
-                        <a href="#offer-timeline" class="btn btn-outline-info btn-sm">View Timeline</a>
-                        @if($tLeafStatus === 'accepted')
-                        <a href="#" class="btn btn-outline-secondary btn-sm" aria-disabled="true"
-                           onclick="return false;" title="PDF generation coming soon">
+                        <a href="#offer-timeline" class="btn btn-outline-info btn-sm">View Negotiation Summary</a>
+                        <a href="{{ route('offers.pdf', $terminalLeaf) }}" class="btn btn-outline-secondary btn-sm" target="_blank">
                             Download PDF
                         </a>
-                        <a href="#" class="btn btn-outline-secondary btn-sm" aria-disabled="true"
-                           onclick="return false;" title="Email copy coming soon">
-                            Email Copy
-                        </a>
-                        @endif
                     </div>
                 </div>
             </div>

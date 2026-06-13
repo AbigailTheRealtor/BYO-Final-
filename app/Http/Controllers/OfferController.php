@@ -13,6 +13,7 @@ use App\Services\Offers\OfferNegotiationChainService;
 use App\Services\Offers\OfferPermissionService;
 use App\Services\Offers\OfferTimelineBuilder;
 use App\Services\Offers\OfferWorkflowFacade;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -645,6 +646,124 @@ class OfferController extends Controller
             ->with('success', 'Offer terms saved successfully.');
     }
 
+    /**
+     * Download a PDF of any terminal-state offer detail page.
+     * Accessible to any user who can view the offer.
+     * Aborts with 404 if the offer chain has not yet reached a terminal state.
+     */
+    public function downloadPdf(Offer $offer): \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $user      = Auth::user();
+        $actorId   = $user?->id;
+        $actorRole = $user?->role ?? $user?->user_type ?? 'system';
+
+        if (!$this->permissionService->canView($offer, $actorId, $actorRole)) {
+            abort(403, 'You are not authorised to download this offer PDF.');
+        }
+
+        $terminalLeaf = $this->chainService->getTerminalLeaf($offer);
+        if ($terminalLeaf === null) {
+            abort(404, 'This offer has not reached a terminal state yet and cannot be downloaded.');
+        }
+
+        $terminalLeaf->loadMissing('metas');
+
+        // Resolve offer type.
+        $offerType = $terminalLeaf->getMeta('offer_type') ?: 'sale';
+        if (!in_array($offerType, ['sale', 'rental', 'lease'])) {
+            $offerType = 'sale';
+        }
+
+        // Negotiation chain — resolved first so chain-level fallback is available.
+        $chainCollection = $this->chainService->getChainForOffer($terminalLeaf);
+        $rootOffer       = $chainCollection->first();
+
+        // Resolve final terms: accepted offers use the immutable snapshot first.
+        $finalTerms      = collect();
+        $snapshotMissing = false;
+        if ($terminalLeaf->status === 'accepted') {
+            // Priority 1: immutable snapshot on the terminal leaf itself.
+            $snapshotJson = \App\Models\OfferMeta::where('offer_id', $terminalLeaf->id)
+                ->where('meta_key', 'accepted_terms_snapshot')
+                ->value('meta_value');
+            if ($snapshotJson) {
+                $decoded = json_decode($snapshotJson, true);
+                if (is_array($decoded)) {
+                    $finalTerms = collect($decoded);
+                }
+            }
+
+            if ($finalTerms->isEmpty()) {
+                // Priority 2: live metas on the terminal leaf itself.
+                $fallbackTerms = $terminalLeaf->metas
+                    ->filter(fn ($m) => $m->meta_key !== 'accepted_terms_snapshot')
+                    ->pluck('meta_value', 'meta_key');
+                if ($fallbackTerms->isNotEmpty()) {
+                    $finalTerms = $fallbackTerms;
+                }
+            }
+
+            if ($finalTerms->isEmpty()) {
+                // Priority 3: walk the chain for the latest accepted offer that has terms
+                // (handles legacy records where snapshot was written on a parent offer).
+                $acceptedInChain = $chainCollection
+                    ->where('status', 'accepted')
+                    ->sortByDesc('id');
+                foreach ($acceptedInChain as $chainOffer) {
+                    if ($chainOffer->id === $terminalLeaf->id) {
+                        continue;
+                    }
+                    $chainSnapshotJson = \App\Models\OfferMeta::where('offer_id', $chainOffer->id)
+                        ->where('meta_key', 'accepted_terms_snapshot')
+                        ->value('meta_value');
+                    if ($chainSnapshotJson) {
+                        $decoded = json_decode($chainSnapshotJson, true);
+                        if (is_array($decoded)) {
+                            $finalTerms = collect($decoded);
+                            break;
+                        }
+                    }
+                    // No snapshot — try the chain offer's own live metas.
+                    $chainOffer->loadMissing('metas');
+                    $chainMetas = $chainOffer->metas
+                        ->filter(fn ($m) => $m->meta_key !== 'accepted_terms_snapshot')
+                        ->pluck('meta_value', 'meta_key');
+                    if ($chainMetas->isNotEmpty()) {
+                        $finalTerms = $chainMetas;
+                        break;
+                    }
+                }
+            }
+
+            if ($finalTerms->isEmpty()) {
+                $snapshotMissing = true;
+            }
+        } else {
+            $finalTerms = $terminalLeaf->metas->pluck('meta_value', 'meta_key');
+        }
+
+        // Terminal outcome timestamp from event log.
+        $terminalOutcomeAt = null;
+        $expectedEventType = 'offer_' . $terminalLeaf->status;
+        $terminalEvent = \App\Models\OfferEventLog::where('offer_id', $terminalLeaf->id)
+            ->where('event_type', $expectedEventType)
+            ->orderByDesc('created_at')
+            ->first();
+        $terminalOutcomeAt = $terminalEvent?->created_at ?? $terminalLeaf->created_at;
+
+        $html = view('offers.offer_detail_pdf', compact(
+            'terminalLeaf', 'finalTerms', 'offerType',
+            'chainCollection', 'rootOffer', 'terminalOutcomeAt', 'snapshotMissing',
+        ))->render();
+
+        $pdf = Pdf::loadHTML($html);
+        $pdf->setPaper('A4', 'portrait');
+
+        $filename = 'offer-detail-' . $terminalLeaf->id . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /**
@@ -1117,6 +1236,7 @@ class OfferController extends Controller
         $snapshotMissing = false;
         if ($terminalLeaf !== null) {
             if ($terminalLeaf->status === 'accepted') {
+                // Priority 1: immutable snapshot on the terminal leaf itself.
                 $snapshotJson = \App\Models\OfferMeta::where('offer_id', $terminalLeaf->id)
                     ->where('meta_key', 'accepted_terms_snapshot')
                     ->value('meta_value');
@@ -1126,6 +1246,50 @@ class OfferController extends Controller
                         $finalTerms = collect($decoded);
                     }
                 }
+
+                if ($finalTerms->isEmpty()) {
+                    // Priority 2: live metas on the terminal leaf itself.
+                    $terminalLeaf->loadMissing('metas');
+                    $fallbackTerms = $terminalLeaf->metas
+                        ->filter(fn ($m) => $m->meta_key !== 'accepted_terms_snapshot')
+                        ->pluck('meta_value', 'meta_key');
+                    if ($fallbackTerms->isNotEmpty()) {
+                        $finalTerms = $fallbackTerms;
+                    }
+                }
+
+                if ($finalTerms->isEmpty()) {
+                    // Priority 3: walk the chain for the latest accepted offer that has a snapshot
+                    // (handles legacy records where the snapshot was written on a parent).
+                    $acceptedInChain = $chainCollection
+                        ->where('status', 'accepted')
+                        ->sortByDesc('id');
+                    foreach ($acceptedInChain as $chainOffer) {
+                        if ($chainOffer->id === $terminalLeaf->id) {
+                            continue;
+                        }
+                        $chainSnapshotJson = \App\Models\OfferMeta::where('offer_id', $chainOffer->id)
+                            ->where('meta_key', 'accepted_terms_snapshot')
+                            ->value('meta_value');
+                        if ($chainSnapshotJson) {
+                            $decoded = json_decode($chainSnapshotJson, true);
+                            if (is_array($decoded)) {
+                                $finalTerms = collect($decoded);
+                                break;
+                            }
+                        }
+                        // No snapshot on this chain offer — try its live metas.
+                        $chainOffer->loadMissing('metas');
+                        $chainMetas = $chainOffer->metas
+                            ->filter(fn ($m) => $m->meta_key !== 'accepted_terms_snapshot')
+                            ->pluck('meta_value', 'meta_key');
+                        if ($chainMetas->isNotEmpty()) {
+                            $finalTerms = $chainMetas;
+                            break;
+                        }
+                    }
+                }
+
                 if ($finalTerms->isEmpty()) {
                     $snapshotMissing = true;
                 }
