@@ -191,6 +191,16 @@ class AskAiRunnerV2Service
             'repair credits offered',
             'seller open to concessions',
             'concessions available',
+            // Amount/quantity phrases — these must NOT be in LISTING_KEY_KEYWORD_MAP because
+            // listing.seller_credit_offered is a boolean yes/no field. Routing amount questions
+            // here (the free-text FAQ field) allows the description fallback to fire when the
+            // FAQ field is null, surfacing the dollar amount from the listing description.
+            'how much is the seller credit',
+            'seller credit amount',
+            'how much seller credit',
+            'what is the seller credit',
+            'how much is the closing credit',
+            'how much credit is the seller',
         ],
         // ---- Seller: Flexibility & Negotiation -------------------------------
         'faq_answers.closing_timeline_flexibility' => [
@@ -1435,6 +1445,12 @@ class AskAiRunnerV2Service
             'counties are you interested in',
         ],
         // ---- Seller Credit / Concessions ----
+        // NOTE: bare 'seller credit' and 'seller contribution' have been intentionally
+        // removed from this list. Those broad phrases intercept amount questions like
+        // "how much is the seller credit" and pin them to this boolean yes/no field.
+        // Amount/quantity questions now route to faq_answers.seller_concessions_offered
+        // (the free-text FAQ field) via FAQ_KEY_KEYWORD_MAP so the description fallback
+        // can surface the dollar figure. Only intent-clear boolean phrases remain here.
         'listing.seller_credit_offered' => [
             'seller credit offered',
             'is the seller offering a credit',
@@ -1442,8 +1458,6 @@ class AskAiRunnerV2Service
             'seller contribution credit',
             'is the seller offering any credits',
             'does the seller offer a credit',
-            'seller credit',
-            'seller contribution',
             'closing cost credits',
             'closing cost credit',
             'credit toward closing',
@@ -3000,6 +3014,66 @@ class AskAiRunnerV2Service
                 && array_key_exists('allowed_context', $promptPackage)
                 && empty($promptPackage['allowed_context'])
             ) {
+                // ----------------------------------------------------------------
+                // Guard A description fallback (feature-flagged).
+                //
+                // When the FAQ field is null/absent but the listing has a
+                // non-empty description, attempt to answer the question from the
+                // description text. This handles cases like "how much is the
+                // seller credit" where the boolean field (seller_credit_offered)
+                // is "Yes" but the dollar amount lives only in the description.
+                // ----------------------------------------------------------------
+                if ($this->enableDescriptionFallback) {
+                    $faqDescFallback = $context['listing']['description'] ?? null;
+                    if (is_string($faqDescFallback) && trim($faqDescFallback) !== '') {
+                        $faqDescPackage = $this->buildDescriptionFallbackPackage($question, trim($faqDescFallback));
+                        $faqDescResult  = $this->adapter->generate($faqDescPackage);
+                        $faqDescAnswer  = $this->parseDescriptionFallbackAnswer($faqDescResult);
+
+                        if ($faqDescAnswer !== null && !$this->isBareAnswerPlaceholder($faqDescAnswer)) {
+                            $faqDescHitResponse = [
+                                'success'            => true,
+                                'status'             => 'ready',
+                                'answer'             => $faqDescAnswer,
+                                'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                                'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                                'refusal_message'    => null,
+                                'error'              => null,
+                                'source'             => [
+                                    'answer_source'    => 'description_fallback',
+                                    'snapshot_id'      => null,
+                                    'canonical_key'    => null,
+                                    'match_type'       => null,
+                                    'snapshot_version' => null,
+                                ],
+                            ];
+                            $faqDescHitResponse['follow_up_questions'] = $this->followUpService->forResult(
+                                $faqDescHitResponse,
+                                $classification
+                            );
+
+                            $trace['final_status']              = 'ready';
+                            $trace['description_fallback_used'] = true;
+                            $trace['source_attribution']        = $faqDescHitResponse['source_attribution'] ?? null;
+                            $this->emitTrace($trace);
+
+                            return [
+                                'success'          => true,
+                                'status'           => 'ready',
+                                'classification'   => $classification,
+                                'context'          => $context,
+                                'contract'         => $contract,
+                                'prompt_package'   => $promptPackage,
+                                'adapter_result'   => $faqDescResult,
+                                'final_response'   => $faqDescHitResponse,
+                                'error'            => null,
+                                'trace'            => $trace,
+                                'outcome_category' => 'description_fallback',
+                            ];
+                        }
+                    }
+                }
+
                 $faqFieldLabel = $this->deriveFieldLabel($normalizedFieldKey);
                 $missingFinalResponse = [
                     'success'            => false,
@@ -3695,6 +3769,50 @@ class AskAiRunnerV2Service
                 $outcomeCategory                  = 'placeholder_sanitized';
             }
 
+            // Safety net: bare boolean + quantity question mismatch.
+            //
+            // When the final answer is a bare "Yes" or "No" AND the question
+            // starts with "how much" or "how many", the model only saw a boolean
+            // field (e.g. seller_credit_offered = "Yes") and has no dollar/count
+            // data to report. Attempt the description fallback; if it yields a
+            // real answer, use it instead. If it misses, fall through to the
+            // original boolean answer unchanged so we at least surface something.
+            //
+            // This guards against future boolean-field + quantity-question routing
+            // mismatches that slip through the keyword maps.
+            if (
+                ($finalResponse['status'] ?? '') === 'ready'
+                && isset($finalResponse['answer'])
+                && is_string($finalResponse['answer'])
+                && in_array(mb_strtolower(trim($finalResponse['answer'])), ['yes', 'no'], true)
+                && $this->enableDescriptionFallback
+            ) {
+                $lowerQuestion = mb_strtolower(trim($question));
+                if (str_starts_with($lowerQuestion, 'how much') || str_starts_with($lowerQuestion, 'how many')) {
+                    $safetyDesc = $context['listing']['description'] ?? null;
+                    if (is_string($safetyDesc) && trim($safetyDesc) !== '') {
+                        $safetyPackage = $this->buildDescriptionFallbackPackage($question, trim($safetyDesc));
+                        $safetyResult  = $this->adapter->generate($safetyPackage);
+                        $safetyAnswer  = $this->parseDescriptionFallbackAnswer($safetyResult);
+
+                        if ($safetyAnswer !== null && !$this->isBareAnswerPlaceholder($safetyAnswer)) {
+                            $finalResponse['success'] = true;
+                            $finalResponse['answer']  = $safetyAnswer;
+                            $finalResponse['source']  = [
+                                'answer_source'    => 'description_fallback',
+                                'snapshot_id'      => null,
+                                'canonical_key'    => null,
+                                'match_type'       => null,
+                                'snapshot_version' => null,
+                            ];
+                            $outcomeCategory = 'description_fallback';
+                            $trace['description_fallback_used']                = true;
+                            $trace['bare_boolean_quantity_safety_net_fired']   = true;
+                        }
+                    }
+                }
+            }
+
             $finalResponse['follow_up_questions'] = $this->followUpService->forResult(
                 $finalResponse,
                 $classification
@@ -3716,14 +3834,21 @@ class AskAiRunnerV2Service
             $trace['source_attribution'] = $finalResponse['source_attribution'] ?? null;
             $this->emitTrace($trace);
 
-            // Attach OpenAI source metadata to the final response.
-            $finalResponse['source'] = [
-                'answer_source'    => 'openai',
-                'snapshot_id'      => null,
-                'canonical_key'    => null,
-                'match_type'       => null,
-                'snapshot_version' => null,
-            ];
+            // Attach OpenAI source metadata to the final response, but only when
+            // no earlier path (description_fallback safety net, knowledge_snapshot
+            // from the response builder, etc.) has already set an explicit source.
+            // Checking !isset() rather than `!== 'description_fallback'` ensures we
+            // never accidentally overwrite any named source type (knowledge_snapshot,
+            // faq_snapshot, description_fallback, …) that a downstream builder set.
+            if (!isset($finalResponse['source']['answer_source'])) {
+                $finalResponse['source'] = [
+                    'answer_source'    => 'openai',
+                    'snapshot_id'      => null,
+                    'canonical_key'    => null,
+                    'match_type'       => null,
+                    'snapshot_version' => null,
+                ];
+            }
 
             return [
                 'success'          => $finalResponse['success'],

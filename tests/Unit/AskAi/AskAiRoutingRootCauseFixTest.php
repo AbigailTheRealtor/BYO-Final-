@@ -1107,4 +1107,506 @@ class AskAiRoutingRootCauseFixTest extends TestCase
         $this->assertNull($result,
             'R3b landlord: flood_zone_code="Other" + empty fallback must return null');
     }
+
+    // =========================================================================
+    // Helpers — runner private keyword-map detection via Reflection
+    // =========================================================================
+
+    private function callDetectFaqFieldKey(string $question): ?string
+    {
+        $runner = $this->makeMinimalRunner();
+        $ref    = new ReflectionMethod(AskAiRunnerV2Service::class, 'detectFaqFieldKey');
+        $ref->setAccessible(true);
+        return $ref->invoke($runner, $question);
+    }
+
+    private function callDetectListingFieldKey(string $question): ?string
+    {
+        $runner = $this->makeMinimalRunner();
+        $ref    = new ReflectionMethod(AskAiRunnerV2Service::class, 'detectListingFieldKey');
+        $ref->setAccessible(true);
+        return $ref->invoke($runner, $question);
+    }
+
+    // =========================================================================
+    // Regression R4: bare 'seller credit' removed from LISTING_KEY_KEYWORD_MAP
+    // =========================================================================
+
+    /**
+     * R4a: The bare phrases 'seller credit' and 'seller contribution' must no
+     * longer appear inside the listing.seller_credit_offered keyword array in
+     * LISTING_KEY_KEYWORD_MAP.
+     *
+     * Uses Reflection to inspect the runtime constant — not raw source text —
+     * so the assertion is immune to formatting or quote-style changes.
+     */
+    public function test_R4a_bare_seller_credit_phrase_absent_from_listing_key_map(): void
+    {
+        $ref     = new \ReflectionClass(AskAiRunnerV2Service::class);
+        $map     = $ref->getConstant('LISTING_KEY_KEYWORD_MAP');
+        $phrases = $map['listing.seller_credit_offered'] ?? [];
+
+        $this->assertNotContains(
+            'seller credit',
+            $phrases,
+            'R4a: bare "seller credit" must not be in listing.seller_credit_offered keyword array'
+        );
+        $this->assertNotContains(
+            'seller contribution',
+            $phrases,
+            'R4a: bare "seller contribution" must not be in listing.seller_credit_offered keyword array'
+        );
+    }
+
+    /**
+     * R4b: detectListingFieldKey() must NOT match "how much is the seller credit"
+     * to listing.seller_credit_offered now that the bare phrase is removed.
+     */
+    public function test_R4b_how_much_seller_credit_does_not_route_to_listing_key(): void
+    {
+        $detected = $this->callDetectListingFieldKey('how much is the seller credit');
+
+        $this->assertNotSame(
+            'listing.seller_credit_offered',
+            $detected,
+            'R4b: "how much is the seller credit" must NOT route to listing.seller_credit_offered'
+        );
+    }
+
+    /**
+     * R4c: detectFaqFieldKey() MUST match "how much is the seller credit" to
+     * faq_answers.seller_concessions_offered (the free-text FAQ field).
+     */
+    public function test_R4c_how_much_seller_credit_routes_to_faq_concessions_key(): void
+    {
+        $detected = $this->callDetectFaqFieldKey('how much is the seller credit');
+
+        $this->assertSame(
+            'faq_answers.seller_concessions_offered',
+            $detected,
+            'R4c: "how much is the seller credit" must route to faq_answers.seller_concessions_offered'
+        );
+    }
+
+    /**
+     * R4d: "is the seller offering a credit?" must still route to the boolean
+     * listing field (listing.seller_credit_offered) — not the FAQ key — so that
+     * yes/no credit questions are unaffected by the routing change.
+     */
+    public function test_R4d_is_seller_offering_credit_still_routes_to_listing_key(): void
+    {
+        // FAQ key should not match this question.
+        $faqKey = $this->callDetectFaqFieldKey('is the seller offering a credit?');
+        $this->assertNull(
+            $faqKey,
+            'R4d: "is the seller offering a credit?" must NOT match any FAQ key'
+        );
+
+        // Listing key should still match.
+        $listingKey = $this->callDetectListingFieldKey('is the seller offering a credit?');
+        $this->assertSame(
+            'listing.seller_credit_offered',
+            $listingKey,
+            'R4d: "is the seller offering a credit?" must still route to listing.seller_credit_offered'
+        );
+    }
+
+    // =========================================================================
+    // Regression R5: Guard A description fallback fires when FAQ field is null
+    //   and description contains the dollar amount
+    // =========================================================================
+
+    /**
+     * R5: Integration test — when:
+     *   - question routes to faq_answers.seller_concessions_offered (FAQ key)
+     *   - the FAQ field is null/absent (Guard A fires)
+     *   - the listing description contains "$5,000 credit"
+     *   - enableDescriptionFallback is true
+     * then the final answer includes "$5,000" and answer_source = 'description_fallback'.
+     */
+    public function test_R5_guard_a_description_fallback_returns_dollar_amount(): void
+    {
+        $descAnswer = 'The seller is offering a $5,000 credit toward buyer\'s closing costs.';
+
+        $classifier = $this->createMock(AskAiQuestionClassifierService::class);
+        $classifier->method('classify')->willReturn([
+            'question_type' => 'listing_facts',
+            'confidence'    => 0.9,
+            'reason'        => 'stub',
+        ]);
+
+        $internalRunner = $this->createMock(AskAiInternalRunnerService::class);
+        $internalRunner->method('run')->willReturn([
+            'context' => [
+                'listing' => [
+                    'seller_credit_offered' => 'Yes',
+                    'description'           => 'Beautiful home. The seller is offering a $5,000 credit toward buyer\'s closing costs.',
+                ],
+            ],
+            'contract'       => [],
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'allowed_context'      => [],
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => null,
+            ],
+        ]);
+
+        $adapterMock = $this->createMock(AskAiOpenAiAdapterService::class);
+        $adapterMock->expects($this->once())
+            ->method('generate')
+            ->willReturn([
+                'success'      => true,
+                'status'       => 'generated',
+                'raw_response' => json_encode(['answer_text' => $descAnswer]),
+                'model'        => 'gpt-4o',
+                'error'        => null,
+            ]);
+
+        $finalBuilder = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $finalBuilder->expects($this->never())->method('build');
+
+        $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
+        $followUp->method('forResult')->willReturn([]);
+
+        $runner = new AskAiRunnerV2Service(
+            $classifier,
+            $internalRunner,
+            $adapterMock,
+            $finalBuilder,
+            $followUp,
+            null,
+            null,
+            true
+        );
+
+        $result = $runner->run(
+            'seller', 121,
+            'how much is the seller credit',
+            ['normalized_field_key' => 'faq_answers.seller_concessions_offered']
+        );
+
+        $this->assertTrue($result['success'], 'R5: Guard A description fallback → success must be true');
+        $this->assertSame('ready', $result['status'],
+            'R5: Guard A description fallback → status must be ready');
+        $this->assertSame('description_fallback', $result['outcome_category'],
+            'R5: outcome_category must be description_fallback');
+        $this->assertStringContainsString('$5,000', $result['final_response']['answer'],
+            'R5: final answer must include the dollar amount from the description');
+        $this->assertSame('description_fallback', $result['final_response']['source']['answer_source'],
+            'R5: answer_source must be description_fallback');
+        $this->assertTrue($result['trace']['description_fallback_used'] ?? false,
+            'R5: trace must record description_fallback_used=true');
+    }
+
+    // =========================================================================
+    // Regression R6: bare-boolean + quantity safety net
+    // =========================================================================
+
+    /**
+     * R6: When OpenAI returns a bare "Yes" to a "how much …" question, the
+     * bare-boolean safety net must fire and attempt the description fallback.
+     * If the description contains a dollar amount, the final answer is updated.
+     */
+    public function test_R6_bare_boolean_safety_net_fires_for_how_much_question(): void
+    {
+        $descAnswer = 'The seller is offering a $5,000 credit toward buyer\'s closing costs.';
+
+        $classifier = $this->createMock(AskAiQuestionClassifierService::class);
+        $classifier->method('classify')->willReturn([
+            'question_type' => 'listing_facts',
+            'confidence'    => 0.9,
+            'reason'        => 'stub',
+        ]);
+
+        $internalRunner = $this->createMock(AskAiInternalRunnerService::class);
+        $internalRunner->method('run')->willReturn([
+            'context' => [
+                'listing' => [
+                    'seller_credit_offered' => 'Yes',
+                    'description'           => 'Beautiful home. The seller is offering a $5,000 credit toward buyer\'s closing costs.',
+                ],
+            ],
+            'contract'       => [],
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'allowed_context'      => ['listing' => ['seller_credit_offered' => 'Yes']],
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => null,
+            ],
+        ]);
+
+        $adapterMock = $this->createMock(AskAiOpenAiAdapterService::class);
+        // Call 1: primary adapter → returns "Yes" (boolean field only in context)
+        // Call 2: safety-net description fallback → returns the dollar amount
+        $adapterMock->expects($this->exactly(2))
+            ->method('generate')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    'success'      => true,
+                    'status'       => 'generated',
+                    'raw_response' => json_encode(['answer_text' => 'Yes']),
+                    'model'        => 'gpt-4o',
+                    'error'        => null,
+                ],
+                [
+                    'success'      => true,
+                    'status'       => 'generated',
+                    'raw_response' => json_encode(['answer_text' => $descAnswer]),
+                    'model'        => 'gpt-4o',
+                    'error'        => null,
+                ]
+            );
+
+        $finalBuilder = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $finalBuilder->method('build')->willReturn([
+            'success'            => true,
+            'status'             => 'ready',
+            'answer'             => 'Yes',
+            'disclosures'        => [],
+            'source_attribution' => [],
+            'refusal_message'    => null,
+            'error'              => null,
+        ]);
+
+        $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
+        $followUp->method('forResult')->willReturn([]);
+
+        $runner = new AskAiRunnerV2Service(
+            $classifier,
+            $internalRunner,
+            $adapterMock,
+            $finalBuilder,
+            $followUp,
+            null,
+            null,
+            true
+        );
+
+        $result = $runner->run(
+            'seller', 121,
+            'how much is the seller credit',
+            ['normalized_field_key' => 'listing.seller_credit_offered']
+        );
+
+        $this->assertTrue($result['success'], 'R6: safety net fired → success must be true');
+        $this->assertSame('ready', $result['status'],
+            'R6: safety net fired → status must be ready');
+        $this->assertStringContainsString('$5,000', $result['final_response']['answer'],
+            'R6: safety net must replace bare "Yes" with the dollar amount from description');
+        $this->assertNotSame('Yes', $result['final_response']['answer'],
+            'R6: bare "Yes" must never be the final answer to a "how much" question');
+        $this->assertSame('description_fallback', $result['final_response']['source']['answer_source'],
+            'R6: answer_source must be description_fallback after safety net fires');
+        $this->assertTrue($result['trace']['bare_boolean_quantity_safety_net_fired'] ?? false,
+            'R6: trace must record bare_boolean_quantity_safety_net_fired=true');
+    }
+
+    // =========================================================================
+    // Regression R4e: Guard A scope — does NOT fire when FAQ field is present
+    // =========================================================================
+
+    /**
+     * R4e: Guard A must only fire when allowed_context is empty (FAQ field absent).
+     * When allowed_context is non-empty (the FAQ field exists in the listing),
+     * the primary adapter must be called directly — description fallback must NOT fire.
+     */
+    public function test_R4e_guard_a_does_not_fire_when_faq_field_is_present(): void
+    {
+        $classifier = $this->createMock(AskAiQuestionClassifierService::class);
+        $classifier->method('classify')->willReturn([
+            'question_type' => 'listing_facts',
+            'confidence'    => 0.9,
+            'reason'        => 'stub',
+        ]);
+
+        $internalRunner = $this->createMock(AskAiInternalRunnerService::class);
+        $internalRunner->method('run')->willReturn([
+            'context' => [
+                'listing' => [
+                    'description' => 'Beautiful home. The seller is offering a $5,000 credit.',
+                ],
+            ],
+            'contract'       => [],
+            'prompt_package' => [
+                'status'          => 'prompt_ready',
+                'question_type'   => 'listing_facts',
+                // Non-empty allowed_context: FAQ field IS present → Guard A must NOT fire.
+                'allowed_context' => [
+                    'faq_answers' => [
+                        'seller_concessions_offered' => ['answer_text' => '$3,000 credit toward closing costs'],
+                    ],
+                ],
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => null,
+            ],
+        ]);
+
+        $adapterMock = $this->createMock(AskAiOpenAiAdapterService::class);
+        // Only ONE adapter call must happen (primary call, NOT description fallback).
+        $adapterMock->expects($this->once())
+            ->method('generate')
+            ->willReturn([
+                'success'      => true,
+                'status'       => 'generated',
+                'raw_response' => json_encode(['answer_text' => '$3,000 credit toward closing costs']),
+                'model'        => 'gpt-4o',
+                'error'        => null,
+            ]);
+
+        $finalBuilder = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $finalBuilder->method('build')->willReturn([
+            'success'            => true,
+            'status'             => 'ready',
+            'answer'             => '$3,000 credit toward closing costs',
+            'disclosures'        => [],
+            'source_attribution' => [],
+            'refusal_message'    => null,
+            'error'              => null,
+        ]);
+
+        $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
+        $followUp->method('forResult')->willReturn([]);
+
+        $runner = new AskAiRunnerV2Service(
+            $classifier,
+            $internalRunner,
+            $adapterMock,
+            $finalBuilder,
+            $followUp,
+            null,
+            null,
+            true
+        );
+
+        $result = $runner->run(
+            'seller', 121,
+            'how much is the seller credit',
+            ['normalized_field_key' => 'faq_answers.seller_concessions_offered']
+        );
+
+        $this->assertSame('ready', $result['status'],
+            'R4e: must succeed when FAQ field is present in allowed_context');
+        $this->assertFalse($result['trace']['description_fallback_used'] ?? false,
+            'R4e: description_fallback_used must be false — Guard A must not fire when FAQ field is present');
+        $this->assertStringContainsString('$3,000', $result['final_response']['answer'],
+            'R4e: answer must come from the primary FAQ context, not description fallback');
+    }
+
+    // =========================================================================
+    // Regression R7: classifier routes 'how much is the seller credit' correctly
+    // =========================================================================
+
+    /**
+     * R7: AskAiQuestionClassifierService must classify "how much is the seller credit"
+     * as listing_facts — confirming the classifier is not accidentally routing it to
+     * an incompatible type after the keyword-map cleanup.
+     */
+    public function test_R7_classifier_routes_seller_credit_question_to_listing_facts(): void
+    {
+        $classifier = new AskAiQuestionClassifierService();
+
+        $result = $classifier->classify('how much is the seller credit');
+
+        $this->assertSame(
+            'listing_facts',
+            $result['question_type'],
+            'R7: "how much is the seller credit" must classify as listing_facts'
+        );
+    }
+
+    // =========================================================================
+    // Regression R8: source overwrite does not clobber explicitly-set sources
+    // =========================================================================
+
+    /**
+     * R8: When finalResponseBuilder->build() returns a response that already has
+     * an explicit answer_source (e.g. 'knowledge_snapshot'), the unconditional
+     * 'openai' overwrite must NOT fire.
+     *
+     * This tests the !isset() fix at the source-overwrite guard: any named source
+     * (knowledge_snapshot, faq_snapshot, description_fallback, …) is preserved.
+     */
+    public function test_R8_source_overwrite_preserves_explicitly_set_answer_sources(): void
+    {
+        $classifier = $this->createMock(AskAiQuestionClassifierService::class);
+        $classifier->method('classify')->willReturn([
+            'question_type' => 'listing_facts',
+            'confidence'    => 0.9,
+            'reason'        => 'stub',
+        ]);
+
+        $internalRunner = $this->createMock(AskAiInternalRunnerService::class);
+        $internalRunner->method('run')->willReturn([
+            'context'        => ['listing' => []],
+            'contract'       => [],
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'allowed_context'      => ['listing' => ['year_built' => '1995']],
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => null,
+            ],
+        ]);
+
+        $adapterMock = $this->createMock(AskAiOpenAiAdapterService::class);
+        $adapterMock->method('generate')->willReturn([
+            'success'      => true,
+            'status'       => 'generated',
+            'raw_response' => json_encode(['answer_text' => 'Built in 1995']),
+            'model'        => 'gpt-4o',
+            'error'        => null,
+        ]);
+
+        $finalBuilder = $this->createMock(AskAiFinalResponseBuilderService::class);
+        // Simulate a response builder that returns a knowledge_snapshot source.
+        $finalBuilder->method('build')->willReturn([
+            'success'            => true,
+            'status'             => 'ready',
+            'answer'             => 'Built in 1995',
+            'disclosures'        => [],
+            'source_attribution' => [],
+            'refusal_message'    => null,
+            'error'              => null,
+            'source'             => [
+                'answer_source'    => 'knowledge_snapshot',
+                'snapshot_id'      => 42,
+                'canonical_key'    => 'listing.year_built',
+                'match_type'       => 'exact',
+                'snapshot_version' => 3,
+            ],
+        ]);
+
+        $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
+        $followUp->method('forResult')->willReturn([]);
+
+        $runner = new AskAiRunnerV2Service(
+            $classifier,
+            $internalRunner,
+            $adapterMock,
+            $finalBuilder,
+            $followUp,
+            null,
+            null,
+            false
+        );
+
+        $result = $runner->run('seller', 99, 'when was this home built', []);
+
+        $this->assertSame(
+            'knowledge_snapshot',
+            $result['final_response']['source']['answer_source'],
+            'R8: knowledge_snapshot source must not be overwritten by the openai fallback guard'
+        );
+        $this->assertSame(42, $result['final_response']['source']['snapshot_id'],
+            'R8: snapshot_id must be preserved when source is explicitly set');
+        $this->assertSame('listing.year_built', $result['final_response']['source']['canonical_key'],
+            'R8: canonical_key must be preserved when source is explicitly set');
+    }
 }
