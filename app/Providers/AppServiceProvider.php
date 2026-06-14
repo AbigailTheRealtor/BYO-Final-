@@ -41,6 +41,7 @@ use App\Services\LocationDna\StubPoiLookupAdapter;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
 use App\Services\LocationDna\CommuteTimeLookupService;
+use App\Services\LocationDna\LocationDnaEnrichmentRunner;
 use App\Services\LocationDna\PoiDistanceLookupService;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 
@@ -97,6 +98,15 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(PoiDistanceLookupService::class, function ($app) {
             return new PoiDistanceLookupService($app->make(PoiLookupAdapterInterface::class));
+        });
+
+        $this->app->bind(LocationDnaEnrichmentRunner::class, function ($app) {
+            return new LocationDnaEnrichmentRunner(
+                $app->make(FloodZoneLookupService::class),
+                $app->make(SchoolDistrictLookupService::class),
+                $app->make(PoiDistanceLookupService::class),
+                $app->make(CommuteTimeLookupService::class),
+            );
         });
 
         $this->app->bind(AskAiRunnerV2Service::class, function ($app) {
