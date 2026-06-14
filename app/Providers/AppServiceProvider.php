@@ -30,12 +30,16 @@ use App\Services\AskAi\AskAiKnowledgeSearchService;
 use App\Contracts\BoundaryAdapterInterface;
 use App\Contracts\FloodZoneAdapterInterface;
 use App\Contracts\CommuteTimeAdapterInterface;
+use App\Contracts\PoiLookupAdapterInterface;
 use App\Services\LocationDna\CensusTigerBoundaryAdapter;
 use App\Services\LocationDna\FemaFloodZoneAdapter;
 use App\Services\LocationDna\CommuteTimeStubAdapter;
+use App\Services\LocationDna\GooglePlacesPoiAdapter;
+use App\Services\LocationDna\StubPoiLookupAdapter;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
 use App\Services\LocationDna\CommuteTimeLookupService;
+use App\Services\LocationDna\PoiDistanceLookupService;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -69,6 +73,22 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(CommuteTimeLookupService::class, function ($app) {
             return new CommuteTimeLookupService($app->make(CommuteTimeAdapterInterface::class));
+        });
+
+        // POI Distance Lookup — Buyer/Tenant search-area geometry (Phase 3C)
+        // Adapter selection respects location_dna.poi.provider first, then falls back to
+        // StubPoiLookupAdapter whenever the provider is not 'google' or the key is absent.
+        // Bound (not singleton) so config changes in tests always produce a fresh instance.
+        $this->app->bind(PoiLookupAdapterInterface::class, function ($app) {
+            $provider = config('location_dna.poi.provider', 'google');
+            if ($provider === 'google' && !blank(config('services.google.places_key'))) {
+                return new GooglePlacesPoiAdapter();
+            }
+            return new StubPoiLookupAdapter();
+        });
+
+        $this->app->bind(PoiDistanceLookupService::class, function ($app) {
+            return new PoiDistanceLookupService($app->make(PoiLookupAdapterInterface::class));
         });
 
         $this->app->bind(AskAiRunnerV2Service::class, function ($app) {

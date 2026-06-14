@@ -63,4 +63,42 @@ return [
         'max_destinations' => (int) env('LOCATION_DNA_COMMUTE_MAX_DESTINATIONS', 10),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Buyer/Tenant POI Distance Lookup — Provider & Limits
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the PoiDistanceLookupService, which resolves points of
+    | interest for buyer/tenant search area geometries (not property coordinates).
+    |
+    | provider
+    |   The POI data provider to use. Currently only 'google' is supported.
+    |   When the configured API key is absent the service automatically falls
+    |   back to StubPoiLookupAdapter, which returns empty results without error.
+    |
+    | timeout
+    |   HTTP request timeout in seconds for outbound provider API calls.
+    |
+    | cache_ttl
+    |   Seconds to cache a lookup result keyed by geometry + categories.
+    |   Default 86400 (24 hours).
+    |
+    | max_radius_miles
+    |   Upper bound on the search radius in miles. Any input radius exceeding
+    |   this value is silently capped. Polygon centroids always use this value
+    |   as the search radius. Default 25 miles.
+    |
+    | category_result_limit
+    |   Maximum number of results returned per category per lookup call.
+    |   Default 5.
+    |
+    */
+    'poi' => [
+        'provider'              => env('LOCATION_DNA_POI_PROVIDER', 'google'),
+        'timeout'               => (int) env('LOCATION_DNA_POI_TIMEOUT', 5),
+        'cache_ttl'             => (int) env('LOCATION_DNA_POI_CACHE_TTL', 86400),
+        'max_radius_miles'      => (int) env('LOCATION_DNA_POI_MAX_RADIUS_MILES', 25),
+        'category_result_limit' => (int) env('LOCATION_DNA_POI_CATEGORY_RESULT_LIMIT', 5),
+    ],
+
 ];
