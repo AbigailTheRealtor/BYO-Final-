@@ -2140,6 +2140,12 @@
             }
 
             if (modalEl) {
+                // Re-enable the send button every time the modal opens so a
+                // stale disabled state (e.g. user navigated away mid-request)
+                // never leaves the button permanently greyed out.
+                modalEl.addEventListener('show.bs.modal', function () {
+                    setLoading(false);
+                });
                 modalEl.addEventListener('hidden.bs.modal', function () {
                     if (textarea) textarea.value = '';
                     resetResult();

@@ -3335,6 +3335,134 @@ class AskAiRunnerV2Service
             }
 
             // ----------------------------------------------------------------
+            // listing_facts no-key description fallback.
+            //
+            // Fires when ALL of the following are true:
+            //   1. Adapter call failed (success = false).
+            //   2. The question classified as 'listing_facts'.
+            //   3. The prompt package was 'prompt_ready'.
+            //   4. Step 1b+1c found NO specific structured field
+            //      (normalizedFieldKey === null) — i.e. the question used
+            //      novel phrasing not yet in LISTING_KEY_KEYWORD_MAP.
+            //   5. Description fallback feature is enabled AND normalizer is
+            //      injected and enabled.
+            //   6. The listing description is a non-empty string.
+            //
+            // Purpose: when a novel phrasing like "Does the seller offer any
+            // closing cost assistance?" fails to hit a keyword map entry and
+            // the primary OpenAI call fails, consult the listing description
+            // before giving up with the generic insufficient_context response.
+            //
+            // Outcome on hit : status='ready', outcome_category='description_fallback'.
+            // Outcome on miss : status='insufficient_context',
+            //                   answer='This information was not provided in
+            //                           the listing description.',
+            //                   answer_source='description_fallback_miss'.
+            // ----------------------------------------------------------------
+            if (
+                !($adapterResult['success'] ?? false)
+                && ($questionType ?? '') === 'listing_facts'
+                && ($promptPackage['status'] ?? '') === 'prompt_ready'
+                && $normalizedFieldKey === null
+                && $this->enableDescriptionFallback
+                && $this->normalizer !== null
+                && $this->normalizer->isEnabled()
+            ) {
+                $noKeyDesc = $context['listing']['description'] ?? null;
+                if (is_string($noKeyDesc) && trim($noKeyDesc) !== '') {
+                    $noKeyDescPackage  = $this->buildDescriptionFallbackPackage($question, trim($noKeyDesc));
+                    $noKeyDescResult   = $this->adapter->generate($noKeyDescPackage);
+                    $noKeyDescAnswer   = $this->parseDescriptionFallbackAnswer($noKeyDescResult);
+
+                    if ($noKeyDescAnswer !== null) {
+                        $noKeyHitResponse = [
+                            'success'            => true,
+                            'status'             => 'ready',
+                            'answer'             => $noKeyDescAnswer,
+                            'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                            'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                            'refusal_message'    => null,
+                            'error'              => null,
+                            'source'             => [
+                                'answer_source'    => 'description_fallback',
+                                'snapshot_id'      => null,
+                                'canonical_key'    => null,
+                                'match_type'       => null,
+                                'snapshot_version' => null,
+                            ],
+                        ];
+                        $noKeyHitResponse['follow_up_questions'] = $this->followUpService->forResult(
+                            $noKeyHitResponse,
+                            $classification
+                        );
+
+                        $trace['description_fallback_used']     = true;
+                        $trace['description_fallback_key_path'] = 'no_key';
+                        $trace['final_status']                  = 'ready';
+                        $trace['source_attribution']            = $noKeyHitResponse['source_attribution'] ?? null;
+                        $this->emitTrace($trace);
+
+                        return [
+                            'success'          => true,
+                            'status'           => 'ready',
+                            'classification'   => $classification,
+                            'context'          => $context,
+                            'contract'         => $contract,
+                            'prompt_package'   => $promptPackage,
+                            'adapter_result'   => $adapterResult,
+                            'final_response'   => $noKeyHitResponse,
+                            'error'            => null,
+                            'trace'            => $trace,
+                            'outcome_category' => 'description_fallback',
+                        ];
+                    }
+
+                    // Description consulted but returned sentinel / no answer.
+                    $noKeyMissResponse = [
+                        'success'            => false,
+                        'status'             => 'insufficient_context',
+                        'answer'             => 'This information was not provided in the listing description.',
+                        'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                        'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                        'refusal_message'    => null,
+                        'error'              => null,
+                        'source'             => [
+                            'answer_source'    => 'description_fallback_miss',
+                            'snapshot_id'      => null,
+                            'canonical_key'    => null,
+                            'match_type'       => null,
+                            'snapshot_version' => null,
+                        ],
+                    ];
+                    $noKeyMissResponse['follow_up_questions'] = $this->followUpService->forResult(
+                        $noKeyMissResponse,
+                        $classification
+                    );
+
+                    $trace['description_fallback_used']      = false;
+                    $trace['description_fallback_attempted']  = true;
+                    $trace['description_fallback_key_path']   = 'no_key';
+                    $trace['final_status']                    = 'insufficient_context';
+                    $trace['source_attribution']              = $noKeyMissResponse['source_attribution'] ?? null;
+                    $this->emitTrace($trace);
+
+                    return [
+                        'success'          => false,
+                        'status'           => 'insufficient_context',
+                        'classification'   => $classification,
+                        'context'          => $context,
+                        'contract'         => $contract,
+                        'prompt_package'   => $promptPackage,
+                        'adapter_result'   => $adapterResult,
+                        'final_response'   => $noKeyMissResponse,
+                        'error'            => null,
+                        'trace'            => $trace,
+                        'outcome_category' => 'description_fallback_miss',
+                    ];
+                }
+            }
+
+            // ----------------------------------------------------------------
             // Universal prompt-ready adapter-failed fallback.
             //
             // Fires when ALL of the following are true:
@@ -3342,8 +3470,9 @@ class AskAiRunnerV2Service
             //   2. The prompt package was 'prompt_ready' — i.e. ALL governance
             //      gates (context assembly, response contract, prompt builder)
             //      passed and the only failure is the external OpenAI call.
-            //   3. Neither the faq_answers.* nor the listing.* specific fallbacks
-            //      handled the failure (they return early before reaching here).
+            //   3. Neither the faq_answers.*, listing.*, nor the no-key
+            //      listing_facts description fallbacks handled the failure
+            //      (they all return early before reaching here).
             //
             // This is intentionally NOT gated on question_type so that it covers:
             //   - listing_facts questions with no specific field key pinned

@@ -3651,4 +3651,118 @@ class AskAiRunnerV2ServiceTest extends TestCase
                 "L10: '$phrase' must be present in LISTING_KEY_KEYWORD_MAP for first/last month rent fields");
         }
     }
+
+    // ── L11 ── No-key listing_facts + adapter fails + description hit → ready ─────
+
+    /**
+     * Build an internal runner result where:
+     *  - listing context contains a non-empty description (for the no-key fallback)
+     *  - NO specific field value is present (normalizedFieldKey will be null)
+     *  - prompt_package is prompt_ready so the primary adapter is called
+     */
+    private function makeNoKeyInternalResult(string $description = ''): array
+    {
+        return $this->makeInternalResult([
+            'context' => [
+                'status'       => 'assembled',
+                'listing_type' => 'seller',
+                'listing'      => [
+                    'description' => $description,
+                ],
+            ],
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'listing_facts',
+                'required_disclosures' => ['Information is derived from structured property data.'],
+                'source_attribution'   => ['required_sources' => ['property_intelligence']],
+                'refusal_template'     => null,
+                'allowed_context'      => ['listing' => ['description' => $description]],
+            ],
+        ]);
+    }
+
+    public function test_case_L11_no_key_listing_facts_flag_on_adapter_hit_returns_ready(): void
+    {
+        // When listing_facts has no keyword-map match (normalizedFieldKey === null),
+        // the primary adapter call fails, and the no-key description fallback fires.
+        // On a valid answer from the description adapter → status='ready'.
+        $descAnswer      = 'The seller is willing to consider closing cost concessions.';
+        $descRawResponse = json_encode(['answer_text' => $descAnswer]);
+
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeEnabledNormalizerMock(true);
+        $runner              = $this->makeRunner($mocks, true);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn(
+            $this->makeNoKeyInternalResult('Spacious home. Seller may consider closing cost assistance.')
+        );
+
+        // Call 1 (primary adapter) fails.
+        // Call 2 (no-key description fallback) succeeds with a valid answer.
+        $mocks['adapter']->expects($this->exactly(2))
+            ->method('generate')
+            ->willReturnOnConsecutiveCalls(
+                ['success' => false, 'status' => 'error', 'raw_response' => null, 'model' => null, 'error' => 'timeout'],
+                ['success' => true,  'status' => 'generated', 'raw_response' => $descRawResponse, 'model' => 'gpt-4o', 'error' => null]
+            );
+
+        // normalizedFieldKey intentionally NOT passed → remains null inside the runner.
+        $result = $runner->run('seller', 1, 'Does the seller offer closing cost assistance?');
+
+        $this->assertTrue($result['success'], 'L11: no-key hit → success must be true');
+        $this->assertSame('ready', $result['status'], 'L11: no-key hit → status must be ready');
+        $this->assertSame('description_fallback', $result['outcome_category'],
+            'L11: no-key hit → outcome_category must be description_fallback');
+        $this->assertSame($descAnswer, $result['final_response']['answer'],
+            'L11: no-key hit → answer must match description fallback text');
+        $this->assertSame('description_fallback', $result['final_response']['source']['answer_source'],
+            'L11: no-key hit → answer_source must be description_fallback');
+        $this->assertTrue($result['trace']['description_fallback_used'] ?? false,
+            'L11: no-key hit → trace must record description_fallback_used=true');
+        $this->assertSame('no_key', $result['trace']['description_fallback_key_path'] ?? null,
+            'L11: no-key hit → trace must record description_fallback_key_path=no_key');
+    }
+
+    // ── L12 ── No-key listing_facts + adapter fails + description sentinel → miss ─
+
+    public function test_case_L12_no_key_listing_facts_flag_on_adapter_sentinel_returns_miss(): void
+    {
+        // When both adapter calls fail / return sentinel, the miss message must
+        // reference the listing description specifically.
+        $sentinelResponse = json_encode(['answer_text' => 'INFORMATION_NOT_IN_DESCRIPTION']);
+
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeEnabledNormalizerMock(true);
+        $runner              = $this->makeRunner($mocks, true);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn(
+            $this->makeNoKeyInternalResult('A charming property in the heart of the city.')
+        );
+
+        // Call 1 (primary adapter) fails.
+        // Call 2 (no-key description fallback) returns sentinel.
+        $mocks['adapter']->expects($this->exactly(2))
+            ->method('generate')
+            ->willReturnOnConsecutiveCalls(
+                ['success' => false, 'status' => 'error', 'raw_response' => null, 'model' => null, 'error' => 'timeout'],
+                ['success' => true,  'status' => 'generated', 'raw_response' => $sentinelResponse, 'model' => 'gpt-4o', 'error' => null]
+            );
+
+        $result = $runner->run('seller', 1, 'Does the seller provide any closing cost help?');
+
+        $this->assertSame(false, $result['success'], 'L12: no-key sentinel → must be unsuccessful');
+        $this->assertSame('insufficient_context', $result['status'],
+            'L12: no-key sentinel → status must be insufficient_context');
+        $this->assertSame(
+            'This information was not provided in the listing description.',
+            $result['final_response']['answer'],
+            'L12: no-key sentinel → miss message must say "not provided in the listing description"'
+        );
+        $this->assertSame('description_fallback_miss', $result['final_response']['source']['answer_source'],
+            'L12: no-key sentinel → answer_source must be description_fallback_miss');
+        $this->assertSame('description_fallback_miss', $result['outcome_category'],
+            'L12: no-key sentinel → outcome_category must be description_fallback_miss');
+    }
 }
