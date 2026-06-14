@@ -671,27 +671,30 @@ class TenantCriteriaAuctionController extends Controller
         if ($request->sort) {
             $sort = $request->sort;
             if ($sort == 1) {
-                $sort_by = 'address';
-                $sort_type = 'DESC';
+                $auctions->orderByRaw(
+                    "(SELECT meta_value FROM tenant_criteria_auction_metas WHERE tenant_criteria_auction_metas.tenant_criteria_auction_id = tenant_criteria_auctions.id AND meta_key = 'property_type') DESC"
+                );
             } else if ($sort == 2) {
-                $sort_by = 'address';
-                $sort_type = 'ASC';
+                $auctions->orderByRaw(
+                    "(SELECT meta_value FROM tenant_criteria_auction_metas WHERE tenant_criteria_auction_metas.tenant_criteria_auction_id = tenant_criteria_auctions.id AND meta_key = 'property_type') ASC"
+                );
             } else if ($sort == 3) {
-                $sort_by = 'created_at';
-                $sort_type = 'DESC';
+                $auctions->orderBy('created_at', 'DESC');
             } else if ($sort == 4) {
-                $sort_by = 'created_at';
-                $sort_type = 'ASC';
+                $auctions->orderBy('created_at', 'ASC');
             } else if ($sort == 5) {
-                $sort_by = 'price';
-                $sort_type = 'DESC';
+                $auctions->orderByRaw(
+                    "(SELECT meta_value FROM tenant_criteria_auction_metas WHERE tenant_criteria_auction_metas.tenant_criteria_auction_id = tenant_criteria_auctions.id AND meta_key = 'max_price') DESC"
+                );
             } else if ($sort == 6) {
-                $sort_by = 'price';
-                $sort_type = 'ASC';
+                $auctions->orderByRaw(
+                    "(SELECT meta_value FROM tenant_criteria_auction_metas WHERE tenant_criteria_auction_metas.tenant_criteria_auction_id = tenant_criteria_auctions.id AND meta_key = 'max_price') ASC"
+                );
+            } else {
+                $auctions->inRandomOrder();
             }
-            $auctions->orderBy($sort_by, $sort_type);
         } else {
-            $auctions->orderBy(DB::raw('RAND()'));
+            $auctions->inRandomOrder();
         }
 
         $auctions_c = $auctions;

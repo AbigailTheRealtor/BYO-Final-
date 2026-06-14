@@ -820,11 +820,13 @@ class BuyerCriteriaAuctionController extends Controller
 
         if ($request->sort) {
             $sort = $request->sort;
+            $sort_by = null;
+            $sort_type = 'ASC';
             if ($sort == 1) {
-                $sort_by = 'address';
+                $sort_by = 'title';
                 $sort_type = 'DESC';
             } elseif ($sort == 2) {
-                $sort_by = 'address';
+                $sort_by = 'title';
                 $sort_type = 'ASC';
             } elseif ($sort == 3) {
                 $sort_by = 'created_at';
@@ -833,9 +835,13 @@ class BuyerCriteriaAuctionController extends Controller
                 $sort_by = 'created_at';
                 $sort_type = 'ASC';
             }
-            $auctions->orderBy($sort_by, $sort_type);
+            if ($sort_by) {
+                $auctions->orderBy($sort_by, $sort_type);
+            } else {
+                $auctions->inRandomOrder();
+            }
         } else {
-            $auctions->orderBy(DB::raw('RAND()'));
+            $auctions->inRandomOrder();
         }
 
         $auctions_c = $auctions;
