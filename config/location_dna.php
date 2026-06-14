@@ -32,4 +32,35 @@ return [
     */
     'flood_zone_max_area_sq_degrees' => (float) env('LOCATION_DNA_FLOOD_ZONE_MAX_AREA', 2.0),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Commute Time Lookups
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the CommuteTimeLookupService and its adapter.
+    |
+    | provider        — Selects the active adapter implementation. Supported
+    |                   values: 'stub' (default, no HTTP calls). Future phases
+    |                   will add 'google', 'mapbox', 'here', etc. Changing
+    |                   this env variable alone is sufficient to swap providers;
+    |                   no code edits are required.
+    |
+    | timeout         — HTTP request timeout in seconds (used by real provider
+    |                   adapters; ignored by the stub adapter).
+    |
+    | cache_ttl       — How long (in seconds) successful commute-time results
+    |                   are cached. Default: 86400 (24 hours).
+    |
+    | max_destinations — Maximum number of destinations accepted in a single
+    |                    resolve() call. Excess entries are silently truncated
+    |                    with a Log::warning.
+    |
+    */
+    'commute_time' => [
+        'provider'         => env('LOCATION_DNA_COMMUTE_PROVIDER', 'stub'),
+        'timeout'          => (int) env('LOCATION_DNA_COMMUTE_TIMEOUT', 10),
+        'cache_ttl'        => (int) env('LOCATION_DNA_COMMUTE_CACHE_TTL', 86400),
+        'max_destinations' => (int) env('LOCATION_DNA_COMMUTE_MAX_DESTINATIONS', 10),
+    ],
+
 ];

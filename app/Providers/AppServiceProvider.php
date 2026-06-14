@@ -29,10 +29,13 @@ use App\Services\AskAi\AskAiIntentNormalizerService;
 use App\Services\AskAi\AskAiKnowledgeSearchService;
 use App\Contracts\BoundaryAdapterInterface;
 use App\Contracts\FloodZoneAdapterInterface;
+use App\Contracts\CommuteTimeAdapterInterface;
 use App\Services\LocationDna\CensusTigerBoundaryAdapter;
 use App\Services\LocationDna\FemaFloodZoneAdapter;
+use App\Services\LocationDna\CommuteTimeStubAdapter;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
+use App\Services\LocationDna\CommuteTimeLookupService;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -52,12 +55,20 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(BoundaryAdapterInterface::class, CensusTigerBoundaryAdapter::class);
         $this->app->bind(FloodZoneAdapterInterface::class, FemaFloodZoneAdapter::class);
 
+        if (config('location_dna.commute_time.provider') === 'stub') {
+            $this->app->bind(CommuteTimeAdapterInterface::class, CommuteTimeStubAdapter::class);
+        }
+
         $this->app->bind(BoundaryLookupService::class, function ($app) {
             return new BoundaryLookupService($app->make(BoundaryAdapterInterface::class));
         });
 
         $this->app->bind(FloodZoneLookupService::class, function ($app) {
             return new FloodZoneLookupService($app->make(FloodZoneAdapterInterface::class));
+        });
+
+        $this->app->bind(CommuteTimeLookupService::class, function ($app) {
+            return new CommuteTimeLookupService($app->make(CommuteTimeAdapterInterface::class));
         });
 
         $this->app->bind(AskAiRunnerV2Service::class, function ($app) {
