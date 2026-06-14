@@ -673,6 +673,9 @@ class BuyerAgentAuctionController extends Controller
             // Analytics failure must not disrupt bid viewing
         }
 
-        return view('hire_buyer_agent.bid_detail', compact('bid', 'auction'));
+        $locationMatchInsights = app(\App\Services\LocationDna\LocationMatchAuctionExtractor::class)
+            ->extractInsights($auction);
+
+        return view('hire_buyer_agent.bid_detail', compact('bid', 'auction', 'locationMatchInsights'));
     }
 }

@@ -443,7 +443,9 @@ class TenantAgentAuctionController extends Controller
         $page_data['bid'] = $bid;
         $page_data['auction'] = $auction;
         $page_data['listingId'] = $auction->listing_id ?? 'TAA-' . $auction->id;
-        
+        $page_data['locationMatchInsights'] = app(\App\Services\LocationDna\LocationMatchAuctionExtractor::class)
+            ->extractInsights($auction);
+
         return view('tenant_agent.bid_preview', $page_data);
     }
 }

@@ -1295,6 +1295,16 @@ class SellerAgentAuctionController extends Controller
             // Analytics failure must not disrupt bid viewing
         }
 
+        // Location Match (Phase 6D): $locationMatchInsights is intentionally omitted here.
+        // Seller auctions represent supply-side listings (a property at a known location).
+        // The Location Match panel requires a demand-side counterpart — buyer/tenant
+        // preferences indicating desired areas — which does not exist in this context.
+        // Without preferences there is nothing to compare the property location against,
+        // so computing insights would always yield an empty result. The Blade partial
+        // ($locationMatchInsights ?? []) renders the "No location match data available."
+        // notice in that case, correctly communicating that preferences have not been
+        // captured rather than implying a match failed.
+        // See: App\Services\LocationDna\LocationMatchAuctionExtractor (governance block).
         return view('hire_seller_agent.bid_detail', compact('bid', 'auction'));
     }
 }

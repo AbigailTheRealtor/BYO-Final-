@@ -1,6 +1,20 @@
-{{-- Agent-Side Compatibility Read-Only Display Partial --}}
-{{-- Included on bid detail pages to show agent's working style & compatibility answers. --}}
-{{-- Requires: $bid (an agent bid model instance with HasCompatibilityPreferences trait) --}}
+{{--
+    Agent-Side Compatibility Read-Only Display Partial
+    ====================================================
+    Included on bid detail pages to show agent's working style & compatibility answers,
+    followed by the Location Match insights section (Phase 6D integration point).
+
+    Requires: $bid (an agent bid model instance with HasCompatibilityPreferences trait)
+
+    Integration note — Location Match (Phase 6D):
+      This is the single canonical integration point for LocationMatchIntegrationService
+      output across all four roles (seller, buyer, landlord, tenant). It is chosen because
+      this partial is the deepest shared include that reaches all four role bid-detail render
+      paths without duplication. Adding the section inside each role-specific
+      representation-compatibility tab (the listing-creation form chain) would cause a
+      second appearance on pages that render both chains. The location-match-insights
+      partial is @included exactly once here, eliminating that risk.
+--}}
 @php
     $compat = method_exists($bid, 'loadCompatibilityPreferences')
         ? $bid->loadCompatibilityPreferences()
@@ -87,3 +101,22 @@
     @endforeach
 </div>
 @endif
+
+{{--
+    ─── Phase 6D: Location Match Integration ──────────────────────────────────────
+    Single canonical include point for the Location Match section across all four
+    roles (seller, buyer, landlord, tenant).
+
+    $locationMatchInsights is populated upstream by the controller:
+      • BuyerAgentAuctionController::bidDetail()          — real insights or []
+      • TenantAgentAuctionController::viewBidPreview()    — real insights or []
+      • SellerAgentAuctionController / LandlordAgentAuction — not set → defaults to []
+
+    When $locationMatchInsights is [] (seller/landlord, or buyer/tenant with no
+    matching data), the partial renders "No location match data available."
+    When it carries insight strings, it renders the bulleted insight list.
+
+    Extraction and service orchestration live in:
+      App\Services\LocationDna\LocationMatchAuctionExtractor
+--}}
+@include('partials.location-match-insights', ['insights' => $locationMatchInsights ?? []])

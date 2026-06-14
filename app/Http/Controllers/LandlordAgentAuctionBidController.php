@@ -195,6 +195,13 @@ class LandlordAgentAuctionBidController extends Controller
         $page_data['title'] = 'Landlord Agent Bid Detail';
         $page_data['bid']     = $bid;
         $page_data['auction'] = $auction;
+        // Location Match (Phase 6D): $locationMatchInsights is intentionally omitted here.
+        // Landlord auctions are supply-side listings (a rental property at a known location).
+        // The Location Match panel compares a property's location against demand-side
+        // preferences (desired cities/ZIP codes from a tenant or buyer listing). No such
+        // preferences exist in this context, so there is nothing meaningful to compare.
+        // The Blade partial defaults to [] and renders "No location match data available."
+        // See: App\Services\LocationDna\LocationMatchAuctionExtractor (governance block).
         return view('hire_landlord_agent.view-bid', $page_data);
     }
 
