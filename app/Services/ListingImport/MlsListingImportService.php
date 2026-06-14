@@ -756,7 +756,34 @@ class MlsListingImportService
             '/\bAbout[\s:]+(.{10,1000})/si',
             '/\bDescription[\s:]+(.{10,1000})/si',
         ], true)) {
-            $data['description'] = trim($v);
+            $v = trim($v);
+
+            // Strip MLS page header/address block from the beginning of the description.
+            // MLS exports frequently prepend the property address and city/state/ZIP line
+            // before the actual narrative remarks body.  The pattern anchors to the start
+            // of the captured string and matches any leading block that contains no
+            // lowercase letters (i.e. all-caps address tokens, digits, punctuation) up to
+            // a recognised US state abbreviation followed by a five-digit ZIP code.
+            // Only fires when:
+            //   (a) a valid US state abbreviation precedes the ZIP, AND
+            //   (b) non-empty prose remains after the stripped block —
+            // so we never accidentally remove real narrative content.
+            // This is a post-capture cleanup step and does NOT affect parser boundaries.
+            static $mlsHeaderUsStates = [
+                'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN',
+                'IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV',
+                'NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN',
+                'TX','UT','VT','VA','WA','WV','WI','WY','DC',
+            ];
+            if (preg_match(
+                '/^([A-Z0-9][^a-z]{0,250}?)\b([A-Z]{2})\b[\s,\-]*(\d{5}(?:-\d{4})?)\s+([\s\S]+)/su',
+                $v,
+                $hdr
+            ) && in_array($hdr[2], $mlsHeaderUsStates, true) && trim($hdr[4]) !== '') {
+                $v = trim($hdr[4]);
+            }
+
+            $data['description'] = $v;
         }
 
         // ─── Number of Units (Income / Multifamily) ───────────────────────────
