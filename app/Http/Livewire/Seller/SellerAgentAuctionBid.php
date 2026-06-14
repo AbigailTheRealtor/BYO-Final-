@@ -28,6 +28,7 @@ class SellerAgentAuctionBid extends Component
 
     public bool $defaultProfileExists = false;
     public bool $defaultProfileLoaded = false;
+    public array $compatibility_agent_response = [];
 
     public $editBidId = null;
     public bool $isEditMode = false;
@@ -182,6 +183,16 @@ class SellerAgentAuctionBid extends Component
     {
         $this->promoMaterials = [
             ['type' => '', 'other' => '', 'link' => '', 'files' => []],
+        ];
+
+        $this->compatibility_agent_response = [
+            'communication_preferences'  => [],
+            'negotiation_approach'       => [],
+            'guidance_style'             => [],
+            'collaboration_preferences'  => [],
+            'transaction_strategy'       => [],
+            'representation_philosophy'  => [],
+            'representation_priorities'  => [],
         ];
 
         $auction = SellerAgentAuction::find($auctionId);
@@ -379,6 +390,17 @@ class SellerAgentAuctionBid extends Component
                 $this->applyPresetField('brokerage_relationship', $mapped['brokerage_relationship'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('additional_details_broker', $mapped['additional_details_broker'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('retained_deposits', $mapped['retained_deposits'] ?? null, $presetFieldsApplied);
+                // Compatibility preferences from preset — blank-field guard:
+                // only fill a section if the current bid has no data for that section yet.
+                $compatFromPreset = AgentBidMapperService::mapCompatibilityFromProfile($profile->profile_data ?? []);
+                foreach ($compatFromPreset as $_cpSection => $_cpData) {
+                    if (is_array($_cpData) && !empty($_cpData)) {
+                        $existing = $this->compatibility_agent_response[$_cpSection] ?? null;
+                        if (empty($existing)) {
+                            $this->compatibility_agent_response[$_cpSection] = $_cpData;
+                        }
+                    }
+                }
                 if ($presetFieldsApplied > 0) {
                     $this->defaultProfileLoaded = true;
                     try {
@@ -505,6 +527,12 @@ class SellerAgentAuctionBid extends Component
                     }, $editPromo);
                     $this->promoMaterials = $editPromo;
                 }
+
+                // Compatibility preferences from saved bid
+                $this->compatibility_agent_response = array_merge(
+                    $this->compatibility_agent_response,
+                    $existingBid->loadCompatibilityPreferences()
+                );
             }
         }
     }
@@ -544,7 +572,7 @@ class SellerAgentAuctionBid extends Component
             }
         }
 
-        $maxTab = $this->hasReferralTab() ? 6 : 5;
+        $maxTab = $this->hasReferralTab() ? 7 : 6;
         if ($this->activeTab < $maxTab) {
             $this->activeTab++;
         }
@@ -831,6 +859,13 @@ class SellerAgentAuctionBid extends Component
         if (!empty($data['business_card_link']))         $this->business_card_link         = $data['business_card_link'];
         if (!empty($data['business_card_stored_path'])) $this->business_card_stored_path  = $data['business_card_stored_path'];
         if (!empty($data['promoMaterials']))             $this->promoMaterials             = $data['promoMaterials'];
+        // Compatibility preferences from profile
+        $compatData = AgentBidMapperService::mapCompatibilityFromProfile($data);
+        foreach ($compatData as $_cpSection => $_cpData) {
+            if (is_array($_cpData) && !empty($_cpData)) {
+                $this->compatibility_agent_response[$_cpSection] = $_cpData;
+            }
+        }
         $this->defaultProfileLoaded = true;
     }
 
@@ -972,6 +1007,8 @@ class SellerAgentAuctionBid extends Component
                 $savedMaterials[] = $entry;
             }
             $bid->saveMeta('promo_materials', json_encode($savedMaterials));
+
+            $bid->saveCompatibilityPreferences($this->compatibility_agent_response);
 
             DB::commit();
 

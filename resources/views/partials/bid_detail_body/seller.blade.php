@@ -847,3 +847,5 @@
                                         </div>
                                         @endif
 
+
+@include('partials.agent-bid-compatibility-display', ['bid' => $bid])

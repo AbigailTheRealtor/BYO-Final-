@@ -224,6 +224,45 @@ class AgentBidMapperService
     }
 
     /**
+     * Extract the compatibility_preferences sub-array from a raw profile_data array.
+     *
+     * Returns an array keyed by the 7 canonical section names containing their
+     * respective field arrays.  Returns an empty array when profile_data contains
+     * no compatibility_preferences key or when the stored value is not an array.
+     *
+     * No DB writes, no side-effects.  Pure transformation.
+     *
+     * @param  array  $profileData  The decoded profile_data array from AgentDefaultProfile.
+     * @return array<string, array> Compatibility sections, each being an assoc array of fields.
+     */
+    public static function mapCompatibilityFromProfile(array $profileData): array
+    {
+        $raw = $profileData['compatibility_preferences'] ?? null;
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $allowed = [
+            'communication_preferences',
+            'negotiation_approach',
+            'guidance_style',
+            'collaboration_preferences',
+            'transaction_strategy',
+            'representation_philosophy',
+            'representation_priorities',
+        ];
+
+        $result = [];
+        foreach ($allowed as $section) {
+            if (isset($raw[$section]) && is_array($raw[$section])) {
+                $result[$section] = $raw[$section];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Look up the best matching AgentDefaultProfile for the given user/role/
      * property-type combination (with role-default fallback), then return the
      * normalised bid-field array, or null when no profile exists.

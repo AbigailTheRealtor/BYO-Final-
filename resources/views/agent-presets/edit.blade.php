@@ -1966,6 +1966,216 @@
             </div>
         </div>
 
+        {{-- ── WORKING STYLE & COMPATIBILITY ───────────────────────────────── --}}
+        <div class="preset-section">
+            <div class="preset-section-header"
+                 data-preset-toggle="section-compatibility"
+                 aria-expanded="false"
+                 aria-controls="section-compatibility">
+                <i class="fa-solid fa-handshake-simple section-icon"></i>
+                Working Style &amp; Compatibility
+                <i class="fa-solid fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="preset-section-body preset-closed" id="section-compatibility">
+                <p class="text-muted mb-4 small">These defaults pre-fill the Working Style &amp; Compatibility tab in bid forms. All fields are optional.</p>
+
+                {{-- SECTION 1: Communication Preferences --}}
+                <h6 class="fw-bold mt-3 mb-3 border-bottom pb-2" style="color: #049399;"><i class="fa-solid fa-comments me-2"></i>Communication Preferences</h6>
+
+                <div class="mb-3">
+                    <label class="fw-bold">Preferred Communication Channels</label>
+                    <select name="compatibility_preferences[communication_preferences][agent_communication_channels][]" multiple
+                            class="form-control select2-multiple" data-placeholder="Select all that apply">
+                        @php $curCommChans = old('compatibility_preferences.communication_preferences.agent_communication_channels', $data['compatibility_preferences']['communication_preferences']['agent_communication_channels'] ?? []); @endphp
+                        @foreach(['Phone Call','Text Message','Email','Video Call','In-Person Meeting','Messaging App'] as $opt)
+                            <option value="{{ $opt }}" @selected(in_array($opt, $curCommChans))>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Proactive Update Cadence</label>
+                    @php $curCommFreq = old('compatibility_preferences.communication_preferences.agent_communication_frequency', $data['compatibility_preferences']['communication_preferences']['agent_communication_frequency'] ?? ''); @endphp
+                    <select name="compatibility_preferences[communication_preferences][agent_communication_frequency]" class="form-control">
+                        <option value="">Select</option>
+                        @foreach(['Daily Updates','Every Few Days','Weekly','At Key Milestones','As Needed'] as $opt)
+                            <option value="{{ $opt }}" @selected($curCommFreq === $opt)>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Response Time Commitment</label>
+                    @php $curRespTime = old('compatibility_preferences.communication_preferences.agent_response_time_commitment', $data['compatibility_preferences']['communication_preferences']['agent_response_time_commitment'] ?? ''); @endphp
+                    <select name="compatibility_preferences[communication_preferences][agent_response_time_commitment]" class="form-control">
+                        <option value="">Select</option>
+                        @foreach(['Within 1 Hour','Within a Few Hours','Same Business Day','Within 24 Hours','Within 48 Hours'] as $opt)
+                            <option value="{{ $opt }}" @selected($curRespTime === $opt)>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Communication Notes</label>
+                    <textarea name="compatibility_preferences[communication_preferences][agent_communication_notes]" class="form-control" rows="2"
+                              placeholder="E.g., I prefer text for quick questions and email for detailed follow-ups.">{{ old('compatibility_preferences.communication_preferences.agent_communication_notes', $data['compatibility_preferences']['communication_preferences']['agent_communication_notes'] ?? '') }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">General Availability</label>
+                    <textarea name="compatibility_preferences[communication_preferences][agent_availability_notes]" class="form-control" rows="2"
+                              placeholder="E.g., Available weekdays 8am–8pm and weekends by appointment.">{{ old('compatibility_preferences.communication_preferences.agent_availability_notes', $data['compatibility_preferences']['communication_preferences']['agent_availability_notes'] ?? '') }}</textarea>
+                </div>
+
+                {{-- SECTION 2: Negotiation Approach --}}
+                <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2" style="color: #049399;"><i class="fa-solid fa-scale-balanced me-2"></i>Negotiation Approach</h6>
+
+                <div class="mb-3">
+                    <label class="fw-bold">Negotiation Style</label>
+                    @php $curNegStyle = old('compatibility_preferences.negotiation_approach.agent_negotiation_style', $data['compatibility_preferences']['negotiation_approach']['agent_negotiation_style'] ?? ''); @endphp
+                    <select name="compatibility_preferences[negotiation_approach][agent_negotiation_style]" class="form-control">
+                        <option value="">Select</option>
+                        @foreach(['Assertive','Collaborative','Methodical','Adaptive','Conservative'] as $opt)
+                            <option value="{{ $opt }}" @selected($curNegStyle === $opt)>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Negotiation Notes</label>
+                    <textarea name="compatibility_preferences[negotiation_approach][agent_negotiation_notes]" class="form-control" rows="2"
+                              placeholder="E.g., I use comparable sales data to anchor every negotiation.">{{ old('compatibility_preferences.negotiation_approach.agent_negotiation_notes', $data['compatibility_preferences']['negotiation_approach']['agent_negotiation_notes'] ?? '') }}</textarea>
+                </div>
+
+                {{-- SECTION 3: Guidance Style --}}
+                <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2" style="color: #049399;"><i class="fa-solid fa-compass me-2"></i>Guidance Style</h6>
+
+                <div class="mb-3">
+                    <label class="fw-bold">Level of Guidance</label>
+                    @php $curGuidLevel = old('compatibility_preferences.guidance_style.agent_guidance_level', $data['compatibility_preferences']['guidance_style']['agent_guidance_level'] ?? ''); @endphp
+                    <select name="compatibility_preferences[guidance_style][agent_guidance_level]" class="form-control">
+                        <option value="">Select</option>
+                        @foreach(['Hands-On','Balanced','Advisory','Minimal'] as $opt)
+                            <option value="{{ $opt }}" @selected($curGuidLevel === $opt)>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Guidance Notes</label>
+                    <textarea name="compatibility_preferences[guidance_style][agent_guidance_notes]" class="form-control" rows="2"
+                              placeholder="E.g., I educate first-time buyers on every step.">{{ old('compatibility_preferences.guidance_style.agent_guidance_notes', $data['compatibility_preferences']['guidance_style']['agent_guidance_notes'] ?? '') }}</textarea>
+                </div>
+
+                {{-- SECTION 4: Collaboration Preferences --}}
+                <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2" style="color: #049399;"><i class="fa-solid fa-people-arrows me-2"></i>Collaboration Preferences</h6>
+
+                <div class="mb-3">
+                    <label class="fw-bold">Collaboration Style</label>
+                    @php $curCollabStyle = old('compatibility_preferences.collaboration_preferences.agent_collaboration_style', $data['compatibility_preferences']['collaboration_preferences']['agent_collaboration_style'] ?? ''); @endphp
+                    <select name="compatibility_preferences[collaboration_preferences][agent_collaboration_style]" class="form-control">
+                        <option value="">Select</option>
+                        @foreach(['Highly Proactive','Steady & Systematic','Flexible & Responsive','Team-Oriented'] as $opt)
+                            <option value="{{ $opt }}" @selected($curCollabStyle === $opt)>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Availability Windows</label>
+                    <input type="text" name="compatibility_preferences[collaboration_preferences][agent_availability_windows]" class="form-control"
+                           value="{{ old('compatibility_preferences.collaboration_preferences.agent_availability_windows', $data['compatibility_preferences']['collaboration_preferences']['agent_availability_windows'] ?? '') }}"
+                           placeholder="E.g., Weekdays 8am–8pm, weekends by appointment">
+                </div>
+
+                {{-- SECTION 5: Transaction Strategy --}}
+                <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2" style="color: #049399;"><i class="fa-solid fa-chess-knight me-2"></i>Transaction Strategy</h6>
+
+                <div class="mb-3">
+                    <label class="fw-bold">Transaction Pace</label>
+                    @php $curTxPace = old('compatibility_preferences.transaction_strategy.agent_transaction_pace', $data['compatibility_preferences']['transaction_strategy']['agent_transaction_pace'] ?? ''); @endphp
+                    <select name="compatibility_preferences[transaction_strategy][agent_transaction_pace]" class="form-control">
+                        <option value="">Select</option>
+                        @foreach(['Fast-Paced','Moderate','Patient','Client-Driven'] as $opt)
+                            <option value="{{ $opt }}" @selected($curTxPace === $opt)>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Transaction Types &amp; Experience</label>
+                    <select name="compatibility_preferences[transaction_strategy][agent_strategy_experience][]" multiple
+                            class="form-control select2-multiple" data-placeholder="Select all that apply">
+                        @php $curStratExp = old('compatibility_preferences.transaction_strategy.agent_strategy_experience', $data['compatibility_preferences']['transaction_strategy']['agent_strategy_experience'] ?? []); @endphp
+                        @foreach(['First-Time Buyers/Sellers','Move-Up / Move-Down','Investment Properties','Distressed Properties','New Construction','Luxury Properties','Commercial Real Estate','1031 Exchanges','Relocation Transactions','Estate & Probate Sales','Multi-Family Properties'] as $opt)
+                            <option value="{{ $opt }}" @selected(in_array($opt, $curStratExp))>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Strategy Notes</label>
+                    <textarea name="compatibility_preferences[transaction_strategy][agent_strategy_notes]" class="form-control" rows="2"
+                              placeholder="E.g., I specialize in competitive markets and have closed over 30 off-market deals.">{{ old('compatibility_preferences.transaction_strategy.agent_strategy_notes', $data['compatibility_preferences']['transaction_strategy']['agent_strategy_notes'] ?? '') }}</textarea>
+                </div>
+
+                {{-- SECTION 6: Representation Philosophy --}}
+                <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2" style="color: #049399;"><i class="fa-solid fa-shield-halved me-2"></i>Representation Philosophy</h6>
+
+                <div class="mb-3">
+                    <label class="fw-bold">Decision Support Style</label>
+                    @php $curDecStyle = old('compatibility_preferences.representation_philosophy.agent_decision_support_style', $data['compatibility_preferences']['representation_philosophy']['agent_decision_support_style'] ?? ''); @endphp
+                    <select name="compatibility_preferences[representation_philosophy][agent_decision_support_style]" class="form-control">
+                        <option value="">Select</option>
+                        @foreach(['Data-Driven','Options-Based','Recommendation-First','Collaborative Discussion'] as $opt)
+                            <option value="{{ $opt }}" @selected($curDecStyle === $opt)>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Risk Posture</label>
+                    @php $curRiskPost = old('compatibility_preferences.representation_philosophy.agent_risk_posture', $data['compatibility_preferences']['representation_philosophy']['agent_risk_posture'] ?? ''); @endphp
+                    <select name="compatibility_preferences[representation_philosophy][agent_risk_posture]" class="form-control">
+                        <option value="">Select</option>
+                        @foreach(['Conservative','Balanced','Opportunistic','Adaptive'] as $opt)
+                            <option value="{{ $opt }}" @selected($curRiskPost === $opt)>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Representation Philosophy</label>
+                    <select name="compatibility_preferences[representation_philosophy][agent_representation_philosophy][]" multiple
+                            class="form-control select2-multiple" data-placeholder="Select all that apply">
+                        @php $curRepPhil = old('compatibility_preferences.representation_philosophy.agent_representation_philosophy', $data['compatibility_preferences']['representation_philosophy']['agent_representation_philosophy'] ?? []); @endphp
+                        @foreach(['Fiduciary-First','Transparent Communication','Full-Service Partnership','Education-Focused','Results-Oriented','Long-Term Relationship'] as $opt)
+                            <option value="{{ $opt }}" @selected(in_array($opt, $curRepPhil))>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Philosophy Narrative</label>
+                    <textarea name="compatibility_preferences[representation_philosophy][agent_philosophy_narrative]" class="form-control" rows="3"
+                              placeholder="In your own words, describe your overall representation philosophy.">{{ old('compatibility_preferences.representation_philosophy.agent_philosophy_narrative', $data['compatibility_preferences']['representation_philosophy']['agent_philosophy_narrative'] ?? '') }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Additional Philosophy Notes</label>
+                    <textarea name="compatibility_preferences[representation_philosophy][agent_philosophy_notes]" class="form-control" rows="2"
+                              placeholder="E.g., I believe in radical transparency.">{{ old('compatibility_preferences.representation_philosophy.agent_philosophy_notes', $data['compatibility_preferences']['representation_philosophy']['agent_philosophy_notes'] ?? '') }}</textarea>
+                </div>
+
+                {{-- SECTION 7: Representation Priorities --}}
+                <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2" style="color: #049399;"><i class="fa-solid fa-list-check me-2"></i>Representation Priorities</h6>
+
+                <div class="mb-3">
+                    <label class="fw-bold">Primary Capability Strengths</label>
+                    <select name="compatibility_preferences[representation_priorities][agent_representation_priorities][]" multiple
+                            class="form-control select2-multiple" data-placeholder="Select all that apply">
+                        @php $curRepPri = old('compatibility_preferences.representation_priorities.agent_representation_priorities', $data['compatibility_preferences']['representation_priorities']['agent_representation_priorities'] ?? []); @endphp
+                        @foreach(['Price Optimization','Timeline Management','Negotiation Strength','Market Knowledge','Client Communication','Transaction Coordination','Legal & Contract Expertise','Marketing & Exposure','Network & Connections','Off-Market Access','Technology & Digital Marketing','Vendor Relationships'] as $opt)
+                            <option value="{{ $opt }}" @selected(in_array($opt, $curRepPri))>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Priorities Notes</label>
+                    <textarea name="compatibility_preferences[representation_priorities][agent_priority_notes]" class="form-control" rows="2"
+                              placeholder="E.g., My strongest value-add is negotiation – I've consistently saved clients 3–5% below asking.">{{ old('compatibility_preferences.representation_priorities.agent_priority_notes', $data['compatibility_preferences']['representation_priorities']['agent_priority_notes'] ?? '') }}</textarea>
+                </div>
+
+            </div>
+        </div>
+
         {{-- ── STICKY SAVE BAR ──────────────────────────────────────────────── --}}
         <div class="sticky-save-bar">
             <a href="{{ route('agent.presets.index') }}" class="btn btn-outline-secondary">

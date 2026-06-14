@@ -996,6 +996,7 @@
                 </div>
             </div>
 
+            @include('partials.agent-bid-compatibility-display', ['bid' => $bid])
 
     <x-slot name="footerActions">
         @if($bidStatus === 'Active')

@@ -488,6 +488,7 @@ class AgentPresetController extends Controller
             'weekends_available'            => $request->input('weekends_available', ''),
             'communication_style'           => $request->input('communication_style', ''),
             'preferred_contact_method'      => $request->input('preferred_contact_method', ''),
+            'compatibility_preferences'     => $request->input('compatibility_preferences', []),
         ];
 
         AgentDefaultProfile::upsertForAgent($userId, $role, $propertyType, $profileData);

@@ -33,6 +33,7 @@ class LandlordAgentAuctionBid extends Component
 
     public bool $defaultProfileExists = false;
     public bool $defaultProfileLoaded = false;
+    public array $compatibility_agent_response = [];
 
     // Agent Information
     public $first_name;
@@ -649,6 +650,15 @@ class LandlordAgentAuctionBid extends Component
             ],
         ];
 
+        $this->compatibility_agent_response = [
+            'communication_preferences'  => [],
+            'negotiation_approach'       => [],
+            'guidance_style'             => [],
+            'collaboration_preferences'  => [],
+            'transaction_strategy'       => [],
+            'representation_philosophy'  => [],
+            'representation_priorities'  => [],
+        ];
 
         $auction = \App\Models\LandlordAgentAuction::find($auctionId);
         // $this->additional_details = $auction->get->additional_details ?? '';
@@ -871,6 +881,17 @@ class LandlordAgentAuctionBid extends Component
                 $this->applyPresetField('early_termination_fee_amount', $mapped['early_termination_fee_amount'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('brokerage_relationship', $mapped['brokerage_relationship'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('additional_details_broker', $mapped['additional_details_broker'] ?? null, $presetFieldsApplied);
+                // Compatibility preferences from preset — blank-field guard:
+                // only fill a section if the current bid has no data for that section yet.
+                $compatFromPreset = AgentBidMapperService::mapCompatibilityFromProfile($profile->profile_data ?? []);
+                foreach ($compatFromPreset as $_cpSection => $_cpData) {
+                    if (is_array($_cpData) && !empty($_cpData)) {
+                        $existing = $this->compatibility_agent_response[$_cpSection] ?? null;
+                        if (empty($existing)) {
+                            $this->compatibility_agent_response[$_cpSection] = $_cpData;
+                        }
+                    }
+                }
                 if ($presetFieldsApplied > 0) {
                     $this->defaultProfileLoaded = true;
                     try {
@@ -1090,6 +1111,12 @@ class LandlordAgentAuctionBid extends Component
                         return $m;
                     }, $this->promoMaterials);
                 }
+
+                // Compatibility preferences from saved bid
+                $this->compatibility_agent_response = array_merge(
+                    $this->compatibility_agent_response,
+                    $existingBid->loadCompatibilityPreferences()
+                );
             } else {
                 // Bid not found or ownership mismatch — fall back to new-bid mode
                 $this->isEditMode = false;
@@ -1123,7 +1150,7 @@ class LandlordAgentAuctionBid extends Component
             }
         }
 
-        $maxTab = $this->service_type === 'full_service' ? ($this->hasReferralTab() ? 6 : 5) : 4;
+        $maxTab = $this->service_type === 'full_service' ? ($this->hasReferralTab() ? 7 : 6) : 5;
         if ($this->activeTab < $maxTab) {
             $this->activeTab = $this->activeTab + 1;
         }
@@ -1254,6 +1281,13 @@ class LandlordAgentAuctionBid extends Component
         if (!empty($data['business_card_link']))         $this->business_card_link         = $data['business_card_link'];
         if (!empty($data['business_card_stored_path'])) $this->business_card_stored_path  = $data['business_card_stored_path'];
         if (!empty($data['promoMaterials']))             $this->promoMaterials             = $data['promoMaterials'];
+        // Compatibility preferences from profile
+        $compatData = AgentBidMapperService::mapCompatibilityFromProfile($data);
+        foreach ($compatData as $_cpSection => $_cpData) {
+            if (is_array($_cpData) && !empty($_cpData)) {
+                $this->compatibility_agent_response[$_cpSection] = $_cpData;
+            }
+        }
         $this->defaultProfileLoaded = true;
     }
 
@@ -1535,6 +1569,8 @@ class LandlordAgentAuctionBid extends Component
             $bid->saveMeta('license_no', $this->license_no);
             $bid->saveMeta('year_licensed', $this->year_licensed);
             $bid->saveMeta('nar_id', $this->nar_id);
+
+            $bid->saveCompatibilityPreferences($this->compatibility_agent_response);
 
             $auction = \App\Models\LandlordAgentAuction::find($this->auctionId);
 

@@ -225,6 +225,7 @@
 
                             $tabs[] = 'Agent Presentation & Marketing Materials';
                             $tabs[] = 'Agent Credentials & Contact Info';
+                            $tabs[] = 'Working Style & Compatibility';
                         @endphp
 
                         {{-- <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -258,7 +259,7 @@
                         </ul>
                     @elseif($service_type === 'limited_service')
                         <ul class="nav nav-tabs" id="myTab" role="tablist">
-                            @foreach (['Agent Overview', 'Service Selection and Pricing', 'Additional Details', 'Presentation and Promotional Materials', 'Agent Credentials & Contact Info'] as $index => $tab)
+                            @foreach (['Agent Overview', 'Service Selection and Pricing', 'Additional Details', 'Presentation and Promotional Materials', 'Agent Credentials & Contact Info', 'Working Style & Compatibility'] as $index => $tab)
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                         wire:click="setActiveTab({{ $index }})"
@@ -330,6 +331,10 @@
                                 @include('livewire.buyer-agent-auction-bid-tabs.commission-based.agent-info')
 
                             </div>
+                            <!-- Tab 6/7: Working Style & Compatibility -->
+                            <div class="tab-pane fade {{ $activeTab === (6 + $tabOffset) ? 'show active' : '' }}">
+                                @include('partials.agent-bid-compatibility')
+                            </div>
                         @elseif($service_type === 'limited_service')
                             <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}">
 
@@ -346,9 +351,13 @@
                                 @include('livewire.tenant-agent-auction-bid-tabs.commission-based.agent-presentation')
 
                             </div>
-                            <!-- Tab 4: Services to Tenant -->
+                            <!-- Tab 4: Agent Credentials -->
                             <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}" id="services">
                                 @include('livewire.tenant-agent-auction-bid-tabs.commission-based.agent-info')
+                            </div>
+                            <!-- Tab 5: Working Style & Compatibility (limited_service) -->
+                            <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}">
+                                @include('partials.agent-bid-compatibility')
                             </div>
                         @endif
                     </div>

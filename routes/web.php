@@ -1050,7 +1050,8 @@ Route::get('/test', function () {
 if (app()->environment('local', 'development')) {
     Route::get('/dev-login/{id}', function ($id) {
         Auth::loginUsingId($id);
-        return redirect('/dashboard');
+        $to = request('to', '/dashboard');
+        return redirect($to);
     })->name('dev.login');
 
 }

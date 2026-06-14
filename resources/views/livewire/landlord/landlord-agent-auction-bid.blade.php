@@ -240,6 +240,7 @@
 
                             $tabs[] = 'Agent Presentation And Marketing Materials';
                             $tabs[] = 'Agent Credentials & Contact Info';
+                            $tabs[] = 'Working Style & Compatibility';
                         @endphp
 
 
@@ -319,6 +320,10 @@
 
                                 @include('livewire.landlord-agent-auction-bid-tabs.commission-based.agent-info')
 
+                            </div>
+                            <!-- Tab 6/7: Working Style & Compatibility -->
+                            <div class="tab-pane fade {{ $activeTab === (6 + $tabOffset) ? 'show active' : '' }}">
+                                @include('partials.agent-bid-compatibility')
                             </div>
                     </div>
 

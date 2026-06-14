@@ -1440,3 +1440,5 @@
                                                                             </div>
                                                                         </div>
 
+
+@include('partials.agent-bid-compatibility-display', ['bid' => $bid])
