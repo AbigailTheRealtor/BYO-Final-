@@ -18,12 +18,24 @@ namespace App\Services\LocationDna;
  *   - Compute scores, recommendations, or generate marketing copy.
  * ==================================================================================
  *
- * Input payload shape (all sections optional):
+ * Input payload shape (all sections optional; each section accepts either key variant):
  *   [
- *     'floodZones'    => [ ['zone' => string], ... ],
- *     'schoolDistricts' => [ ['name' => string], ... ],
- *     'pois'          => [ ['label' => string, 'name' => string], ... ],
- *     'commuteTimes'  => [ ['destination' => string, 'minutes' => int|float], ... ],
+ *     'floodZones'      => [
+ *                            ['zone' => string],              // primary key
+ *                            ['zone_designation' => string],  // alternate key (runner native)
+ *                          ],
+ *     'schoolDistricts' => [
+ *                            ['name' => string],              // primary key
+ *                            ['district_name' => string],     // alternate key (runner native)
+ *                          ],
+ *     'pois'            => [
+ *                            ['label' => string, 'name' => string],    // primary key
+ *                            ['category' => string, 'name' => string], // alternate key (runner native)
+ *                          ],
+ *     'commuteTimes'    => [
+ *                            ['destination' => string, 'minutes' => int|float],              // primary keys
+ *                            ['destination_label' => string, 'travel_time_minutes' => int|float], // alternate keys (runner native)
+ *                          ],
  *   ]
  *
  * Output shape:
@@ -36,6 +48,7 @@ class LocationIntelligenceSummaryService
      *
      * Each section is skipped gracefully when absent, not an array, or malformed.
      * Duplicate school district names are deduplicated (case-sensitive).
+     * Both primary and alternate (runner-native) key variants are accepted per section.
      *
      * @param  array $locationData  Enrichment payload (in-memory only, no DB reads).
      * @return array                ['summary_lines' => string[]]
@@ -69,7 +82,7 @@ class LocationIntelligenceSummaryService
             if (!is_array($entry)) {
                 continue;
             }
-            $zone = $entry['zone'] ?? null;
+            $zone = $entry['zone'] ?? $entry['zone_designation'] ?? null;
             if (is_string($zone) && $zone !== '') {
                 $lines[] = "Flood Zone: {$zone}";
             }
@@ -93,7 +106,7 @@ class LocationIntelligenceSummaryService
             if (!is_array($entry)) {
                 continue;
             }
-            $name = $entry['name'] ?? null;
+            $name = $entry['name'] ?? $entry['district_name'] ?? null;
             if (is_string($name) && $name !== '' && !isset($seen[$name])) {
                 $seen[$name] = true;
                 $lines[]     = "School District: {$name}";
@@ -116,7 +129,7 @@ class LocationIntelligenceSummaryService
             if (!is_array($entry)) {
                 continue;
             }
-            $label = $entry['label'] ?? null;
+            $label = $entry['label'] ?? $entry['category'] ?? null;
             $name  = $entry['name']  ?? null;
             if (is_string($label) && $label !== '' && is_string($name) && $name !== '') {
                 $lines[] = "Nearby {$label}: {$name}";
@@ -139,8 +152,8 @@ class LocationIntelligenceSummaryService
             if (!is_array($entry)) {
                 continue;
             }
-            $destination = $entry['destination'] ?? null;
-            $minutes     = $entry['minutes']     ?? null;
+            $destination = $entry['destination'] ?? $entry['destination_label'] ?? null;
+            $minutes     = $entry['minutes']     ?? $entry['travel_time_minutes'] ?? null;
             if (is_string($destination) && $destination !== '' && is_numeric($minutes)) {
                 $lines[] = "{$destination}: {$minutes} minutes";
             }

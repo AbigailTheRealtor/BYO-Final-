@@ -18,6 +18,16 @@ use Tests\TestCase;
  *   (7) Malformed/unexpected payload shape → graceful skip, no exception
  *   (8) Duplicate district names are deduplicated
  *
+ * Plus eight new cases required by Phase 4D (alternate-key / dual-shape):
+ *   (9)  Flood zone via zone_designation key
+ *   (10) School district via district_name key
+ *   (11) POI via category key (name stays as-is)
+ *   (12) Commute via destination_label + travel_time_minutes keys
+ *   (13) Mixed old and new key payload across all four sections
+ *   (14) Malformed entries with new key shapes are still skipped
+ *   (15) Duplicate district_name entries are deduplicated
+ *   (16) Governance: no DB or Eloquent imports in the service file
+ *
  * No database, no factories, no HTTP calls — purely in-memory fixture arrays.
  */
 class LocationIntelligenceSummaryServiceTest extends TestCase
@@ -249,5 +259,207 @@ class LocationIntelligenceSummaryServiceTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/^use\s+.*MarketingContext/m', $serviceFile, 'Must not import marketing report classes');
         $this->assertStringNotContainsString('DB::', $serviceFile, 'Must not make DB calls');
         $this->assertDoesNotMatchRegularExpression('/^use\s+Illuminate\\\\Database\\\\Eloquent/m', $serviceFile, 'Must not import Eloquent');
+    }
+
+    // =========================================================================
+    // Phase 4D — Alternate-key / dual-shape tests
+    // =========================================================================
+
+    // (9) Flood zone via zone_designation key
+
+    /** @test */
+    public function it_formats_flood_zone_from_zone_designation_key(): void
+    {
+        $payload = [
+            'floodZones' => [
+                ['zone_designation' => 'X'],
+                ['zone_designation' => 'AE'],
+            ],
+        ];
+
+        $result = $this->makeService()->summarize($payload);
+
+        $this->assertSummaryShape($result);
+        $this->assertContains('Flood Zone: X', $result['summary_lines']);
+        $this->assertContains('Flood Zone: AE', $result['summary_lines']);
+        $this->assertCount(2, $result['summary_lines']);
+    }
+
+    // (10) School district via district_name key
+
+    /** @test */
+    public function it_formats_school_district_from_district_name_key(): void
+    {
+        $payload = [
+            'schoolDistricts' => [
+                ['district_name' => 'Pinellas County Schools'],
+                ['district_name' => 'Hillsborough County Schools'],
+            ],
+        ];
+
+        $result = $this->makeService()->summarize($payload);
+
+        $this->assertSummaryShape($result);
+        $this->assertContains('School District: Pinellas County Schools', $result['summary_lines']);
+        $this->assertContains('School District: Hillsborough County Schools', $result['summary_lines']);
+        $this->assertCount(2, $result['summary_lines']);
+    }
+
+    // (11) POI via category key (name stays as-is)
+
+    /** @test */
+    public function it_formats_poi_from_category_and_name_keys(): void
+    {
+        $payload = [
+            'pois' => [
+                ['category' => 'Hospital', 'name' => 'Bay Pines VA Medical Center'],
+                ['category' => 'Park',     'name' => 'Weedon Island Preserve'],
+            ],
+        ];
+
+        $result = $this->makeService()->summarize($payload);
+
+        $this->assertSummaryShape($result);
+        $this->assertContains('Nearby Hospital: Bay Pines VA Medical Center', $result['summary_lines']);
+        $this->assertContains('Nearby Park: Weedon Island Preserve', $result['summary_lines']);
+        $this->assertCount(2, $result['summary_lines']);
+    }
+
+    // (12) Commute via destination_label + travel_time_minutes keys
+
+    /** @test */
+    public function it_formats_commute_from_destination_label_and_travel_time_minutes_keys(): void
+    {
+        $payload = [
+            'commuteTimes' => [
+                ['destination_label' => 'Downtown Tampa',             'travel_time_minutes' => 24],
+                ['destination_label' => 'Tampa International Airport', 'travel_time_minutes' => 18],
+            ],
+        ];
+
+        $result = $this->makeService()->summarize($payload);
+
+        $this->assertSummaryShape($result);
+        $this->assertContains('Downtown Tampa: 24 minutes', $result['summary_lines']);
+        $this->assertContains('Tampa International Airport: 18 minutes', $result['summary_lines']);
+        $this->assertCount(2, $result['summary_lines']);
+    }
+
+    // (13) Mixed old and new key payload across all four sections
+
+    /** @test */
+    public function it_handles_mixed_old_and_new_key_payload(): void
+    {
+        $payload = [
+            'floodZones' => [
+                ['zone'             => 'X'],
+                ['zone_designation' => 'AE'],
+            ],
+            'schoolDistricts' => [
+                ['name'          => 'Pinellas County Schools'],
+                ['district_name' => 'Hillsborough County Schools'],
+            ],
+            'pois' => [
+                ['label'    => 'Beach',    'name' => 'Clearwater Beach'],
+                ['category' => 'Hospital', 'name' => 'Bay Pines VA Medical Center'],
+            ],
+            'commuteTimes' => [
+                ['destination'       => 'Downtown Tampa',             'minutes'              => 30],
+                ['destination_label' => 'Tampa International Airport', 'travel_time_minutes' => 18],
+            ],
+        ];
+
+        $result = $this->makeService()->summarize($payload);
+
+        $this->assertSummaryShape($result);
+        $this->assertContains('Flood Zone: X', $result['summary_lines']);
+        $this->assertContains('Flood Zone: AE', $result['summary_lines']);
+        $this->assertContains('School District: Pinellas County Schools', $result['summary_lines']);
+        $this->assertContains('School District: Hillsborough County Schools', $result['summary_lines']);
+        $this->assertContains('Nearby Beach: Clearwater Beach', $result['summary_lines']);
+        $this->assertContains('Nearby Hospital: Bay Pines VA Medical Center', $result['summary_lines']);
+        $this->assertContains('Downtown Tampa: 30 minutes', $result['summary_lines']);
+        $this->assertContains('Tampa International Airport: 18 minutes', $result['summary_lines']);
+        $this->assertCount(8, $result['summary_lines']);
+    }
+
+    // (14) Malformed entries with new key shapes are still skipped
+
+    /** @test */
+    public function it_skips_malformed_entries_with_new_key_shapes(): void
+    {
+        $payload = [
+            'floodZones' => [
+                ['zone_designation' => ''],
+                ['zone_designation' => null],
+                ['zone_designation' => 'X'],
+            ],
+            'schoolDistricts' => [
+                ['district_name' => ''],
+                ['district_name' => null],
+                ['district_name' => 'Pinellas County Schools'],
+            ],
+            'pois' => [
+                ['category' => '',        'name' => 'Some Place'],
+                ['category' => 'Hospital', 'name' => ''],
+                ['category' => 'Hospital', 'name' => 'Bay Pines VA Medical Center'],
+            ],
+            'commuteTimes' => [
+                ['destination_label' => '',        'travel_time_minutes' => 10],
+                ['destination_label' => 'Airport', 'travel_time_minutes' => null],
+                ['destination_label' => 'Airport', 'travel_time_minutes' => 15],
+            ],
+        ];
+
+        $result = $this->makeService()->summarize($payload);
+
+        $this->assertSummaryShape($result);
+        $this->assertContains('Flood Zone: X', $result['summary_lines']);
+        $this->assertContains('School District: Pinellas County Schools', $result['summary_lines']);
+        $this->assertContains('Nearby Hospital: Bay Pines VA Medical Center', $result['summary_lines']);
+        $this->assertContains('Airport: 15 minutes', $result['summary_lines']);
+        $this->assertCount(4, $result['summary_lines']);
+    }
+
+    // (15) Duplicate district_name entries are deduplicated
+
+    /** @test */
+    public function it_deduplicates_district_name_key_entries(): void
+    {
+        $payload = [
+            'schoolDistricts' => [
+                ['district_name' => 'Pinellas County Schools'],
+                ['district_name' => 'Hillsborough County Schools'],
+                ['district_name' => 'Pinellas County Schools'],
+                ['district_name' => 'Pinellas County Schools'],
+            ],
+        ];
+
+        $result = $this->makeService()->summarize($payload);
+
+        $this->assertSummaryShape($result);
+
+        $districtLines = array_values(array_filter(
+            $result['summary_lines'],
+            fn (string $line) => str_starts_with($line, 'School District:'),
+        ));
+
+        $this->assertCount(2, $districtLines);
+        $this->assertContains('School District: Pinellas County Schools', $districtLines);
+        $this->assertContains('School District: Hillsborough County Schools', $districtLines);
+    }
+
+    // (16) Governance: no DB or Eloquent imports in the service file
+
+    /** @test */
+    public function service_file_contains_no_db_or_eloquent_imports(): void
+    {
+        $serviceFile = file_get_contents(
+            base_path('app/Services/LocationDna/LocationIntelligenceSummaryService.php'),
+        );
+
+        $this->assertStringNotContainsString('DB::', $serviceFile, 'Must not make DB calls');
+        $this->assertDoesNotMatchRegularExpression('/^use\s+Illuminate\\\\Database\\\\Eloquent/m', $serviceFile, 'Must not import Eloquent');
+        $this->assertDoesNotMatchRegularExpression('/^use\s+Illuminate\\\\Support\\\\Facades\\\\DB/m', $serviceFile, 'Must not import DB facade');
     }
 }
