@@ -28,9 +28,11 @@ use Tests\TestCase;
  *   C. Flag off — enableDescriptionFallback=false → path not entered.
  *   D. Prohibited bypass — classifier returns 'prohibited' → path not entered.
  *   E. Empty description — loadListingDescription returns null → path not entered.
- *   F. Normalizer disabled — normalizer->isEnabled()=false → path not entered.
- *   G. Off-topic question — no keyword guard anymore; fallback IS attempted,
- *      adapter returns sentinel → status='insufficient_context'.
+ *   F. Normalizer disabled — plausibility gate (not normalizer) gates Step 1a-desc; listing
+ *      question with normalizer=disabled still enters fallback → status='ready'.
+ *   G. Off-topic question — "What is the weather today?" passes Stage 1 (not a greeting/ack)
+ *      but fails Stage 2 (isListingRelatedQuestion → false, no property/RE signals);
+ *      description fallback NOT entered → status='unsupported'.
  *   H. loadListingDescription returns null for unknown listing type.
  *   I. loadListingDescription returns null for landlord (no description field).
  *   J. loadListingDescription returns null when no DB row exists (real DB).
@@ -341,66 +343,78 @@ class AskAiRunnerV2DescriptionFallbackUnsupportedTest extends TestCase
     }
 
     // =========================================================================
-    // F. Normalizer disabled
+    // F. Normalizer disabled — plausibility gate replaces normalizer check
     // =========================================================================
 
     /**
-     * When normalizer->isEnabled() returns false, the Step 1a-desc block
-     * condition fails at gate (c) and the fallback is skipped.
+     * When normalizer->isEnabled() returns false, the Step 1a-desc fallback
+     * should STILL fire for listing-related questions.  The gate now uses a
+     * deterministic two-stage plausibility check instead of requiring the
+     * normalizer, so disabling the normalizer must not suppress valid answers.
+     *
+     * "Does seller offer a credit?" contains signals ('seller', 'credit') that
+     * pass isListingRelatedQuestion(), and it is not a hard-rejected greeting,
+     * so isObviouslyNonListingQuestion() returns false.  The adapter returns a
+     * hit → status='ready'.
      */
-    public function test_normalizer_disabled_skips_description_fallback(): void
+    public function test_normalizer_disabled_does_not_block_description_fallback(): void
     {
         $runner = $this->makeStubRunner(
             'The seller is offering a $5,000 credit toward buyer closing costs.',
-            $this->adapterHit('irrelevant'),
-            false   // normalizerEnabled = false
+            $this->adapterHit('The seller is offering a $5,000 credit toward buyer closing costs.'),
+            false   // normalizerEnabled = false (no longer gates the fallback)
         );
 
         $result = $runner->run('seller', 121, 'Does seller offer a credit?');
 
-        $this->assertSame('unsupported', $result['status']);
-        $this->assertArrayNotHasKey(
-            'description_fallback_unsupported_attempted',
-            $result['trace'],
-            'Fallback must be skipped when normalizer is disabled'
+        $this->assertTrue(
+            $result['trace']['description_fallback_unsupported_attempted'] ?? false,
+            'F: normalizer-disabled must NOT suppress the fallback for listing questions'
         );
+        $this->assertTrue(
+            $result['trace']['description_fallback_unsupported_used'] ?? false,
+            'F: adapter returned a hit, so description_fallback_unsupported_used must be true'
+        );
+        $this->assertSame('ready', $result['status'],
+            'F: listing question + description hit → status must be ready');
+        $this->assertSame('description_fallback', $result['outcome_category'],
+            'F: outcome_category must be description_fallback on a hit');
     }
 
     // =========================================================================
-    // G. Off-topic question — no keyword guard, adapter is the sentinel guard
+    // G. Off-topic question — Stage 2 blocks before description fallback → unsupported
     // =========================================================================
 
     /**
-     * With isRealEstateQuestion() removed, an off-topic question like
-     * "What is the weather today?" is NOT pre-filtered. The fallback IS
-     * attempted because the listing has a non-empty description. The adapter
-     * returns the INFORMATION_NOT_IN_DESCRIPTION sentinel, so the result is
-     * status='insufficient_context' (description_fallback_miss).
+     * "What is the weather today?" passes Stage 1 (not a greeting/ack) but
+     * contains no property/RE signal word, so Stage 2 (isListingRelatedQuestion)
+     * returns false and the Step 1a-desc description fallback is NOT entered.
      *
-     * This is the correct design: the adapter already handles irrelevant
-     * questions via the sentinel — no second keyword registry is needed.
+     * The result is status='unsupported' — the correct outcome for a genuinely
+     * unrelated question — rather than consuming an adapter call.
+     *
+     * Valid listing questions phrased in unusual ways (e.g. "Is it move-in
+     * ready?", "How's the condition?", "Are there repair needs?") are covered
+     * by the broad signal list in isListingRelatedQuestion() — "move",
+     * "condition", and "repair" are all included signals.
      */
-    public function test_off_topic_question_enters_fallback_and_returns_miss(): void
+    public function test_off_topic_question_blocked_by_stage2_returns_unsupported(): void
     {
         $runner = $this->makeStubRunner(
             'Beautiful 3-bedroom home with ocean views.',
-            $this->adapterMiss()   // sentinel → miss, not blocked at guard
+            $this->adapterMiss()   // adapter must NOT be called for description fallback
         );
 
         $result = $runner->run('seller', 121, 'What is the weather today?');
 
-        // Fallback IS attempted (no keyword guard)
-        $this->assertTrue(
-            $result['trace']['description_fallback_unsupported_attempted'] ?? false,
-            'Fallback must be attempted even for off-topic questions (adapter is the guard)'
+        // Stage 2 blocks weather questions — the description fallback is never attempted.
+        $this->assertArrayNotHasKey(
+            'description_fallback_unsupported_attempted',
+            $result['trace'],
+            'G: Stage 2 must block weather question — description fallback must NOT be attempted'
         );
-        // But adapter returns sentinel → miss outcome
-        $this->assertSame('insufficient_context', $result['status']);
-        $this->assertSame('description_fallback_miss', $result['outcome_category']);
-        $this->assertSame(
-            'This information was not provided in the listing description.',
-            $result['final_response']['answer']
-        );
+        $this->assertSame('unsupported', $result['status'],
+            'G: weather question blocked by Stage 2 → status must be unsupported');
     }
 
     // =========================================================================

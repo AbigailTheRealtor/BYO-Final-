@@ -458,7 +458,14 @@ class AskAiContextBuilderService
                     'pet_restrictions'     => $infoGet('pet_restrictions'),
                     'rental_restrictions'  => $infoGet('leasing_restrictions'),
                     // ── Flood Zone ────────────────────────────────────────────────
-                    'flood_zone_code'      => $infoGet('flood_zone_code'),
+                    // flood_zone_code may be "Other" when the user selected a non-standard
+                    // zone code; resolve to the free-text sibling 'flood_zone_code_other'
+                    // so the AI never returns the bare placeholder string "Other".
+                    'flood_zone_code'      => $this->resolveOtherValue(
+                                                 $infoGet('flood_zone_code'),
+                                                 $infoGet,
+                                                 'flood_zone_code_other'
+                                             ),
                     'flood_zone_panel'     => $infoGet('flood_zone_panel'),
                     'flood_zone_date'      => $infoGet('flood_zone_date'),
                     'flood_insurance_required' => $infoGet('flood_insurance_required'),
@@ -776,7 +783,14 @@ class AskAiContextBuilderService
                 'roof_type'                => $this->decodeJsonField($infoGet('roof_type')),
                 'exterior_construction'    => $this->decodeJsonField($infoGet('exterior_construction')),
                 'foundation'               => $this->decodeJsonField($infoGet('foundation')),
-                'flood_zone_code'          => $infoGet('flood_zone_code'),
+                // flood_zone_code may be "Other" when the user selected a non-standard
+                // zone code; resolve to the free-text sibling 'flood_zone_code_other'
+                // so the AI never returns the bare placeholder string "Other".
+                'flood_zone_code'          => $this->resolveOtherValue(
+                                                 $infoGet('flood_zone_code'),
+                                                 $infoGet,
+                                                 'flood_zone_code_other'
+                                             ),
                 'flood_zone_panel'         => $infoGet('flood_zone_panel'),
                 'flood_zone_date'          => $infoGet('flood_zone_date'),
                 'flood_insurance_required' => $infoGet('flood_insurance_required'),
@@ -884,22 +898,26 @@ class AskAiContextBuilderService
     }
 
     /**
-     * Resolve a "select + Other custom input" field pair.
+     * Resolve a field value that may contain a placeholder string so that the
+     * AI prompt never receives a bare sentinel.
      *
-     * Many listing forms present a select box whose last option is "Other", paired
-     * with a free-text input that stores the user's custom value. This helper
-     * ensures the literal word "Other" is never surfaced to the AI when a real
-     * custom value is available.
+     * Behaviour by normalized primary value:
      *
-     * Resolution order:
-     *   1. If $primaryValue is NOT "Other" (case-insensitive), return it unchanged.
-     *   2. If $primaryValue IS "Other", iterate $fallbackKeys in order and return
-     *      the first non-empty string value returned by $infoGet.
-     *   3. If all fallback keys are empty, return null rather than the literal "Other".
+     *   "other" | "see remarks" | "see private remarks" | "per remarks"
+     *     → Attempt each $fallbackKey in order; return the first non-empty
+     *       value.  Return null when all fallbacks are empty/null.
      *
-     * @param  string|null $primaryValue  Raw value from the primary meta key.
-     * @param  callable    $infoGet       EAV meta reader: info($key) → ?string.
-     * @param  string      ...$fallbackKeys  EAV meta keys to check when primary = "Other".
+     *   "tbd" | "t.b.d." | "n/a" | "na" | "none" | "unknown" |
+     *   "not applicable" | "not available"
+     *     → Return null immediately (no fallback possible; value is absent by
+     *       definition).
+     *
+     *   any other value (real data)
+     *     → Return $primaryValue unchanged.
+     *
+     * @param  string|null $primaryValue   Raw field value from EAV / native column.
+     * @param  callable    $infoGet        Closure that resolves a meta key to its value.
+     * @param  string      ...$fallbackKeys Meta keys to try when primary is "Other" / "See Remarks".
      * @return string|null
      */
     private function resolveOtherValue(?string $primaryValue, callable $infoGet, string ...$fallbackKeys): ?string
@@ -908,18 +926,25 @@ class AskAiContextBuilderService
             return null;
         }
 
-        if (strtolower(trim($primaryValue)) !== 'other') {
-            return $primaryValue;
+        $normalized = strtolower(trim($primaryValue));
+
+        // Placeholders that have no meaningful fallback — the field is blank by intent.
+        if (in_array($normalized, ['tbd', 't.b.d.', 'n/a', 'na', 'none', 'unknown', 'not applicable', 'not available'], true)) {
+            return null;
         }
 
-        foreach ($fallbackKeys as $key) {
-            $val = $infoGet($key);
-            if ($val !== null && $val !== '' && $val !== false) {
-                return (string) $val;
+        // "Other" and "See Remarks" variants — try supplied fallback keys.
+        if (in_array($normalized, ['other', 'see remarks', 'see private remarks', 'per remarks'], true)) {
+            foreach ($fallbackKeys as $key) {
+                $val = $infoGet($key);
+                if ($val !== null && $val !== '' && $val !== false) {
+                    return (string) $val;
+                }
             }
+            return null;
         }
 
-        return null;
+        return $primaryValue;
     }
 
     /**

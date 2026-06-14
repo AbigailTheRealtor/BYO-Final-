@@ -2692,16 +2692,21 @@ class AskAiRunnerV2Service
             // Conditions (all must be true):
             //   (a) $questionType === 'unsupported'
             //   (b) $enableDescriptionFallback is true
-            //   (c) normalizer is injected AND enabled
+            //   (c) The question is not an obvious non-listing input (greetings,
+            //       one-word acks, spam) — rejected via isObviouslyNonListingQuestion().
+            //       All other questions, including off-topic ones, are allowed
+            //       through: the description / OpenAI sentinel is the authoritative
+            //       judge of whether the listing contains the answer.  A keyword
+            //       allowlist (Stage 2) is deliberately omitted — it would only
+            //       recreate the failure class it was meant to fix (valid listing
+            //       questions blocked by a missing keyword).
             //   (d) The listing has a non-empty description string.
             //
-            // No additional keyword guard is applied beyond these conditions.
-            // The OpenAI adapter already returns INFORMATION_NOT_IN_DESCRIPTION
-            // for questions the description cannot answer (including off-topic
-            // ones), which maps cleanly to the miss outcome below. Adding a
-            // second keyword registry here would create maintenance debt with no
-            // meaningful reduction in API calls, since the normalizer already
-            // consumed one call to determine this question is 'unsupported'.
+            // The normalizer is NOT required for this path.  The adapter
+            // (which is always injected) is sufficient for the description
+            // search, and decoupling from the normalizer flag ensures that
+            // listing-related questions never fall through to the generic
+            // 'unsupported' status just because the normalizer is disabled.
             //
             // Trace fields added before return:
             //   description_fallback_unsupported_attempted = true when (a)–(c)
@@ -2721,8 +2726,7 @@ class AskAiRunnerV2Service
             if (
                 $questionType === 'unsupported'
                 && $this->enableDescriptionFallback
-                && $this->normalizer !== null
-                && $this->normalizer->isEnabled()
+                && !$this->isObviouslyNonListingQuestion($question)
             ) {
                 $unsuppDesc = $this->loadListingDescription($listingType, $listingId);
                 if (is_string($unsuppDesc) && trim($unsuppDesc) !== '') {
@@ -2732,7 +2736,7 @@ class AskAiRunnerV2Service
                     $unsuppResult  = $this->adapter->generate($unsuppPackage);
                     $unsuppAnswer  = $this->parseDescriptionFallbackAnswer($unsuppResult);
 
-                    if ($unsuppAnswer !== null) {
+                    if ($unsuppAnswer !== null && !$this->isBareAnswerPlaceholder($unsuppAnswer)) {
                         $unsuppHitResponse = [
                             'success'            => true,
                             'status'             => 'ready',
@@ -3054,21 +3058,21 @@ class AskAiRunnerV2Service
                     //
                     // Guardrails:
                     //   1. Flag must be enabled ($this->enableDescriptionFallback).
-                    //   2. The normalizer service must be injected AND enabled — this
-                    //      ensures the full AI pipeline infrastructure is available.
-                    //   3. Description must be a non-empty string.
-                    //   4. OpenAI adapter must be available (always is on this path).
-                    //   5. The answer is extracted only if OpenAI finds it in the text —
+                    //   2. Description must be a non-empty string.
+                    //   3. OpenAI adapter must be available (always is on this path).
+                    //   4. The answer is extracted only if OpenAI finds it in the text —
                     //      a sentinel value (INFORMATION_NOT_IN_DESCRIPTION) signals miss.
-                    //   6. Falls through to the normal insufficient_context return on any
-                    //      failure, miss, or when the flag / normalizer is off.
+                    //   5. Falls through to the normal insufficient_context return on any
+                    //      failure, miss, or when the flag is off.
+                    //
+                    // The normalizer is NOT required — the adapter is always injected and
+                    // Guard B already confirms this is a listing.* key path, so the
+                    // plausibility check that guards Step 1a-desc is unnecessary here.
+                    // Decoupling from the normalizer flag ensures null structured fields
+                    // never suppress the description fallback when the flag is on.
                     // ----------------------------------------------------------------
                     $descFallbackAttempted = false;
-                    if (
-                        $this->enableDescriptionFallback
-                        && $this->normalizer !== null
-                        && $this->normalizer->isEnabled()
-                    ) {
+                    if ($this->enableDescriptionFallback) {
                         $listingDescription = $context['listing']['description'] ?? null;
                         if (is_string($listingDescription) && trim($listingDescription) !== '') {
                             $descFallbackAttempted = true;
@@ -3076,7 +3080,7 @@ class AskAiRunnerV2Service
                             $descAdapterResult     = $this->adapter->generate($descPackage);
                             $descAnswer            = $this->parseDescriptionFallbackAnswer($descAdapterResult);
 
-                            if ($descAnswer !== null) {
+                            if ($descAnswer !== null && !$this->isBareAnswerPlaceholder($descAnswer)) {
                                 $descFallbackResponse = [
                                     'success'            => true,
                                     'status'             => 'ready',
@@ -3670,6 +3674,27 @@ class AskAiRunnerV2Service
 
             $finalResponse = $this->finalResponseBuilder->build($promptPackage, $adapterResult);
 
+            // Safety net: if the adapter returned a bare placeholder value
+            // ("Other", "See Remarks", "TBD", "N/A", …) as the final answer,
+            // convert the response to insufficient_context so the placeholder
+            // is never surfaced to the user.  This guards against cases where
+            // a placeholder slipped through the context builder and was echoed
+            // back verbatim by the model.  The check is exact-match only to
+            // avoid false positives in normal sentences.
+            if (
+                ($finalResponse['status'] ?? '') === 'ready'
+                && isset($finalResponse['answer'])
+                && is_string($finalResponse['answer'])
+                && $this->isBareAnswerPlaceholder($finalResponse['answer'])
+            ) {
+                $finalResponse['success']         = false;
+                $finalResponse['status']          = 'insufficient_context';
+                $finalResponse['answer']          = 'This information was not provided for this listing.';
+                $finalResponse['refusal_message'] = null;
+                $finalResponse['error']           = null;
+                $outcomeCategory                  = 'placeholder_sanitized';
+            }
+
             $finalResponse['follow_up_questions'] = $this->followUpService->forResult(
                 $finalResponse,
                 $classification
@@ -3789,6 +3814,177 @@ class AskAiRunnerV2Service
         }
 
         return null;
+    }
+
+    /**
+     * Deterministic Stage-1 hard pre-check for Step 1a-desc.
+     *
+     * Returns true when the question is so obviously non-listing (a greeting,
+     * one-word acknowledgement, or similar) that the description fallback
+     * should be skipped immediately.  The list is intentionally very small —
+     * only patterns that could never plausibly be about a property listing.
+     *
+     * False negatives (returning false for a non-listing question) are
+     * acceptable: the adapter's INFORMATION_NOT_IN_DESCRIPTION sentinel will
+     * handle those.  False positives (returning true for a real question) are
+     * not: they would suppress valid answers.
+     *
+     * @param  string $question  The user's raw question text.
+     * @return bool  true → skip description fallback; false → continue.
+     */
+    private function isObviouslyNonListingQuestion(string $question): bool
+    {
+        $lower = mb_strtolower(trim($question));
+
+        $bare = rtrim($lower, ' .!?,;:');
+
+        $hardRejects = [
+            'hello', 'hi', 'hey', 'hi there', 'hello there',
+            'good morning', 'good afternoon', 'good evening',
+            'thanks', 'thank you', 'ty', 'thx',
+            'bye', 'goodbye', 'see you', 'take care',
+            'ok', 'okay', 'k', 'yes', 'no', 'nope', 'sure',
+            'great', 'got it', 'sounds good',
+        ];
+
+        return in_array($bare, $hardRejects, true);
+    }
+
+    /**
+     * Deterministic Stage-2 listing-plausibility check for Step 1a-desc.
+     *
+     * Returns true when the question contains at least one keyword that
+     * plausibly relates to a property listing, rental, or real estate
+     * transaction.  The list is intentionally broad — a false positive
+     * (allowing a marginally off-topic question through) is preferable to a
+     * false negative (blocking a genuine property question from the fallback).
+     *
+     * Questions containing none of these signals are unlikely to match
+     * anything in a listing description, so we skip the adapter call and
+     * let the question remain 'unsupported'.
+     *
+     * @param  string $question  The user's raw question text.
+     * @return bool  true → proceed to description fallback; false → skip.
+     */
+    private function isListingRelatedQuestion(string $question): bool
+    {
+        $lower = mb_strtolower($question);
+
+        // Curated allowlist of signals plausibly relevant to a property listing,
+        // rental, or real-estate transaction.
+        //
+        // Design principles:
+        //   - Matching uses word boundaries (\b) via preg_match so that short
+        //     terms like "rent", "lot", or "unit" cannot match as substrings
+        //     inside unrelated words ("current", "lottery", "united").
+        //   - Include only terms specific enough to real-estate contexts.
+        //   - Generic single-syllable words that carry meaning in many domains
+        //     (year, rate, total, dollar, heat, cool, build, well) are excluded;
+        //     the same listing questions are covered by more specific terms.
+        //   - False negatives (blocking a valid listing question) are not
+        //     acceptable — expand this list when one is found.
+        //   - Both singular and plural forms are listed separately where the
+        //     plural is not just the singular + 's' at a word boundary (e.g.
+        //     "issue" → \bissue\b won't match "issues" → add "issues" too).
+        //
+        // Confirmed Stage 2 rejects: "What is the weather today?",
+        // "Who won the football game?", "Tell me a joke.", "How do I make pasta?",
+        // "The current traffic is bad.", "We stand united as a nation.",
+        // "Did they win the lottery?", "The island is beautiful."
+        $signals = [
+            // Property types & structures
+            'property', 'house', 'home', 'condo', 'apartment', 'unit',
+            'building', 'residence', 'dwelling', 'studio', 'townhouse',
+            'duplex', 'ranch', 'bungalow', 'cottage', 'villa', 'mobile',
+            'commercial', 'industrial', 'retail', 'warehouse', 'office',
+            'multifamily', 'multi-family', 'land', 'parcel', 'lot',
+            // Construction & age (specific enough; generic 'year'/'build' excluded)
+            'built', 'constructed', 'construction', 'renovation', 'renovated',
+            'remodel', 'remodeled', 'updated', 'upgrade', 'addition',
+            // Transaction roles
+            'seller', 'buyer', 'landlord', 'tenant', 'owner', 'agent',
+            'listing', 'offer', 'bid', 'sale', 'purchase', 'vendor',
+            'lessor', 'lessee', 'renter', 'occupant',
+            // Financial / price (generic 'rate'/'total'/'dollar' excluded)
+            'price', 'cost', 'fee', 'rent', 'lease', 'credit', 'deposit',
+            'mortgage', 'loan', 'financing', 'budget', 'payment',
+            'tax', 'income', 'noi', 'hoa', 'cdd', 'concession', 'earnest',
+            'contribution', 'closing', 'escrow', 'commission', 'monthly',
+            'annual',
+            // Physical features & rooms
+            'bedroom', 'bathroom', 'garage', 'pool', 'yard', 'acre',
+            'floor', 'roof', 'foundation', 'kitchen', 'square', 'sqft',
+            'basement', 'attic', 'balcony', 'patio', 'deck', 'den',
+            'living', 'dining', 'laundry', 'closet', 'storage', 'pantry',
+            'carport', 'driveway', 'fence', 'porch', 'lanai', 'loft',
+            'window', 'ceiling', 'carpet', 'tile', 'hardwood',
+            'appliance', 'stove', 'dishwasher', 'refrigerator',
+            'washer', 'dryer', 'microwave', 'cabinet', 'counter',
+            'fireplace', 'jacuzzi', 'sauna', 'elevator',
+            // Utilities & systems (generic 'cable'/'fiber'/'heat'/'cool'/'well' excluded)
+            'water', 'sewer', 'electric', 'hvac', 'solar', 'septic',
+            'internet', 'utility', 'utilities', 'plumbing', 'insulation',
+            'generator',
+            // Location & zoning
+            'flood', 'zone', 'zoning', 'waterfront', 'address',
+            'location', 'city', 'county', 'school', 'district',
+            'neighborhood', 'community', 'subdivision', 'easement', 'easements',
+            // Availability & rental terms
+            'available', 'availability', 'included', 'required', 'allowed',
+            'permitted', 'furnished', 'parking', 'pet', 'smoking',
+            'move', 'possession', 'vacant', 'occupied',
+            // Transaction specifics
+            'inspection', 'appraisal', 'contingency', 'disclosure',
+            'warranty', 'association', 'permit', 'title', 'deed', 'lien',
+            'covenant',
+            // Property condition & disclosures (plurals listed separately)
+            'condition', 'issue', 'issues', 'defect', 'defects', 'repair', 'repairs',
+            'mold', 'asbestos', 'radon', 'termite', 'pest',
+            // HOA / association
+            'dues', 'amenity', 'amenities', 'bylaw',
+        ];
+
+        foreach ($signals as $signal) {
+            if (preg_match('/\b' . preg_quote($signal, '/') . '\b/', $lower)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true when the adapter's final answer text is a bare placeholder
+     * that must not be surfaced to the user.
+     *
+     * Matching is exact (case-insensitive, leading/trailing punctuation stripped)
+     * to avoid false positives in sentences that happen to contain these words.
+     * The list covers values that dropdowns and form fields store as stand-ins
+     * when no real data was entered.
+     *
+     * @param  string $answer  Final answer text produced by the adapter.
+     * @return bool  true → the answer is a bare placeholder; false → safe to return.
+     */
+    private function isBareAnswerPlaceholder(string $answer): bool
+    {
+        $normalized = mb_strtolower(rtrim(trim($answer), " \t.!?,;:"));
+
+        $placeholders = [
+            'other',
+            'see remarks',
+            'see private remarks',
+            'per remarks',
+            'tbd',
+            't.b.d.',
+            'n/a',
+            'na',
+            'none',
+            'unknown',
+            'not applicable',
+            'not available',
+        ];
+
+        return in_array($normalized, $placeholders, true);
     }
 
     /**

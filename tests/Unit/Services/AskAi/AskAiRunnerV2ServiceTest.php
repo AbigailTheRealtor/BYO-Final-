@@ -3528,12 +3528,16 @@ class AskAiRunnerV2ServiceTest extends TestCase
             'L3: sentinel → answer_source must be description_fallback_miss');
     }
 
-    // ── L4 ── Flag on, but normalizer null → description fallback must NOT fire ───
+    // ── L4 ── Flag on, normalizer null → Guard B description fallback DOES fire ─────
 
-    public function test_case_L4_flag_on_but_normalizer_null_description_fallback_does_not_fire(): void
+    public function test_case_L4_flag_on_normalizer_null_description_fallback_fires(): void
     {
-        // Normalizer gate: even with flag=true, if normalizer is null the description
-        // fallback must be skipped and the original miss message returned.
+        // After decoupling Guard B from the normalizer requirement, flag=true +
+        // non-empty description is sufficient to trigger the description fallback,
+        // even when normalizer is null.  The adapter is called and returns the
+        // sentinel, yielding description_fallback_miss.
+        $sentinelResponse = json_encode(['answer_text' => 'INFORMATION_NOT_IN_DESCRIPTION']);
+
         $mocks  = $this->makeMocks();   // normalizer NOT in mocks → null
         $runner = $this->makeRunner($mocks, true);
 
@@ -3541,7 +3545,17 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $mocks['internalRunner']->method('run')->willReturn(
             $this->makeGuardBInternalResult('Seller offering concessions toward closing costs.')
         );
-        $mocks['adapter']->expects($this->never())->method('generate');
+
+        // Adapter IS now called — Guard B no longer requires the normalizer.
+        $mocks['adapter']->expects($this->once())
+            ->method('generate')
+            ->willReturn([
+                'success'      => true,
+                'status'       => 'generated',
+                'raw_response' => $sentinelResponse,
+                'model'        => 'gpt-4o',
+                'error'        => null,
+            ]);
 
         $result = $runner->run(
             'seller', 1,
@@ -3550,14 +3564,18 @@ class AskAiRunnerV2ServiceTest extends TestCase
         );
 
         $this->assertSame('insufficient_context', $result['status'],
-            'L4: normalizer null → fallback skipped, must return insufficient_context');
+            'L4: sentinel returned → status must be insufficient_context');
         $this->assertSame(
-            'This information was not provided in the listing.',
+            'This information was not provided in the listing description.',
             $result['final_response']['answer'],
-            'L4: normalizer null → original miss message, not "listing description" variant'
+            'L4: sentinel returned → miss message must reference "listing description"'
         );
-        $this->assertSame('openai', $result['final_response']['source']['answer_source'],
-            'L4: normalizer null → answer_source stays openai');
+        $this->assertSame('description_fallback_miss', $result['final_response']['source']['answer_source'],
+            'L4: sentinel returned → answer_source must be description_fallback_miss');
+        // Guard B records description_fallback_used only on a hit; on a sentinel miss the
+        // $descFallbackAttempted flag controls the miss message/source inline (no extra trace key).
+        $this->assertArrayNotHasKey('description_fallback_used', $result['trace'],
+            'L4: sentinel miss → description_fallback_used must be absent (no hit occurred)');
     }
 
     // ── L5 ── Flag off, null description → insufficient_context (no crash) ────────
