@@ -328,7 +328,7 @@ class AskAiQuestionClassifierService
             'move in timeframe',
             'move-in schedule',
             'available move-in',
-            // Buyer / tenant preferred area
+            // Buyer / tenant preferred area / location
             'preferred areas',
             'preferred neighborhoods',
             'preferred cities',
@@ -336,6 +336,45 @@ class AskAiQuestionClassifierService
             'where does the buyer want to live',
             'location preferences',
             'location preference',
+            'what cities does the buyer prefer',
+            'which cities is the buyer looking in',
+            'cities the buyer is interested in',
+            'preferred counties',
+            'what counties is the buyer looking in',
+            'which counties does the buyer prefer',
+            // Generic city/county phrases — matches "What cities are you interested in?"
+            // "Which cities are on the list?", etc. These are short bare phrases; the
+            // LISTING_KEY_KEYWORD_MAP has the same phrases for precise routing.
+            'what cities',
+            'which cities',
+            'what counties',
+            'which counties',
+            'cities are you interested in',
+            'cities interested in',
+            // Tenant monthly income
+            'monthly income',
+            'household income',
+            'tenant monthly income',
+            'what is the tenant income',
+            'how much does the tenant earn',
+            'income of the tenant',
+            'household monthly income',
+            'tenant income',
+            // Seller credit / contribution
+            'seller credit offered',
+            'is the seller offering a credit',
+            'seller contribution credit',
+            'does the seller offer a credit',
+            'seller credit',
+            'seller contribution',
+            // Pet policy (landlord)
+            'pet policy',
+            'pet policy details',
+            'do you accept pets',
+            'accept pets',
+            'does this rental accept pets',
+            'does the landlord accept pets',
+            'is this rental pet-friendly',
             // Move-in timeframe synonyms
             'when do they want to move',
             'when can they move',

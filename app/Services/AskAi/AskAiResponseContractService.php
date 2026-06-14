@@ -319,8 +319,15 @@ class AskAiResponseContractService
                 'listing.inspection_contingency_buyer',
                 'listing.appraisal_contingency_buyer',
                 'listing.financing_contingency_buyer',
+                // Buyer / Tenant preferred locations
+                'listing.cities',
+                'listing.counties',
                 // Tenant status
                 'listing.current_status',
+                // Tenant income
+                'listing.monthly_income',
+                // Seller credit / concessions
+                'listing.seller_credit_offered',
                 // MLS / service
                 'listing.mls_id',
                 'listing.sold',

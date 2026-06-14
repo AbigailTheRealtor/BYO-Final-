@@ -519,6 +519,11 @@ class AskAiContextBuilderService
                                                       'assumable_occupancy_other'
                                                   ),
                     'income_requirement'        => $infoGet('monthly_income'),
+                    // seller_contribution_credit_offered: Yes/No field saved via saveMeta() in all
+                    // seller Livewire components (SellerAgentAuction, SellerOfferListing, and their
+                    // Edit variants). EAV key confirmed by code audit — maps to output key
+                    // 'seller_credit_offered' for LISTING_KEY_KEYWORD_MAP routing.
+                    'seller_credit_offered'     => $infoGet('seller_contribution_credit_offered'),
                 ],
                 // ── Vacant Land-specific fields ─────────────────────────────────────
                 // Only populated when property_type === 'Vacant Land'. All array-valued
@@ -652,6 +657,11 @@ class AskAiContextBuilderService
                 'inspection_contingency_buyer' => $infoGet('inspection_contingency_buyer'),
                 'appraisal_contingency_buyer'  => $infoGet('appraisal_contingency_buyer'),
                 'financing_contingency_buyer'  => $infoGet('financing_contingency_buyer'),
+                // cities / counties: stored as JSON arrays via saveMeta('cities', json_encode($request->cities))
+                // in BuyerCriteriaAuctionController. TenantAgentAuctionController uses the same keys.
+                // decodeJsonField() converts '["Tampa","Orlando"]' → 'Tampa, Orlando'.
+                'cities'                       => $this->decodeJsonField($infoGet('cities')),
+                'counties'                     => $this->decodeJsonField($infoGet('counties')),
             ],
 
             // -----------------------------------------------------------------
@@ -697,7 +707,11 @@ class AskAiContextBuilderService
                 'water_view'                => $this->decodeJsonField($infoGet('view_preference')),
                 'view'                      => $this->decodeJsonField($infoGet('view_preference')),
                 'available_date'            => $infoGet('available_date'),
-                'pet_policy'                => $infoGet('pet_policy'),
+                // pet_policy: the form writes a dedicated 'pet_policy' EAV meta key;
+                // older landlord listings stored the Yes/No flag only under 'pets'
+                // (same key seller/buyer use for pets_allowed). Fall back to 'pets'
+                // so Guard B reads the actual pet-permission value on legacy records.
+                'pet_policy'                => $infoGet('pet_policy') ?: $infoGet('pets'),
                 'pet_deposit_fee_rent'      => $infoGet('pet_deposit_fee_rent'),
                 'pet_max_weight_lbs'        => $infoGet('pet_max_weight_lbs'),
                 'pet_species_allowed'       => $this->decodeJsonField($infoGet('pet_species_allowed')),
@@ -860,6 +874,9 @@ class AskAiContextBuilderService
                 // credit_score_range: stored under 'credit_score' meta key for tenant agent
                 // auctions, or 'credit_score_range' for offer-flow tenant listings.
                 'credit_score_range'   => $infoGet('credit_score_range') ?? $infoGet('credit_score'),
+                // monthly_income: tenant household income, stored under 'monthly_income' or
+                // 'household_monthly_income' in tenant_criteria_auction_metas.
+                'monthly_income'       => $infoGet('monthly_income') ?? $infoGet('household_monthly_income'),
             ],
 
             default => [],

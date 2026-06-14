@@ -1278,4 +1278,409 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
         $this->assertSame('missing_data', $result['question_type'],
             '"Is credit score listed?" must route to missing_data');
     }
+
+    // =========================================================================
+    // 16. Buyer — "What cities is the buyer looking in?" → listing.cities
+    //     (gap fix: cities/counties were saved via saveMeta but never extracted)
+    // =========================================================================
+
+    public function test_cities_question_classifies_as_listing_facts_and_detects_correct_key(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('What cities does the buyer prefer?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What cities does the buyer prefer?" must classify as listing_facts');
+
+        $internalRunner = $this->makeRunnerWithListingField('cities', 'Tampa, Orlando, Sarasota');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('buyer', 1, 'What cities does the buyer prefer?');
+
+        $this->assertSame('listing.cities',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"What cities does the buyer prefer?" must resolve to listing.cities');
+    }
+
+    public function test_cities_field_present_pipeline_succeeds(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('cities', 'Tampa, St. Petersburg');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+
+        $adapter->expects($this->once())->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->expects($this->once())->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('buyer', 1, 'What cities does the buyer prefer?');
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('ready', $result['status']);
+    }
+
+    public function test_cities_field_null_guard_b_fires(): void
+    {
+        $this->assertGuardBFiresWithMessage('buyer', 'What cities does the buyer prefer?', 'cities', 'Preferred cities information');
+    }
+
+    public function test_cities_question_never_returns_unsupported(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('cities', 'Miami, Fort Lauderdale');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('buyer', 1, 'Which cities is the buyer looking in?');
+
+        $this->assertNotSame('unsupported', $result['status'],
+            '"Which cities is the buyer looking in?" must never return unsupported');
+    }
+
+    // =========================================================================
+    // 17. Tenant — "What is the tenant monthly income?" → listing.monthly_income
+    //     (gap fix: monthly_income was not extracted from tenant EAV metas)
+    // =========================================================================
+
+    public function test_monthly_income_question_classifies_as_listing_facts_and_detects_correct_key(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('What is the tenant income?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What is the tenant income?" must classify as listing_facts');
+
+        $internalRunner = $this->makeRunnerWithListingField('monthly_income', '$5,000');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('tenant', 1, 'What is the tenant income?');
+
+        $this->assertSame('listing.monthly_income',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"What is the tenant income?" must resolve to listing.monthly_income');
+    }
+
+    public function test_monthly_income_field_present_pipeline_succeeds(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('monthly_income', '$6,500');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+
+        $adapter->expects($this->once())->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->expects($this->once())->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('tenant', 1, 'What is the tenant monthly income?');
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('ready', $result['status']);
+    }
+
+    public function test_monthly_income_field_null_guard_b_fires(): void
+    {
+        $this->assertGuardBFiresWithMessage('tenant', 'What is the tenant monthly income?', 'monthly_income', 'Tenant monthly income information');
+    }
+
+    public function test_monthly_income_question_never_returns_unsupported(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('monthly_income', '$4,200');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('tenant', 1, 'What is the household monthly income?');
+
+        $this->assertNotSame('unsupported', $result['status'],
+            '"What is the household monthly income?" must never return unsupported');
+    }
+
+    // =========================================================================
+    // 18. Landlord — "What is the pet policy?" → listing.pet_policy
+    //     (gap fix: sparse LISTING_KEY_KEYWORD_MAP meant natural pet questions
+    //     routed to listing.pets_allowed which is null for landlord listings)
+    // =========================================================================
+
+    public function test_pet_policy_question_classifies_as_listing_facts_and_detects_correct_key(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('What is the pet policy for this rental?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What is the pet policy?" must classify as listing_facts');
+
+        $internalRunner = $this->makeRunnerWithListingField('pet_policy', 'Small dogs only, under 25 lbs');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('landlord', 1, 'What is the pet policy for this rental?');
+
+        $this->assertSame('listing.pet_policy',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"What is the pet policy?" must resolve to listing.pet_policy');
+    }
+
+    public function test_pet_policy_accept_pets_phrase_routes_to_pet_policy_key(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('pet_policy', 'Cats and small dogs allowed');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('landlord', 1, 'Do you accept pets in this rental?');
+
+        $this->assertSame('listing.pet_policy',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"Do you accept pets?" must route to listing.pet_policy for landlord');
+    }
+
+    public function test_pet_policy_field_null_guard_b_fires(): void
+    {
+        $this->assertGuardBFiresWithMessage('landlord', 'What is the pet policy?', 'pet_policy', 'Pet policy details information');
+    }
+
+    public function test_pet_policy_question_never_returns_unsupported(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('pet_policy', 'No pets allowed');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('landlord', 1, 'Does the landlord accept pets?');
+
+        $this->assertNotSame('unsupported', $result['status'],
+            '"Does the landlord accept pets?" must never return unsupported');
+    }
+
+    // =========================================================================
+    // 19. Seller — "Is the seller offering a credit?" → listing.seller_credit_offered
+    //     (gap fix: seller_contribution_credit_offered was not extracted from EAV)
+    // =========================================================================
+
+    public function test_seller_credit_question_classifies_as_listing_facts_and_detects_correct_key(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('Is the seller offering a credit?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"Is the seller offering a credit?" must classify as listing_facts');
+
+        $internalRunner = $this->makeRunnerWithListingField('seller_credit_offered', 'Yes');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('seller', 1, 'Is the seller offering a credit?');
+
+        $this->assertSame('listing.seller_credit_offered',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"Is the seller offering a credit?" must resolve to listing.seller_credit_offered');
+    }
+
+    public function test_seller_credit_field_present_pipeline_succeeds(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('seller_credit_offered', 'Yes');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+
+        $adapter->expects($this->once())->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->expects($this->once())->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('seller', 1, 'Is the seller offering a credit?');
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('ready', $result['status']);
+    }
+
+    public function test_seller_credit_field_null_guard_b_fires(): void
+    {
+        $this->assertGuardBFiresWithMessage('seller', 'Is the seller offering a credit?', 'seller_credit_offered', 'Seller credit offering information');
+    }
+
+    public function test_seller_credit_question_never_returns_unsupported(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('seller_credit_offered', 'No');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('seller', 1, 'Does the seller offer a credit?');
+
+        $this->assertNotSame('unsupported', $result['status'],
+            '"Does the seller offer a credit?" must never return unsupported');
+    }
+
+    // =========================================================================
+    // 20. Tenant — generic income phrasing (acceptance criteria)
+    //     "What is your monthly income?" and "What is the household income?"
+    //     must resolve to listing.monthly_income (not unsupported).
+    //     These phrases were initially missing from the map and caused the
+    //     pipeline to return 'unsupported' even when the field was present.
+    // =========================================================================
+
+    /**
+     * @dataProvider genericMonthlyIncomeQuestionProvider
+     */
+    public function test_generic_monthly_income_question_routes_to_correct_key(string $question): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('monthly_income', '$5,500');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('tenant', 1, $question);
+
+        $this->assertSame(
+            'listing.monthly_income',
+            $result['classification']['normalized_field_key'] ?? null,
+            "\"$question\" must resolve to listing.monthly_income"
+        );
+        $this->assertNotSame('unsupported', $result['status'],
+            "\"$question\" must not return unsupported when monthly_income data is present");
+    }
+
+    public static function genericMonthlyIncomeQuestionProvider(): array
+    {
+        return [
+            'your monthly income (acceptance phrase)' => ['What is your monthly income?'],
+            'household income (acceptance phrase)'     => ['What is the household income?'],
+            'their monthly income'                     => ['What is their monthly income?'],
+            'applicant monthly income'                 => ['What is the applicant monthly income?'],
+            'household monthly income'                 => ['What is the household monthly income?'],
+        ];
+    }
+
+    public function test_generic_monthly_income_null_guard_b_fires(): void
+    {
+        $this->assertGuardBFiresWithMessage('tenant', 'What is your monthly income?', 'monthly_income', 'Tenant monthly income information');
+    }
+
+    public function test_generic_monthly_income_income_property_question_still_routes_to_income_requirement(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('income_requirement', '$8,000/month');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('seller', 1, 'How much monthly income does this property generate?');
+
+        $this->assertSame(
+            'listing.income_requirement',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"How much monthly income does this property generate?" must still route to listing.income_requirement, not listing.monthly_income'
+        );
+    }
+
+    // =========================================================================
+    // 21. Buyer — "What cities are you interested in?" acceptance phrase
+    //     Must classify as listing_facts AND route to listing.cities.
+    // =========================================================================
+
+    public function test_what_cities_are_you_interested_in_classifies_as_listing_facts(): void
+    {
+        $result = (new AskAiQuestionClassifierService())->classify('What cities are you interested in?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What cities are you interested in?" must classify as listing_facts');
+    }
+
+    public function test_what_cities_are_you_interested_in_routes_to_cities_key(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('cities', 'Tampa, Orlando, Sarasota');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('buyer', 1, 'What cities are you interested in?');
+
+        $this->assertSame(
+            'listing.cities',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"What cities are you interested in?" must resolve to listing.cities'
+        );
+        $this->assertNotSame('unsupported', $result['status'],
+            '"What cities are you interested in?" must not return unsupported when cities data is present');
+    }
+
+    /**
+     * @dataProvider genericCitiesQuestionProvider
+     */
+    public function test_generic_cities_question_classifies_and_routes(string $question, string $expectedKey): void
+    {
+        $field = $expectedKey === 'listing.cities' ? 'cities' : 'counties';
+        $internalRunner = $this->makeRunnerWithListingField($field, 'Tampa, Hillsborough');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('buyer', 1, $question);
+
+        $this->assertSame($expectedKey, $result['classification']['normalized_field_key'] ?? null,
+            "\"$question\" must resolve to $expectedKey");
+        $this->assertNotSame('unsupported', $result['status']);
+    }
+
+    public static function genericCitiesQuestionProvider(): array
+    {
+        return [
+            'what cities you interested in' => ['What cities are you interested in?', 'listing.cities'],
+            'which cities'                  => ['Which cities does the buyer prefer?', 'listing.cities'],
+            'what counties'                 => ['What counties is the buyer looking in?', 'listing.counties'],
+            'which counties'                => ['Which counties are preferred?', 'listing.counties'],
+        ];
+    }
+
+    // =========================================================================
+    // 22. Landlord — "Are pets allowed?" acceptance phrase
+    //     Must route to listing.pet_policy (NOT listing.pets_allowed) for
+    //     landlord role. landlord context has pet_policy, not pets_allowed.
+    // =========================================================================
+
+    public function test_are_pets_allowed_routes_to_pet_policy_for_landlord(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('pet_policy', 'No dogs, cats ok under 15 lbs');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('landlord', 1, 'Are pets allowed?');
+
+        $this->assertSame(
+            'listing.pet_policy',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"Are pets allowed?" must route to listing.pet_policy (not listing.pets_allowed) for landlord role'
+        );
+        $this->assertNotSame('unsupported', $result['status'],
+            '"Are pets allowed?" must not return unsupported for landlord when pet_policy data is present');
+    }
+
+    public function test_are_pets_allowed_still_routes_to_pets_allowed_for_seller(): void
+    {
+        $internalRunner = $this->makeRunnerWithListingField('pets_allowed', 'Yes');
+        $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
+        $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $adapter->method('generate')->willReturn($this->makeAdapterSuccess());
+        $finalBuilder->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $this->makeRunner($internalRunner, $adapter, $finalBuilder)->run('seller', 1, 'Are pets allowed?');
+
+        $this->assertSame(
+            'listing.pets_allowed',
+            $result['classification']['normalized_field_key'] ?? null,
+            '"Are pets allowed?" must still route to listing.pets_allowed for seller role'
+        );
+        $this->assertNotSame('unsupported', $result['status'],
+            '"Are pets allowed?" must not return unsupported for seller when pets_allowed data is present');
+    }
+
+    public function test_are_pets_allowed_null_guard_b_fires_for_landlord(): void
+    {
+        $this->assertGuardBFiresWithMessage('landlord', 'Are pets allowed?', 'pet_policy', 'Pet policy details information');
+    }
 }

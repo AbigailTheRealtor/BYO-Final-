@@ -3048,4 +3048,305 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $this->assertSame($nullAnswer, $absentAnswer,
             'R3: null and absent-key must produce identical answers.');
     }
+
+    // =========================================================================
+    // Case K — Step 1c: AI-driven routing for listing_facts with no
+    //           deterministic key.  All tests use 'What brand of garbage
+    //           disposal is installed?' as the novel question — specific enough
+    //           that neither detectFaqFieldKey() nor detectListingFieldKey()
+    //           will match it, so the Step 1c gate (no deterministic key) fires.
+    // =========================================================================
+
+    // ── K1 ── listing_facts + no key + normalizer enabled + match returned ────
+
+    public function test_case_K1_step1c_normalizer_called_when_no_deterministic_key(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(
+            true,
+            'listing.hoa_fee',
+            'matched'
+        );
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What brand of garbage disposal is installed?');
+
+        $this->assertSame('Y', $result['trace']['normalizer_called'],
+            'K1: normalizer_called must be Y when Step 1c fires.');
+        $this->assertSame('Y', $result['trace']['router_called'],
+            'K1: router_called must be Y when Step 1c fires.');
+        $this->assertSame('matched', $result['trace']['normalizer_status'],
+            'K1: normalizer_status must be matched when normalizer returns a key.');
+        $this->assertSame('listing.hoa_fee', $result['trace']['normalized_field_key'],
+            'K1: normalized_field_key must carry the AI-resolved field path.');
+        $this->assertSame('listing.hoa_fee', $result['classification']['normalized_field_key'],
+            'K1: classification must also carry the resolved key for downstream guards.');
+    }
+
+    // ── K2 ── listing_facts + no key + normalizer disabled → never called ─────
+
+    public function test_case_K2_step1c_skipped_when_normalizer_flag_off(): void
+    {
+        $mocks = $this->makeMocks();
+
+        $normalizerMock = $this->createMock(AskAiIntentNormalizerService::class);
+        $normalizerMock->method('isEnabled')->willReturn(false);
+        $normalizerMock->expects($this->never())->method('normalize');
+        $mocks['normalizer'] = $normalizerMock;
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What brand of garbage disposal is installed?');
+
+        $this->assertSame('N', $result['trace']['normalizer_called'],
+            'K2: normalizer_called must be N when flag is off.');
+        $this->assertSame('N', $result['trace']['router_called'],
+            'K2: router_called must be N when flag is off.');
+        $this->assertSame('not_applicable', $result['trace']['normalizer_status'],
+            'K2: normalizer_status must be not_applicable when normalizer is disabled for listing_facts.');
+    }
+
+    // ── K3 ── listing_facts + HAS deterministic key → Step 1c gate fails ──────
+
+    public function test_case_K3_step1c_not_called_when_deterministic_key_found(): void
+    {
+        $mocks = $this->makeMocks();
+
+        $normalizerMock = $this->createMock(AskAiIntentNormalizerService::class);
+        $normalizerMock->method('isEnabled')->willReturn(true);
+        $normalizerMock->method('buildKnownFieldKeys')->willReturn([
+            'listing.bedrooms', 'listing.hoa_fee', 'faq_answers.hvac_system_age',
+        ]);
+        $normalizerMock->expects($this->never())->method('normalize');
+        $mocks['normalizer'] = $normalizerMock;
+
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $this->assertSame('N', $result['trace']['normalizer_called'],
+            'K3: normalizer_called must be N when Step 1b already resolved a key.');
+        $this->assertSame('not_applicable', $result['trace']['normalizer_status'],
+            'K3: normalizer_status must be not_applicable when deterministic key found.');
+        $this->assertNotNull($result['trace']['deterministic_field_key'],
+            'K3: deterministic_field_key must be set when Step 1b matched.');
+    }
+
+    // ── K4 ── listing_facts + no key + normalizer returns null (unknown) ───────
+
+    public function test_case_K4_step1c_unknown_response_leaves_no_key_in_options(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(
+            true,
+            null,
+            'unknown'
+        );
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What brand of garbage disposal is installed?');
+
+        $this->assertSame('Y', $result['trace']['normalizer_called'],
+            'K4: normalizer_called must be Y even when result is unknown.');
+        $this->assertSame('unknown', $result['trace']['normalizer_status'],
+            'K4: normalizer_status must reflect the unknown response.');
+        $this->assertSame('unsupported', $result['trace']['router_status'],
+            'K4: router_status must be unsupported when normalizer returns unknown.');
+        $this->assertNull($result['trace']['normalized_field_key'],
+            'K4: normalized_field_key must stay null when no key was resolved.');
+        $this->assertArrayNotHasKey('normalized_field_key', $result['classification'],
+            'K4: classification must not have normalized_field_key for unknown response.');
+    }
+
+    // ── K5 ── listing_facts + no key + normalizer returns prohibited ───────────
+
+    public function test_case_K5_step1c_prohibited_response_escalates_question_type(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMockWithStatus(
+            true,
+            null,
+            'prohibited'
+        );
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult([
+            'success'        => false,
+            'status'         => 'blocked',
+            'prompt_package' => [
+                'status'               => 'blocked',
+                'required_disclosures' => [],
+                'source_attribution'   => [],
+                'refusal_template'     => 'Not permitted.',
+            ],
+        ]));
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse([
+            'success' => false,
+            'status'  => 'blocked',
+        ]));
+
+        $result = $runner->run('seller', 1, 'What brand of garbage disposal is installed?');
+
+        $this->assertSame('prohibited', $result['trace']['final_question_type'],
+            'K5: question_type must be escalated to prohibited when router flags it.');
+        $this->assertSame('prohibited', $result['trace']['normalizer_status'],
+            'K5: normalizer_status must carry prohibited when router flagged the question.');
+        $this->assertSame('Y', $result['trace']['normalizer_called'],
+            'K5: normalizer_called must be Y even on prohibited escalation.');
+    }
+
+    // ── K6 ── listing_facts + no key + normalizer operational failure ──────────
+
+    public function test_case_K6_step1c_failed_status_leaves_no_key(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(
+            true,
+            null,
+            'failed',
+            'api_error'
+        );
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What brand of garbage disposal is installed?');
+
+        $this->assertSame('failed', $result['trace']['normalizer_status'],
+            'K6: normalizer_status must be failed on API error.');
+        $this->assertSame('api_error', $result['trace']['normalizer_error'],
+            'K6: normalizer_error must carry the error code on failure.');
+        $this->assertSame('failed', $result['trace']['router_status'],
+            'K6: router_status must be failed when normalizer fails.');
+        $this->assertNull($result['trace']['normalized_field_key'],
+            'K6: normalized_field_key must stay null on normalizer failure.');
+    }
+
+    // ── K7 ── deterministic_field_key present in trace when Step 1b finds a key
+
+    public function test_case_K7_deterministic_field_key_in_trace_when_step1b_matches(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'How many bedrooms?');
+
+        $this->assertNotNull($result['trace']['deterministic_field_key'],
+            'K7: deterministic_field_key must be set when Step 1b matched a key.');
+        $this->assertStringContainsString('listing.', $result['trace']['deterministic_field_key'],
+            'K7: deterministic_field_key must be a canonical listing.* path.');
+    }
+
+    // ── K8 ── deterministic_field_key is null when no Step 1b match ───────────
+
+    public function test_case_K8_deterministic_field_key_null_when_no_step1b_match(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What brand of garbage disposal is installed?');
+
+        $this->assertNull($result['trace']['deterministic_field_key'],
+            'K8: deterministic_field_key must be null when neither keyword map matched.');
+    }
+
+    // ── K9 ── trace: normalizer_called=Y, router_called=Y, status=matched ──────
+
+    public function test_case_K9_trace_fields_set_correctly_on_step1c_match(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(
+            true,
+            'faq_answers.hvac_system_age',
+            'matched'
+        );
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'What brand of garbage disposal is installed?');
+        $trace = $result['trace'];
+
+        $this->assertSame('Y', $trace['normalizer_called'], 'K9: normalizer_called=Y on Step 1c match.');
+        $this->assertSame('Y', $trace['router_called'],     'K9: router_called=Y on Step 1c match.');
+        $this->assertSame('matched', $trace['normalizer_status'], 'K9: normalizer_status=matched.');
+        $this->assertSame('matched', $trace['router_status'],     'K9: router_status=matched.');
+        $this->assertSame('faq_answers.hvac_system_age', $trace['normalized_field_key'],
+            'K9: normalized_field_key set to the AI-resolved path.');
+        $this->assertNull($trace['deterministic_field_key'],
+            'K9: deterministic_field_key stays null since Step 1b found nothing.');
+    }
+
+    // ── K10 ── Regression: unsupported → Step 1a path unchanged ──────────────
+
+    public function test_case_K10_regression_unsupported_step1a_path_unchanged(): void
+    {
+        $mocks = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(
+            true,
+            'listing.bedrooms',
+            'matched'
+        );
+        $runner = $this->makeRunner($mocks);
+
+        $unsupportedPackage = [
+            'status'               => 'listing_facts',
+            'question_type'        => 'listing_facts',
+            'required_disclosures' => [],
+            'source_attribution'   => [],
+            'refusal_template'     => null,
+        ];
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('unsupported'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeFinalResponse());
+
+        $result = $runner->run('seller', 1, 'Who manufactured the dishwasher?');
+
+        $this->assertSame('Y', $result['trace']['normalizer_called'],
+            'K10: unsupported question still calls normalizer via Step 1a.');
+        $this->assertSame('listing.bedrooms', $result['trace']['normalized_field_key'],
+            'K10: normalized_field_key from Step 1a must be carried through.');
+        $this->assertSame('listing_facts', $result['trace']['final_question_type'],
+            'K10: question_type must be updated to listing_facts by Step 1a.');
+    }
 }

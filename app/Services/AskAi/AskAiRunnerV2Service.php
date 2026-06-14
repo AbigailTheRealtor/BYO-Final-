@@ -1144,6 +1144,37 @@ class AskAiRunnerV2Service
             'required credit score',
             'credit score',
         ],
+        // ---- Tenant Monthly Income ----
+        // IMPORTANT: Do NOT add the bare phrase 'monthly income' here — it is a
+        // substring of income-property questions ("How much monthly income does this
+        // property generate?") which correctly route to listing.income_requirement
+        // (defined later in this map). Bare 'monthly income' would intercept those
+        // questions since this entry appears earlier.
+        //
+        // Verified-safe generic phrases (none are substrings of any
+        // listing.income_requirement question — confirmed by collision script):
+        //   'your monthly income', 'household income', 'their monthly income',
+        //   'applicant monthly income'
+        // These handle tenant-context questions like "What is your monthly income?"
+        // or "What is the household income?" without colliding with seller
+        // income-property routing.
+        'listing.monthly_income' => [
+            // Tenant-scoped explicit phrases
+            'tenant monthly income',
+            'what is the tenant income',
+            'how much does the tenant earn',
+            'income of the tenant',
+            'what income does the tenant have',
+            'tenant income',
+            'household income of the tenant',
+            // Generic household/personal income phrases (collision-verified safe)
+            'household monthly income',
+            'household income',
+            'your monthly income',
+            'their monthly income',
+            'applicant monthly income',
+            'renter monthly income',
+        ],
         'listing.appliances' => [
             'what appliances are included',
             'which appliances are included in the rental',
@@ -1202,6 +1233,16 @@ class AskAiRunnerV2Service
             'what is the pet policy for this rental',
             'pet policy for the unit',
             'pet rules for this rental',
+            'what is the pet policy',
+            'pet policy',
+            'pet policy details',
+            'pet policy for this property',
+            'do you accept pets',
+            'accept pets',
+            'does this rental accept pets',
+            'does the landlord accept pets',
+            'is this rental pet-friendly',
+            'can pets live here',
         ],
         'listing.pet_deposit_fee_rent' => [
             'pet deposit',
@@ -1349,6 +1390,48 @@ class AskAiRunnerV2Service
             'is the offer contingent on financing',
             'does the buyer have a financing contingency',
             'mortgage contingency',
+        ],
+        // ---- Buyer / Tenant Preferred Locations ----
+        'listing.cities' => [
+            'preferred cities',
+            'what cities does the buyer prefer',
+            'which cities is the buyer looking in',
+            'cities the buyer is interested in',
+            'what cities is the tenant looking in',
+            'preferred city locations',
+            'target cities',
+            'what cities are preferred',
+            'cities they are looking in',
+            // Generic bare phrases — match "What cities are you interested in?",
+            // "Which cities does the buyer prefer?", etc. Safe at this stage
+            // because the classifier has already confirmed listing_facts intent.
+            'what cities',
+            'which cities',
+            'cities are you interested in',
+        ],
+        'listing.counties' => [
+            'preferred counties',
+            'what counties is the buyer looking in',
+            'which counties does the buyer prefer',
+            'counties the buyer is interested in',
+            'what counties is the tenant looking in',
+            'target county',
+            'preferred county',
+            'counties they are looking in',
+            // Generic bare phrase — matches "Which counties are preferred?", etc.
+            'which counties',
+            'counties are you interested in',
+        ],
+        // ---- Seller Credit / Concessions ----
+        'listing.seller_credit_offered' => [
+            'seller credit offered',
+            'is the seller offering a credit',
+            'seller offering a credit',
+            'seller contribution credit',
+            'is the seller offering any credits',
+            'does the seller offer a credit',
+            'seller credit',
+            'seller contribution',
         ],
         // ---- Vacant Land — shared lot fields ----
         'listing.total_acreage' => [
@@ -2373,10 +2456,19 @@ class AskAiRunnerV2Service
      *
      * Pipeline stages:
      *   1. Classify the question (always runs)
-     *   1a. [Optional] Intent normalization: if classifier returns 'unsupported'
-     *       AND the normalizer is injected AND its feature flag is enabled,
-     *       attempt to map the question to a known listing_facts field key.
+     *   1a. [Optional] Intent normalization for unsupported questions: if classifier
+     *       returns 'unsupported' AND the normalizer is injected AND its feature flag
+     *       is enabled, attempt to map the question to a known listing_facts field key.
      *       Layer 1 'prohibited' questions always block before this step.
+     *   1b. Deterministic FAQ + listing field key detection for listing_facts questions.
+     *       Keyword maps resolve common phrasings to canonical field paths; when matched,
+     *       the prompt package is narrowed and Guard B fires on missing data.
+     *   1c. [Optional] AI-driven field routing for listing_facts with no deterministic
+     *       match: if classifier returned 'listing_facts' (directly or via Step 1a),
+     *       Step 1b found no key, AND the normalizer is injected AND enabled, calls the
+     *       normalizer to map the question to an approved field path. Provides Guard B
+     *       protection for novel phrasings of known fields. Layer 1 'prohibited' questions
+     *       always block before this step — Step 1c only runs for listing_facts.
      *   2. Run internal pipeline: context → contract → prompt package
      *   3. Guard: if no prompt_package returned, skip OpenAI and return safe failed result
      *   4. Generate via OpenAI adapter
@@ -2396,15 +2488,21 @@ class AskAiRunnerV2Service
      *                                follow_up_questions key from AskAiFollowUpQuestionService; null if skipped
      *   error          string|null — null unless final_response['error'] is set or a Throwable is caught
      *
-     * The trace array also carries two normalizer observability fields:
-     *   normalizer_status  string|null — outcome of the normalizer step:
-     *     'not_applicable' — question type is not 'unsupported' (normalizer cannot help)
-     *     'not_called'     — question is unsupported but normalizer is off or not injected
+     * The trace array also carries normalizer observability fields:
+     *   normalizer_status  string|null — outcome of the normalizer step (Step 1a or Step 1c):
+     *     'not_applicable' — normalizer was not needed:
+     *                        • question type is non-listing_facts (educational, standout, etc.)
+     *                        • question is listing_facts AND a deterministic key was found
+     *                        • question is listing_facts, no key, but normalizer is not injected/enabled
+     *     'not_called'     — question is 'unsupported' but normalizer is off or not injected
      *     'matched'        — normalizer called and returned a canonical key
      *     'unknown'        — normalizer called; OpenAI returned "unknown"
      *     'failed'         — normalizer called; operational failure (see normalizer_error)
      *   normalizer_error   string|null — structured error code when normalizer_status='failed':
      *     rate_limited | timeout | api_error | invalid_json | invalid_key | empty_response
+     *   deterministic_field_key string|null — field key found by Step 1b deterministic detection
+     *     (faq_answers.* or listing.* path). Null when no deterministic key was found, which is
+     *     the condition that triggers Step 1c AI-driven routing when normalizer is enabled.
      *
      * @param  string $listingType  Canonical or aliased listing type string.
      * @param  int    $listingId    Primary key of the listing record.
@@ -2452,6 +2550,7 @@ class AskAiRunnerV2Service
                 'router_context_path'         => null,
                 'normalized_field_key'        => null,
                 'faq_key_detected'            => null,
+                'deterministic_field_key'     => null,
                 'final_question_type'         => $questionType,
                 'final_status'                => null,
                 'source_attribution'          => null,
@@ -2560,16 +2659,110 @@ class AskAiRunnerV2Service
             if ($questionType === 'listing_facts' && !isset($options['normalized_field_key'])) {
                 $detectedKey = $this->detectFaqFieldKey($question);
                 if ($detectedKey !== null) {
-                    $trace['faq_key_detected'] = $detectedKey;
+                    $trace['faq_key_detected']        = $detectedKey;
+                    $trace['deterministic_field_key'] = $detectedKey;
                     $classification['normalized_field_key'] = $detectedKey;
                     $options = array_merge($options, ['normalized_field_key' => $detectedKey]);
                 } else {
                     $detectedListingKey = $this->detectListingFieldKey($question);
                     if ($detectedListingKey !== null) {
-                        $trace['listing_key_detected'] = $detectedListingKey;
+                        // ── Role-aware key remapping ──────────────────────────────────────
+                        // Landlord listings extract pet data under 'pet_policy' (via the
+                        // pet_policy EAV meta key), NOT under 'pets_allowed' (which comes
+                        // from the 'pets' meta — absent for landlord). When a pet-intent
+                        // question resolves to listing.pets_allowed (the earlier map entry),
+                        // remap to listing.pet_policy so Guard B checks the correct field
+                        // and returns insufficient_context (not unsupported) when absent.
+                        // Seller/buyer listings are not affected: their ctx['listing'] has
+                        // 'pets_allowed' populated and 'pet_policy' null — the inverse case
+                        // would require the opposite remap but that gap does not exist.
+                        static $roleAliasMap = [
+                            'landlord'             => 'landlord',
+                            'landlord_agent_auction' => 'landlord',
+                            'landlord_auction'     => 'landlord',
+                        ];
+                        $canonicalRole = $roleAliasMap[$listingType] ?? null;
+                        if ($canonicalRole === 'landlord' && $detectedListingKey === 'listing.pets_allowed') {
+                            $detectedListingKey = 'listing.pet_policy';
+                        }
+                        // ─────────────────────────────────────────────────────────────────
+
+                        $trace['listing_key_detected']    = $detectedListingKey;
+                        $trace['deterministic_field_key'] = $detectedListingKey;
                         $classification['normalized_field_key'] = $detectedListingKey;
                         $options = array_merge($options, ['normalized_field_key' => $detectedListingKey]);
                     }
+                }
+            }
+
+            // ----------------------------------------------------------------
+            // Step 1c — AI-driven field routing for listing_facts with no
+            // deterministic key (Step 1b found nothing).
+            //
+            // Mirrors Step 1a but triggers for listing_facts questions rather
+            // than unsupported ones.  Fires only when:
+            //   (a) question type is listing_facts (direct or via Step 1a)
+            //   (b) neither detectFaqFieldKey() nor detectListingFieldKey()
+            //       resolved a field (no normalized_field_key in $options yet)
+            //   (c) the normalizer service is injected and its flag is enabled
+            //
+            // When a canonical path is returned the prompt is narrowed to that
+            // single field, enabling Guard B to fire correctly on missing data
+            // ("information not provided") rather than sending full listing
+            // context to OpenAI with no guard.
+            //
+            // When the normalizer returns 'prohibited', the question is
+            // re-classified so the internal runner applies the same fair-housing
+            // refusal it would for a classifier-blocked question.
+            //
+            // Hallucinated paths (keys not in knownFieldKeys) are already
+            // rejected inside AskAiIntentNormalizerService::normalize() before
+            // the key reaches this runner — the status is set to 'failed' with
+            // error 'invalid_key' and null is returned.
+            //
+            // When normalizer is not injected/enabled, the pipeline falls through
+            // to the full-context OpenAI call — same as before this step existed.
+            // ----------------------------------------------------------------
+            if ($questionType === 'listing_facts'
+                && !isset($options['normalized_field_key'])
+                && $this->normalizer !== null
+                && $this->normalizer->isEnabled()
+            ) {
+                $trace['normalizer_called'] = 'Y';
+                $trace['router_called']     = 'Y';
+
+                $knownFieldKeys = $this->normalizer->buildKnownFieldKeys();
+                $normalizedKey  = $this->normalizer->normalize($question, $knownFieldKeys, $listingType);
+
+                $normalizerStatus  = $this->normalizer->getLastStatus();
+                $normalizerError   = $this->normalizer->getLastError();
+                $routerContextPath = $this->normalizer->getLastContextPath();
+
+                $trace['normalizer_status']   = $normalizerStatus;
+                $trace['normalizer_error']    = $normalizerError;
+                $trace['router_context_path'] = $routerContextPath;
+
+                $trace['router_status'] = match ($normalizerStatus) {
+                    'matched'    => 'matched',
+                    'unknown'    => 'unsupported',
+                    'prohibited' => 'prohibited',
+                    'failed'     => 'failed',
+                    default      => 'not_called',
+                };
+
+                // Prohibited question reached Step 1c — escalate so the internal
+                // runner applies the same fair-housing refusal path.
+                if ($normalizerStatus === 'prohibited') {
+                    $questionType   = 'prohibited';
+                    $classification = [
+                        'question_type' => 'prohibited',
+                        'confidence'    => 1.0,
+                        'reason'        => 'OpenAI router flagged this listing_facts question as touching a prohibited topic.',
+                    ];
+                } elseif ($normalizedKey !== null) {
+                    $trace['normalized_field_key']          = $normalizedKey;
+                    $classification['normalized_field_key'] = $normalizedKey;
+                    $options = array_merge($options, ['normalized_field_key' => $normalizedKey]);
                 }
             }
 
@@ -3321,6 +3514,13 @@ class AskAiRunnerV2Service
             'listing.inspection_contingency_buyer'       => 'Inspection contingency information',
             'listing.appraisal_contingency_buyer'        => 'Appraisal contingency information',
             'listing.financing_contingency_buyer'        => 'Financing contingency information',
+            // Listing.* fields — Buyer / Tenant Preferred Locations
+            'listing.cities'                             => 'Preferred cities information',
+            'listing.counties'                           => 'Preferred counties information',
+            // Listing.* fields — Tenant Income
+            'listing.monthly_income'                     => 'Tenant monthly income information',
+            // Listing.* fields — Seller Credit
+            'listing.seller_credit_offered'              => 'Seller credit offering information',
             // Listing.* fields — Safety & Disclosure
             'listing.flood_zone_code'                    => 'Flood zone status information',
             'listing.flood_insurance_required'           => 'Flood insurance requirement information',
