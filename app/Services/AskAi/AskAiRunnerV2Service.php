@@ -2989,7 +2989,7 @@ class AskAiRunnerV2Service
                     // was never attempted (flag off / normalizer disabled / no description),
                     // keep the original structured-data miss message.
                     $missAnswer  = $descFallbackAttempted
-                        ? 'This information was not found in the listing description.'
+                        ? 'This information was not provided in the listing description.'
                         : 'This information was not provided in the listing.';
                     $missSource  = $descFallbackAttempted ? 'description_fallback_miss' : 'openai';
 

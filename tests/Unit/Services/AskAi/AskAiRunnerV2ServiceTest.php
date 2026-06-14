@@ -3360,7 +3360,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
     //
     // If OpenAI finds an answer → status='ready', outcome_category='description_fallback'.
     // If OpenAI returns the sentinel → status='insufficient_context',
-    //   answer='This information was not found in the listing description.',
+    //   answer='This information was not provided in the listing description.',
     //   source.answer_source='description_fallback_miss'.
     // If flag off or normalizer null → status='insufficient_context',
     //   answer='This information was not provided in the listing.' (unchanged message).
@@ -3520,9 +3520,9 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $this->assertSame(false, $result['success'], 'L3: sentinel → must be unsuccessful');
         $this->assertSame('insufficient_context', $result['status'], 'L3: sentinel → status must be insufficient_context');
         $this->assertSame(
-            'This information was not found in the listing description.',
+            'This information was not provided in the listing description.',
             $result['final_response']['answer'],
-            'L3: sentinel → miss message must reference listing description specifically'
+            'L3: sentinel → miss message must say "not provided in the listing description"'
         );
         $this->assertSame('description_fallback_miss', $result['final_response']['source']['answer_source'],
             'L3: sentinel → answer_source must be description_fallback_miss');

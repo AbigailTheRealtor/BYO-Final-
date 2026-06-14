@@ -780,6 +780,7 @@
    with equal specificity to Bootstrap's .btn-primary. Since app.css loads after
    bootstrap.min.css, Tailwind wins and the button appears white/invisible.
    Using the modal ID gives specificity (1,1,0) which beats [type='button'] at (0,1,0).
+   Fix: scoped to #solAiModal so it does not affect other modals on this page.
    ----------------------------------------------------------------- */
 #solAiModal .modal-footer .btn-primary {
     background-color: #2563eb !important;
