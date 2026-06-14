@@ -1575,10 +1575,21 @@ class SellerOfferListingEdit extends Component
         $locationPois = $canViewLocationDnaPanel
             ? PropertyLocationPoi::where('listing_type', 'seller_agent')->where('listing_id', $this->listingId)->orderBy('poi_category')->orderBy('distance_miles')->get()
             : collect();
-        $canGenerateLocationDna = $canViewLocationDnaPanel
-            && !empty($this->address)
-            && !empty($this->property_city)
-            && !empty($this->property_state);
+        $canGenerateLocationDna = false;
+        if ($canViewLocationDnaPanel) {
+            $dnaAddress = $this->address        ?: '';
+            $dnaCity    = $this->property_city  ?: '';
+            $dnaState   = $this->property_state ?: '';
+            if ((empty($dnaAddress) || empty($dnaCity) || empty($dnaState)) && $this->listingId) {
+                $m = SellerAgentAuctionModel::find($this->listingId);
+                if ($m) {
+                    if (empty($dnaAddress)) $dnaAddress = $m->info('address') ?: ($m->address ?? '');
+                    if (empty($dnaCity))    $dnaCity    = $m->info('property_city') ?: '';
+                    if (empty($dnaState))   $dnaState   = $m->info('property_state') ?: '';
+                }
+            }
+            $canGenerateLocationDna = !empty($dnaAddress) && !empty($dnaCity) && !empty($dnaState);
+        }
 
         return view('livewire.offer-listing.seller.offer-seller-listing-edit', compact('locationDna', 'locationPois', 'canGenerateLocationDna', 'canViewLocationDnaPanel'))
             ->extends('layouts.main')->section('content');

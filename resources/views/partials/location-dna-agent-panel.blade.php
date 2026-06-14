@@ -49,7 +49,7 @@ use App\Presenters\LocationDnaPresenter;
             <div class="mb-3">
                 <form method="POST" action="{{ route('agent.location-dna.generate', [$listingType, $listingId]) }}">
                     @csrf
-                    <button type="submit" class="btn btn-sm {{ $locationDna ? 'btn-outline-primary' : 'btn-primary' }}">
+                    <button type="submit" class="btn btn-sm btn-primary">
                         <i class="fa-solid fa-arrow-rotate-right me-1"></i>
                         {{ $locationDna ? 'Refresh Location DNA' : 'Generate Location DNA' }}
                     </button>
