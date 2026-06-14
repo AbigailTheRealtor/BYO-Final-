@@ -83,7 +83,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
         ];
     }
 
-    private function makeRunner(array $mocks): AskAiRunnerV2Service
+    private function makeRunner(array $mocks, bool $enableDescriptionFallback = false): AskAiRunnerV2Service
     {
         return new AskAiRunnerV2Service(
             $mocks['classifier'],
@@ -92,7 +92,8 @@ class AskAiRunnerV2ServiceTest extends TestCase
             $mocks['finalBuilder'],
             $mocks['followUpService'],
             $mocks['normalizer']       ?? null,
-            $mocks['knowledgeSearch']  ?? null
+            $mocks['knowledgeSearch']  ?? null,
+            $enableDescriptionFallback
         );
     }
 
@@ -3354,20 +3355,19 @@ class AskAiRunnerV2ServiceTest extends TestCase
     // Case L — Description fallback (Guard B extension)
     //
     // When a listing.* field is null/absent AND the listing description is
-    // non-empty AND the feature flag is enabled, Guard B should attempt an
-    // OpenAI call using only the description.  If OpenAI finds an answer, the
-    // runner returns status='ready' with outcome_category='description_fallback'.
-    // If OpenAI returns the sentinel or the adapter fails, the runner falls
-    // through to the normal 'insufficient_context' path.
+    // non-empty AND both the feature flag AND the normalizer are enabled,
+    // Guard B should attempt an OpenAI call using only the description.
     //
-    // These tests use the pure PHPUnit\Framework\TestCase pattern (no Laravel
-    // container) so the config() helper is not available.  The feature flag is
-    // tested by spying on the adapter mock — when the flag is off the adapter
-    // must NOT receive a second call for the description package.
+    // If OpenAI finds an answer → status='ready', outcome_category='description_fallback'.
+    // If OpenAI returns the sentinel → status='insufficient_context',
+    //   answer='This information was not found in the listing description.',
+    //   source.answer_source='description_fallback_miss'.
+    // If flag off or normalizer null → status='insufficient_context',
+    //   answer='This information was not provided in the listing.' (unchanged message).
     // =========================================================================
 
     /**
-     * Helper: build a Guard-B prompt package for listing.seller_credit_offered = null.
+     * Build a Guard-B prompt package for listing.seller_credit_offered = null.
      */
     private function makeGuardBPromptPackage(mixed $fieldValue = null): array
     {
@@ -3384,7 +3384,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
     }
 
     /**
-     * Helper: build an internal result whose context includes a listing description.
+     * Build an internal result whose context includes a listing description.
      */
     private function makeGuardBInternalResult(?string $description = '', mixed $fieldValue = null): array
     {
@@ -3401,119 +3401,171 @@ class AskAiRunnerV2ServiceTest extends TestCase
         ]);
     }
 
-    public function test_case_L1_description_fallback_flag_off_returns_insufficient_context(): void
+    /**
+     * Build a normalizer mock with isEnabled() returning the given value.
+     */
+    private function makeEnabledNormalizerMock(bool $enabled = true): AskAiIntentNormalizerService
     {
-        // When the feature flag is off (default), Guard B must return insufficient_context
-        // even if the description is non-empty.  The adapter must NOT be called a second
-        // time for a description-only package (classifier call aside).
-        $mocks  = $this->makeMocks();
-        $runner = $this->makeRunner($mocks);
+        $mock = $this->createMock(AskAiIntentNormalizerService::class);
+        $mock->method('isEnabled')->willReturn($enabled);
+        return $mock;
+    }
+
+    // ── L1 ── Flag off, normalizer null → insufficient_context (original message) ─
+
+    public function test_case_L1_flag_off_normalizer_null_returns_insufficient_context_with_original_message(): void
+    {
+        $mocks  = $this->makeMocks();   // normalizer not in mocks → null
+        $runner = $this->makeRunner($mocks, false);
 
         $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
         $mocks['internalRunner']->method('run')->willReturn(
-            $this->makeGuardBInternalResult('This gorgeous home offers seller concessions on closing costs.')
+            $this->makeGuardBInternalResult('Seller offering $5,000 credit toward closing costs.')
         );
-        // Adapter should NOT be called — Guard B fires before the adapter when flag is off.
         $mocks['adapter']->expects($this->never())->method('generate');
 
         $result = $runner->run(
-            'seller',
-            1,
+            'seller', 1,
             'Does the seller offer a credit toward closing?',
             ['normalized_field_key' => 'listing.seller_credit_offered']
         );
 
-        $this->assertSame(false, $result['success'],
-            'L1: flag off — result must be unsuccessful (insufficient_context path)');
-        $this->assertSame('insufficient_context', $result['status'],
-            'L1: flag off — status must be insufficient_context');
+        $this->assertSame(false, $result['success'], 'L1: flag off — must be unsuccessful');
+        $this->assertSame('insufficient_context', $result['status'], 'L1: flag off — status must be insufficient_context');
+        $this->assertSame(
+            'This information was not provided in the listing.',
+            $result['final_response']['answer'],
+            'L1: flag off — original miss message must be used (no "listing description" phrasing)'
+        );
+        $this->assertSame('openai', $result['final_response']['source']['answer_source'],
+            'L1: flag off — answer_source must remain openai');
     }
 
-    public function test_case_L2_description_fallback_flag_on_adapter_succeeds_returns_ready(): void
+    // ── L2 ── Flag on, normalizer enabled, adapter returns valid answer → ready ──
+
+    public function test_case_L2_flag_on_normalizer_enabled_adapter_succeeds_returns_description_fallback(): void
     {
-        // When the flag is on, description non-empty, and the adapter returns a valid
-        // answer_text (not the sentinel), the runner must return status='ready'.
-        // We test this by wrapping the runner in a testable subclass that overrides
-        // config() calls — but since this is a pure unit test we instead verify the
-        // outcome directly by checking what happens when the adapter is pre-configured.
-        //
-        // The simplest approach: inject a custom runner with the flag bypass by
-        // checking the Guard B implementation directly through the makeRunner interface.
-        // Since config() is a global helper, we verify the fallback path by asserting
-        // that when the adapter DOES return a good raw_response containing answer_text,
-        // the runner returns 'ready' (i.e. the Guard B description path works correctly
-        // when triggered).
-        //
-        // Actual flag toggling in production is via ASK_AI_ENABLE_DESCRIPTION_FALLBACK=true.
-        // Here we document the expected behaviour of the description path itself.
+        $descAnswer      = 'The seller is offering a $5,000 credit toward closing costs.';
+        $descRawResponse = json_encode(['answer_text' => $descAnswer]);
 
-        // Build mock that returns a valid JSON description answer.
-        $descRawResponse = json_encode(['answer_text' => 'The seller is offering a $5,000 credit toward closing costs.']);
-
-        $mocks  = $this->makeMocks();
-        $runner = $this->makeRunner($mocks);
+        $mocks                = $this->makeMocks();
+        $mocks['normalizer']  = $this->makeEnabledNormalizerMock(true);
+        $runner               = $this->makeRunner($mocks, true);
 
         $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
         $mocks['internalRunner']->method('run')->willReturn(
             $this->makeGuardBInternalResult('Beautiful home. Seller offering $5,000 credit toward closing costs.')
         );
 
-        // Adapter returns a valid description answer.
+        // Adapter returns a valid JSON description answer on the first (and only) call.
+        $mocks['adapter']->expects($this->once())
+            ->method('generate')
+            ->willReturn([
+                'success'      => true,
+                'status'       => 'generated',
+                'raw_response' => $descRawResponse,
+                'model'        => 'gpt-4o',
+                'error'        => null,
+            ]);
+
+        $result = $runner->run(
+            'seller', 1,
+            'Does the seller offer a credit toward closing?',
+            ['normalized_field_key' => 'listing.seller_credit_offered']
+        );
+
+        $this->assertTrue($result['success'], 'L2: flag on + valid answer → success must be true');
+        $this->assertSame('ready', $result['status'], 'L2: flag on + valid answer → status must be ready');
+        $this->assertSame('description_fallback', $result['outcome_category'],
+            'L2: flag on + valid answer → outcome_category must be description_fallback');
+        $this->assertSame($descAnswer, $result['final_response']['answer'],
+            'L2: answer must match the text extracted from the description fallback');
+        $this->assertSame('description_fallback', $result['final_response']['source']['answer_source'],
+            'L2: answer_source must be description_fallback');
+        $this->assertTrue($result['trace']['description_fallback_used'] ?? false,
+            'L2: trace must record description_fallback_used=true');
+    }
+
+    // ── L3 ── Flag on, normalizer enabled, adapter returns sentinel → miss message ─
+
+    public function test_case_L3_flag_on_adapter_returns_sentinel_uses_description_miss_message(): void
+    {
+        // When the adapter returns the sentinel (INFORMATION_NOT_IN_DESCRIPTION),
+        // parseDescriptionFallbackAnswer returns null → Guard B falls through.
+        // The miss message must say "listing description" and source='description_fallback_miss'.
+        $sentinelResponse = json_encode(['answer_text' => 'INFORMATION_NOT_IN_DESCRIPTION']);
+
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeEnabledNormalizerMock(true);
+        $runner              = $this->makeRunner($mocks, true);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn(
+            $this->makeGuardBInternalResult('This home has many features listed here.')
+        );
         $mocks['adapter']->method('generate')->willReturn([
             'success'      => true,
             'status'       => 'generated',
-            'raw_response' => $descRawResponse,
+            'raw_response' => $sentinelResponse,
             'model'        => 'gpt-4o',
             'error'        => null,
         ]);
 
-        // Simulate flag being on by calling the internal method path via the runner.
-        // Since we cannot toggle config() in a pure unit test, we verify the
-        // parseDescriptionFallbackAnswer logic is correct by exercising buildDescriptionFallbackPackage
-        // behaviour through source inspection rather than live invocation.
-        // The documented contract: when flag=true + description non-empty + adapter returns valid answer_text,
-        // the runner returns outcome_category='description_fallback'.
+        $result = $runner->run(
+            'seller', 1,
+            'Does the seller offer a credit toward closing?',
+            ['normalized_field_key' => 'listing.seller_credit_offered']
+        );
 
-        // This test documents the expected integration path and is marked as
-        // informational — the guard test (L1) verifies the off-path correctly.
-        $this->assertTrue(true, 'L2: documented — flag=on path produces description_fallback outcome');
+        $this->assertSame(false, $result['success'], 'L3: sentinel → must be unsuccessful');
+        $this->assertSame('insufficient_context', $result['status'], 'L3: sentinel → status must be insufficient_context');
+        $this->assertSame(
+            'This information was not found in the listing description.',
+            $result['final_response']['answer'],
+            'L3: sentinel → miss message must reference listing description specifically'
+        );
+        $this->assertSame('description_fallback_miss', $result['final_response']['source']['answer_source'],
+            'L3: sentinel → answer_source must be description_fallback_miss');
     }
 
-    public function test_case_L3_parseDescriptionFallbackAnswer_sentinel_returns_null(): void
+    // ── L4 ── Flag on, but normalizer null → description fallback must NOT fire ───
+
+    public function test_case_L4_flag_on_but_normalizer_null_description_fallback_does_not_fire(): void
     {
-        // parseDescriptionFallbackAnswer is private; test via source inspection.
-        // Verify the sentinel string "INFORMATION_NOT_IN_DESCRIPTION" is in the source.
-        $source = file_get_contents($this->serviceFilePath());
-        $this->assertStringContainsString(
-            'INFORMATION_NOT_IN_DESCRIPTION',
-            $source,
-            'L3: sentinel string must be present in RunnerV2Service for description fallback miss detection'
+        // Normalizer gate: even with flag=true, if normalizer is null the description
+        // fallback must be skipped and the original miss message returned.
+        $mocks  = $this->makeMocks();   // normalizer NOT in mocks → null
+        $runner = $this->makeRunner($mocks, true);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
+        $mocks['internalRunner']->method('run')->willReturn(
+            $this->makeGuardBInternalResult('Seller offering concessions toward closing costs.')
         );
+        $mocks['adapter']->expects($this->never())->method('generate');
+
+        $result = $runner->run(
+            'seller', 1,
+            'Does the seller offer closing cost credits?',
+            ['normalized_field_key' => 'listing.seller_credit_offered']
+        );
+
+        $this->assertSame('insufficient_context', $result['status'],
+            'L4: normalizer null → fallback skipped, must return insufficient_context');
+        $this->assertSame(
+            'This information was not provided in the listing.',
+            $result['final_response']['answer'],
+            'L4: normalizer null → original miss message, not "listing description" variant'
+        );
+        $this->assertSame('openai', $result['final_response']['source']['answer_source'],
+            'L4: normalizer null → answer_source stays openai');
     }
 
-    public function test_case_L4_description_fallback_package_has_prompt_ready_status(): void
-    {
-        // buildDescriptionFallbackPackage is private; verify via source inspection
-        // that it sets status='prompt_ready' (required by adapter gate).
-        $source = file_get_contents($this->serviceFilePath());
-        $this->assertStringContainsString(
-            "'status'        => 'prompt_ready'",
-            $source,
-            'L4: buildDescriptionFallbackPackage must set status=prompt_ready for adapter gate'
-        );
-        $this->assertStringContainsString(
-            'buildDescriptionFallbackPackage',
-            $source,
-            'L4: buildDescriptionFallbackPackage method must be defined in RunnerV2Service'
-        );
-    }
+    // ── L5 ── Flag off, null description → insufficient_context (no crash) ────────
 
-    public function test_case_L5_description_fallback_flag_off_no_description_context_key_access(): void
+    public function test_case_L5_flag_off_null_description_returns_insufficient_context(): void
     {
-        // Variant of L1: null description — flag off — still returns insufficient_context.
-        // Verifies the guard conditions are correctly ordered (flag check first).
         $mocks  = $this->makeMocks();
-        $runner = $this->makeRunner($mocks);
+        $runner = $this->makeRunner($mocks, false);
 
         $mocks['classifier']->method('classify')->willReturn($this->makeClassification('listing_facts'));
         $mocks['internalRunner']->method('run')->willReturn(
@@ -3522,19 +3574,19 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $mocks['adapter']->expects($this->never())->method('generate');
 
         $result = $runner->run(
-            'seller',
-            1,
+            'seller', 1,
             'Does the seller offer closing cost credits?',
             ['normalized_field_key' => 'listing.seller_credit_offered']
         );
 
         $this->assertSame('insufficient_context', $result['status'],
-            'L5: null description + flag off must return insufficient_context');
+            'L5: null description + flag off must return insufficient_context without crashing');
     }
+
+    // ── L6 ── config/ask_ai.php declares the enable_description_fallback key ──────
 
     public function test_case_L6_config_flag_key_present_in_ask_ai_config(): void
     {
-        // Verify the enable_description_fallback key exists in config/ask_ai.php.
         $configPath = dirname(__DIR__, 4) . '/config/ask_ai.php';
         $source     = file_get_contents($configPath);
         $this->assertStringContainsString(
@@ -3544,44 +3596,59 @@ class AskAiRunnerV2ServiceTest extends TestCase
         );
     }
 
+    // ── L7 ── closing-cost credit synonyms are in LISTING_KEY_KEYWORD_MAP ─────────
+
     public function test_case_L7_closing_cost_credit_routes_to_listing_seller_credit_offered(): void
     {
-        // Verify that "credit toward closing" resolves to listing.seller_credit_offered
-        // via detectListingFieldKey() (source inspection of LISTING_KEY_KEYWORD_MAP).
         $source = file_get_contents($this->serviceFilePath());
-        $this->assertStringContainsString(
-            "'credit toward closing'",
-            $source,
-            'L7: "credit toward closing" must be in LISTING_KEY_KEYWORD_MAP for listing.seller_credit_offered'
-        );
-        $this->assertStringContainsString(
-            "'closing credit'",
-            $source,
-            'L7: "closing credit" must be in LISTING_KEY_KEYWORD_MAP'
-        );
-        $this->assertStringContainsString(
-            "'seller credit at closing'",
-            $source,
-            'L7: "seller credit at closing" must be in LISTING_KEY_KEYWORD_MAP'
-        );
+        $this->assertStringContainsString("'credit toward closing'", $source,
+            'L7: "credit toward closing" must be in LISTING_KEY_KEYWORD_MAP');
+        $this->assertStringContainsString("'closing credit'", $source,
+            'L7: "closing credit" must be in LISTING_KEY_KEYWORD_MAP');
+        $this->assertStringContainsString("'seller credit at closing'", $source,
+            'L7: "seller credit at closing" must be in LISTING_KEY_KEYWORD_MAP');
     }
+
+    // ── L8 ── closing-cost credit synonyms are in FAQ_KEY_KEYWORD_MAP ────────────
 
     public function test_case_L8_faq_key_map_includes_closing_credit_synonyms(): void
     {
-        // Verify closing-cost credit synonyms are in FAQ_KEY_KEYWORD_MAP for
-        // faq_answers.seller_concessions_offered (source inspection).
         $source = file_get_contents($this->serviceFilePath());
+        $this->assertStringContainsString('faq_answers.seller_concessions_offered', $source,
+            'L8: faq_answers.seller_concessions_offered must be in FAQ_KEY_KEYWORD_MAP');
+        $this->assertStringContainsString("'credits toward closing'", $source,
+            'L8: "credits toward closing" must be in the FAQ_KEY_KEYWORD_MAP block');
+    }
 
-        // The map entry must appear within the seller_concessions_offered block.
-        $this->assertStringContainsString(
-            'faq_answers.seller_concessions_offered',
-            $source,
-            'L8: faq_answers.seller_concessions_offered must be in FAQ_KEY_KEYWORD_MAP'
-        );
-        $this->assertStringContainsString(
-            "'credits toward closing'",
-            $source,
-            'L8: "credits toward closing" must be in the FAQ_KEY_KEYWORD_MAP block'
-        );
+    // ── L9 ── rent/deposit synonym expansion — new phrases route correctly ────────
+
+    public function test_case_L9_expanded_rent_synonyms_route_to_listing_rent_amount(): void
+    {
+        $source = file_get_contents($this->serviceFilePath());
+        // Search for phrase content without quote-style assumption (phrase may be single
+        // or double-quoted in the PHP source depending on whether it contains an apostrophe).
+        foreach (['cost to rent', 'rental rate', 'how much per month', 'rent price', "what's the rent"] as $phrase) {
+            $this->assertStringContainsString($phrase, $source,
+                "L9: '$phrase' must be present in LISTING_KEY_KEYWORD_MAP under listing.rent_amount");
+        }
+    }
+
+    public function test_case_L9b_expanded_deposit_synonyms_route_to_listing_security_deposit(): void
+    {
+        $source = file_get_contents($this->serviceFilePath());
+        foreach (['how much deposit', 'move in deposit', 'upfront deposit', "what's the deposit"] as $phrase) {
+            $this->assertStringContainsString($phrase, $source,
+                "L9b: '$phrase' must be present in LISTING_KEY_KEYWORD_MAP under listing.security_deposit_amount");
+        }
+    }
+
+    public function test_case_L10_expanded_first_last_month_rent_synonyms_present(): void
+    {
+        $source = file_get_contents($this->serviceFilePath());
+        // Apostrophe-containing phrases use double-quote PHP strings; search for bare phrase.
+        foreach (['first and last month rent', 'first and last month', "first month's rent", "last month's rent"] as $phrase) {
+            $this->assertStringContainsString($phrase, $source,
+                "L10: '$phrase' must be present in LISTING_KEY_KEYWORD_MAP for first/last month rent fields");
+        }
     }
 }

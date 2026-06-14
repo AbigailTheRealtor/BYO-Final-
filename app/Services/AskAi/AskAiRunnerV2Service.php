@@ -994,6 +994,12 @@ class AskAiRunnerV2Service
             'rental price',
             'how much is the rent',
             'what is the monthly rent',
+            "what's the rent",
+            'cost to rent',
+            'rental rate',
+            'how much per month',
+            'what is the rental rate',
+            'rent price',
         ],
         'listing.max_rent' => [
             'tenant max rent',
@@ -2062,6 +2068,11 @@ class AskAiRunnerV2Service
             'security deposit',
             'deposit amount',
             'required security deposit',
+            "what's the deposit",
+            'how much deposit',
+            'move in deposit',
+            'deposit to move in',
+            'upfront deposit',
         ],
         'listing.terms_of_lease' => [
             'what are the terms of the lease',
@@ -2145,11 +2156,19 @@ class AskAiRunnerV2Service
             'first month rent required',
             'is first month rent required',
             'first month payment required',
+            "first month's rent",
+            'do i need first month rent',
+            'first and last month rent',
+            'first month upfront',
         ],
         'listing.last_month_rent_required' => [
             'last month rent required',
             'is last month rent required',
             'last month deposit',
+            "last month's rent",
+            'do i need last month rent',
+            'first and last month',
+            'last month payment required',
         ],
         // ---- Total Move-In Funds ----
         'listing.total_move_in_funds_required' => [
@@ -2178,6 +2197,9 @@ class AskAiRunnerV2Service
             'pet deposit amount',
             'how much is the pet deposit',
             'pet security deposit',
+            'what is the pet deposit',
+            'pet deposit fee',
+            'deposit for pets',
         ],
         'listing.pet_monthly_fee' => [
             'monthly pet fee',
@@ -2893,20 +2915,28 @@ class AskAiRunnerV2Service
                     // only the description text via a targeted OpenAI call.
                     //
                     // Guardrails:
-                    //   1. Flag must be enabled (config ask_ai.enable_description_fallback).
-                    //   2. Description must be a non-empty string.
-                    //   3. OpenAI adapter must be available (always is on this path).
-                    //   4. The answer is extracted only if OpenAI finds it in the text —
+                    //   1. Flag must be enabled ($this->enableDescriptionFallback).
+                    //   2. The normalizer service must be injected AND enabled — this
+                    //      ensures the full AI pipeline infrastructure is available.
+                    //   3. Description must be a non-empty string.
+                    //   4. OpenAI adapter must be available (always is on this path).
+                    //   5. The answer is extracted only if OpenAI finds it in the text —
                     //      a sentinel value (INFORMATION_NOT_IN_DESCRIPTION) signals miss.
-                    //   5. Falls through to the normal insufficient_context return on any
-                    //      failure, miss, or when the flag is off.
+                    //   6. Falls through to the normal insufficient_context return on any
+                    //      failure, miss, or when the flag / normalizer is off.
                     // ----------------------------------------------------------------
-                    if ($this->enableDescriptionFallback) {
+                    $descFallbackAttempted = false;
+                    if (
+                        $this->enableDescriptionFallback
+                        && $this->normalizer !== null
+                        && $this->normalizer->isEnabled()
+                    ) {
                         $listingDescription = $context['listing']['description'] ?? null;
                         if (is_string($listingDescription) && trim($listingDescription) !== '') {
-                            $descPackage       = $this->buildDescriptionFallbackPackage($question, trim($listingDescription));
-                            $descAdapterResult = $this->adapter->generate($descPackage);
-                            $descAnswer        = $this->parseDescriptionFallbackAnswer($descAdapterResult);
+                            $descFallbackAttempted = true;
+                            $descPackage           = $this->buildDescriptionFallbackPackage($question, trim($listingDescription));
+                            $descAdapterResult     = $this->adapter->generate($descPackage);
+                            $descAnswer            = $this->parseDescriptionFallbackAnswer($descAdapterResult);
 
                             if ($descAnswer !== null) {
                                 $descFallbackResponse = [
@@ -2952,15 +2982,26 @@ class AskAiRunnerV2Service
                         }
                     }
 
+                    // Differentiate the miss message and source based on whether we
+                    // actually tried the description fallback.  When the fallback ran
+                    // but could not find the answer in the description, tell the user
+                    // specifically that the description was checked.  When the fallback
+                    // was never attempted (flag off / normalizer disabled / no description),
+                    // keep the original structured-data miss message.
+                    $missAnswer  = $descFallbackAttempted
+                        ? 'This information was not found in the listing description.'
+                        : 'This information was not provided in the listing.';
+                    $missSource  = $descFallbackAttempted ? 'description_fallback_miss' : 'openai';
+
                     $missingListingResponse = [
                         'success'            => false,
                         'status'             => 'insufficient_context',
-                        'answer'             => 'This information was not provided in the listing.',
+                        'answer'             => $missAnswer,
                         'disclosures'        => $promptPackage['required_disclosures'] ?? [],
                         'source_attribution' => $promptPackage['source_attribution'] ?? [],
                         'refusal_message'    => null,
                         'error'              => null,
-                        'source'             => ['answer_source' => 'openai', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
+                        'source'             => ['answer_source' => $missSource, 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
                     ];
                     $missingListingResponse['follow_up_questions'] = $this->followUpService->forResult(
                         $missingListingResponse,
