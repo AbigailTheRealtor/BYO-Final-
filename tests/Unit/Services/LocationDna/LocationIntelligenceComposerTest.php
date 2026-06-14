@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\LocationDna;
 use App\Services\LocationDna\LocationDnaEnrichmentRunner;
 use App\Services\LocationDna\LocationIntelligenceComposer;
 use App\Services\LocationDna\LocationIntelligenceSummaryService;
+use App\Services\LocationDna\LocationPreferenceAnalyzer;
 use Illuminate\Support\Facades\Log;
 use Mockery;
 use Mockery\MockInterface;
@@ -14,15 +15,18 @@ use Tests\TestCase;
 /**
  * LocationIntelligenceComposerTest
  *
- * 7-case unit test for LocationIntelligenceComposer::compose().
+ * 10-case unit test for LocationIntelligenceComposer::compose().
  *
- *   (1) Full success — returns both enrichment and summary keys with data
- *   (2) Enrichment runner throws — empty enrichment + empty summary_lines
- *   (3) Summary service throws — enrichment present + empty summary_lines
- *   (4) Return array has exactly 'enrichment' and 'summary' keys and no others
- *   (5) No exception escapes to caller even when both services throw
- *   (6) Log::warning emitted on enrichment failure
- *   (7) Log::warning emitted on summary failure
+ *   (1)  Full success — returns both enrichment and summary keys with data
+ *   (2)  Enrichment runner throws — empty enrichment + empty summary_lines
+ *   (3)  Summary service throws — enrichment present + empty summary_lines
+ *   (4)  Return array has exactly 'enrichment' and 'summary' keys and no others
+ *   (5)  No exception escapes to caller even when both services throw
+ *   (6)  Log::warning emitted on enrichment failure
+ *   (7)  Log::warning emitted on summary failure
+ *   (8)  Analyzer success — preference lines prepended before enrichment lines
+ *   (9)  Analyzer throws — Log::warning emitted, enrichment summary lines intact
+ *   (10) Governance — no DB, Eloquent, or OpenAI imports in the composer file
  */
 class LocationIntelligenceComposerTest extends TestCase
 {
@@ -83,9 +87,25 @@ class LocationIntelligenceComposerTest extends TestCase
         return Mockery::mock(LocationIntelligenceSummaryService::class);
     }
 
-    private function makeComposer(MockInterface $runner, MockInterface $summary): LocationIntelligenceComposer
+    private function mockAnalyzer(): MockInterface
     {
-        return new LocationIntelligenceComposer($runner, $summary);
+        return Mockery::mock(LocationPreferenceAnalyzer::class);
+    }
+
+    /**
+     * Build a composer. Pass a real LocationPreferenceAnalyzer by default so
+     * the existing tests (1–7) are unaffected; pass a mock for isolation tests (8–9).
+     */
+    private function makeComposer(
+        MockInterface $runner,
+        MockInterface $summary,
+        $analyzer = null,
+    ): LocationIntelligenceComposer {
+        return new LocationIntelligenceComposer(
+            $runner,
+            $summary,
+            $analyzer ?? new LocationPreferenceAnalyzer(),
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -266,6 +286,101 @@ class LocationIntelligenceComposerTest extends TestCase
             ->compose($this->boundaryData(), $this->preferences());
 
         $this->addToAssertionCount(1);
+    }
+
+    // -------------------------------------------------------------------------
+    // (8) Analyzer success — preference lines prepended before enrichment lines
+    // -------------------------------------------------------------------------
+
+    public function test_analyzer_lines_are_prepended_before_enrichment_summary_lines(): void
+    {
+        $analyzer = $this->mockAnalyzer();
+        $runner   = $this->mockRunner();
+        $summary  = $this->mockSummary();
+
+        $runner->shouldReceive('run')->once()->andReturn($this->enrichmentPayload());
+        $summary->shouldReceive('summarize')->once()->andReturn($this->summaryPayload());
+
+        $analyzer->shouldReceive('analyze')->once()
+            ->with($this->preferences())
+            ->andReturn(['summary_lines' => ['Focused on a specifically defined target area.']]);
+
+        $result = $this->makeComposer($runner, $summary, $analyzer)
+            ->compose($this->boundaryData(), $this->preferences());
+
+        $allLines = $result['summary']['summary_lines'];
+
+        // Preference line appears first.
+        $this->assertSame('Focused on a specifically defined target area.', $allLines[0]);
+
+        // Enrichment lines follow after preference lines.
+        $this->assertContains('Flood Zone: AE', $allLines);
+
+        $prefIdx     = 0;
+        $enrichIdx   = array_search('Flood Zone: AE', $allLines);
+        $this->assertTrue($prefIdx < $enrichIdx, 'Preference line must precede enrichment lines');
+    }
+
+    // -------------------------------------------------------------------------
+    // (9) Analyzer throws — Log::warning emitted, enrichment summary lines intact
+    // -------------------------------------------------------------------------
+
+    public function test_analyzer_failure_logs_warning_and_returns_enrichment_lines_intact(): void
+    {
+        Log::shouldReceive('warning')->once()->with(
+            Mockery::pattern('/preference analyzer/'),
+            Mockery::type('array')
+        );
+
+        $analyzer = $this->mockAnalyzer();
+        $runner   = $this->mockRunner();
+        $summary  = $this->mockSummary();
+
+        $runner->shouldReceive('run')->once()->andReturn($this->enrichmentPayload());
+        $summary->shouldReceive('summarize')->once()->andReturn($this->summaryPayload());
+        $analyzer->shouldReceive('analyze')->once()
+            ->andThrow(new RuntimeException('analyzer exploded'));
+
+        $result = $this->makeComposer($runner, $summary, $analyzer)
+            ->compose($this->boundaryData(), $this->preferences());
+
+        // Enrichment summary lines returned unchanged despite analyzer failure.
+        $this->assertSame(
+            $this->summaryPayload()['summary_lines'],
+            $result['summary']['summary_lines'],
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // (10) Governance — no DB, Eloquent, or OpenAI imports in the composer file
+    // -------------------------------------------------------------------------
+
+    public function test_composer_file_contains_no_db_eloquent_or_openai_imports(): void
+    {
+        $composerFile = file_get_contents(
+            base_path('app/Services/LocationDna/LocationIntelligenceComposer.php'),
+        );
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/^use\s+.*[Oo]pen[Aa][Ii]/m',
+            $composerFile,
+            'Must not import OpenAI classes',
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/^use\s+Illuminate\\\\Database\\\\Eloquent/m',
+            $composerFile,
+            'Must not import Eloquent',
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/^use\s+Illuminate\\\\Support\\\\Facades\\\\DB/m',
+            $composerFile,
+            'Must not import DB facade',
+        );
+        $this->assertStringNotContainsString(
+            'DB::',
+            $composerFile,
+            'Must not make DB calls',
+        );
     }
 
     // -------------------------------------------------------------------------

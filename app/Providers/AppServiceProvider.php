@@ -44,6 +44,7 @@ use App\Services\LocationDna\CommuteTimeLookupService;
 use App\Services\LocationDna\LocationDnaEnrichmentRunner;
 use App\Services\LocationDna\LocationIntelligenceComposer;
 use App\Services\LocationDna\LocationIntelligenceSummaryService;
+use App\Services\LocationDna\LocationPreferenceAnalyzer;
 use App\Services\LocationDna\PoiDistanceLookupService;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 
@@ -115,6 +116,7 @@ class AppServiceProvider extends ServiceProvider
             return new LocationIntelligenceComposer(
                 $app->make(LocationDnaEnrichmentRunner::class),
                 $app->make(LocationIntelligenceSummaryService::class),
+                $app->make(LocationPreferenceAnalyzer::class),
             );
         });
 
