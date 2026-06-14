@@ -118,6 +118,7 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(AskAiFollowUpQuestionService::class),
                 $app->make(AskAiIntentNormalizerService::class),
                 $app->make(AskAiKnowledgeSearchService::class),
+                (bool) config('ask_ai.enable_description_fallback', false),
             );
         });
     }

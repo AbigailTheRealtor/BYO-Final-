@@ -182,6 +182,11 @@ class AskAiRunnerV2Service
             'seller concessions',
             'is the seller offering concessions',
             'closing cost credits',
+            'closing cost credit',
+            'credit toward closing',
+            'credits toward closing',
+            'closing credit',
+            'seller credit at closing',
             'repair credits offered',
             'seller open to concessions',
             'concessions available',
@@ -1432,6 +1437,12 @@ class AskAiRunnerV2Service
             'does the seller offer a credit',
             'seller credit',
             'seller contribution',
+            'closing cost credits',
+            'closing cost credit',
+            'credit toward closing',
+            'credits toward closing',
+            'closing credit',
+            'seller credit at closing',
         ],
         // ---- Vacant Land — shared lot fields ----
         'listing.total_acreage' => [
@@ -2432,6 +2443,7 @@ class AskAiRunnerV2Service
     private AskAiFollowUpQuestionService $followUpService;
     private ?AskAiIntentNormalizerService $normalizer;
     private ?AskAiKnowledgeSearchService $knowledgeSearch;
+    private bool $enableDescriptionFallback;
 
     public function __construct(
         AskAiQuestionClassifierService $classifier,
@@ -2440,15 +2452,17 @@ class AskAiRunnerV2Service
         AskAiFinalResponseBuilderService $finalResponseBuilder,
         AskAiFollowUpQuestionService $followUpService,
         ?AskAiIntentNormalizerService $normalizer = null,
-        ?AskAiKnowledgeSearchService $knowledgeSearch = null
+        ?AskAiKnowledgeSearchService $knowledgeSearch = null,
+        bool $enableDescriptionFallback = false
     ) {
-        $this->classifier           = $classifier;
-        $this->internalRunner       = $internalRunner;
-        $this->adapter              = $adapter;
-        $this->finalResponseBuilder = $finalResponseBuilder;
-        $this->followUpService      = $followUpService;
-        $this->normalizer           = $normalizer;
-        $this->knowledgeSearch      = $knowledgeSearch;
+        $this->classifier               = $classifier;
+        $this->internalRunner           = $internalRunner;
+        $this->adapter                  = $adapter;
+        $this->finalResponseBuilder     = $finalResponseBuilder;
+        $this->followUpService          = $followUpService;
+        $this->normalizer               = $normalizer;
+        $this->knowledgeSearch          = $knowledgeSearch;
+        $this->enableDescriptionFallback = $enableDescriptionFallback;
     }
 
     /**
@@ -2871,6 +2885,73 @@ class AskAiRunnerV2Service
                     && ($listingData[$listingField] === null || $listingData[$listingField] === '');
 
                 if ($fieldAbsent || $fieldBlank) {
+                    // ----------------------------------------------------------------
+                    // Description fallback (feature-flagged).
+                    //
+                    // When the structured listing field is null/absent but the listing
+                    // has a non-empty description, attempt to answer the question using
+                    // only the description text via a targeted OpenAI call.
+                    //
+                    // Guardrails:
+                    //   1. Flag must be enabled (config ask_ai.enable_description_fallback).
+                    //   2. Description must be a non-empty string.
+                    //   3. OpenAI adapter must be available (always is on this path).
+                    //   4. The answer is extracted only if OpenAI finds it in the text —
+                    //      a sentinel value (INFORMATION_NOT_IN_DESCRIPTION) signals miss.
+                    //   5. Falls through to the normal insufficient_context return on any
+                    //      failure, miss, or when the flag is off.
+                    // ----------------------------------------------------------------
+                    if ($this->enableDescriptionFallback) {
+                        $listingDescription = $context['listing']['description'] ?? null;
+                        if (is_string($listingDescription) && trim($listingDescription) !== '') {
+                            $descPackage       = $this->buildDescriptionFallbackPackage($question, trim($listingDescription));
+                            $descAdapterResult = $this->adapter->generate($descPackage);
+                            $descAnswer        = $this->parseDescriptionFallbackAnswer($descAdapterResult);
+
+                            if ($descAnswer !== null) {
+                                $descFallbackResponse = [
+                                    'success'            => true,
+                                    'status'             => 'ready',
+                                    'answer'             => $descAnswer,
+                                    'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                                    'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                                    'refusal_message'    => null,
+                                    'error'              => null,
+                                    'source'             => [
+                                        'answer_source'    => 'description_fallback',
+                                        'snapshot_id'      => null,
+                                        'canonical_key'    => null,
+                                        'match_type'       => null,
+                                        'snapshot_version' => null,
+                                    ],
+                                ];
+                                $descFallbackResponse['follow_up_questions'] = $this->followUpService->forResult(
+                                    $descFallbackResponse,
+                                    $classification
+                                );
+
+                                $trace['final_status']              = 'ready';
+                                $trace['description_fallback_used'] = true;
+                                $trace['source_attribution']        = $descFallbackResponse['source_attribution'] ?? null;
+                                $this->emitTrace($trace);
+
+                                return [
+                                    'success'          => true,
+                                    'status'           => 'ready',
+                                    'classification'   => $classification,
+                                    'context'          => $context,
+                                    'contract'         => $contract,
+                                    'prompt_package'   => $promptPackage,
+                                    'adapter_result'   => $descAdapterResult,
+                                    'final_response'   => $descFallbackResponse,
+                                    'error'            => null,
+                                    'trace'            => $trace,
+                                    'outcome_category' => 'description_fallback',
+                                ];
+                            }
+                        }
+                    }
+
                     $missingListingResponse = [
                         'success'            => false,
                         'status'             => 'insufficient_context',
@@ -3801,5 +3882,116 @@ class AskAiRunnerV2Service
         ];
 
         return $labelMap[$normalizedFieldKey] ?? 'The requested information';
+    }
+
+    // -------------------------------------------------------------------------
+    // Description Fallback Helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Build a minimal, self-contained prompt package that constrains OpenAI to answer
+     * using ONLY the provided listing description text.
+     *
+     * The package passes the adapter gate (status='prompt_ready') and instructs the
+     * model to return {"answer_text": "..."} — or the sentinel value
+     * "INFORMATION_NOT_IN_DESCRIPTION" when the answer is absent.
+     *
+     * GOVERNANCE NOTE: This package deliberately omits all structured listing context,
+     * contract paths, and source attribution arrays so that no structured field data
+     * can bleed into a description-only call. The prohibited-key scan in
+     * OpenAiClientService still applies; no Fair Housing bypass is possible.
+     *
+     * @param  string $question    The user's original question, passed through unchanged.
+     * @param  string $description The listing description text to use as the sole source.
+     * @return array               A prompt package ready for AskAiOpenAiAdapterService::generate().
+     */
+    private function buildDescriptionFallbackPackage(string $question, string $description): array
+    {
+        return [
+            'status'        => 'prompt_ready',
+            'question'      => $question,
+            'question_type' => 'description_fallback',
+
+            'system_instructions' => [
+                'You are a real estate information assistant.',
+                'You must answer the question using ONLY the property listing description provided in allowed_context.listing_description.',
+                'Do not invent, estimate, or infer data that is not explicitly stated in the description.',
+                'Do not reference protected class characteristics including race, color, national origin, religion, sex, familial status, or disability.',
+                'If the exact answer cannot be found in the description, your answer_text must be exactly: INFORMATION_NOT_IN_DESCRIPTION',
+                'Do not generate legal, financial, investment, or professional advice of any kind.',
+                'All responses must be factual, neutral, and free of speculation or conjecture.',
+                'Respond using a JSON object containing only the key answer_text.',
+            ],
+
+            'developer_instructions' => [
+                'source_constraint' => 'Use only the listing_description text in allowed_context. No external information.',
+                'sentinel_value'    => 'If the answer is absent from the description, return {"answer_text":"INFORMATION_NOT_IN_DESCRIPTION"} exactly.',
+                'response_rules'    => ['respond_with_json_object', 'key_is_answer_text'],
+            ],
+
+            'allowed_context' => [
+                'listing_description' => $description,
+            ],
+
+            'source_attribution'       => [],
+            'required_disclosures'     => [],
+            'refusal_template'         => null,
+            'missing_required_sources' => [],
+            'context_versions'         => [],
+
+            'response_format' => [
+                'type'                            => 'structured_text',
+                'must_include_source_attribution' => false,
+                'must_include_disclosures'        => false,
+                'must_not_include'                => [
+                    'protected_class_characteristics',
+                    'speculation_or_conjecture',
+                    'invented_or_inferred_values',
+                ],
+            ],
+
+            'error' => null,
+        ];
+    }
+
+    /**
+     * Extract a usable answer string from a description-fallback adapter result.
+     *
+     * Returns null (causing Guard B to fall through to insufficient_context) when:
+     *   - The adapter call itself failed (success=false).
+     *   - raw_response is missing, empty, or not valid JSON.
+     *   - answer_text key is absent, empty, or equals the sentinel
+     *     "INFORMATION_NOT_IN_DESCRIPTION" (case-insensitive).
+     *
+     * @param  array  $adapterResult  Output of AskAiOpenAiAdapterService::generate().
+     * @return string|null            The trimmed answer text, or null on any miss/failure.
+     */
+    private function parseDescriptionFallbackAnswer(array $adapterResult): ?string
+    {
+        if (!($adapterResult['success'] ?? false)) {
+            return null;
+        }
+
+        $rawResponse = $adapterResult['raw_response'] ?? null;
+        if (!is_string($rawResponse) || $rawResponse === '') {
+            return null;
+        }
+
+        $decoded = json_decode($rawResponse, true);
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        $answerText = $decoded['answer_text'] ?? null;
+        if (!is_string($answerText)) {
+            return null;
+        }
+
+        $answerText = trim($answerText);
+        if ($answerText === '' || strtoupper($answerText) === 'INFORMATION_NOT_IN_DESCRIPTION') {
+            return null;
+        }
+
+        return $answerText;
     }
 }

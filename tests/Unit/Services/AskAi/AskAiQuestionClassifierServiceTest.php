@@ -1605,4 +1605,51 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('listing_facts', $result['question_type'],
             '"What is the move-in date?" must remain listing_facts');
     }
+
+    // =========================================================================
+    // Case R — Closing-cost credit synonym routing
+    //
+    // Phrasings like "credit toward closing", "closing credit", and
+    // "seller credit at closing" were previously not covered by any
+    // listing_facts keyword, causing them to fall through to 'unsupported'.
+    // They were added to the classifier in the seller-credit block AND the
+    // seller-concessions block so all natural phrasings route correctly.
+    // =========================================================================
+
+    /** @dataProvider closingCostCreditProvider */
+    public function test_case_R_closing_cost_credit_synonyms_classify_as_listing_facts(string $q): void
+    {
+        $result = $this->makeService()->classify($q);
+        $this->assertSame('listing_facts', $result['question_type'],
+            "\"$q\" must route to listing_facts (closing-cost credit synonym)");
+    }
+
+    public static function closingCostCreditProvider(): array
+    {
+        return [
+            'credit toward closing'          => ['Is the seller offering a credit toward closing?'],
+            'credits toward closing'         => ['Are there credits toward closing available?'],
+            'closing credit'                 => ['Is there a closing credit?'],
+            'seller credit at closing'       => ['Does the seller offer a seller credit at closing?'],
+            'closing cost credit singular'   => ['Is there a closing cost credit?'],
+            'closing cost credits plural'    => ['Does the seller offer closing cost credits?'],
+            'credit toward closing bare'     => ['credit toward closing'],
+            'closing credit bare'            => ['closing credit'],
+        ];
+    }
+
+    public function test_case_R_seller_credit_existing_phrase_still_routes(): void
+    {
+        // Regression guard: pre-existing phrase must not break after adding synonyms.
+        $result = $this->makeService()->classify('Is the seller offering a credit?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"Is the seller offering a credit?" must remain listing_facts');
+    }
+
+    public function test_case_R_seller_concessions_still_routes(): void
+    {
+        $result = $this->makeService()->classify('Is the seller offering concessions?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"Is the seller offering concessions?" must remain listing_facts');
+    }
 }

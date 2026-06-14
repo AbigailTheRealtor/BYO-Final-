@@ -367,6 +367,12 @@ class AskAiQuestionClassifierService
             'does the seller offer a credit',
             'seller credit',
             'seller contribution',
+            // Closing-cost credit synonyms
+            'credit toward closing',
+            'credits toward closing',
+            'closing credit',
+            'seller credit at closing',
+            'closing cost credit',
             // Pet policy (landlord)
             'pet policy',
             'pet policy details',
@@ -442,6 +448,11 @@ class AskAiQuestionClassifierService
             'concessions offered',
             'offering concessions',
             'closing cost credits',
+            'closing cost credit',
+            'credit toward closing',
+            'credits toward closing',
+            'closing credit',
+            'seller credit at closing',
             'repair credits',
             // Items excluded / what conveys (FAQ answer)
             'items excluded',

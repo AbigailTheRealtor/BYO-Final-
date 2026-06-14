@@ -39,4 +39,20 @@ return [
      * ASK_AI_ENABLE_OPENAI_INTENT_NORMALIZATION=true in their .env file.
      */
     'enable_openai_intent_normalization' => env('ASK_AI_ENABLE_OPENAI_INTENT_NORMALIZATION', false),
+
+    /*
+     * Enable description-derived fallback answers for listing.* fields that are null or absent.
+     *
+     * When true, if Guard B detects a null/missing listing.* field value AND the listing has a
+     * non-empty description, the runner will make a targeted OpenAI call using only the listing
+     * description as context. If OpenAI finds a relevant answer in the description, that answer
+     * is returned with description_fallback source attribution; otherwise the normal
+     * 'insufficient_context' response fires.
+     *
+     * This flag defaults to false (off) in all environments. Enable via the env file only after
+     * governance review — the description call goes to OpenAI and costs tokens.
+     *
+     * Dev/staging: set ASK_AI_ENABLE_DESCRIPTION_FALLBACK=true in .env.
+     */
+    'enable_description_fallback' => env('ASK_AI_ENABLE_DESCRIPTION_FALLBACK', false),
 ];
