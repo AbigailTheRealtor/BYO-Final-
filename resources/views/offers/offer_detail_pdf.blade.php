@@ -139,6 +139,217 @@
     <div style="font-size:10px;color:#444;">{{ $fmtDateTime($terminalOutcomeAt) }}</div>
 </div>
 
+{{-- ── Property Being Offered (buyer/tenant role only) ── --}}
+@php
+    $_pRole = $terminalLeaf->role ?? ($rootOffer->role ?? '');
+    $_hasPropData = in_array($_pRole, ['buyer', 'tenant']) && isset($rootMetas) &&
+        ($rootMetas->get('prop_type') || $rootMetas->get('prop_street') || $rootMetas->get('prop_mls_number') || $rootMetas->get('match_explanation'));
+@endphp
+@if($_hasPropData)
+<div class="section-box">
+    <div class="section-header">Property Being Offered</div>
+    <div class="section-body">
+        @php
+            $pm = $rootMetas;
+            $fmtDatePdf = function ($v) {
+                if (!$v) return '—';
+                try { return \Carbon\Carbon::parse($v)->format('F j, Y'); }
+                catch (\Throwable $e) { return '—'; }
+            };
+        @endphp
+        @if($pm->get('prop_street') || $pm->get('prop_city') || $pm->get('prop_state'))
+        <h3>Property Address</h3>
+        @if($pm->get('prop_street'))
+        <div class="meta-row">
+            <span class="meta-label">Street</span>
+            <span class="meta-value">{{ $pm->get('prop_street') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_city') || $pm->get('prop_state') || $pm->get('prop_zip'))
+        <div class="meta-row">
+            <span class="meta-label">City / State / ZIP</span>
+            <span class="meta-value">{{ implode(', ', array_filter([$pm->get('prop_city'), $pm->get('prop_state'), $pm->get('prop_zip')])) }}</span>
+        </div>
+        @endif
+        @endif
+
+        @if($pm->get('prop_type') || $pm->get('prop_subtype') || $pm->get('prop_listing_status') || $pm->get('prop_mls_number') || $pm->get('prop_listing_url'))
+        <h3>Property Identification</h3>
+        @if($pm->get('prop_type'))
+        <div class="meta-row">
+            <span class="meta-label">Property Type</span>
+            <span class="meta-value">{{ $pm->get('prop_type') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_subtype'))
+        <div class="meta-row">
+            <span class="meta-label">Style / Subtype</span>
+            <span class="meta-value">{{ $pm->get('prop_subtype') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_listing_status'))
+        <div class="meta-row">
+            <span class="meta-label">Listing Status</span>
+            <span class="meta-value">{{ $pm->get('prop_listing_status') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_mls_number'))
+        <div class="meta-row">
+            <span class="meta-label">MLS #</span>
+            <span class="meta-value">{{ $pm->get('prop_mls_number') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_listing_url'))
+        <div class="meta-row">
+            <span class="meta-label">Listing URL</span>
+            <span class="meta-value">{{ $pm->get('prop_listing_url') }}</span>
+        </div>
+        @endif
+        @endif
+
+        @php
+            $pdfAttrBedrooms  = $pm->get('prop_attr_bedrooms') === 'Other' && $pm->get('prop_attr_other_bedrooms')
+                ? $pm->get('prop_attr_other_bedrooms') : $pm->get('prop_attr_bedrooms');
+            $pdfAttrBathrooms = $pm->get('prop_attr_bathrooms') === 'Other' && $pm->get('prop_attr_other_bathrooms')
+                ? $pm->get('prop_attr_other_bathrooms') : $pm->get('prop_attr_bathrooms');
+            $pdfPoolTypes = array_filter([
+                $pm->get('prop_attr_pool_private')  ? 'Private'   : null,
+                $pm->get('prop_attr_pool_community') ? 'Community' : null,
+            ]);
+        @endphp
+        @if($pm->get('prop_attr_condition') || $pdfAttrBedrooms || $pdfAttrBathrooms || $pm->get('prop_attr_heated_sqft') || $pm->get('prop_attr_total_sqft') || $pm->get('prop_attr_total_acreage') || $pm->get('prop_attr_garage') || $pm->get('prop_attr_pool') || $pm->get('prop_attr_year_built') || $pm->get('prop_attr_zoning'))
+        <h3>Property Attributes</h3>
+        @if($pm->get('prop_attr_condition'))
+        <div class="meta-row">
+            <span class="meta-label">Property Condition</span>
+            <span class="meta-value">{{ $pm->get('prop_attr_condition') }}</span>
+        </div>
+        @endif
+        @if($pdfAttrBedrooms)
+        <div class="meta-row">
+            <span class="meta-label">Bedrooms</span>
+            <span class="meta-value">{{ $pdfAttrBedrooms }}</span>
+        </div>
+        @endif
+        @if($pdfAttrBathrooms)
+        <div class="meta-row">
+            <span class="meta-label">Bathrooms</span>
+            <span class="meta-value">{{ $pdfAttrBathrooms }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_attr_heated_sqft'))
+        <div class="meta-row">
+            <span class="meta-label">Heated SqFt</span>
+            <span class="meta-value">{{ $pm->get('prop_attr_heated_sqft') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_attr_net_leasable_sqft'))
+        <div class="meta-row">
+            <span class="meta-label">Net Leasable SqFt</span>
+            <span class="meta-value">{{ $pm->get('prop_attr_net_leasable_sqft') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_attr_total_sqft'))
+        <div class="meta-row">
+            <span class="meta-label">Total SqFt</span>
+            <span class="meta-value">{{ $pm->get('prop_attr_total_sqft') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_attr_sqft_source'))
+        <div class="meta-row">
+            <span class="meta-label">SqFt Source</span>
+            <span class="meta-value">{{ $pm->get('prop_attr_sqft_source') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_attr_total_acreage'))
+        <div class="meta-row">
+            <span class="meta-label">Total Acreage</span>
+            <span class="meta-value">{{ $pm->get('prop_attr_total_acreage') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_attr_garage'))
+        <div class="meta-row">
+            <span class="meta-label">Garage</span>
+            <span class="meta-value">{{ $pm->get('prop_attr_garage') }}{{ $pm->get('prop_attr_garage_spaces') ? ' (' . $pm->get('prop_attr_garage_spaces') . ' spaces)' : '' }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_attr_pool'))
+        <div class="meta-row">
+            <span class="meta-label">Pool</span>
+            <span class="meta-value">{{ $pm->get('prop_attr_pool') }}{{ count($pdfPoolTypes) ? ' — ' . implode(', ', $pdfPoolTypes) : '' }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_attr_year_built'))
+        <div class="meta-row">
+            <span class="meta-label">Year Built</span>
+            <span class="meta-value">{{ $pm->get('prop_attr_year_built') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_attr_zoning'))
+        <div class="meta-row">
+            <span class="meta-label">Zoning</span>
+            <span class="meta-value">{{ $pm->get('prop_attr_zoning') }}</span>
+        </div>
+        @endif
+        @endif
+
+        @if($pm->get('prop_virtual_tour_url') || $pm->get('prop_video_url'))
+        <h3>Media Links</h3>
+        @if($pm->get('prop_virtual_tour_url'))
+        <div class="meta-row">
+            <span class="meta-label">Virtual Tour</span>
+            <span class="meta-value">{{ $pm->get('prop_virtual_tour_url') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_video_url'))
+        <div class="meta-row">
+            <span class="meta-label">Video</span>
+            <span class="meta-value">{{ $pm->get('prop_video_url') }}</span>
+        </div>
+        @endif
+        @endif
+
+        @if($pm->get('prop_available_date') || $pm->get('prop_occupancy_status') || $pm->get('prop_showing_availability'))
+        <h3>Availability</h3>
+        @if($pm->get('prop_available_date'))
+        <div class="meta-row">
+            <span class="meta-label">Available Date</span>
+            <span class="meta-value">{{ $fmtDatePdf($pm->get('prop_available_date')) }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_occupancy_status'))
+        <div class="meta-row">
+            <span class="meta-label">Occupancy Status</span>
+            <span class="meta-value">{{ $pm->get('prop_occupancy_status') }}</span>
+        </div>
+        @endif
+        @if($pm->get('prop_showing_availability'))
+        <div class="meta-row">
+            <span class="meta-label">Showing Availability</span>
+            <span class="meta-value">{{ $pm->get('prop_showing_availability') }}</span>
+        </div>
+        @endif
+        @endif
+
+        @if($pm->get('match_explanation') || $pm->get('match_compromise_note'))
+        <h3>Match Explanation</h3>
+        @if($pm->get('match_explanation'))
+        <div class="meta-row">
+            <span class="meta-label">Why It Matches</span>
+            <span class="meta-value" style="white-space:pre-wrap;">{{ $pm->get('match_explanation') }}</span>
+        </div>
+        @endif
+        @if($pm->get('match_compromise_note'))
+        <div class="meta-row">
+            <span class="meta-label">Compromises / Notes</span>
+            <span class="meta-value" style="white-space:pre-wrap;">{{ $pm->get('match_compromise_note') }}</span>
+        </div>
+        @endif
+        @endif
+    </div>
+</div>
+@endif
+
 {{-- ── Terms Snapshot ── --}}
 <div class="section-box">
     <div class="section-header">{{ $termsHeading }}</div>

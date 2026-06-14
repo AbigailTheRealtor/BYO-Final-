@@ -44,6 +44,12 @@ class AcceptedBidSummaryController extends Controller
             ->where('user_id', $summary->tenant_user_id)
             ->first();
 
+        // For buyer/tenant listing types, attempt to load property-being-offered data
+        // from any accepted offer in the chain linked to this listing (via OfferAuction).
+        $resolved           = $this->resolveOfferPropertyData($summary);
+        $offerPropertyMetas = $resolved['metas'];
+        $offerForPhotos     = $resolved['offer'];
+
         return view('accepted_bid_summary.view', [
             'summary'                           => $summary,
             'html'                              => $html,
@@ -52,6 +58,8 @@ class AcceptedBidSummaryController extends Controller
             'canUploadAcknowledgementDocuments' => $canUploadAcknowledgementDocuments,
             'existingDocs'                      => $existingDocs,
             'sharedDocs'                        => $sharedDocs,
+            'offerPropertyMetas'                => $offerPropertyMetas,
+            'offerForPhotos'                    => $offerForPhotos,
         ]);
     }
 
@@ -73,6 +81,15 @@ class AcceptedBidSummaryController extends Controller
 
         $html = $this->summaryService->getRenderedHtml($summary);
 
+        // Inject property-being-offered data into sign page HTML (service-rendered path).
+        $signResolved = $this->resolveOfferPropertyData($summary);
+        if ($signResolved['metas'] !== null) {
+            $propHtml = $this->buildOfferPropertySectionHtml($signResolved['metas'], $signResolved['offer']);
+            if ($propHtml !== '') {
+                $html .= $propHtml;
+            }
+        }
+
         $canUploadAcknowledgementDocuments = ($user->id === $summary->tenant_user_id);
 
         $existingDocs = $canUploadAcknowledgementDocuments
@@ -86,12 +103,14 @@ class AcceptedBidSummaryController extends Controller
             ->first();
 
         return view('accepted_bid_summary.sign', [
-            'summary'                          => $summary,
-            'html'                             => $html,
-            'userRole'                         => $userRole,
-            'existingDocs'                     => $existingDocs,
-            'sharedDocs'                       => $sharedDocs,
+            'summary'                           => $summary,
+            'html'                              => $html,
+            'userRole'                          => $userRole,
+            'existingDocs'                      => $existingDocs,
+            'sharedDocs'                        => $sharedDocs,
             'canUploadAcknowledgementDocuments' => $canUploadAcknowledgementDocuments,
+            'offerPropertyMetas'                => $signResolved['metas'],
+            'offerForPhotos'                    => $signResolved['offer'],
         ]);
     }
 
@@ -176,6 +195,16 @@ class AcceptedBidSummaryController extends Controller
     {
         try {
             $html = $this->summaryService->getRenderedHtml($summary);
+
+            // Inject property-being-offered section for buyer/tenant summaries.
+            // This ensures PDF output (via getRenderedHtml service path) includes property data.
+            $pdfResolved = $this->resolveOfferPropertyData($summary);
+            if ($pdfResolved['metas'] !== null) {
+                $propHtml = $this->buildOfferPropertySectionHtml($pdfResolved['metas'], $pdfResolved['offer']);
+                if ($propHtml !== '') {
+                    $html .= $propHtml;
+                }
+            }
 
             $pdf = Pdf::loadHTML($html);
             $pdf->setPaper('A4', 'portrait');
@@ -377,5 +406,200 @@ class AcceptedBidSummaryController extends Controller
         }
 
         return 'Unknown';
+    }
+
+    /**
+     * Locate the root offer's property/match metas for a buyer or tenant summary.
+     *
+     * For the Offer response system (separate from the agent-hire AcceptedBidSummary flow),
+     * property data lives on the root offer's OfferMeta records. Counter-offers inherit these
+     * metas via the termMetaKeys copy-on-counter logic; we walk the parent_offer_id chain to
+     * confirm the root is always the canonical source.
+     *
+     * Scoped by both listing_id AND role (= listing_type) to prevent cross-listing data exposure.
+     *
+     * Returns ['metas' => Collection|null, 'offer' => Offer|null].
+     */
+    private function resolveOfferPropertyData(AcceptedBidSummary $summary): array
+    {
+        $result = ['metas' => null, 'offer' => null];
+
+        if (!in_array($summary->listing_type, ['buyer', 'tenant'])) {
+            return $result;
+        }
+
+        try {
+            // Scope to the specific bidder (tenant_user_id = the buyer/tenant who submitted the offer)
+            // to avoid picking a different accepted offer chain if the listing ever has multiple
+            // historical accepted records.
+            $acceptedLeaf = \App\Models\Offer::whereHas('offerAuction', function ($q) use ($summary) {
+                $q->where('listing_id', $summary->listing_id);
+            })
+            ->where('role', $summary->listing_type)
+            ->where('status', 'accepted')
+            ->where('user_id', $summary->tenant_user_id)
+            ->orderByDesc('id')
+            ->with('metas')
+            ->first();
+
+            if (!$acceptedLeaf) {
+                return $result;
+            }
+
+            // Walk parent chain to root — property info is always stored on the root offer.
+            $rootOffer = $acceptedLeaf;
+            $visited   = [];
+            while ($rootOffer->parent_offer_id && !isset($visited[$rootOffer->id])) {
+                $visited[$rootOffer->id] = true;
+                $parent = \App\Models\Offer::with('metas')->find($rootOffer->parent_offer_id);
+                if (!$parent) {
+                    break;
+                }
+                $rootOffer = $parent;
+            }
+
+            $propMetas = $rootOffer->metas->pluck('meta_value', 'meta_key');
+            if ($propMetas->get('prop_type') || $propMetas->get('match_explanation')) {
+                $result['metas'] = $propMetas;
+                $result['offer'] = $rootOffer;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('[AcceptedBidSummaryController] Failed to load offer property data', [
+                'summary_id' => $summary->id,
+                'error'      => $e->getMessage(),
+            ]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Build a self-contained HTML block for the "Property Being Offered" section.
+     *
+     * Used when injecting property data into the service-rendered HTML path (getRenderedHtml),
+     * which drives both the sign page display and the PDF generated by generatePdf().
+     * This ensures property/match data appears consistently in all document outputs for
+     * buyer/tenant listing types — not just in the Blade view wrapper.
+     *
+     * $offer is optional only for backward-compatibility; both live callers now supply it so
+     * that uploaded-photo asset URLs and external photo/media links are rendered in full.
+     */
+    private function buildOfferPropertySectionHtml(\Illuminate\Support\Collection $metas, ?\App\Models\Offer $offer = null): string
+    {
+        $fields = [
+            'prop_street'               => 'Street Address',
+            'prop_city'                 => 'City',
+            'prop_state'                => 'State',
+            'prop_zip'                  => 'ZIP Code',
+            'prop_type'                 => 'Property Type',
+            'prop_subtype'              => 'Property Style / Subtype',
+            'prop_listing_status'       => 'Listing Status',
+            'prop_mls_number'           => 'MLS #',
+            'prop_listing_url'          => 'Listing URL',
+            'prop_available_date'       => 'Available Date',
+            'prop_occupancy_status'     => 'Occupancy Status',
+            'prop_showing_availability' => 'Showing Availability',
+            // Property attribute groups (type-conditional, mirrors seller/landlord property-preferences)
+            'prop_attr_condition'       => 'Property Condition',
+            'prop_attr_bedrooms'        => 'Bedrooms',
+            'prop_attr_bathrooms'       => 'Bathrooms',
+            'prop_attr_heated_sqft'     => 'Heated SqFt',
+            'prop_attr_net_leasable_sqft' => 'Net Leasable SqFt',
+            'prop_attr_total_sqft'      => 'Total SqFt',
+            'prop_attr_sqft_source'     => 'SqFt Source',
+            'prop_attr_total_acreage'   => 'Total Acreage',
+            'prop_attr_garage'          => 'Garage',
+            'prop_attr_garage_spaces'   => 'Garage Spaces',
+            'prop_attr_pool'            => 'Pool',
+            'prop_attr_year_built'      => 'Year Built',
+            'prop_attr_zoning'          => 'Zoning',
+        ];
+
+        $rows = [];
+        foreach ($fields as $key => $label) {
+            $val = trim((string)($metas->get($key) ?? ''));
+            if ($val !== '') {
+                $rows[] = '<p style="margin:4px 0;"><strong>' . e($label) . ':</strong> ' . e($val) . '</p>';
+            }
+        }
+
+        // ── Media links (virtual tour, video) ───────────────────────────────
+        $mediaRows = [];
+        foreach ([
+            'prop_virtual_tour_url' => 'Virtual Tour',
+            'prop_video_url'        => 'Video Tour',
+        ] as $metaKey => $mediaLabel) {
+            $url = trim((string)($metas->get($metaKey) ?? ''));
+            if ($url !== '' && preg_match('#^https?://#i', $url)) {
+                $mediaRows[] = '<p style="margin:4px 0;"><strong>' . e($mediaLabel) . ':</strong> '
+                    . '<a href="' . e($url) . '" style="color:#1a5fa8;">' . e($url) . '</a></p>';
+            }
+        }
+
+        // ── External photo URLs ──────────────────────────────────────────────
+        $rawPhotoUrls = trim((string)($metas->get('prop_photo_urls') ?? ''));
+        if ($rawPhotoUrls !== '') {
+            $safeUrls = array_values(array_filter(
+                array_map('trim', explode("\n", $rawPhotoUrls)),
+                fn($u) => $u !== '' && preg_match('#^https?://#i', $u)
+            ));
+            foreach ($safeUrls as $idx => $u) {
+                $mediaRows[] = '<p style="margin:4px 0;"><strong>Photo ' . ($idx + 1) . ':</strong> '
+                    . '<a href="' . e($u) . '" style="color:#1a5fa8;">' . e($u) . '</a></p>';
+            }
+        }
+
+        // ── Uploaded photos (stored as JSON filenames on the root offer) ────
+        $uploadedPhotos = json_decode((string)($metas->get('prop_photos') ?? '[]'), true) ?: [];
+        if ($offer && !empty($uploadedPhotos)) {
+            $baseUrl = rtrim(config('app.url'), '/');
+            foreach ($uploadedPhotos as $idx => $filename) {
+                $assetUrl = $baseUrl . '/storage/offer-property-photos/' . $offer->id . '/' . e($filename);
+                $mediaRows[] = '<p style="margin:4px 0;"><strong>Uploaded Photo ' . ($idx + 1) . ':</strong> '
+                    . '<a href="' . $assetUrl . '" style="color:#1a5fa8;">' . $assetUrl . '</a></p>';
+            }
+        }
+
+        $explanation = trim((string)($metas->get('match_explanation') ?? ''));
+        $compromise  = trim((string)($metas->get('match_compromise_note') ?? ''));
+
+        $matchRows = [];
+        if ($explanation !== '') {
+            $matchRows[] = '<p style="margin:4px 0;"><strong>Why It Matches:</strong></p>'
+                . '<p style="margin:4px 0 12px;white-space:pre-line;">' . e($explanation) . '</p>';
+        }
+        if ($compromise !== '') {
+            $matchRows[] = '<p style="margin:4px 0;"><strong>Noted Compromises / Differences:</strong></p>'
+                . '<p style="margin:4px 0 12px;white-space:pre-line;">' . e($compromise) . '</p>';
+        }
+
+        if (empty($rows) && empty($mediaRows) && empty($matchRows)) {
+            return '';
+        }
+
+        $html  = '<div style="background:#f0f7ff;padding:20px;border:1px solid #4a90d9;border-radius:8px;margin-top:20px;">';
+        $html .= '<h2 style="color:#333;border-bottom:2px solid #4a90d9;padding-bottom:10px;margin-top:0;">Property Being Offered</h2>';
+
+        if (!empty($rows)) {
+            $html .= implode('', $rows);
+        }
+
+        if (!empty($mediaRows)) {
+            $html .= '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #c0d8f0;">';
+            $html .= '<h4 style="color:#333;margin-top:0;">Photos &amp; Media</h4>';
+            $html .= implode('', $mediaRows);
+            $html .= '</div>';
+        }
+
+        if (!empty($matchRows)) {
+            $html .= '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #c0d8f0;">';
+            $html .= '<h4 style="color:#333;margin-top:0;">Match Explanation</h4>';
+            $html .= implode('', $matchRows);
+            $html .= '</div>';
+        }
+
+        $html .= '</div>';
+
+        return $html;
     }
 }

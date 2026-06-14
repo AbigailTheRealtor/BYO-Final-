@@ -88,6 +88,24 @@
                 </div>
             </div>
 
+            {{-- ── Property Being Offered (buyer/tenant offer responses only) ── --}}
+            {{-- $offerPropertyMetas and $offerForPhotos are loaded by the controller
+                 when an accepted response offer is linked to this listing. --}}
+            @if(isset($offerPropertyMetas) && $offerPropertyMetas &&
+                ($offerPropertyMetas->get('prop_type') || $offerPropertyMetas->get('match_explanation')))
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Property Being Offered</h5>
+                </div>
+                <div class="card-body">
+                    @include('offers._property_being_offered_display', [
+                        'metas' => $offerPropertyMetas,
+                        'offer' => $offerForPhotos,
+                    ])
+                </div>
+            </div>
+            @endif
+
             <div class="card summary-document-card">
                 <div class="card-header">
                     <h5 class="mb-0">Summary Document</h5>

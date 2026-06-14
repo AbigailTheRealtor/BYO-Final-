@@ -102,6 +102,30 @@ class OfferController extends Controller
             }
         }
 
+        // Buyer/tenant offers require property info and match explanation on every submit path.
+        if (in_array($offer->role, ['buyer', 'tenant'])) {
+            $offer->loadMissing('metas');
+            $offerMetas  = $offer->metas->pluck('meta_value', 'meta_key');
+            $missingProp = [];
+            if (!$offerMetas->get('prop_street') || !$offerMetas->get('prop_city')) {
+                $missingProp[] = 'property address (street and city are required)';
+            }
+            if (!$offerMetas->get('prop_type')) {
+                $missingProp[] = 'property type';
+            }
+            if (!$offerMetas->get('match_explanation')) {
+                $missingProp[] = 'match explanation';
+            }
+            if (!empty($missingProp)) {
+                $msg = 'Please complete the Property Being Offered section before submitting: '
+                    . implode(', ', $missingProp) . '.';
+                if (!$request->expectsJson()) {
+                    return redirect()->route('offers.show', $offer)->with('error', $msg);
+                }
+                return response()->json(['message' => $msg], 422);
+            }
+        }
+
         $result = $this->facade->submit($offer, $actorId, $actorRole, [], $request->ip());
 
         if ($result['allowed'] === false) {
@@ -514,6 +538,23 @@ class OfferController extends Controller
             'last_month_rent_offered', 'move_in_funds', 'move_in_date',
             'utilities_terms', 'maintenance_responsibility', 'parking_terms',
             'additional_lease_terms',
+            // Property Being Offered (buyer/tenant role — inherited read-only on counters)
+            'prop_street', 'prop_city', 'prop_state', 'prop_zip',
+            'prop_type', 'prop_subtype', 'prop_listing_status',
+            'prop_mls_number', 'prop_listing_url',
+            'prop_virtual_tour_url', 'prop_video_url',
+            'prop_available_date', 'prop_occupancy_status', 'prop_showing_availability',
+            'prop_photos', 'prop_photo_urls',
+            // Property attribute groups (type-conditional, mirrors seller/landlord property-preferences)
+            'prop_attr_condition', 'prop_attr_bedrooms', 'prop_attr_other_bedrooms',
+            'prop_attr_bathrooms', 'prop_attr_other_bathrooms',
+            'prop_attr_heated_sqft', 'prop_attr_net_leasable_sqft',
+            'prop_attr_total_sqft', 'prop_attr_sqft_source',
+            'prop_attr_total_acreage', 'prop_attr_garage', 'prop_attr_garage_spaces',
+            'prop_attr_pool', 'prop_attr_pool_private', 'prop_attr_pool_community',
+            'prop_attr_year_built', 'prop_attr_zoning',
+            // Match explanation
+            'match_explanation', 'match_compromise_note',
         ];
         foreach ($termMetaKeys as $key) {
             $parentVal = $parentMetas->get($key);
@@ -647,6 +688,133 @@ class OfferController extends Controller
     }
 
     /**
+     * Save "Property Being Offered" meta for buyer/tenant root draft offers.
+     */
+    public function saveProperty(Request $request, Offer $offer)
+    {
+        if (Auth::id() !== $offer->user_id) {
+            abort(403);
+        }
+
+        if ($offer->status !== 'draft') {
+            abort(422, 'Property information can only be edited while the offer is in draft status.');
+        }
+
+        if (!in_array($offer->role, ['buyer', 'tenant'])) {
+            abort(422, 'Property information is only applicable to buyer and tenant offers.');
+        }
+
+        if ($offer->parent_offer_id !== null) {
+            abort(422, 'Property information cannot be edited on counter offers — it is inherited from the original offer.');
+        }
+
+        $validated = $request->validate([
+            'prop_street'               => 'nullable|string|max:255',
+            'prop_city'                 => 'nullable|string|max:100',
+            'prop_state'                => 'nullable|string|max:100',
+            'prop_zip'                  => 'nullable|string|max:20',
+            'prop_type'                 => 'nullable|string|max:100',
+            'prop_subtype'              => 'nullable|string|max:100',
+            'prop_listing_status'       => 'nullable|string|max:50',
+            'prop_mls_number'           => 'nullable|string|max:50',
+            'prop_listing_url'          => 'nullable|url|max:500',
+            'prop_virtual_tour_url'     => 'nullable|url|max:500',
+            'prop_video_url'            => 'nullable|url|max:500',
+            'prop_available_date'       => 'nullable|date',
+            'prop_occupancy_status'     => 'nullable|string|max:100',
+            'prop_showing_availability' => 'nullable|string|max:255',
+            'prop_photos'                  => 'nullable|array|max:20',
+            'prop_photos.*'                => 'image|max:5120',
+            'prop_photo_urls'              => 'nullable|string|max:10000',
+            // Property attribute groups — type-conditional, all nullable (draft permissive)
+            'prop_attr_condition'          => 'nullable|string|max:200',
+            'prop_attr_bedrooms'           => 'nullable|string|max:20',
+            'prop_attr_other_bedrooms'     => 'nullable|integer|min:1|max:100',
+            'prop_attr_bathrooms'          => 'nullable|string|max:20',
+            'prop_attr_other_bathrooms'    => 'nullable|string|max:20',
+            'prop_attr_heated_sqft'        => 'nullable|string|max:100',
+            'prop_attr_net_leasable_sqft'  => 'nullable|string|max:100',
+            'prop_attr_total_sqft'         => 'nullable|string|max:100',
+            'prop_attr_sqft_source'        => 'nullable|string|in:Appraisal,Builder,Measured,Owner Provided,Public Records',
+            'prop_attr_total_acreage'      => 'nullable|string|max:200',
+            'prop_attr_garage'             => 'nullable|string|in:Yes,No',
+            'prop_attr_garage_spaces'      => 'nullable|integer|min:1|max:50',
+            'prop_attr_pool'               => 'nullable|string|in:Yes,No',
+            'prop_attr_pool_private'       => 'nullable|string|max:5',
+            'prop_attr_pool_community'     => 'nullable|string|max:5',
+            'prop_attr_year_built'         => 'nullable|integer|min:1800|max:' . (date('Y') + 5),
+            'prop_attr_zoning'             => 'nullable|string|max:100',
+            'match_explanation'            => 'nullable|string|max:5000',
+            'match_compromise_note'        => 'nullable|string|max:5000',
+        ]);
+
+        // Sanitize prop_photo_urls: keep only absolute http/https URLs to prevent
+        // javascript:/data: URI injection when values are rendered into <a href>/<img src>.
+        if (!empty($validated['prop_photo_urls'])) {
+            $cleanUrls = array_values(array_filter(
+                array_map('trim', explode("\n", $validated['prop_photo_urls'])),
+                function (string $url): bool {
+                    if ($url === '') return false;
+                    $parsed = parse_url($url);
+                    return isset($parsed['scheme'])
+                        && in_array(strtolower($parsed['scheme']), ['http', 'https'], true)
+                        && filter_var($url, FILTER_VALIDATE_URL) !== false;
+                }
+            ));
+            $validated['prop_photo_urls'] = implode("\n", $cleanUrls);
+        }
+
+        // Handle photo uploads — append to existing.
+        // When a listing URL is provided, photo uploads are skipped: the URL already links
+        // to the full MLS/listing page where all photos are accessible.
+        $existingPhotos    = json_decode($offer->getMeta('prop_photos') ?? '[]', true) ?: [];
+        $hasListingUrl     = !empty(trim($validated['prop_listing_url'] ?? ''));
+        $photosSkippedNote = null;
+        if ($request->hasFile('prop_photos') && !$hasListingUrl) {
+            $dir = 'offer-property-photos/' . $offer->id;
+            foreach ($request->file('prop_photos') as $file) {
+                $path = $file->store($dir, 'public');
+                $existingPhotos[] = basename($path);
+            }
+        } elseif ($request->hasFile('prop_photos') && $hasListingUrl) {
+            $photosSkippedNote = 'Photo uploads were skipped because a Listing URL was provided — '
+                . 'photos are accessible via the listing link.';
+        }
+
+        $scalarFields = [
+            'prop_street', 'prop_city', 'prop_state', 'prop_zip',
+            'prop_type', 'prop_subtype', 'prop_listing_status',
+            'prop_mls_number', 'prop_listing_url',
+            'prop_virtual_tour_url', 'prop_video_url',
+            'prop_available_date', 'prop_occupancy_status', 'prop_showing_availability',
+            'prop_photo_urls',
+            // Property attribute groups (type-conditional)
+            'prop_attr_condition', 'prop_attr_bedrooms', 'prop_attr_other_bedrooms',
+            'prop_attr_bathrooms', 'prop_attr_other_bathrooms',
+            'prop_attr_heated_sqft', 'prop_attr_net_leasable_sqft',
+            'prop_attr_total_sqft', 'prop_attr_sqft_source',
+            'prop_attr_total_acreage', 'prop_attr_garage', 'prop_attr_garage_spaces',
+            'prop_attr_pool', 'prop_attr_pool_private', 'prop_attr_pool_community',
+            'prop_attr_year_built', 'prop_attr_zoning',
+            'match_explanation', 'match_compromise_note',
+        ];
+
+        $offer->load('metas');
+        foreach ($scalarFields as $key) {
+            $offer->saveMeta($key, $validated[$key] ?? null);
+        }
+        $offer->saveMeta('prop_photos', json_encode($existingPhotos));
+
+        $successMsg = 'Property information saved.';
+        if ($photosSkippedNote) {
+            $successMsg .= ' Note: ' . $photosSkippedNote;
+        }
+
+        return redirect()->route('offers.show', $offer)
+            ->with('success', $successMsg);
+    }
+
+    /**
      * Download a PDF of any terminal-state offer detail page.
      * Accessible to any user who can view the offer.
      * Aborts with 404 if the offer chain has not yet reached a terminal state.
@@ -677,6 +845,14 @@ class OfferController extends Controller
         // Negotiation chain — resolved first so chain-level fallback is available.
         $chainCollection = $this->chainService->getChainForOffer($terminalLeaf);
         $rootOffer       = $chainCollection->first();
+
+        // Load root offer metas for property-being-offered display in buyer/tenant PDFs.
+        if ($rootOffer) {
+            $rootOffer->loadMissing('metas');
+        }
+        $rootMetas = $rootOffer
+            ? $rootOffer->metas->pluck('meta_value', 'meta_key')
+            : collect();
 
         // Resolve final terms: accepted offers use the immutable snapshot first.
         $finalTerms      = collect();
@@ -753,7 +929,7 @@ class OfferController extends Controller
 
         $html = view('offers.offer_detail_pdf', compact(
             'terminalLeaf', 'finalTerms', 'offerType',
-            'chainCollection', 'rootOffer', 'terminalOutcomeAt', 'snapshotMissing',
+            'chainCollection', 'rootOffer', 'rootMetas', 'terminalOutcomeAt', 'snapshotMissing',
         ))->render();
 
         $pdf = Pdf::loadHTML($html);

@@ -187,6 +187,18 @@
                 </div>
             </div>
 
+            {{-- Property Being Offered — terminal display (buyer/tenant role only) --}}
+            @if(in_array($offer->role, ['buyer', 'tenant']))
+            <div class="card mb-4">
+                <div class="card-header">
+                    <strong>Property Being Offered</strong>
+                </div>
+                <div class="card-body">
+                    @include('offers._property_being_offered_display', ['metas' => $rootMetas, 'offer' => $rootOffer])
+                </div>
+            </div>
+            @endif
+
             {{-- Terms Snapshot Section (read-only for all four terminal outcomes) --}}
             @php
                 $terminalHeadings = [
@@ -274,6 +286,28 @@
                     catch (\Throwable $e) { return '—'; }
                 };
             @endphp
+
+            {{-- Property Being Offered (buyer/tenant role only) --}}
+            @if(in_array($offer->role, ['buyer', 'tenant']))
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong>Property Being Offered</strong>
+                    @if($canEdit && !$offer->parent_offer_id)
+                        <span class="badge bg-success">Editable</span>
+                    @else
+                        <span class="badge bg-secondary">Locked</span>
+                    @endif
+                </div>
+                <div class="card-body">
+                    @if($canEdit && !$offer->parent_offer_id)
+                        @include('offers._property_being_offered_form', ['offer' => $offer, 'metas' => $metas])
+                    @else
+                        @include('offers._property_being_offered_display', ['metas' => $rootMetas, 'offer' => $rootOffer])
+                    @endif
+                </div>
+            </div>
+            @endif
+
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <strong>Offer Terms</strong>
@@ -493,6 +527,22 @@
                                                         <dd class="col-sm-8" style="white-space:pre-wrap;">{{ $_rsm->get('message_to_landlord') }}</dd>
                                                         @endif
                                                     </dl>
+                                                </div>
+                                            </div>
+                                            @endif
+                                            @endif
+                                            {{-- Read-only property context from the root offer (buyer/tenant role) --}}
+                                            @if(in_array($offer->role, ['buyer', 'tenant']))
+                                            @php
+                                                $_hasProp = $rootMetas->get('prop_type') || $rootMetas->get('prop_street') || $rootMetas->get('prop_mls_number');
+                                            @endphp
+                                            @if($_hasProp)
+                                            <div class="card bg-light border mb-4">
+                                                <div class="card-header fw-semibold text-secondary" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:.04em;">
+                                                    Original Offer — Property Being Offered
+                                                </div>
+                                                <div class="card-body py-2" style="font-size:0.9rem;">
+                                                    @include('offers._property_being_offered_display', ['metas' => $rootMetas, 'offer' => $rootOffer])
                                                 </div>
                                             </div>
                                             @endif

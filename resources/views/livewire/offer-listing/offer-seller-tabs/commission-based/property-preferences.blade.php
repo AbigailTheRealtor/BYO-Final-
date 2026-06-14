@@ -43,29 +43,10 @@
         ['name' => 'Other'],
     ];
 
-    // Bathroom options
-    $bathroomOptions = [
-        ['name' => '1'],
-        ['name' => '1.5'],
-        ['name' => '2'],
-        ['name' => '2.5'],
-        ['name' => '3'],
-        ['name' => '3.5'],
-        ['name' => '4'],
-        ['name' => '4.5'],
-        ['name' => '5'],
-        ['name' => '5.5'],
-        ['name' => '6'],
-        ['name' => '6.5'],
-        ['name' => '7'],
-        ['name' => '7.5'],
-        ['name' => '8'],
-        ['name' => '8.5'],
-        ['name' => '9'],
-        ['name' => '9.5'],
-        ['name' => '10'],
-        ['name' => 'Other'],
-    ];
+    // Bathroom options — sourced from config/property_types.php (shared source of truth).
+    // config('property_types.bathroom_options') returns flat strings; map to ['name' => X] for
+    // backwards-compatible @foreach $opt['name'] access used throughout this template.
+    $bathroomOptions = array_map(fn($v) => ['name' => $v], config('property_types.bathroom_options'));
 
     // Business type options (for Commercial property type)
     $business_type = [
@@ -224,21 +205,8 @@
         ['name' => 'Other'],
     ];
 
-    $acreageRes = [
-        ['name' => '0 to less than 1/4 acre'],
-        ['name' => '1/4 to less than 1/2 acre'],
-        ['name' => '1/2 to less than 1 acre'],
-        ['name' => '1 to less than 2 acres'],
-        ['name' => '2 to less than 5 acres'],
-        ['name' => '5 to less than 10 acres'],
-        ['name' => '10 to less than 20 acres'],
-        ['name' => '20 to less than 50 acres'],
-        ['name' => '50 to less than 100 acres'],
-        ['name' => '100 to less than 200 acres'],
-        ['name' => '200 to less than 500 acres'],
-        ['name' => '500+ acres'],
-        ['name' => 'Non-Applicable'],
-    ];
+    // Acreage options — sourced from config/property_types.php (shared source of truth).
+    $acreageRes = array_map(fn($v) => ['name' => $v], config('property_types.acreage_options'));
 
     $tenant_require = [
         ['name' => 'Furnished'],
