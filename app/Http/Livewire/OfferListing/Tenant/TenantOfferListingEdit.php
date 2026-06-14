@@ -34,6 +34,8 @@ class TenantOfferListingEdit extends Component
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
     public bool $isListingDraft = false; // Source of truth for button mode (read from DB in mount)
+    public $existingLocationDna = [];
+    public $location_dna_preferences_json = '';
     public $listing_status = 'Active'; // 'Active', 'Pending', 'Expired', or 'Draft'
 
     public $user_type = ''; // Default to tenant or whatever makes sense
@@ -2425,6 +2427,9 @@ class TenantOfferListingEdit extends Component
         $this->cities = json_decode($auction->info('cities'), true) ?? [];
         $this->counties = json_decode($auction->info('counties'), true) ?? [];
         $this->state = $auction->info('state');
+        $ldnaRaw = $auction->info('location_dna_preferences');
+        $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+        $this->location_dna_preferences_json = $ldnaRaw ?? '';
 
         // Property Details
         $this->property_type = $auction->info('property_type');
@@ -3761,6 +3766,7 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('current_status', $this->current_status);
             $auction->saveMeta('video_link', $this->video_link);
             $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
+            $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
 
             if ($this->photo instanceof TemporaryUploadedFile) {
                 $extensionPhoto = $this->photo->getClientOriginalExtension();

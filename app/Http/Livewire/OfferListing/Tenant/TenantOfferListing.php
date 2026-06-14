@@ -63,6 +63,8 @@ class TenantOfferListing extends Component
     // Location fields
     public $state = '';
     public $property_type = '';
+    public $existingLocationDna = [];
+    public $location_dna_preferences_json = '';
     public $rent_includes =  [];
     public $other_rent_include = '';
 
@@ -3232,6 +3234,11 @@ class TenantOfferListing extends Component
             $this->property_zip = $auction->info('property_zip') ?: '';
             $this->property_county = $auction->info('property_county') ?: '';
 
+            // Location DNA preferences
+            $ldnaRaw = $auction->info('location_dna_preferences');
+            $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+            $this->location_dna_preferences_json = $ldnaRaw ?? '';
+
             if (!empty($this->cities)) {
                 $this->cityFieldVisible = true;
             }
@@ -4207,6 +4214,7 @@ class TenantOfferListing extends Component
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
         $auction->saveMeta('state', $this->state);
+        $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
 
         $auction->saveMeta('property_city', $this->property_city);
         $auction->saveMeta('property_state', $this->property_state);

@@ -1114,6 +1114,16 @@
     </div>
     @endif
 
+    {{-- Location DNA Map --}}
+    <x-location-dna-map
+        :preferences="$locationDnaPreferences ?? null"
+        :legacyLocation="$legacyLocation ?? []"
+        :boundaryData="$boundaryData ?? null"
+        :floodZoneData="$floodZoneData ?? null"
+        :schoolDistrictData="$schoolDistrictData ?? null"
+    />
+    <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['summary_lines'] ?? []" />
+
     {{-- ===== DESIRED PROPERTY FEATURES ===== --}}
     @php
         $propTypes      = $subOther($arr('property_type') ?: ($str('property_type') ? [$str('property_type')] : []), '');

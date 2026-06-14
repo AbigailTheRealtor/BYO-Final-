@@ -1067,6 +1067,16 @@
 
     @endif {{-- /hasCriteriaContent --}}
 
+    {{-- Location DNA Map --}}
+    <x-location-dna-map
+        :preferences="$locationDnaPreferences ?? null"
+        :legacyLocation="$legacyLocation ?? []"
+        :boundaryData="$boundaryData ?? null"
+        :floodZoneData="$floodZoneData ?? null"
+        :schoolDistrictData="$schoolDistrictData ?? null"
+    />
+    <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['summary_lines'] ?? []" />
+
     {{-- Financing Details --}}
     @if($hasFinancingContent)
     <div class="card section-card" id="section-financing">

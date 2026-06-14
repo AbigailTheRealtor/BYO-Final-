@@ -46,6 +46,8 @@ class BuyerOfferListing extends Component
     // Location fields
     public $state = '';
     public $property_type = '';
+    public $existingLocationDna = [];
+    public $location_dna_preferences_json = '';
 
     // Property details
     public $property_items = [];
@@ -1861,6 +1863,10 @@ class BuyerOfferListing extends Component
             $this->flood_zone_tolerance = $floodZoneRaw ? (is_string($floodZoneRaw) ? json_decode($floodZoneRaw, true) ?? [] : (array)$floodZoneRaw) : [];
             $this->flood_zone_tolerance_other = $auction->get->flood_zone_tolerance_other ?? '';
 
+            // Location DNA preferences
+            $ldnaRaw = $auction->info('location_dna_preferences');
+            $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+            $this->location_dna_preferences_json = $ldnaRaw ?? '';
 
             // Sale Provision
             $saleProvisionRaw = $auction->get->sale_provision ?? null;
@@ -2322,6 +2328,7 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('cities', json_encode($this->cities));
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
+        $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
 
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);

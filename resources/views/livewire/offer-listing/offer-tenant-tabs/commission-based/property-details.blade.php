@@ -218,6 +218,28 @@
     </div>
 </div>
 
+@include('partials.location-dna.map-input', ['existingLocationDna' => $existingLocationDna ?? []])
+<input type="hidden" id="ldna-livewire-bridge" wire:model.defer="location_dna_preferences_json">
+<script>
+(function () {
+    function syncLdnaBridge() {
+        var src = document.getElementById('ldna-json-field');
+        var dst = document.getElementById('ldna-livewire-bridge');
+        if (src && dst) {
+            dst.value = src.value;
+            dst.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+    var _origSerialize = window.ldnaSerialize;
+    window.ldnaSerialize = function () {
+        if (typeof _origSerialize === 'function') _origSerialize();
+        syncLdnaBridge();
+    };
+    document.addEventListener('DOMContentLoaded', syncLdnaBridge);
+    document.addEventListener('livewire:load', syncLdnaBridge);
+})();
+</script>
+
 <!-- Property Type Dropdown -->
 
 <div class="form-group">

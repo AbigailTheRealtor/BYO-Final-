@@ -46,16 +46,29 @@ class CensusSchoolDistrictAdapter implements SchoolDistrictAdapterInterface
             round($maxLat, 4),
         ]));
 
+        // Cache as a JSON string — see FemaFloodZoneAdapter::lookup() for rationale.
         $cached = Cache::get($cacheKey);
         if ($cached !== null) {
-            return $cached;
+            if (is_string($cached)) {
+                try {
+                    return json_decode($cached, true, 512, JSON_THROW_ON_ERROR);
+                } catch (\JsonException $e) {
+                    Log::warning('CensusSchoolDistrictAdapter: cache JSON decode failed — evicting and fetching fresh', [
+                        'cache_key' => $cacheKey,
+                        'error'     => $e->getMessage(),
+                    ]);
+                    Cache::forget($cacheKey);
+                    // fall through to live fetch below
+                }
+            } else {
+                // Legacy PHP-serialized array (pre-JSON-cache format); return as-is.
+                return $cached;
+            }
         }
 
         try {
             $result = $this->fetchFromCensus($minLng, $minLat, $maxLng, $maxLat);
-            // Only cache successful responses; failures bubble as exceptions
-            // so the caller retries on the next request.
-            Cache::put($cacheKey, $result, $ttl);
+            Cache::put($cacheKey, json_encode($result, JSON_THROW_ON_ERROR), $ttl);
             return $result;
         } catch (\Throwable $e) {
             Log::warning('CensusSchoolDistrictAdapter: lookup failed', [
@@ -131,19 +144,41 @@ class CensusSchoolDistrictAdapter implements SchoolDistrictAdapterInterface
             if ($type === 'Polygon') {
                 $results[] = [
                     'district_name' => (string) $name,
-                    'rings'         => $coords,
+                    'rings'         => $this->truncateCoords($coords),
                 ];
             } elseif ($type === 'MultiPolygon') {
                 // Each polygon in a MultiPolygon becomes its own entry
                 foreach ($coords as $polygonRings) {
                     $results[] = [
                         'district_name' => (string) $name,
-                        'rings'         => $polygonRings,
+                        'rings'         => $this->truncateCoords($polygonRings),
                     ];
                 }
             }
         }
 
         return $results;
+    }
+
+    /**
+     * Round every coordinate pair in a rings array to 5 decimal places.
+     *
+     * 5 decimal places ≈ 1 m accuracy — more than sufficient for school-district
+     * polygon visualisation.  Reducing coordinate precision shrinks the
+     * serialised payload compared with raw Census output.
+     *
+     * @param  array  $rings  [[lng, lat], …] pairs grouped into exterior/hole rings
+     * @return array
+     */
+    private function truncateCoords(array $rings): array
+    {
+        return array_map(function (array $ring) {
+            return array_map(function (array $coord) {
+                return [
+                    round((float) ($coord[0] ?? 0), 5),
+                    round((float) ($coord[1] ?? 0), 5),
+                ];
+            }, $ring);
+        }, $rings);
     }
 }

@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\BuyerAgentAuction;
 use App\Models\SellerListingInquiry; // TODO: replace with a neutral OfferListingInquiry model/table when buyer-specific inquiry tracking is needed
 use App\Services\AskAi\AskAiContextBuilderService;
+use App\Services\LocationDna\BoundaryLookupService;
+use App\Services\LocationDna\FloodZoneLookupService;
+use App\Services\LocationDna\LocationIntelligenceComposer;
+use App\Services\LocationDna\SchoolDistrictLookupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -70,8 +74,13 @@ class BuyerOfferListingController extends Controller
         return $auction;
     }
 
-    public function view($id)
-    {
+    public function view(
+        $id,
+        BoundaryLookupService $boundaryLookupService,
+        FloodZoneLookupService $floodZoneLookupService,
+        SchoolDistrictLookupService $schoolDistrictLookupService,
+        LocationIntelligenceComposer $locationIntelligenceComposer
+    ) {
         $auction = $this->resolveOfferListing($id, withRelations: true);
 
         $meta = [];
@@ -84,13 +93,36 @@ class BuyerOfferListingController extends Controller
 
         $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'buyer');
 
+        $ldnaRaw = $auction->info('location_dna_preferences');
+        $locationDnaPreferences = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? null) : null;
+        $legacyLocation = [
+            'cities'    => is_array($meta['cities'] ?? null) ? ($meta['cities'] ?? []) : (json_decode($meta['cities'] ?? '[]', true) ?? []),
+            'counties'  => is_array($meta['counties'] ?? null) ? ($meta['counties'] ?? []) : (json_decode($meta['counties'] ?? '[]', true) ?? []),
+            'states'    => $meta['state'] ?? '' ? [$meta['state']] : [],
+            'zip_codes' => [],
+        ];
+        $boundaryData = $boundaryLookupService->resolve($locationDnaPreferences, $legacyLocation);
+        $floodZoneData = $floodZoneLookupService->resolve($boundaryData, $locationDnaPreferences ?? []);
+        $schoolDistrictData = $schoolDistrictLookupService->resolve($boundaryData, $locationDnaPreferences ?? []);
+        try {
+            $locationIntelligence = $locationIntelligenceComposer->compose($boundaryData, $locationDnaPreferences ?? []);
+            $locationIntelligenceSummary = $locationIntelligence['summary'] ?? ['summary_lines' => []];
+        } catch (\Throwable $e) {
+            $locationIntelligenceSummary = ['summary_lines' => []];
+        }
+
         $page_data = [
             'title'   => $meta['listing_title'] ?? ($auction->title ?? 'Buyer Criteria Listing'),
             'id'      => $id,
             'auth_id' => auth()->id(),
         ];
 
-        return view('offer-listing.buyer.view', compact('auction', 'meta', 'askAiChipContext') + $page_data);
+        return view('offer-listing.buyer.view', compact(
+            'auction', 'meta', 'askAiChipContext',
+            'locationDnaPreferences', 'legacyLocation',
+            'boundaryData', 'floodZoneData', 'schoolDistrictData',
+            'locationIntelligenceSummary'
+        ) + $page_data);
     }
 
     public function submitQuestion(Request $request, $auction)

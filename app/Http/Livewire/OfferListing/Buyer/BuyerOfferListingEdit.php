@@ -27,6 +27,8 @@ class BuyerOfferListingEdit extends Component
     public $isDraft = false; // To track draft status
     public bool $isListingDraft = false; // Source of truth for button mode (read from DB in mount)
     public $isLoadingData = false; // Flag to prevent reset during draft/edit load
+    public $existingLocationDna = [];
+    public $location_dna_preferences_json = '';
     public $listing_status = 'Active'; // 'Active', 'Pending', 'Expired', or 'Draft'
     public $meeting_Preference = ''; // Meeting preference field
 
@@ -1795,6 +1797,9 @@ class BuyerOfferListingEdit extends Component
             $this->auction_time = $auction->get->auction_time ?? '';
 
             $this->state = $auction->get->state ?? '';
+            $ldnaRaw = $auction->info('location_dna_preferences');
+            $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+            $this->location_dna_preferences_json = $ldnaRaw ?? '';
             $this->property_type = $auction->get->property_type ?? '';
             $citiesRaw = $auction->get->cities ?? null;
             $this->cities = $citiesRaw ? (is_string($citiesRaw) ? json_decode($citiesRaw, true) ?? [] : (array)$citiesRaw) : [];
@@ -2686,6 +2691,7 @@ class BuyerOfferListingEdit extends Component
         }
         $auction->saveMeta('video_link', $this->video_link);
         $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
+        $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
 
         // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
         if ($this->photo && !is_string($this->photo)) {
