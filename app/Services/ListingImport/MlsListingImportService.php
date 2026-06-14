@@ -402,29 +402,43 @@ class MlsListingImportService
         }
 
         // ─── Annual Property Taxes ────────────────────────────────────────────
+        // Covers Stellar MLS label variants: "Taxes (Annual Amount):", "Annual Property
+        // Taxes:", "Annual Taxes:", "Tax Amount:", "Tax Amt:", "Ann. Tax:", "Annual Tax:".
+        // Bare "Tax:" also matched with a negative lookahead excluding Tax Year/ID/Legal.
         if ($v = $extract([
             '/Taxes?\s*\(Annual\s+Amount\)[\s:]+\$?([\d,]+(?:\.\d{2})?)/i',
             '/Annual\s+(?:Property\s+)?Taxes?[\s:]+\$?([\d,]+(?:\.\d{2})?)/i',
+            '/Tax\s+Amount[\s:]+\$?([\d,]+(?:\.\d{2})?)/i',
+            '/Tax\s+Amt[\s:]+\$?([\d,]+(?:\.\d{2})?)/i',
+            '/Ann\.?\s+Tax[\s:]+\$?([\d,]+(?:\.\d{2})?)/i',
+            '/Annual\s+Tax[\s:]+\$?([\d,]+(?:\.\d{2})?)/i',
+            '/\bTax\b(?!\s*(?:ID|Year|Legal|Assessment))[\s:]+\$?([\d,]+(?:\.\d{2})?)/i',
         ])) {
             $data['annual_taxes'] = preg_replace('/[^\d.]/', '', $v);
         }
 
         // ─── Legal Description ────────────────────────────────────────────────
-        // Matches full "Legal Description" and abbreviated "Legal Desc" variants.
-        // NOTE: do NOT add the /i flag here. The lookahead [A-Z][a-z]+ intentionally
-        // matches only Title Case label words (e.g. "Flood"), not ALL-CAPS content
-        // values (e.g. "BLOCK", "ESTATES"). The /i flag would collapse that distinction.
+        // Covers "Legal Description:", "Legal Desc:", and "Tax Legal Desc:" variants,
+        // including ALL-CAPS label forms from some MLS exports (requires /i flag).
+        // Boundary closure via $labelStop is used instead of the old Title-Case lookahead
+        // which misfired on Title-Case words that are part of the description value itself
+        // (e.g. "Section 23 Township 29 South").
         if ($v = $extract([
-            '/Legal\s+Description[\s:]+(.{5,500}?)(?=\s{2,}|[A-Z][a-z]+\s*[\s:\*]|$)/s',
-            '/Legal\s+Desc[\s:]+(.{5,500}?)(?=\s{2,}|[A-Z][a-z]+\s*[\s:\*]|$)/s',
-        ])) {
+            '/(?:Tax\s+)?Legal\s+Desc(?:ription)?[\s:]+(.{5,500})/is',
+        ], true)) {
             $data['legal_description'] = trim($v);
         }
 
         // ─── Flood Zone Code ──────────────────────────────────────────────────
-        // Tighten char class to [A-Za-z0-9\-\/] (no spaces) so multi-word label
-        // names that follow (e.g. "Appliances:") are never captured by accident.
-        if ($v = $extract(['/Flood\s+Zone\s+Code[\s:\*]+([A-Za-z0-9\-\/]{1,15})/i'])) {
+        // 3-word "Flood Zone Code:" tried first (most specific).
+        // 2-word "Flood Zone:" variant (e.g. Stellar data grid exports) requires a
+        // colon immediately after "Zone" to avoid matching "Flood Zone Panel:",
+        // "Flood Zone Date:", or "Flood Zone Code:" (which have a word before the colon).
+        // Char class [A-Za-z0-9\-\/] excludes spaces so adjacent labels aren't captured.
+        if ($v = $extract([
+            '/Flood\s+Zone\s+Code[\s:\*]+([A-Za-z0-9\-\/]{1,15})/i',
+            '/Flood\s+Zone\s*:[\s:\*]*([A-Za-z0-9\-\/]{1,15})/i',
+        ])) {
             $data['flood_zone_code'] = MlsNormalizer::normalize('flood_zone_code', $v);
         }
 
@@ -732,13 +746,16 @@ class MlsListingImportService
 
         // ─── Description / Remarks ────────────────────────────────────────────
         // "Public Remarks (English Only)" is the canonical MLS field name; also
-        // matches shorter "Public Remarks:" and plain "Remarks:" variants.
+        // matches "Public Remarks:", "Remarks:", "Property Description:", and "About:".
         // Maps directly to canonical key 'description' → Livewire 'additional_details'.
+        // Boundary closure via $labelStop terminates capture at the next MLS label.
         if ($v = $extract([
-            '/Public\s+Remarks?\s*\(English\s+Only\)[\s:]+(.{10,2000}?)(?=\s{2,}|(?:[A-Z][a-z]+\s*:)|$)/si',
-            '/(?:Public\s+)?Remarks?[\s:]+(.{10,1000}?)(?=\s{2,}|(?:[A-Z][a-z]+\s*:)|$)/si',
-            '/Description[\s:]+(.{10,1000}?)(?=\s{2,}|(?:[A-Z][a-z]+\s*:)|$)/si',
-        ])) {
+            '/Public\s+Remarks?\s*\(English\s+Only\)[\s:]+(.{10,2000})/si',
+            '/(?:Public\s+)?Remarks?[\s:]+(.{10,1000})/si',
+            '/Property\s+Description[\s:]+(.{10,1000})/si',
+            '/\bAbout[\s:]+(.{10,1000})/si',
+            '/\bDescription[\s:]+(.{10,1000})/si',
+        ], true)) {
             $data['description'] = trim($v);
         }
 

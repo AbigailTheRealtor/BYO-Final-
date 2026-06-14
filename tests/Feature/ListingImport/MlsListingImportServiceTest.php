@@ -1766,6 +1766,43 @@ class MlsListingImportServiceTest extends TestCase
         $this->assertEquals('11-22-33-44555', $data['tax_id']);
     }
 
+    /** @dataProvider annualTaxesLabelVariantsProvider */
+    public function test_annual_taxes_alternate_label_variants_parse(string $rawText, string $expected): void
+    {
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('annual_taxes', $result['data'],
+            "annual_taxes must be parsed from: $rawText");
+        $this->assertEquals($expected, $result['data']['annual_taxes']);
+    }
+
+    public static function annualTaxesLabelVariantsProvider(): array
+    {
+        return [
+            'Tax Amount colon'      => ['Tax Amount: $3,908 Tax Year: 2023', '3908'],
+            'Tax Amt colon'         => ['Tax Amt: $4,200 Tax Year: 2023', '4200'],
+            'Ann. Tax colon'        => ['Ann. Tax: $5,100 Tax Year: 2023', '5100'],
+            'Annual Tax colon'      => ['Annual Tax: $3,500 Tax Year: 2023', '3500'],
+            'bare Tax colon'        => ['Tax: $3,908 Tax Year: 2023', '3908'],
+            'bare Tax no dollar'    => ['Tax: 3,908.00 Tax Year: 2023', '3908.00'],
+        ];
+    }
+
+    public function test_bare_tax_label_does_not_capture_tax_year_or_tax_id(): void
+    {
+        $rawText = 'Tax ID: 12-34-56-78900 Tax Year: 2023 Tax: $4,750';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertEquals('2023', $data['tax_year'] ?? null, 'Tax Year must still parse');
+        $this->assertEquals('12-34-56-78900', $data['tax_id'] ?? null, 'Tax ID must still parse');
+        $this->assertEquals('4750', $data['annual_taxes'] ?? null, 'bare Tax: must capture the amount');
+    }
+
     public function test_tax_year_and_parcel_id_parsed_as_separate_fields(): void
     {
         $rawText = 'Tax ID: 55-66-77-88999 Tax Year: 2024 Annual Property Taxes: $3,100';
@@ -1826,6 +1863,104 @@ class MlsListingImportServiceTest extends TestCase
         $this->assertArrayHasKey('description', $data);
         $this->assertStringContainsStringIgnoringCase('Beautiful 3/2', $data['description']);
         $this->assertStringNotContainsStringIgnoringCase('Directions', $data['description']);
+    }
+
+    public function test_about_label_maps_to_description_key(): void
+    {
+        $rawText = 'About: Stunning 3-bed home near the water. Directions: Head north on US-19.';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('description', $result['data']);
+        $this->assertStringContainsStringIgnoringCase('Stunning', $result['data']['description']);
+        $this->assertStringNotContainsStringIgnoringCase('Directions', $result['data']['description']);
+    }
+
+    public function test_property_description_label_maps_to_description_key(): void
+    {
+        $rawText = 'Property Description: Charming cottage with ocean views. Directions: Head south.';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('description', $result['data']);
+        $this->assertStringContainsStringIgnoringCase('Charming cottage', $result['data']['description']);
+        $this->assertStringNotContainsStringIgnoringCase('Directions', $result['data']['description']);
+    }
+
+    /** @dataProvider legalDescriptionLabelVariantsProvider */
+    public function test_legal_description_alternate_label_variants_parse(string $rawText, string $needle): void
+    {
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('legal_description', $result['data'],
+            "legal_description must be parsed from: $rawText");
+        $this->assertStringContainsStringIgnoringCase($needle, $result['data']['legal_description']);
+    }
+
+    public static function legalDescriptionLabelVariantsProvider(): array
+    {
+        return [
+            'LEGAL DESCRIPTION all caps'     => ['LEGAL DESCRIPTION: SUNRIDGE ESTATES LOT 14 Tax Year: 2023', 'SUNRIDGE ESTATES'],
+            'Legal Description mixed case'   => ['Legal Description: Bayshore Terrace Sub Lot 22 Tax Year: 2023', 'Bayshore Terrace'],
+            'Legal Desc abbreviated'         => ['Legal Desc: Sunridge Sub PB 45 PG 12 Tax Year: 2023', 'Sunridge Sub'],
+            'Tax Legal Desc with prefix'     => ['Tax Legal Desc: Oak Park Lots 1-4 Tax Year: 2023', 'Oak Park'],
+        ];
+    }
+
+    public function test_legal_description_title_case_words_in_value_are_preserved(): void
+    {
+        $rawText = 'Legal Description: Section 23 Township 29 South Range 16 East Tax Year: 2023';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('legal_description', $result['data']);
+        $desc = $result['data']['legal_description'];
+        $this->assertStringContainsStringIgnoringCase('Section 23', $desc);
+        $this->assertStringContainsStringIgnoringCase('Township', $desc);
+        $this->assertStringNotContainsStringIgnoringCase('Tax Year', $desc,
+            'Tax Year label must not bleed into legal_description value');
+    }
+
+    /** @dataProvider floodZoneTwoWordLabelProvider */
+    public function test_flood_zone_two_word_label_parsed(string $rawText, string $expected): void
+    {
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('flood_zone_code', $result['data'],
+            "flood_zone_code must be parsed from: $rawText");
+        $this->assertEquals($expected, $result['data']['flood_zone_code']);
+    }
+
+    public static function floodZoneTwoWordLabelProvider(): array
+    {
+        return [
+            'Flood Zone AE'  => ['Flood Zone: AE Tax Year: 2023', 'AE'],
+            'Flood Zone X'   => ['Flood Zone: X Tax Year: 2023', 'X'],
+            'Flood Zone VE'  => ['Flood Zone: VE Tax Year: 2023', 'VE'],
+            'Flood Zone ae lowercase' => ['Flood Zone: ae Tax Year: 2023', 'AE'],
+        ];
+    }
+
+    public function test_flood_zone_two_word_does_not_capture_panel_or_date(): void
+    {
+        $rawText = 'Flood Zone Code: AE Flood Zone Panel: 12057C0215G Flood Zone Date: 09/01/2021 Flood Zone: X Tax Year: 2023';
+
+        $result = $this->service->import('', $rawText);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertEquals('AE', $data['flood_zone_code'] ?? null,
+            'flood_zone_code must come from "Flood Zone Code:" (3-word), not "Flood Zone:" (2-word) when 3-word appears first');
+        $this->assertStringContainsString('12057C', $data['flood_zone_panel'] ?? '',
+            'flood_zone_panel must still parse correctly');
+        $this->assertNotEquals('12057C0215G', $data['flood_zone_code'],
+            'Panel value must not bleed into flood_zone_code');
     }
 
     public function test_description_maps_to_additional_details_for_all_roles(): void

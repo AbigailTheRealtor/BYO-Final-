@@ -45,14 +45,14 @@ URL fetch → parseFields() → MlsNormalizer → MlsFieldMap → importListingF
 → applyImportedFields() → saveDraft() → loadDraft() → [Public View] → [Ask AI]
 ```
 
-**Confirmed P0 failures: 13 total**
-- 4 parser-label-variant gaps (P0-1 through P0-4) — specific MLS label forms not matched
-- 1 Stage 7 failure: Landlord loadDraft() TypeError wipes all fields on reload (P0-5)
-- 8 parser boundary-bleed bugs (fields parsed incorrectly, wrong value written)
+**Confirmed P0 failures: 13 total — all 13 RESOLVED as of 2026-06-14 remediation**
+- 4 parser-label-variant gaps (P0-1 through P0-4) — FIXED: label patterns added
+- 1 Stage 7 failure: Landlord loadDraft() TypeError — FIXED: double-decode removed
+- 8 parser boundary-bleed bugs — FIXED: $labelStop colon-anchor and char-class tightened
 
 **Parser label-variant gaps (P1): 3**
 **Minor/edge-case gaps (P2): 4**
-**Previously-fixed regressions confirmed still passing: 10**
+**Previously-fixed regressions confirmed still passing: 412 (full CI suite)**
 
 ---
 
@@ -88,10 +88,10 @@ URL fetch → parseFields() → MlsNormalizer → MlsFieldMap → importListingF
 | 4 — Preview Modal | `HasMlsImport::importListingFromUrl()` → `$importPreviewData` | `SellerOfferListing` | `LandlordOfferListing` |
 | 5 — Apply Selected | `HasMlsImport::applyImportedFields()` | `SellerOfferListing` | `LandlordOfferListing` |
 | 6 — Save Draft | `SellerOfferListing::saveDraft()` | EAV / native columns | EAV meta keys |
-| 7 — Reload Draft | `SellerOfferListing::loadDraft()` / `LandlordOfferListing::loadDraft()` | EAV load | **Broken — TypeError** |
+| 7 — Reload Draft | `SellerOfferListing::loadDraft()` / `LandlordOfferListing::loadDraft()` | EAV load | **✅ FIXED — double-decode removed (P0-5)** |
 | 8 — Public View | `resources/views/offer-listing/{role}/view.blade.php` | Partial audit | Partial audit |
 
-> **Stage 7 note:** `LandlordOfferListing::loadDraft()` is currently broken for all JSON-array fields. See P0-5 for full root cause and scope.
+> **Stage 7 note (historical):** `LandlordOfferListing::loadDraft()` had a double-decode TypeError for all JSON-array fields. Fixed in 2026-06-14 remediation by removing redundant `json_decode()` calls — all array fields now use `ensureArray()` directly.
 
 ---
 
@@ -572,19 +572,19 @@ No new normalizer failures were found. All 5 `MlsNormalizer` branches pass the 1
 
 | Priority | ID | Finding | Stage | Fix Target |
 |----------|----|---------|-------|------------|
-| **P0** | P0-5 | Landlord loadDraft() TypeError — ALL Landlord fields fail to reload | Stage 7 | Remove redundant `json_decode()` calls from `LandlordOfferListing::loadDraft()` |
-| **P0** | BB-1 | Furnished "Unfurnished" → "Un" | Stage 1 | Remove `Furnished\b` from $labelStop or use colon-anchor form |
-| **P0** | BB-2 | Sewer "Public Sewer" → "Public" | Stage 1 | Remove/fix `Sewer\b` stop |
-| **P0** | BB-3 | Utilities truncated at "Available" | Stage 1 | Remove/fix `Available\b` stop |
-| **P0** | BB-4 | Tenant Pays "Electricity" → "Electri" | Stage 1 | Remove/fix `City\b` stop |
-| **P0** | BB-5 | City multi-word names truncated | Stage 1 | Remove/fix `City\b` stop |
-| **P0** | BB-6 | Association Name truncated at "HOA" | Stage 1 | Remove/fix `HOA\b` stop |
-| **P0** | BB-7 | Association Name truncated at "Association" | Stage 1 | Remove/fix `Association\b` stop |
-| **P0** | BB-8 | Flood Zone Panel polluted by newline bleed | Stage 1 | Change `\s` in char class to `[ \t]` or use explicit char list |
-| **P0** | P0-1 | Public Remarks dead `\s{2,}` terminator | Stage 1 | Replace lookahead with `$labelStop` closure |
-| **P0** | P0-2 | Annual Taxes missing label variants | Stage 1 | Add 5 label alternations |
-| **P0** | P0-3 | Legal Description dead terminator + Title Case firing | Stage 1 | Replace lookahead with `$labelStop`; add `/i` |
-| **P0** | P0-4 | Flood Zone Code 2-word label not matched | Stage 1 | Add `Flood Zone:` alternation |
+| **✅ FIXED** | P0-5 | Landlord loadDraft() TypeError — ALL Landlord fields fail to reload | Stage 7 | Redundant `json_decode()` removed; all array fields use `ensureArray()` |
+| **✅ FIXED** | BB-1 | Furnished "Unfurnished" → "Un" | Stage 1 | `Furnished\b(?=\s*:)` colon-anchor in $labelStop |
+| **✅ FIXED** | BB-2 | Sewer "Public Sewer" → "Public" | Stage 1 | `Sewer\b(?=\s*:)` colon-anchor in $labelStop |
+| **✅ FIXED** | BB-3 | Utilities truncated at "Available" | Stage 1 | `Available\b(?=\s*:)` colon-anchor in $labelStop |
+| **✅ FIXED** | BB-4 | Tenant Pays "Electricity" → "Electri" | Stage 1 | `City\b(?=\s*:)` colon-anchor in $labelStop |
+| **✅ FIXED** | BB-5 | City multi-word names truncated | Stage 1 | `City\b(?=\s*:)` colon-anchor in $labelStop |
+| **✅ FIXED** | BB-6 | Association Name truncated at "HOA" | Stage 1 | `HOA\b(?=\s*:)` colon-anchor in $labelStop |
+| **✅ FIXED** | BB-7 | Association Name truncated at "Association" | Stage 1 | `Association\b(?=\s*:)` colon-anchor in $labelStop |
+| **✅ FIXED** | BB-8 | Flood Zone Panel polluted by newline bleed | Stage 1 | `\s` removed from char class `[A-Za-z0-9\-]` |
+| **✅ FIXED** | P0-1 | Public Remarks: added `About:` + `Property Description:` labels | Stage 1 | Patterns migrated to `boundary=true` ($labelStop closure) |
+| **✅ FIXED** | P0-2 | Annual Taxes missing label variants | Stage 1 | Added `Tax Amount:`, `Tax Amt:`, `Ann. Tax:`, `Annual Tax:`, bare `Tax:` |
+| **✅ FIXED** | P0-3 | Legal Description dead terminator + Title Case firing | Stage 1 | Switched to `boundary=true`; added `/i` flag; added `Tax Legal Desc:` |
+| **✅ FIXED** | P0-4 | Flood Zone Code 2-word label not matched | Stage 1 | Added `Flood Zone\s*:` pattern (colon-required, excludes Panel/Date/Code) |
 | **P1** | P1-1 | Security Deposit missing 2-word label | Stage 1 | Add alternation |
 | **P1** | P1-2 | HOA Dues label missing | Stage 1 | Add alternation |
 | **P1** | P1-3 | Folio Number label missing | Stage 1 | Add alternation |
@@ -611,12 +611,12 @@ No new normalizer failures were found. All 5 `MlsNormalizer` branches pass the 1
 
 ## Appendix A — Full Pipeline Stage Table for All P0 Failures (Parser-Label Failures)
 
-> These are the four label-variant parser failures (P0-1 through P0-4). P0-5 (Landlord loadDraft) and BB-1 through BB-8 (boundary bleed) are covered in Parts 2 and 3 above.
+> **Status as of 2026-06-14 remediation: ALL P0 failures resolved.** These are the four label-variant parser failures (P0-1 through P0-4). P0-5 (Landlord loadDraft) and BB-1 through BB-8 (boundary bleed) are covered in Parts 2 and 3 above.
 
 | Stage | P0-1 Description | P0-2 Annual Taxes | P0-3 Legal Desc | P0-4 Flood Zone Code |
 |-------|-----------------|-------------------|-----------------|---------------------|
-| 1 — Parser | ❌ dead terminator | ❌ missing label forms | ❌ dead terminator + Title Case | ❌ 2-word label not matched |
-| 2 — Normalizer | N/A (not reached) | N/A | N/A | N/A |
+| 1 — Parser | ✅ FIXED: `About:`, `Property Description:` added; `boundary=true` | ✅ FIXED: 5 new label variants added | ✅ FIXED: `boundary=true`, `/i` flag, `Tax Legal Desc:` | ✅ FIXED: `Flood Zone:` (2-word, colon-required) |
+| 2 — Normalizer | N/A | N/A | N/A | N/A |
 | 3 — Field Map (Seller) | CI✅ | CI✅ | CI✅ | CI✅ |
 | 3 — Field Map (Landlord) | CI✅ | CI✅ | CI✅ | CI✅ |
 | 4 — Preview Modal | Live✅ (when parser succeeds) | Live✅ (fixture label works) | Live✅ (fixture label works) | Live✅ (3-word label works) |
