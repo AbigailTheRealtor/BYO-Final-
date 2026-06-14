@@ -4506,11 +4506,10 @@ class AskAiRunnerV2Service
      *   seller   → seller_agent_auctions.description            (native column)
      *   buyer    → buyer_agent_auctions.additional_details      (native column)
      *   tenant   → tenant_agent_auction_metas meta_key='additional_details' (EAV)
-     *   landlord → no public description field exists           (always null)
+     *   landlord → landlord_agent_auction_metas meta_key='additional_details' (EAV)
      *
      * Returns null when:
      *   - The listing type is unrecognised.
-     *   - The role is 'landlord' (no description concept in context builder).
      *   - No row exists for the given listing ID.
      *   - The description column/meta value is null or blank.
      *   - Any DB exception occurs (silently caught).
@@ -4543,9 +4542,8 @@ class AskAiRunnerV2Service
 
         try {
             // Seller and Buyer store their public description in native table columns.
-            // Landlord and Tenant have no freetext description native column — landlord
-            // has no description concept in the context builder at all; tenant stores
-            // its optional "additional_details" text in the EAV meta table.
+            // Tenant and Landlord have no native description column; both store their
+            // optional freetext "additional_details" in the EAV meta table.
             if ($canonical === 'seller') {
                 $value = DB::table('seller_agent_auctions')
                     ->where('id', $listingId)
@@ -4561,9 +4559,11 @@ class AskAiRunnerV2Service
                     ->where('meta_key', 'additional_details')
                     ->value('meta_value');
             } else {
-                // Landlord: no public freetext description field exists in either the
-                // native table or EAV metas; return null so the fallback is skipped.
-                return null;
+                // Landlord uses EAV: landlord_agent_auction_metas (meta_key = 'additional_details').
+                $value = DB::table('landlord_agent_auction_metas')
+                    ->where('landlord_agent_auction_id', $listingId)
+                    ->where('meta_key', 'additional_details')
+                    ->value('meta_value');
             }
 
             if (!is_string($value) || trim($value) === '') {

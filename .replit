@@ -30,6 +30,7 @@ ASK_AI_ENABLE_OPENAI_INTENT_NORMALIZATION = "true"
 OPENAI_MODEL = "gpt-4o-2024-08-06"
 OPENAI_PROMPT_VERSION = "property-dna-report-v1.0"
 MAIL_MAILER = "log"
+ASK_AI_ENABLE_DESCRIPTION_FALLBACK = "true"
 
 [workflows]
 runButton = "Project"
