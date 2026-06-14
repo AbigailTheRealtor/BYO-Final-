@@ -28,8 +28,11 @@ use App\Services\AskAi\AskAiFollowUpQuestionService;
 use App\Services\AskAi\AskAiIntentNormalizerService;
 use App\Services\AskAi\AskAiKnowledgeSearchService;
 use App\Contracts\BoundaryAdapterInterface;
+use App\Contracts\FloodZoneAdapterInterface;
 use App\Services\LocationDna\CensusTigerBoundaryAdapter;
+use App\Services\LocationDna\FemaFloodZoneAdapter;
 use App\Services\LocationDna\BoundaryLookupService;
+use App\Services\LocationDna\FloodZoneLookupService;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -47,9 +50,14 @@ class AppServiceProvider extends ServiceProvider
         // safer: it is immune to future constructor changes in those dependencies and makes
         // the intent clear to anyone reading the service graph.
         $this->app->bind(BoundaryAdapterInterface::class, CensusTigerBoundaryAdapter::class);
+        $this->app->bind(FloodZoneAdapterInterface::class, FemaFloodZoneAdapter::class);
 
         $this->app->bind(BoundaryLookupService::class, function ($app) {
             return new BoundaryLookupService($app->make(BoundaryAdapterInterface::class));
+        });
+
+        $this->app->bind(FloodZoneLookupService::class, function ($app) {
+            return new FloodZoneLookupService($app->make(FloodZoneAdapterInterface::class));
         });
 
         $this->app->bind(AskAiRunnerV2Service::class, function ($app) {

@@ -1,7 +1,7 @@
 {{--
   Location DNA Map Display Component
   ====================================
-  Usage:  <x-location-dna-map :preferences="$locationDnaPreferences" :legacyLocation="$legacyLocation" :boundaryData="$boundaryData ?? null" />
+  Usage:  <x-location-dna-map :preferences="$locationDnaPreferences" :legacyLocation="$legacyLocation" :boundaryData="$boundaryData ?? null" :floodZoneData="$floodZoneData ?? null" />
 
   Props:
     $preferences   – decoded array from `location_dna_preferences` meta key, or null
@@ -10,6 +10,9 @@
     $boundaryData  – optional; resolved by BoundaryLookupService in the controller:
                        ['geojson_polygons' => [...], 'fallback' => bool]
                      When absent or fallback=true, chip display is used for Tiers 3-5.
+    $floodZoneData – optional; resolved by FloodZoneLookupService in the controller:
+                       ['flood_zones' => [...], 'available' => bool]
+                     When absent or available=false, no flood overlay is rendered.
 
   Priority chain — STRICTLY one tier renders; the first non-empty tier wins:
     1. Custom drawn polygons   → Google Maps Polygon overlays
@@ -27,6 +30,12 @@
     REST API and passes them as $boundaryData. When the API returns no data (unknown area,
     network error, timeout), $boundaryData['fallback'] is true and the chip display renders
     unchanged. This ensures the map never goes blank.
+
+  Phase 3A flood zone overlay:
+    FloodZoneLookupService fetches FEMA NFHL flood zone polygons and passes them as
+    $floodZoneData. When unavailable (timeout, no data, area too large), the map renders
+    normally without the overlay. Flood zones are rendered as a second pass on top of
+    existing overlays and do NOT affect fitBounds.
 
   XSS:
     All user-supplied label content rendered via JavaScript uses textContent, not
@@ -81,6 +90,26 @@
   $useBoundaryMap = !empty($geoPolygons)
                     && in_array($tier, ['cities', 'zips', 'counties'], true);
 
+  /* ── Phase 3A: Flood zone overlay data ───────────────────────────────────── */
+  $fzd          = isset($floodZoneData) && is_array($floodZoneData) ? $floodZoneData : null;
+  $floodZones   = ($fzd && !empty($fzd['available']) && !empty($fzd['flood_zones']))
+                    ? $fzd['flood_zones']
+                    : [];
+  $hasFloodZones = !empty($floodZones)
+                   && ($tier === 'polygons' || $tier === 'radii' || $useBoundaryMap);
+
+  /* Unique zone designations for the legend (stable sorted order) */
+  $floodZoneLegend = [];
+  if ($hasFloodZones) {
+      foreach ($floodZones as $fz) {
+          $zd = $fz['zone_designation'] ?? '';
+          if ($zd !== '' && !in_array($zd, $floodZoneLegend, true)) {
+              $floodZoneLegend[] = $zd;
+          }
+      }
+      sort($floodZoneLegend);
+  }
+
   $componentId = 'ldna-display-' . uniqid();
   $mapsKey     = config('services.google.places_key') ?: env('GOOGLE_PLACES_API_KEY', '');
 @endphp
@@ -111,6 +140,16 @@
     border-left:3px solid #0ea5e9;padding-left:.75rem; }
   .ldna-neigh-supplement { margin-top:.75rem; padding-top:.75rem;
     border-top: 1px solid #cbd5e1; }
+  /* Flood zone legend */
+  .ldna-flood-legend { display:flex; flex-wrap:wrap; gap:.4rem;
+    align-items:center; padding:.6rem .85rem; margin-top:.5rem;
+    background:#fff8f1; border:1px solid #fed7aa; border-radius:6px;
+    font-size:.8rem; }
+  .ldna-flood-legend-title { font-weight:700; color:#9a3412;
+    text-transform:uppercase; letter-spacing:.04em; margin-right:.3rem; flex-shrink:0; }
+  .ldna-flood-chip { display:inline-flex; align-items:center; gap:.28rem;
+    border-radius:12px; padding:.18rem .65rem; font-size:.78rem; font-weight:600;
+    border:1px solid transparent; white-space:nowrap; }
 </style>
 @endpush
 
@@ -149,6 +188,11 @@
       </span>
     @endif
     <div id="{{ $componentId }}" class="ldna-hero-map"></div>
+
+    @if($hasFloodZones)
+      @include('components.location-dna-flood-legend', ['floodZoneLegend' => $floodZoneLegend])
+    @endif
+
     @if($dnaNeigh)
       <div class="ldna-neigh-supplement">
         <span style="font-size:.78rem;color:#64748b;font-weight:600;">NEIGHBORHOODS</span><br>
@@ -168,16 +212,54 @@
 
   <script>
   (function () {
-    var polygons  = @json($polygons);
-    var radii     = @json($radii);
-    var tier      = @json($tier);
-    var mapElId   = @json($componentId);
+    var polygons   = @json($polygons);
+    var radii      = @json($radii);
+    var tier       = @json($tier);
+    var mapElId    = @json($componentId);
+    var floodZones = @json($floodZones);
 
     /* XSS-safe label helper — uses textContent, never innerHTML */
     function safeLabel(text) {
       var strong = document.createElement('strong');
       strong.textContent = String(text || '');
       return strong.outerHTML;
+    }
+
+    /* Return Google Maps style config for a FEMA flood zone designation */
+    function floodZoneStyle(zone) {
+      var z = String(zone).toUpperCase();
+      if (z === 'X' || z.charAt(0) === 'X') {
+        return { fillColor: '#16a34a', fillOpacity: 0.15, strokeColor: '#15803d', strokeWeight: 1 };
+      }
+      if (z === 'VE' || z === 'V' || (z.length > 1 && z.charAt(0) === 'V')) {
+        return { fillColor: '#dc2626', fillOpacity: 0.35, strokeColor: '#b91c1c', strokeWeight: 1 };
+      }
+      if (z.charAt(0) === 'A') {
+        return { fillColor: '#f97316', fillOpacity: 0.30, strokeColor: '#ea580c', strokeWeight: 1 };
+      }
+      return { fillColor: '#94a3b8', fillOpacity: 0.20, strokeColor: '#64748b', strokeWeight: 1 };
+    }
+
+    function ringToPath(ring) {
+      return ring.map(function (pt) { return { lat: pt[1], lng: pt[0] }; });
+    }
+
+    function renderFloodZones(gMap) {
+      if (!floodZones || !floodZones.length) return;
+      floodZones.forEach(function (fz) {
+        var style = floodZoneStyle(fz.zone_designation);
+        var paths = (fz.rings || []).map(function (ring) { return ringToPath(ring); });
+        if (!paths.length) return;
+        new google.maps.Polygon({
+          paths: paths,
+          fillColor:    style.fillColor,
+          fillOpacity:  style.fillOpacity,
+          strokeColor:  style.strokeColor,
+          strokeWeight: style.strokeWeight,
+          map: gMap,
+          zIndex: 10,
+        });
+      });
     }
 
     function initLdnaDisplay() {
@@ -247,6 +329,9 @@
       }
 
       if (hasBounds) { gMap.fitBounds(bounds); }
+
+      /* Phase 3A: render flood zones on top — does NOT affect fitBounds */
+      renderFloodZones(gMap);
     }
 
     if (document.readyState === 'loading') {
@@ -262,6 +347,7 @@
        Renders a full Google Maps canvas with polygon outlines from Census TIGER data.
        Falls back to chip display when $boundaryData['fallback'] is true (handled by
        the $useBoundaryMap flag above — this block only runs when polygons are available).
+       Phase 3A flood zone overlay is rendered as a second pass on top of boundaries.
        Supplemental neighborhoods and notes continue to appear below the map.          --}}
   <div class="ldna-hero mb-3">
     @if($flex)
@@ -270,6 +356,10 @@
       </span>
     @endif
     <div id="{{ $componentId }}" class="ldna-hero-map"></div>
+
+    @if($hasFloodZones)
+      @include('components.location-dna-flood-legend', ['floodZoneLegend' => $floodZoneLegend])
+    @endif
 
     @if($dnaNeigh)
       <div class="ldna-neigh-supplement">
@@ -304,12 +394,46 @@
      * We create one google.maps.Polygon per disconnected polygon piece so that
      * islands and exclaves render as separate shapes rather than as holes.
      */
-    var geoRings = @json($geoPolygons);
-    var mapElId  = @json($componentId);
+    var geoRings   = @json($geoPolygons);
+    var floodZones = @json($floodZones);
+    var mapElId    = @json($componentId);
 
     function ringToPath(ring) {
       return ring.map(function (pt) {
         return { lat: pt[1], lng: pt[0] };
+      });
+    }
+
+    /* Return Google Maps style config for a FEMA flood zone designation */
+    function floodZoneStyle(zone) {
+      var z = String(zone).toUpperCase();
+      if (z === 'X' || z.charAt(0) === 'X') {
+        return { fillColor: '#16a34a', fillOpacity: 0.15, strokeColor: '#15803d', strokeWeight: 1 };
+      }
+      if (z === 'VE' || z === 'V' || (z.length > 1 && z.charAt(0) === 'V')) {
+        return { fillColor: '#dc2626', fillOpacity: 0.35, strokeColor: '#b91c1c', strokeWeight: 1 };
+      }
+      if (z.charAt(0) === 'A') {
+        return { fillColor: '#f97316', fillOpacity: 0.30, strokeColor: '#ea580c', strokeWeight: 1 };
+      }
+      return { fillColor: '#94a3b8', fillOpacity: 0.20, strokeColor: '#64748b', strokeWeight: 1 };
+    }
+
+    function renderFloodZones(gMap) {
+      if (!floodZones || !floodZones.length) return;
+      floodZones.forEach(function (fz) {
+        var style = floodZoneStyle(fz.zone_designation);
+        var paths = (fz.rings || []).map(function (ring) { return ringToPath(ring); });
+        if (!paths.length) return;
+        new google.maps.Polygon({
+          paths: paths,
+          fillColor:    style.fillColor,
+          fillOpacity:  style.fillOpacity,
+          strokeColor:  style.strokeColor,
+          strokeWeight: style.strokeWeight,
+          map: gMap,
+          zIndex: 10,
+        });
       });
     }
 
@@ -369,6 +493,9 @@
       if (hasBounds) {
         gMap.fitBounds(bounds);
       }
+
+      /* Phase 3A: render flood zones on top — does NOT affect fitBounds */
+      renderFloodZones(gMap);
     }
 
     if (document.readyState === 'loading') {

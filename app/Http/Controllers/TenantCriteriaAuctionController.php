@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\TenantCriteriaAuction;
 use App\Models\TenantCriteriaAuctionBid;
 use App\Services\LocationDna\BoundaryLookupService;
+use App\Services\LocationDna\FloodZoneLookupService;
 
 class TenantCriteriaAuctionController extends Controller
 {
@@ -599,7 +600,7 @@ class TenantCriteriaAuctionController extends Controller
         return redirect()->back()->with('success', 'Auction Approved Successfully!');
     }
 
-    public function view($id, Request $request, BoundaryLookupService $boundaryLookupService)
+    public function view($id, Request $request, BoundaryLookupService $boundaryLookupService, FloodZoneLookupService $floodZoneLookupService)
     {
         $page_data['auction'] = TenantCriteriaAuction::whereId($id)->first();
         $page_data['title'] = 'Tenant Criteria';
@@ -617,6 +618,10 @@ class TenantCriteriaAuctionController extends Controller
         $page_data['boundaryData'] = $boundaryLookupService->resolve(
             $page_data['locationDnaPreferences'],
             $page_data['legacyLocation']
+        );
+        $page_data['floodZoneData'] = $floodZoneLookupService->resolve(
+            $page_data['boundaryData'],
+            $page_data['locationDnaPreferences'] ?? []
         );
         return view('tenant_criteria.view', $page_data);
     }
