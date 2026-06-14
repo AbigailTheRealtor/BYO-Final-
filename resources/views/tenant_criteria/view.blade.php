@@ -129,6 +129,8 @@
           :preferences="$locationDnaPreferences ?? null"
           :legacyLocation="$legacyLocation ?? []"
           :boundaryData="$boundaryData ?? null"
+          :floodZoneData="$floodZoneData ?? null"
+          :schoolDistrictData="$schoolDistrictData ?? null"
         />
         <!-- Description Box  -->
         <div class="card description">

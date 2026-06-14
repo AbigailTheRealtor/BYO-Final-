@@ -1,7 +1,7 @@
 {{--
   Location DNA Map Display Component
   ====================================
-  Usage:  <x-location-dna-map :preferences="$locationDnaPreferences" :legacyLocation="$legacyLocation" :boundaryData="$boundaryData ?? null" :floodZoneData="$floodZoneData ?? null" />
+  Usage:  <x-location-dna-map :preferences="$locationDnaPreferences" :legacyLocation="$legacyLocation" :boundaryData="$boundaryData ?? null" :floodZoneData="$floodZoneData ?? null" :schoolDistrictData="$schoolDistrictData ?? null" />
 
   Props:
     $preferences   – decoded array from `location_dna_preferences` meta key, or null
@@ -13,6 +13,9 @@
     $floodZoneData – optional; resolved by FloodZoneLookupService in the controller:
                        ['flood_zones' => [...], 'available' => bool]
                      When absent or available=false, no flood overlay is rendered.
+    $schoolDistrictData – optional; resolved by SchoolDistrictLookupService in the controller:
+                       ['school_districts' => [...], 'available' => bool]
+                     When absent or available=false, no school district overlay is rendered.
 
   Priority chain — STRICTLY one tier renders; the first non-empty tier wins:
     1. Custom drawn polygons   → Google Maps Polygon overlays
@@ -36,6 +39,11 @@
     $floodZoneData. When unavailable (timeout, no data, area too large), the map renders
     normally without the overlay. Flood zones are rendered as a second pass on top of
     existing overlays and do NOT affect fitBounds.
+
+  Phase 3B school district overlay:
+    SchoolDistrictLookupService fetches Census TIGER/Line school district polygons and
+    passes them as $schoolDistrictData. Rendered as a third pass BELOW flood zones by
+    zIndex. Does NOT affect fitBounds. When unavailable, map renders normally.
 
   XSS:
     All user-supplied label content rendered via JavaScript uses textContent, not
@@ -110,6 +118,25 @@
       sort($floodZoneLegend);
   }
 
+  /* ── Phase 3B: School district overlay data ──────────────────────────────── */
+  $sdd              = isset($schoolDistrictData) && is_array($schoolDistrictData) ? $schoolDistrictData : null;
+  $schoolDistricts  = ($sdd && !empty($sdd['available']) && !empty($sdd['school_districts']))
+                        ? $sdd['school_districts']
+                        : [];
+  $hasSchoolDistricts = !empty($schoolDistricts)
+                        && ($tier === 'polygons' || $tier === 'radii' || $useBoundaryMap);
+
+  /* Unique district names for the legend (insertion order, then deduped) */
+  $schoolDistrictLegend = [];
+  if ($hasSchoolDistricts) {
+      foreach ($schoolDistricts as $sd) {
+          $dn = $sd['district_name'] ?? '';
+          if ($dn !== '' && !in_array($dn, $schoolDistrictLegend, true)) {
+              $schoolDistrictLegend[] = $dn;
+          }
+      }
+  }
+
   $componentId = 'ldna-display-' . uniqid();
   $mapsKey     = config('services.google.places_key') ?: env('GOOGLE_PLACES_API_KEY', '');
 @endphp
@@ -150,6 +177,16 @@
   .ldna-flood-chip { display:inline-flex; align-items:center; gap:.28rem;
     border-radius:12px; padding:.18rem .65rem; font-size:.78rem; font-weight:600;
     border:1px solid transparent; white-space:nowrap; }
+  /* School district legend */
+  .ldna-school-district-legend { display:flex; flex-wrap:wrap; gap:.4rem;
+    align-items:center; padding:.6rem .85rem; margin-top:.5rem;
+    background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px;
+    font-size:.8rem; }
+  .ldna-school-district-legend-title { font-weight:700; color:#1e40af;
+    text-transform:uppercase; letter-spacing:.04em; margin-right:.3rem; flex-shrink:0; }
+  .ldna-school-district-chip { display:inline-flex; align-items:center; gap:.28rem;
+    border-radius:12px; padding:.18rem .65rem; font-size:.78rem; font-weight:600;
+    background:#dbeafe; color:#1d4ed8; border:1px solid #93c5fd; white-space:nowrap; }
 </style>
 @endpush
 
@@ -193,6 +230,10 @@
       @include('components.location-dna-flood-legend', ['floodZoneLegend' => $floodZoneLegend])
     @endif
 
+    @if($hasSchoolDistricts)
+      @include('components.location-dna-school-district-legend', ['schoolDistrictLegend' => $schoolDistrictLegend])
+    @endif
+
     @if($dnaNeigh)
       <div class="ldna-neigh-supplement">
         <span style="font-size:.78rem;color:#64748b;font-weight:600;">NEIGHBORHOODS</span><br>
@@ -212,11 +253,12 @@
 
   <script>
   (function () {
-    var polygons   = @json($polygons);
-    var radii      = @json($radii);
-    var tier       = @json($tier);
-    var mapElId    = @json($componentId);
-    var floodZones = @json($floodZones);
+    var polygons        = @json($polygons);
+    var radii           = @json($radii);
+    var tier            = @json($tier);
+    var mapElId         = @json($componentId);
+    var floodZones      = @json($floodZones);
+    var schoolDistricts = @json($schoolDistricts);
 
     /* XSS-safe label helper — uses textContent, never innerHTML */
     function safeLabel(text) {
@@ -258,6 +300,26 @@
           strokeWeight: style.strokeWeight,
           map: gMap,
           zIndex: 10,
+        });
+      });
+    }
+
+    /* Phase 3B: render school district outlines — does NOT affect fitBounds.
+     * Rendered below flood zones (zIndex 5 < 10). */
+    function renderSchoolDistricts(gMap) {
+      if (!schoolDistricts || !schoolDistricts.length) return;
+      schoolDistricts.forEach(function (sd) {
+        var paths = (sd.rings || []).map(function (ring) { return ringToPath(ring); });
+        if (!paths.length) return;
+        new google.maps.Polygon({
+          paths:        paths,
+          fillColor:    '#1d4ed8',
+          fillOpacity:  0.05,
+          strokeColor:  '#1d4ed8',
+          strokeWeight: 1.5,
+          strokeOpacity: 0.7,
+          map:          gMap,
+          zIndex:       5,
         });
       });
     }
@@ -332,6 +394,8 @@
 
       /* Phase 3A: render flood zones on top — does NOT affect fitBounds */
       renderFloodZones(gMap);
+      /* Phase 3B: render school district outlines below flood zones — does NOT affect fitBounds */
+      renderSchoolDistricts(gMap);
     }
 
     if (document.readyState === 'loading') {
@@ -359,6 +423,10 @@
 
     @if($hasFloodZones)
       @include('components.location-dna-flood-legend', ['floodZoneLegend' => $floodZoneLegend])
+    @endif
+
+    @if($hasSchoolDistricts)
+      @include('components.location-dna-school-district-legend', ['schoolDistrictLegend' => $schoolDistrictLegend])
     @endif
 
     @if($dnaNeigh)
@@ -394,9 +462,10 @@
      * We create one google.maps.Polygon per disconnected polygon piece so that
      * islands and exclaves render as separate shapes rather than as holes.
      */
-    var geoRings   = @json($geoPolygons);
-    var floodZones = @json($floodZones);
-    var mapElId    = @json($componentId);
+    var geoRings        = @json($geoPolygons);
+    var floodZones      = @json($floodZones);
+    var schoolDistricts = @json($schoolDistricts);
+    var mapElId         = @json($componentId);
 
     function ringToPath(ring) {
       return ring.map(function (pt) {
@@ -433,6 +502,26 @@
           strokeWeight: style.strokeWeight,
           map: gMap,
           zIndex: 10,
+        });
+      });
+    }
+
+    /* Phase 3B: render school district outlines — does NOT affect fitBounds.
+     * Rendered below flood zones (zIndex 5 < 10). */
+    function renderSchoolDistricts(gMap) {
+      if (!schoolDistricts || !schoolDistricts.length) return;
+      schoolDistricts.forEach(function (sd) {
+        var paths = (sd.rings || []).map(function (ring) { return ringToPath(ring); });
+        if (!paths.length) return;
+        new google.maps.Polygon({
+          paths:         paths,
+          fillColor:     '#1d4ed8',
+          fillOpacity:   0.05,
+          strokeColor:   '#1d4ed8',
+          strokeWeight:  1.5,
+          strokeOpacity: 0.7,
+          map:           gMap,
+          zIndex:        5,
         });
       });
     }
@@ -496,6 +585,8 @@
 
       /* Phase 3A: render flood zones on top — does NOT affect fitBounds */
       renderFloodZones(gMap);
+      /* Phase 3B: render school district outlines below flood zones — does NOT affect fitBounds */
+      renderSchoolDistricts(gMap);
     }
 
     if (document.readyState === 'loading') {

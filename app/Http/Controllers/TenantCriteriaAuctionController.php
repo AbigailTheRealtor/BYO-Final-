@@ -11,6 +11,7 @@ use App\Models\TenantCriteriaAuction;
 use App\Models\TenantCriteriaAuctionBid;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
+use App\Services\LocationDna\SchoolDistrictLookupService;
 
 class TenantCriteriaAuctionController extends Controller
 {
@@ -600,7 +601,7 @@ class TenantCriteriaAuctionController extends Controller
         return redirect()->back()->with('success', 'Auction Approved Successfully!');
     }
 
-    public function view($id, Request $request, BoundaryLookupService $boundaryLookupService, FloodZoneLookupService $floodZoneLookupService)
+    public function view($id, Request $request, BoundaryLookupService $boundaryLookupService, FloodZoneLookupService $floodZoneLookupService, SchoolDistrictLookupService $schoolDistrictLookupService)
     {
         $page_data['auction'] = TenantCriteriaAuction::whereId($id)->first();
         $page_data['title'] = 'Tenant Criteria';
@@ -620,6 +621,10 @@ class TenantCriteriaAuctionController extends Controller
             $page_data['legacyLocation']
         );
         $page_data['floodZoneData'] = $floodZoneLookupService->resolve(
+            $page_data['boundaryData'],
+            $page_data['locationDnaPreferences'] ?? []
+        );
+        $page_data['schoolDistrictData'] = $schoolDistrictLookupService->resolve(
             $page_data['boundaryData'],
             $page_data['locationDnaPreferences'] ?? []
         );

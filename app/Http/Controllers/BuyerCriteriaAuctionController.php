@@ -20,6 +20,7 @@ use App\Models\WaterExtra;
 use App\Models\WaterViewType;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
+use App\Services\LocationDna\SchoolDistrictLookupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -327,7 +328,7 @@ class BuyerCriteriaAuctionController extends Controller
         return view('buyer_criteria.add-counter-bid', $page_data);
     }
 
-    public function view($id, BoundaryLookupService $boundaryLookupService, FloodZoneLookupService $floodZoneLookupService)
+    public function view($id, BoundaryLookupService $boundaryLookupService, FloodZoneLookupService $floodZoneLookupService, SchoolDistrictLookupService $schoolDistrictLookupService)
     {
         $page_data['auction'] = BuyerCriteriaAuction::whereId($id)->first();
         $page_data['created_by'] = User::whereId($page_data['auction']->user_id)->get()->first();
@@ -353,6 +354,10 @@ class BuyerCriteriaAuctionController extends Controller
             $page_data['legacyLocation']
         );
         $page_data['floodZoneData'] = $floodZoneLookupService->resolve(
+            $page_data['boundaryData'],
+            $page_data['locationDnaPreferences'] ?? []
+        );
+        $page_data['schoolDistrictData'] = $schoolDistrictLookupService->resolve(
             $page_data['boundaryData'],
             $page_data['locationDnaPreferences'] ?? []
         );

@@ -34,6 +34,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | School District Census TIGER/Line API
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the CensusSchoolDistrictAdapter and SchoolDistrictLookupService.
+    |
+    | school_district_endpoint         — Census TIGER School Districts ArcGIS REST URL.
+    |
+    | school_district_timeout          — HTTP request timeout in seconds (default 15).
+    |
+    | school_district_cache_ttl        — Cache TTL in seconds for successful responses.
+    |                                    Default: 86400 (24 hours). School district
+    |                                    boundaries rarely change; a long TTL is safe.
+    |
+    | school_district_max_area_sq_degrees — Maximum bounding area before the lookup
+    |                                       is skipped entirely. Expressed in square
+    |                                       degrees (lat × lng). Default 2.0 matches
+    |                                       the flood zone threshold — see the flood
+    |                                       zone comment above for calibration notes.
+    |
+    */
+    'school_district_endpoint'             => env(
+        'LOCATION_DNA_SCHOOL_DISTRICT_ENDPOINT',
+        'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/School_Districts/MapServer/0/query'
+    ),
+    'school_district_timeout'              => (int)   env('LOCATION_DNA_SCHOOL_DISTRICT_TIMEOUT',      15),
+    'school_district_cache_ttl'            => (int)   env('LOCATION_DNA_SCHOOL_DISTRICT_CACHE_TTL',    86400),
+    'school_district_max_area_sq_degrees'  => (float) env('LOCATION_DNA_SCHOOL_DISTRICT_MAX_AREA',     2.0),
+
+    /*
+    |--------------------------------------------------------------------------
     | Commute Time Lookups
     |--------------------------------------------------------------------------
     |
