@@ -1378,6 +1378,62 @@
             }, 200);
         });
 
+        // Re-hydrate all Select2 multi-selects after MLS "Apply Selected" completes.
+        // Select2 elements use wire:ignore so Livewire DOM diff does not update them.
+        // dispatchBrowserEvent('mlsApplied') fires from HasMlsImport::applyImportedFields().
+        //
+        // Two-pass approach (200 ms + 600 ms): guards against newly-added DOM sections
+        // (e.g. when property_type was empty and changed during apply) whose Select2
+        // instances have not yet been initialized at the time the first pass runs.
+        // initializeFullService() is called first; its internal !hasClass guard prevents
+        // re-initializing already-active Select2 instances.
+        (function() {
+            function _landlordMlsRehydrate() {
+                if (typeof initializeFullService === 'function') {
+                    initializeFullService();
+                }
+                var mlsIdFields = ['heating_fuel','air_conditioning','water','sewer',
+                    'property_utilities','laundry_features','floor_covering',
+                    'security_features','road_surface_type','electrical_service',
+                    'building_features','space_type','space_classification',
+                    'roof_type','exterior_construction','foundation',
+                    'water_access','water_view','interior_features'];
+                mlsIdFields.forEach(function(fieldId) {
+                    var values = @this.get(fieldId) || [];
+                    if (!Array.isArray(values) || values.length === 0) return;
+                    var $el = $('#' + fieldId);
+                    if ($el.length && $el.hasClass('select2-hidden-accessible')) {
+                        $el.val(values).trigger('change.select2');
+                        console.log('[MlsApplied] Rehydrated ' + fieldId + ':', values);
+                    }
+                });
+                var regularFields = {
+                    'appliances': '#appliances',
+                    'offered_financing': '#offered_financing',
+                    'tenant_pays': '#tenant_pays',
+                    'owner_pays': '#owner_pays',
+                    'terms_of_lease': '#terms_of_lease',
+                    'rent_includes': '#rent_includes',
+                    'view_preference': '#view_preference',
+                    'non_negotiable_amenities': '#non_negotiable_amenities',
+                };
+                Object.keys(regularFields).forEach(function(prop) {
+                    var values = @this.get(prop) || [];
+                    if (!Array.isArray(values) || values.length === 0) return;
+                    var $el = $(regularFields[prop]);
+                    if ($el.length && $el.hasClass('select2-hidden-accessible')) {
+                        $el.val(values).trigger('change.select2');
+                        console.log('[MlsApplied] Rehydrated ' + prop + ':', values);
+                    }
+                });
+            }
+            window.addEventListener('mlsApplied', function() {
+                console.log('[MlsApplied] Rehydrating landlord Select2 fields from Livewire properties');
+                setTimeout(_landlordMlsRehydrate, 200);
+                setTimeout(_landlordMlsRehydrate, 600);
+            });
+        }());
+
         // Listen for force-redirect event to ensure redirect works after submit
         window.addEventListener('force-redirect', function(event) {
             console.log('[ForceRedirect] Redirecting to:', event.detail.url);

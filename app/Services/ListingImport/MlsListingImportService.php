@@ -113,7 +113,7 @@ class MlsListingImportService
             '|Exterior\s+Construction\b|Exterior\s+Feat\b|Exterior\s+Information\b|Interior\s+Information\b' .
             '|Floor\s+Covering\b|Roof\b' .
             '|Furnishings?\b(?=\s*:)|Furnished\b(?=\s*:)|Available\b(?=\s*:)' .
-            '|Tax\s+(?:ID|Year)|Annual\s+(?:CDD|Prop(?:erty)?|Tax)|Taxes\b|Parcel\b' .
+            '|Tax\s+(?:ID|Year)|Annual\s+(?:CDD|Prop(?:erty)?|Tax)|Taxes\b|Parcel\b|Folio\b' .
             // Tax\b(?=\s*:) — stops "Tax: $3,908" style bare Tax labels (e.g. some
             // Stellar MLS exports use "Tax:" instead of "Tax Year:" or "Tax Amount:").
             // The colon lookahead prevents firing on mid-word occurrences like
@@ -146,7 +146,7 @@ class MlsListingImportService
             // Waterfront Feet must appear BEFORE bare Waterfront so "Waterfront Feet:"
             // terminates captures before "Waterfront\b" fires on the shorter prefix.
             '|Waterfront\s+Feet\b|Waterfront\b|Water\s+Frontage\b|Water\s+(?:Access|View|Extra|Front)\b' .
-            '|Rent\s+(?:Includes?|Price)\b|Tenant\s+Pays?\b|Terms\s+of\s+Lease\b' .
+            '|Rent\s+(?:Includes?|Price)\b|Tenant\s+Pays?\b|Terms\s+of\s+Lease\b|Lease\s+Terms\b' .
             // Minimum Security Deposit (3-word label) must precede the 2-word fallback.
             '|Application\s+Fee\b|Security\s+Deposit\b|Minimum\s+Security\s+Deposit\b|Minimum\s+(?:Lease|Security)\b' .
             // Monthly Fee: e.g. "Monthly Fee: $150" in condo/commercial exports.
@@ -161,7 +161,11 @@ class MlsListingImportService
             // and carport fields to bleed into those following label words.
             '|Special\s+Assessment(?:\s+Y\/N)?\b|Homeowners?\s+Assoc|Subdivision\b' .
             '|School\s+District\b|Neighborhood\b' .
-            '|Foundation\b|Sewer\b(?=\s*:)|Utilities\b|Roof\s+Type\b' .
+            // Water\b(?=\s*:): stops captures (e.g. sewer) from bleeding into the bare
+            // "Water:" label used by the water source parser; the colon lookahead prevents
+            // firing on "Waterfront:", "Water Access:", or "Water View:" which are already
+            // handled by their own dedicated labelStop entries above.
+            '|Foundation\b|Sewer\b(?=\s*:)|Water\b(?=\s*:)|Utilities\b|Roof\s+Type\b' .
             '|Number\s+of\s+Units\b|Total\s+Units\b|Cap\s+Rate\b' .
             // Commercial Sale specific labels
             '|Building\s+Size\b|Ceiling\s+Height\b|Parking\s+Spaces\b' .
@@ -392,7 +396,11 @@ class MlsListingImportService
         // Non-greedy capture with a lookahead that stops before a Title Case label word
         // (e.g. "Tax" in "1410Tax Year:") or whitespace.  This handles the Stellar MLS
         // no-separator pattern where the parcel ID runs directly into the next label.
-        if ($v = $extract(['/(?:Tax\s+ID|Parcel\s+(?:ID|Number))[\s:]+([A-Za-z0-9\-\.]+?)(?=[A-Z][a-z]|\s|$|\||\n)/i'])) {
+        // "Folio Number:" / "Folio #:" are Miami-Dade / Broward County MLS label forms.
+        if ($v = $extract([
+            '/(?:Tax\s+ID|Parcel\s+(?:ID|Number))[\s:]+([A-Za-z0-9\-\.]+?)(?=[A-Z][a-z]|\s|$|\||\n)/i',
+            '/Folio\s+(?:Number|#)[\s:]+([A-Za-z0-9\-\.]+?)(?=[A-Z][a-z]|\s|$|\||\n)/i',
+        ])) {
             $data['tax_id'] = $v;
         }
 
@@ -443,7 +451,12 @@ class MlsListingImportService
         }
 
         // ─── Flood Zone Date ──────────────────────────────────────────────────
-        if ($v = $extract(['/Flood\s+Zone\s+Date[\s:]+(\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2})/i'])) {
+        // Covers numeric forms (MM/DD/YY, MM/DD/YYYY, YYYY-MM-DD) and text forms
+        // (e.g. "January 15, 2020" or "Jan 15 2020") emitted by some county portals.
+        if ($v = $extract([
+            '/Flood\s+Zone\s+Date[\s:]+(\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2})/i',
+            '/Flood\s+Zone\s+Date[\s:]+([A-Za-z]+\.?\s+\d{1,2},?\s+\d{4})/i',
+        ])) {
             $data['flood_zone_date'] = $v;
         }
 
@@ -459,8 +472,11 @@ class MlsListingImportService
         }
 
         // ─── Zoning ───────────────────────────────────────────────────────────
-        if ($v = $extract(['/Zoning[\s:\*]+([A-Za-z0-9\-\/]{1,30})/i'], true)) {
-            $data['zoning'] = $v;
+        // Char class expanded to allow spaces so multi-word codes like
+        // "R-1 Single Family" or "B-3 General Business" are captured whole.
+        // Boundary protection (boundary=true) stops at the next MLS label.
+        if ($v = $extract(['/Zoning[\s:\*]+([A-Za-z0-9\-\/][A-Za-z0-9\-\/ ]{0,59})/i'], true)) {
+            $data['zoning'] = rtrim($v);
         }
 
         // ─── Additional Parcels ───────────────────────────────────────────────
@@ -480,7 +496,12 @@ class MlsListingImportService
         }
 
         // ─── Minimum Security Deposit ─────────────────────────────────────────
-        if ($v = $extract(['/Minimum\s+Security\s+Deposit[\s:]+\$?([\d,]+(?:\.\d{2})?)/i'])) {
+        // "Minimum Security Deposit:" (3-word, most specific) tried first.
+        // "Security Deposit:" (2-word) used as fallback for MLS exports that omit "Minimum".
+        if ($v = $extract([
+            '/Minimum\s+Security\s+Deposit[\s:]+\$?([\d,]+(?:\.\d{2})?)/i',
+            '/Security\s+Deposit[\s:]+\$?([\d,]+(?:\.\d{2})?)/i',
+        ])) {
             $data['minimum_security_deposit'] = preg_replace('/[^\d.]/', '', $v);
         }
 
@@ -490,7 +511,12 @@ class MlsListingImportService
         }
 
         // ─── Terms of Lease ───────────────────────────────────────────────────
-        if ($v = $extract(['/Terms\s+of\s+Lease[\s:]+([^\|\n]{1,200})/i'], true)) {
+        // "Terms of Lease:" (standard Stellar MLS form) tried first.
+        // "Lease Terms:" is the reversed-label variant found in some regional exports.
+        if ($v = $extract([
+            '/Terms\s+of\s+Lease[\s:]+([^\|\n]{1,200})/i',
+            '/Lease\s+Terms[\s:]+([^\|\n]{1,200})/i',
+        ], true)) {
             $data['terms_of_lease'] = $v;
         }
 
@@ -515,10 +541,11 @@ class MlsListingImportService
             $data['association_name'] = trim($v);
         }
 
-        // "Association Fee:", "HOA Fee:"
+        // "Association Fee:", "HOA Fee:", "HOA Dues:"
         if ($v = $extract([
             '/Association\s+Fee(?!\s+Freq)[\s:\$]+([0-9,\.]+)/i',
             '/HOA\s+Fee[\s:\$]+([0-9,\.]+)/i',
+            '/HOA\s+Dues[\s:\$]+([0-9,\.]+)/i',
         ])) {
             $data['association_fee_amount'] = preg_replace('/[^\d.]/', '', $v);
         }
@@ -705,9 +732,8 @@ class MlsListingImportService
         // consuming "Water Frontage: <value> Waterfront: <bool>".
         // Negative lookahead (?!\s+Y\/N) ensures the Y/N boolean variant above is
         // not re-matched here even if the boolean branch did not fire.
-        // NOTE: No Livewire property exists on Seller/Landlord for this field yet;
-        //       it is parsed and stored in $data but does not apply to the form.
-        //       A human-readable label is registered in MlsFieldMap::fieldLabels().
+        // Mapped to the 'water_frontage' Livewire property on both Seller and Landlord
+        // via MlsFieldMap (text description of the water body type).
         if ($v = $extract(['/Water\s+Frontage(?!\s+Y\/N)[\s:]+([^\|\n]{1,100})/i'], true)) {
             $data['water_frontage'] = $v;
         }
@@ -716,9 +742,7 @@ class MlsListingImportService
         // "Waterfront Feet:" is the numeric linear-footage of water frontage.
         // Must appear BEFORE Waterfront parser: "/Waterfront[\s:]+/" would otherwise
         // match "Waterfront Feet:" and capture the feet value into $data['waterfront'].
-        // NOTE: No Livewire property exists on Seller/Landlord for this field yet;
-        //       it is parsed and stored in $data but does not apply to the form.
-        //       A human-readable label is registered in MlsFieldMap::fieldLabels().
+        // Mapped to the 'waterfront_feet' numeric Livewire property on Seller and Landlord.
         // Note: use !== null (not truthiness) because a valid value of "0" is falsy
         // in PHP and would incorrectly cause the assignment to short-circuit.
         if (($v = $extract(['/Waterfront\s+Feet[\s:]+(\d+(?:\.\d+)?)/i'])) !== null) {
@@ -776,7 +800,7 @@ class MlsListingImportService
                 'TX','UT','VT','VA','WA','WV','WI','WY','DC',
             ];
             if (preg_match(
-                '/^([A-Z0-9][^a-z]{0,250}?)\b([A-Z]{2})\b[\s,\-]*(\d{5}(?:-\d{4})?)\s+([\s\S]+)/su',
+                '/^([A-Z0-9][^a-z]{0,250}?)\b([A-Z]{2})\b[\s,\-]*(\d{5}(?:-\d{4})?)[\s.,;:!?\-–—]+([\s\S]+)/su',
                 $v,
                 $hdr
             ) && in_array($hdr[2], $mlsHeaderUsStates, true) && trim($hdr[4]) !== '') {

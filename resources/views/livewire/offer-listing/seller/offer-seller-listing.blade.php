@@ -1569,6 +1569,30 @@
             });
         }
 
+        // Re-hydrate all Select2 multi-selects after MLS "Apply Selected" completes.
+        // Select2 elements use wire:ignore, so Livewire's DOM diff does not update them.
+        // dispatchBrowserEvent('mlsApplied') fires from HasMlsImport::applyImportedFields().
+        //
+        // Two-pass approach:
+        //   Pass 1 (200 ms): initializeMlsPropertyMultiSelects() first ensures any
+        //     Select2 fields that were newly added to the DOM during apply (e.g. when
+        //     property_type was empty and changed during apply) are initialized before
+        //     rehydrating their values.  Fields already initialized are skipped via the
+        //     !hasClass('select2-hidden-accessible') guard inside that function.
+        //   Pass 2 (600 ms): second attempt in case the first races with a slow
+        //     Livewire morphdom reconciliation on low-powered devices.
+        window.addEventListener('mlsApplied', function() {
+            console.log('[MlsApplied] Rehydrating Select2 fields from Livewire properties');
+            setTimeout(function() {
+                initializeMlsPropertyMultiSelects();
+                rehydrateSelect2MultiFields();
+            }, 200);
+            setTimeout(function() {
+                initializeMlsPropertyMultiSelects();
+                rehydrateSelect2MultiFields();
+            }, 600);
+        });
+
         // Listen for force-redirect event to ensure redirect works after submit
         window.addEventListener('force-redirect', function(event) {
             console.log('[ForceRedirect] Redirecting to:', event.detail.url);

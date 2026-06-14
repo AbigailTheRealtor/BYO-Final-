@@ -383,12 +383,13 @@ class AskAiContextBuilderService
                                                  'other_garage_needed'
                                              ),
                     'garage_spaces'        => $infoGet('garage_parking_spaces'),
-                    // water_view: decoded from the 'view_preference' meta key (JSON array).
-                    // Live-DB audit (June 2026) confirmed all roles store scenic/water view
-                    // selections under 'view_preference' — 'water_view' does not exist in
-                    // any role's meta table. Output key kept as 'water_view' for prompt
-                    // and registry contract consistency.
-                    'water_view'           => $this->decodeJsonField($infoGet('view_preference')),
+                    // water_view: the offer-listing wizard (and MLS import) saves specific water
+                    // body type selections under the 'water_view' meta key.  Older listings
+                    // and manual scenic-preference entries live under 'view_preference'.
+                    // Read 'water_view' first (present on all Livewire/MLS-created records);
+                    // fall back to 'view_preference' for legacy rows where 'water_view' is absent.
+                    'water_view'           => $this->decodeJsonField($infoGet('water_view'))
+                                                 ?: $this->decodeJsonField($infoGet('view_preference')),
                     // ── Lot / Land ────────────────────────────────────────────────
                     // lot_size is retained as a backward-compatible alias that reads
                     // total_acreage with a min_acreage fallback for older rows.
@@ -707,12 +708,14 @@ class AskAiContextBuilderService
                                                   'other_property_condition'
                                               ),
                 'appliances'                => $this->decodeJsonField($infoGet('appliances')),
-                // view / water_view: the form stores scenic/water view selections as a
-                // JSON-encoded multiselect under the 'view_preference' meta key.
-                // Live-DB audit (June 2026) confirmed neither 'water_view' nor 'view'
-                // exists in landlord_agent_auction_metas — the key is 'view_preference'.
-                'water_view'                => $this->decodeJsonField($infoGet('view_preference')),
-                'view'                      => $this->decodeJsonField($infoGet('view_preference')),
+                // water_view / view: the offer-listing wizard (and MLS import) saves specific
+                // water-body-type selections under the 'water_view' meta key; older/legacy
+                // records and scenic preferences live under 'view_preference'.
+                // Read 'water_view' first with 'view_preference' as fallback for legacy rows.
+                'water_view'                => $this->decodeJsonField($infoGet('water_view'))
+                                                  ?: $this->decodeJsonField($infoGet('view_preference')),
+                'view'                      => $this->decodeJsonField($infoGet('water_view'))
+                                                  ?: $this->decodeJsonField($infoGet('view_preference')),
                 'available_date'            => $infoGet('available_date'),
                 // pet_policy: the form writes a dedicated 'pet_policy' EAV meta key;
                 // older landlord listings stored the Yes/No flag only under 'pets'

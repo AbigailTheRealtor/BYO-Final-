@@ -121,6 +121,19 @@ trait HasMlsImport
             $isArray  = $row['is_array_prop'];
             $rawValue = $row['value'];
 
+            // Landlord residential routing: 'terms_of_lease' canonical key carries
+            // DURATION values from MLS residential exports ('Month-to-Month', '1 Year',
+            // '6 Months', etc.).  These belong in the 'desired_lease_length' prop whose
+            // blade options are $residential_lease_term_options / $Commercial_lease_term_options.
+            // The 'terms_of_lease' prop itself is for COMMERCIAL lease TYPES (Gross Lease,
+            // Net Lease, etc.) and is only relevant when property_type = 'Commercial Property'.
+            if ($canonicalKey === 'terms_of_lease' && $role === 'landlord'
+                && ($this->property_type ?? '') === 'Residential Property'
+                && property_exists($this, 'desired_lease_length')) {
+                $propName = 'desired_lease_length';
+                $isArray  = true;
+            }
+
             if (!property_exists($this, $propName)) {
                 continue;
             }
@@ -141,6 +154,17 @@ trait HasMlsImport
                     }
                 }
                 continue;
+            }
+
+            // Role-specific property_type normalization.
+            // MLS text emits verbose forms like "Residential Property", "Commercial Property",
+            // "Business Opportunity", "Income/Multifamily", "Vacant Land Sale".
+            // Seller / buyer / tenant forms store the SHORT form without a " Property" suffix:
+            //   'Residential', 'Commercial', 'Business', 'Income', 'Vacant Land'.
+            // Landlord form options ARE the full forms: 'Residential Property', 'Commercial Property',
+            // so MLS-captured values already match landlord — we still normalise edge cases.
+            if ($canonicalKey === 'property_type') {
+                $rawValue = static::normalizePropertyTypeForRole($rawValue, $role);
             }
 
             $existingValue = $this->{$propName};
@@ -165,9 +189,65 @@ trait HasMlsImport
         $this->importPreviewData = [];
         $this->importSuccess     = true;
         $this->showImportModal   = false;
+
+        // Notify the browser so Select2 multi-select elements (which use wire:ignore
+        // and therefore are not re-rendered by Livewire's DOM diff) can be rehydrated
+        // with the newly applied property values.
+        $this->dispatchBrowserEvent('mlsApplied');
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    /**
+     * Map a raw MLS "Property Type" string to the canonical value expected by
+     * the given role's form.
+     *
+     * Landlord form options: 'Residential Property', 'Commercial Property'
+     * Seller / buyer / tenant options: 'Residential', 'Commercial', 'Business',
+     *                                   'Income', 'Vacant Land'
+     */
+    private static function normalizePropertyTypeForRole(string $value, string $role): string
+    {
+        $v     = trim($value);
+        $lower = strtolower($v);
+
+        if ($role === 'landlord') {
+            // Landlord blade uses "Residential Property" / "Commercial Property".
+            // MLS output already matches, but handle short-form edge cases too.
+            if (str_contains($lower, 'commercial'))  return 'Commercial Property';
+            if (str_contains($lower, 'residential')) return 'Residential Property';
+            return $v;
+        }
+
+        // Seller, buyer, tenant: use short-form values (no " Property" suffix).
+        if (str_contains($lower, 'residential')   || str_contains($lower, 'single family')
+            || str_contains($lower, 'condominium') || str_contains($lower, 'condo')
+            || str_contains($lower, 'townhome')    || str_contains($lower, 'townhouse')
+            || str_contains($lower, 'mobile home')) {
+            return 'Residential';
+        }
+
+        // "Business Opportunity" → 'Business' (must come before 'commercial' check
+        // because some MLS exports say "Business, Commercial").
+        if (str_contains($lower, 'business')) {
+            return 'Business';
+        }
+
+        if (str_contains($lower, 'commercial')) {
+            return 'Commercial';
+        }
+
+        if (str_contains($lower, 'income') || str_contains($lower, 'multifamily')
+            || str_contains($lower, 'multi-family') || str_contains($lower, 'multi family')) {
+            return 'Income';
+        }
+
+        if (str_contains($lower, 'vacant') || str_contains($lower, 'land')) {
+            return 'Vacant Land';
+        }
+
+        return $v; // already-normalized or unrecognised — pass through
+    }
 
     private function resolveImportRole(): string
     {

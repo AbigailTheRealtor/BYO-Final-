@@ -2530,6 +2530,7 @@ class SellerOfferListing extends Component
             $this->lease_assignable = $auction->get->lease_assignable ?? '';
 
             // Financial Details tab — Business
+            $this->business_type = $auction->get->business_type ?? '';
             $this->annual_revenue = $auction->get->annual_revenue ?? '';
             $this->gross_profit = $auction->get->gross_profit ?? '';
             $this->sde_ebitda = $auction->get->sde_ebitda ?? '';
@@ -3141,6 +3142,7 @@ class SellerOfferListing extends Component
         $auction->saveMeta('lease_assignable', $this->lease_assignable);
 
         // Financial Details tab — Business
+        $auction->saveMeta('business_type', $this->business_type);
         $auction->saveMeta('annual_revenue', $this->stripCommas($this->annual_revenue));
         $auction->saveMeta('gross_profit', $this->stripCommas($this->gross_profit));
         $auction->saveMeta('sde_ebitda', $this->stripCommas($this->sde_ebitda));

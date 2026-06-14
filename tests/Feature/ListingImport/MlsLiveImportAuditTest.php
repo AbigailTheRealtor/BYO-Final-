@@ -1146,22 +1146,14 @@ class MlsLiveImportAuditTest extends TestCase
     // AUDIT: Stage 6 FAIL for Landlord (new finding from live testing)
     //
     // LandlordAgentAuction::getGetAttribute() auto-decodes any valid-JSON meta
-    // value (line 114–116 of the model):
-    //   $decoded = json_decode($row->meta_value, true);
-    //   if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) { $value = $decoded; }
+    // value.  Early versions of loadDraft() called json_decode() a second time on
+    // the already-decoded value, which would throw \TypeError in PHP 8.
     //
-    // loadDraft() then calls json_decode() AGAIN on the already-decoded value:
-    //   $this->heating_fuel = $this->ensureArray(json_decode($auction->get->heating_fuel ?? '[]', true));
-    //
-    // PHP 8 json_decode() requires its first argument to be a string; receiving
-    // an array throws \TypeError.  This fires unconditionally on any Landlord
-    // loadDraft() call because heating_fuel (and several other JSON array fields)
-    // are always saved as json_encode'd strings and always auto-decoded by the
-    // accessor.
-    //
-    // The tests below use a try/catch:
-    //  • If the bug still exists  → TypeError is caught; test documents/passes.
-    //  • If the bug is fixed      → try block completes; value assertions run.
+    // That double-decode path is NOT observed in the current environment (confirmed
+    // via manual probe: loadDraft succeeds and value assertions run).  The helper
+    // below no longer masks failures: if \TypeError ever fires, the test FAILS and
+    // the caller's value assertions also run against the stale $fresh object,
+    // making the regression immediately visible.
 
     private function landlordSaveReload(
         LandlordOfferListing $component,
@@ -1172,16 +1164,7 @@ class MlsLiveImportAuditTest extends TestCase
         $this->assertNotNull($listingId, 'Landlord listingId set after saveDraft');
 
         $fresh = new LandlordOfferListing();
-        try {
-            $fresh->loadDraft($listingId);
-        } catch (\TypeError $e) {
-            $this->assertStringContainsString('json_decode', $e->getMessage(),
-                'AUDIT: Stage 6 Reload FAIL — Landlord loadDraft double-decode bug confirmed: ' .
-                'getGetAttribute() returns decoded array; json_decode() then receives array type. ' .
-                'Fix: replace json_decode($auction->get->field ?? \'[]\', true) with ' .
-                'ensureArray($auction->get->field ?? []) in loadDraft()');
-            return;
-        }
+        $fresh->loadDraft($listingId);
         $afterLoad($fresh);
     }
 
@@ -1281,6 +1264,564 @@ class MlsLiveImportAuditTest extends TestCase
             $this->assertIsArray($fresh->exterior_construction, 'exterior_construction reloads as array');
             $this->assertContains('Block', $fresh->exterior_construction,
                 'Landlord exterior_construction round-trip');
+        });
+    }
+
+    // =========================================================================
+    // Stage 6: Save/Reload — Forms 3–7 form-unique fields
+    // =========================================================================
+    //
+    // Each test covers a canonical key that is only meaningful for one
+    // specific Seller property-type (Commercial Sale, Business Opportunity,
+    // Vacant Land, Income/Multifamily).  All use the standard 4-step pattern:
+    //   1. Parse raw text  →  importListingFromUrl()
+    //   2. Apply           →  applyImportedFields([key])
+    //   3. Save            →  saveDraft()
+    //   4. Reload & assert →  loadDraft($listingId)
+
+    // ── Commercial Sale ──────────────────────────────────────────────────────
+
+    public function test_seller_save_reload_commercial_building_size_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Building Size: 5,200 Sq Ft | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['building_size_sqft']);
+
+        $this->assertSame('5200', $component->total_square_feet,
+            'Pre-save: building_size_sqft normalizer strips commas → total_square_feet');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+        $this->assertNotNull($listingId, 'listingId set after saveDraft');
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertSame('5200', $fresh->total_square_feet,
+            'Commercial Sale building size (total_square_feet) scalar EAV round-trip');
+    }
+
+    public function test_seller_save_reload_commercial_cap_rate_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Cap Rate: 6.5% | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['cap_rate']);
+
+        $this->assertSame('6.5', $component->minimum_cap_rate,
+            'Pre-save: cap_rate normalizer strips percent sign → minimum_cap_rate');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertSame('6.5', $fresh->minimum_cap_rate,
+            'Commercial Sale cap rate (minimum_cap_rate) scalar EAV round-trip');
+    }
+
+    public function test_seller_save_reload_commercial_building_features_array_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Building Features: Air Conditioning,Elevator | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['building_features_list']);
+
+        $this->assertIsArray($component->building_features,
+            'Pre-save: building_features_list maps to array on component');
+        $this->assertContains('Air Conditioning', $component->building_features,
+            'Pre-save: Air Conditioning in building_features');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertIsArray($fresh->building_features,
+            'Commercial Sale building_features reloads as array');
+        $this->assertContains('Air Conditioning', $fresh->building_features,
+            'Air Conditioning persists through save/reload');
+        $this->assertContains('Elevator', $fresh->building_features,
+            'Elevator persists through save/reload');
+    }
+
+    public function test_seller_save_reload_commercial_current_use_array_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Current Use: Office,Retail | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['current_use_list']);
+
+        $this->assertIsArray($component->current_use,
+            'Pre-save: current_use_list maps to array on component');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertIsArray($fresh->current_use,
+            'Commercial Sale current_use reloads as array');
+        $this->assertContains('Office', $fresh->current_use,
+            'Office persists through save/reload');
+    }
+
+    // ── Business Opportunity ─────────────────────────────────────────────────
+
+    public function test_seller_save_reload_business_type_scalar_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Business Type: Restaurant | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['business_type']);
+
+        $this->assertSame('Restaurant', $component->business_type,
+            'Pre-save: business_type scalar value on component');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertSame('Restaurant', $fresh->business_type,
+            'Business Opportunity business_type scalar EAV round-trip');
+    }
+
+    public function test_seller_save_reload_annual_revenue_scalar_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Annual Revenue: $450,000 | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['annual_revenue']);
+
+        $this->assertNotEmpty($component->annual_revenue,
+            'Pre-save: annual_revenue populated on component');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertSame($component->annual_revenue, $fresh->annual_revenue,
+            'Business Opportunity annual_revenue scalar EAV round-trip');
+    }
+
+    public function test_seller_save_reload_employee_count_scalar_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Number of Employees: 12 | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['employee_count']);
+
+        $this->assertSame('12', $component->employee_count,
+            'Pre-save: employee_count scalar on component');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertSame('12', $fresh->employee_count,
+            'Business Opportunity employee_count scalar EAV round-trip');
+    }
+
+    // ── Vacant Land ──────────────────────────────────────────────────────────
+
+    public function test_seller_save_reload_vacant_land_acreage_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Total Acreage: 2.5 acres | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['lot_size_acres']);
+
+        $this->assertNotEmpty($component->total_acreage,
+            'Pre-save: lot_size_acres → total_acreage populated on component');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertSame($component->total_acreage, $fresh->total_acreage,
+            'Vacant Land total_acreage scalar native column round-trip');
+    }
+
+    public function test_seller_save_reload_vacant_land_zoning_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Zoning: A-1 Agricultural | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['zoning']);
+
+        $this->assertNotEmpty($component->zoning,
+            'Pre-save: zoning populated on component (P2-2: multi-word codes now captured)');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertSame($component->zoning, $fresh->zoning,
+            'Vacant Land zoning scalar EAV round-trip (including multi-word P2-2 fix)');
+    }
+
+    // ── Income / Multifamily ─────────────────────────────────────────────────
+
+    public function test_seller_save_reload_income_gross_annual_income_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Gross Annual Income: $120,000 | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['gross_annual_income']);
+
+        $this->assertNotEmpty($component->gross_annual_income,
+            'Pre-save: gross_annual_income populated on component');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertSame($component->gross_annual_income, $fresh->gross_annual_income,
+            'Income gross_annual_income scalar EAV round-trip');
+    }
+
+    public function test_seller_save_reload_income_annual_operating_expenses_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Annual Operating Expenses: $35,000 | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['annual_operating_expenses']);
+
+        $this->assertNotEmpty($component->annual_operating_expenses,
+            'Pre-save: annual_operating_expenses populated on component');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertSame($component->annual_operating_expenses, $fresh->annual_operating_expenses,
+            'Income annual_operating_expenses scalar EAV round-trip');
+    }
+
+    public function test_seller_save_reload_income_unit_number_roundtrip(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'Number of Units: 8 | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['number_of_units']);
+
+        $this->assertSame('8', $component->unit_number,
+            'Pre-save: number_of_units → unit_number on component');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertSame('8', $fresh->unit_number,
+            'Income unit_number scalar native column round-trip');
+    }
+
+    // ── Stage 5.5 — Select2 sewer display fix: full apply → save → reload ───
+    //
+    // The Stage 5.5 fix (dispatchBrowserEvent('mlsApplied') + JS listener) ensures
+    // Select2 multi-select fields are visually rehydrated after Apply Selected.
+    // The JS rehydration is browser-only and cannot be Feature-tested.
+    //
+    // This test covers the server-side prerequisite: that sewer (a multi-select
+    // array field, mapped as *sewer) survives the full apply → saveDraft → loadDraft
+    // pipeline so the Select2 rehydration has the correct underlying data to display.
+    // A parser-level smoke test (verifying no bleed into the following "Water:" label)
+    // lives in MlsGapFixesRegressionTest::test_stage5_5_sewer_parser_does_not_bleed_into_water_label().
+    //
+    // NOTE: importPreviewData is a numerically-indexed array of row objects; each row
+    // has 'canonical_key', 'value', 'prop_name', 'is_array_prop', etc.  It is NOT a
+    // key-indexed map.  Use collect()->firstWhere('canonical_key', ...) to find a row.
+
+    public function test_stage5_5_sewer_apply_save_reload_end_to_end(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        // Pipe-separated format; Water\b(?=\s*:) labelStop prevents sewer bleeding into Water.
+        // List Price is included so the listing-type hint fires ('sale'), ensuring seller
+        // field-map keys (including sewer) are included in the preview.
+        $component->importRawText =
+            'List Price: $350,000 | Bedrooms: 3 | Sewer: Public Sewer | Water: Public';
+        $component->importListingFromUrl();
+
+        // importPreviewData is a numerically-indexed array of row objects.
+        $sewerRow = collect($component->importPreviewData)->firstWhere('canonical_key', 'sewer');
+        $this->assertNotNull($sewerRow,
+            'Stage 5.5: sewer present in preview data after importListingFromUrl');
+        $this->assertSame('Public Sewer', $sewerRow['value'] ?? null,
+            'Stage 5.5: sewer preview value must be "Public Sewer" (not bled into Water)');
+        $this->assertTrue($sewerRow['is_array_prop'] ?? false,
+            'Stage 5.5: sewer is flagged as array prop (*sewer) in preview');
+
+        $component->applyImportedFields(['sewer']);
+
+        // sewer maps to *sewer — applyImportedFields splits comma-separated string into array
+        $this->assertIsArray($component->sewer,
+            'Stage 5.5 apply: sewer is an array on the component after applyImportedFields');
+        $this->assertContains('Public Sewer', $component->sewer,
+            'Stage 5.5 apply: "Public Sewer" present in sewer array');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+        $this->assertNotNull($listingId, 'listingId set after saveDraft');
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertIsArray($fresh->sewer,
+            'Stage 5.5 save/reload: sewer reloads as array — Select2 rehydration has correct data');
+        $this->assertContains('Public Sewer', $fresh->sewer,
+            'Stage 5.5 save/reload: "Public Sewer" persists through saveDraft→loadDraft');
+    }
+
+    // ── Stage 5.5 expanded — seller roof_type ────────────────────────────────
+    //
+    // roof_type maps to *roof_type (array prop).  The seller Select2 listener
+    // re-populates it via rehydrateSelect2MultiFields() on mlsApplied.
+    // This test verifies the server-side prerequisite: the array value survives
+    // apply → saveDraft → loadDraft so the JS rehydration has correct data.
+
+    public function test_stage5_5_seller_roof_type_apply_save_reload_end_to_end(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText =
+            'List Price: $350,000 | Bedrooms: 3 | Roof Type: Shingle';
+        $component->importListingFromUrl();
+
+        $roofRow = collect($component->importPreviewData)->firstWhere('canonical_key', 'roof_type');
+        $this->assertNotNull($roofRow, 'Stage 5.5: roof_type present in seller preview data');
+        $this->assertSame('Shingle', $roofRow['value'] ?? null, 'roof_type preview value');
+        $this->assertTrue($roofRow['is_array_prop'] ?? false, 'roof_type flagged as array prop (*roof_type)');
+
+        $component->applyImportedFields(['roof_type']);
+
+        $this->assertIsArray($component->roof_type, 'Stage 5.5 apply: roof_type is an array');
+        $this->assertContains('Shingle', $component->roof_type, 'Shingle in applied roof_type array');
+
+        $component->saveDraft();
+        $listingId = $component->listingId;
+        $this->assertNotNull($listingId, 'listingId set after saveDraft');
+
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($listingId);
+
+        $this->assertIsArray($fresh->sewer, 'Stage 5.5 save/reload: sewer is array (sanity)');
+        $this->assertIsArray($fresh->roof_type, 'Stage 5.5 save/reload: roof_type reloads as array');
+        $this->assertContains('Shingle', $fresh->roof_type,
+            'Stage 5.5 save/reload: Shingle persists through saveDraft→loadDraft');
+    }
+
+    // ── Stage 5.5 expanded — seller air_conditioning ─────────────────────────
+
+    public function test_stage5_5_seller_air_conditioning_apply_save_reload_end_to_end(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText =
+            'List Price: $350,000 | Bedrooms: 3 | Air Conditioning: Central Air';
+        $component->importListingFromUrl();
+
+        $acRow = collect($component->importPreviewData)->firstWhere('canonical_key', 'air_conditioning');
+        $this->assertNotNull($acRow, 'Stage 5.5: air_conditioning present in seller preview data');
+        $this->assertSame('Central Air', $acRow['value'] ?? null, 'air_conditioning preview value');
+        $this->assertTrue($acRow['is_array_prop'] ?? false, 'air_conditioning flagged as array prop');
+
+        $component->applyImportedFields(['air_conditioning']);
+
+        $this->assertIsArray($component->air_conditioning, 'Stage 5.5 apply: air_conditioning is an array');
+        $this->assertContains('Central Air', $component->air_conditioning,
+            'Central Air in applied air_conditioning array');
+
+        $component->saveDraft();
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($component->listingId);
+
+        $this->assertIsArray($fresh->air_conditioning,
+            'Stage 5.5 save/reload: air_conditioning reloads as array');
+        $this->assertContains('Central Air', $fresh->air_conditioning,
+            'Stage 5.5 save/reload: Central Air persists through saveDraft→loadDraft');
+    }
+
+    // ── Stage 5.5 expanded — seller water ────────────────────────────────────
+
+    public function test_stage5_5_seller_water_apply_save_reload_end_to_end(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText =
+            'List Price: $350,000 | Bedrooms: 3 | Water: Public | Sewer: Public Sewer';
+        $component->importListingFromUrl();
+
+        $waterRow = collect($component->importPreviewData)->firstWhere('canonical_key', 'water');
+        $this->assertNotNull($waterRow, 'Stage 5.5: water present in seller preview data');
+        $this->assertSame('Public', $waterRow['value'] ?? null, 'water preview value');
+        $this->assertTrue($waterRow['is_array_prop'] ?? false, 'water flagged as array prop (*water)');
+
+        $component->applyImportedFields(['water']);
+
+        $this->assertIsArray($component->water, 'Stage 5.5 apply: water is an array');
+        $this->assertContains('Public', $component->water, 'Public in applied water array');
+
+        $component->saveDraft();
+        $fresh = new SellerOfferListing();
+        $fresh->loadDraft($component->listingId);
+
+        $this->assertIsArray($fresh->water, 'Stage 5.5 save/reload: water reloads as array');
+        $this->assertContains('Public', $fresh->water,
+            'Stage 5.5 save/reload: Public persists through saveDraft→loadDraft');
+    }
+
+    // ── Stage 5.5 expanded — landlord heating_fuel ───────────────────────────
+    //
+    // Uses landlordSaveReload() to tolerate the known double-decode EAV bug.
+    // The apply step asserts the prop value before save; if loadDraft throws
+    // TypeError the test documents the Stage 7 failure without failing the suite.
+
+    public function test_stage5_5_landlord_heating_fuel_apply_save_reload_end_to_end(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new LandlordOfferListing();
+        $component->user_type = 'landlord';
+        $component->importRawText =
+            'Monthly Rent: $2,000 | Bedrooms: 2 | Heating & Fuel: Electric';
+        $component->importListingFromUrl();
+
+        $hfRow = collect($component->importPreviewData)->firstWhere('canonical_key', 'heating_fuel');
+        $this->assertNotNull($hfRow, 'Stage 5.5: heating_fuel present in landlord preview data');
+        $this->assertSame('Electric', $hfRow['value'] ?? null, 'heating_fuel preview value');
+        $this->assertTrue($hfRow['is_array_prop'] ?? false,
+            'heating_fuel flagged as array prop (*heating_fuel) in landlord preview');
+
+        $component->applyImportedFields(['heating_fuel']);
+
+        $this->assertIsArray($component->heating_fuel,
+            'Stage 5.5 apply: heating_fuel is an array on landlord component');
+        $this->assertContains('Electric', $component->heating_fuel,
+            'Electric in applied heating_fuel array');
+
+        $this->landlordSaveReload($component, function (LandlordOfferListing $fresh) {
+            $this->assertIsArray($fresh->heating_fuel,
+                'Stage 5.5 save/reload: heating_fuel reloads as array');
+            $this->assertContains('Electric', $fresh->heating_fuel,
+                'Stage 5.5 save/reload: Electric persists through saveDraft→loadDraft');
+        });
+    }
+
+    // ── Stage 5.5 expanded — landlord rent_includes ───────────────────────────
+    //
+    // rent_includes maps to *rent_includes (array prop).  The landlord Select2
+    // listener re-populates it on mlsApplied.  Uses landlordSaveReload() helper.
+
+    public function test_stage5_5_landlord_rent_includes_apply_save_reload_end_to_end(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new LandlordOfferListing();
+        $component->user_type = 'landlord';
+        $component->importRawText =
+            'Monthly Rent: $2,000 | Bedrooms: 2 | Rent Includes: Water, Trash Collection';
+        $component->importListingFromUrl();
+
+        $riRow = collect($component->importPreviewData)->firstWhere('canonical_key', 'rent_includes');
+        $this->assertNotNull($riRow, 'Stage 5.5: rent_includes present in landlord preview data');
+        $this->assertTrue($riRow['is_array_prop'] ?? false,
+            'rent_includes flagged as array prop (*rent_includes)');
+
+        $component->applyImportedFields(['rent_includes']);
+
+        $this->assertIsArray($component->rent_includes,
+            'Stage 5.5 apply: rent_includes is an array on landlord component');
+        $this->assertNotEmpty($component->rent_includes,
+            'Stage 5.5 apply: at least one token in rent_includes');
+
+        $this->landlordSaveReload($component, function (LandlordOfferListing $fresh) {
+            $this->assertIsArray($fresh->rent_includes,
+                'Stage 5.5 save/reload: rent_includes reloads as array');
+            $this->assertNotEmpty($fresh->rent_includes,
+                'Stage 5.5 save/reload: rent_includes has tokens after loadDraft');
         });
     }
 }
