@@ -20,6 +20,7 @@ use App\Models\WaterExtra;
 use App\Models\WaterViewType;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
+use App\Services\LocationDna\LocationDnaChipPresenter;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,10 @@ use Illuminate\Support\Str;
 
 class BuyerCriteriaAuctionController extends Controller
 {
+    public function __construct(private LocationDnaChipPresenter $chipPresenter)
+    {
+    }
+
     public function addAuction()
     {
         $page_data['title'] = 'Add Buyer\'s Criteria';
@@ -838,6 +843,15 @@ class BuyerCriteriaAuctionController extends Controller
         $page_data['count'] = $auctions_c->count();
         // dd($page_data['count']);
         $page_data['pAuctions'] = $auctions->paginate(12);
+
+        $locationChips = [];
+        foreach ($page_data['pAuctions'] as $item) {
+            $raw = $item->info('location_dna_preferences');
+            $prefs = $raw ? (json_decode($raw, true) ?? []) : [];
+            $locationChips[$item->id] = $this->chipPresenter->present($prefs);
+        }
+        $page_data['locationChips'] = $locationChips;
+
         return view('buyer_criteria.search', $page_data);
     }
 }

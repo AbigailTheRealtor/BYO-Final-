@@ -81,6 +81,12 @@
                                             href="{{ route('buyer.criteria.view', @$auction->id) }}">{{ @$auction->get->property_type }}</a>
                                     </h5>
                                 </div>
+                                @if (!empty($locationChips[$auction->id]['chips']))
+                                    <x-location-dna-chips
+                                        :chips="$locationChips[$auction->id]['chips']"
+                                        :overflow="$locationChips[$auction->id]['overflow']"
+                                    />
+                                @endif
                                 <div class="qr-code" style="width: 50px; height:50px; position: absolute; top:0; right:0;">
                                         {{qr_code(route('buyer.criteria.view',@$auction->id), 150)}}
                                 </div>

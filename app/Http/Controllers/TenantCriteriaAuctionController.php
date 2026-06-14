@@ -11,10 +11,15 @@ use App\Models\TenantCriteriaAuction;
 use App\Models\TenantCriteriaAuctionBid;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
+use App\Services\LocationDna\LocationDnaChipPresenter;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 
 class TenantCriteriaAuctionController extends Controller
 {
+    public function __construct(private LocationDnaChipPresenter $chipPresenter)
+    {
+    }
+
     public function index()
     {
         $page_data['title'] = 'Add Tenant\'s Criteria';
@@ -693,6 +698,15 @@ class TenantCriteriaAuctionController extends Controller
 
         $page_data['count'] = $auctions_c->count();
         $page_data['pAuctions'] = $auctions->paginate(12);
+
+        $locationChips = [];
+        foreach ($page_data['pAuctions'] as $item) {
+            $raw = $item->info('location_dna_preferences');
+            $prefs = $raw ? (json_decode($raw, true) ?? []) : [];
+            $locationChips[$item->id] = $this->chipPresenter->present($prefs);
+        }
+        $page_data['locationChips'] = $locationChips;
+
         return view('tenant_criteria.search', $page_data);
     }
 
