@@ -837,9 +837,6 @@
         $navHasContact = $str('first_name') || $str('last_name') || $str('email')
             || $str('phone_number') || $str('agent_brokerage') || $str('agent_license_number');
 
-        /* Additional Details */
-        $navHasAddl = $str('additional_details') || $str('preferance_details');
-
         /* Tax, Legal, HOA & CDD */
         $navHasTaxLegal = $str('parcel_id') || $str('annual_property_taxes') || $str('tax_year')
             || $str('legal_description') || $str('total_parcel_count') || $str('additional_parcels')
@@ -859,6 +856,9 @@
             <li><a href="#section-overview">Overview</a></li>
             @if($navHasPhotos)
             <li><a href="#section-photos">Photos</a></li>
+            @endif
+            @if($str('additional_details'))
+            <li><a href="#section-description">Description</a></li>
             @endif
             <li><a href="#section-details">Property</a></li>
             <li><a href="#section-leasing">Leasing Terms</a></li>
@@ -884,8 +884,8 @@
             @if($navHasStructural)
             <li><a href="#section-structural">Structural</a></li>
             @endif
-            @if($navHasAddl)
-            <li><a href="#section-additional">Additional Details</a></li>
+            @if($str('preferance_details'))
+            <li><a href="#section-preferences">Preferences</a></li>
             @endif
             @if($navHasTaxLegal)
             <li><a href="#section-taxlegal">Tax &amp; Legal</a></li>
@@ -1008,6 +1008,18 @@
         window._lolShowPhoto=show;
     })();
     </script>
+    @endif
+
+    {{-- ================================================================
+         DESCRIPTION
+         ============================================================== --}}
+    @if($str('additional_details'))
+    <div class="card section-card" id="section-description">
+        <div class="card-header"><i class="fa-solid fa-align-left me-2"></i>Description</div>
+        <div class="card-body">
+            <p class="mb-0" style="font-size:.925rem;">{!! nl2br(e($str('additional_details'))) !!}</p>
+        </div>
+    </div>
     @endif
 
     {{-- ================================================================
@@ -1487,21 +1499,13 @@
     @endif
 
     {{-- ================================================================
-         ADDITIONAL DETAILS
+         PREFERENCES
          ============================================================== --}}
-    @php
-        $hasAddlDetails = $str('additional_details') || $str('preferance_details');
-    @endphp
-    @if($hasAddlDetails)
-    <div class="card section-card" id="section-additional">
-        <div class="card-header"><i class="fa-solid fa-circle-info me-2"></i>Additional Details</div>
+    @if($str('preferance_details'))
+    <div class="card section-card" id="section-preferences">
+        <div class="card-header"><i class="fa-solid fa-circle-info me-2"></i>Preferences</div>
         <div class="card-body">
-            @if($str('additional_details'))
-                <p class="mb-2" style="font-size:.925rem;">{!! nl2br(e($str('additional_details'))) !!}</p>
-            @endif
-            @if($str('preferance_details'))
-                <p class="mb-0" style="font-size:.925rem;">{!! nl2br(e($str('preferance_details'))) !!}</p>
-            @endif
+            <p class="mb-0" style="font-size:.925rem;">{!! nl2br(e($str('preferance_details'))) !!}</p>
         </div>
     </div>
     @endif
