@@ -328,7 +328,7 @@ class BuyerCriteriaAuctionController extends Controller
         return view('buyer_criteria.add-counter-bid', $page_data);
     }
 
-    public function view($id, BoundaryLookupService $boundaryLookupService, FloodZoneLookupService $floodZoneLookupService, SchoolDistrictLookupService $schoolDistrictLookupService)
+    public function view($id, BoundaryLookupService $boundaryLookupService, FloodZoneLookupService $floodZoneLookupService, SchoolDistrictLookupService $schoolDistrictLookupService, \App\Services\LocationDna\LocationIntelligenceComposer $locationIntelligenceComposer)
     {
         $page_data['auction'] = BuyerCriteriaAuction::whereId($id)->first();
         $page_data['created_by'] = User::whereId($page_data['auction']->user_id)->get()->first();
@@ -361,6 +361,15 @@ class BuyerCriteriaAuctionController extends Controller
             $page_data['boundaryData'],
             $page_data['locationDnaPreferences'] ?? []
         );
+        try {
+            $locationIntelligence = $locationIntelligenceComposer->compose(
+                $page_data['boundaryData'],
+                $page_data['locationDnaPreferences'] ?? []
+            );
+            $page_data['locationIntelligenceSummary'] = $locationIntelligence['summary'] ?? ['summary_lines' => []];
+        } catch (\Throwable $e) {
+            $page_data['locationIntelligenceSummary'] = ['summary_lines' => []];
+        }
         return view('buyer_criteria.view', $page_data);
     }
 

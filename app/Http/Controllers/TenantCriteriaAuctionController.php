@@ -601,7 +601,7 @@ class TenantCriteriaAuctionController extends Controller
         return redirect()->back()->with('success', 'Auction Approved Successfully!');
     }
 
-    public function view($id, Request $request, BoundaryLookupService $boundaryLookupService, FloodZoneLookupService $floodZoneLookupService, SchoolDistrictLookupService $schoolDistrictLookupService)
+    public function view($id, Request $request, BoundaryLookupService $boundaryLookupService, FloodZoneLookupService $floodZoneLookupService, SchoolDistrictLookupService $schoolDistrictLookupService, \App\Services\LocationDna\LocationIntelligenceComposer $locationIntelligenceComposer)
     {
         $page_data['auction'] = TenantCriteriaAuction::whereId($id)->first();
         $page_data['title'] = 'Tenant Criteria';
@@ -628,6 +628,15 @@ class TenantCriteriaAuctionController extends Controller
             $page_data['boundaryData'],
             $page_data['locationDnaPreferences'] ?? []
         );
+        try {
+            $locationIntelligence = $locationIntelligenceComposer->compose(
+                $page_data['boundaryData'],
+                $page_data['locationDnaPreferences'] ?? []
+            );
+            $page_data['locationIntelligenceSummary'] = $locationIntelligence['summary'] ?? ['summary_lines' => []];
+        } catch (\Throwable $e) {
+            $page_data['locationIntelligenceSummary'] = ['summary_lines' => []];
+        }
         return view('tenant_criteria.view', $page_data);
     }
 
