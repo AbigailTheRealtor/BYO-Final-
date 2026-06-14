@@ -2,6 +2,7 @@
 
 namespace App\Services\AskAi;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -2680,6 +2681,143 @@ class AskAiRunnerV2Service
             }
 
             // ----------------------------------------------------------------
+            // Step 1a-desc — Unsupported-question description fallback.
+            //
+            // Fires immediately after the normalizer block confirms the
+            // question is still 'unsupported'. Unlike the listing_facts
+            // description fallback (≈line 3362), this path fires BEFORE the
+            // internal runner because an unsupported prompt_package is never
+            // 'prompt_ready', so the primary OpenAI call is never reached.
+            //
+            // Conditions (all must be true):
+            //   (a) $questionType === 'unsupported'
+            //   (b) $enableDescriptionFallback is true
+            //   (c) normalizer is injected AND enabled
+            //   (d) The listing has a non-empty description string.
+            //
+            // No additional keyword guard is applied beyond these conditions.
+            // The OpenAI adapter already returns INFORMATION_NOT_IN_DESCRIPTION
+            // for questions the description cannot answer (including off-topic
+            // ones), which maps cleanly to the miss outcome below. Adding a
+            // second keyword registry here would create maintenance debt with no
+            // meaningful reduction in API calls, since the normalizer already
+            // consumed one call to determine this question is 'unsupported'.
+            //
+            // Trace fields added before return:
+            //   description_fallback_unsupported_attempted = true when (a)–(c)
+            //     pass and description is non-empty; absent otherwise.
+            //   description_fallback_unsupported_used = true on a hit (answer
+            //     found in the description), false on a miss.
+            //
+            // Hit outcome : status='ready',
+            //               answer_source='description_fallback',
+            //               source_attribution=['Listing description.'],
+            //               outcome_category='description_fallback'.
+            // Miss outcome: status='insufficient_context',
+            //               answer='This information was not provided in
+            //                       the listing description.',
+            //               answer_source='description_fallback_miss'.
+            // ----------------------------------------------------------------
+            if (
+                $questionType === 'unsupported'
+                && $this->enableDescriptionFallback
+                && $this->normalizer !== null
+                && $this->normalizer->isEnabled()
+            ) {
+                $unsuppDesc = $this->loadListingDescription($listingType, $listingId);
+                if (is_string($unsuppDesc) && trim($unsuppDesc) !== '') {
+                    $trace['description_fallback_unsupported_attempted'] = true;
+
+                    $unsuppPackage = $this->buildDescriptionFallbackPackage($question, trim($unsuppDesc));
+                    $unsuppResult  = $this->adapter->generate($unsuppPackage);
+                    $unsuppAnswer  = $this->parseDescriptionFallbackAnswer($unsuppResult);
+
+                    if ($unsuppAnswer !== null) {
+                        $unsuppHitResponse = [
+                            'success'            => true,
+                            'status'             => 'ready',
+                            'answer'             => $unsuppAnswer,
+                            'disclosures'        => [],
+                            'source_attribution' => ['Listing description.'],
+                            'refusal_message'    => null,
+                            'error'              => null,
+                            'source'             => [
+                                'answer_source'    => 'description_fallback',
+                                'snapshot_id'      => null,
+                                'canonical_key'    => null,
+                                'match_type'       => null,
+                                'snapshot_version' => null,
+                            ],
+                        ];
+                        $unsuppHitResponse['follow_up_questions'] = $this->followUpService->forResult(
+                            $unsuppHitResponse,
+                            $classification
+                        );
+
+                        $trace['description_fallback_unsupported_used'] = true;
+                        $trace['final_status']                          = 'ready';
+                        $trace['source_attribution']                    = $unsuppHitResponse['source_attribution'];
+                        $this->emitTrace($trace);
+
+                        return [
+                            'success'          => true,
+                            'status'           => 'ready',
+                            'classification'   => $classification,
+                            'context'          => null,
+                            'contract'         => null,
+                            'prompt_package'   => $unsuppPackage,
+                            'adapter_result'   => $unsuppResult,
+                            'final_response'   => $unsuppHitResponse,
+                            'error'            => null,
+                            'trace'            => $trace,
+                            'outcome_category' => 'description_fallback',
+                        ];
+                    }
+
+                    // Description was consulted but the answer was not found in it.
+                    $unsuppMissResponse = [
+                        'success'            => false,
+                        'status'             => 'insufficient_context',
+                        'answer'             => 'This information was not provided in the listing description.',
+                        'disclosures'        => [],
+                        'source_attribution' => [],
+                        'refusal_message'    => null,
+                        'error'              => null,
+                        'source'             => [
+                            'answer_source'    => 'description_fallback_miss',
+                            'snapshot_id'      => null,
+                            'canonical_key'    => null,
+                            'match_type'       => null,
+                            'snapshot_version' => null,
+                        ],
+                    ];
+                    $unsuppMissResponse['follow_up_questions'] = $this->followUpService->forResult(
+                        $unsuppMissResponse,
+                        $classification
+                    );
+
+                    $trace['description_fallback_unsupported_used'] = false;
+                    $trace['final_status']                          = 'insufficient_context';
+                    $trace['source_attribution']                    = $unsuppMissResponse['source_attribution'];
+                    $this->emitTrace($trace);
+
+                    return [
+                        'success'          => false,
+                        'status'           => 'insufficient_context',
+                        'classification'   => $classification,
+                        'context'          => null,
+                        'contract'         => null,
+                        'prompt_package'   => $unsuppPackage,
+                        'adapter_result'   => $unsuppResult,
+                        'final_response'   => $unsuppMissResponse,
+                        'error'            => null,
+                        'trace'            => $trace,
+                        'outcome_category' => 'description_fallback_miss',
+                    ];
+                }
+            }
+
+            // ----------------------------------------------------------------
             // Step 1b — Deterministic FAQ key detection for listing_facts.
             // Runs when the classifier (or step 1a normalization) routed the
             // question to listing_facts AND no normalized_field_key has been
@@ -4163,5 +4301,82 @@ class AskAiRunnerV2Service
         }
 
         return $answerText;
+    }
+
+    /**
+     * Load the free-text description for a listing using a direct DB lookup.
+     *
+     * Source per role (mirrors AskAiContextBuilderService::extractListingFields):
+     *   seller   → seller_agent_auctions.description            (native column)
+     *   buyer    → buyer_agent_auctions.additional_details      (native column)
+     *   tenant   → tenant_agent_auction_metas meta_key='additional_details' (EAV)
+     *   landlord → no public description field exists           (always null)
+     *
+     * Returns null when:
+     *   - The listing type is unrecognised.
+     *   - The role is 'landlord' (no description concept in context builder).
+     *   - No row exists for the given listing ID.
+     *   - The description column/meta value is null or blank.
+     *   - Any DB exception occurs (silently caught).
+     *
+     * @param  string  $listingType  Canonical or aliased listing type string.
+     * @param  int     $listingId    Primary key of the listing record.
+     * @return string|null           Trimmed description text, or null.
+     */
+    protected function loadListingDescription(string $listingType, int $listingId): ?string
+    {
+        static $typeAliases = [
+            'seller'                  => 'seller',
+            'seller_agent_auction'    => 'seller',
+            'property_auction'        => 'seller',
+            'buyer'                   => 'buyer',
+            'buyer_agent_auction'     => 'buyer',
+            'buyer_criteria_auction'  => 'buyer',
+            'landlord'                => 'landlord',
+            'landlord_agent_auction'  => 'landlord',
+            'landlord_auction'        => 'landlord',
+            'tenant'                  => 'tenant',
+            'tenant_agent_auction'    => 'tenant',
+            'tenant_criteria_auction' => 'tenant',
+        ];
+
+        $canonical = $typeAliases[strtolower($listingType)] ?? null;
+        if ($canonical === null) {
+            return null;
+        }
+
+        try {
+            // Seller and Buyer store their public description in native table columns.
+            // Landlord and Tenant have no freetext description native column — landlord
+            // has no description concept in the context builder at all; tenant stores
+            // its optional "additional_details" text in the EAV meta table.
+            if ($canonical === 'seller') {
+                $value = DB::table('seller_agent_auctions')
+                    ->where('id', $listingId)
+                    ->value('description');
+            } elseif ($canonical === 'buyer') {
+                $value = DB::table('buyer_agent_auctions')
+                    ->where('id', $listingId)
+                    ->value('additional_details');
+            } elseif ($canonical === 'tenant') {
+                // Tenant uses EAV: tenant_agent_auction_metas (meta_key = 'additional_details').
+                $value = DB::table('tenant_agent_auction_metas')
+                    ->where('tenant_agent_auction_id', $listingId)
+                    ->where('meta_key', 'additional_details')
+                    ->value('meta_value');
+            } else {
+                // Landlord: no public freetext description field exists in either the
+                // native table or EAV metas; return null so the fallback is skipped.
+                return null;
+            }
+
+            if (!is_string($value) || trim($value) === '') {
+                return null;
+            }
+
+            return trim($value);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }
