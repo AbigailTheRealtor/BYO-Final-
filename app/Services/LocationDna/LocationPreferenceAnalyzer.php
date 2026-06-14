@@ -3,7 +3,7 @@
 namespace App\Services\LocationDna;
 
 /**
- * LocationPreferenceAnalyzer — Phase 5A Preference Intelligence Layer
+ * LocationPreferenceAnalyzer — Phase 5B Summary Refinement (updated from Phase 5A)
  *
  * GOVERNANCE BLOCK:
  * ==================================================================================
@@ -30,11 +30,20 @@ namespace App\Services\LocationDna;
  *   ['summary_lines' => string[]]
  *
  * Lines are emitted in standardized order:
- *   1. Flexibility
+ *   1. Flexibility (or a Phase 5B combined sentence that absorbs flexibility)
  *   2. Search breadth (broad/narrow density signal)
  *   3. Geographic targeting (multi-city submarket framing)
  *   4. Polygon / radius spatial insight
  *   5. Preference specificity (targeted density signal + preference-type label)
+ *
+ * Phase 5B combining rules (applied before section emission):
+ *   (a) flexibility + multi-city  → single combined submarket+flexibility sentence;
+ *       suppresses the standalone flexibility line and the submarket line.
+ *   (b) flexibility + radius      → single combined commute-distance sentence;
+ *       suppresses the standalone flexibility line and the radius line.
+ *       Only fires when rule (a) has not already consumed flexibility.
+ *   (c) broad + submarket         → suppress the broad line; the submarket line is
+ *       more informative and communicates the same concept.
  */
 class LocationPreferenceAnalyzer
 {
@@ -60,12 +69,67 @@ class LocationPreferenceAnalyzer
             return ['summary_lines' => []];
         }
 
-        $lines = [];
+        $cities  = $this->getArray($preferences, 'cities');
+        $radii   = $this->getArray($preferences, 'radius_searches');
+        $hasFlex = !empty($preferences['flexible_location']);
+        $hasMultiCity = count($cities) >= 2;
+        $hasRadius    = !empty($radii);
+        $isBroad      = $this->isBroad($preferences);
 
-        $lines = array_merge($lines, $this->flexibilityLines($preferences));
-        $lines = array_merge($lines, $this->breadthLines($preferences));
-        $lines = array_merge($lines, $this->geographicTargetingLines($preferences));
-        $lines = array_merge($lines, $this->polygonRadiusLines($preferences));
+        $lines = [];
+        $flexConsumed      = false;
+        $submarketConsumed = false;
+        $radiusConsumed    = false;
+
+        // ---------------------------------------------------------------
+        // Phase 5B combining pass — evaluate rules before section emission
+        // ---------------------------------------------------------------
+
+        // Rule (a): flexibility + multi-city → combined submarket+flexibility sentence
+        if ($hasFlex && $hasMultiCity) {
+            $formatted = $this->formatList($cities);
+            $lines[]           = "Open to opportunities across multiple submarkets including {$formatted} and willing to prioritize overall fit over a specific neighborhood.";
+            $flexConsumed      = true;
+            $submarketConsumed = true;
+        }
+
+        // Rule (b): flexibility + radius → combined commute-distance+flexibility sentence
+        // Only fires when rule (a) has not already consumed flexibility.
+        if ($hasFlex && !$flexConsumed && $hasRadius) {
+            $lines[]        = 'Open to opportunities within commuting distance of preferred areas while remaining flexible on exact location.';
+            $flexConsumed   = true;
+            $radiusConsumed = true;
+        }
+
+        // ---------------------------------------------------------------
+        // Section emission — standardized order
+        // ---------------------------------------------------------------
+
+        // 1. Standalone flexibility line (skipped when consumed by a combining rule)
+        if (!$flexConsumed) {
+            $lines = array_merge($lines, $this->flexibilityLines($preferences));
+        }
+
+        // 2. Breadth — rule (c): suppress broad whenever any submarket-style line is
+        //    present in the output. This covers both cases:
+        //      • submarket fires as a standalone line (hasMultiCity && !submarketConsumed)
+        //      • submarket was absorbed into the combined flexibility+submarket sentence
+        //        by rule (a) (hasMultiCity && submarketConsumed)
+        //    In both cases the "multiple submarkets" concept is already communicated,
+        //    making "Broad geographic search area." redundant.
+        if ($isBroad && !$hasMultiCity) {
+            $lines[] = 'Broad geographic search area.';
+        }
+
+        // 3. Geographic targeting — suppressed when already consumed by rule (a)
+        if (!$submarketConsumed) {
+            $lines = array_merge($lines, $this->geographicTargetingLines($preferences));
+        }
+
+        // 4. Polygon / radius spatial insight — radius suppressed when consumed by rule (b)
+        $lines = array_merge($lines, $this->polygonRadiusLines($preferences, $radiusConsumed));
+
+        // 5. Preference specificity (targeted density signal + preference-type label)
         $lines = array_merge($lines, $this->specificityLines($preferences));
 
         return ['summary_lines' => $lines];
@@ -84,15 +148,6 @@ class LocationPreferenceAnalyzer
         return [];
     }
 
-    private function breadthLines(array $preferences): array
-    {
-        if ($this->isBroad($preferences)) {
-            return ['Broad geographic search area.'];
-        }
-
-        return [];
-    }
-
     private function geographicTargetingLines(array $preferences): array
     {
         $cities = $this->getArray($preferences, 'cities');
@@ -105,7 +160,10 @@ class LocationPreferenceAnalyzer
         return [];
     }
 
-    private function polygonRadiusLines(array $preferences): array
+    /**
+     * @param  bool $radiusConsumed  True when rule (b) already absorbed the radius signal.
+     */
+    private function polygonRadiusLines(array $preferences, bool $radiusConsumed = false): array
     {
         $polygons = $this->getArray($preferences, 'polygons');
         $radii    = $this->getArray($preferences, 'radius_searches');
@@ -119,7 +177,7 @@ class LocationPreferenceAnalyzer
             $lines[] = 'Searching across several custom-defined target areas.';
         }
 
-        if (!empty($radii)) {
+        if (!$radiusConsumed && !empty($radii)) {
             $lines[] = 'Searching within a defined radius from a preferred location.';
         }
 

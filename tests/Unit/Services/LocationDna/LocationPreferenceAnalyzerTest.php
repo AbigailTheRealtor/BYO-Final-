@@ -6,11 +6,11 @@ use App\Services\LocationDna\LocationPreferenceAnalyzer;
 use Tests\TestCase;
 
 /**
- * LocationPreferenceAnalyzerTest — Phase 5A
+ * LocationPreferenceAnalyzerTest — Phase 5B (updated from Phase 5A)
  *
  * Covers all required scenarios:
  *   (1)  Flexible location → flexibility line
- *   (2)  Many cities (≥5) → broad breadth line
+ *   (2)  Many cities (≥5) → Phase 5B rule (c): broad suppressed, submarket present
  *   (3)  Many ZIP codes (≥6) → broad breadth line
  *   (4)  Many polygons (≥3) → broad breadth line
  *   (5)  Few ZIPs (1–2, no cities/polygons/radii) → highly targeted line
@@ -24,8 +24,13 @@ use Tests\TestCase;
  *   (13) Neighborhoods present → neighborhood preference type line
  *   (14) Mixed cities + ZIP codes → mixed preference type line
  *   (15) Empty preferences → empty summary_lines, no exception
- *   (16) Deterministic line ordering (flexibility → breadth → geo targeting → polygon/radius → specificity)
+ *   (16) Deterministic line ordering (flexibility → breadth → polygon/radius)
+ *         Updated for Phase 5B: uses ZIPs for breadth so no combining rules fire.
  *   (17) Governance — no DB, Eloquent, or OpenAI imports in the service file
+ *   (18) Phase 5B — combined flexibility + city list sentence (rule a)
+ *   (19) Phase 5B — combined flexibility + radius sentence (rule b)
+ *   (20) Phase 5B — broad + submarket deduplication: broad absent, submarket present (rule c)
+ *   (21) Phase 5B — determinism: analyze() called twice with same input returns identical array
  *
  * No database, no factories, no HTTP calls — purely in-memory fixture arrays.
  */
@@ -76,11 +81,11 @@ class LocationPreferenceAnalyzerTest extends TestCase
     }
 
     // =========================================================================
-    // (2) Many cities (≥5) → broad breadth line
+    // (2) Many cities (≥5) → Phase 5B rule (c): broad suppressed, submarket present
     // =========================================================================
 
     /** @test */
-    public function it_generates_broad_line_for_five_or_more_cities(): void
+    public function it_suppresses_broad_line_and_shows_submarket_for_five_or_more_cities(): void
     {
         $preferences = [
             'cities' => ['Tampa', 'St. Petersburg', 'Clearwater', 'Brandon', 'Wesley Chapel'],
@@ -89,7 +94,12 @@ class LocationPreferenceAnalyzerTest extends TestCase
         $result = $this->makeAnalyzer()->analyze($preferences);
 
         $this->assertSummaryShape($result);
-        $this->assertContains('Broad geographic search area.', $result['summary_lines']);
+        // Phase 5B rule (c): broad is suppressed when submarket fires simultaneously.
+        $this->assertNotContains('Broad geographic search area.', $result['summary_lines']);
+        // Submarket line is present (it is more informative).
+        $submarketLine = $this->findLineContaining($result['summary_lines'], 'submarkets');
+        $this->assertNotNull($submarketLine, 'Submarket line must be present for 5+ cities');
+        $this->assertStringContainsString('Tampa', $submarketLine);
     }
 
     /** @test */
@@ -515,15 +525,20 @@ class LocationPreferenceAnalyzerTest extends TestCase
 
     // =========================================================================
     // (16) Deterministic line ordering
-    //       flexibility → breadth → geographic targeting → polygon/radius → specificity
+    //       Updated for Phase 5B: uses ZIP codes for breadth and a polygon so that
+    //       no combining rules fire (no cities, no radius alongside flexibility).
+    //       Verified order: flexibility → breadth → polygon/radius
     // =========================================================================
 
     /** @test */
     public function it_outputs_lines_in_standardized_order(): void
     {
+        // Use ZIPs for breadth and a single polygon.
+        // flexible_location=true with no cities and no radius → standalone flex line fires,
+        // no Phase-5B combining rules apply, and broad fires via ZIP threshold.
         $preferences = [
             'flexible_location' => true,
-            'cities'            => ['Tampa', 'St. Petersburg', 'Clearwater', 'Brandon', 'Wesley Chapel'],
+            'zip_codes'         => ['33601', '33602', '33603', '33604', '33605', '33606'],
             'polygons'          => [['path' => [
                 ['lat' => 27.9, 'lng' => -82.5],
                 ['lat' => 27.8, 'lng' => -82.5],
@@ -539,17 +554,14 @@ class LocationPreferenceAnalyzerTest extends TestCase
 
         $flexIdx    = $this->indexOfLineContaining($lines, 'overall fit');
         $breadthIdx = $this->indexOfLineContaining($lines, 'Broad geographic');
-        $geoIdx     = $this->indexOfLineContaining($lines, 'submarkets');
         $polyIdx    = $this->indexOfLineContaining($lines, 'target area');
 
         $this->assertNotNull($flexIdx, 'Flexibility line must be present');
         $this->assertNotNull($breadthIdx, 'Breadth line must be present');
-        $this->assertNotNull($geoIdx, 'Geographic targeting line must be present');
         $this->assertNotNull($polyIdx, 'Polygon line must be present');
 
         $this->assertTrue($flexIdx < $breadthIdx, 'Flexibility must come before breadth');
-        $this->assertTrue($breadthIdx < $geoIdx, 'Breadth must come before geographic targeting');
-        $this->assertTrue($geoIdx < $polyIdx, 'Geographic targeting must come before polygon/radius');
+        $this->assertTrue($breadthIdx < $polyIdx, 'Breadth must come before polygon/radius');
     }
 
     /** @test */
@@ -575,6 +587,100 @@ class LocationPreferenceAnalyzerTest extends TestCase
 
         // Both specificity lines are last in the overall output (no enrichment lines present).
         $this->assertSame(count($lines) - 1, $prefTypeIdx, 'Preference-type label must be the very last line');
+    }
+
+    /** @test */
+    public function it_places_combined_submarket_line_before_polygon_radius_after_phase5b_merge(): void
+    {
+        // Rule (a) fires: flex + 3 cities → combined submarket+flexibility sentence.
+        // The combined line absorbs both the flexibility and geographic-targeting slots,
+        // so it must still appear BEFORE any polygon/radius lines in the output.
+        $preferences = [
+            'flexible_location' => true,
+            'cities'            => ['Tampa', 'St. Petersburg', 'Clearwater'],
+            'polygons'          => [['path' => [
+                ['lat' => 27.9, 'lng' => -82.5],
+                ['lat' => 27.8, 'lng' => -82.5],
+                ['lat' => 27.8, 'lng' => -82.4],
+            ]]],
+        ];
+
+        $result = $this->makeAnalyzer()->analyze($preferences);
+        $lines  = $result['summary_lines'];
+
+        $this->assertSummaryShape($result);
+        $this->assertNotEmpty($lines);
+
+        $geoIdx  = $this->indexOfLineContaining($lines, 'submarkets');
+        $polyIdx = $this->indexOfLineContaining($lines, 'target area');
+
+        $this->assertNotNull($geoIdx, 'Combined submarket line must be present');
+        $this->assertNotNull($polyIdx, 'Polygon line must be present');
+
+        $this->assertTrue(
+            $geoIdx < $polyIdx,
+            'Geographic targeting (combined) must come before polygon/radius lines',
+        );
+    }
+
+    /** @test */
+    public function it_places_standalone_submarket_line_before_polygon_radius_without_combining(): void
+    {
+        // No flex → rule (a) does not fire; standalone submarket line emitted.
+        // Must still appear before any polygon/radius lines.
+        $preferences = [
+            'cities'  => ['Tampa', 'St. Petersburg'],
+            'polygons' => [['path' => [
+                ['lat' => 27.9, 'lng' => -82.5],
+                ['lat' => 27.8, 'lng' => -82.5],
+                ['lat' => 27.8, 'lng' => -82.4],
+            ]]],
+        ];
+
+        $result = $this->makeAnalyzer()->analyze($preferences);
+        $lines  = $result['summary_lines'];
+
+        $this->assertSummaryShape($result);
+        $this->assertNotEmpty($lines);
+
+        $geoIdx  = $this->indexOfLineContaining($lines, 'submarkets');
+        $polyIdx = $this->indexOfLineContaining($lines, 'target area');
+
+        $this->assertNotNull($geoIdx, 'Standalone submarket line must be present');
+        $this->assertNotNull($polyIdx, 'Polygon line must be present');
+
+        $this->assertTrue(
+            $geoIdx < $polyIdx,
+            'Geographic targeting (standalone) must come before polygon/radius lines',
+        );
+    }
+
+    /** @test */
+    public function it_places_submarket_line_before_radius_line(): void
+    {
+        // Standalone submarket (no flex) + radius → submarket before radius.
+        $preferences = [
+            'cities'          => ['Tampa', 'St. Petersburg'],
+            'radius_searches' => [
+                ['center' => ['lat' => 27.9, 'lng' => -82.5], 'radius_miles' => 5],
+            ],
+        ];
+
+        $result = $this->makeAnalyzer()->analyze($preferences);
+        $lines  = $result['summary_lines'];
+
+        $this->assertSummaryShape($result);
+
+        $geoIdx    = $this->indexOfLineContaining($lines, 'submarkets');
+        $radiusIdx = $this->indexOfLineContaining($lines, 'defined radius');
+
+        $this->assertNotNull($geoIdx, 'Submarket line must be present');
+        $this->assertNotNull($radiusIdx, 'Radius line must be present');
+
+        $this->assertTrue(
+            $geoIdx < $radiusIdx,
+            'Geographic targeting must come before polygon/radius lines',
+        );
     }
 
     // =========================================================================
@@ -618,6 +724,242 @@ class LocationPreferenceAnalyzerTest extends TestCase
             $serviceFile,
             'Must not import DB facade',
         );
+    }
+
+    // =========================================================================
+    // (18) Phase 5B — combined flexibility + city list sentence (rule a)
+    // =========================================================================
+
+    /** @test */
+    public function it_combines_flexibility_and_multi_city_into_single_submarket_sentence(): void
+    {
+        $preferences = [
+            'flexible_location' => true,
+            'cities'            => ['Tampa', 'St. Petersburg', 'Clearwater'],
+        ];
+
+        $result = $this->makeAnalyzer()->analyze($preferences);
+        $lines  = $result['summary_lines'];
+
+        $this->assertSummaryShape($result);
+
+        // Combined sentence must be present and contain all three cities.
+        $combined = $this->findLineContaining($lines, 'submarkets');
+        $this->assertNotNull($combined, 'Combined submarket+flexibility line must be present');
+        $this->assertStringContainsString('Tampa, St. Petersburg and Clearwater', $combined);
+        $this->assertStringContainsString('overall fit', $combined);
+
+        // Standalone flexibility line must NOT appear.
+        $this->assertNotContains(
+            'Open to multiple areas and willing to prioritize overall fit over a specific neighborhood.',
+            $lines,
+        );
+
+        // Standalone submarket line must NOT appear.
+        $this->assertNotContains(
+            'Seeking opportunities across multiple submarkets including Tampa, St. Petersburg and Clearwater.',
+            $lines,
+        );
+    }
+
+    /** @test */
+    public function it_produces_exactly_one_submarket_related_line_when_flex_and_multi_city_combine(): void
+    {
+        $preferences = [
+            'flexible_location' => true,
+            'cities'            => ['Tampa', 'St. Petersburg'],
+        ];
+
+        $result = $this->makeAnalyzer()->analyze($preferences);
+        $lines  = $result['summary_lines'];
+
+        $this->assertSummaryShape($result);
+
+        $submarketLines = array_filter($lines, fn ($l) => str_contains($l, 'submarkets'));
+        $this->assertCount(1, $submarketLines, 'Exactly one submarket-related line must appear');
+    }
+
+    // =========================================================================
+    // (19) Phase 5B — combined flexibility + radius sentence (rule b)
+    // =========================================================================
+
+    /** @test */
+    public function it_combines_flexibility_and_radius_into_single_commute_distance_sentence(): void
+    {
+        $preferences = [
+            'flexible_location' => true,
+            'radius_searches'   => [
+                ['center' => ['lat' => 27.9, 'lng' => -82.5], 'radius_miles' => 10],
+            ],
+        ];
+
+        $result = $this->makeAnalyzer()->analyze($preferences);
+        $lines  = $result['summary_lines'];
+
+        $this->assertSummaryShape($result);
+
+        // Combined sentence must be present.
+        $this->assertContains(
+            'Open to opportunities within commuting distance of preferred areas while remaining flexible on exact location.',
+            $lines,
+        );
+
+        // Standalone flexibility line must NOT appear.
+        $this->assertNotContains(
+            'Open to multiple areas and willing to prioritize overall fit over a specific neighborhood.',
+            $lines,
+        );
+
+        // Standalone radius line must NOT appear.
+        $this->assertNotContains(
+            'Searching within a defined radius from a preferred location.',
+            $lines,
+        );
+    }
+
+    /** @test */
+    public function it_applies_rule_a_not_rule_b_when_both_cities_and_radius_accompany_flexibility(): void
+    {
+        // When flex + multi-city + radius all appear, rule (a) fires first and
+        // consumes flexibility. Rule (b) must NOT fire because flex is already consumed.
+        // The radius line appears separately (not consumed by rule b).
+        $preferences = [
+            'flexible_location' => true,
+            'cities'            => ['Tampa', 'St. Petersburg'],
+            'radius_searches'   => [
+                ['center' => ['lat' => 27.9, 'lng' => -82.5], 'radius_miles' => 10],
+            ],
+        ];
+
+        $result = $this->makeAnalyzer()->analyze($preferences);
+        $lines  = $result['summary_lines'];
+
+        $this->assertSummaryShape($result);
+
+        // Rule (a) combined line is present.
+        $combined = $this->findLineContaining($lines, 'submarkets');
+        $this->assertNotNull($combined, 'Rule (a) combined line must be present');
+        $this->assertStringContainsString('overall fit', $combined);
+
+        // Rule (b) combined line must NOT appear (rule a consumed flexibility first).
+        $this->assertNotContains(
+            'Open to opportunities within commuting distance of preferred areas while remaining flexible on exact location.',
+            $lines,
+        );
+
+        // Radius line appears independently (not consumed by rule b since rule b didn't fire).
+        $this->assertContains(
+            'Searching within a defined radius from a preferred location.',
+            $lines,
+        );
+    }
+
+    // =========================================================================
+    // (20) Phase 5B — broad + submarket deduplication: broad absent, submarket present (rule c)
+    // =========================================================================
+
+    /** @test */
+    public function it_suppresses_broad_line_when_submarket_fires_alongside_it(): void
+    {
+        // 5 cities triggers both broad (≥5) and submarket (≥2) simultaneously.
+        $preferences = [
+            'cities' => ['Tampa', 'St. Petersburg', 'Clearwater', 'Brandon', 'Wesley Chapel'],
+        ];
+
+        $result = $this->makeAnalyzer()->analyze($preferences);
+        $lines  = $result['summary_lines'];
+
+        $this->assertSummaryShape($result);
+
+        // Broad line must be absent (suppressed by rule c).
+        $this->assertNotContains('Broad geographic search area.', $lines);
+
+        // Submarket line must be present (it communicates the same concept and more).
+        $submarketLine = $this->findLineContaining($lines, 'submarkets');
+        $this->assertNotNull($submarketLine, 'Submarket line must be present');
+        $this->assertStringContainsString('Tampa', $submarketLine);
+        $this->assertStringContainsString('Wesley Chapel', $submarketLine);
+    }
+
+    /** @test */
+    public function it_emits_broad_line_when_broadness_is_from_zips_not_cities(): void
+    {
+        // Broad via ZIPs only — no multi-city, so submarket never fires.
+        // Rule (c) must NOT suppress the broad line in this case.
+        $preferences = [
+            'zip_codes' => ['33601', '33602', '33603', '33604', '33605', '33606'],
+        ];
+
+        $result = $this->makeAnalyzer()->analyze($preferences);
+
+        $this->assertSummaryShape($result);
+        $this->assertContains('Broad geographic search area.', $result['summary_lines']);
+    }
+
+    /** @test */
+    public function it_suppresses_broad_line_even_when_submarket_is_consumed_by_combining_rule(): void
+    {
+        // flex + 5 cities → rule (a) fires: combined flex+submarket sentence absorbs
+        // both signals. Even though the standalone submarket line never appears,
+        // the combined sentence already communicates "multiple submarkets," so broad
+        // remains redundant and must still be suppressed by rule (c).
+        $preferences = [
+            'flexible_location' => true,
+            'cities'            => ['Tampa', 'St. Petersburg', 'Clearwater', 'Brandon', 'Wesley Chapel'],
+        ];
+
+        $result = $this->makeAnalyzer()->analyze($preferences);
+        $lines  = $result['summary_lines'];
+
+        $this->assertSummaryShape($result);
+
+        // Combined submarket+flexibility line is present.
+        $combined = $this->findLineContaining($lines, 'submarkets');
+        $this->assertNotNull($combined, 'Combined submarket line must be present');
+        $this->assertStringContainsString('overall fit', $combined);
+
+        // Broad must NOT appear — the combined sentence already communicates the same breadth.
+        $this->assertNotContains('Broad geographic search area.', $lines);
+    }
+
+    // =========================================================================
+    // (21) Phase 5B — determinism: analyze() returns identical output on repeated calls
+    // =========================================================================
+
+    /** @test */
+    public function it_produces_identical_output_on_repeated_calls_with_the_same_input(): void
+    {
+        $preferences = [
+            'flexible_location' => true,
+            'cities'            => ['Tampa', 'St. Petersburg', 'Clearwater'],
+            'zip_codes'         => ['33601', '33602'],
+            'neighborhoods'     => [],
+            'polygons'          => [['path' => [
+                ['lat' => 27.9, 'lng' => -82.5],
+                ['lat' => 27.8, 'lng' => -82.5],
+                ['lat' => 27.8, 'lng' => -82.4],
+            ]]],
+            'radius_searches'   => [],
+        ];
+
+        $analyzer = $this->makeAnalyzer();
+
+        $first  = $analyzer->analyze($preferences);
+        $second = $analyzer->analyze($preferences);
+
+        $this->assertSame($first, $second, 'analyze() must be deterministic: identical input must yield identical output');
+    }
+
+    /** @test */
+    public function it_produces_identical_output_for_empty_preferences_on_repeated_calls(): void
+    {
+        $analyzer = $this->makeAnalyzer();
+
+        $first  = $analyzer->analyze([]);
+        $second = $analyzer->analyze([]);
+
+        $this->assertSame($first, $second);
+        $this->assertEmpty($first['summary_lines']);
     }
 
     // =========================================================================
