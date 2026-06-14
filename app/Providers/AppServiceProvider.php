@@ -42,6 +42,8 @@ use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
 use App\Services\LocationDna\CommuteTimeLookupService;
 use App\Services\LocationDna\LocationDnaEnrichmentRunner;
+use App\Services\LocationDna\LocationIntelligenceComposer;
+use App\Services\LocationDna\LocationIntelligenceSummaryService;
 use App\Services\LocationDna\PoiDistanceLookupService;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 
@@ -106,6 +108,13 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(SchoolDistrictLookupService::class),
                 $app->make(PoiDistanceLookupService::class),
                 $app->make(CommuteTimeLookupService::class),
+            );
+        });
+
+        $this->app->bind(LocationIntelligenceComposer::class, function ($app) {
+            return new LocationIntelligenceComposer(
+                $app->make(LocationDnaEnrichmentRunner::class),
+                $app->make(LocationIntelligenceSummaryService::class),
             );
         });
 
