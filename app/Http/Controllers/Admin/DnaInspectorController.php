@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\PropertyDnaProfile;
+use App\Models\BuyerCriteriaAuction;
 use App\Models\BuyerTenantDnaProfile;
 use App\Models\ListingCompatibilityScore;
+use App\Models\PropertyDnaProfile;
 use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
+use App\Models\TenantCriteriaAuction;
 use App\Services\Dna\PropertyMarketingBriefService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

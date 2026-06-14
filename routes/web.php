@@ -901,7 +901,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('demand/{id}', [DnaInspectorController::class, 'demandShow'])->name('demand.show');
             Route::get('scores', [DnaInspectorController::class, 'scoresIndex'])->name('scores.index');
             Route::get('scores/{id}', [DnaInspectorController::class, 'scoresShow'])->name('scores.show');
-
             // Location DNA Inspector (read-only, admin-only)
             Route::get('location', [DnaInspectorController::class, 'locationIndex'])->name('location.index');
             Route::get('location/{listingType}/{listingId}', [DnaInspectorController::class, 'locationShow'])->name('location.show');
@@ -1263,4 +1262,6 @@ if (app()->environment('local', 'development')) {
 // ===========================================================================
 // END LAYER 2 DEV-ONLY routes
 // ===========================================================================
+
+
 
