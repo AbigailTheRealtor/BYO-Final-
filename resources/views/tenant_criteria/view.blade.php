@@ -105,7 +105,7 @@
               <span class="badge bg-success">Leased</span>
             @endif
           </div>
-          @if ($auction->user_id == auth()->user()->id)
+          @if (auth()->check() && $auction->user_id == auth()->id())
             <div class="d-flex justify-content-end align-content-center">
               <a href="{{route('agent.tenant.criteria.auction.edit', $auction->id)}}" class="btn btn-success btn-sm px-3 mb-3 me-2"><i class="fa-solid fa-pen-to-square me-1"></i>Edit Listing</a>
               {{-- <a href="javascript:void(0)" class="btn btn-success btn-sm px-3 mb-3"><i class="fa-solid fa-pen-to-square me-1"></i>Edit Auction Status</a> --}}
@@ -711,7 +711,7 @@
         @endif
         <!-- Highest Bider -->
         <div class="card higestBider">
-          @if($auction->user_id == auth()->user()->id && $auction->bids->count() > 0)
+          @if(auth()->check() && $auction->user_id == auth()->id() && $auction->bids->count() > 0)
             <div class="d-flex align-items-baseline justify-content-center">
               @if ($auction->display_bids == 0)
                 <form action="{{ route('tenant.criteria.bids.visibility', ['id' => $auction->id, 'vis' => 'show']) }}"  method="post">

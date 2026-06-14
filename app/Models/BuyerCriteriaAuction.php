@@ -75,8 +75,6 @@ class BuyerCriteriaAuction extends Model
             }
             $data[$row->meta_key] = $value;
         }
-        $collection = new Collection();
-        $collection->push((object) $data);
-        return $collection->first();
+        return new \Illuminate\Support\Fluent($data);
     }
 }

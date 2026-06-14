@@ -250,7 +250,7 @@
                           <span class="badge bg-success">Sold</span>
                         @endif
                     </div>
-                    @if ($auction->user_id == auth()->user()->id)
+                    @if (auth()->check() && $auction->user_id == auth()->id())
                         <div class="d-flex justify-content-end align-content-center">
                             <a href="{{route('buyer_agent.auction.edit', $auction->id)}}" class="btn btn-success btn-sm px-3 mb-3 me-2"><i class="fa-solid fa-pen-to-square me-1"></i>Edit Listing</a>
                             <a href="{{ route('buyer.listings.download', $auction->id) }}" class="btn btn-outline-secondary btn-sm px-3 mb-3 me-2"><i class="fa-solid fa-download me-1"></i>Download Listing Snapshot (PDF)</a>
@@ -1568,7 +1568,7 @@
                 @endif
                 <!-- Highest Bider -->
                 <div class="card higestBider">
-                    @if($auction->user_id == auth()->user()->id && $auction->bids->count() > 0)
+                    @if(auth()->check() && $auction->user_id == auth()->id() && $auction->bids->count() > 0)
                     <div class="d-flex align-items-baseline justify-content-center">
                       @if ($auction->display_bids == 0)
                         <form action="{{ route('criteria.auction.bids.visibility', ['id' => $auction->id, 'vis' => 'show']) }}"  method="post">
@@ -1610,7 +1610,7 @@
                         @endif
                         <div class="accordion" id="accordionExample">
                             <div class="accordion-item border-0">
-                                @if ($auction->display_bids == 1 || $auction->user_id == auth()->user()->id)
+                                @if ($auction->display_bids == 1 || (auth()->check() && $auction->user_id == auth()->id()))
                                     @foreach (@$auction->bids as $bid)
                                         @php
                                             $buyerIsListingOwner = isset($auth_id) && $auction->user_id == $auth_id;

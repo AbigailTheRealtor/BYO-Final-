@@ -613,6 +613,7 @@ class TenantCriteriaAuctionController extends Controller
         $page_data['id'] = $id;
         $page_data['bids'] = TenantCriteriaAuctionBid::with('meta')->where('tenant_criteria_auction_id', $id)->whereNull('counter_id')->get();
         $auction = $page_data['auction'];
+        $page_data['lowest_bid_price'] = $auction->info('monthly_price') ?? 0;
         $ldnaRaw = $auction->info('location_dna_preferences');
         $page_data['locationDnaPreferences'] = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? null) : null;
         $page_data['legacyLocation'] = [
