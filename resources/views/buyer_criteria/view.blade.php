@@ -277,6 +277,7 @@
                     :floodZoneData="$floodZoneData ?? null"
                     :schoolDistrictData="$schoolDistrictData ?? null"
                 />
+                <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['summary_lines'] ?? []" />
                 <!-- Description Box  -->
                 <div class="card description">
                     {{-- {{dd(@$auction)}} --}}
