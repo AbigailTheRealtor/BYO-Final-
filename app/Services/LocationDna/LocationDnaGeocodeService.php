@@ -90,6 +90,35 @@ class LocationDnaGeocodeService
             $county  = trim($addressData['county'] ?? '');
             $zip     = trim($addressData['zip'] ?? '');
 
+            // (a-bis) Short-circuit: if pre-geocoded lat/lng from Google Places are present, use them
+            //         and skip the Geocoding API call entirely.
+            $preLat = isset($addressData['pre_lat']) && $addressData['pre_lat'] !== '' ? (float) $addressData['pre_lat'] : null;
+            $preLng = isset($addressData['pre_lng']) && $addressData['pre_lng'] !== '' ? (float) $addressData['pre_lng'] : null;
+
+            if ($preLat !== null && $preLng !== null && $preLat !== 0.0 && $preLng !== 0.0) {
+                $record = PropertyLocationDna::firstOrNew([
+                    'listing_type' => $listingType,
+                    'listing_id'   => $listingId,
+                ]);
+
+                $record->source_address = $address;
+                $record->source_city    = $city;
+                $record->source_state   = $state;
+                $record->source_county  = $county ?: null;
+                $record->source_zip     = $zip    ?: null;
+                $record->geocoded_lat   = $preLat;
+                $record->geocoded_lng   = $preLng;
+                $record->geocode_source = 'saved_meta';
+                $record->geocode_status = 'geocoded';
+                $record->geocode_error  = null;
+                $record->geocoded_at    = now();
+                $record->save();
+
+                $output = $this->geocodedOutput($listingType, $listingId, $preLat, $preLng, 'saved_meta');
+                $this->audit($listingType, $listingId, $output, $addressData);
+                return $output;
+            }
+
             // (b) Find or initialise the record
             $record = PropertyLocationDna::firstOrNew([
                 'listing_type' => $listingType,
@@ -258,6 +287,7 @@ class LocationDnaGeocodeService
         int    $listingId,
         float  $lat,
         float  $lng,
+        string $source = 'google',
     ): array {
         return [
             'success'      => true,
@@ -266,7 +296,7 @@ class LocationDnaGeocodeService
             'listing_id'   => $listingId,
             'lat'          => $lat,
             'lng'          => $lng,
-            'source'       => 'google',
+            'source'       => $source,
             'error'        => null,
         ];
     }

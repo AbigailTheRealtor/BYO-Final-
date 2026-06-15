@@ -507,6 +507,9 @@ class SellerOfferListing extends Component
     public $meeting_details_email = '';
 
     public $address = '';
+    public $property_lat = '';
+    public $property_lng = '';
+    public $google_place_id = '';
     public $property_city = '';
     public $property_state = '';
     public $property_zip = '';
@@ -2229,6 +2232,9 @@ class SellerOfferListing extends Component
             'meeting_details_phone'           => $this->meeting_details_phone,
             'meeting_details_email'           => $this->meeting_details_email,
             'address'                         => $this->address,
+            'property_lat'                    => $this->property_lat,
+            'property_lng'                    => $this->property_lng,
+            'google_place_id'                 => $this->google_place_id,
             'meeting_details_meeting_time'    => $this->meeting_details_meeting_time,
             'meeting_details_meeting_date'    => $this->meeting_details_meeting_date,
             'meeting_details_time_zone'       => $this->meeting_details_time_zone,
@@ -2878,6 +2884,9 @@ class SellerOfferListing extends Component
             $this->meeting_details_phone = $auction->get->meeting_details_phone;
             $this->meeting_details_email = $auction->get->meeting_details_email;
             $this->address = $auction->get->address;
+            $this->property_lat = $auction->get->property_lat ?? '';
+            $this->property_lng = $auction->get->property_lng ?? '';
+            $this->google_place_id = $auction->get->google_place_id ?? '';
             $this->meeting_details_meeting_time = $auction->get->meeting_details_meeting_time;
             $this->meeting_details_time_zone = $auction->get->meeting_details_time_zone;
             $this->meeting_details_meeting_date = $auction->get->meeting_details_meeting_date;
@@ -3466,6 +3475,9 @@ class SellerOfferListing extends Component
 
         // Meeting details yes
         $auction->saveMeta('address', $this->address);
+        $auction->saveMeta('property_lat', $this->property_lat);
+        $auction->saveMeta('property_lng', $this->property_lng);
+        $auction->saveMeta('google_place_id', $this->google_place_id);
         $auction->saveMeta('meeting_details_meeting_time', $this->meeting_details_meeting_time);
         $auction->saveMeta('meeting_details_meeting_date', $this->meeting_details_meeting_date);
         $auction->saveMeta('meeting_details_time_zone', $this->meeting_details_time_zone);

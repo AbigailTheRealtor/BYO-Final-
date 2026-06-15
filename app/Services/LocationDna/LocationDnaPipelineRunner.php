@@ -254,6 +254,8 @@ class LocationDnaPipelineRunner
             'state'   => (string) ($listing->info('property_state') ?: ''),
             'county'  => (string) ($listing->info('property_county') ?: ''),
             'zip'     => (string) ($listing->info('property_zip') ?: ''),
+            'pre_lat' => (string) ($listing->info('property_lat') ?: ''),
+            'pre_lng' => (string) ($listing->info('property_lng') ?: ''),
         ];
     }
 
@@ -275,6 +277,8 @@ class LocationDnaPipelineRunner
             'state'   => (string) ($listing->info('property_state') ?: ''),
             'county'  => (string) ($listing->info('property_county') ?: ''),
             'zip'     => (string) ($listing->info('property_zip') ?: ''),
+            'pre_lat' => (string) ($listing->info('property_lat') ?: ''),
+            'pre_lng' => (string) ($listing->info('property_lng') ?: ''),
         ];
     }
 }

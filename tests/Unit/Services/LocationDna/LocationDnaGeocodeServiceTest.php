@@ -692,4 +692,112 @@ class LocationDnaGeocodeServiceTest extends TestCase
         $this->assertEqualsWithDelta(27.9506, $result['lat'], 0.0001);
         $this->assertEqualsWithDelta(-82.4572, $result['lng'], 0.0001);
     }
+
+    // =========================================================================
+    // (14) saved_meta short-circuit — pre_lat / pre_lng provided
+    // =========================================================================
+
+    /** @test */
+    public function it_uses_pre_lat_pre_lng_and_skips_api_when_both_are_present(): void
+    {
+        // HTTP client must never be called when pre_lat / pre_lng are supplied.
+        $this->mockClient->expects($this->never())->method('request');
+
+        $addressData = array_merge(self::VALID_ADDRESS, [
+            'pre_lat' => '27.9506',
+            'pre_lng' => '-82.4572',
+        ]);
+
+        $result = $this->makeService()->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            $addressData
+        );
+
+        $this->assertContractShape($result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('geocoded', $result['status']);
+        $this->assertSame('saved_meta', $result['source']);
+        $this->assertEqualsWithDelta(27.9506, $result['lat'], 0.0001);
+        $this->assertEqualsWithDelta(-82.4572, $result['lng'], 0.0001);
+        $this->assertNull($result['error']);
+
+        // DB record must be persisted with saved_meta source
+        $this->assertDatabaseHas('property_location_dna', [
+            'listing_type'   => self::LISTING_TYPE,
+            'listing_id'     => self::LISTING_ID,
+            'geocode_status' => 'geocoded',
+            'geocode_source' => 'saved_meta',
+            'source_address' => '123 Main St',
+            'source_city'    => 'Tampa',
+            'source_state'   => 'FL',
+        ]);
+    }
+
+    /** @test */
+    public function it_falls_through_to_api_when_pre_lat_is_zero(): void
+    {
+        // Zero lat/lng are not trustworthy — must call the API.
+        $this->mockClient->expects($this->once())
+            ->method('request')
+            ->willReturn($this->makeGeoResponse(27.9506, -82.4572));
+
+        $addressData = array_merge(self::VALID_ADDRESS, [
+            'pre_lat' => '0',
+            'pre_lng' => '0',
+        ]);
+
+        $result = $this->makeService()->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            $addressData
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('google', $result['source']);
+    }
+
+    /** @test */
+    public function it_falls_through_to_api_when_pre_lat_is_empty_string(): void
+    {
+        $this->mockClient->expects($this->once())
+            ->method('request')
+            ->willReturn($this->makeGeoResponse(27.9506, -82.4572));
+
+        $addressData = array_merge(self::VALID_ADDRESS, [
+            'pre_lat' => '',
+            'pre_lng' => '',
+        ]);
+
+        $result = $this->makeService()->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            $addressData
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('google', $result['source']);
+    }
+
+    /** @test */
+    public function it_falls_through_to_api_when_only_pre_lat_is_present(): void
+    {
+        // Both pre_lat AND pre_lng must be non-zero for the short-circuit to fire.
+        $this->mockClient->expects($this->once())
+            ->method('request')
+            ->willReturn($this->makeGeoResponse(27.9506, -82.4572));
+
+        $addressData = array_merge(self::VALID_ADDRESS, [
+            'pre_lat' => '27.9506',
+        ]);
+
+        $result = $this->makeService()->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            $addressData
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('google', $result['source']);
+    }
 }

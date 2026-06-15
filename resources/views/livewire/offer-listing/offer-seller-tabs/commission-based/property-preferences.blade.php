@@ -382,13 +382,84 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="address" class="form-control has-icon" data-icon="fa-solid fa-map-pin"
-            placeholder="Enter street address (e.g., 123 Main Street)" required>
+        <input type="text" id="seller-offer-street-address" wire:model="address"
+            class="form-control has-icon" data-icon="fa-solid fa-map-pin"
+            placeholder="Enter street address (e.g., 123 Main Street)" required
+            autocomplete="off">
     </div>
 </div>
+
+<input type="hidden" id="seller-offer-property-lat" wire:model="property_lat">
+<input type="hidden" id="seller-offer-property-lng" wire:model="property_lng">
+<input type="hidden" id="seller-offer-google-place-id" wire:model="google_place_id">
+
 <div class="alert alert-warning mt-3 p-2 small">
     <strong>🛡️ On the listing, only your City, County, State, and ZIP code are displayed.</strong> Your full address is shared with the Agent you hire only after an Agent is selected, helping protect your privacy while still allowing Agents to understand your general location.
 </div>
+
+<script>
+window.byoInitSellerOfferPlaces = function() {
+    var input = document.getElementById('seller-offer-street-address');
+    if (!input || !window.google || !window.google.maps || !window.google.maps.places) { return; }
+    if (input._byoPlacesAttached) { return; }
+    input._byoPlacesAttached = true;
+
+    var ac = new google.maps.places.Autocomplete(input, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' },
+        fields: ['address_components', 'geometry', 'place_id']
+    });
+
+    google.maps.event.addDomListener(input, 'keydown', function(e) {
+        if (e.keyCode === 13) { e.preventDefault(); }
+    });
+
+    ac.addListener('place_changed', function() {
+        var place = ac.getPlace();
+        if (!place || !place.geometry || !place.geometry.location) { return; }
+
+        var lat = place.geometry.location.lat();
+        var lng = place.geometry.location.lng();
+        var placeId = place.place_id || '';
+
+        var streetNum = '', route = '', city = '', county = '', state = '', zip = '';
+
+        if (place.address_components) {
+            place.address_components.forEach(function(c) {
+                var t = c.types;
+                if (t.indexOf('street_number') !== -1)                 streetNum = c.long_name;
+                if (t.indexOf('route') !== -1)                         route     = c.long_name;
+                if (t.indexOf('locality') !== -1)                      city      = c.long_name;
+                if (t.indexOf('sublocality_level_1') !== -1 && !city)  city      = c.long_name;
+                if (t.indexOf('administrative_area_level_2') !== -1)   county    = c.long_name.replace(/ County$/, '');
+                if (t.indexOf('administrative_area_level_1') !== -1)   state     = c.short_name;
+                if (t.indexOf('postal_code') !== -1)                   zip       = c.long_name;
+            });
+        }
+
+        var street = streetNum ? (streetNum + ' ' + route).trim() : route;
+
+        @this.set('address', street);
+        if (city)   { @this.set('property_city', city); }
+        if (county) { @this.set('property_county', county); }
+        if (state)  { @this.set('property_state', state); }
+        if (zip)    { @this.set('property_zip', zip); }
+        @this.set('property_lat', String(lat));
+        @this.set('property_lng', String(lng));
+        @this.set('google_place_id', placeId);
+    });
+};
+
+if (window.google && window.google.maps && window.google.maps.places) {
+    window.byoInitSellerOfferPlaces();
+}
+
+document.addEventListener('livewire:load', function() {
+    Livewire.hook('message.processed', function() {
+        window.byoInitSellerOfferPlaces();
+    });
+});
+</script>
 
 <!-- Property City -->
 <div class="form-group mb-3">

@@ -3417,4 +3417,7 @@
             });
         });
     </script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.places_key') }}&libraries=places&callback=byoInitLandlordOfferPlaces"
+        async defer></script>
 @endpush
