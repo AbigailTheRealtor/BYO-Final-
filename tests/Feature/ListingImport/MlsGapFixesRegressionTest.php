@@ -931,4 +931,186 @@ class MlsGapFixesRegressionTest extends TestCase
         $this->assertArrayHasKey('property_type', $map,
             'BUG-05: MlsFieldMap::forRole("seller") must still include property_type canonical key.');
     }
+
+    // ─── BUG-06: county no-space colon (Stellar MLS Matrix format) ───────────
+
+    /**
+     * BUG-06: Stellar MLS Matrix summary line emits "County:Pinellas" (no space
+     * after the colon) in the concatenated property details block.  The original
+     * county regex required [\s]+ (one or more spaces) so it silently failed to
+     * match, leaving county blank after an import from a live Stellar URL.
+     *
+     * Fix: county regex now uses [\s]* (zero-or-more) so both
+     * "County: Pinellas" (spaced) and "County:Pinellas" (no-space) are captured.
+     * The $boundary=true flag on $extract() trims at the next recognised label
+     * (e.g. "List Price:") so "PinellasList Price:$345,000" yields "Pinellas".
+     */
+    public function test_bug_06_county_no_space_colon_stellar_mls_format(): void
+    {
+        $raw = 'ActiveCounty:PinellasList Price:$345,000ADOM:136Beds:3Baths:1/0';
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('Pinellas', $result['data']['county'] ?? null,
+            'BUG-06: county must be parsed from "County:Pinellas" (no space after colon).');
+    }
+
+    /**
+     * BUG-06 complement: county with no-space colon must not bleed into the
+     * next concatenated label.  "County:PinellasList Price:..." must yield
+     * "Pinellas", not "PinellasList Price:...".
+     */
+    public function test_bug_06_county_no_space_does_not_bleed_into_list_price(): void
+    {
+        $raw = 'County:PinellasList Price:$345,000';
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('Pinellas', $result['data']['county'] ?? null,
+            'BUG-06: county no-space form must stop at the List Price label boundary.');
+        $this->assertStringNotContainsStringIgnoringCase('List', $result['data']['county'] ?? '',
+            'BUG-06: "List" must not bleed into county value.');
+    }
+
+    // ─── BUG-07: Stellar MLS "About" header address parsing ──────────────────
+
+    /**
+     * BUG-07: Stellar MLS Matrix public shared pages do NOT include labeled
+     * "Address:", "City:", "State:", or "Zip:" fields.  The property address
+     * appears only in an "About {STREET}, {CITY}, {StateName} {ZIP}" header
+     * before the narrative remarks.  The standard labeled parsers all returned
+     * null, so address/city/state/zip were missing after import.
+     *
+     * Fix: a new parser block after the standard labeled parsers detects the
+     * "About ..." header pattern and extracts all four address components.
+     * Full state names (e.g. "Florida") are converted to 2-letter abbreviations.
+     */
+    public function test_bug_07_stellar_about_header_extracts_all_address_fields(): void
+    {
+        $raw = "About 828 89TH AVENUE N, ST PETERSBURG, Florida 33702\nWelcome to this beautifully updated home.";
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertSame('828 89TH AVENUE N', $data['address'] ?? null,
+            'BUG-07: street must be extracted from the "About" header line.');
+        $this->assertSame('ST PETERSBURG', $data['city'] ?? null,
+            'BUG-07: city must be extracted from the "About" header line.');
+        $this->assertSame('FL', $data['state'] ?? null,
+            'BUG-07: full state name "Florida" must be converted to abbreviation "FL".');
+        $this->assertSame('33702', $data['zip'] ?? null,
+            'BUG-07: ZIP must be extracted as 5-digit code (no +4 suffix).');
+    }
+
+    /**
+     * BUG-07 variant: unit number in street address ("Unit#202") must be
+     * preserved verbatim.
+     */
+    public function test_bug_07_stellar_about_header_preserves_unit_number(): void
+    {
+        $raw = "About 8535 BLIND PASS DRIVE Unit#202, TREASURE ISLAND, Florida 33706\nCoastal Living Just Steps from Sunset Beach!";
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertSame('8535 BLIND PASS DRIVE Unit#202', $data['address'] ?? null,
+            'BUG-07: unit number after street name must be preserved in the address field.');
+        $this->assertSame('TREASURE ISLAND', $data['city'] ?? null,
+            'BUG-07: multi-word city (TREASURE ISLAND) must be extracted correctly.');
+        $this->assertSame('FL', $data['state'] ?? null,
+            'BUG-07: state must be FL for "Florida".');
+        $this->assertSame('33706', $data['zip'] ?? null,
+            'BUG-07: ZIP must be extracted from the unit-address header.');
+    }
+
+    /**
+     * BUG-07 guard: when standard labeled "Address:" / "City:" / "State:" /
+     * "Zip:" fields ARE present, they must take precedence over the "About"
+     * fallback — the About parser fires only when labeled parsers found nothing.
+     */
+    public function test_bug_07_labeled_address_takes_precedence_over_about(): void
+    {
+        $raw = "Address: 100 FIRST ST\nCity: Tampa\nState: FL\nZip: 33601\nAbout 828 89TH AVENUE N, ST PETERSBURG, Florida 33702\nRemarks here.";
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $data = $result['data'];
+
+        $this->assertStringContainsString('100 FIRST ST', $data['address'] ?? '',
+            'BUG-07: labeled Address: must take precedence over the About header fallback.');
+        $this->assertStringContainsStringIgnoringCase('Tampa', $data['city'] ?? '',
+            'BUG-07: labeled City: must take precedence over the About header city.');
+    }
+
+    // ─── BUG-08: description strip — Stellar MLS mixed-case full state name ──
+
+    /**
+     * BUG-08: The "About {HEADER}" pattern captures the property address as
+     * part of the description text:
+     *   "828 89TH AVENUE N, ST PETERSBURG, Florida 33702\nWelcome to..."
+     * The primary strip regex requires [^a-z] (all-caps block) so it failed on
+     * "Florida" (mixed case), leaving the address header in the description.
+     *
+     * Fix: a fallback strip fires when the description begins with a digit-led
+     * address followed by a recognised full US state name ("Florida", "Texas",
+     * etc.) and a 5-digit ZIP, then a newline/whitespace before the narrative.
+     */
+    public function test_bug_08_description_strip_stellar_mls_full_state_name(): void
+    {
+        $raw = "About 828 89TH AVENUE N, ST PETERSBURG, Florida 33702\nWelcome to this beautifully updated 3-bedroom home.";
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $desc = $result['data']['description'] ?? '';
+
+        $this->assertStringStartsWith('Welcome to this', $desc,
+            'BUG-08: address header with full state name must be stripped from description.');
+        $this->assertStringNotContainsString('89TH AVENUE', $desc,
+            'BUG-08: street address must not remain in description after strip.');
+        $this->assertStringNotContainsString('ST PETERSBURG', $desc,
+            'BUG-08: city must not remain in description after fallback strip.');
+    }
+
+    /**
+     * BUG-08 variant: Landlord unit address with full state name.
+     */
+    public function test_bug_08_description_strip_unit_address_full_state_name(): void
+    {
+        $raw = "About 8535 BLIND PASS DRIVE Unit#202, TREASURE ISLAND, Florida 33706\nCoastal Living Just Steps from Sunset Beach!";
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $desc = $result['data']['description'] ?? '';
+
+        $this->assertStringStartsWith('Coastal Living', $desc,
+            'BUG-08: unit-number address with full state name must be stripped from description.');
+        $this->assertStringNotContainsString('BLIND PASS', $desc,
+            'BUG-08: street name must not remain in description after fallback strip.');
+    }
+
+    /**
+     * BUG-08 guard: a description that does NOT begin with a digit must not be
+     * affected by the fallback strip pattern.
+     */
+    public function test_bug_08_description_non_digit_start_not_stripped(): void
+    {
+        $raw = 'Public Remarks: Beautifully renovated 3-bedroom home near Florida 33702 zip code area.';
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $desc = $result['data']['description'] ?? '';
+
+        $this->assertStringStartsWith('Beautifully', $desc,
+            'BUG-08: description not leading with a street number must not be stripped by the fallback.');
+    }
 }

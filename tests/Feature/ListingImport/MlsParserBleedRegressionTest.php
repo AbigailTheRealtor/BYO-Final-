@@ -356,10 +356,10 @@ class MlsParserBleedRegressionTest extends TestCase
         $this->assertEquals('80x120', $data['lot_dimensions'] ?? '');
         $this->assertEquals('0.22', $data['lot_size_acres'] ?? '');
 
-        // Pool, Garage, Carport
-        $this->assertEquals('yes', $data['pool'] ?? '');
-        $this->assertEquals('yes', $data['garage'] ?? '');
-        $this->assertEquals('no', $data['carport'] ?? '');
+        // Pool, Garage, Carport — normalizeFormYesNo() returns Title Case "Yes"/"No"
+        $this->assertEquals('Yes', $data['pool'] ?? '');
+        $this->assertEquals('Yes', $data['garage'] ?? '');
+        $this->assertEquals('No', $data['carport'] ?? '');
         $this->assertStringNotContainsStringIgnoringCase('Appliances', $data['carport'] ?? '');
 
         // A/C and Heating clean
@@ -424,10 +424,10 @@ class MlsParserBleedRegressionTest extends TestCase
         // Rental price
         $this->assertEquals('2800', $data['price'] ?? '');
 
-        // Pool, Garage, Carport
-        $this->assertEquals('no', $data['pool'] ?? '');
-        $this->assertEquals('yes', $data['garage'] ?? '');
-        $this->assertEquals('no', $data['carport'] ?? '');
+        // Pool, Garage, Carport — normalizeFormYesNo() returns Title Case "Yes"/"No"
+        $this->assertEquals('No', $data['pool'] ?? '');
+        $this->assertEquals('Yes', $data['garage'] ?? '');
+        $this->assertEquals('No', $data['carport'] ?? '');
         $this->assertStringNotContainsStringIgnoringCase('Rental Rate', $data['carport'] ?? '');
 
         // A/C and Heating clean

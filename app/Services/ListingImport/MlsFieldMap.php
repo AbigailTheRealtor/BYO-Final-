@@ -199,7 +199,11 @@ class MlsFieldMap
             'rent_includes'   => '*rent_includes',
             'description'     => 'additional_details',
             // ── Rental-specific fields ────────────────────────────────────────
+            // Both available_date and lease_available_date are populated from the
+            // same parsed MLS "Available:" value (see MlsListingImportService).
+            // LandlordOfferListing has two distinct date input properties for these.
             'available_date'          => 'available_date',
+            'lease_available_date'    => 'lease_available_date',
             'lease_amount_frequency'  => 'lease_amount_frequency',
             'minimum_security_deposit' => 'security_deposit_amount',
             'terms_of_lease'          => '*terms_of_lease',

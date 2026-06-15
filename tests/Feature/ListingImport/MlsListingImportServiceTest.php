@@ -454,29 +454,35 @@ class MlsListingImportServiceTest extends TestCase
     public static function booleanNormalizerProvider(): array
     {
         return [
-            'pool Yes'             => ['pool', 'Yes', 'yes'],
-            'pool Y'               => ['pool', 'Y', 'yes'],
-            'pool TRUE'            => ['pool', 'TRUE', 'yes'],
-            'pool 1'               => ['pool', '1', 'yes'],
-            'pool No'              => ['pool', 'No', 'no'],
-            'pool N'               => ['pool', 'N', 'no'],
-            'pool NO'              => ['pool', 'NO', 'no'],
-            'pool 0'               => ['pool', '0', 'no'],
-            'garage Yes'           => ['garage', 'Yes', 'yes'],
-            'carport No'           => ['carport', 'No', 'no'],
+            // pool/garage/carport → normalizeFormYesNo() → Title Case "Yes"/"No"
+            'pool Yes'             => ['pool', 'Yes', 'Yes'],
+            'pool Y'               => ['pool', 'Y', 'Yes'],
+            'pool TRUE'            => ['pool', 'TRUE', 'Yes'],
+            'pool 1'               => ['pool', '1', 'Yes'],
+            'pool No'              => ['pool', 'No', 'No'],
+            'pool N'               => ['pool', 'N', 'No'],
+            'pool NO'              => ['pool', 'NO', 'No'],
+            'pool 0'               => ['pool', '0', 'No'],
+            'garage Yes'           => ['garage', 'Yes', 'Yes'],
+            'carport No'           => ['carport', 'No', 'No'],
+            // waterfront/additional_parcels → normalizeBoolean() → lowercase "yes"/"no"
             'waterfront Yes'       => ['waterfront', 'Yes', 'yes'],
             'additional_parcels Y' => ['additional_parcels', 'Y', 'yes'],
+            // Non-boolean pass-through values
             'pool In Ground'       => ['pool', 'In Ground', 'In Ground'],
         ];
     }
 
     public function test_normalizer_furnishing(): void
     {
-        $this->assertEquals('furnished', MlsNormalizer::normalize('furnished', 'Furnished'));
-        $this->assertEquals('unfurnished', MlsNormalizer::normalize('furnished', 'Unfurnished'));
-        $this->assertEquals('negotiable', MlsNormalizer::normalize('furnished', 'Negotiable'));
-        $this->assertEquals('turnkey', MlsNormalizer::normalize('furnished', 'Turnkey'));
-        $this->assertEquals('partial', MlsNormalizer::normalize('furnished', 'Partial'));
+        // normalizeFurnishing returns Title Case to match form <option value="..."> exactly.
+        // Landlord: tenant_require select options are 'Furnished', 'Unfurnished', etc.
+        // Seller: building_features merge applies ucfirst() internally, so Title Case is fine.
+        $this->assertEquals('Furnished',   MlsNormalizer::normalize('furnished', 'Furnished'));
+        $this->assertEquals('Unfurnished', MlsNormalizer::normalize('furnished', 'Unfurnished'));
+        $this->assertEquals('Negotiable',  MlsNormalizer::normalize('furnished', 'Negotiable'));
+        $this->assertEquals('Turnkey',     MlsNormalizer::normalize('furnished', 'Turnkey'));
+        $this->assertEquals('Partial',     MlsNormalizer::normalize('furnished', 'Partial'));
     }
 
     public function test_normalizer_flood_zone(): void
@@ -1829,11 +1835,11 @@ class MlsListingImportServiceTest extends TestCase
         $data = $result['data'];
 
         $this->assertArrayHasKey('pool', $data);
-        $this->assertEquals('yes', $data['pool']);
+        $this->assertEquals('Yes', $data['pool']);
         $this->assertArrayHasKey('garage', $data);
-        $this->assertStringContainsString('2', $data['garage']);
+        $this->assertStringContainsString('2', $data['garage']); // "2 Car" contains "2"
         $this->assertArrayHasKey('carport', $data);
-        $this->assertEquals('no', $data['carport']);
+        $this->assertEquals('No', $data['carport']);
     }
 
     public function test_appliances_parse_from_raw_text(): void
@@ -2322,7 +2328,7 @@ class MlsListingImportServiceTest extends TestCase
         // because "Dues" follows HOA before the colon.  Fixed by adding
         // HOA\s+(?:Dues?|Fee)\b(?=\s*:) ahead of bare HOA\b in $labelStop.
         $result = $this->service->import('', 'Carport: Yes HOA Dues: $200 Subdivision: PINE RIDGE');
-        $this->assertSame('yes', $result['data']['carport'] ?? null,
+        $this->assertSame('Yes', $result['data']['carport'] ?? null,
             'carport must stop at "HOA Dues:" and not include the dues amount');
     }
 
@@ -2330,7 +2336,7 @@ class MlsListingImportServiceTest extends TestCase
     {
         // "Monthly Fee:" was not in $labelStop — carport captured the fee amount.
         $result = $this->service->import('', 'Carport: No Monthly Fee: 150 Subdivision: RIVER OAKS');
-        $this->assertSame('no', $result['data']['carport'] ?? null,
+        $this->assertSame('No', $result['data']['carport'] ?? null,
             'carport must stop at "Monthly Fee:" and not include the fee amount');
     }
 
@@ -2358,5 +2364,141 @@ class MlsListingImportServiceTest extends TestCase
         $this->assertNotNull($waterView, 'water_view must be parsed');
         $this->assertStringNotContainsString('Special Assessment', (string) $waterView,
             'water_view must stop before "Special Assessment Y/N:" label');
+    }
+
+    // ─── Task #2838 follow-up regression tests ────────────────────────────────
+
+    /**
+     * Pool "None" must normalise to form-select "No" (not remain as "None").
+     * MLS exports emit "Pool: None" to indicate no pool exists.
+     */
+    public function test_pool_none_normalizes_to_no(): void
+    {
+        $result = $this->service->import('', 'Pool: None Year Built: 2010');
+        $this->assertSame('No', $result['data']['pool'] ?? null,
+            'Pool "None" must map to form-select "No" via normalizeFormYesNo()');
+    }
+
+    /**
+     * Garage multi-value strings like "Yes, Attached, 1 Spaces" must normalise
+     * to the first comma token only — "Yes".
+     */
+    public function test_garage_multivalue_extracts_yes(): void
+    {
+        $result = $this->service->import('', 'Garage: Yes, Attached, 1 Spaces Year Built: 2010');
+        $this->assertSame('Yes', $result['data']['garage'] ?? null,
+            'Garage "Yes, Attached, 1 Spaces" must extract first token "Yes"');
+    }
+
+    /**
+     * Carport / pool / garage normalise to Title Case so they match
+     * <option value="Yes"> and <option value="No"> exactly.
+     */
+    public function test_pool_garage_carport_are_title_case(): void
+    {
+        $raw    = 'Pool: Yes Garage: No Carport: Yes Year Built: 2001';
+        $result = $this->service->import('', $raw);
+        $data   = $result['data'];
+
+        $this->assertSame('Yes', $data['pool']    ?? null, 'pool must be Title Case "Yes"');
+        $this->assertSame('No',  $data['garage']  ?? null, 'garage must be Title Case "No"');
+        $this->assertSame('Yes', $data['carport'] ?? null, 'carport must be Title Case "Yes"');
+    }
+
+    /**
+     * normalizeFurnishing returns Title Case to match landlord tenant_require
+     * select options and the seller building_features merge path.
+     */
+    public function test_normalizer_form_yes_no_title_case(): void
+    {
+        $this->assertSame('Yes', MlsNormalizer::normalizeFormYesNo('yes'));
+        $this->assertSame('Yes', MlsNormalizer::normalizeFormYesNo('Y'));
+        $this->assertSame('Yes', MlsNormalizer::normalizeFormYesNo('1'));
+        $this->assertSame('No',  MlsNormalizer::normalizeFormYesNo('no'));
+        $this->assertSame('No',  MlsNormalizer::normalizeFormYesNo('None'));
+        $this->assertSame('No',  MlsNormalizer::normalizeFormYesNo('NONE'));
+        $this->assertSame('Yes', MlsNormalizer::normalizeFormYesNo('Yes, Attached, 1 Spaces'));
+        $this->assertSame('In Ground', MlsNormalizer::normalizeFormYesNo('In Ground'));
+    }
+
+    /**
+     * normalizeSewer maps shorthand MLS tokens to form option values.
+     */
+    public function test_normalizer_sewer_crosswalk(): void
+    {
+        $this->assertSame('Public Sewer', MlsNormalizer::normalize('sewer', 'Public Sewer'));
+        $this->assertSame('Public Sewer', MlsNormalizer::normalize('sewer', 'Connected'));
+        $this->assertSame('Public Sewer', MlsNormalizer::normalize('sewer', 'connected'));
+        $this->assertSame('Septic Tank',  MlsNormalizer::normalize('sewer', 'Septic Tank'));
+        $this->assertSame('Aerobic Septic', MlsNormalizer::normalize('sewer', 'Aerobic Septic'));
+        $this->assertSame('None',         MlsNormalizer::normalize('sewer', 'None'));
+        // Multi-value deduplication
+        $this->assertSame(
+            'Public Sewer',
+            MlsNormalizer::normalize('sewer', 'Connected, Public Sewer'),
+            'Duplicate "Connected" and "Public Sewer" tokens must deduplicate to one entry'
+        );
+    }
+
+    /**
+     * Available date from MLS is emitted as both 'available_date' and
+     * 'lease_available_date' so LandlordOfferListing can populate both date pickers.
+     */
+    public function test_available_date_emits_lease_available_date(): void
+    {
+        $raw    = 'Available: 08/01/2026 Bedrooms: 3';
+        $result = $this->service->import('', $raw);
+        $data   = $result['data'];
+
+        $this->assertArrayHasKey('available_date', $data,
+            'available_date must be parsed from "Available:" label');
+        $this->assertArrayHasKey('lease_available_date', $data,
+            'lease_available_date must be emitted alongside available_date');
+        $this->assertSame($data['available_date'], $data['lease_available_date'],
+            'available_date and lease_available_date must carry the same value');
+    }
+
+    /**
+     * MlsFieldMap::landlord() must include a lease_available_date entry so the
+     * preview and apply steps can route the parsed value to the Livewire property.
+     */
+    public function test_landlord_field_map_includes_lease_available_date(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+        $this->assertArrayHasKey('lease_available_date', $map,
+            'landlord field map must include lease_available_date');
+        $this->assertSame('lease_available_date', $map['lease_available_date'],
+            'lease_available_date must map to the Livewire property of the same name');
+    }
+
+    /**
+     * Sewer "Connected, Water Connected" deduplicated to "Public Sewer" — both
+     * tokens are shorthand for public sewer being connected.
+     */
+    public function test_sewer_connected_water_connected_maps_to_public_sewer(): void
+    {
+        $result = $this->service->import('', 'Sewer: Connected, Water Connected Utilities: Public');
+        $this->assertArrayHasKey('sewer', $result['data'],
+            'sewer must be parsed');
+        $sewer = $result['data']['sewer'];
+        $this->assertStringContainsString('Public Sewer', $sewer,
+            '"Connected, Water Connected" must normalise to "Public Sewer"');
+        $this->assertStringNotContainsString('Connected', str_replace('Public Sewer', '', $sewer),
+            'Raw "Connected" token must not appear in output after normalisation');
+    }
+
+    /**
+     * Furnished value from MLS normalises to Title Case matching landlord's
+     * tenant_require form select options (Furnished / Unfurnished / etc.).
+     */
+    public function test_furnished_normalizes_to_title_case_for_landlord_form(): void
+    {
+        $raw    = 'Furnished: Unfurnished Available: 08/01/2026 Bedrooms: 3';
+        $result = $this->service->import('', $raw);
+
+        $this->assertArrayHasKey('furnished', $result['data'],
+            'furnished must be parsed');
+        $this->assertSame('Unfurnished', $result['data']['furnished'],
+            'furnished must normalise to Title Case "Unfurnished" to match tenant_require option');
     }
 }

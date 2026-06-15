@@ -288,8 +288,73 @@ class MlsListingImportService
         // colon (e.g. "City: SEMINOLE County Unified State: FL").  The actual county
         // line "County: Pinellas" always has a colon and is matched correctly.
         // Boundary protection also stops at the next recognized label.
-        if ($v = $extract(['/County\s*:[\s]+([^\|\n,]{2,50})/i'], true)) {
+        // Note: Stellar MLS Matrix pages emit "County:Pinellas" (no space after colon)
+        // in the concatenated summary line, so [\s]* (zero-or-more) is used instead of
+        // [\s]+ to handle both spaced ("County: Pinellas") and no-space forms.
+        if ($v = $extract(['/County\s*:[\s]*([^\|\n,]{2,50})/i'], true)) {
             $data['county'] = trim($v, ', ');
+        }
+
+        // ─── Stellar MLS "About" header — address / city / state / zip ──────
+        // Stellar MLS Matrix public shared pages do NOT include labeled Address:,
+        // City:, State:, or Zip: fields.  Instead the full property address appears
+        // on an "About {STREET}, {CITY}, {StateName} {ZIP}" header line before the
+        // narrative remarks.  This block fires only when the standard labeled parsers
+        // above found nothing for address/city/state/zip.
+        if (!isset($data['address']) || !isset($data['city'])) {
+            // Full US state name → 2-letter abbreviation look-up
+            static $aboutStateNameMap = [
+                'alabama' => 'AL', 'alaska' => 'AK', 'arizona' => 'AZ',
+                'arkansas' => 'AR', 'california' => 'CA', 'colorado' => 'CO',
+                'connecticut' => 'CT', 'delaware' => 'DE', 'florida' => 'FL',
+                'georgia' => 'GA', 'hawaii' => 'HI', 'idaho' => 'ID',
+                'illinois' => 'IL', 'indiana' => 'IN', 'iowa' => 'IA',
+                'kansas' => 'KS', 'kentucky' => 'KY', 'louisiana' => 'LA',
+                'maine' => 'ME', 'maryland' => 'MD', 'massachusetts' => 'MA',
+                'michigan' => 'MI', 'minnesota' => 'MN', 'mississippi' => 'MS',
+                'missouri' => 'MO', 'montana' => 'MT', 'nebraska' => 'NE',
+                'nevada' => 'NV', 'new hampshire' => 'NH', 'new jersey' => 'NJ',
+                'new mexico' => 'NM', 'new york' => 'NY', 'north carolina' => 'NC',
+                'north dakota' => 'ND', 'ohio' => 'OH', 'oklahoma' => 'OK',
+                'oregon' => 'OR', 'pennsylvania' => 'PA', 'rhode island' => 'RI',
+                'south carolina' => 'SC', 'south dakota' => 'SD', 'tennessee' => 'TN',
+                'texas' => 'TX', 'utah' => 'UT', 'vermont' => 'VT',
+                'virginia' => 'VA', 'washington' => 'WA', 'west virginia' => 'WV',
+                'wisconsin' => 'WI', 'wyoming' => 'WY', 'district of columbia' => 'DC',
+            ];
+            // Pattern: About {STREET}, {CITY}, {StateFull_or_Abbr} {ZIP}
+            // Street and city are separated by commas; state may be full name ("Florida")
+            // or 2-letter abbreviation ("FL"); ZIP may include +4 suffix (33702-3016).
+            if (preg_match(
+                '/\bAbout\s+([^\n,]{5,100}),\s*([^\n,]{2,60}),\s*([A-Z]{2}|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(\d{5}(?:-\d{4})?)/i',
+                $text,
+                $am
+            )) {
+                $aboutStreet = trim($am[1]);
+                $aboutCity   = trim($am[2]);
+                $aboutState  = trim($am[3]);
+                $aboutZip    = substr(trim($am[4]), 0, 5); // keep 5-digit portion only
+
+                // Resolve full state name → abbreviation when needed
+                if (strlen($aboutState) > 2) {
+                    $aboutState = $aboutStateNameMap[strtolower($aboutState)] ?? strtoupper($aboutState);
+                } else {
+                    $aboutState = strtoupper($aboutState);
+                }
+
+                if (!isset($data['address']) && $aboutStreet !== '') {
+                    $data['address'] = $aboutStreet;
+                }
+                if (!isset($data['city']) && $aboutCity !== '') {
+                    $data['city'] = $aboutCity;
+                }
+                if (!isset($data['state']) && $aboutState !== '') {
+                    $data['state'] = $aboutState;
+                }
+                if (!isset($data['zip']) && $aboutZip !== '') {
+                    $data['zip'] = $aboutZip;
+                }
+            }
         }
 
         // ─── Price / List Price ───────────────────────────────────────────────
@@ -397,10 +462,16 @@ class MlsListingImportService
         }
 
         // ─── Available Date ───────────────────────────────────────────────────
+        // Emitted as both 'available_date' AND 'lease_available_date' because
+        // LandlordOfferListing exposes two separate date pickers for the same
+        // underlying MLS value: $available_date (Available Date) and
+        // $lease_available_date (Lease Available Date). Both Livewire properties
+        // are mapped in MlsFieldMap::landlord() and must receive the same value.
         if ($v = $extract([
             '/(?:Available|Avail\.?)\s*(?:Date)?[\s:]+(\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2}|[A-Za-z]+ \d{1,2},?\s*\d{4})/i',
         ])) {
-            $data['available_date'] = $v;
+            $data['available_date']       = $v;
+            $data['lease_available_date'] = $v;
         }
 
         // ─── Application Fee ──────────────────────────────────────────────────
@@ -643,8 +714,10 @@ class MlsListingImportService
         }
 
         // ─── Sewer ────────────────────────────────────────────────────────────
+        // normalizeSewer() maps common MLS shorthand tokens to form option values
+        // (e.g. "Connected" → "Public Sewer") and deduplicates multi-value strings.
         if ($v = $extract(['/Sewer[\s:]+([^\|\n]{1,120})/i'], true)) {
-            $data['sewer'] = $v;
+            $data['sewer'] = MlsNormalizer::normalize('sewer', $v);
         }
 
         // ─── Utilities ────────────────────────────────────────────────────────
@@ -824,6 +897,35 @@ class MlsListingImportService
                 $hdr
             ) && in_array($hdr[2], $mlsHeaderUsStates, true) && trim($hdr[4]) !== '') {
                 $v = trim($hdr[4]);
+            } elseif (preg_match(
+                // Fallback strip: Stellar MLS Matrix uses mixed-case full state name
+                // e.g. "828 89TH AVENUE N, ST PETERSBURG, Florida 33702\nRemarks..."
+                // The primary strip above requires [^a-z] (all-caps) so it misses
+                // "Florida"-style state names.  This pattern anchors to a digit-led
+                // street address, allows any non-newline content up to the last comma
+                // before a capitalized full state name followed by a 5-digit ZIP, then
+                // requires a newline/whitespace before non-empty narrative text.
+                '/^(\d[^\n]{3,200}),\s*([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]+)?)\s+(\d{5}(?:-\d{4})?(?:-\d+)?)[\s\n]+([\s\S]+)/su',
+                $v,
+                $hdr
+            )) {
+                // Verify the matched state token is a real US full state name.
+                static $stripUsStateFullNames = [
+                    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
+                    'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia',
+                    'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas',
+                    'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts',
+                    'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana',
+                    'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico',
+                    'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma',
+                    'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina',
+                    'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
+                    'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming',
+                    'District of Columbia',
+                ];
+                if (in_array($hdr[2], $stripUsStateFullNames, true) && trim($hdr[4]) !== '') {
+                    $v = trim($hdr[4]);
+                }
             }
 
             $data['description'] = $v;

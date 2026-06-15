@@ -95,9 +95,11 @@ class MlsLiveImportAuditTest extends TestCase
         $result = $this->service->import('', $this->fixtures['residential']);
         $data = $result['data'];
 
-        $this->assertSame('yes', $data['pool'] ?? null, 'pool normalised to yes');
-        $this->assertSame('yes', $data['garage'] ?? null, 'garage normalised to yes');
-        $this->assertSame('no', $data['carport'] ?? null, 'carport normalised to no');
+        // pool/garage/carport use normalizeFormYesNo() — Title Case "Yes"/"No"
+        $this->assertSame('Yes', $data['pool']    ?? null, 'pool normalised to "Yes" (Title Case)');
+        $this->assertSame('Yes', $data['garage']  ?? null, 'garage normalised to "Yes" (Title Case)');
+        $this->assertSame('No',  $data['carport'] ?? null, 'carport normalised to "No" (Title Case)');
+        // waterfront uses normalizeBoolean() — lowercase "yes"/"no"
         $this->assertSame('no', $data['waterfront'] ?? null, 'waterfront normalised to no');
         $this->assertSame('no', $data['additional_parcels'] ?? null, 'additional_parcels');
         $this->assertSame('no', $data['has_special_assessments'] ?? null, 'has_special_assessments');
@@ -241,8 +243,8 @@ class MlsLiveImportAuditTest extends TestCase
         $result = $this->service->import('', $this->fixtures['residential']);
         $data = $result['data'];
 
-        $this->assertSame('unfurnished', $data['furnished'] ?? null,
-            'furnished value preserved — normaliser maps Unfurnished → unfurnished');
+        $this->assertSame('Unfurnished', $data['furnished'] ?? null,
+            'furnished value preserved — normaliser maps Unfurnished → Title Case "Unfurnished"');
     }
 
     /**
@@ -573,9 +575,12 @@ class MlsLiveImportAuditTest extends TestCase
 
     public function test_normalizer_boolean_yes_variants_coerce_to_yes(): void
     {
+        // Use a boolean-storage field (waterfront) which still goes through
+        // normalizeBoolean() and returns lowercase 'yes'.
+        // pool/garage/carport now use normalizeFormYesNo() and return Title Case 'Yes'.
         foreach (['Yes', 'Y', 'yes', 'y', 'true', '1', 'TRUE'] as $input) {
-            $this->assertSame('yes', MlsNormalizer::normalize('pool', $input),
-                "normalizeBoolean('{$input}') must return 'yes'");
+            $this->assertSame('yes', MlsNormalizer::normalize('waterfront', $input),
+                "normalizeBoolean('{$input}') must return 'yes' for waterfront");
         }
     }
 
@@ -602,23 +607,24 @@ class MlsLiveImportAuditTest extends TestCase
 
     public function test_normalizer_furnishing_unfurnished(): void
     {
-        $this->assertSame('unfurnished', MlsNormalizer::normalize('furnished', 'Unfurnished'));
-        $this->assertSame('unfurnished', MlsNormalizer::normalize('furnished', 'unfurnished'));
-        $this->assertSame('unfurnished', MlsNormalizer::normalize('furnished', 'UNFURNISHED'));
+        // normalizeFurnishing returns Title Case to match form <option value="..."> exactly.
+        $this->assertSame('Unfurnished', MlsNormalizer::normalize('furnished', 'Unfurnished'));
+        $this->assertSame('Unfurnished', MlsNormalizer::normalize('furnished', 'unfurnished'));
+        $this->assertSame('Unfurnished', MlsNormalizer::normalize('furnished', 'UNFURNISHED'));
     }
 
     public function test_normalizer_furnishing_all_valid_values(): void
     {
         $cases = [
-            'Furnished'   => 'furnished',
-            'Negotiable'  => 'negotiable',
-            'Partial'     => 'partial',
-            'Turnkey'     => 'turnkey',
-            'Unfurnished' => 'unfurnished',
+            'Furnished'   => 'Furnished',
+            'Negotiable'  => 'Negotiable',
+            'Partial'     => 'Partial',
+            'Turnkey'     => 'Turnkey',
+            'Unfurnished' => 'Unfurnished',
         ];
         foreach ($cases as $input => $expected) {
             $this->assertSame($expected, MlsNormalizer::normalize('furnished', $input),
-                "furnishing '{$input}' → '{$expected}'");
+                "furnishing '{$input}' → '{$expected}' (Title Case)");
         }
     }
 

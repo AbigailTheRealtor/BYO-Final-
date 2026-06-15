@@ -19,9 +19,15 @@ class MlsNormalizer
         }
 
         return match (strtolower($field)) {
+            // Form-select Yes/No fields: return Title Case "Yes"/"No" so values
+            // match <option value="Yes"> / <option value="No"> exactly.
+            // Also handles "None" → "No" and multi-value garage strings like
+            // "Yes, Attached, 1 Spaces" → "Yes".
             'pool', 'pool_needed',
             'garage', 'garage_needed',
-            'carport', 'carport_needed',
+            'carport', 'carport_needed'     => self::normalizeFormYesNo($v),
+
+            // Boolean storage fields: lowercase "yes" / "no" (not form selects)
             'waterfront',
             'additional_parcels',
             'has_hoa',
@@ -30,19 +36,57 @@ class MlsNormalizer
             'has_special_assessments',
             'pets_allowed',
             'inventory_included',
-            'seller_financing_yn'       => self::normalizeBoolean($v),
+            'seller_financing_yn'           => self::normalizeBoolean($v),
 
-            'furnished'             => self::normalizeFurnishing($v),
-            'flood_zone_code'       => self::normalizeFloodZone($v),
-            'lease_amount_frequency'=> self::normalizeLeaseFrequency($v),
-            'association_fee_frequency' => self::normalizeHoaFeeFrequency($v),
-            'lease_rate_type'           => self::normalizeLeaseRateType($v),
+            'furnished'                     => self::normalizeFurnishing($v),
+            'sewer'                         => self::normalizeSewer($v),
+            'flood_zone_code'               => self::normalizeFloodZone($v),
+            'lease_amount_frequency'        => self::normalizeLeaseFrequency($v),
+            'association_fee_frequency'     => self::normalizeHoaFeeFrequency($v),
+            'lease_rate_type'               => self::normalizeLeaseRateType($v),
 
-            'cap_rate'              => self::normalizeCapRate($v),
-            'net_operating_income'  => self::normalizeNetOperatingIncome($v),
+            'cap_rate'                      => self::normalizeCapRate($v),
+            'net_operating_income'          => self::normalizeNetOperatingIncome($v),
 
-            default                 => $v,
+            default                         => $v,
         };
+    }
+
+    // ─── Form-select Yes/No ───────────────────────────────────────────────────
+
+    /**
+     * Normalize pool / garage / carport values to Title Case "Yes" or "No",
+     * matching the form's <option value="Yes"> / <option value="No"> exactly.
+     *
+     * Special handling:
+     *   "None"                  → "No"   (MLS emits "Pool: None" when no pool)
+     *   "Yes, Attached, 1 Spaces" → "Yes"  (first comma-token extracted)
+     *   "Y/N: Yes"              → "Yes"  (Y/N prefix stripped)
+     *
+     * Non-yes/no values (e.g. "In Ground", "2 Car") are returned as-is so
+     * they remain visible in the import preview.
+     */
+    public static function normalizeFormYesNo(string $value): string
+    {
+        // Strip leading "Y/N:" prefix emitted by some MLS exports.
+        $value = preg_replace('/^Y\/N\s*:\s*/i', '', trim($value));
+
+        // For comma-separated values like "Yes, Attached, 1 Spaces", use only
+        // the first token before the comma.
+        $firstToken = trim(explode(',', $value)[0]);
+
+        $lower = strtolower($firstToken);
+
+        if (in_array($lower, ['yes', 'y', 'true', '1'], true)) {
+            return 'Yes';
+        }
+
+        // 'none' is the MLS way of saying "no pool / no garage / no carport".
+        if (in_array($lower, ['no', 'n', 'false', '0', 'none'], true)) {
+            return 'No';
+        }
+
+        return $value; // pass-through for descriptive values like "In Ground", "2 Car"
     }
 
     // ─── Boolean ─────────────────────────────────────────────────────────────
@@ -53,6 +97,10 @@ class MlsNormalizer
      *
      * Also strips the "Y/N:" prefix that some MLS exports emit for boolean fields
      * (e.g. "Additional Parcels Y/N: Y/N:No" → "No" → "no").
+     *
+     * Note: pool/garage/carport use normalizeFormYesNo() instead (Title Case).
+     * This method is reserved for boolean storage fields (has_hoa, has_cdd, etc.)
+     * that do not correspond to a form select element.
      */
     public static function normalizeBoolean(string $value): string
     {
@@ -75,19 +123,110 @@ class MlsNormalizer
     // ─── Furnishing ──────────────────────────────────────────────────────────
 
     /**
-     * Normalize MLS Furnishings dropdown to a consistent lowercase value.
+     * Normalize MLS Furnishings dropdown to the Title Case value expected by
+     * form select elements (tenant_require / building_features).
+     *
      * MLS options: Furnished, Negotiable, Partial, Turnkey, Unfurnished
+     *
+     * Title Case is required because:
+     *   - Landlord: tenant_require select uses <option value="{{ $row_pt['name'] }}">
+     *     where names are Title Case ('Furnished', 'Unfurnished', etc.).
+     *   - Seller: building_features merge logic applies ucfirst() internally, so
+     *     Title Case output here is consistent with its own normalization step.
      */
     public static function normalizeFurnishing(string $value): string
     {
         return match (strtolower(trim($value))) {
-            'furnished'   => 'furnished',
-            'negotiable'  => 'negotiable',
-            'partial'     => 'partial',
-            'turnkey'     => 'turnkey',
-            'unfurnished' => 'unfurnished',
+            'furnished'   => 'Furnished',
+            'negotiable'  => 'Negotiable',
+            'partial'     => 'Partial',
+            'turnkey'     => 'Turnkey',
+            'unfurnished' => 'Unfurnished',
             default       => $value,
         };
+    }
+
+    // ─── Sewer ───────────────────────────────────────────────────────────────
+
+    /**
+     * Normalize MLS sewer values to match form select options.
+     *
+     * Form options: Aerobic Septic, PEP-Holding Tank, Private Sewer, Public Sewer,
+     *               Septic Needed, Septic Tank, None, Other
+     *
+     * Handles comma-separated MLS multi-values, deduplicates, and maps common
+     * shorthand MLS tokens (e.g. "Connected" → "Public Sewer").
+     */
+    public static function normalizeSewer(string $value): string
+    {
+        $tokens    = array_map('trim', explode(',', $value));
+        $result    = [];
+        $seen      = [];
+
+        foreach ($tokens as $token) {
+            if ($token === '') {
+                continue;
+            }
+            $normalized = self::normalizeSewerToken($token);
+            if (!in_array($normalized, $seen, true)) {
+                $seen[]   = $normalized;
+                $result[] = $normalized;
+            }
+        }
+
+        return implode(', ', $result);
+    }
+
+    /**
+     * Normalize a single sewer token to the nearest form option.
+     */
+    private static function normalizeSewerToken(string $token): string
+    {
+        static $formOptions = [
+            'Aerobic Septic', 'PEP-Holding Tank', 'Private Sewer', 'Public Sewer',
+            'Septic Needed', 'Septic Tank', 'None', 'Other',
+        ];
+
+        // Exact case-insensitive match against a known form option.
+        foreach ($formOptions as $opt) {
+            if (strcasecmp($token, $opt) === 0) {
+                return $opt;
+            }
+        }
+
+        $lower = strtolower($token);
+
+        // "Connected" / "Water Connected" / "Municipal" → public sewer is connected.
+        // "Water Connected" appears in some MLS exports inside the Sewer field as
+        // shorthand for a fully connected public sewer utility.
+        if ($lower === 'connected'
+            || $lower === 'water connected'
+            || str_contains($lower, 'municipal')
+        ) {
+            return 'Public Sewer';
+        }
+
+        // Partial matches for common MLS shorthand values.
+        if (str_contains($lower, 'public')) {
+            return 'Public Sewer';
+        }
+        if (str_contains($lower, 'aerobic')) {
+            return 'Aerobic Septic';
+        }
+        if (str_contains($lower, 'private')) {
+            return 'Private Sewer';
+        }
+        if (str_contains($lower, 'septic needed')) {
+            return 'Septic Needed';
+        }
+        if (str_contains($lower, 'septic')) {
+            return 'Septic Tank';
+        }
+        if ($lower === 'none') {
+            return 'None';
+        }
+
+        return $token; // pass-through for unrecognised values
     }
 
     // ─── Flood Zone ──────────────────────────────────────────────────────────
