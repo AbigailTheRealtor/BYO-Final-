@@ -853,6 +853,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 'bridge_server_token'  => $token ? 'SET' : 'MISSING',
             ]);
         })->name('bridge.env-test');
+
+        // Bridge MLS — live API preview (no DB writes).
+        Route::get('bridge/properties-preview', function () {
+            /** @var \App\Services\Bridge\BridgeApiService $service */
+            $service = app(\App\Services\Bridge\BridgeApiService::class);
+            $records = $service->fetchProperties(10);
+
+            $safeFields = [
+                'ListingKey', 'ListingId', 'StandardStatus', 'PropertyType',
+                'ListPrice', 'UnparsedAddress', 'City', 'StateOrProvince',
+                'PostalCode', 'BedroomsTotal', 'BathroomsTotalInteger',
+                'LivingArea', 'ModificationTimestamp', 'PublicRemarks',
+            ];
+
+            $properties = array_map(function ($record) use ($safeFields) {
+                return array_intersect_key($record, array_flip($safeFields));
+            }, $records);
+
+            return response()->json([
+                'count'      => count($properties),
+                'properties' => $properties,
+            ]);
+        })->name('bridge.properties-preview');
         Route::get('buyer', [BuyerController::class, 'buyer'])->name('buyer');
         Route::post('buyer', [BuyerController::class, 'store']);
         Route::post('buyer/update', [BuyerController::class, 'update'])->name('buyer.update');

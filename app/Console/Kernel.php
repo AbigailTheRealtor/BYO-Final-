@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\MlsParseDebug::class,
         \App\Console\Commands\MlsImportAuditCommand::class,
         \App\Console\Commands\BackfillLocationSnapshots::class,
+        \App\Console\Commands\ImportBridgeProperties::class,
     ];
     /**
      * Define the application's command schedule.
