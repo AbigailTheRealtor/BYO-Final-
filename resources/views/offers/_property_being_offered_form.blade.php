@@ -39,6 +39,24 @@
 </div>
 @endif
 
+<style>
+    #save-property-info-btn { background:#2563eb; border-color:#2563eb; color:#fff; font-weight:600; }
+    #save-property-info-btn:hover { background:#1d4ed8; border-color:#1d4ed8; }
+    /* Tailwind Preflight sets background-color:transparent on [type='submit'], which
+       beats Bootstrap's .btn-primary. Scoped ID override (higher specificity) restores the correct blue. */
+    .offer-section-header {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 0.4rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .offer-section-header:first-child { margin-top: 0; }
+</style>
 <form method="POST" action="{{ route('offers.property', $offer) }}" enctype="multipart/form-data" id="property-being-offered-form">
     @csrf
 
@@ -149,6 +167,91 @@
         ])
 
     </div>{{-- end x-data --}}
+
+    {{-- ── Property Description ─────────────────────────────────────────── --}}
+    <p class="offer-section-header">{{ $isTenant ? 'Rental Description' : 'Property Description' }}</p>
+
+    <div class="mb-3">
+        <label class="form-label fw-semibold">
+            {{ $isTenant ? 'Rental Description' : 'Property Description' }}
+        </label>
+        <textarea name="prop_description" class="form-control" rows="5"
+            placeholder="{{ $isTenant ? 'Describe this rental property — amenities, condition, neighbourhood highlights...' : 'Describe this property — features, condition, recent upgrades, neighbourhood highlights...' }}">{{ old('prop_description', $pm->get('prop_description')) }}</textarea>
+        <div class="form-text">
+            Required before submitting. Give the {{ $isTenant ? 'tenant' : 'buyer' }} a clear picture of the property.
+        </div>
+    </div>
+
+    {{-- ── Property Highlights (buyer: purchase; tenant: rental) ──────────── --}}
+    <p class="offer-section-header">{{ $isTenant ? 'Rental Highlights' : 'Property Highlights' }}</p>
+
+    @php
+        $savedHighlights = json_decode($pm->get('prop_highlights', '[]'), true) ?: [];
+        $buyerHighlights = [
+            'Move-in ready',
+            'Recently renovated',
+            'Updated kitchen',
+            'Updated bathrooms',
+            'New roof',
+            'New HVAC',
+            'Open floor plan',
+            'New appliances',
+            'Hardwood floors',
+            'Smart home features',
+            'Energy efficient',
+            'Private pool',
+            'Large yard',
+            'Waterfront',
+            'Gated community',
+            'Low HOA',
+            'No HOA',
+            'Great school district',
+        ];
+        $tenantHighlights = [
+            'Furnished',
+            'Partially furnished',
+            'Pet-friendly',
+            'All utilities included',
+            'Water / sewer included',
+            'In-unit washer/dryer',
+            'Shared laundry',
+            'Private parking',
+            'Garage included',
+            'Pool access',
+            'Gym access',
+            'Central A/C',
+            'Recently renovated',
+            'New appliances',
+            'Gated community',
+            'Short-term lease ok',
+        ];
+        $highlightOptions = $isTenant ? $tenantHighlights : $buyerHighlights;
+        $savedOtherHighlight = in_array('Other', $savedHighlights) ? '' : '';
+        $savedOtherText = $pm->get('prop_highlights_other', '');
+    @endphp
+
+    <div class="mb-3">
+        <div class="row g-2">
+            @foreach($highlightOptions as $hl)
+            <div class="col-md-4 col-sm-6">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox"
+                        name="prop_highlights[]" value="{{ $hl }}"
+                        id="hl_{{ Str::slug($hl) }}"
+                        {{ in_array($hl, $savedHighlights) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="hl_{{ Str::slug($hl) }}">{{ $hl }}</label>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        <div class="mt-2">
+            <label class="form-label fw-semibold">Other highlight (optional)</label>
+            <input type="text" name="prop_highlights_other" class="form-control"
+                value="{{ old('prop_highlights_other', $savedOtherText) }}"
+                placeholder="e.g. Corner unit, Private dock...">
+        </div>
+        <div class="form-text">Select all that apply. Highlights are shown to the {{ $isTenant ? 'tenant' : 'buyer' }} in the summary.</div>
+    </div>
 
     {{-- ── Media & Availability ─────────────────────────────────────────── --}}
     <p class="offer-section-header">Media &amp; Availability</p>

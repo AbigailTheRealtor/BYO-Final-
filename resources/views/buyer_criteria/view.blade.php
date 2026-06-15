@@ -1664,6 +1664,113 @@
                                                             </p>
                                                         @endif
 
+                                                        @if (isset($bid->get->property_description) && $bid->get->property_description != '')
+                                                            <div class="mt-2 mb-1">
+                                                                <p class="fw-bold small mb-1 text-muted">Property Description:</p>
+                                                                <p class="small">{{ $bid->get->property_description }}</p>
+                                                            </div>
+                                                        @endif
+
+                                                        @if (isset($bid->get->property_highlights) && $bid->get->property_highlights != '')
+                                                            <p class="small fw-bold mb-1 text-muted">Highlights:</p>
+                                                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                                                @php $highlights = is_array($bid->get->property_highlights) ? $bid->get->property_highlights : (json_decode($bid->get->property_highlights, true) ?? []); @endphp
+                                                                @foreach ($highlights as $hl)
+                                                                    @if($hl && $hl !== 'Other')
+                                                                        <span class="badge bg-secondary">{{ $hl }}</span>
+                                                                    @endif
+                                                                @endforeach
+                                                                @if(isset($bid->get->property_highlights_other) && $bid->get->property_highlights_other)
+                                                                    <span class="badge bg-secondary">{{ $bid->get->property_highlights_other }}</span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+
+                                                        @if (isset($bid->get->why_property_matches) && $bid->get->why_property_matches != '')
+                                                            <div class="mt-2 mb-1">
+                                                                <p class="fw-bold small mb-1 text-muted">Why This Property Matches:</p>
+                                                                <p class="small">{{ $bid->get->why_property_matches }}</p>
+                                                            </div>
+                                                        @endif
+
+                                                        @if (isset($bid->get->compromises_concessions) && $bid->get->compromises_concessions != '')
+                                                            <div class="mt-2 mb-1">
+                                                                <p class="fw-bold small mb-1 text-muted">Compromises &amp; Concessions:</p>
+                                                                <p class="small">{{ $bid->get->compromises_concessions }}</p>
+                                                            </div>
+                                                        @endif
+
+                                                        @if (isset($bid->get->negotiation_response_deadline) && $bid->get->negotiation_response_deadline != '')
+                                                            <p class="d-flex justify-content-between small">Response Deadline:
+                                                                <span>{{ $bid->get->negotiation_response_deadline }}</span>
+                                                            </p>
+                                                        @endif
+
+                                                        @if (isset($bid->get->negotiation_closing_date) && $bid->get->negotiation_closing_date != '')
+                                                            <p class="d-flex justify-content-between small">Preferred Closing Date:
+                                                                <span>{{ $bid->get->negotiation_closing_date }}</span>
+                                                            </p>
+                                                        @endif
+
+                                                        @if (isset($bid->get->negotiation_timeline) && $bid->get->negotiation_timeline != '')
+                                                            <div class="mt-2 mb-1">
+                                                                <p class="fw-bold small mb-1 text-muted">Negotiation Notes:</p>
+                                                                <p class="small">{{ $bid->get->negotiation_timeline }}</p>
+                                                            </div>
+                                                        @endif
+
+                                                        @if (isset($bid->get->possession_date) && $bid->get->possession_date != '')
+                                                            <p class="d-flex justify-content-between small">Possession Date:
+                                                                <span>{{ $bid->get->possession_date }}</span>
+                                                            </p>
+                                                        @endif
+
+                                                        @if (isset($bid->get->response_requested_by) && $bid->get->response_requested_by != '')
+                                                            <p class="d-flex justify-content-between small">Response Requested By:
+                                                                <span>{{ $bid->get->response_requested_by }}</span>
+                                                            </p>
+                                                        @endif
+
+                                                        @if (isset($bid->get->home_warranty_requested) && $bid->get->home_warranty_requested != '')
+                                                            <p class="d-flex justify-content-between small">Home Warranty Requested:
+                                                                <span>{{ $bid->get->home_warranty_requested }}
+                                                                @if(isset($bid->get->home_warranty_amount) && $bid->get->home_warranty_amount)
+                                                                    (up to ${{ number_format($bid->get->home_warranty_amount) }})
+                                                                @endif
+                                                                </span>
+                                                            </p>
+                                                        @endif
+
+                                                        @if (isset($bid->get->seller_contribution_requested) && $bid->get->seller_contribution_requested != '')
+                                                            <p class="d-flex justify-content-between small">Seller Contribution:
+                                                                <span>{{ $bid->get->seller_contribution_requested }}
+                                                                @if(isset($bid->get->seller_contribution_amount) && $bid->get->seller_contribution_amount)
+                                                                    — {{ $bid->get->seller_contribution_amount }}
+                                                                @endif
+                                                                </span>
+                                                            </p>
+                                                        @endif
+
+                                                        @if (isset($bid->get->included_personal_property) && $bid->get->included_personal_property != '')
+                                                            <div class="mt-2 mb-1">
+                                                                <p class="fw-bold small mb-1 text-muted">Included Personal Property:</p>
+                                                                <p class="small">{{ $bid->get->included_personal_property }}</p>
+                                                            </div>
+                                                        @endif
+
+                                                        @if (isset($bid->get->excluded_items) && $bid->get->excluded_items != '')
+                                                            <div class="mt-2 mb-1">
+                                                                <p class="fw-bold small mb-1 text-muted">Excluded Items:</p>
+                                                                <p class="small">{{ $bid->get->excluded_items }}</p>
+                                                            </div>
+                                                        @endif
+
+                                                        @if (isset($bid->get->custom_terms) && $bid->get->custom_terms != '')
+                                                            <div class="mt-2 mb-1">
+                                                                <p class="fw-bold small mb-1 text-muted">Custom Terms / Special Conditions:</p>
+                                                                <p class="small">{{ $bid->get->custom_terms }}</p>
+                                                            </div>
+                                                        @endif
 
                                                         {{-- @if ($bid->get->is_commercial == 'Yes')
                                                             <h5>Commercial Property Information:</h5>

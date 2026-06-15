@@ -308,149 +308,132 @@
             </div>
             @endif
 
-            {{-- ── Criteria Summary + Location DNA panels ───────────────────────── --}}
-            {{--
-                Linkage path (confirmed via OfferController::resolveOfferAuctionId):
-                  offers.offer_auction_id → offer_auctions.id
-                  offer_auctions.listing_id → encoded string:
-                    "buyer_criteria:{id}"  → BuyerAgentAuction::find($id)
-                    "tenant_criteria:{id}" → TenantAgentAuction::find($id)
-                    anything else          → no criteria linked (regular OfferAuction)
-
-                If the criteria model cannot be loaded, both panels show a clean
-                empty-state rather than erroring. Location DNA only appears when
-                the criteria listing has a populated location_dna_preferences meta.
-            --}}
+            {{-- ── Buyer Criteria Summary (only when offer is linked to a Buyer Criteria listing) --}}
+            @if($offer->role === 'buyer' && $buyerCriteriaAuction)
             @php
-                $criteriaModel    = null;
-                $criteriaRole     = null;   // 'buyer' or 'tenant'
-                $criteriaLoadErr  = null;
-
-                try {
-                    $oa = $offer->offerAuction;   // Offer belongsTo OfferAuction
-                    if ($oa && is_string($oa->listing_id)) {
-                        if (str_starts_with($oa->listing_id, 'buyer_criteria:')) {
-                            $cId = (int) substr($oa->listing_id, strlen('buyer_criteria:'));
-                            $cm  = \App\Models\BuyerAgentAuction::find($cId);
-                            if ($cm) {
-                                $cm->loadMissing('meta');
-                                $criteriaModel = $cm;
-                                $criteriaRole  = 'buyer';
-                            }
-                        } elseif (str_starts_with($oa->listing_id, 'tenant_criteria:')) {
-                            $cId = (int) substr($oa->listing_id, strlen('tenant_criteria:'));
-                            $cm  = \App\Models\TenantAgentAuction::find($cId);
-                            if ($cm) {
-                                $cm->loadMissing('meta');
-                                $criteriaModel = $cm;
-                                $criteriaRole  = 'tenant';
-                            }
-                        }
-                    }
-                } catch (\Throwable $e) {
-                    $criteriaLoadErr = $e->getMessage();
-                }
-
-                // Helper: read a meta value from the criteria model; returns '' if absent/false.
-                $cInfo = fn($key) => ($criteriaModel ? ($criteriaModel->info($key) ?: '') : '');
-
-                // Location DNA — only shown when populated.
-                $dnaPrefRaw = $criteriaModel ? ($criteriaModel->info('location_dna_preferences') ?: '') : '';
-                $dnaPrefs   = [];
-                if ($dnaPrefRaw) {
-                    $decoded = json_decode($dnaPrefRaw, true);
-                    $dnaPrefs = is_array($decoded) ? array_filter($decoded, fn($v) => $v !== '' && $v !== null) : [];
-                }
-
-                // Buyer-specific native fields (stored as native columns, not metas).
-                $buyerBudget     = '';
-                $buyerFinancing  = '';
-                if ($criteriaRole === 'buyer' && $criteriaModel) {
-                    $buyerBudget    = trim(implode(' / ', array_filter([
-                        $criteriaModel->preapproval_amount ? 'Pre-approved: $' . number_format($criteriaModel->preapproval_amount) : '',
-                        $criteriaModel->cash_budget        ? 'Cash: $' . number_format($criteriaModel->cash_budget) : '',
-                        $cInfo('max_purchase_budget')      ? 'Budget: $' . number_format((float)$cInfo('max_purchase_budget')) : '',
-                    ])));
-                    $buyerFinancing = $criteriaModel->financing_approved ? 'Pre-approved' : ($criteriaModel->financing_approved === false ? 'Not pre-approved' : '');
-                }
+                $bcType        = $buyerCriteriaMetas->get('property_type');
+                $bcStyles      = $buyerCriteriaMetas->get('propertyStyles');
+                $bcMaxPrice    = $buyerCriteriaMetas->get('max_price') ?: $buyerCriteriaMetas->get('buyerBudget') ?: $buyerCriteriaMetas->get('maximum_budget');
+                $bcBeds        = $buyerCriteriaMetas->get('bedrooms') ?: $buyerCriteriaMetas->get('custom_bedrooms');
+                $bcBaths       = $buyerCriteriaMetas->get('bathroomsRes') ?: $buyerCriteriaMetas->get('bathrooms') ?: $buyerCriteriaMetas->get('custom_bathroomsRes');
+                $bcMinSqft     = $buyerCriteriaMetas->get('minimum_heated_square') ?: $buyerCriteriaMetas->get('min_sqftRes') ?: $buyerCriteriaMetas->get('min_sqft');
+                $bcCitiesRaw   = $buyerCriteriaMetas->get('cities');
+                $bcCities      = $bcCitiesRaw ? implode(', ', array_filter((array) json_decode($bcCitiesRaw, true))) : null;
+                $bcCountiesRaw = $buyerCriteriaMetas->get('counties');
+                $bcCounties    = $bcCountiesRaw ? implode(', ', array_filter((array) json_decode($bcCountiesRaw, true))) : null;
+                $bcState       = $buyerCriteriaMetas->get('state') ?: $buyerCriteriaMetas->get('states');
+                $bcFinRaw      = $buyerCriteriaMetas->get('offered_financing') ?: $buyerCriteriaMetas->get('financings');
+                $bcFinancings  = $bcFinRaw ? implode(', ', array_filter((array) json_decode($bcFinRaw, true))) : null;
+                $bcTitle       = $buyerCriteriaMetas->get('titleListing') ?: ($buyerCriteriaAuction->title ?? ('Buyer Criteria #' . $buyerCriteriaAuction->id));
+                $bcFmtMoney    = fn($v) => $v ? '$' . number_format((float) str_replace([',','$'], '', $v)) : null;
             @endphp
-
-            @if($criteriaModel || $criteriaLoadErr)
-            {{-- Criteria Summary --}}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <strong>{{ $criteriaRole === 'tenant' ? 'Tenant' : 'Buyer' }} Criteria Summary</strong>
-                    <span class="badge bg-secondary ms-2" style="font-size:0.75rem;">Linked Listing Requirements</span>
+            <div class="card mb-4 border-primary border-opacity-25">
+                <div class="card-header bg-primary bg-opacity-10 d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-check-fill text-primary flex-shrink-0" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M15.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708L12.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"/><path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/></svg>
+                    <strong class="text-primary" style="font-size:0.9rem;">Buyer Criteria Summary</strong>
                 </div>
-                <div class="card-body">
-                    @if($criteriaLoadErr)
-                        {{-- Linkage error — document and surface clean empty-state --}}
-                        <p class="text-muted mb-0"><em>Criteria information could not be loaded.</em></p>
-                        {{-- Developer note: {{ $criteriaLoadErr }} --}}
-                    @elseif(!$criteriaModel)
-                        <p class="text-muted mb-0"><em>No criteria listing is linked to this offer.</em></p>
-                    @else
-                        @php
-                            $critRows = array_filter([
-                                'Property Type'  => $cInfo('property_type'),
-                                'Bedrooms'       => $cInfo('bedrooms'),
-                                'Bathrooms'      => $cInfo('bathrooms'),
-                                ($criteriaRole === 'tenant' ? 'Max Rent / Budget' : 'Budget / Pre-approval')
-                                    => $criteriaRole === 'tenant'
-                                        ? ($cInfo('max_rent_budget') ?: ($cInfo('monthly_price') ? '$'.number_format((float)$cInfo('monthly_price')).' /mo' : ''))
-                                        : $buyerBudget,
-                                'Financing'      => $criteriaRole === 'buyer' ? $buyerFinancing : '',
-                                'Move-in / Target Date' => $cInfo('move_in_date') ?: $cInfo('target_move_date'),
-                                'Lease Duration' => $criteriaRole === 'tenant' ? $cInfo('lease_duration') : '',
-                                'Pets'           => $criteriaRole === 'tenant' ? $cInfo('has_pets') : '',
-                                'Furnished'      => $criteriaRole === 'tenant' ? $cInfo('furnished') : '',
-                                'Additional Notes' => $cInfo('additional_details'),
-                            ], fn($v) => $v !== '' && $v !== false && $v !== null);
-                        @endphp
-                        @if(count($critRows))
-                        <dl class="row mb-0">
-                            @foreach($critRows as $label => $val)
-                            <dt class="col-sm-4 text-muted" style="font-size:0.9rem;">{{ $label }}</dt>
-                            <dd class="col-sm-8" style="font-size:0.9rem;">{{ $val }}</dd>
-                            @endforeach
-                        </dl>
-                        @else
-                        <p class="text-muted mb-0"><em>No criteria details were specified on the linked listing.</em></p>
+                <div class="card-body py-3">
+                    <p class="text-muted mb-2" style="font-size:0.82rem;">Linked listing: <em>{{ $bcTitle }}</em></p>
+                    <dl class="row mb-0" style="font-size:0.9rem;">
+                        @if($bcType)
+                        <dt class="col-sm-4 fw-semibold">Property Type</dt>
+                        <dd class="col-sm-8">{{ $bcType }}{{ $bcStyles ? ' — ' . $bcStyles : '' }}</dd>
                         @endif
-                    @endif
+                        @if($bcMaxPrice)
+                        <dt class="col-sm-4 fw-semibold">Max Budget</dt>
+                        <dd class="col-sm-8">{{ $bcFmtMoney($bcMaxPrice) ?? $bcMaxPrice }}</dd>
+                        @endif
+                        @if($bcBeds)
+                        <dt class="col-sm-4 fw-semibold">Bedrooms</dt>
+                        <dd class="col-sm-8">{{ $bcBeds }}+</dd>
+                        @endif
+                        @if($bcBaths)
+                        <dt class="col-sm-4 fw-semibold">Bathrooms</dt>
+                        <dd class="col-sm-8">{{ $bcBaths }}+</dd>
+                        @endif
+                        @if($bcMinSqft)
+                        <dt class="col-sm-4 fw-semibold">Min Sq Ft</dt>
+                        <dd class="col-sm-8">{{ number_format((float) str_replace(',', '', $bcMinSqft)) }} sq ft</dd>
+                        @endif
+                        @if($bcCities)
+                        <dt class="col-sm-4 fw-semibold">Cities</dt>
+                        <dd class="col-sm-8">{{ $bcCities }}</dd>
+                        @endif
+                        @if($bcCounties)
+                        <dt class="col-sm-4 fw-semibold">Counties</dt>
+                        <dd class="col-sm-8">{{ $bcCounties }}</dd>
+                        @endif
+                        @if($bcState)
+                        <dt class="col-sm-4 fw-semibold">State</dt>
+                        <dd class="col-sm-8">{{ $bcState }}</dd>
+                        @endif
+                        @if($bcFinancings)
+                        <dt class="col-sm-4 fw-semibold">Financing</dt>
+                        <dd class="col-sm-8">{{ $bcFinancings }}</dd>
+                        @endif
+                    </dl>
                 </div>
             </div>
             @endif
 
-            @if($criteriaModel && count($dnaPrefs))
-            {{-- Location DNA Compatibility --}}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <strong>Location DNA Compatibility</strong>
-                    <span class="badge bg-secondary ms-2" style="font-size:0.75rem;">From Linked Listing</span>
+            {{-- ── Location DNA Compatibility (only when buyer criteria has a DNA record) --}}
+            @if($offer->role === 'buyer' && $locationDna)
+            @php
+                $dnaJson       = $locationDna->summary_json ?? [];
+                $dnaLifestyle  = $locationDna->lifestyle_json ?? [];
+                $dnaCity       = $locationDna->source_city;
+                $dnaState      = $locationDna->source_state;
+                $dnaZip        = $locationDna->source_zip;
+                $dnaCounty     = $locationDna->source_county;
+                $dnaStatus     = $locationDna->geocode_status;
+                $dnaPrefCities = data_get($dnaJson, 'preferred_cities', []);
+                $dnaPrefZips   = data_get($dnaJson, 'preferred_zips', []);
+                $dnaPrefNeigh  = data_get($dnaJson, 'preferred_neighborhoods', []);
+                $dnaFlexible   = data_get($dnaJson, 'flexible_location');
+                $dnaRadius     = data_get($dnaJson, 'radius_miles');
+                $dnaNote       = data_get($dnaJson, 'location_notes');
+            @endphp
+            <div class="card mb-4 border-success border-opacity-25">
+                <div class="card-header bg-success bg-opacity-10 d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill text-success flex-shrink-0" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/></svg>
+                    <strong class="text-success" style="font-size:0.9rem;">Location DNA Compatibility</strong>
                 </div>
-                <div class="card-body">
-                    <div class="d-flex flex-wrap gap-2">
-                        @foreach($dnaPrefs as $dnaPref)
-                        @if(is_string($dnaPref) && trim($dnaPref) !== '')
-                        <span class="badge rounded-pill bg-info text-dark" style="font-size:0.8rem;padding:0.35em 0.75em;">
-                            <i class="fa-solid fa-location-dot me-1"></i>{{ trim($dnaPref) }}
-                        </span>
+                <div class="card-body py-3">
+                    @if($dnaCity || $dnaState || $dnaZip)
+                    <p class="text-muted mb-2" style="font-size:0.82rem;">
+                        Source address:
+                        {{ implode(', ', array_filter([$dnaCity, $dnaState, $dnaZip])) }}
+                        @if($dnaStatus === 'ok') <span class="badge bg-success bg-opacity-25 text-success ms-1" style="font-size:0.7rem;">Geocoded</span> @endif
+                    </p>
+                    @endif
+                    <dl class="row mb-0" style="font-size:0.9rem;">
+                        @if(count($dnaPrefCities) > 0)
+                        <dt class="col-sm-4 fw-semibold">Preferred Cities</dt>
+                        <dd class="col-sm-8">{{ implode(', ', $dnaPrefCities) }}</dd>
                         @endif
-                        @endforeach
-                    </div>
+                        @if(count($dnaPrefZips) > 0)
+                        <dt class="col-sm-4 fw-semibold">Preferred ZIPs</dt>
+                        <dd class="col-sm-8">{{ implode(', ', $dnaPrefZips) }}</dd>
+                        @endif
+                        @if(count($dnaPrefNeigh) > 0)
+                        <dt class="col-sm-4 fw-semibold">Neighborhoods</dt>
+                        <dd class="col-sm-8">{{ implode(', ', $dnaPrefNeigh) }}</dd>
+                        @endif
+                        @if($dnaRadius !== null)
+                        <dt class="col-sm-4 fw-semibold">Search Radius</dt>
+                        <dd class="col-sm-8">{{ $dnaRadius }} miles</dd>
+                        @endif
+                        @if($dnaFlexible !== null)
+                        <dt class="col-sm-4 fw-semibold">Flexible Location</dt>
+                        <dd class="col-sm-8">{{ $dnaFlexible ? 'Yes' : 'No' }}</dd>
+                        @endif
+                        @if($dnaNote)
+                        <dt class="col-sm-4 fw-semibold">Notes</dt>
+                        <dd class="col-sm-8">{{ $dnaNote }}</dd>
+                        @endif
+                    </dl>
                 </div>
             </div>
-            @elseif($criteriaModel && !count($dnaPrefs))
-            {{-- Criteria IS linked but no DNA prefs recorded — silent (no panel shown) --}}
-            {{-- If you want to surface an empty state, uncomment:
-            <div class="card mb-4">
-                <div class="card-header"><strong>Location DNA Compatibility</strong></div>
-                <div class="card-body">
-                    <p class="text-muted mb-0"><em>No Location DNA preferences were provided on the linked listing.</em></p>
-                </div>
-            </div>
-            --}}
             @endif
 
             <div class="card mb-4">

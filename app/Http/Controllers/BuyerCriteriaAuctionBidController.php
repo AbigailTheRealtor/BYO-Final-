@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BuyerCriteriaAuction;
 use App\Models\BuyerCriteriaAuctionBid;
+use App\Models\PropertyLocationDna;
 use App\Models\PropertyType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,16 +15,24 @@ class BuyerCriteriaAuctionBidController extends Controller
 {
     public function add_bid($id)
     {
-        // dd($id);
         $page_data['auction'] = BuyerCriteriaAuction::find($id);
         $page_data['title'] = "Add Bid for Buyer's Criteria Auction - " . $page_data['auction']->address;
         $page_data['property_types'] = PropertyType::orderBy('sort', 'ASC')->get();
-        // dd($page_data);
+        $page_data['locationDna'] = PropertyLocationDna::where('listing_type', 'buyer_criteria')
+            ->where('listing_id', $id)
+            ->first();
         return view('buyer_criteria.add-bid', $page_data);
     }
     //
     public function save_bid($id, Request $request)
     {
+
+        $request->validate([
+            'property_description' => ['required', 'string', 'min:10'],
+        ], [
+            'property_description.required' => 'A property description is required before submitting.',
+            'property_description.min'      => 'Please write at least 10 characters describing the property.',
+        ]);
 
         try {
             $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
@@ -257,6 +266,23 @@ class BuyerCriteriaAuctionBidController extends Controller
             $bid->saveMeta('video_type', $request->video_type);
             $bid->saveMeta('youtube_video_link', $request->youtube_video_link);
             $bid->saveMeta('vimeo_video_link', $request->vimeo_video_link);
+            $bid->saveMeta('property_description', $request->property_description);
+            $bid->saveMeta('property_highlights', json_encode($request->property_highlights));
+            $bid->saveMeta('property_highlights_other', $request->property_highlights_other);
+            $bid->saveMeta('why_property_matches', $request->why_property_matches);
+            $bid->saveMeta('compromises_concessions', $request->compromises_concessions);
+            $bid->saveMeta('negotiation_response_deadline', $request->negotiation_response_deadline);
+            $bid->saveMeta('negotiation_closing_date', $request->negotiation_closing_date);
+            $bid->saveMeta('negotiation_timeline', $request->negotiation_timeline);
+            $bid->saveMeta('possession_date', $request->possession_date);
+            $bid->saveMeta('response_requested_by', $request->response_requested_by);
+            $bid->saveMeta('home_warranty_requested', $request->home_warranty_requested);
+            $bid->saveMeta('home_warranty_amount', $request->home_warranty_amount);
+            $bid->saveMeta('seller_contribution_requested', $request->seller_contribution_requested);
+            $bid->saveMeta('seller_contribution_amount', $request->seller_contribution_amount);
+            $bid->saveMeta('included_personal_property', $request->included_personal_property);
+            $bid->saveMeta('excluded_items', $request->excluded_items);
+            $bid->saveMeta('custom_terms', $request->custom_terms);
 
             if ($request->audio != "") {
                 $extension = $request->audio->getClientOriginalExtension();

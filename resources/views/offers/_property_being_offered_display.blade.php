@@ -41,6 +41,10 @@
     };
 
     $hasPhotos  = count($propPhotos) > 0 || count($propPhotoUrls) > 0;
+    $propDescription = $pm->get('prop_description');
+    $propHighlights  = json_decode($pm->get('prop_highlights', '[]'), true) ?: [];
+    $propHighOther   = $pm->get('prop_highlights_other');
+
     $hasAnyData = $propStreet || $propCity || $propType || $propMls
         || $hasPhotos || $pm->get('match_explanation')
         || $pm->get('prop_description') || $pm->get('prop_highlights');
@@ -90,6 +94,29 @@
     <dd class="col-sm-9"><a href="{{ $propUrl }}" target="_blank" rel="noopener">{{ $propUrl }}</a></dd>
     @endif
 </dl>
+@endif
+
+{{-- ── Property Description ──────────────────────────────────────────────── --}}
+@if($propDescription)
+<p class="fw-semibold text-secondary" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #dee2e6;padding-bottom:4px;margin:0 0 8px;">
+    {{ $offer->role === 'tenant' ? 'Rental Description' : 'Property Description' }}
+</p>
+<div class="mb-3" style="white-space:pre-wrap;font-size:0.95rem;">{{ $propDescription }}</div>
+@endif
+
+{{-- ── Property Highlights ────────────────────────────────────────────────── --}}
+@if(count($propHighlights) > 0 || $propHighOther)
+<p class="fw-semibold text-secondary" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #dee2e6;padding-bottom:4px;margin:0 0 8px;">
+    {{ $offer->role === 'tenant' ? 'Rental Highlights' : 'Property Highlights' }}
+</p>
+<div class="d-flex flex-wrap gap-2 mb-3">
+    @foreach($propHighlights as $hl)
+    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" style="font-size:0.82rem;font-weight:500;padding:0.35em 0.65em;">{{ $hl }}</span>
+    @endforeach
+    @if($propHighOther)
+    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25" style="font-size:0.82rem;font-weight:500;padding:0.35em 0.65em;">{{ $propHighOther }}</span>
+    @endif
+</div>
 @endif
 
 {{-- ── Property Attributes ──────────────────────────────────────────────── --}}

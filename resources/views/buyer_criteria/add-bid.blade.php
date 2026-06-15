@@ -123,6 +123,51 @@
       border-color: rgba(var(--bs-danger-rgb), var(--bs-text-opacity)) !important;
     }
 
+    /* ── Finish / Save button — explicit states ──────────────────────────────── */
+    .wizard-step-finish {
+      background-color: #0d6efd !important;
+      border-color: #0d6efd !important;
+      color: #fff !important;
+      font-weight: 600;
+      min-width: 160px;
+      transition: background-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+    .wizard-step-finish:hover,
+    .wizard-step-finish:focus {
+      background-color: #0b5ed7 !important;
+      border-color: #0a58ca !important;
+      box-shadow: 0 0 0 .2rem rgba(13,110,253,.3) !important;
+    }
+    .wizard-step-finish:disabled,
+    .wizard-step-finish.disabled {
+      background-color: #6ea8fe !important;
+      border-color: #6ea8fe !important;
+      opacity: .65;
+      cursor: not-allowed;
+    }
+    @media (max-width: 576px) {
+      .wizard-step-finish {
+        width: 100%;
+        font-size: 1.05rem;
+        padding: .65rem 1rem;
+      }
+    }
+
+    /* ── Criteria match badges ───────────────────────────────────────────────── */
+    .criteria-match-badge {
+      display: inline-block;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: .1rem .45rem;
+      border-radius: 999px;
+      margin-left: .35rem;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .criteria-match-badge.match  { background:#d1fae5; color:#065f46; }
+    .criteria-match-badge.no-match { background:#fee2e2; color:#991b1b; }
+    .criteria-match-badge.pending  { background:#f3f4f6; color:#6b7280; }
+
     .grid-picker {
       width: 100%;
       height: 0px;
@@ -147,6 +192,261 @@
     <h4 class="title">
       {{ $title }}
     </h4>
+
+    {{-- Buyer Criteria Checklist (read-only reference panel) --}}
+    <div class="row mb-4 g-3">
+      <div class="col-lg-8">
+        <div class="card border-primary shadow-sm h-100">
+          <div class="card-header bg-primary text-white d-flex align-items-center py-2">
+            <i class="fa-solid fa-list-check me-2"></i>
+            <strong>Buyer Criteria Checklist</strong>
+            <span class="ms-2 badge bg-white text-primary small">Reference — what the buyer is looking for</span>
+          </div>
+          <div class="card-body py-3">
+            <p class="small text-muted mb-2"><i class="fa-solid fa-circle-info me-1"></i>Green badge = your bid matches this criterion. Red = mismatch. Grey = field not yet entered.</p>
+            <div class="row row-cols-2 row-cols-md-3 g-2 small" id="criteria-checklist-grid">
+              @if($auction->address)
+              <div class="col"><span class="text-muted">Listed Address:</span> <strong>{{ $auction->address }}</strong></div>
+              @endif
+
+              @if($auction->get->property_type ?? null)
+              <div class="col criteria-row"
+                   data-field="property_type"
+                   data-form-field="property_type"
+                   data-match-value="{{ $auction->get->property_type }}">
+                <span class="text-muted">Property Type:</span>
+                <strong>{{ $auction->get->property_type }}</strong>
+                <span class="criteria-match-badge pending js-criteria-badge">–</span>
+              </div>
+              @endif
+
+              @if($auction->get->maximum_budget ?? null)
+              <div class="col criteria-row"
+                   data-field="maximum_budget"
+                   data-form-field="price"
+                   data-match-value="{{ $auction->get->maximum_budget }}"
+                   data-match-type="lte">
+                <span class="text-muted">Max Budget:</span>
+                <strong>${{ number_format($auction->get->maximum_budget) }}</strong>
+                <span class="criteria-match-badge pending js-criteria-badge">–</span>
+              </div>
+              @endif
+
+              @if($auction->get->bedrooms ?? null)
+              <div class="col criteria-row"
+                   data-field="bedrooms"
+                   data-form-field="bedrooms"
+                   data-match-value="{{ $auction->get->bedrooms }}"
+                   data-match-type="gte">
+                <span class="text-muted">Bedrooms:</span>
+                <strong>{{ $auction->get->bedrooms }}</strong>
+                <span class="criteria-match-badge pending js-criteria-badge">–</span>
+              </div>
+              @endif
+
+              @if($auction->get->bathrooms ?? null)
+              <div class="col criteria-row"
+                   data-field="bathrooms"
+                   data-form-field="bathrooms"
+                   data-match-value="{{ $auction->get->bathrooms }}"
+                   data-match-type="gte">
+                <span class="text-muted">Bathrooms:</span>
+                <strong>{{ $auction->get->bathrooms }}</strong>
+                <span class="criteria-match-badge pending js-criteria-badge">–</span>
+              </div>
+              @endif
+
+              @if($auction->get->heated_sqft ?? null)
+              <div class="col criteria-row"
+                   data-field="heated_sqft"
+                   data-form-field="heated_sqft"
+                   data-match-value="{{ $auction->get->heated_sqft }}"
+                   data-match-type="gte">
+                <span class="text-muted">Sq Ft:</span>
+                <strong>{{ $auction->get->heated_sqft }}</strong>
+                <span class="criteria-match-badge pending js-criteria-badge">–</span>
+              </div>
+              @endif
+
+              @if($auction->get->preferred_location ?? null)
+              <div class="col"><span class="text-muted">Location Pref:</span> <strong>{{ $auction->get->preferred_location }}</strong></div>
+              @endif
+
+              @if($auction->get->city ?? null)
+              <div class="col criteria-row"
+                   data-field="city"
+                   data-form-field="city"
+                   data-match-value="{{ $auction->get->city }}">
+                <span class="text-muted">City:</span>
+                <strong>{{ $auction->get->city }}</strong>
+                <span class="criteria-match-badge pending js-criteria-badge">–</span>
+              </div>
+              @endif
+
+              @if($auction->get->county ?? null)
+              <div class="col criteria-row"
+                   data-field="county"
+                   data-form-field="county"
+                   data-match-value="{{ $auction->get->county }}">
+                <span class="text-muted">County:</span>
+                <strong>{{ $auction->get->county }}</strong>
+                <span class="criteria-match-badge pending js-criteria-badge">–</span>
+              </div>
+              @endif
+
+              @if($auction->get->state ?? null)
+              <div class="col criteria-row"
+                   data-field="state"
+                   data-form-field="state"
+                   data-match-value="{{ $auction->get->state }}">
+                <span class="text-muted">State:</span>
+                <strong>{{ $auction->get->state }}</strong>
+                <span class="criteria-match-badge pending js-criteria-badge">–</span>
+              </div>
+              @endif
+
+              @if($auction->get->desired_move_in_date ?? null)
+              <div class="col"><span class="text-muted">Move-in:</span> <strong>{{ $auction->get->desired_move_in_date }}</strong></div>
+              @endif
+
+              @if($auction->get->term_financings ?? null)
+              <div class="col criteria-row"
+                   data-field="term_financings"
+                   data-form-field="term_financings"
+                   data-match-value="{{ is_array($auction->get->term_financings) ? implode(',', $auction->get->term_financings) : $auction->get->term_financings }}">
+                <span class="text-muted">Financing:</span>
+                <strong>{{ is_array($auction->get->term_financings) ? implode(', ', $auction->get->term_financings) : $auction->get->term_financings }}</strong>
+                <span class="criteria-match-badge pending js-criteria-badge">–</span>
+              </div>
+              @endif
+
+              @if($auction->get->contingencies ?? null)
+              <div class="col"><span class="text-muted">Contingencies:</span> <strong>{{ $auction->get->contingencies }}</strong></div>
+              @endif
+
+              @if($auction->get->additional_details ?? null)
+              <div class="col-12 mt-1"><span class="text-muted">Buyer Notes:</span> {{ $auction->get->additional_details }}</div>
+              @endif
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card border-info shadow-sm h-100">
+          <div class="card-header bg-info text-white d-flex align-items-center py-2">
+            <i class="fa-solid fa-location-dot me-2"></i>
+            <strong>Location DNA Compatibility</strong>
+          </div>
+          <div class="card-body py-3">
+            @php
+              $dnaPrefs    = ($locationDna && is_array($locationDna->summary_json)) ? $locationDna->summary_json : [];
+              $dnaCities   = $dnaPrefs['cities']          ?? [];
+              $dnaZips     = $dnaPrefs['zip_codes']       ?? [];
+              $dnaNeigh    = $dnaPrefs['neighborhoods']   ?? [];
+              $dnaRadii    = $dnaPrefs['radius_searches'] ?? [];
+              $dnaPolygons = $dnaPrefs['polygons']        ?? [];
+              $dnaFlex     = $dnaPrefs['flexible_location'] ?? false;
+              $dnaNotes    = $dnaPrefs['location_notes']  ?? '';
+              $hasPrefs    = $locationDna && (count($dnaCities) || count($dnaZips) || count($dnaNeigh) || count($dnaRadii) || count($dnaPolygons) || $dnaNotes);
+            @endphp
+            @if(!$locationDna || (!$hasPrefs && $locationDna->geocode_status !== 'geocoded'))
+              <p class="small text-muted mb-0"><i class="fa-solid fa-circle-info me-1 text-muted"></i>No Location DNA preferences were provided.</p>
+            @else
+              {{-- Source / geocoded reference location --}}
+              @if($locationDna->source_city || $locationDna->source_state)
+                <p class="small text-muted mb-1">Buyer's reference location:</p>
+                <p class="mb-2 small fw-semibold"><i class="fa-solid fa-map-pin me-1 text-info"></i>
+                  {{ implode(', ', array_filter([$locationDna->source_city, $locationDna->source_county, $locationDna->source_state, $locationDna->source_zip])) }}
+                  @if($locationDna->geocode_status !== 'geocoded')
+                    <span class="badge bg-warning text-dark ms-1 small" style="font-size:.65rem;">Pending geocode</span>
+                  @endif
+                </p>
+              @endif
+
+              {{-- Flexible location flag --}}
+              <p class="small mb-2">
+                <span class="fw-bold text-muted">Flexible on location:</span>
+                @if($dnaFlex)
+                  <span class="badge bg-success ms-1 small">Yes</span>
+                @else
+                  <span class="badge bg-secondary ms-1 small">No</span>
+                @endif
+              </p>
+
+              {{-- Cities --}}
+              @if(count($dnaCities))
+                <p class="small fw-bold text-muted mb-1">Preferred Cities:</p>
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                  @foreach($dnaCities as $c)
+                    <span class="badge bg-primary bg-opacity-75 small">{{ $c }}</span>
+                  @endforeach
+                </div>
+              @endif
+
+              {{-- ZIP Codes --}}
+              @if(count($dnaZips))
+                <p class="small fw-bold text-muted mb-1">ZIP Codes:</p>
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                  @foreach($dnaZips as $z)
+                    <span class="badge bg-secondary bg-opacity-75 small">{{ $z }}</span>
+                  @endforeach
+                </div>
+              @endif
+
+              {{-- Neighborhoods --}}
+              @if(count($dnaNeigh))
+                <p class="small fw-bold text-muted mb-1">Neighborhoods:</p>
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                  @foreach($dnaNeigh as $n)
+                    <span class="badge bg-info text-dark small">{{ $n }}</span>
+                  @endforeach
+                </div>
+              @endif
+
+              {{-- Radius searches --}}
+              @if(count($dnaRadii))
+                <p class="small fw-bold text-muted mb-1">Radius Zones:</p>
+                <ul class="list-unstyled mb-2 small">
+                  @foreach($dnaRadii as $r)
+                    <li><i class="fa-solid fa-circle-dot me-1 text-info" style="font-size:.7rem;"></i>
+                      {{ $r['label'] ?? 'Zone' }} — {{ $r['radius_miles'] ?? '?' }} mi radius
+                    </li>
+                  @endforeach
+                </ul>
+              @endif
+
+              {{-- Polygon searches --}}
+              @if(count($dnaPolygons))
+                <p class="small fw-bold text-muted mb-1">Custom Area Polygons:</p>
+                <ul class="list-unstyled mb-2 small">
+                  @foreach($dnaPolygons as $p)
+                    <li><i class="fa-solid fa-draw-polygon me-1 text-secondary" style="font-size:.7rem;"></i>{{ $p['label'] ?? 'Custom area' }}</li>
+                  @endforeach
+                </ul>
+              @endif
+
+              {{-- Location notes --}}
+              @if($dnaNotes)
+                <hr class="my-2">
+                <p class="small fw-bold text-muted mb-1">Location Notes:</p>
+                <p class="small fst-italic">{{ $dnaNotes }}</p>
+              @endif
+
+              {{-- Lifestyle signals --}}
+              @if($locationDna->lifestyle_json && count($locationDna->lifestyle_json))
+                <hr class="my-2">
+                <p class="small text-muted mb-1">Lifestyle signals:</p>
+                <div class="d-flex flex-wrap gap-1">
+                  @foreach(array_slice($locationDna->lifestyle_json, 0, 6) as $key => $val)
+                    <span class="badge bg-light text-dark border small">{{ ucwords(str_replace('_', ' ', $key)) }}: {{ $val }}</span>
+                  @endforeach
+                </div>
+              @endif
+            @endif
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="card m-4">
       <div class="card-title">
@@ -706,6 +1006,65 @@
                 </div>
               </div>
             </div>
+            {{-- Additional Purchase Offer Terms --}}
+            <div class="mt-4 pt-2 border-top">
+              <h5 class="fw-bold mb-3 text-primary"><i class="fa-solid fa-file-contract me-2"></i>Additional Offer Terms</h5>
+              <div class="row g-3">
+                <div class="col-md-6 form-group">
+                  <label class="fw-bold">Possession Date:</label>
+                  <input type="date" name="possession_date" class="form-control has-icon" data-icon="fa-regular fa-calendar-days">
+                  <small class="text-muted">When would you like possession of the property?</small>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label class="fw-bold">Response Requested By:</label>
+                  <input type="date" name="response_requested_by" class="form-control has-icon" data-icon="fa-regular fa-calendar-check">
+                  <small class="text-muted">Deadline for seller to respond to this offer.</small>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="fw-bold">Home Warranty Requested:</label>
+                @php $yes_no_warranty = [['name'=>'Yes','target'=>'.homeWarrantyYes','icon'=>'fa-regular fa-circle-check'],['name'=>'No','target'=>'','icon'=>'fa-regular fa-circle-xmark']]; @endphp
+                <select name="home_warranty_requested" class="grid-picker" style="justify-content:flex-start;">
+                  <option value="">Select</option>
+                  @foreach($yes_no_warranty as $item)
+                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row" style="width:calc(33.3% - 10px);" data-icon="<i class='{{ $item['icon'] }}'></i>">{{ $item['name'] }}</option>
+                  @endforeach
+                </select>
+                <div class="form-group homeWarrantyYes d-none mt-2">
+                  <label class="fw-bold">Home Warranty Amount <small class="text-muted">(Optional)</small>:</label>
+                  <input type="number" name="home_warranty_amount" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="e.g., 500">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="fw-bold">Seller Contribution Requested:</label>
+                @php $yes_no_contrib = [['name'=>'Yes','target'=>'.sellerContribYes','icon'=>'fa-regular fa-circle-check'],['name'=>'No','target'=>'','icon'=>'fa-regular fa-circle-xmark']]; @endphp
+                <select name="seller_contribution_requested" class="grid-picker" style="justify-content:flex-start;">
+                  <option value="">Select</option>
+                  @foreach($yes_no_contrib as $item)
+                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row" style="width:calc(33.3% - 10px);" data-icon="<i class='{{ $item['icon'] }}'></i>">{{ $item['name'] }}</option>
+                  @endforeach
+                </select>
+                <div class="form-group sellerContribYes d-none mt-2">
+                  <label class="fw-bold">Contribution Amount or %:</label>
+                  <input type="text" name="seller_contribution_amount" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="e.g., $5,000 or 3%">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="fw-bold">Included Personal Property <small class="text-muted">(Optional)</small>:</label>
+                <textarea name="included_personal_property" class="form-control" rows="2" placeholder="e.g., Refrigerator, washer/dryer, lawn mower..."></textarea>
+                <small class="text-muted">List any personal property you expect to be included in the sale.</small>
+              </div>
+              <div class="form-group">
+                <label class="fw-bold">Excluded Items <small class="text-muted">(Optional)</small>:</label>
+                <textarea name="excluded_items" class="form-control" rows="2" placeholder="e.g., Seller's grandfather clock, dining room chandelier..."></textarea>
+                <small class="text-muted">List any items you expect to be excluded from the sale.</small>
+              </div>
+              <div class="form-group">
+                <label class="fw-bold">Custom Terms / Special Conditions <small class="text-muted">(Optional)</small>:</label>
+                <textarea name="custom_terms" class="form-control" rows="3" placeholder="Any additional terms, conditions, or contingencies not covered above..."></textarea>
+              </div>
+            </div>
+            {{-- /Additional Purchase Offer Terms --}}
             {{-- Slide 6 --}}
             {{-- Slide 7 --}}
             <div class="wizard-step" data-step="5">
@@ -8083,13 +8442,109 @@
             @endif
           </div>
           {{-- property_listed="Yes" --}}
+
+          {{-- New Steps: Property Description, Highlights, Why, Compromises, Timeline --}}
+          <div class="wizard-step" data-step="94">
+            <h5 class="mb-3 fw-bold"><i class="fa-solid fa-file-lines me-2 text-primary"></i>Property Description</h5>
+            <p class="text-muted mb-4">Describe the property you are offering to the buyer. Help them visualize the space and understand its key selling points.</p>
+            <div class="form-group">
+              <label class="fw-bold" for="property_description">Property Description: <small class="text-danger">*</small></label>
+              <textarea name="property_description" id="property_description" class="form-control" rows="8" required
+                placeholder="Describe the property — its layout, standout features, condition, and what makes it a great match for this buyer's criteria..."></textarea>
+              <small class="text-muted">Required. Describe the property's layout, standout features, condition, and why it's a great match for this buyer.</small>
+            </div>
+          </div>
+
+          <div class="wizard-step" data-step="95">
+            <h5 class="mb-3 fw-bold"><i class="fa-solid fa-star me-2 text-warning"></i>Property Highlights</h5>
+            <p class="text-muted mb-4">Select or describe the top features of your property that align with the buyer's criteria.</p>
+            <div class="form-group">
+              <label class="fw-bold">Select Highlights: <small class="text-muted">(Choose all that apply)</small></label>
+              @php
+                $propertyHighlights = [
+                  'Move-in ready', 'Recently renovated', 'Updated kitchen', 'Updated bathrooms',
+                  'Open floor plan', 'Natural light', 'Private backyard', 'Waterfront / water view',
+                  'Corner lot', 'Cul-de-sac', 'New roof', 'New HVAC', 'Energy efficient',
+                  'Solar panels', 'Smart home features', 'Gated community', 'Low HOA fees',
+                  'No HOA', 'Pool', 'Garage / parking', 'Other',
+                ];
+              @endphp
+              <select class="grid-picker" name="property_highlights[]" style="justify-content: flex-start;" multiple>
+                <option value="">Select</option>
+                @foreach ($propertyHighlights as $highlight)
+                  <option value="{{ $highlight }}"
+                    data-icon='<i class="fa-regular fa-star"></i>'
+                    data-target="{{ $highlight === 'Other' ? '.highlightOther' : '' }}"
+                    class="card flex-row" style="width:calc(33.3% - 10px);">
+                    {{ $highlight }}
+                  </option>
+                @endforeach
+              </select>
+              <div class="form-group highlightOther d-none mt-2">
+                <label class="fw-bold">Other Highlights:</label>
+                <input type="text" name="property_highlights_other" class="form-control has-icon"
+                  data-icon="fa-regular fa-star" placeholder="Describe additional highlights...">
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-step" data-step="96">
+            <h5 class="mb-3 fw-bold"><i class="fa-solid fa-circle-check me-2 text-success"></i>Why This Property Matches</h5>
+            <p class="text-muted mb-4">Explain how your property meets the buyer's stated criteria. Reference specific requirements they listed.</p>
+            <div class="form-group">
+              <label class="fw-bold">Why This Property Matches the Buyer's Criteria: <small class="text-muted">(Optional)</small></label>
+              <textarea name="why_property_matches" id="why_property_matches" class="form-control" rows="8"
+                placeholder="e.g., This property meets your need for 3+ bedrooms, is within your target zip code, and falls within your stated price range..."></textarea>
+            </div>
+          </div>
+
+          <div class="wizard-step" data-step="97">
+            <h5 class="mb-3 fw-bold"><i class="fa-solid fa-handshake me-2 text-info"></i>Compromises &amp; Concessions</h5>
+            <p class="text-muted mb-4">Be transparent about any areas where the property may not perfectly align with the buyer's criteria, and note any concessions you are willing to make.</p>
+            <div class="form-group">
+              <label class="fw-bold">Potential Compromises or Gaps: <small class="text-muted">(Optional)</small></label>
+              <textarea name="compromises_concessions" id="compromises_concessions" class="form-control" rows="6"
+                placeholder="e.g., The property is 5 miles outside your preferred zip code, but it offers a larger lot size than requested. Seller is open to covering closing costs as a concession..."></textarea>
+            </div>
+          </div>
+
+          <div class="wizard-step" data-step="98">
+            <h5 class="mb-3 fw-bold"><i class="fa-solid fa-calendar-check me-2 text-primary"></i>Negotiation Timeline</h5>
+            <p class="text-muted mb-4">Outline your preferred timeline for negotiation and closing.</p>
+            <div class="form-group">
+              <label class="fw-bold">Preferred Response Deadline: <small class="text-muted">(Optional)</small></label>
+              <input type="date" name="negotiation_response_deadline" class="form-control has-icon" data-icon="fa-regular fa-calendar-days">
+            </div>
+            <div class="form-group">
+              <label class="fw-bold">Preferred Closing Date: <small class="text-muted">(Optional)</small></label>
+              <input type="date" name="negotiation_closing_date" class="form-control has-icon" data-icon="fa-regular fa-calendar-days">
+            </div>
+            <div class="form-group">
+              <label class="fw-bold">Negotiation Notes: <small class="text-muted">(Optional)</small></label>
+              <textarea name="negotiation_timeline" id="negotiation_timeline" class="form-control" rows="4"
+                placeholder="Any additional notes about your preferred negotiation timeline, urgency, or flexibility..."></textarea>
+            </div>
+            <div class="mt-4 p-3 border border-primary rounded" style="background:#f0f4ff;">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                  <h6 class="mb-1 fw-bold text-primary"><i class="fa-solid fa-eye me-2"></i>Preview Your Offer</h6>
+                  <p class="mb-0 text-muted small">Review how your offer will appear to the buyer before submitting.</p>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#offerPreviewModal">
+                  <i class="fa-solid fa-eye me-1"></i> Preview
+                </button>
+              </div>
+            </div>
+          </div>
+          {{-- /New Steps --}}
+
             <div class="d-flex justify-content-between form-group mt-4">
               <div>
                 <a class="wizard-step-back btn btn-success btn-lg text-600" style="display: none;">Back</a>
               </div>
               <div>
                 <a class="wizard-step-next btn btn-success btn-lg text-600" style="display: none;">Next</a>
-                <button type="button" class="wizard-step-finish btn btn-success btn-lg text-600"
+                <button type="button" class="wizard-step-finish btn btn-primary btn-lg text-600"
                   style="display: none;">Save</button>
               </div>
             </div>
@@ -8127,6 +8582,30 @@
     <input type="text" name="garageSpaces[]" placeholder="Garage Spaces" data-type="unit"
       class="form-control has-icon mt-1" data-icon="fa-solid fa-qrcode">
   </template>
+  {{-- Offer Preview Modal --}}
+  <div class="modal fade" id="offerPreviewModal" tabindex="-1" aria-labelledby="offerPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="offerPreviewModalLabel">
+            <i class="fa-solid fa-eye me-2"></i>Offer Preview — Buyer View
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="offerPreviewBody">
+          <p class="text-muted small mb-3"><i class="fa-solid fa-circle-info me-1"></i>This is a preview of how key details will appear to the buyer after submission. Some fields may be hidden or summarised on the final bid card.</p>
+          <div id="previewContent"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="wizard-step-finish btn btn-primary">
+            <i class="fa-solid fa-paper-plane me-1"></i>Submit Offer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 @endsection
 @push('scripts')
   <script>
@@ -8796,8 +9275,9 @@
 
               if($('#property_listed').val() === "Yes"){
                 if (StepWizard.currentStep == 92) {
-                  $('.wizard-step-next').hide();
-                  $('.wizard-step-finish').show();
+                  $('.wizard-step.active').removeClass('active');
+                  $('[data-step="94"]').addClass('active');
+                  StepWizard.setStep();
                 }
               }
 
@@ -8805,21 +9285,47 @@
               (property_type == 'Residential Property' || property_type ==
                 'Income Property')
             ) {
-              $('.wizard-step-next').hide();
-              $('.wizard-step-finish').show();
+              $('.wizard-step.active').removeClass('active');
+              $('[data-step="94"]').addClass('active');
+              StepWizard.setStep();
             }
             if (StepWizard.currentStep == 72 &&
               (property_type == 'Commercial Property' || property_type ==
                 'Business Opportunity')
             ) {
-              $('.wizard-step-next').hide();
-              $('.wizard-step-finish').show();
+              $('.wizard-step.active').removeClass('active');
+              $('[data-step="94"]').addClass('active');
+              StepWizard.setStep();
             }
               if (StepWizard.currentStep == 92 &&
                 (property_type == 'other')
               ) {
-                $('.wizard-step-next').hide();
-                $('.wizard-step-finish').show();
+                $('.wizard-step.active').removeClass('active');
+                $('[data-step="94"]').addClass('active');
+                StepWizard.setStep();
+              }
+
+              // After every forward-navigation step, fix backStep for new steps 94-98
+              // using data-step attribute directly (immune to DOM-index offset from duplicate step 7)
+              var _fwdDs = parseInt($('.wizard-step.active').attr('data-step'));
+              if (_fwdDs === 94) {
+                if (property_type === 'Residential Property' || property_type === 'Income Property') {
+                  StepWizard.backStep = 37;
+                } else if (property_type === 'Commercial Property' || property_type === 'Business Opportunity') {
+                  StepWizard.backStep = 71;
+                } else if (property_type === 'Vacant Land') {
+                  StepWizard.backStep = 92;
+                } else {
+                  StepWizard.backStep = 91;
+                }
+              } else if (_fwdDs === 95) {
+                StepWizard.backStep = 94;
+              } else if (_fwdDs === 96) {
+                StepWizard.backStep = 95;
+              } else if (_fwdDs === 97) {
+                StepWizard.backStep = 96;
+              } else if (_fwdDs === 98) {
+                StepWizard.backStep = 97;
               }
             }
           }
@@ -8837,6 +9343,28 @@
                 if (StepWizard.currentStep == 89) {
                   StepWizard.backStep = 2;
                 }
+              }
+
+              // Use data-step directly to set backStep for new steps 94-98
+              var _bkDs = parseInt($('.wizard-step.active').attr('data-step'));
+              if (_bkDs === 94) {
+                if (property_type === 'Residential Property' || property_type === 'Income Property') {
+                  StepWizard.backStep = 37;
+                } else if (property_type === 'Commercial Property' || property_type === 'Business Opportunity') {
+                  StepWizard.backStep = 71;
+                } else if (property_type === 'Vacant Land') {
+                  StepWizard.backStep = 92;
+                } else {
+                  StepWizard.backStep = 91;
+                }
+              } else if (_bkDs === 95) {
+                StepWizard.backStep = 94;
+              } else if (_bkDs === 96) {
+                StepWizard.backStep = 95;
+              } else if (_bkDs === 97) {
+                StepWizard.backStep = 96;
+              } else if (_bkDs === 98) {
+                StepWizard.backStep = 97;
               }
 
               if (StepWizard.currentStep == 8 && property_type == 'Income Property') {
@@ -9087,6 +9615,115 @@
         $('#otherSturctureUnit').hide();
       }
     })
+
+    /* ── Buyer Criteria match badge logic ───────────────────────────────────── */
+    /*
+     * WHY a lightweight JS engine rather than reusing BuyerBidMatchScoreHelper (PHP):
+     *
+     * BuyerBidMatchScoreHelper is a server-side, post-submission scoring system that
+     * runs against stored bid records and computes weighted scores across 16+ field groups
+     * (commission structure, lease options, retainer fees, etc.). It requires Eloquent
+     * models and DB access and is appropriate for the view-page score shown to buyers.
+     *
+     * updateCriteriaBadges() is a pre-submission, in-browser real-time feedback widget.
+     * Its scope is limited to the 8 Checklist fields visible to the agent in the sidebar
+     * panel (property type, price, beds, baths, sqft, city, county, state, financing).
+     * It uses simple exact/gte/lte comparisons that are correct for these fields and
+     * runs instantly on every input change without a server round-trip.
+     *
+     * Porting the full PHP scoring logic to JS or adding an AJAX endpoint for a live
+     * badge widget would introduce latency, maintenance drift, and unnecessary complexity.
+     * The two systems are complementary: JS badges guide the agent before submitting;
+     * the PHP helper scores the bid after submission for the listing owner.
+     * See: docs/audits/BUYER_CRITERIA_BID_FORM_FIELD_AUDIT.md §3
+     */
+    function updateCriteriaBadges() {
+      $('#criteria-checklist-grid .criteria-row').each(function() {
+        var $row       = $(this);
+        var formField  = $row.data('form-field');
+        var matchValue = String($row.data('match-value') || '').toLowerCase().trim();
+        var matchType  = $row.data('match-type') || 'exact';
+        var $badge     = $row.find('.js-criteria-badge');
+        var $input     = $('[name="' + formField + '"]');
+        if (!$input.length) return;
+        var enteredVal = ($input.is('select') ? $input.find('option:selected').val() : $input.val()) || '';
+        enteredVal = String(enteredVal).toLowerCase().trim();
+        if (!enteredVal) {
+          $badge.attr('class', 'criteria-match-badge pending js-criteria-badge').text('–');
+          return;
+        }
+        var isMatch = false;
+        if (matchType === 'gte') {
+          isMatch = parseFloat(enteredVal) >= parseFloat(matchValue);
+        } else if (matchType === 'lte') {
+          isMatch = parseFloat(enteredVal) <= parseFloat(matchValue);
+        } else {
+          isMatch = enteredVal === matchValue || enteredVal.indexOf(matchValue) !== -1 || matchValue.indexOf(enteredVal) !== -1;
+        }
+        if (isMatch) {
+          $badge.attr('class', 'criteria-match-badge match js-criteria-badge').html('✓ Match');
+        } else {
+          $badge.attr('class', 'criteria-match-badge no-match js-criteria-badge').html('✗ No match');
+        }
+      });
+    }
+    $(document).ready(function() {
+      updateCriteriaBadges();
+      $('form.mainform').on('change input', 'input, select, textarea', function() {
+        updateCriteriaBadges();
+      });
+    });
+
+    $('#offerPreviewModal').on('show.bs.modal', function () {
+      var rows = '';
+      function previewRow(label, val) {
+        if (val && val.trim && val.trim() !== '') {
+          rows += '<p class="d-flex justify-content-between small border-bottom pb-1 mb-1"><span class="text-muted">' + label + ':</span><span class="ms-2 fw-semibold text-end" style="max-width:60%">' + val + '</span></p>';
+        }
+      }
+      function previewBlock(label, val) {
+        if (val && val.trim && val.trim() !== '') {
+          rows += '<div class="mb-3"><p class="fw-bold mb-1 small text-muted">' + label + '</p><div class="p-2 bg-light rounded small" style="white-space:pre-wrap">' + $('<span>').text(val).html() + '</div></div>';
+        }
+      }
+
+      previewRow('Address', $('[name="address"]').val());
+      previewRow('Property Type', $('[name="property_type"]').val() || $('[name="property_type"] option:selected').text());
+      previewRow('Offer Price', $('[name="price"]').val() ? '$' + $('[name="price"]').val() : '');
+      previewRow('Financing Type', $('[name="term_financings"]').val());
+      previewRow('Closing Days', $('[name="closing_days2"]').val());
+      previewRow('Escrow Amount', $('[name="escrow_amount2"]').val());
+      previewRow('Bedrooms', $('[name="bedrooms"]').val());
+      previewRow('Bathrooms', $('[name="bathrooms"]').val());
+      previewRow('County', $('[name="county"]').val());
+      previewRow('State', $('[name="state"]').val());
+      previewRow('Possession Date', $('[name="possession_date"]').val());
+      previewRow('Response Requested By', $('[name="response_requested_by"]').val());
+      previewRow('Home Warranty Requested', $('[name="home_warranty_requested"] option:selected').val());
+      previewRow('Seller Contribution Requested', $('[name="seller_contribution_requested"] option:selected').val());
+      previewRow('Preferred Response Deadline', $('[name="negotiation_response_deadline"]').val());
+      previewRow('Preferred Closing Date', $('[name="negotiation_closing_date"]').val());
+      previewBlock('Property Description', $('[name="property_description"]').val());
+      previewBlock('Included Personal Property', $('[name="included_personal_property"]').val());
+      previewBlock('Excluded Items', $('[name="excluded_items"]').val());
+      previewBlock('Custom Terms', $('[name="custom_terms"]').val());
+      previewBlock('Why This Property Matches', $('[name="why_property_matches"]').val());
+      previewBlock('Compromises & Concessions', $('[name="compromises_concessions"]').val());
+      previewBlock('Negotiation Notes', $('[name="negotiation_timeline"]').val());
+
+      var highlights = [];
+      $('[name="property_highlights[]"] option:selected').each(function() {
+        if ($(this).val()) highlights.push($(this).val());
+      });
+      if (highlights.length) {
+        rows += '<p class="small border-bottom pb-1 mb-1"><span class="text-muted">Highlights:</span> ' + highlights.map(function(h){ return '<span class="badge bg-secondary ms-1">' + h + '</span>'; }).join('') + '</p>';
+      }
+
+      if (!rows) {
+        rows = '<p class="text-muted">No details entered yet. Complete the form steps to see a preview here.</p>';
+      }
+      $('#previewContent').html(rows);
+    });
   </script>
   <x-google-maps-script :callback="'initialize'" />
 @endpush

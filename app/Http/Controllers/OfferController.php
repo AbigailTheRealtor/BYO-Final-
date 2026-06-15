@@ -745,6 +745,10 @@ class OfferController extends Controller
             'prop_photos'                  => 'nullable|array|max:20',
             'prop_photos.*'                => 'image|max:5120',
             'prop_photo_urls'              => 'nullable|string|max:10000',
+            'prop_description'             => 'nullable|string|max:10000',
+            'prop_highlights'              => 'nullable|array',
+            'prop_highlights.*'            => 'nullable|string|max:200',
+            'prop_highlights_other'        => 'nullable|string|max:300',
             // Property attribute groups — type-conditional, all nullable (draft permissive)
             'prop_attr_condition'          => 'nullable|string|max:200',
             'prop_attr_bedrooms'           => 'nullable|string|max:20',
@@ -810,6 +814,8 @@ class OfferController extends Controller
             'prop_virtual_tour_url', 'prop_video_url',
             'prop_available_date', 'prop_occupancy_status', 'prop_showing_availability',
             'prop_photo_urls',
+            'prop_description',
+            'prop_highlights_other',
             // Property attribute groups (type-conditional)
             'prop_attr_condition', 'prop_attr_bedrooms', 'prop_attr_other_bedrooms',
             'prop_attr_bathrooms', 'prop_attr_other_bathrooms',
@@ -1505,11 +1511,32 @@ class OfferController extends Controller
             }
         }
 
+        // ── Buyer Criteria link resolution ────────────────────────────────────
+        // If the OfferAuction bridge has a listing_id like "buyer_criteria:{id}",
+        // load the BuyerAgentAuction (source listing) and its Location DNA for the sidebar panels.
+        // No panels are shown when the offer is not linked to a Buyer Criteria listing.
+        $buyerCriteriaAuction = null;
+        $buyerCriteriaMetas   = collect();
+        $locationDna          = null;
+
+        if ($offer->role === 'buyer') {
+            $listingId = $offer->offerAuction?->listing_id;
+            if ($listingId && str_starts_with($listingId, 'buyer_criteria:')) {
+                $criteriaId = (int) substr($listingId, strlen('buyer_criteria:'));
+                $buyerCriteriaAuction = \App\Models\BuyerAgentAuction::with('meta')->find($criteriaId);
+                $buyerCriteriaMetas   = $buyerCriteriaAuction?->meta->pluck('meta_value', 'meta_key') ?? collect();
+                $locationDna = \App\Models\PropertyLocationDna::where('listing_type', 'buyer_criteria')
+                    ->where('listing_id', $criteriaId)
+                    ->first();
+            }
+        }
+
         return view('offers.show', compact(
             'offer', 'timeline', 'actions', 'metas', 'offerType',
             'counterDefaults', 'rootOffer', 'rootMetas',
             'terminalLeaf', 'isTerminal', 'isHistorical', 'chainSummary',
-            'finalTerms', 'snapshotMissing', 'terminalOutcomeAt'
+            'finalTerms', 'snapshotMissing', 'terminalOutcomeAt',
+            'buyerCriteriaAuction', 'buyerCriteriaMetas', 'locationDna'
         ));
     }
 
