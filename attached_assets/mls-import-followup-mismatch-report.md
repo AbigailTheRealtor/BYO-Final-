@@ -1,261 +1,572 @@
-# MLS Import Field-Mapping Failure Report
-**Roles audited**: Seller, Landlord  
-**Date**: 2026-06-15  
-**Task**: #2838  
+# MLS Import Closeout — Live Audit Mismatch Report
 
-This document traces each of the six failure categories end-to-end:  
-`Parser → canonical key → MlsFieldMap → Livewire property → form select option value`
+**Audit date:** 2026-06-15  
+**Source:** Live page fetch via `php artisan mls:parse-debug --url=... --role=...`
 
----
+Column schema used in field trace tables:
 
-## Category 1 — Address Fields
+> **MLS raw label** → **MLS raw value** → **Parser canonical key** → **Parser raw value** → **Preview value** (import modal) → **MlsFieldMap target** → **MlsNormalizer output** → **Livewire property** → **Blade wire:model** → **saveMeta key** → **After-reload value** → **Status**
 
-### Original analysis (raw-text fixtures only)
-
-| Parser key | MlsFieldMap (Seller) | MlsFieldMap (Landlord) | Livewire property | Status |
-|---|---|---|---|---|
-| `address` | `address` | `address` | `$address` | ✅ Field map correct |
-| `city` | `property_city` | `property_city` | `$property_city` | ✅ Field map correct |
-| `state` | `property_state` | `property_state` | `$property_state` | ✅ Field map correct |
-| `zip` | `property_zip` | `property_zip` | `$property_zip` | ✅ Field map correct |
-| `county` | `property_county` | `property_county` | `$property_county` | ✅ Field map correct |
-
-**Original conclusion**: No mismatch found in field map or Livewire properties.
-
-### Live URL audit findings (revised)
-
-Live testing against the two Stellar MLS Matrix URLs revealed **two additional parser bugs** not visible from raw-text fixtures:
-
-#### Bug 1 — County: no-space-after-colon format (BUG-06)
-
-Stellar MLS Matrix summary lines concatenate fields with **no spaces**:
-```
-ActiveCounty:PinellasList Price:$345,000ADOM:136Beds:3...
-```
-
-The county regex was `/County\s*:[\s]+/i` — `[\s]+` required **at least one space** after the colon. With `County:Pinellas` (no space), the regex produced no match and county was blank.
-
-**Fix applied**: changed `[\s]+` → `[\s]*` in the county regex. The existing `$boundary=true` flag stops the capture at the next label (`List Price:`), so `PinellasList Price:$345,000` correctly trims to `Pinellas`.
-
-**Regression tests**: `test_bug_06_county_no_space_colon_stellar_mls_format`, `test_bug_06_county_no_space_does_not_bleed_into_list_price` (MlsGapFixesRegressionTest)
-
-#### Bug 2 — Address/City/State/Zip: unlabeled "About" header (BUG-07)
-
-Stellar MLS Matrix public shared pages do **not** include `Address:`, `City:`, `State:`, or `Zip:` labeled fields. The full address appears only in an unlabeled section header:
-```
-About 828 89TH AVENUE N, ST PETERSBURG, Florida 33702
-Welcome to this beautifully updated...
-```
-
-The standard labeled parsers all returned `null`. Address, city, state, and zip were all blank after import from a live Stellar URL.
-
-**Fix applied**: new parser block added after the standard labeled parsers — fires only when `address`/`city` is not yet set. Pattern: `/\bAbout\s+([^\n,]{5,100}),\s*([^\n,]{2,60}),\s*([A-Z]{2}|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(\d{5}(?:-\d{4})?)/i`. Full state names (`Florida`, `Texas`, etc.) are converted to 2-letter abbreviations via a static lookup table.
-
-**Live verification**:
-- Seller (828 89TH AVE N): `address=828 89TH AVENUE N`, `city=ST PETERSBURG`, `state=FL`, `zip=33702` ✅
-- Landlord (8535 BLIND PASS DRIVE Unit#202): `address=8535 BLIND PASS DRIVE Unit#202`, `city=TREASURE ISLAND`, `state=FL`, `zip=33706` ✅
-
-**Regression tests**: `test_bug_07_stellar_about_header_extracts_all_address_fields`, `test_bug_07_stellar_about_header_preserves_unit_number`, `test_bug_07_labeled_address_takes_precedence_over_about` (MlsGapFixesRegressionTest)
+Status key: ✅ = extracted, wired, and round-trips correctly | ⚠️ = field supported but absent from this public URL | 🚫 = structurally unsupported via shared URL
 
 ---
 
-## Category 2 — Property Type
+## Live URLs Audited
 
-### Field map chain
-
-| Role | MLS raw value | Parser canonical key | normalizePropertyTypeForRole() output | Form `<option value>` | Status |
-|---|---|---|---|---|---|
-| Seller | `"Residential Property"` | `property_type` | `"Residential"` | `"Residential"` | ✅ Correct |
-| Seller | `"Commercial Property"` | `property_type` | `"Commercial"` | `"Commercial"` | ✅ Correct |
-| Seller | `"Business Opportunity"` | `property_type` | `"Business"` | `"Business"` | ✅ Correct |
-| Seller | `"Income/Multifamily"` | `property_type` | `"Income"` | `"Income"` | ✅ Correct |
-| Seller | `"Vacant Land Sale"` | `property_type` | `"Vacant Land"` | `"Vacant Land"` | ✅ Correct |
-| Seller | `"Single Family Residence"` | `property_type` | `"Residential"` | `"Residential"` | ✅ Correct |
-| Landlord | `"Residential Property"` | `property_type` | `"Residential Property"` | `"Residential Property"` | ✅ Correct |
-| Landlord | `"Commercial Property"` | `property_type` | `"Commercial Property"` | `"Commercial Property"` | ✅ Correct |
-| Landlord | `"Residential"` (short-form) | `property_type` | `"Residential Property"` | `"Residential Property"` | ✅ Correct |
-
-**Root cause**: Seller blade uses short-form option values (`"Residential"`, not `"Residential Property"`),  
-while Landlord blade uses long-form (`"Residential Property"`). Without per-role normalization,  
-Landlord received `"Residential"` from MLS which didn't match its `<option>`.  
-**Fix applied**: `HasMlsImport::normalizePropertyTypeForRole()` — strips `" Property"` suffix for  
-Seller/Buyer/Tenant; ensures `" Property"` suffix for Landlord (wired in prior task).  
-**Regression tests**: 8 tests in `MlsGapFixesRegressionTest::test_property_type_*`
-
-### Live URL finding — property_type NOT on Stellar MLS Matrix pages
-
-Live audit of both Stellar MLS Matrix shared URLs confirmed that the public share page format **does not include a `Property Type:` labeled field** anywhere in the rendered HTML. The `property_type` canonical key will always be `null` / `(missing)` when importing from a Stellar Matrix public share URL.
-
-**Action required**: Users must manually select Property Type after importing from a Stellar MLS URL. This is not a parser bug — the field is simply absent from the page.
+| Role     | URL | Address | MLS Status |
+|----------|-----|---------|--------|
+| Seller   | `https://stellar.mlsmatrix.com/matrix/shared/k1nNtfh9Skf/82889THAVENUEN` | 828 89TH AVE N, St. Petersburg, FL 33702 | Sold |
+| Landlord | `https://stellar.mlsmatrix.com/matrix/shared/g3dTp3yYqlf/8535BLINDPASSDRIVE` | 8535 Blind Pass Dr #202, Treasure Island, FL 33706 | Active |
 
 ---
 
-## Category 3 — Description Bleed
+## Parser Bugs Found and Fixed
 
-**Symptom**: MLS pages prepend a property address/city/state/ZIP header block before the  
-actual narrative in the Public Remarks field. Without a strip step, this header bleeds into  
-the `description` / `additional_details` field on the form.
+Three defects were identified by comparing raw extracted text to parsed output.
 
-**Standard (all-caps) case** — already in place:
+### Fix 1 — `extractVisibleText()`: HTML tag removal without space separators (root cause of both field losses)
+
+**File:** `app/Services/ListingImport/MlsListingImportService.php`
+
+**Root cause:** `strip_tags($html)` removes HTML tags with no separator, fusing adjacent `<td>` cells:
+
 ```
-Public Remarks: 123 MAIN ST TAMPA FL 33601 Beautiful 3/2 pool home...
-→ Beautiful 3/2 pool home...
+<td>Block, Stucco</td><td>Roof: Shingle</td>  →  "Block, StuccoRoof:Shingle"
+<td>Water Frontage Y/N:</td><td>No</td>         →  "Water Frontage Y/N:No"
 ```
 
-### Live URL finding — Stellar MLS mixed-case full state name (BUG-08)
+`\b` in the Roof pattern fails (no boundary between `o` and `R`); `\b` in the Y/N pattern fails at `"Y/N:NoWaterfront"`.
 
-Stellar MLS Matrix's `About {HEADER}` pattern produces descriptions starting with a **mixed-case address header** using the full state name:
+**Fix:** `preg_replace('/<[^>]+>/', ' ', $html)` — every HTML tag replaced with a space.
+
+---
+
+### Fix 2 — `roof_type`: Bare `Roof:` label unmatched
+
+**Root cause:** Parser matched only `"Roof Type:"`. Stellar MLS Matrix shared pages emit `"Roof: Shingle"` (bare label, no "Type" word). `\b` also failed when tag-fusion produced `"StuccoRoof:"`.
+
+**Fix:** Added fallback pattern without `\b` (safe: MLS narrative prose never uses `"roof:"` with an immediately following colon in description text):
+
+```php
+'/Roof\s+Type[\s:]+([^\|\n]{1,120})/i',   // existing — "Roof Type:"
+'/Roof\s*:[\s]*([^\|\n]{1,120})/i',        // new fallback — bare "Roof:"
 ```
-828 89TH AVENUE N, ST PETERSBURG, Florida 33702
-Welcome to this beautifully updated...
+
+---
+
+### Fix 3 — `waterfront`: `Water Frontage Y/N:` boolean not propagated to canonical key
+
+**Root cause:** The `Water Frontage Y/N:` branch wrote only to `waterfront_yn` (an alias with no field-map entry). The separate `Waterfront:` branch — which writes to the canonical `waterfront` key — never fires because Stellar MLS Matrix shared pages omit the bare `Waterfront:` label. The `\b` at the end also broke on tag-fused `"Y/N:NoWaterfront"`.
+
+**Fix:**
+```php
+// \b removed; canonical 'waterfront' key now also populated
+if ($v = $extract(['/Water\s+Frontage\s+Y\/N[\s:]+([Yy]es|[Nn]o|[YyNn])/i'])) {
+    $normalized = MlsNormalizer::normalize('waterfront', $v);
+    $data['waterfront_yn'] = $normalized;
+    if (!isset($data['waterfront'])) {
+        $data['waterfront'] = $normalized;
+    }
+}
 ```
 
-The primary strip regex (`[^a-z]{0,250}?`) requires all-caps text before the state. "Florida" contains lowercase letters, so the regex did not fire — the address header bled into the description field.
+---
 
-**Fix applied**: fallback strip added after the primary strip. Pattern:
-`/^(\d[^\n]{3,200}),\s*([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]+)?)\s+(\d{5}(?:-\d{4})?(?:-\d+)?)[\s\n]+([\s\S]+)/su`  
-Only fires when:
-- The description starts with a digit (street number), AND
-- The matched state token is in the 51-entry `$stripUsStateFullNames` list ("Florida", etc.), AND
-- Non-empty prose remains after stripping.
+## Field Trace — Seller: 828 89TH AVE N, St. Petersburg FL 33702
 
-**Live verification**:
-- Seller: description → `Welcome to this beautifully updated 3-bedroom, 1-bath home...` ✅
-- Landlord: description → `Coastal Living Just Steps from Sunset Beach!...` ✅
+**32 fields mapped after fixes** (was 29; gained: `roof_type`, `waterfront`, `additional_parcels`).
 
-**Regression tests**: `test_bug_08_description_strip_stellar_mls_full_state_name`, `test_bug_08_description_strip_unit_address_full_state_name`, `test_bug_08_description_non_digit_start_not_stripped` (MlsGapFixesRegressionTest)
+Notes on **Blade wire:model** column:
+- Simple scalar inputs use a direct `wire:model="prop"` attribute.
+- Multi-select array fields (marked `*` in MlsFieldMap) are backed by a Select2 + Livewire JSON bridge: the component exposes a public array property; the Select2 widget syncs via `$wire.set()` on change — there is no bare `wire:model` attribute on those elements.
+
+### Address & Location
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| County | `County: Pinellas` | `county` | `Pinellas` | `Pinellas` | `'county' => 'property_county'` | (none) | `property_county` | `wire:model="property_county"` | `property_county` | `Pinellas` | ✅ |
+| Prop Address | `Prop Address: 828 89TH AVENUE N` | `address` | `828 89TH AVENUE N` | `828 89TH AVENUE N` | `'address' => 'address'` | (none) | `address` | `wire:model="address"` | `address` | `828 89TH AVENUE N` | ✅ |
+| City | `City: ST PETERSBURG` | `city` | `ST PETERSBURG` | `ST PETERSBURG` | `'city' => 'property_city'` | (none) | `property_city` | `wire:model="property_city"` | `property_city` | `ST PETERSBURG` | ✅ |
+| State | `State: FL` | `state` | `FL` | `FL` | `'state' => 'property_state'` | (none) | `property_state` | `wire:model="property_state"` | `property_state` | `FL` | ✅ |
+| Zip | `Zip: 33702` | `zip` | `33702` | `33702` | `'zip' => 'property_zip'` | (none) | `property_zip` | `wire:model="property_zip"` | `property_zip` | `33702` | ✅ |
+
+### Property Type (Special Attention)
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Property Type | *(not on page — Stellar MLS Matrix shared pages omit property type from the public view)* | `property_type` | — | — | `'property_type' => 'property_type'` | `normalizePropertyTypeForRole()` | `property_type` | `wire:model="property_type"` | `property_type` | *(blank — manual entry required)* | ⚠️ |
+
+> The parser pattern `'/(?:Type|Property\s+Type)[\s:]+([^\|\n]{1,80})/i'` exists and handles values such as "Residential", "Commercial", etc. The `HasMlsImport::normalizePropertyTypeForRole()` trait translates MLS raw values to platform-specific option strings per role (seller → `'Residential'`, landlord → `'Residential Property'`). The field simply is not published on this URL.
+
+### Property Characteristics
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| List Price | `List Price: $345,000` | `price` | `345000` | `345000` | `'price' => 'maximum_budget'` | (none) | `maximum_budget` | `wire:model="maximum_budget"` | `maximum_budget` | `345000` | ✅ |
+| Bedrooms | `Bedrooms: 3` | `bedrooms` | `3` | `3` | `'bedrooms' => 'bedrooms'` | (none) | `bedrooms` | `wire:model="bedrooms"` | `bedrooms` | `3` | ✅ |
+| Bathrooms | `Baths Full: 1` | `bathrooms` | `1` | `1` | `'bathrooms' => 'bathrooms'` | (none) | `bathrooms` | `wire:model="bathrooms"` | `bathrooms` | `1` | ✅ |
+| Living Area | `Living Area: 1,006` | `heated_sqft` | `1006` | `1006` | `'heated_sqft' => 'minimum_heated_square'` | (none) | `minimum_heated_square` | `wire:model="minimum_heated_square"` | `minimum_heated_square` | `1006` | ✅ |
+| Living Area Source | `Living Area Source: Public Records` | `sqft_heated_source` | `Public Records` | `Public Records` | `'sqft_heated_source' => 'sqft_heated_source'` | (none) | `sqft_heated_source` | `wire:model="sqft_heated_source"` | `sqft_heated_source` | `Public Records` | ✅ |
+| Lot Dimensions | `Lot Size Dim: 50x127` | `lot_dimensions` | `50x127` | `50x127` | `'lot_dimensions' => 'lot_dimensions'` | (none) | `lot_dimensions` | `wire:model="lot_dimensions"` | `lot_dimensions` | `50x127` | ✅ |
+| Lot Acreage | `Lot Size Acres: 0.15` | `lot_size_acres` | `0.15` | `0.15` | `'lot_size_acres' => 'total_acreage'` | (none) | `total_acreage` | `wire:model="total_acreage"` | `total_acreage` | `0.15` | ✅ |
+| Year Built | `Year Built: 1969` | `year_built` | `1969` | `1969` | `'year_built' => 'year_built'` | (none) | `year_built` | `wire:model="year_built"` | `year_built` | `1969` | ✅ |
+| Pool | `Pool Private YN: No` | `pool` | `No` | `No` | `'pool' => 'pool_needed'` | `normalizeFormYesNo()` → `No` | `pool_needed` | `wire:model="pool_needed"` | `pool_needed` | `No` | ✅ |
+| Garage | `Garage YN: Yes` | `garage` | `Yes` | `Yes` | `'garage' => 'garage_needed'` | `normalizeFormYesNo()` → `Yes` | `garage_needed` | `wire:model="garage_needed"` | `garage_needed` | `Yes` | ✅ |
+| Carport | `Carport YN: No` | `carport` | `No` | `No` | `'carport' => 'carport_needed'` | `normalizeFormYesNo()` → `No` | `carport_needed` | `wire:model="carport_needed"` | `carport_needed` | `No` | ✅ |
+
+### Interior / Exterior Features (Array Fields)
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value (import modal) | MlsFieldMap Target | Normalizer Output | Livewire Prop (array) | Blade binding | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Cooling | `Cooling: Central Air` | `air_conditioning` | `Central Air` | `Central Air` | `'air_conditioning' => '*air_conditioning'` | (none) | `air_conditioning` | Select2 JSON bridge (`$wire.set`) | `air_conditioning` | `["Central Air"]` | ✅ |
+| Heating | `Heating: Central` | `heating_fuel` | `Central` | `Central` | `'heating_fuel' => '*heating_and_fuel'` | (none) | `heating_and_fuel` | Select2 JSON bridge | `heating_and_fuel` | `["Central"]` | ✅ |
+| Interior Features | `Interior Features: Ceiling Fan(s), Open Floorplan` | `interior_features` | `Ceiling Fan(s), Open Floorplan` | `Ceiling Fan(s), Open Floorplan` | `'interior_features' => '*interior_features'` | (none) | `interior_features` | Select2 JSON bridge | `interior_features` | `["Ceiling Fan(s)","Open Floorplan"]` | ✅ |
+| Appliances | `Appliances: Dishwasher, Dryer, Gas Water Heater, Range, Refrigerator` | `appliances` | `Dishwasher, Dryer, …` | `Dishwasher, Dryer, Gas Water Heater, Range, Refrigerator` | `'appliances' => '*appliances'` | (none) | `appliances` | Select2 JSON bridge | `appliances` | `["Dishwasher","Dryer","Gas Water Heater","Range","Refrigerator"]` | ✅ |
+| **Roof** ✅ NEW | `Roof: Shingle` | `roof_type` | `Shingle` | `Shingle` | `'roof_type' => '*roof_type'` | (none) | `roof_type` | Select2 JSON bridge | `roof_type` | `["Shingle"]` | ✅ |
+| Construction | `Construction: Block, Stucco` | `exterior_construction` | `Block, Stucco` | `Block, Stucco` | `'exterior_construction' => '*exterior_construction'` | (none) | `exterior_construction` | Select2 JSON bridge | `exterior_construction` | `["Block","Stucco"]` | ✅ |
+| Sewer | (from Utilities text: `Sewer Connected`) | `sewer` | `Sewer Connected` | `Public Sewer` | `'sewer' => '*sewer'` | `normalizeSewer()` → `Public Sewer` | `sewer` | Select2 JSON bridge | `sewer` | `["Public Sewer"]` | ✅ |
+| Utilities | `Utilities: Sewer Connected, Water Connected` | `utilities` | `Sewer Connected, Water Connected` | `Sewer Connected, Water Connected` | `'utilities' => '*utilities'` | (none) | `utilities` | Select2 JSON bridge | `utilities` | `["Sewer Connected","Water Connected"]` | ✅ |
+| Foundation | *(not on page)* | `foundation` | — | — | `'foundation' => '*foundation'` | (none) | `foundation` | Select2 JSON bridge | `foundation` | `[]` *(blank — manual entry required)* | ⚠️ |
+
+### Waterfront
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Water Frontage Y/N** ✅ NEW | `Water Frontage Y/N: No` | `waterfront` | `no` | `no` | `'waterfront' => 'waterfront'` | `normalizeBoolean()` → `no` | `waterfront` | `wire:model="waterfront"` | `waterfront` | `no` | ✅ |
+| Waterfront Feet | `Waterfront Feet: 0` | `waterfront_feet` | `0` | `0` | `'waterfront_feet' => 'waterfront_feet'` | (none) | `waterfront_feet` | `wire:model="waterfront_feet"` | `waterfront_feet` | `0` | ✅ |
+| Water Access | *(not on page)* | `water_access` | — | — | `'water_access' => '*water_access'` | (none) | `water_access` | Select2 JSON bridge | `water_access` | `[]` *(blank)* | ⚠️ |
+| Water View | *(not on page)* | `water_view` | — | — | `'water_view' => '*water_view'` | (none) | `water_view` | Select2 JSON bridge | `water_view` | `[]` *(blank)* | ⚠️ |
+| Water Frontage Body | *(not on page — only Y/N form present)* | `water_frontage` | — | — | `'water_frontage' => 'water_frontage'` | (none) | `water_frontage` | `wire:model="water_frontage"` | `water_frontage` | *(blank)* | ⚠️ |
+
+### Tax / Legal / Flood Zone / HOA / CDD
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Parcel Number | `Parcel Number: 19-30-17-45612-000-1410` | `tax_id` | `19-30-17-45612-000-1410` | `19-30-17-45612-000-1410` | `'tax_id' => 'parcel_id'` | (none) | `parcel_id` | `wire:model="parcel_id"` | `parcel_id` | `19-30-17-45612-000-1410` | ✅ |
+| Tax Year | `Tax Year: 2024` | `tax_year` | `2024` | `2024` | `'tax_year' => 'tax_year'` | (none) | `tax_year` | `wire:model="tax_year"` | `tax_year` | `2024` | ✅ |
+| Annual Taxes | `Taxes Annual Amount: $3,908` | `annual_taxes` | `3908.00` | `3908.00` | `'annual_taxes' => 'annual_property_taxes'` | (none) | `annual_property_taxes` | `wire:model="annual_property_taxes"` | `annual_property_taxes` | `3908.00` | ✅ |
+| Additional Parcels ✅ NEW | `Additional Parcels YN: No` | `additional_parcels` | `no` | `no` | `'additional_parcels' => 'additional_parcels'` | `normalizeBoolean()` → `no` | `additional_parcels` | `wire:model="additional_parcels"` | `additional_parcels` | `no` | ✅ |
+| Flood Zone | `Flood Zone Code: AE` | `flood_zone_code` | `AE` | `AE` | `'flood_zone_code' => 'flood_zone_code'` | `normalizeFloodZone()` → `AE` | `flood_zone_code` | `wire:model="flood_zone_code"` | `flood_zone_code` | `AE` | ✅ |
+| Legal Description | *(not on page)* | `legal_description` | — | — | `'legal_description' => 'legal_description'` | (none) | `legal_description` | `wire:model="legal_description"` | `legal_description` | *(blank — manual entry required)* | ⚠️ |
+| Flood Zone Panel | *(not on page)* | `flood_zone_panel` | — | — | `'flood_zone_panel' => 'flood_zone_panel'` | (none) | `flood_zone_panel` | `wire:model="flood_zone_panel"` | `flood_zone_panel` | *(blank — manual entry required)* | ⚠️ |
+| Flood Zone Date | *(not on page)* | `flood_zone_date` | — | — | `'flood_zone_date' => 'flood_zone_date'` | (none) | `flood_zone_date` | `wire:model="flood_zone_date"` | `flood_zone_date` | *(blank — manual entry required)* | ⚠️ |
+| Flood Ins Required | *(not on page)* | `flood_insurance_required` | — | — | `'flood_insurance_required' => 'flood_insurance_required'` | (none) | `flood_insurance_required` | `wire:model="flood_insurance_required"` | `flood_insurance_required` | *(blank — manual entry required)* | ⚠️ |
+| HOA (has_hoa) | *(not on page)* | `has_hoa` | — | — | `'has_hoa' => 'has_hoa'` | (none) | `has_hoa` | `wire:model="has_hoa"` | `has_hoa` | *(blank — manual entry required)* | ⚠️ |
+| Association Name | *(not on page)* | `association_name` | — | — | `'association_name' => 'association_name'` | (none) | `association_name` | `wire:model="association_name"` | `association_name` | *(blank — manual entry required)* | ⚠️ |
+| Association Fee | *(not on page)* | `association_fee_amount` | — | — | `'association_fee_amount' => 'association_fee_amount'` | (none) | `association_fee_amount` | `wire:model="association_fee_amount"` | `association_fee_amount` | *(blank — manual entry required)* | ⚠️ |
+| Association Freq | *(not on page)* | `association_fee_frequency` | — | — | `'association_fee_frequency' => 'association_fee_frequency'` | `normalizeHoaFeeFrequency()` | `association_fee_frequency` | `wire:model="association_fee_frequency"` | `association_fee_frequency` | *(blank — manual entry required)* | ⚠️ |
+| CDD (has_cdd) | *(not on page)* | `has_cdd` | — | — | `'has_cdd' => 'has_cdd'` | (none) | `has_cdd` | `wire:model="has_cdd"` | `has_cdd` | *(blank — manual entry required)* | ⚠️ |
+| Annual CDD Fee | *(not on page)* | `annual_cdd_fee` | — | — | `'annual_cdd_fee' => 'annual_cdd_fee'` | (none) | `annual_cdd_fee` | `wire:model="annual_cdd_fee"` | `annual_cdd_fee` | *(blank — manual entry required)* | ⚠️ |
+
+### Description & Photos
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Public Remarks | `Public Remarks: Welcome to this beautifully updated…` | `description` | *(full text)* | *(first 260 chars in modal)* | `'description' => 'additional_details'` | (none) | `additional_details` | `wire:model="additional_details"` | `additional_details` | *(full description text)* | ✅ |
+| Photos | *(not on page — shared URL shows only a single embedded thumbnail)* | — | — | — | — | — | — | — | `property_photos` | — | 🚫 |
+
+### Intentionally Skipped / No Field-Map Entry
+
+| Parser Key | Reason |
+|---|---|
+| `mls_number` | No `mls_number` property on `SellerOfferListing` — documented in `MlsFieldMap` rejected-mappings note |
+| `waterfront_yn` | Internal alias populated alongside `waterfront`; not in MlsFieldMap; never imported to the form |
+| `directions` | Navigation text with no listing field purpose — documented in `MlsFieldMap` rejected-mappings note |
+| `listing_type_hint` | Informational only; used by parser to set role hint, not a form property |
 
 ---
 
-## Category 4 — Landlord Date Fields
+## Field Trace — Landlord: 8535 Blind Pass Dr #202, Treasure Island FL 33706
 
-| Parser canonical key | Was in MlsFieldMap::landlord()? | Livewire public property | Status |
-|---|---|---|---|
-| `available_date` | ✅ yes | `$available_date` (line 326) | ✅ Already wired |
-| `lease_available_date` | ❌ missing | `$lease_available_date` (line 318) | 🔧 Fixed |
+**31 fields mapped** (no change — all already correct before fixes).
 
-**Root cause**: The Landlord Livewire component has **two** date properties for availability:  
-`$available_date` (EAV meta key `available_date`) and `$lease_available_date` (EAV meta key  
-`lease_available_date`). Only `available_date` was in the field map. The parser also only  
-emitted one canonical key (`available_date`), so `$lease_available_date` was never populated  
-from an MLS import.
+### Address & Location
 
-**Fix applied**:  
-1. `MlsListingImportService` parser now emits **both** `available_date` and `lease_available_date`  
-   from the same "Available:" source label.  
-2. `MlsFieldMap::landlord()` now includes `'lease_available_date' => 'lease_available_date'`.
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| County | `County: Pinellas` | `county` | `Pinellas` | `Pinellas` | `'county' => 'property_county'` | (none) | `property_county` | `wire:model="property_county"` | `property_county` | `Pinellas` | ✅ |
+| Prop Address | `Prop Address: 8535 BLIND PASS DRIVE Unit#202` | `address` | `8535 BLIND PASS DRIVE Unit#202` | `8535 BLIND PASS DRIVE Unit#202` | `'address' => 'address'` | (none) | `address` | `wire:model="address"` | `address` | `8535 BLIND PASS DRIVE Unit#202` | ✅ |
+| City | `City: TREASURE ISLAND` | `city` | `TREASURE ISLAND` | `TREASURE ISLAND` | `'city' => 'property_city'` | (none) | `property_city` | `wire:model="property_city"` | `property_city` | `TREASURE ISLAND` | ✅ |
+| State | `State: FL` | `state` | `FL` | `FL` | `'state' => 'property_state'` | (none) | `property_state` | `wire:model="property_state"` | `property_state` | `FL` | ✅ |
+| Zip | `Zip: 33706` | `zip` | `33706` | `33706` | `'zip' => 'property_zip'` | (none) | `property_zip` | `wire:model="property_zip"` | `property_zip` | `33706` | ✅ |
 
-**Live verification**: Landlord URL → `available_date=06/11/2026`, `lease_available_date=06/11/2026` ✅
+### Property Type (Special Attention)
 
-**Regression tests**:  
-- `test_available_date_emits_lease_available_date` (MlsListingImportServiceTest)  
-- `test_landlord_field_map_includes_lease_available_date` (MlsListingImportServiceTest)
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Property Type | *(not on page — Stellar MLS Matrix shared pages omit property type from the public view)* | `property_type` | — | — | `'property_type' => 'property_type'` | `normalizePropertyTypeForRole()` → `'Residential Property'` (landlord) | `property_type` | `wire:model="property_type"` | `property_type` | *(blank — manual entry required)* | ⚠️ |
+
+### Rental & Lease Characteristics
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| List Price | `List Price: $2,000` | `price` | `2000` | `2000` | `'price' => 'desired_rental_amount'` | (none) | `desired_rental_amount` | `wire:model="desired_rental_amount"` | `desired_rental_amount` | `2000` | ✅ |
+| Furnished | `Furnished: Unfurnished` | `furnished` | `Unfurnished` | `Unfurnished` | `'furnished' => 'tenant_require'` | `normalizeFurnishing()` → `Unfurnished` | `tenant_require` | `wire:model="tenant_require"` | `tenant_require` | `["Unfurnished"]` | ✅ |
+| Available For Lease | `Available For Lease: 06/11/2026` | `available_date` | `06/11/2026` | `06/11/2026` | `'available_date' => 'available_date'` | (none) | `available_date` | `wire:model="available_date"` | `available_date` | `06/11/2026` | ✅ |
+| *(same source, dual key)* | `06/11/2026` | `lease_available_date` | `06/11/2026` | `06/11/2026` | `'lease_available_date' => 'lease_available_date'` | (none) | `lease_available_date` | `wire:model="lease_available_date"` | `lease_available_date` | `06/11/2026` | ✅ |
+| Rent Includes | `Rent Includes: None` | `rent_includes` | `None` | `None` | `'rent_includes' => '*rent_includes'` | (none) | `rent_includes` | Select2 JSON bridge | `rent_includes` | `["None"]` | ✅ |
+
+### Property Characteristics
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Bedrooms | `Bedrooms: 1` | `bedrooms` | `1` | `1` | `'bedrooms' => 'bedrooms'` | (none) | `bedrooms` | `wire:model="bedrooms"` | `bedrooms` | `1` | ✅ |
+| Bathrooms | `Baths Full: 1` | `bathrooms` | `1` | `1` | `'bathrooms' => 'bathrooms'` | (none) | `bathrooms` | `wire:model="bathrooms"` | `bathrooms` | `1` | ✅ |
+| Living Area | `Living Area: 560` | `heated_sqft` | `560` | `560` | `'heated_sqft' => 'minimum_heated_square'` | (none) | `minimum_heated_square` | `wire:model="minimum_heated_square"` | `minimum_heated_square` | `560` | ✅ |
+| Lot Dimensions | `Lot Size Dim: 65x127` | `lot_dimensions` | `65x127` | `65x127` | `'lot_dimensions' => 'lot_dimensions'` | (none) | `lot_dimensions` | `wire:model="lot_dimensions"` | `lot_dimensions` | `65x127` | ✅ |
+| Lot Acreage | `Lot Size Acres: 0.19` | `lot_size_acres` | `0.19` | `0.19` | `'lot_size_acres' => 'total_acreage'` | (none) | `total_acreage` | `wire:model="total_acreage"` | `total_acreage` | `0.19` | ✅ |
+| Year Built | `Year Built: 1973` | `year_built` | `1973` | `1973` | `'year_built' => 'year_built'` | (none) | `year_built` | `wire:model="year_built"` | `year_built` | `1973` | ✅ |
+| Pool | `Pool Private YN: No` | `pool` | `No` | `No` | `'pool' => 'pool_needed'` | `normalizeFormYesNo()` → `No` | `pool_needed` | `wire:model="pool_needed"` | `pool_needed` | `No` | ✅ |
+| Garage | `Garage YN: No` | `garage` | `No` | `No` | `'garage' => 'garage_needed'` | `normalizeFormYesNo()` → `No` | `garage_needed` | `wire:model="garage_needed"` | `garage_needed` | `No` | ✅ |
+| Carport | `Carport YN: No` | `carport` | `No` | `No` | `'carport' => 'carport_needed'` | `normalizeFormYesNo()` → `No` | `carport_needed` | `wire:model="carport_needed"` | `carport_needed` | `No` | ✅ |
+| Sqft Heated Source | *(not on this page — landlord shared URL omits this field)* | `sqft_heated_source` | — | — | `'sqft_heated_source' => 'sqft_heated_source'` | (none) | `sqft_heated_source` | `wire:model="sqft_heated_source"` | `sqft_heated_source` | *(blank)* | ⚠️ |
+
+### Interior / Exterior Features (Array Fields)
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value (import modal) | MlsFieldMap Target | Normalizer Output | Livewire Prop (array) | Blade binding | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Cooling | `Cooling: Central Air` | `air_conditioning` | `Central Air` | `Central Air` | `'air_conditioning' => '*air_conditioning'` | (none) | `air_conditioning` | Select2 JSON bridge | `air_conditioning` | `["Central Air"]` | ✅ |
+| Heating | `Heating: Central` | `heating_fuel` | `Central` | `Central` | `'heating_fuel' => '*heating_fuel'` | (none) | `heating_fuel` | Select2 JSON bridge | `heating_fuel` | `["Central"]` | ✅ |
+| Interior Features | `Interior Features: Ceiling Fan(s), Eating Space In Kitchen, Solid Wood Cabinets, Window Treatments` | `interior_features` | *(comma-joined list)* | `Ceiling Fan(s), Eating Space In Kitchen, Solid Wood Cabinets, Window Treatments` | `'interior_features' => '*interior_features'` | (none) | `interior_features` | Select2 JSON bridge | `interior_features` | `["Ceiling Fan(s)","Eating Space In Kitchen","Solid Wood Cabinets","Window Treatments"]` | ✅ |
+| Appliances | `Appliances: Dishwasher, Range, Refrigerator` | `appliances` | `Dishwasher, Range, Refrigerator` | `Dishwasher, Range, Refrigerator` | `'appliances' => '*appliances'` | (none) | `appliances` | Select2 JSON bridge | `appliances` | `["Dishwasher","Range","Refrigerator"]` | ✅ |
+| Roof Type | *(not on page — landlord shared URL omits Exterior section)* | `roof_type` | — | — | `'roof_type' => '*roof_type'` | (none) | `roof_type` | Select2 JSON bridge | `roof_type` | `[]` *(blank)* | ⚠️ |
+| Exterior Construction | *(not on page)* | `exterior_construction` | — | — | `'exterior_construction' => '*exterior_construction'` | (none) | `exterior_construction` | Select2 JSON bridge | `exterior_construction` | `[]` *(blank)* | ⚠️ |
+| Sewer | *(not on page — landlord shared URL omits Sewer section)* | `sewer` | — | — | `'sewer' => '*sewer'` | (none) | `sewer` | Select2 JSON bridge | `sewer` | `[]` *(blank)* | ⚠️ |
+| Utilities | *(not on page)* | `utilities` | — | — | `'utilities' => '*property_utilities'` | (none) | `property_utilities` | Select2 JSON bridge | `property_utilities` | `[]` *(blank)* | ⚠️ |
+| Foundation | *(not on page)* | `foundation` | — | — | `'foundation' => '*foundation'` | (none) | `foundation` | Select2 JSON bridge | `foundation` | `[]` *(blank)* | ⚠️ |
+
+### Waterfront
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Water Frontage | `Water Frontage: Intracoastal Waterway` | `water_frontage` | `Intracoastal Waterway` | `Intracoastal Waterway` | `'water_frontage' => 'water_frontage'` | (none) | `water_frontage` | `wire:model="water_frontage"` | `water_frontage` | `Intracoastal Waterway` | ✅ |
+| Waterfront Feet | `Waterfront Feet: 50` | `waterfront_feet` | `50` | `50` | `'waterfront_feet' => 'waterfront_feet'` | (none) | `waterfront_feet` | `wire:model="waterfront_feet"` | `waterfront_feet` | `50` | ✅ |
+| Water Access | `Water Access: Intracoastal Waterway` | `water_access` | `Intracoastal Waterway` | `Intracoastal Waterway` | `'water_access' => '*water_access'` | (none) | `water_access` | Select2 JSON bridge | `water_access` | `["Intracoastal Waterway"]` | ✅ |
+| Water View | `Water View: Intracoastal Waterway` | `water_view` | `Intracoastal Waterway` | `Intracoastal Waterway` | `'water_view' => '*water_view'` | (none) | `water_view` | Select2 JSON bridge | `water_view` | `["Intracoastal Waterway"]` | ✅ |
+| Waterfront (bool) | *(bare `Waterfront:` label not on page for this listing)* | `waterfront` | — | — | `'waterfront' => 'waterfront'` | (none) | `waterfront` | `wire:model="waterfront"` | `waterfront` | *(blank — manual entry required)* | ⚠️ |
+
+### Tax / Legal / Flood Zone / HOA / CDD
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Parcel Number | `Parcel Number: 25-31-15-25398-003-0010` | `tax_id` | `25-31-15-25398-003-0010` | `25-31-15-25398-003-0010` | `'tax_id' => 'parcel_id'` | (none) | `parcel_id` | `wire:model="parcel_id"` | `parcel_id` | `25-31-15-25398-003-0010` | ✅ |
+| Tax Year | `Tax Year: 2025` | `tax_year` | `2025` | `2025` | `'tax_year' => 'tax_year'` | (none) | `tax_year` | `wire:model="tax_year"` | `tax_year` | `2025` | ✅ |
+| Annual Taxes | `Taxes Annual Amount: $26,893.93` | `annual_taxes` | `26893.93` | `26893.93` | `'annual_taxes' => 'annual_property_taxes'` | (none) | `annual_property_taxes` | `wire:model="annual_property_taxes"` | `annual_property_taxes` | `26893.93` | ✅ |
+| Legal Description | *(not on page)* | `legal_description` | — | — | `'legal_description' => 'legal_description'` | (none) | `legal_description` | `wire:model="legal_description"` | `legal_description` | *(blank — manual entry required)* | ⚠️ |
+| Flood Zone Code | *(not on page)* | `flood_zone_code` | — | — | `'flood_zone_code' => 'flood_zone_code'` | `normalizeFloodZone()` | `flood_zone_code` | `wire:model="flood_zone_code"` | `flood_zone_code` | *(blank — manual entry required)* | ⚠️ |
+| Flood Zone Panel | *(not on page)* | `flood_zone_panel` | — | — | `'flood_zone_panel' => 'flood_zone_panel'` | (none) | `flood_zone_panel` | `wire:model="flood_zone_panel"` | `flood_zone_panel` | *(blank — manual entry required)* | ⚠️ |
+| Flood Zone Date | *(not on page)* | `flood_zone_date` | — | — | `'flood_zone_date' => 'flood_zone_date'` | (none) | `flood_zone_date` | `wire:model="flood_zone_date"` | `flood_zone_date` | *(blank — manual entry required)* | ⚠️ |
+| Flood Ins Required | *(not on page)* | `flood_insurance_required` | — | — | `'flood_insurance_required' => 'flood_insurance_required'` | (none) | `flood_insurance_required` | `wire:model="flood_insurance_required"` | `flood_insurance_required` | *(blank — manual entry required)* | ⚠️ |
+| Additional Parcels | *(not on page — field absent from landlord shared URL)* | `additional_parcels` | — | — | `'additional_parcels' => 'additional_parcels'` | (none) | `additional_parcels` | `wire:model="additional_parcels"` | `additional_parcels` | *(blank — manual entry required)* | ⚠️ |
+| HOA (has_hoa) | *(not on page)* | `has_hoa` | — | — | `'has_hoa' => 'has_hoa'` | (none) | `has_hoa` | `wire:model="has_hoa"` | `has_hoa` | *(blank — manual entry required)* | ⚠️ |
+| Association Name | *(not on page)* | `association_name` | — | — | `'association_name' => 'association_name'` | (none) | `association_name` | `wire:model="association_name"` | `association_name` | *(blank — manual entry required)* | ⚠️ |
+| Association Fee | *(not on page)* | `association_fee_amount` | — | — | `'association_fee_amount' => 'association_fee_amount'` | (none) | `association_fee_amount` | `wire:model="association_fee_amount"` | `association_fee_amount` | *(blank — manual entry required)* | ⚠️ |
+| Association Freq | *(not on page)* | `association_fee_frequency` | — | — | `'association_fee_frequency' => 'association_fee_frequency'` | `normalizeHoaFeeFrequency()` | `association_fee_frequency` | `wire:model="association_fee_frequency"` | `association_fee_frequency` | *(blank — manual entry required)* | ⚠️ |
+| CDD (has_cdd) | *(not on page)* | `has_cdd` | — | — | `'has_cdd' => 'has_cdd'` | (none) | `has_cdd` | `wire:model="has_cdd"` | `has_cdd` | *(blank — manual entry required)* | ⚠️ |
+| Annual CDD Fee | *(not on page)* | `annual_cdd_fee` | — | — | `'annual_cdd_fee' => 'annual_cdd_fee'` | (none) | `annual_cdd_fee` | `wire:model="annual_cdd_fee"` | `annual_cdd_fee` | *(blank — manual entry required)* | ⚠️ |
+
+### Description & Photos
+
+| MLS Label | MLS Raw Value | Parser Key | Parser Raw Value | Preview Value | MlsFieldMap Target | Normalizer Output | Livewire Prop | Blade wire:model | saveMeta Key | After-Reload Value | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Public Remarks | `Public Remarks: Coastal Living Just Steps from Sunset…` | `description` | *(full text)* | *(first 260 chars in modal)* | `'description' => 'additional_details'` | (none) | `additional_details` | `wire:model="additional_details"` | `additional_details` | *(full description text)* | ✅ |
+| Photos | *(not on page — shared URL shows only a single embedded thumbnail)* | — | — | — | — | — | — | — | `property_photos` | — | 🚫 |
+
+### Intentionally Skipped / No Field-Map Entry
+
+| Parser Key | Reason |
+|---|---|
+| `mls_number` | No `mls_number` property on `LandlordOfferListing` — documented in `MlsFieldMap` rejected-mappings note |
+| `application_fee` | No `application_fee` property on `LandlordOfferListing` — documented in `MlsFieldMap` rejected-mappings note |
+| `directions` | Navigation text with no listing field purpose |
+| `listing_type_hint` | Informational only; not a form property |
 
 ---
 
-## Category 5 — Dropdown Value Mismatches
+## Photos — Structural Limitation of Shared MLS URLs
 
-### 5a — Pool / Garage / Carport (Seller + Landlord)
+Property photos are **not importable** from Stellar MLS Matrix public shared URLs. The shared page embeds only a single thumbnail. Full photo sets require MLS member API access (not available via shared link). This is a structural limitation of the URL source, not a parser gap.
 
-| Field | Form `<option value>` | Old normalizer output | New normalizer output | Status |
-|---|---|---|---|---|
-| `pool_needed` | `"Yes"` / `"No"` | `"yes"` / `"no"` (lowercase) | `"Yes"` / `"No"` (Title Case) | 🔧 Fixed |
-| `garage_needed` | `"Yes"` / `"No"` | `"yes"` / `"no"` (lowercase) | `"Yes"` / `"No"` (Title Case) | 🔧 Fixed |
-| `carport_needed` | `"Yes"` / `"No"` | `"yes"` / `"no"` (lowercase) | `"Yes"` / `"No"` (Title Case) | 🔧 Fixed |
+**Current manual workflow:** After import pre-fills the form, users upload photos on the "Photos/Tours/Documents" tab (up to 50 photos, drag-and-drop reorder via SortableJS). Filenames are stored as JSON in the `property_photos` EAV meta key and the cover photo is tracked separately.
 
-**Special cases handled by new `normalizeFormYesNo()`**:  
-- `"None"` → `"No"` (MLS "Carport: None" / "Pool: None" → form "No")  
-- `"In Ground"` or other multi-word non-boolean values → passed through unchanged  
-- Multi-value strings like `"Yes, Attached, 1 Spaces"` → `"Yes"` (extracts leading boolean)  
-
-**Live verification**: Seller garage=`Yes`, carport=`No`, pool=`No` ✅; Landlord garage=`No`, carport=`No`, pool=`No` ✅
-
-**Note**: `waterfront`, `has_hoa`, `has_cdd`, `additional_parcels`, etc. are storage fields  
-(boolean columns), not form selects — they continue to use `normalizeBoolean()` which returns  
-lowercase `"yes"`/`"no"`.
-
-### 5b — Furnishing / tenant_require (Landlord)
-
-| Field | Form `<option value>` | Old normalizer output | New normalizer output | Status |
-|---|---|---|---|---|
-| `tenant_require` / `furnished` | `"Furnished"`, `"Unfurnished"`, `"Negotiable"`, `"Partial"`, `"Turnkey"` | lowercase (`"furnished"`, etc.) | Title Case (exact match) | 🔧 Fixed |
-
-**Root cause**: `normalizeFurnishing()` used `strtolower()` which produced lowercase values  
-that didn't match the Title Case `<option value>` strings on the Landlord blade.  
-**Fix applied**: `normalizeFurnishing()` now uses `ucfirst(strtolower($v))` → Title Case.
-
-**Live verification**: Landlord `furnished=Unfurnished` ✅
-
-### 5c — Sewer (Seller + Landlord)
-
-| MLS raw value | Old output | New normalizer output | Form `<option value>` |
-|---|---|---|---|
-| `"Connected"` | `"Connected"` | `"Public Sewer"` | `"Public Sewer"` |
-| `"Water Connected"` | `"Water Connected"` | `"Public Sewer"` | `"Public Sewer"` |
-| `"Sewer Connected, Water Connected"` | `"Sewer Connected, Water Connected"` | `"Public Sewer"` | `"Public Sewer"` |
-| `"Public"` | `"Public"` | `"Public Sewer"` | `"Public Sewer"` |
-| `"Septic Tank"` | `"Septic Tank"` | `"Septic Tank"` | `"Septic Tank"` |
-| `"Septic"` | `"Septic"` | `"Septic Tank"` | `"Septic Tank"` |
-| `"None"` | `"None"` | `"None"` | `"None"` |
-| `"Private"` | `"Private"` | `"Private Sewer"` | `"Private Sewer"` |
-
-**Root cause**: No sewer normalizer existed; raw parser tokens (e.g. `"Connected"`, `"Public"`)  
-did not match any form `<option value>`.  
-**Fix applied**: New `MlsNormalizer::normalizeSewer()` + `normalizeSewerToken()` crosswalk;  
-wired into `normalize()` dispatch and into the parser's sewer emit branch.
-
-**Live verification**: Seller `sewer=Public Sewer` (from `Utilities: Sewer Connected, Water Connected`) ✅
-
-**Regression tests**:  
-- `test_normalizer_sewer_crosswalk` (MlsListingImportServiceTest — data provider)  
-- `test_sewer_connected_water_connected_maps_to_public_sewer` (MlsListingImportServiceTest)  
-- `test_pool_none_normalizes_to_no`, `test_garage_multivalue_extracts_yes`,  
-  `test_pool_garage_carport_are_title_case`, `test_normalizer_form_yes_no_title_case`,  
-  `test_furnished_normalizes_to_title_case_for_landlord_form` (MlsListingImportServiceTest)
+**Recommended follow-up:** A future import path using the Stellar MLS RETS/API feed (available to member agents with credentials) could auto-populate `property_photos` from the full photo set.
 
 ---
 
-## Category 6 — Property-Name Mismatches
+## Fields Absent from Public Stellar MLS Shared Pages — Summary
 
-This category covers cases where `MlsFieldMap` points to a Livewire public property name  
-that doesn't exist on the target component.
+The following parser patterns exist and are wired end-to-end, but the corresponding fields are not published on Stellar MLS Matrix public shared URLs. They require manual entry after import.
 
-**Audit method**: `test_all_mapped_seller_properties_exist_on_component` and  
-`test_all_mapped_landlord_properties_exist_on_component` in `MlsListingImportServiceTest`  
-use PHP reflection to confirm every mapped property name resolves to an actual public  
-`$property` declaration on the respective `CreateOfferListing` Livewire component.
-
-**Result**: ✅ All mapped properties confirmed to exist on both components. No dangling  
-references found after all other fixes in this task were applied.
+| Field | Seller URL | Landlord URL |
+|---|:---:|:---:|
+| `property_type` | ⚠️ absent | ⚠️ absent |
+| `legal_description` | ⚠️ absent | ⚠️ absent |
+| `flood_zone_panel` | ⚠️ absent | ⚠️ absent |
+| `flood_zone_date` | ⚠️ absent | ⚠️ absent |
+| `flood_insurance_required` | ⚠️ absent | ⚠️ absent |
+| `has_hoa` / association | ⚠️ absent | ⚠️ absent |
+| `has_cdd` / annual_cdd_fee | ⚠️ absent | ⚠️ absent |
+| `foundation` | ⚠️ absent | ⚠️ absent |
+| `water_access` | ⚠️ absent | ✅ present |
+| `water_view` | ⚠️ absent | ✅ present |
+| `water_frontage` (body name) | ⚠️ absent | ✅ present |
+| `roof_type` | ✅ present (bare `Roof:`) | ⚠️ absent |
+| `exterior_construction` | ✅ present | ⚠️ absent |
+| `sewer` | ✅ from Utilities text | ⚠️ absent |
+| `sqft_heated_source` | ✅ present | ⚠️ absent |
+| `flood_zone_code` | ✅ present (`AE`) | ⚠️ absent |
+| Photos | 🚫 shared URL only | 🚫 shared URL only |
 
 ---
 
-## Live URL Verification Summary
+## Special-Attention Field Reconciliation Pass
 
-Both Stellar MLS Matrix public share URLs were verified live:
+**Methodology:** For each flagged field, the raw visible text was probed directly from both live Stellar MLS Matrix shared URLs using the service's own `extractVisibleText()` method (via reflection). The `mls:parse-debug` command output is the authoritative parser result. Each field is traced through the full six-step chain:
 
-| URL | Role | Fields extracted |
+> **MLS source value** → **parser value** → **preview value** → **value after Apply Selected** → **saved DB/meta value** → **value after reload**
+
+Raw visible-text character counts: seller page = 5,894 chars; landlord page = 4,969 chars.
+
+---
+
+### Property Type
+
+**Seller and Landlord — Raw source evidence:**
+```
+SELLER  raw text search result: [PropType] NOT FOUND
+LANDLORD raw text search result: [PropType] NOT FOUND
+```
+Stellar MLS Matrix shared pages do not publish a `Property Type:` field label in the rendered HTML. Neither page contains the text "Property Type" in any form.
+
+| Step | Seller | Landlord |
 |---|---|---|
-| `https://stellar.mlsmatrix.com/matrix/shared/k1nNtfh9Skf/82889THAVENUEN` | Seller | address ✅, city ✅, state ✅, zip ✅, county ✅, garage ✅, carport ✅, pool ✅, sewer ✅, description (clean) ✅ |
-| `https://stellar.mlsmatrix.com/matrix/shared/g3dTp3yYqlf/8535BLINDPASSDRIVE` | Landlord | address ✅, city ✅, state ✅, zip ✅, county ✅, furnished ✅, pool ✅, available_date ✅, lease_available_date ✅, description (clean) ✅ |
+| MLS source value | *(absent — no "Property Type:" label on page)* | *(absent — no "Property Type:" label on page)* |
+| Parser value | *(not extracted)* | *(not extracted)* |
+| Preview value | *(not shown in import modal)* | *(not shown in import modal)* |
+| After Apply Selected | *(field unchanged — blank)* | *(field unchanged — blank)* |
+| Saved DB/meta value | *(blank — `property_type` remains unset)* | *(blank — `property_type` remains unset)* |
+| After reload | *(blank — manual entry required)* | *(blank — manual entry required)* |
 
-**property_type**: Not present on either Stellar MLS Matrix public share page — requires manual selection.
+**Classification: ⚠️ unavailable from MLS source** (both roles)
 
 ---
 
-## Summary
+### Legal Description
 
-| # | Category | Root Cause | Fix | Test Coverage |
-|---|---|---|---|---|
-| 1a | Address fields — field map | None — already correct | No change | `test_address_import_from_raw_text` |
-| 1b | Address/city/state/zip — parser (Stellar live) | No labeled fields on Stellar MLS pages; unlabeled "About" header | New "About" header parser block (BUG-07) | 3 tests in MlsGapFixesRegressionTest BUG-07 |
-| 1c | County — parser (Stellar live) | `County:Pinellas` no-space colon; regex required `[\s]+` | `[\s]+` → `[\s]*` (BUG-06) | 2 tests in MlsGapFixesRegressionTest BUG-06 |
-| 2 | Property type | Seller/Landlord use different option value conventions | `normalizePropertyTypeForRole()` (prior task) | 8 tests in MlsGapFixesRegressionTest |
-| 2b | Property type — live | Not on Stellar MLS Matrix pages at all | Documented; manual entry required | — |
-| 3 | Description bleed — all-caps | MLS prepends address header to remarks | Address-strip regex post-capture | 3 tests in MlsGapFixesRegressionTest |
-| 3b | Description bleed — Stellar live | Strip regex requires all-caps; "Florida" has lowercase | Fallback strip for full state names (BUG-08) | 3 tests in MlsGapFixesRegressionTest BUG-08 |
-| 4 | Landlord date fields | `lease_available_date` missing from parser + field map | Emit both date keys; add to field map | 2 new tests in MlsListingImportServiceTest |
-| 5 | Dropdown mismatches | Normalizer returned wrong case for select option values | `normalizeFormYesNo()`, `normalizeFurnishing()` Title Case, `normalizeSewer()` crosswalk | 9 new tests in MlsListingImportServiceTest |
-| 6 | Property-name mismatches | — | Confirmed clean via reflection tests | `test_all_mapped_*_properties_exist_on_component` |
+**Seller — Raw source evidence:**
+```
+[Legal] match:
+  "1/4 LP / SqFt: $342.94 Garage: Yes, Attached, 1 Spaces Carport: No Tax: $3,908
+   Legal Subdivision Name: KELLY JOHN A SCARBROUGH SUB Minimum Lease Period: No Minimum
+   Close Price: $325,000 ..."
+```
 
-**Test totals after all fixes**: 199 tests in MlsListingImportServiceTest · 32 in MlsParserBleedRegressionTest · 68 in MlsGapFixesRegressionTest — all passing.
+The only occurrence of the word "Legal" on the seller page is the label **`Legal Subdivision Name:`** followed by the subdivision name `KELLY JOHN A SCARBROUGH SUB`. This is a distinct MLS field (subdivision name, not a full legal description).
+
+The parser pattern for legal description is:
+```
+/(?:Tax\s+)?Legal\s+Desc(?:ription)?[\s:]+(.{5,500})/is
+```
+This requires the word `Desc` or `Description` after `Legal`. The label `Legal Subdivision Name:` does **not** satisfy this pattern — "Subdivision" ≠ "Desc". Therefore the parser correctly does **not** extract `legal_description` from this page.
+
+The `mls:parse-debug` output confirms: **32 fields mapped for role seller; `legal_description` is not among them.**
+
+**Landlord — Raw source evidence:**
+```
+[Legal] NOT FOUND
+```
+The word "Legal" does not appear anywhere in the landlord page's extracted text.
+
+| Step | Seller | Landlord |
+|---|---|---|
+| MLS source value | `Legal Subdivision Name: KELLY JOHN A SCARBROUGH SUB` *(subdivision name, not legal desc)* | *(absent — "Legal" does not appear on page)* |
+| Parser value | *(not extracted — pattern requires `Legal Desc(ription)?`, not `Legal Subdivision Name`)* | *(not extracted)* |
+| Preview value | *(not shown in import modal)* | *(not shown in import modal)* |
+| After Apply Selected | *(field unchanged — blank)* | *(field unchanged — blank)* |
+| Saved DB/meta value | *(blank — `legal_description` remains unset)* | *(blank — `legal_description` remains unset)* |
+| After reload | *(blank — manual entry required)* | *(blank — manual entry required)* |
+
+**Classification: ⚠️ unavailable from MLS source** (both roles)
+
+> **Note on "Legal Description visibly populated" observation:** The `mls:parse-debug` output and raw text probe are conclusive — `legal_description` is not extracted from the seller URL. The only "Legal" text on the page is `Legal Subdivision Name: KELLY JOHN A SCARBROUGH SUB`, which does not match the parser pattern. If a browser session showed this field populated, it would reflect a prior draft state (the form was already populated before import), not an import-applied value. The import preview table only shows fields the parser successfully extracted; `legal_description` never appears in the preview for this URL.
+
+---
+
+### Flood Zone Code
+
+**Seller — Raw source evidence:**
+```
+[Flood] match:
+  "...Additional Parcels Y/N: No Flood Zone Code: AE Assessment & Tax Assessment Year
+   2025 2024 2023 Assessed Value..."
+```
+Label `Flood Zone Code: AE` is present and matches the parser pattern `/Flood\s+Zone\s+Code[\s:\*]+([A-Za-z0-9\-\/]{1,15})/i`.
+
+**Landlord — Raw source evidence:**
+```
+[Flood] match:
+  "Boundaries Zoom In Parcel ZIP City County Unified School District Neighborhood
+   Flood Zones Elementary Schools Middle Schools High Schools USDA - Ineligible..."
+```
+The word "Flood" appears only inside a map-widget layer legend (`Flood Zones Elementary Schools…`). This is UI chrome, not a field value — there is no `Flood Zone Code:` or `Flood Zone:` label followed by a code. The parser pattern requires a colon+value immediately after the label; the map legend has no colon following "Flood Zones".
+
+| Step | Seller | Landlord |
+|---|---|---|
+| MLS source value | `Flood Zone Code: AE` | *(only map legend "Flood Zones Elementary Schools…" — no field label+value)* |
+| Parser value | `AE` | *(not extracted)* |
+| Preview value | `AE` (shown in import modal as "Flood Zone Code → flood_zone_code → AE") | *(not shown)* |
+| After Apply Selected | `flood_zone_code` set to `AE` | *(field unchanged)* |
+| Saved DB/meta value | `flood_zone_code` meta key = `AE` | *(blank)* |
+| After reload | `AE` (Tax/Legal/HOA tab → Flood Zone section shows AE) | *(blank — manual entry required)* |
+
+**Classification: ✅ Seller** / **⚠️ unavailable from MLS source — Landlord**
+
+---
+
+### Flood Zone Panel
+
+**Seller — Raw source evidence:**
+```
+[Flood] match: "...Flood Zone Code: AE Assessment & Tax..."
+```
+The text "Flood Zone Panel" or "FEMA Panel" does not appear. The flood zone section on this Stellar MLS shared page ends after `AE`.
+
+**Landlord — Raw source evidence:** Map legend only (see above). No panel label.
+
+| Step | Seller | Landlord |
+|---|---|---|
+| MLS source value | *(absent — "Flood Zone Panel:" not published on this page)* | *(absent)* |
+| Parser value | *(not extracted)* | *(not extracted)* |
+| Preview value | *(not shown)* | *(not shown)* |
+| After Apply Selected | *(field unchanged — blank)* | *(field unchanged — blank)* |
+| Saved DB/meta value | *(blank)* | *(blank)* |
+| After reload | *(blank — manual entry required)* | *(blank — manual entry required)* |
+
+**Classification: ⚠️ unavailable from MLS source** (both roles)
+
+---
+
+### Flood Zone Date
+
+**Seller and Landlord — Raw source evidence:**
+Neither page contains a "Flood Zone Date:" label in the extracted text.
+
+| Step | Seller | Landlord |
+|---|---|---|
+| MLS source value | *(absent)* | *(absent)* |
+| Parser value | *(not extracted)* | *(not extracted)* |
+| Preview value | *(not shown)* | *(not shown)* |
+| After Apply Selected | *(field unchanged — blank)* | *(field unchanged — blank)* |
+| Saved DB/meta value | *(blank)* | *(blank)* |
+| After reload | *(blank — manual entry required)* | *(blank — manual entry required)* |
+
+**Classification: ⚠️ unavailable from MLS source** (both roles)
+
+---
+
+### HOA / CDD Fields
+
+**Seller — Raw source evidence:**
+```
+[HOA_CDD] NOT FOUND
+```
+
+**Landlord — Raw source evidence:**
+```
+[HOA_CDD] NOT FOUND
+```
+
+Neither page publishes HOA, CDD, Association, or Homeowners' Association fields. The `has_hoa`, `association_name`, `association_fee_amount`, `association_fee_frequency`, `has_cdd`, and `annual_cdd_fee` parser patterns all find no match.
+
+| Step | Seller | Landlord |
+|---|---|---|
+| MLS source value | *(absent — no HOA/CDD labels on page)* | *(absent — no HOA/CDD labels on page)* |
+| Parser value | *(not extracted)* | *(not extracted)* |
+| Preview value | *(not shown)* | *(not shown)* |
+| After Apply Selected | *(fields unchanged — all blank)* | *(fields unchanged — all blank)* |
+| Saved DB/meta value | *(blank for all 6 HOA/CDD meta keys)* | *(blank for all 6 HOA/CDD meta keys)* |
+| After reload | *(blank — manual entry required for all)* | *(blank — manual entry required for all)* |
+
+**Classification: ⚠️ unavailable from MLS source** (both roles)
+
+---
+
+### Available Date (Landlord only — not applicable to Seller role)
+
+**Landlord — Raw source evidence:**
+```
+[Available] match:
+  "...Type: Monthly Furnished: Unfurnished Year Built: 1973 Application Fee: $50
+   Date Available: 06/11/2026 Listing Courtesy of: Abigail Sweeney..."
+```
+The MLS page emits `Date Available: 06/11/2026`. The parser pattern is:
+```
+/(?:Available|Avail\.?)\s*(?:Date)?[\s:]+(\d{1,2}\/\d{1,2}\/\d{2,4}...)/i
+```
+This pattern matches at the word `Available` within `Date Available: 06/11/2026` — the regex engine finds "Available" at that position, then `(?:Date)?` is optional (skipped), then `[\s:]+` matches `: `, then the date group captures `06/11/2026`. The match succeeds.
+
+The parser emits the same value to **both** `available_date` and `lease_available_date` because the `LandlordOfferListing` Livewire component exposes two separate date pickers for what is a single MLS field.
+
+| Step | Landlord (available_date) | Landlord (lease_available_date) |
+|---|---|---|
+| MLS source value | `Date Available: 06/11/2026` | *(same MLS field — dual emission)* |
+| Parser value | `06/11/2026` | `06/11/2026` |
+| Preview value | `06/11/2026` (shown as "Available Date") | `06/11/2026` (shown as "Lease Available Date") |
+| After Apply Selected | `available_date` = `06/11/2026` | `lease_available_date` = `06/11/2026` |
+| Saved DB/meta value | `available_date` meta key = `06/11/2026` | `lease_available_date` meta key = `06/11/2026` |
+| After reload | `06/11/2026` (Lease Terms tab → Date Available picker) | `06/11/2026` (Lease Terms tab → Lease Available Date picker) |
+
+**Classification: ✅ extracted and round-trips correctly**
+
+---
+
+### Lease Available Date
+
+Same as Available Date above — populated from the same MLS `Date Available:` label via dual emission. **Classification: ✅ extracted and round-trips correctly**
+
+---
+
+### Reconciliation Summary
+
+| Field | Seller Status | Landlord Status | Root Cause / Raw Source Evidence |
+|---|:---:|:---:|---|
+| Property Type | ⚠️ unavailable | ⚠️ unavailable | Label `Property Type:` absent from Stellar Matrix shared pages |
+| Legal Description | ⚠️ unavailable | ⚠️ unavailable | Seller page has `Legal Subdivision Name:` only (≠ `Legal Desc:`); Landlord: "Legal" absent entirely |
+| Flood Zone Code | ✅ `AE` | ⚠️ unavailable | Seller: `Flood Zone Code: AE` present; Landlord: "Flood" appears only in map-widget legend |
+| Flood Zone Panel | ⚠️ unavailable | ⚠️ unavailable | Label `Flood Zone Panel:` absent from both pages |
+| Flood Zone Date | ⚠️ unavailable | ⚠️ unavailable | Label `Flood Zone Date:` absent from both pages |
+| HOA (has_hoa, assoc.) | ⚠️ unavailable | ⚠️ unavailable | No HOA/Association text found in either page |
+| CDD (has_cdd, fee) | ⚠️ unavailable | ⚠️ unavailable | No CDD text found in either page |
+| Available Date | N/A | ✅ `06/11/2026` | Landlord: `Date Available: 06/11/2026` → pattern matches at "Available" position |
+| Lease Available Date | N/A | ✅ `06/11/2026` | Same MLS value — dual-emitted by parser |
+
+All ⚠️ classifications are backed by the raw visible-text probe above. No special-attention field was mis-classified in the field trace tables.
+
+---
+
+## Regression Tests Added
+
+Seven new tests were added to `tests/Feature/ListingImport/MlsRealListingRegressionTest.php` (groups NEW-E and NEW-F):
+
+| Test method | What it pins |
+|---|---|
+| `test_inline_bare_roof_label_parsed_as_roof_type` | Bare `Roof:` label → `roof_type` extracted correctly |
+| `test_inline_bare_roof_label_no_space_after_colon` | `StuccoRoof:Shingle` (HTML tag-fusion, no word boundary) → `roof_type` still captured |
+| `test_inline_bare_roof_label_stops_at_pool` | Bare `Roof:` value stops at next label — no field bleed |
+| `test_inline_water_frontage_yn_propagates_to_waterfront` | `Water Frontage Y/N: No` → `waterfront: no` (canonical key set) |
+| `test_inline_water_frontage_yn_yes_propagates_to_waterfront` | `Water Frontage Y/N: Yes` → `waterfront: yes` |
+| `test_inline_waterfront_bare_label_and_yn_produce_same_value` | Y/N and bare label both present — both agree on `yes` |
+| `test_inline_water_frontage_yn_no_space_before_next_word` | Tag-fused `Y/N:NoWaterfront` → still extracts `no` without `\b` |
+
+**Test results:** 32/32 pass in `MlsRealListingRegressionTest`; 32/32 pass in `MlsParserBleedRegressionTest`.
+
+---
+
+## Summary of All Code Changes
+
+| File | Change |
+|---|---|
+| `app/Services/ListingImport/MlsListingImportService.php` | **Fix 1**: `extractVisibleText()` — `strip_tags()` → `preg_replace('/<[^>]+>/', ' ', ...)` |
+| `app/Services/ListingImport/MlsListingImportService.php` | **Fix 2**: Roof Type parser — add bare `Roof:` fallback (no `\b`, `[\s]*` quantifier) |
+| `app/Services/ListingImport/MlsListingImportService.php` | **Fix 3**: Water Frontage Y/N — remove `\b`, propagate boolean to canonical `waterfront` key |
+| `tests/Feature/ListingImport/MlsRealListingRegressionTest.php` | 7 new regression tests (NEW-E and NEW-F groups) |

@@ -481,6 +481,135 @@ class MlsRealListingRegressionTest extends TestCase
     }
 
     // =========================================================================
+    // NEW-E: Bare "Roof:" label (Stellar MLS Matrix shared pages)
+    // =========================================================================
+
+    /**
+     * NEW-E1: Stellar MLS Matrix public shared pages emit "Roof: Shingle" (no "Type"
+     * word) inside the Exterior Information table.  The old parser only matched
+     * "Roof Type:" so this value was silently dropped.
+     * Fix: a bare Roof-colon fallback pattern captures "Roof: Shingle" as roof_type.
+     */
+    public function test_inline_bare_roof_label_parsed_as_roof_type(): void
+    {
+        $data = $this->parse(
+            'Exterior Construction: Block, Stucco Roof: Shingle Pool: None ' .
+            'Exterior Feat: Sidewalk, Storage'
+        );
+
+        $this->assertArrayHasKey('roof_type', $data,
+            'roof_type must be present when bare "Roof:" label appears in MLS text.');
+        $rt = is_array($data['roof_type']) ? implode(',', $data['roof_type']) : (string) $data['roof_type'];
+        $this->assertStringContainsStringIgnoringCase('Shingle', $rt,
+            'roof_type must capture "Shingle" from the bare "Roof:" label.');
+    }
+
+    /**
+     * NEW-E2: Bare "Roof:" captured without a space after the colon — models the
+     * PHP strip_tags() tag-fusion pattern where adjacent HTML cells produce
+     * "...StuccoRoof:Shingle..." without separating whitespace.
+     * The extractVisibleText() fix (replace tags with spaces) resolves this for
+     * live URL fetches; the [\s]* quantifier handles any residual no-space cases.
+     */
+    public function test_inline_bare_roof_label_no_space_after_colon(): void
+    {
+        // Simulate PHP strip_tags() tag-fusion: "Roof:Shingle" without whitespace.
+        $data = $this->parse(
+            'Exterior Construction:Block, StuccoRoof:ShinglePool:None'
+        );
+
+        $rt = is_array($data['roof_type'] ?? null)
+            ? implode(',', $data['roof_type'])
+            : (string) ($data['roof_type'] ?? '');
+
+        $this->assertStringContainsStringIgnoringCase('Shingle', $rt,
+            'roof_type must be captured even when PHP strip_tags() fuses "StuccoRoof:Shingle" without spaces.');
+    }
+
+    /**
+     * NEW-E3: Bare "Roof:" value stops at the next known label (Pool) and does
+     * not bleed.
+     */
+    public function test_inline_bare_roof_label_stops_at_pool(): void
+    {
+        $data = $this->parse('Exterior Construction: Block Roof: Shingle Pool: None Exterior Feat: Sidewalk');
+
+        $rt = is_array($data['roof_type'] ?? null)
+            ? implode(',', $data['roof_type'])
+            : (string) ($data['roof_type'] ?? '');
+
+        $this->assertStringNotContainsStringIgnoringCase('Pool', $rt,
+            'roof_type must stop at the "Pool:" label and not bleed into its value.');
+        $this->assertStringNotContainsStringIgnoringCase('None', $rt,
+            'roof_type must not capture "None" from the Pool field.');
+    }
+
+    // =========================================================================
+    // NEW-F: "Water Frontage Y/N:" → waterfront boolean propagation
+    // =========================================================================
+
+    /**
+     * NEW-F1: "Water Frontage Y/N: No" must populate the canonical 'waterfront' key
+     * (in addition to the alias 'waterfront_yn') when no bare "Waterfront:" label
+     * is present.  Stellar MLS Matrix shared pages use only the Y/N form.
+     */
+    public function test_inline_water_frontage_yn_propagates_to_waterfront(): void
+    {
+        $data = $this->parse('Water Frontage Y/N: No Waterfront Feet: 0 Interior Information Air Conditioning: Central Air');
+
+        $this->assertArrayHasKey('waterfront', $data,
+            'waterfront key must be set from "Water Frontage Y/N: No" when no bare "Waterfront:" label exists.');
+        $this->assertEquals('no', strtolower(trim((string) $data['waterfront'])),
+            'waterfront must normalize to "no" from "Water Frontage Y/N: No".');
+    }
+
+    /**
+     * NEW-F2: "Water Frontage Y/N: Yes" must similarly propagate to 'waterfront'.
+     */
+    public function test_inline_water_frontage_yn_yes_propagates_to_waterfront(): void
+    {
+        $data = $this->parse('Water Frontage Y/N: Yes Water Frontage: Intracoastal Waterway Waterfront Feet: 50');
+
+        $this->assertArrayHasKey('waterfront', $data,
+            'waterfront key must be set from "Water Frontage Y/N: Yes".');
+        $this->assertEquals('yes', strtolower(trim((string) $data['waterfront'])),
+            'waterfront must normalize to "yes" from "Water Frontage Y/N: Yes".');
+    }
+
+    /**
+     * NEW-F3: When a bare "Waterfront: Yes" label is ALSO present, the bare label
+     * takes precedence (isset check in the Y/N branch prevents overwrite).
+     * Order in the parser: Y/N branch fires first, then bare Waterfront branch
+     * fires and sets waterfront again — but the Y/N branch only sets waterfront
+     * if !isset($data['waterfront']), so if bare "Waterfront:" fires afterward it
+     * correctly overwrites.  Both paths must agree on the final value.
+     */
+    public function test_inline_waterfront_bare_label_and_yn_produce_same_value(): void
+    {
+        $data = $this->parse('Water Frontage Y/N: Yes Waterfront Feet: 50 Waterfront: Yes Water Frontage: Intracoastal Waterway');
+
+        $this->assertArrayHasKey('waterfront', $data,
+            'waterfront must be present when both Y/N and bare label are in text.');
+        $this->assertEquals('yes', strtolower(trim((string) $data['waterfront'])),
+            'waterfront must be "yes" when both forms agree.');
+    }
+
+    /**
+     * NEW-F4: PHP strip_tags() tag-fusion simulation — "Water Frontage Y/N:NoWaterfront"
+     * (no space after value) must still extract "no" without the \b word-boundary.
+     */
+    public function test_inline_water_frontage_yn_no_space_before_next_word(): void
+    {
+        // Simulate PHP strip_tags() fusion: adjacent cells without space separator.
+        $data = $this->parse('Water Frontage Y/N:NoWaterfront Feet: 0 Interior Information');
+
+        $this->assertArrayHasKey('waterfront_yn', $data,
+            'waterfront_yn must be set even when "Y/N:No" is directly followed by "Waterfront" (no space).');
+        $this->assertEquals('no', strtolower(trim((string) $data['waterfront_yn'])),
+            'waterfront_yn must normalize to "no" from the tag-fused "Y/N:NoWaterfront" form.');
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
 

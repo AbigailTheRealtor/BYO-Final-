@@ -68,12 +68,21 @@ class MlsListingImportService
 
     /**
      * Strip <script>, <style> tags and HTML tags, decode entities.
+     *
+     * Uses preg_replace to replace each HTML tag with a space (rather than
+     * PHP's strip_tags() which removes tags without inserting separators).
+     * Without the space, adjacent table cells like:
+     *   <td>Exterior Construction:</td><td>Block, Stucco</td><td>Roof:</td><td>Shingle</td>
+     * would collapse to "Exterior Construction:Block, StuccoRoof:Shingle", causing
+     * "StuccoRoof" to fuse and the word-boundary anchor \b in "/\bRoof\s*:/" to fail.
+     * Replacing each tag with a space produces the properly-separated form
+     * "Exterior Construction: Block, Stucco Roof: Shingle", which all parsers expect.
      */
     private function extractVisibleText(string $html): string
     {
         $html = preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', $html);
         $html = preg_replace('/<style\b[^>]*>.*?<\/style>/is', ' ', $html);
-        $html = strip_tags($html);
+        $html = preg_replace('/<[^>]+>/', ' ', $html);
         $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $html = preg_replace('/\s+/', ' ', $html);
         return trim($html);
@@ -692,7 +701,25 @@ class MlsListingImportService
         }
 
         // ─── Roof Type ────────────────────────────────────────────────────────
-        if ($v = $extract(['/Roof\s+Type[\s:]+([^\|\n]{1,120})/i'], true)) {
+        // "Roof Type:" is the canonical Stellar MLS Data Entry Form label.
+        // "Roof:" (bare, no "Type") appears in Stellar MLS Matrix public shared
+        // pages inside the "Exterior Information" section (e.g. "Roof: Shingle").
+        // The bare "Roof:" fallback is safe: the labelStop already includes "Roof\b"
+        // so boundary closure on other fields stops before it, and the pattern
+        // requires a colon immediately after "Roof" (with optional spaces) so it
+        // will not match "Roof Type:" (which has a word between "Roof" and ":").
+        if ($v = $extract([
+            '/Roof\s+Type[\s:]+([^\|\n]{1,120})/i',
+            // Bare "Roof:" fallback for Stellar MLS Matrix shared pages which emit
+            // "Roof: Shingle" (no "Type" word) in the Exterior Information table.
+            // No \b word-boundary: adjacent HTML cells fused by strip_tags() produce
+            // "...StuccoRoof:Shingle..." where \b fails between word chars.
+            // The extractVisibleText() space-replacement fix handles live URL fetches;
+            // this no-boundary pattern covers any residual raw-text fusion.
+            // Risk of false match in description text is negligible: MLS narrative prose
+            // does not use "roof:" with a colon (standard form is "new roof (2023)").
+            '/Roof\s*:[\s]*([^\|\n]{1,120})/i',
+        ], true)) {
             $data['roof_type'] = $v;
         }
 
@@ -813,9 +840,22 @@ class MlsListingImportService
         // before the "Water Frontage:" water-body-name field.  Parse the Y/N variant
         // first and store it in its own key so that the free-text branch below does
         // not capture "Y/N: No" as a water body description.
-        // NOTE: waterfront_yn is not in any field map and is never applied to the form.
-        if ($v = $extract(['/Water\s+Frontage\s+Y\/N[\s:]+([Yy]es|[Nn]o|[YyNn])\b/i'])) {
-            $data['waterfront_yn'] = MlsNormalizer::normalize('waterfront', $v);
+        //
+        // The parsed boolean is also written to 'waterfront' when no bare "Waterfront:"
+        // label exists in the text (Stellar MLS Matrix public shared pages use
+        // "Water Frontage Y/N:" instead of a bare "Waterfront:" boolean field, so the
+        // dedicated Waterfront parser below would never fire on those pages).
+        // 'waterfront_yn' is kept as an alias for backward compatibility with snapshots.
+        // Note: no \b word-boundary after the value — PHP's strip_tags() removes HTML
+        // tags without inserting spaces, so adjacent cells produce "Y/N:NoWaterfront"
+        // where \b would fail between 'o' and 'W' (both word chars).  The alternation
+        // is specific enough (Yes|No|Y|N) to avoid false positives.
+        if ($v = $extract(['/Water\s+Frontage\s+Y\/N[\s:]+([Yy]es|[Nn]o|[YyNn])/i'])) {
+            $normalized = MlsNormalizer::normalize('waterfront', $v);
+            $data['waterfront_yn'] = $normalized;
+            if (!isset($data['waterfront'])) {
+                $data['waterfront'] = $normalized;
+            }
         }
 
         // "Water Frontage:" describes the type of water body the property fronts
