@@ -141,13 +141,17 @@ class LandlordOfferListingController extends Controller
 
         $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'landlord');
 
+        $agentAiV2      = config('ask_ai.agent_ai_v2_enabled', false);
+        $agentAiAgentId = (int) ($meta['hired_agent_id'] ?? 0);
+        $agentAiScope   = 'public_listing_landlord';
+
         $page_data = [
             'title' => $auction->title ?? ($meta['listing_title'] ?? 'Rental Property Listing'),
         ];
 
         $offerAuction = $this->ensureLinkedOfferAuction($auction);
 
-        return view('offer-listing.landlord.view', compact('auction', 'meta', 'askAiChipContext', 'offerAuction') + $page_data);
+        return view('offer-listing.landlord.view', compact('auction', 'meta', 'askAiChipContext', 'offerAuction', 'agentAiV2', 'agentAiAgentId', 'agentAiScope') + $page_data);
     }
 
     public function submitQuestion(Request $request, $auction)

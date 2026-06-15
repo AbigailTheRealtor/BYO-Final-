@@ -2613,26 +2613,74 @@
                     <div id="solAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
                         <span class="text-muted fst-italic" style="font-size:.875rem;" id="solAiExampleText"></span>
                     </div>
-                    @php $__solAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('seller', $askAiChipContext ?? [], auth()->check()); @endphp
+                    @php
+                        $__solAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('seller', $askAiChipContext ?? [], auth()->check());
+                        $__solCategorized   = [];
+                        foreach ($__solAiSuggestions as $__sq) { $__solCategorized[$__sq['category'] ?? 'general'][] = $__sq; }
+                    @endphp
                     @if(!empty($__solAiSuggestions))
                     <div id="solAiSuggestions"
                          aria-label="Suggested questions for this listing"
                          aria-live="polite"
                          class="mb-3">
+                        @if($agentAiV2)
+                        {{-- V2: grouped by category with headers --}}
                         <div class="text-muted mb-2" style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">Suggested Questions</div>
+                        @foreach($__solCategorized as $__catKey => $__catItems)
+                        <div class="mb-2">
+                            <div style="font-size:.67rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem;">
+                                <i class="fa-solid {{ $__catItems[0]['category_icon'] ?? 'fa-comment-dots' }} me-1" aria-hidden="true"></i>{{ $__catItems[0]['category_label'] ?? 'General' }}
+                            </div>
+                            <div class="ask-ai-chip-wrap">
+                                @foreach($__catItems as $__sq)
+                                @php $__sqLabel = mb_strlen($__sq['question']) > 80 ? mb_substr($__sq['question'], 0, 79) . '…' : $__sq['question']; @endphp
+                                <button type="button" role="button" class="ask-ai-chip"
+                                        data-question="{{ $__sq['question'] }}"
+                                        data-category="{{ $__sq['category'] }}"
+                                        aria-label="{{ $__sq['question'] }}"
+                                        title="{{ $__sq['question'] }}">{{ $__sqLabel }}</button>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endforeach
+                        @else
+                        {{-- V1: flat chip row with per-chip category icon (pre-Build-6 behavior) --}}
                         <div class="ask-ai-chip-wrap">
                             @foreach($__solAiSuggestions as $__sq)
                             @php $__sqLabel = mb_strlen($__sq['question']) > 80 ? mb_substr($__sq['question'], 0, 79) . '…' : $__sq['question']; @endphp
-                            <button type="button"
-                                    role="button"
-                                    class="ask-ai-chip"
+                            <button type="button" role="button" class="ask-ai-chip"
                                     data-question="{{ $__sq['question'] }}"
-                                    data-category="{{ $__sq['category'] }}"
+                                    data-category="{{ $__sq['category'] ?? '' }}"
                                     aria-label="{{ $__sq['question'] }}"
-                                    title="{{ $__sq['question'] }}">
-                                <span class="text-muted me-2" style="font-size:.7rem;"><i class="fa-solid {{ $__sq['category_icon'] }} me-1" aria-hidden="true"></i>{{ $__sq['category_label'] }}</span>{{ $__sqLabel }}
-                            </button>
+                                    title="{{ $__sq['question'] }}">@if(!empty($__sq['category_icon']))<i class="fa-solid {{ $__sq['category_icon'] }} me-1 opacity-50" aria-hidden="true"></i>@endif@if(!empty($__sq['category_label']))<span style="font-size:.65rem;font-weight:600;color:#64748b;" class="me-1">{{ $__sq['category_label'] }}:</span>@endif{{ $__sqLabel }}</button>
                             @endforeach
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                    @if($agentAiV2)
+                    {{-- V2: conversation history (hidden until V2 session active and messages exist) --}}
+                    <div id="solAiConversation" style="display:none;max-height:260px;overflow-y:auto;margin-bottom:.75rem;padding:.6rem .75rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:.5rem;scroll-behavior:smooth;"></div>
+                    {{-- V2: inline lead-capture form (shown when CTA action button clicked) --}}
+                    <div id="solAiLeadForm" style="display:none;margin-top:.5rem;margin-bottom:.75rem;background:#f0f9ff;border:1px solid #bae6fd;border-radius:.5rem;padding:.85rem 1rem;">
+                        <div style="font-size:.78rem;font-weight:700;color:#0369a1;margin-bottom:.5rem;">
+                            <i class="fa-solid fa-paper-plane me-1" aria-hidden="true"></i><span id="solAiLeadTitle">Contact the Agent</span>
+                        </div>
+                        <input type="hidden" id="solAiLeadActionKey">
+                        <div class="mb-2">
+                            <input type="text" class="form-control form-control-sm" id="solAiLeadName" placeholder="Your name" maxlength="100" autocomplete="name">
+                        </div>
+                        <div class="mb-2">
+                            <input type="email" class="form-control form-control-sm" id="solAiLeadEmail" placeholder="Your email" maxlength="200" autocomplete="email">
+                        </div>
+                        <div class="mb-2">
+                            <textarea class="form-control form-control-sm" id="solAiLeadMessage" rows="2" placeholder="Message (optional)" maxlength="500"></textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="solAiLeadCancel">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-primary" id="solAiLeadSubmit">
+                                <span id="solAiLeadSpinner" class="spinner-border spinner-border-sm me-1" role="status" style="display:none;"></span>Send
+                            </button>
                         </div>
                     </div>
                     @endif
@@ -2879,11 +2927,12 @@
         });
     });
 
-    /* ---- Ask AI modal — live submit ---- */
+    /* ---- Ask AI modal — V2-aware submit + session management ---- */
     (function () {
         var submitBtn  = document.getElementById('solAiSubmitBtn');
         var textarea   = document.getElementById('solAiTextarea');
         var resultDiv  = document.getElementById('solAiResult');
+        var convDiv    = document.getElementById('solAiConversation');
         var spinner    = document.getElementById('solAiSubmitSpinner');
         var icon       = document.getElementById('solAiSubmitIcon');
         var label      = document.getElementById('solAiSubmitLabel');
@@ -2891,43 +2940,108 @@
         var listingId  = {{ $auction->id }};
         var csrfToken  = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
+        /* V2 configuration — from Blade */
+        var useV2         = {{ $agentAiV2 ? 'true' : 'false' }};
+        var v2AgentId     = {{ (int)($agentAiAgentId ?? 0) }};
+        var v2Scope       = '{{ $agentAiScope ?? '' }}';
+        var v2ListingType = 'seller_offer';
+
+        /* V2 session state */
+        var SESSION_KEY  = 'agentai_v2_tok_' + v2Scope + '_' + listingId;
+        var HISTORY_KEY  = 'agentai_v2_hist_' + v2Scope + '_' + listingId;
+        var v2Token      = null;
+        var v2Active     = false;
+        var v2Pending    = false;
+        var v2Failed           = false;
+        var v2PendingCallbacks = [];
+        var lastQuestion       = '';
+
+        function ssGet(k) { try { return sessionStorage.getItem(k); } catch(e) { return null; } }
+        function ssSet(k, v) { try { sessionStorage.setItem(k, v); } catch(e) {} }
+        function getHistory() { try { return JSON.parse(ssGet(HISTORY_KEY) || '[]'); } catch(e) { return []; } }
+        function saveHistory(h) { ssSet(HISTORY_KEY, JSON.stringify(h)); }
+
+        function escHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        function setLoading(on) {
+            if (!submitBtn) return;
+            submitBtn.disabled = on;
+            if (spinner) spinner.style.display = on ? 'inline-block' : 'none';
+            if (icon)    icon.style.display    = on ? 'none' : '';
+            if (label)   label.textContent      = on ? 'Thinking…' : 'Ask AI';
+        }
         function resetResult() {
             if (resultDiv) { resultDiv.style.display = 'none'; resultDiv.innerHTML = ''; }
         }
 
-        if (resultDiv) {
-            resultDiv.addEventListener('click', function (e) {
-                var chip = e.target.closest ? e.target.closest('.ask-ai-chip') : (e.target.classList && e.target.classList.contains('ask-ai-chip') ? e.target : null);
-                if (chip) {
-                    var q = chip.getAttribute('data-question');
-                    if (q && textarea) { textarea.value = q; textarea.focus(); }
-                    return;
-                }
-                var ctaBtn = e.target.closest ? e.target.closest('.ask-ai-escalate-cta') : (e.target.classList && e.target.classList.contains('ask-ai-escalate-cta') ? e.target : null);
-                if (ctaBtn) {
-                    var aiQuestion = textarea ? textarea.value : '';
-                    var qModalEl = document.getElementById('solQuestionModal');
-                    var qTextarea = qModalEl ? qModalEl.querySelector('textarea[name="question"]') : null;
-                    if (qTextarea && aiQuestion) { qTextarea.value = aiQuestion; }
-                    if (modalEl && typeof bootstrap !== 'undefined') { bootstrap.Modal.getOrCreateInstance(modalEl).hide(); }
-                    if (qModalEl && typeof bootstrap !== 'undefined') { bootstrap.Modal.getOrCreateInstance(qModalEl).show(); }
-                }
-            });
+        /* --- Restore V2 conversation history from sessionStorage --- */
+        function restoreHistory() {
+            if (!convDiv) return;
+            var hist = getHistory();
+            if (!hist.length) { convDiv.style.display = 'none'; convDiv.innerHTML = ''; return; }
+            var html = '';
+            hist.forEach(function(item) { html += item.html || ''; });
+            convDiv.innerHTML = html;
+            convDiv.style.display = '';
+            convDiv.scrollTop = convDiv.scrollHeight;
         }
 
-        if (modalEl) {
-            // Re-enable the send button every time the modal opens so a
-            // stale disabled state (e.g. user navigated away mid-request)
-            // never leaves the button permanently greyed out.
-            modalEl.addEventListener('show.bs.modal', function () {
-                setLoading(false);
-            });
-            modalEl.addEventListener('hidden.bs.modal', function () {
-                if (textarea) textarea.value = '';
-                resetResult();
-            });
+        /* --- V2 bubble builders --- */
+        function userBubble(q) {
+            return '<div style="display:flex;justify-content:flex-end;margin-bottom:.4rem;">'
+                + '<div style="background:#2563eb;color:#fff;border-radius:.75rem .75rem .1rem .75rem;padding:.5rem .8rem;font-size:.84rem;max-width:88%;word-break:break-word;">'
+                + escHtml(q) + '</div></div>';
+        }
+        function assistantBubble(data, q) {
+            var status = data.status || 'failed';
+            var answer = data.answer || '';
+            var isEsc  = false;
+            if (status === 'unsupported') {
+                answer = 'I may need the agent to confirm that. Would you like me to send them your question?';
+                isEsc  = true;
+            }
+            if (data.escalate) { if (data.escalation_prompt) answer = data.escalation_prompt; isEsc = true; }
+            var bg = '#f0fdf4', bd = '#bbf7d0', hc = '#15803d';
+            if (status === 'blocked') { bg = '#fffbeb'; bd = '#fde68a'; hc = '#b45309'; }
+            else if (isEsc || status === 'insufficient_context') { bg = '#f0f9ff'; bd = '#bae6fd'; hc = '#0369a1'; }
+            else if (status === 'failed' || !answer) { bg = '#fff1f2'; bd = '#fecdd3'; hc = '#be123c'; }
+            var html = '<div style="margin-bottom:.75rem;">';
+            html += '<div style="background:' + bg + ';border:1px solid ' + bd + ';border-radius:.1rem .75rem .75rem .75rem;padding:.65rem .85rem;">';
+            html += '<div style="font-size:.72rem;font-weight:700;color:' + hc + ';margin-bottom:.3rem;"><i class="fa-solid fa-robot me-1"></i>AI</div>';
+            if (status === 'blocked' && data.refusal_message) {
+                html += '<div style="font-size:.875rem;color:#1e293b;">' + escHtml(data.refusal_message) + '</div>';
+            } else if (!answer) {
+                html += '<div style="font-size:.875rem;color:#be123c;">Ask AI could not generate a response right now. Please try again later.</div>';
+            } else {
+                html += '<div style="font-size:.875rem;color:#1e293b;white-space:pre-wrap;">' + escHtml(answer) + '</div>';
+            }
+            html += '</div>';
+            if (Array.isArray(data.actions) && data.actions.length > 0) {
+                html += '<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem;">';
+                data.actions.forEach(function(a) {
+                    if (a.type === 'link' && a.href) {
+                        html += '<a href="' + escHtml(a.href) + '" style="display:inline-flex;align-items:center;gap:4px;font-size:.77rem;font-weight:600;padding:.28rem .62rem;border-radius:.45rem;border:1px solid #2563eb;color:#2563eb;background:#eff6ff;text-decoration:none;">'
+                            + (a.icon ? '<i class="fa-solid ' + escHtml(a.icon) + '"></i>' : '')
+                            + escHtml(a.label || a.key || 'View') + '</a>';
+                    } else {
+                        html += '<button type="button" class="agentai-v2-action-btn" data-action-key="' + escHtml(a.key || '') + '" style="display:inline-flex;align-items:center;gap:4px;font-size:.77rem;font-weight:600;padding:.28rem .62rem;border-radius:.45rem;border:1px solid #10b981;color:#065f46;background:#ecfdf5;cursor:pointer;">'
+                            + (a.icon ? '<i class="fa-solid ' + escHtml(a.icon) + '"></i>' : '')
+                            + escHtml(a.label || a.key || 'Action') + '</button>';
+                    }
+                });
+                html += '</div>';
+            }
+            if (isEsc) {
+                html += '<div style="margin-top:.4rem;display:flex;gap:.4rem;flex-wrap:wrap;">';
+                html += '<button type="button" class="agentai-v2-escalate-yes" data-question="' + escHtml(q) + '" style="display:inline-flex;align-items:center;gap:4px;font-size:.77rem;font-weight:600;padding:.28rem .62rem;border-radius:.45rem;border:1px solid #2563eb;color:#2563eb;background:#eff6ff;cursor:pointer;"><i class="fa-solid fa-paper-plane"></i>Yes, send my question</button>';
+                html += '</div>';
+            }
+            html += '</div>';
+            return html;
         }
 
+        /* --- V1 renderResult (unchanged — used when V2 not active) --- */
         function renderResult(data) {
             if (!resultDiv) return;
             var html = '';
@@ -2937,127 +3051,211 @@
                 html += '<div style="font-size:.8rem;font-weight:700;color:#15803d;margin-bottom:.35rem;"><i class="fa-solid fa-robot me-1"></i>AI Answer</div>';
                 html += '<div style="font-size:.875rem;color:#1e293b;white-space:pre-wrap;">' + escHtml(data.answer) + '</div>';
                 html += '</div>';
-                if (data.disclosures) {
-                    var disc = Array.isArray(data.disclosures) ? data.disclosures.join(' ') : String(data.disclosures);
-                    if (disc.trim()) {
-                        html += '<div style="font-size:.75rem;color:#64748b;margin-top:.4rem;padding:.5rem .75rem;background:#f8fafc;border-radius:.4rem;border:1px solid #e2e8f0;">' + escHtml(disc) + '</div>';
-                    }
-                }
-                if (data.source_attribution && Array.isArray(data.source_attribution.sources) && data.source_attribution.sources.length > 0) {
-                    var srcLabels = data.source_attribution.sources
-                        .map(function(s) { return s.label || s.key || ''; })
-                        .filter(function(l) { return l !== ''; });
-                    if (srcLabels.length > 0) {
-                        html += '<div style="font-size:.72rem;color:#94a3b8;margin-top:.3rem;">Source: ' + escHtml(srcLabels.join(', ')) + '</div>';
-                    }
-                }
-                if (Array.isArray(data.follow_up_questions) && data.follow_up_questions.length > 0) {
-                    html += '<div style="margin-top:.75rem;padding-top:.6rem;border-top:1px solid #e2e8f0;">';
-                    html += '<div style="font-size:.72rem;font-weight:700;color:#64748b;margin-bottom:.45rem;text-transform:uppercase;letter-spacing:.04em;">Follow-up questions</div>';
-                    html += '<div class="ask-ai-chip-wrap" id="solAiFollowUpChips">';
-                    data.follow_up_questions.forEach(function (chip) {
-                        html += '<button type="button" class="ask-ai-chip" data-question="' + escHtml(chip.question) + '">' + escHtml(chip.label) + '</button>';
-                    });
-                    html += '</div></div>';
-                }
+                if (data.disclosures) { var disc = Array.isArray(data.disclosures) ? data.disclosures.join(' ') : String(data.disclosures); if (disc.trim()) { html += '<div style="font-size:.75rem;color:#64748b;margin-top:.4rem;padding:.5rem .75rem;background:#f8fafc;border-radius:.4rem;border:1px solid #e2e8f0;">' + escHtml(disc) + '</div>'; } }
+                if (data.source_attribution && Array.isArray(data.source_attribution.sources) && data.source_attribution.sources.length > 0) { var srcLabels = data.source_attribution.sources.map(function(s) { return s.label || s.key || ''; }).filter(function(l) { return l !== ''; }); if (srcLabels.length > 0) { html += '<div style="font-size:.72rem;color:#94a3b8;margin-top:.3rem;">Source: ' + escHtml(srcLabels.join(', ')) + '</div>'; } }
+                if (Array.isArray(data.follow_up_questions) && data.follow_up_questions.length > 0) { html += '<div style="margin-top:.75rem;padding-top:.6rem;border-top:1px solid #e2e8f0;"><div style="font-size:.72rem;font-weight:700;color:#64748b;margin-bottom:.45rem;text-transform:uppercase;letter-spacing:.04em;">Follow-up questions</div><div class="ask-ai-chip-wrap" id="solAiFollowUpChips">'; data.follow_up_questions.forEach(function(chip) { html += '<button type="button" class="ask-ai-chip" data-question="' + escHtml(chip.question) + '">' + escHtml(chip.label) + '</button>'; }); html += '</div></div>'; }
             } else if (status === 'blocked' && data.refusal_message) {
-                html += '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:.5rem;padding:.9rem 1rem;">';
-                html += '<div style="font-size:.8rem;font-weight:700;color:#b45309;margin-bottom:.35rem;"><i class="fa-solid fa-shield-halved me-1"></i>Notice</div>';
-                html += '<div style="font-size:.875rem;color:#1e293b;">' + escHtml(data.refusal_message) + '</div>';
-                html += '</div>';
-            } else if ((status === 'unsupported' || status === 'insufficient_context') && data.answer) {
-                html += '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:.5rem;padding:.9rem 1rem;margin-bottom:.5rem;">';
-                html += '<div style="font-size:.8rem;font-weight:700;color:#0369a1;margin-bottom:.35rem;"><i class="fa-solid fa-circle-info me-1"></i>Notice</div>';
-                html += '<div style="font-size:.875rem;color:#1e293b;">' + escHtml(data.answer) + '</div>';
-                html += '</div>';
-                if (data.disclosures) {
-                    var disc2 = Array.isArray(data.disclosures) ? data.disclosures.join(' ') : String(data.disclosures);
-                    if (disc2.trim()) {
-                        html += '<div style="font-size:.75rem;color:#64748b;margin-top:.4rem;padding:.5rem .75rem;background:#f8fafc;border-radius:.4rem;border:1px solid #e2e8f0;">' + escHtml(disc2) + '</div>';
-                    }
-                }
-                html += '<div style="margin-top:.75rem;padding-top:.6rem;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">';
-                html += '<span style="font-size:.8rem;color:#64748b;">Need a definitive answer?</span>';
-                html += '<button type="button" class="ask-ai-escalate-cta" style="display:inline-flex;align-items:center;gap:5px;font-size:.8rem;font-weight:600;padding:.35rem .75rem;border-radius:7px;border:1px solid #2563eb;background:#eff6ff;color:#2563eb;cursor:pointer;transition:background .15s,color .15s;"><i class="fa-solid fa-circle-question" style="font-size:.8rem;pointer-events:none;"></i>Ask a Question</button>';
-                html += '</div>';
+                html += '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:.5rem;padding:.9rem 1rem;"><div style="font-size:.8rem;font-weight:700;color:#b45309;margin-bottom:.35rem;"><i class="fa-solid fa-shield-halved me-1"></i>Notice</div><div style="font-size:.875rem;color:#1e293b;">' + escHtml(data.refusal_message) + '</div></div>';
+            } else if (status === 'unsupported' || status === 'insufficient_context') {
+                var _v1Ans = (status === 'unsupported') ? 'I may need the agent to confirm that. Would you like me to send them your question?' : (data.answer || 'I don\'t have enough information to answer this question.');
+                html += '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:.5rem;padding:.9rem 1rem;margin-bottom:.5rem;"><div style="font-size:.8rem;font-weight:700;color:#0369a1;margin-bottom:.35rem;"><i class="fa-solid fa-circle-info me-1"></i>Notice</div><div style="font-size:.875rem;color:#1e293b;">' + escHtml(_v1Ans) + '</div></div>';
+                if (data.disclosures) { var disc2 = Array.isArray(data.disclosures) ? data.disclosures.join(' ') : String(data.disclosures); if (disc2.trim()) { html += '<div style="font-size:.75rem;color:#64748b;margin-top:.4rem;padding:.5rem .75rem;background:#f8fafc;border-radius:.4rem;border:1px solid #e2e8f0;">' + escHtml(disc2) + '</div>'; } }
+                html += '<div style="margin-top:.75rem;padding-top:.6rem;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;"><span style="font-size:.8rem;color:#64748b;">Need a definitive answer?</span><button type="button" class="ask-ai-escalate-cta" style="display:inline-flex;align-items:center;gap:5px;font-size:.8rem;font-weight:600;padding:.35rem .75rem;border-radius:7px;border:1px solid #2563eb;background:#eff6ff;color:#2563eb;cursor:pointer;transition:background .15s,color .15s;"><i class="fa-solid fa-circle-question" style="font-size:.8rem;pointer-events:none;"></i>Ask a Question</button></div>';
             } else {
-                html += '<div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:.5rem;padding:.9rem 1rem;">';
-                html += '<div style="font-size:.875rem;color:#be123c;">Ask AI could not generate a response right now. Please try again later.</div>';
-                html += '</div>';
+                html += '<div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:.5rem;padding:.9rem 1rem;"><div style="font-size:.875rem;color:#be123c;">Ask AI could not generate a response right now. Please try again later.</div></div>';
             }
             resultDiv.innerHTML = html;
             resultDiv.style.display = '';
         }
 
-        function escHtml(str) {
-            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        /* --- V2 session init (graceful — falls back to V1 on failure) --- */
+        function initV2(onDone) {
+            if (!useV2 || !v2AgentId || !v2Scope) { onDone(false); return; }
+            if (v2Active) { onDone(true); return; }
+            if (v2Pending) { if (onDone) v2PendingCallbacks.push(onDone); return; }
+            if (v2Failed) { onDone(false); return; }
+            v2Pending = true;
+            var stored = ssGet(SESSION_KEY);
+            var body = { agent_id: v2AgentId, scope: v2Scope, listing_type: v2ListingType, listing_id: listingId };
+            if (stored) body.session_token = stored;
+            fetch('/agent-ai/session/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(d) { v2Pending = false; if (d && d.session_token) { v2Token = d.session_token; v2Active = true; ssSet(SESSION_KEY, v2Token); } else { v2Failed = true; } var _cbs = v2PendingCallbacks.splice(0); onDone(v2Active); _cbs.forEach(function(cb) { cb(v2Active); }); })
+            .catch(function() { v2Pending = false; v2Failed = true; var _cbs = v2PendingCallbacks.splice(0); onDone(false); _cbs.forEach(function(cb) { cb(false); }); });
         }
 
-        function setLoading(on) {
-            if (!submitBtn) return;
-            submitBtn.disabled = on;
-            if (spinner) spinner.style.display = on ? 'inline-block' : 'none';
-            if (icon)    icon.style.display    = on ? 'none' : '';
-            if (label)   label.textContent      = on ? 'Thinking…' : 'Ask AI';
+        /* --- Append Q+A turn to V2 conversation --- */
+        function appendTurn(q, data) {
+            var uHtml = userBubble(q);
+            var aHtml = assistantBubble(data, q);
+            var hist  = getHistory();
+            hist.push({ html: uHtml }); hist.push({ html: aHtml });
+            if (hist.length > 24) hist = hist.slice(hist.length - 24);
+            saveHistory(hist);
+            if (convDiv) { convDiv.insertAdjacentHTML('beforeend', uHtml + aHtml); convDiv.style.display = ''; convDiv.scrollTop = convDiv.scrollHeight; }
         }
 
-        if (submitBtn) {
-            submitBtn.addEventListener('click', function () {
-                var question = textarea ? textarea.value.trim() : '';
-                if (!question) { if (textarea) textarea.focus(); return; }
-                resetResult();
-                setLoading(true);
-                fetch('/ask-ai/listing-question', {
+        /* --- V2 fetch submit --- */
+        function submitV2(q) {
+            fetch('/agent-ai/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                body: JSON.stringify({ session_token: v2Token, question: q })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) { setLoading(false); if (textarea) textarea.value = ''; appendTurn(q, data); })
+            .catch(function() { setLoading(false); appendTurn(q, { status: 'failed' }); });
+        }
+
+        /* --- V1 fetch submit --- */
+        function submitV1(q) {
+            resetResult();
+            fetch('/ask-ai/listing-question', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                body: JSON.stringify({ listing_type: 'seller', listing_id: listingId, question: q })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) { setLoading(false); renderResult(data); })
+            .catch(function() { setLoading(false); renderResult({ status: 'failed' }); });
+        }
+
+        /* --- Result div click handler (V1: chip fill + escalate → question modal) --- */
+        if (resultDiv) {
+            resultDiv.addEventListener('click', function(e) {
+                var chip = e.target.closest ? e.target.closest('.ask-ai-chip') : null;
+                if (chip) { var q = chip.getAttribute('data-question'); if (q && textarea) { textarea.value = q; textarea.focus(); } return; }
+                var ctaBtn = e.target.closest ? e.target.closest('.ask-ai-escalate-cta') : null;
+                if (ctaBtn) {
+                    var aiQ = textarea ? textarea.value : '';
+                    var qModalEl = document.getElementById('solQuestionModal');
+                    var qTA = qModalEl ? qModalEl.querySelector('textarea[name="question"]') : null;
+                    if (qTA && aiQ) qTA.value = aiQ;
+                    if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                    if (qModalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(qModalEl).show();
+                }
+            });
+        }
+
+        /* --- Conversation div click handler (V2: escalation confirm + action buttons) --- */
+        if (convDiv) {
+            convDiv.addEventListener('click', function(e) {
+                var escBtn = e.target.closest ? e.target.closest('.agentai-v2-escalate-yes') : null;
+                if (escBtn) {
+                    var q = escBtn.getAttribute('data-question') || lastQuestion;
+                    if (!q || !v2Token) return;
+                    escBtn.disabled = true; escBtn.textContent = 'Sending…';
+                    fetch('/agent-ai/escalate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                        body: JSON.stringify({ session_token: v2Token, question: q })
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) { var msg = (d && d.message) ? d.message : 'Your question has been sent to the agent.'; escBtn.outerHTML = '<span style="font-size:.78rem;color:#15803d;"><i class="fa-solid fa-check-circle me-1"></i>' + escHtml(msg) + '</span>'; })
+                    .catch(function() { if (escBtn) { escBtn.disabled = false; escBtn.textContent = 'Yes, send my question'; } });
+                    return;
+                }
+                var actBtn = e.target.closest ? e.target.closest('.agentai-v2-action-btn') : null;
+                if (actBtn) {
+                    var ak = actBtn.getAttribute('data-action-key') || '';
+                    var leadForm  = document.getElementById('solAiLeadForm');
+                    var leadTitle = document.getElementById('solAiLeadTitle');
+                    var leadAK    = document.getElementById('solAiLeadActionKey');
+                    var leadMsg   = document.getElementById('solAiLeadMessage');
+                    if (leadForm) {
+                        if (leadTitle) leadTitle.textContent = ak || 'Contact the Agent';
+                        if (leadAK) leadAK.value = ak;
+                        if (leadMsg && ak) leadMsg.value = ak;
+                        leadForm.style.display = '';
+                        leadForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }
+            });
+        }
+
+        /* --- Inline lead-capture form handlers (V2 action CTA) --- */
+        (function() {
+            var leadForm   = document.getElementById('solAiLeadForm');
+            var leadSubmit = document.getElementById('solAiLeadSubmit');
+            var leadCancel = document.getElementById('solAiLeadCancel');
+            if (!leadForm || !leadSubmit) return;
+            if (leadCancel) leadCancel.addEventListener('click', function() { leadForm.style.display = 'none'; });
+            leadSubmit.addEventListener('click', function() {
+                var name  = ((document.getElementById('solAiLeadName')  || {}).value || '').trim();
+                var email = ((document.getElementById('solAiLeadEmail') || {}).value || '').trim();
+                var msg   = ((document.getElementById('solAiLeadMessage') || {}).value || '').trim();
+                var ak    = ((document.getElementById('solAiLeadActionKey') || {}).value || '');
+                if (!name || !email) return;
+                var spinner = document.getElementById('solAiLeadSpinner');
+                if (spinner) spinner.style.display = '';
+                leadSubmit.disabled = true;
+                fetch('/agent-ai/escalate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                    body: JSON.stringify({ listing_type: 'seller', listing_id: listingId, question: question })
+                    body: JSON.stringify({ session_token: v2Token, question: ak, name: name, email: email, message: msg })
                 })
-                .then(function (r) { return r.json(); })
-                .then(function (data) { setLoading(false); renderResult(data); })
-                .catch(function () {
-                    setLoading(false);
-                    renderResult({ status: 'failed' });
+                .then(function(r) { return r.json(); })
+                .then(function(d) { leadForm.innerHTML = '<div style="color:#15803d;font-size:.85rem;padding:.3rem 0;"><i class="fa-solid fa-check-circle me-1"></i>' + escHtml((d && d.message) ? d.message : 'Your message has been sent to the agent.') + '</div>'; })
+                .catch(function() { if (spinner) spinner.style.display = 'none'; leadSubmit.disabled = false; });
+            });
+        }());
+
+        /* --- Suggestion chips: categorized, mark-used, populate textarea --- */
+        (function() {
+            var USED_KEY  = 'askAiUsedQuestions';
+            var chipsWrap = document.getElementById('solAiSuggestions');
+            if (!chipsWrap) return;
+            function getUsed() { try { return JSON.parse(sessionStorage.getItem(USED_KEY) || '[]'); } catch(e) { return []; } }
+            function markUsed(q) { var u = getUsed(); if (u.indexOf(q) === -1) u.push(q); try { sessionStorage.setItem(USED_KEY, JSON.stringify(u)); } catch(e) {} }
+            function applyUsed() { var used = getUsed(); chipsWrap.querySelectorAll('.ask-ai-chip').forEach(function(btn) { if (used.indexOf(btn.getAttribute('data-question')) !== -1) btn.style.display = 'none'; }); }
+            if (modalEl) modalEl.addEventListener('show.bs.modal', function() { applyUsed(); });
+            chipsWrap.querySelectorAll('.ask-ai-chip').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var q = btn.getAttribute('data-question');
+                    if (q && textarea) { textarea.value = q; textarea.focus(); }
+                    markUsed(q); btn.style.display = 'none';
                 });
+                btn.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); } });
             });
-        }
-    }());
+        }());
 
-    /* ---- Ask AI Suggestion Chips ---- */
-    (function () {
-        var STORAGE_KEY = 'askAiUsedQuestions';
-        var modalEl   = document.getElementById('solAiModal');
-        var chipsWrap = document.getElementById('solAiSuggestions');
-        if (!chipsWrap) return;
-
-        function getUsed() {
-            try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) { return []; }
-        }
-        function markUsed(q) {
-            var used = getUsed();
-            if (used.indexOf(q) === -1) used.push(q);
-            try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(used)); } catch (e) {}
-        }
-        function applyUsed() {
-            var used = getUsed();
-            chipsWrap.querySelectorAll('.ask-ai-chip').forEach(function (btn) {
-                if (used.indexOf(btn.getAttribute('data-question')) !== -1) btn.style.display = 'none';
+        /* --- Modal lifecycle --- */
+        if (modalEl) {
+            modalEl.addEventListener('show.bs.modal', function() {
+                setLoading(false);
+                /* V2: init session on first open, then restore conversation history */
+                if (useV2 && v2AgentId && v2Scope) {
+                    initV2(function(ok) { if (ok) restoreHistory(); });
+                }
+            });
+            modalEl.addEventListener('hidden.bs.modal', function() {
+                if (textarea) textarea.value = '';
+                resetResult();
+                /* convDiv (V2 history) is intentionally NOT cleared — persists in sessionStorage */
+                var lf = document.getElementById('solAiLeadForm'); if (lf) lf.style.display = 'none';
             });
         }
 
-        if (modalEl) modalEl.addEventListener('show.bs.modal', function () { applyUsed(); });
-
-        chipsWrap.querySelectorAll('.ask-ai-chip').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var q  = btn.getAttribute('data-question');
-                var ta = document.getElementById('solAiTextarea');
-                if (ta) { ta.value = q; ta.focus(); }
-                markUsed(q);
-                btn.style.display = 'none';
+        /* --- Submit button --- */
+        if (submitBtn) {
+            submitBtn.addEventListener('click', function() {
+                var q = textarea ? textarea.value.trim() : '';
+                if (!q) { if (textarea) textarea.focus(); return; }
+                lastQuestion = q;
+                setLoading(true);
+                if (useV2 && v2Active) {
+                    submitV2(q);
+                } else if (useV2 && v2AgentId && v2Scope && !v2Failed) {
+                    initV2(function(ok) { if (ok) { submitV2(q); } else { submitV1(q); } });
+                } else {
+                    submitV1(q);
+                }
             });
-            btn.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
-            });
-        });
+        }
     }());
 
 })();

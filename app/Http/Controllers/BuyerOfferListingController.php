@@ -93,6 +93,10 @@ class BuyerOfferListingController extends Controller
 
         $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'buyer');
 
+        $agentAiV2      = config('ask_ai.agent_ai_v2_enabled', false);
+        $agentAiAgentId = (int) ($meta['hired_agent_id'] ?? 0);
+        $agentAiScope   = 'buyer_criteria';
+
         $ldnaRaw = $auction->info('location_dna_preferences');
         $locationDnaPreferences = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? null) : null;
         $legacyLocation = [
@@ -121,7 +125,8 @@ class BuyerOfferListingController extends Controller
             'auction', 'meta', 'askAiChipContext',
             'locationDnaPreferences', 'legacyLocation',
             'boundaryData', 'floodZoneData', 'schoolDistrictData',
-            'locationIntelligenceSummary'
+            'locationIntelligenceSummary',
+            'agentAiV2', 'agentAiAgentId', 'agentAiScope'
         ) + $page_data);
     }
 

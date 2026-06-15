@@ -96,6 +96,10 @@ class TenantOfferListingController extends Controller
 
         $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'tenant');
 
+        $agentAiV2      = config('ask_ai.agent_ai_v2_enabled', false);
+        $agentAiAgentId = (int) ($meta['hired_agent_id'] ?? 0);
+        $agentAiScope   = 'tenant_criteria';
+
         $ldnaRaw = $auction->info('location_dna_preferences');
         $locationDnaPreferences = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? null) : null;
         $legacyLocation = [
@@ -125,6 +129,9 @@ class TenantOfferListingController extends Controller
             'floodZoneData'              => $floodZoneData,
             'schoolDistrictData'         => $schoolDistrictData,
             'locationIntelligenceSummary' => $locationIntelligenceSummary,
+            'agentAiV2'                  => $agentAiV2,
+            'agentAiAgentId'             => $agentAiAgentId,
+            'agentAiScope'               => $agentAiScope,
         ]);
     }
 

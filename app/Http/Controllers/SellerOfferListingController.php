@@ -94,13 +94,17 @@ class SellerOfferListingController extends Controller
 
         $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'seller');
 
+        $agentAiV2      = config('ask_ai.agent_ai_v2_enabled', false);
+        $agentAiAgentId = (int) ($meta['hired_agent_id'] ?? 0);
+        $agentAiScope   = 'public_listing_seller';
+
         $page_data = [
             'title'   => $auction->address ?? ($meta['listing_title'] ?? 'Seller Offer Listing'),
             'id'      => $id,
             'auth_id' => auth()->id(),
         ];
 
-        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction', 'calcData', 'askAiChipContext') + $page_data);
+        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction', 'calcData', 'askAiChipContext', 'agentAiV2', 'agentAiAgentId', 'agentAiScope') + $page_data);
     }
 
     /**
