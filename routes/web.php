@@ -253,6 +253,16 @@ Route::post('/ask-ai/ask', [\App\Http\Controllers\AskAi\AskAiApiController::clas
     ->name('ask-ai.ask');
 
 
+// Agent AI V2 — feature-flagged routes. Hidden behind CheckAgentAiV2Enabled middleware.
+// When AGENT_AI_ASSISTANT_V2=false (default), both routes return 404.
+// V1 Ask AI routes above are completely unaffected by this flag.
+Route::middleware('agent-ai-v2')->group(function () {
+    Route::post('/agent-ai/ask', [\App\Http\Controllers\AgentAi\AgentAiChatController::class, 'ask'])
+        ->name('agent-ai.ask');
+    Route::post('/agent-ai/session/start', [\App\Http\Controllers\AgentAi\AgentAiChatController::class, 'startSession'])
+        ->name('agent-ai.session.start');
+});
+
 // Route::post('/notification', [NotificationController::class, 'notification']);
 
 

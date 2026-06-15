@@ -55,4 +55,18 @@ return [
      * Dev/staging: set ASK_AI_ENABLE_DESCRIPTION_FALLBACK=true in .env.
      */
     'enable_description_fallback' => env('ASK_AI_ENABLE_DESCRIPTION_FALLBACK', false),
+
+    /*
+     * Enable Agent AI Assistant V2.
+     *
+     * When true, the V2 routes (POST /agent-ai/ask and POST /agent-ai/session/start)
+     * are active and return responses from the V2 pipeline. When false (the default),
+     * those routes return 404 and the V1 pipeline is completely unchanged.
+     *
+     * V1 Ask AI routes, controllers, and service classes are never affected by this flag.
+     *
+     * Enable via: AGENT_AI_ASSISTANT_V2=true in .env (dev/staging only).
+     * GOVERNANCE REVIEW REQUIRED before enabling in production.
+     */
+    'agent_ai_v2_enabled' => env('AGENT_AI_ASSISTANT_V2', false),
 ];
