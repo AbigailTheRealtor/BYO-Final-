@@ -195,6 +195,8 @@
 
   var ldnaMap, ldnaDrawingManager;
   var ldnaOverlays = [];   /* {type:'polygon'|'circle', overlay: GoogleOverlay, data: {}} */
+  var ldnaMapInitialized = false;   /* double-init guard */
+  var ldnaResizeObserver = null;    /* deferred init observer */
 
   /* ── Serialise state to hidden field ─────────────────────────────────────── */
   window.ldnaSerialize = function () {
@@ -274,6 +276,12 @@
 
   /* ── Map initialisation ───────────────────────────────────────────────────── */
   function ldnaInitMap() {
+    if (ldnaMapInitialized) return;
+    ldnaMapInitialized = true;
+
+    /* Disconnect any pending ResizeObserver now that init is running */
+    if (ldnaResizeObserver) { ldnaResizeObserver.disconnect(); ldnaResizeObserver = null; }
+
     var defaultCenter = { lat: 27.9944024, lng: -81.7602544 }; /* Florida centroid */
     ldnaMap = new google.maps.Map(document.getElementById('{{ $mapPanelId }}'), {
       zoom: 8,
@@ -398,14 +406,53 @@
 
   /* ── Wire up Google Maps once the API is loaded ───────────────────────────── */
   /* The host form already loads the Maps JS API.
-     We hook into the existing callback OR use a MutationObserver fallback. */
+     We poll until google.maps.drawing is available, then check visibility.
+     If the container is hidden (inside an inactive wizard tab / Bootstrap tab-pane),
+     we defer init until the element gains a non-zero size via ResizeObserver.
+     NOTE: buyer_criteria/add and tenant_criteria/add also use &callback=initialize
+     for address autocomplete — ldnaTryInit() runs independently of that callback. */
   function ldnaTryInit() {
-    if (typeof google !== 'undefined' && google.maps && google.maps.drawing) {
-      ldnaInitMap(); return;
+    if (ldnaMapInitialized) return;
+    if (typeof google === 'undefined' || !google.maps || !google.maps.drawing) {
+      /* Maps API not ready yet — keep polling */
+      setTimeout(ldnaTryInit, 200);
+      return;
     }
-    /* Poll until Maps + Drawing library are available */
-    setTimeout(ldnaTryInit, 200);
+
+    var container = document.getElementById('{{ $mapPanelId }}');
+    if (!container) return;
+
+    if (container.offsetWidth > 0 && container.offsetHeight > 0) {
+      /* Container is visible — init immediately */
+      ldnaInitMap();
+    } else {
+      /* Container is hidden — defer until it becomes visible via ResizeObserver */
+      if (ldnaResizeObserver) return; /* already waiting */
+      ldnaResizeObserver = new ResizeObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          var rect = entries[i].contentRect;
+          if (rect.width > 0 && rect.height > 0) {
+            ldnaInitMap();
+            break;
+          }
+        }
+      });
+      ldnaResizeObserver.observe(container);
+    }
   }
+
+  /* ── Post-init resize trigger for Bootstrap tab transitions ──────────────── */
+  /* If Maps was initialized while a CSS transition was still running, the SDK
+     may have measured a stale size. Re-trigger resize + re-center on tab show. */
+  document.addEventListener('shown.bs.tab', function () {
+    var container = document.getElementById('{{ $mapPanelId }}');
+    if (!container) return;
+    if (ldnaMap && container.offsetWidth > 0) {
+      var defaultCenter = { lat: 27.9944024, lng: -81.7602544 };
+      google.maps.event.trigger(ldnaMap, 'resize');
+      ldnaMap.setCenter(defaultCenter);
+    }
+  });
 
   /* Run after DOM is ready */
   if (document.readyState === 'loading') {
