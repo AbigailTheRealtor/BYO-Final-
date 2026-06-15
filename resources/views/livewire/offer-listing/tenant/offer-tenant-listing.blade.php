@@ -3343,7 +3343,7 @@ $lease_types = [
         // End lease_for
 
         // leasing_spaces_tenant
-        function initSelect2LeasingSpaces() {
+        window.initSelect2LeasingSpaces = function() {
             var $sel = $('#leasing_spaces_tenant');
             if (!$sel.length) return;
             if ($sel.hasClass('select2-hidden-accessible')) {

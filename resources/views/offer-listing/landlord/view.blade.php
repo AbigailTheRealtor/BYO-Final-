@@ -450,6 +450,25 @@
         </a>
     </div>
 
+    {{-- ===== Property Location Map ===== --}}
+    @php
+        $_landlordLat    = isset($meta['property_lat']) && $meta['property_lat'] !== '' ? $meta['property_lat'] : null;
+        $_landlordLng    = isset($meta['property_lng']) && $meta['property_lng'] !== '' ? $meta['property_lng'] : null;
+        $_landlordMapKey = config('services.google.places_key', '');
+    @endphp
+    @if($_landlordLat !== null && $_landlordLng !== null && $_landlordMapKey !== '')
+        <div class="mb-4">
+            <img src="https://maps.googleapis.com/maps/api/staticmap?center={{ $_landlordLat }},{{ $_landlordLng }}&zoom=15&size=800x280&markers=color:red|{{ $_landlordLat }},{{ $_landlordLng }}&key={{ $_landlordMapKey }}"
+                 alt="Property Location"
+                 class="img-fluid rounded shadow-sm"
+                 style="width:100%;max-height:280px;object-fit:cover;">
+        </div>
+    @else
+        <div class="mb-4 p-3 bg-light rounded text-center text-muted" style="font-size:.875rem;">
+            <i class="fa-solid fa-map-location-dot me-1"></i>Location map unavailable — no coordinates on record
+        </div>
+    @endif
+
     {{-- ===== HERO ===== --}}
     @php
         // Bidding Period countdown — uses expiration_date when available; falls back to created_at + auction_time for legacy records

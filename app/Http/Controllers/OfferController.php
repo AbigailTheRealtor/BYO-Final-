@@ -191,6 +191,10 @@ class OfferController extends Controller
             return response()->json(['message' => $actions['reasons']['accept']], 422);
         }
 
+        // Ensure location coordinates are in the offer meta before the acceptance
+        // snapshot is captured — inherits from listing_snapshot when not present.
+        $this->inheritListingLocationToOfferMeta($offer);
+
         $result = $this->facade->accept($offer, $actorId, $actorRole, [], $request->ip());
 
         if ($result['allowed'] === false) {
@@ -732,6 +736,10 @@ class OfferController extends Controller
             'prop_city'                 => 'nullable|string|max:100',
             'prop_state'                => 'nullable|string|max:100',
             'prop_zip'                  => 'nullable|string|max:20',
+            'prop_county'               => 'nullable|string|max:100',
+            'prop_lat'                  => 'nullable|numeric|between:-90,90',
+            'prop_lng'                  => 'nullable|numeric|between:-180,180',
+            'prop_google_place_id'      => 'nullable|string|max:500',
             'prop_type'                 => 'nullable|string|max:100',
             'prop_subtype'              => 'nullable|string|max:100',
             'prop_listing_status'       => 'nullable|string|max:50',
@@ -808,7 +816,8 @@ class OfferController extends Controller
         }
 
         $scalarFields = [
-            'prop_street', 'prop_city', 'prop_state', 'prop_zip',
+            'prop_street', 'prop_city', 'prop_state', 'prop_zip', 'prop_county',
+            'prop_lat', 'prop_lng', 'prop_google_place_id',
             'prop_type', 'prop_subtype', 'prop_listing_status',
             'prop_mls_number', 'prop_listing_url',
             'prop_virtual_tour_url', 'prop_video_url',
@@ -1592,5 +1601,40 @@ class OfferController extends Controller
             ]
         );
         return $bridge->id;
+    }
+
+    /**
+     * Ensure the offer meta bag contains property coordinates before the acceptance
+     * snapshot is frozen.  If the buyer/tenant never submitted coordinates via the
+     * property form, we fall back to the coordinates stored in the listing_snapshot
+     * that was captured when the offer was first created.
+     */
+    private function inheritListingLocationToOfferMeta(Offer $offer): void
+    {
+        // Only inherit for offers that carry a property address (buyer / tenant).
+        if (!in_array($offer->role, ['buyer', 'tenant'])) {
+            return;
+        }
+
+        // Nothing to do if both coordinates are already stored on the offer.
+        $existingLat = $offer->getMeta('prop_lat');
+        $existingLng = $offer->getMeta('prop_lng');
+        if ($existingLat !== null && $existingLat !== '' && $existingLng !== null && $existingLng !== '') {
+            return;
+        }
+
+        // Pull coordinates from the listing snapshot captured at offer-creation time.
+        $snapshot = $offer->listing_snapshot ?? [];
+        $lat      = $snapshot['property_lat'] ?? null;
+        $lng      = $snapshot['property_lng'] ?? null;
+        $placeId  = $snapshot['google_place_id'] ?? null;
+
+        if ($lat !== null && $lat !== '' && $lng !== null && $lng !== '') {
+            $offer->saveMeta('prop_lat', $lat);
+            $offer->saveMeta('prop_lng', $lng);
+            if ($placeId) {
+                $offer->saveMeta('prop_google_place_id', $placeId);
+            }
+        }
     }
 }

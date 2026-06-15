@@ -4,6 +4,7 @@ namespace App\Http\Livewire\OfferListing\Concerns;
 
 use App\Services\ListingImport\MlsListingImportService;
 use App\Services\ListingImport\MlsFieldMap;
+use App\Services\LocationDna\LocationDnaGeocodeService;
 
 trait HasMlsImport
 {
@@ -290,6 +291,18 @@ trait HasMlsImport
             }
         }
 
+        // ── Server-side geocoding after MLS import (seller / landlord only) ───
+        // Requires an existing listing ID so coordinates can be persisted to EAV
+        // meta immediately and avoid stale-state on the form.  On new/draft listings
+        // (no ID yet) coordinates will be captured via Google Places autocomplete.
+        if ($listingId
+            && in_array($role, ['seller', 'landlord'])
+            && property_exists($this, 'property_lat')
+            && ($this->property_lat === '' || $this->property_lat === null)
+        ) {
+            $this->mlsGeocodeAddress($role, $listingId);
+        }
+
         $this->importPreviewData = [];
         $this->mlsParsedDataJson = '';
         $this->importSuccess     = true;
@@ -323,6 +336,161 @@ trait HasMlsImport
             if ($raw !== '') {
                 $auction->saveMeta('mls_address_raw', $raw);
             }
+        }
+
+        // ── Save-time geocoding fallback ──────────────────────────────────────
+        // When an MLS import was applied before the listing had an ID (new draft),
+        // the applyImportedFields geocoding path was skipped.  Now that the model
+        // has a persisted ID, attempt geocoding if property_lat is still empty.
+        $this->mlsGeocodeSaveTimeFallback($auction);
+    }
+
+    /**
+     * Geocode the address at save time if: the listing's MLS import populated address
+     * fields but property_lat has not yet been set (e.g. new draft, no ID at import
+     * time).  Writes directly to the model meta so the value is persisted atomically.
+     */
+    private function mlsGeocodeSaveTimeFallback(object $auction): void
+    {
+        try {
+            $role = $this->resolveImportRole();
+            if (!in_array($role, ['seller', 'landlord'])) {
+                return;
+            }
+
+            // Only geocode when property_lat is missing on both the model and the component.
+            $existingLat = data_get($auction->get, 'property_lat');
+            if (!empty($existingLat)) {
+                return;
+            }
+            if (!property_exists($this, 'property_lat') || !empty($this->property_lat)) {
+                return;
+            }
+
+            // Geocode with the real, persisted auction ID.
+            $this->mlsGeocodeAddress($role, $auction->id);
+
+            // Persist immediately (saveAllMetadata may have already run its meta saves).
+            if (!empty($this->property_lat)) {
+                $auction->saveMeta('property_lat', $this->property_lat);
+            }
+            if (!empty($this->property_lng)) {
+                $auction->saveMeta('property_lng', $this->property_lng);
+            }
+        } catch (\Throwable $e) {
+            // Silent failure — geocoding is best-effort.
+        }
+    }
+
+    // ─── Geocoding helper ─────────────────────────────────────────────────────
+
+    /**
+     * After MLS address fields are applied to Livewire props, attempt to geocode
+     * the address and write property_lat / property_lng / google_place_id back to
+     * the component.  If the listing already has an ID, also persists immediately
+     * to the model's EAV meta so the values survive without requiring a manual save.
+     *
+     * Runs only when property_lat is empty (i.e. Google Places was not used) and
+     * the role is seller or landlord.  Failures are silent — geocoding is best-effort.
+     */
+    private function mlsGeocodeAddress(string $role, ?int $listingId): void
+    {
+        try {
+            $address = '';
+            $city    = '';
+            $state   = '';
+            $county  = '';
+            $zip     = '';
+
+            if (property_exists($this, 'address'))         $address = (string) ($this->address ?? '');
+            if (property_exists($this, 'property_city'))   $city    = (string) ($this->property_city ?? '');
+            if (property_exists($this, 'property_state'))  $state   = (string) ($this->property_state ?? '');
+            if (property_exists($this, 'property_county')) $county  = (string) ($this->property_county ?? '');
+            if (property_exists($this, 'property_zip'))    $zip     = (string) ($this->property_zip ?? '');
+
+            // When individual city/state fields are blank (e.g. MLS import mapped only the
+            // raw address string), try to parse them from mls_address_raw.  The raw string
+            // is assembled as "Street, City, State ZIP" by buildMlsAddressRaw().
+            if ($city === '' || $state === '') {
+                $rawAddress = '';
+                if (property_exists($this, 'mls_preview') && is_array($this->mls_preview)) {
+                    $rawAddress = (string) ($this->mls_preview['mls_address_raw'] ?? '');
+                }
+                if ($rawAddress === '' && $listingId) {
+                    $mlsFallbackModel = $this->resolveMlsModel($role, $listingId);
+                    if ($mlsFallbackModel && method_exists($mlsFallbackModel, 'getMeta')) {
+                        $rawAddress = (string) ($mlsFallbackModel->getMeta('mls_address_raw') ?? '');
+                    }
+                }
+                if ($rawAddress !== '') {
+                    // "123 Main St, Tampa, FL 33601" or "Tampa, FL 33601" or "Tampa, FL"
+                    if (preg_match('/,\s*([^,]+),\s*([A-Z]{2})\s+([\d]{5}(?:-\d{4})?)\s*$/i', $rawAddress, $m)) {
+                        if ($city  === '') $city  = trim($m[1]);
+                        if ($state === '') $state = strtoupper(trim($m[2]));
+                        if ($zip   === '') $zip   = trim($m[3]);
+                    } elseif (preg_match('/,\s*([^,]+),\s*([A-Z]{2})\s*$/i', $rawAddress, $m)) {
+                        if ($city  === '') $city  = trim($m[1]);
+                        if ($state === '') $state = strtoupper(trim($m[2]));
+                    }
+                }
+            }
+
+            // Last resort: if address is blank but city/state were parsed, skip.
+            // If address contains commas (full address in one field), still pass it through.
+            if ($address === '' || $city === '' || $state === '') {
+                return;
+            }
+
+            $listingTypeMap = [
+                'seller'   => 'seller_agent_auction',
+                'landlord' => 'landlord_agent_auction',
+            ];
+            $listingType = $listingTypeMap[$role] ?? null;
+            if ($listingType === null) {
+                return;
+            }
+
+            $service = app(LocationDnaGeocodeService::class);
+            $result  = $service->geocodeForListing($listingType, (int) $listingId, [
+                'address' => $address,
+                'city'    => $city,
+                'state'   => $state,
+                'county'  => $county,
+                'zip'     => $zip,
+            ]);
+
+            if (!$result['success']) {
+                return;
+            }
+
+            $lat = $result['lat'] !== null ? (string) $result['lat'] : '';
+            $lng = $result['lng'] !== null ? (string) $result['lng'] : '';
+
+            if ($lat === '' || $lng === '') {
+                return;
+            }
+
+            if (property_exists($this, 'property_lat')) $this->property_lat = $lat;
+            if (property_exists($this, 'property_lng')) $this->property_lng = $lng;
+
+            // Google Geocoding API returns place_id on each result; store it when available.
+            $placeId = $result['place_id'] ?? null;
+            if ($placeId && property_exists($this, 'google_place_id') && empty($this->google_place_id)) {
+                $this->google_place_id = $placeId;
+            }
+
+            if ($listingId) {
+                $model = $this->resolveMlsModel($role, $listingId);
+                if ($model) {
+                    $model->saveMeta('property_lat', $lat);
+                    $model->saveMeta('property_lng', $lng);
+                    if ($placeId) {
+                        $model->saveMeta('google_place_id', $placeId);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Silent failure — geocoding is best-effort; never break the import flow.
         }
     }
 

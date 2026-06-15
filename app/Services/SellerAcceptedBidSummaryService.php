@@ -392,7 +392,7 @@ class SellerAcceptedBidSummaryService
 
             $html = $this->buildSummaryHtml($listing, $bid, $seller, $agent, $sourceData, $acceptedCounter);
 
-            $summary = AcceptedBidSummary::create([
+            $summary = AcceptedBidSummary::create(array_merge([
                 'listing_type'        => 'seller',
                 'listing_id'          => $listing->id,
                 'accepted_bid_id'     => $bid->id,
@@ -400,7 +400,7 @@ class SellerAcceptedBidSummaryService
                 'tenant_user_id'      => $seller->id,
                 'agent_user_id'       => $agent->id,
                 'summary_html'        => $html,
-            ]);
+            ], $this->extractPropertyLocationData($listing)));
 
             // Phase 7 — carry referral attribution from listing into accepted record.
             \App\Services\ReferralLinkService::persistAcceptedHireReferral($summary, $listing);
@@ -617,6 +617,33 @@ class SellerAcceptedBidSummaryService
             $parts[] = $state;
         }
         return implode(', ', array_filter($parts)) ?: 'N/A';
+    }
+
+    /**
+     * Extract location fields from the listing's EAV meta for the accepted bid
+     * summary snapshot.  Returns only populated keys so array_merge() is safe.
+     */
+    protected function extractPropertyLocationData(SellerAgentAuction $listing): array
+    {
+        try {
+            $d = $listing->get;
+            $lat = data_get($d, 'property_lat');
+            $lng = data_get($d, 'property_lng');
+            return array_filter([
+                'property_address' => data_get($d, 'address') ?: data_get($d, 'street_address') ?: null,
+                'property_city'    => data_get($d, 'property_city') ?: null,
+                'property_county'  => data_get($d, 'property_county') ?: null,
+                'property_state'   => data_get($d, 'property_state') ?: null,
+                'property_zip'     => data_get($d, 'property_zip') ?: data_get($d, 'zip_code') ?: null,
+                'property_lat'     => ($lat !== null && $lat !== '') ? (float) $lat : null,
+                'property_lng'     => ($lng !== null && $lng !== '') ? (float) $lng : null,
+                'google_place_id'  => data_get($d, 'google_place_id') ?: null,
+                'legal_description' => data_get($d, 'legal_description') ?: null,
+                'parcel_id'        => data_get($d, 'parcel_id') ?: null,
+            ], fn($v) => $v !== null);
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     protected function buildServicesHtml(array $services, $otherServices, string $propertyType, array $photoOptions = []): string

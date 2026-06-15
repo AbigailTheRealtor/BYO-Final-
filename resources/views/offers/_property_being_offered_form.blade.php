@@ -65,28 +65,33 @@
     <div class="row g-3 mb-3">
         <div class="col-12">
             <label class="form-label fw-semibold">Street Address <span class="text-danger">*</span></label>
-            <input type="text" name="prop_street" class="form-control"
+            <input type="text" id="offer-prop-street-address" name="prop_street" class="form-control"
                 value="{{ old('prop_street', $pm->get('prop_street')) }}"
-                placeholder="123 Main St">
+                placeholder="123 Main St" autocomplete="off">
         </div>
         <div class="col-md-4">
             <label class="form-label fw-semibold">City <span class="text-danger">*</span></label>
-            <input type="text" name="prop_city" class="form-control"
+            <input type="text" id="offer-prop-city" name="prop_city" class="form-control"
                 value="{{ old('prop_city', $pm->get('prop_city')) }}"
                 placeholder="City">
         </div>
         <div class="col-md-4">
             <label class="form-label fw-semibold">State</label>
-            <input type="text" name="prop_state" class="form-control"
+            <input type="text" id="offer-prop-state" name="prop_state" class="form-control"
                 value="{{ old('prop_state', $pm->get('prop_state')) }}"
                 placeholder="FL">
         </div>
         <div class="col-md-4">
             <label class="form-label fw-semibold">ZIP Code</label>
-            <input type="text" name="prop_zip" class="form-control"
+            <input type="text" id="offer-prop-zip" name="prop_zip" class="form-control"
                 value="{{ old('prop_zip', $pm->get('prop_zip')) }}"
                 placeholder="33101" maxlength="10">
         </div>
+        {{-- Hidden coordinate + county fields populated by Google Places autocomplete --}}
+        <input type="hidden" id="offer-prop-lat"      name="prop_lat"             value="{{ old('prop_lat',             $pm->get('prop_lat',             '')) }}">
+        <input type="hidden" id="offer-prop-lng"      name="prop_lng"             value="{{ old('prop_lng',             $pm->get('prop_lng',             '')) }}">
+        <input type="hidden" id="offer-prop-place-id" name="prop_google_place_id" value="{{ old('prop_google_place_id', $pm->get('prop_google_place_id', '')) }}">
+        <input type="hidden" id="offer-prop-county"   name="prop_county"          value="{{ old('prop_county',          $pm->get('prop_county',          '')) }}">
     </div>
 
     {{-- ── Property Type & Subtype ──────────────────────────────────────── --}}
@@ -398,6 +403,77 @@
 
     {{-- ── Match Explanation (dedicated partial) ────────────────────────── --}}
     @include('offers._match_explanation_form', ['pm' => $pm, 'offer' => $offer])
+
+    @push('scripts')
+    <script>
+    window.byoInitOfferPropPlaces = function() {
+        var input = document.getElementById('offer-prop-street-address');
+        if (!input || !window.google || !window.google.maps || !window.google.maps.places) { return; }
+        if (input._byoPlacesAttached) { return; }
+        input._byoPlacesAttached = true;
+
+        var ac = new google.maps.places.Autocomplete(input, {
+            types: ['address'],
+            componentRestrictions: { country: 'us' },
+            fields: ['address_components', 'geometry', 'place_id']
+        });
+
+        google.maps.event.addDomListener(input, 'keydown', function(e) {
+            if (e.keyCode === 13) { e.preventDefault(); }
+        });
+
+        ac.addListener('place_changed', function() {
+            var place = ac.getPlace();
+            if (!place || !place.geometry || !place.geometry.location) { return; }
+
+            var lat     = place.geometry.location.lat();
+            var lng     = place.geometry.location.lng();
+            var placeId = place.place_id || '';
+
+            var streetNum = '', route = '', city = '', state = '', zip = '';
+            if (place.address_components) {
+                place.address_components.forEach(function(c) {
+                    var t = c.types;
+                    if (t.indexOf('street_number')            !== -1)                  streetNum = c.long_name;
+                    if (t.indexOf('route')                    !== -1)                  route     = c.long_name;
+                    if (t.indexOf('locality')                 !== -1)                  city      = c.long_name;
+                    if (t.indexOf('sublocality_level_1')      !== -1 && !city)         city      = c.long_name;
+                    if (t.indexOf('administrative_area_level_1') !== -1)               state     = c.short_name;
+                    if (t.indexOf('postal_code')              !== -1)                  zip       = c.long_name;
+                });
+            }
+
+            var street = streetNum ? (streetNum + ' ' + route).trim() : route;
+
+            input.value = street;
+            var county = '';
+            if (place.address_components) {
+                place.address_components.forEach(function(c) {
+                    var t = c.types;
+                    if (t.indexOf('administrative_area_level_2') !== -1) county = c.long_name.replace(/ County$/, '');
+                });
+            }
+
+            var cityEl    = document.getElementById('offer-prop-city');
+            var stateEl   = document.getElementById('offer-prop-state');
+            var zipEl     = document.getElementById('offer-prop-zip');
+            var countyEl  = document.getElementById('offer-prop-county');
+            var latEl     = document.getElementById('offer-prop-lat');
+            var lngEl     = document.getElementById('offer-prop-lng');
+            var placeIdEl = document.getElementById('offer-prop-place-id');
+
+            if (cityEl  && city)    { cityEl.value  = city; }
+            if (stateEl && state)   { stateEl.value = state; }
+            if (zipEl   && zip)     { zipEl.value   = zip; }
+            if (countyEl && county) { countyEl.value = county; }
+            if (latEl)              { latEl.value   = String(lat); }
+            if (lngEl)              { lngEl.value   = String(lng); }
+            if (placeIdEl)          { placeIdEl.value = placeId; }
+        });
+    };
+    </script>
+    <x-google-maps-script callback="byoInitOfferPropPlaces" />
+    @endpush
 
     <div class="d-flex gap-2 mt-4">
         {{-- Explicit styles override any parent CSS conflicts: always blue bg, white text,

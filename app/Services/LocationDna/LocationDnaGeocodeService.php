@@ -75,20 +75,23 @@ class LocationDnaGeocodeService
         $record = null;
 
         try {
-            // (a) Validate minimum required fields
-            foreach (self::REQUIRED_ADDRESS_FIELDS as $field) {
-                if (empty($addressData[$field])) {
-                    $output = $this->skippedOutput($listingType, $listingId, 'missing_required_address_fields');
-                    $this->audit($listingType, $listingId, $output, $addressData);
-                    return $output;
+            // (a) Validate minimum required fields — skipped when full_address override is provided.
+            $fullAddressOverride = trim($addressData['full_address'] ?? '');
+            if ($fullAddressOverride === '') {
+                foreach (self::REQUIRED_ADDRESS_FIELDS as $field) {
+                    if (empty($addressData[$field])) {
+                        $output = $this->skippedOutput($listingType, $listingId, 'missing_required_address_fields');
+                        $this->audit($listingType, $listingId, $output, $addressData);
+                        return $output;
+                    }
                 }
             }
 
-            $address = trim($addressData['address']);
-            $city    = trim($addressData['city']);
-            $state   = trim($addressData['state']);
-            $county  = trim($addressData['county'] ?? '');
-            $zip     = trim($addressData['zip'] ?? '');
+            $address = trim($addressData['address'] ?? '');
+            $city    = trim($addressData['city']    ?? '');
+            $state   = trim($addressData['state']   ?? '');
+            $county  = trim($addressData['county']  ?? '');
+            $zip     = trim($addressData['zip']     ?? '');
 
             // (a-bis) Short-circuit: if pre-geocoded lat/lng from Google Places are present, use them
             //         and skip the Geocoding API call entirely.
@@ -186,8 +189,13 @@ class LocationDnaGeocodeService
                 return $output;
             }
 
-            $fullAddress = "{$address}, {$city}, {$state}" . ($zip ? " {$zip}" : '');
-            $client      = $this->httpClient ?? new Client();
+            // Use caller-supplied full_address override when separate city/state are unavailable
+            // (e.g. MLS raw address "123 Main St, Tampa, FL 33601" with blank city/state props).
+            $fullAddress = $fullAddressOverride !== ''
+                ? $fullAddressOverride
+                : "{$address}, {$city}, {$state}" . ($zip ? " {$zip}" : '');
+
+            $client = $this->httpClient ?? new Client();
 
             $response = $client->request('GET', self::GEOCODE_API_URL, [
                 'query' => [
@@ -215,10 +223,12 @@ class LocationDnaGeocodeService
                 return $output;
             }
 
-            // (f) Success — persist geocoded data
+            // (f) Success — persist geocoded data.
+            // Google Geocoding API includes place_id on each result; capture it when present.
             $location = $body['results'][0]['geometry']['location'];
             $lat      = (float) $location['lat'];
             $lng      = (float) $location['lng'];
+            $placeId  = $body['results'][0]['place_id'] ?? null;
 
             $record->geocoded_lat   = $lat;
             $record->geocoded_lng   = $lng;
@@ -228,7 +238,7 @@ class LocationDnaGeocodeService
             $record->geocoded_at    = now();
             $record->save();
 
-            $output = $this->geocodedOutput($listingType, $listingId, $lat, $lng);
+            $output = $this->geocodedOutput($listingType, $listingId, $lat, $lng, 'google', $placeId);
             $this->audit($listingType, $listingId, $output, $addressData);
             return $output;
 
@@ -283,11 +293,12 @@ class LocationDnaGeocodeService
     // =========================================================================
 
     private function geocodedOutput(
-        string $listingType,
-        int    $listingId,
-        float  $lat,
-        float  $lng,
-        string $source = 'google',
+        string  $listingType,
+        int     $listingId,
+        float   $lat,
+        float   $lng,
+        string  $source   = 'google',
+        ?string $placeId  = null,
     ): array {
         return [
             'success'      => true,
@@ -296,6 +307,7 @@ class LocationDnaGeocodeService
             'listing_id'   => $listingId,
             'lat'          => $lat,
             'lng'          => $lng,
+            'place_id'     => $placeId,
             'source'       => $source,
             'error'        => null,
         ];

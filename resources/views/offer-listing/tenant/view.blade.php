@@ -729,6 +729,16 @@
         </div>
     </div>
 
+    {{-- Location DNA Map — directly below the hero/snapshot so it is always visible --}}
+    <x-location-dna-map
+        :preferences="$locationDnaPreferences ?? null"
+        :legacyLocation="$legacyLocation ?? []"
+        :boundaryData="$boundaryData ?? null"
+        :floodZoneData="$floodZoneData ?? null"
+        :schoolDistrictData="$schoolDistrictData ?? null"
+    />
+    <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['summary_lines'] ?? []" />
+
     {{-- ===== INTERACTION HUB ===== --}}
     <div class="tcl-interaction-hub" id="tcl-interaction-hub">
         <div class="tcl-interaction-hub-label"><i class="fa-solid fa-bolt me-1"></i>Quick Actions &amp; Listing Info</div>
@@ -1114,15 +1124,6 @@
     </div>
     @endif
 
-    {{-- Location DNA Map --}}
-    <x-location-dna-map
-        :preferences="$locationDnaPreferences ?? null"
-        :legacyLocation="$legacyLocation ?? []"
-        :boundaryData="$boundaryData ?? null"
-        :floodZoneData="$floodZoneData ?? null"
-        :schoolDistrictData="$schoolDistrictData ?? null"
-    />
-    <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['summary_lines'] ?? []" />
 
     {{-- ===== DESIRED PROPERTY FEATURES ===== --}}
     @php
@@ -1929,7 +1930,7 @@
                                 data-question="{{ $__sq['question'] }}"
                                 data-category="{{ $__sq['category'] ?? '' }}"
                                 aria-label="{{ $__sq['question'] }}"
-                                title="{{ $__sq['question'] }}">@if(!empty($__sq['category_icon']))<i class="fa-solid {{ $__sq['category_icon'] }} me-1 opacity-50" aria-hidden="true"></i>@endif@if(!empty($__sq['category_label']))<span style="font-size:.65rem;font-weight:600;color:#64748b;" class="me-1">{{ $__sq['category_label'] }}:</span>@endif{{ $__sqLabel }}</button>
+                                title="{{ $__sq['question'] }}">{!! (!empty($__sq['category_icon']) ? '<i class="fa-solid '.e($__sq['category_icon']).' me-1 opacity-50" aria-hidden="true"></i>' : '').(!empty($__sq['category_label']) ? '<span style="font-size:.65rem;font-weight:600;color:#64748b;" class="me-1">'.e($__sq['category_label']).':</span>' : '') !!}{{ $__sqLabel }}</button>
                         @endforeach
                     </div>
                     @endif

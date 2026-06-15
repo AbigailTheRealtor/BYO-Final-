@@ -301,7 +301,7 @@ class BuyerAcceptedBidSummaryService
 
             $html = $this->buildSummaryHtml($listing, $bid, $buyer, $agent, $sourceData, $acceptedCounter);
 
-            $summary = AcceptedBidSummary::create([
+            $summary = AcceptedBidSummary::create(array_merge([
                 'listing_type'        => 'buyer',
                 'listing_id'          => $listing->id,
                 'accepted_bid_id'     => $bid->id,
@@ -309,7 +309,7 @@ class BuyerAcceptedBidSummaryService
                 'tenant_user_id'      => $buyer->id,
                 'agent_user_id'       => $agent->id,
                 'summary_html'        => $html,
-            ]);
+            ], $this->extractLocationIntelligenceData($listing)));
 
             // Phase 7 — carry referral attribution from listing into accepted record.
             \App\Services\ReferralLinkService::persistAcceptedHireReferral($summary, $listing);
@@ -455,6 +455,28 @@ class BuyerAcceptedBidSummaryService
         }
 
         return $result;
+    }
+
+    /**
+     * Extract the buyer listing's location_dna_preferences JSON for the
+     * location_intelligence_snapshot column on the accepted bid summary.
+     */
+    protected function extractLocationIntelligenceData(BuyerAgentAuction $listing): array
+    {
+        try {
+            $metaMap = $listing->meta->pluck('meta_value', 'meta_key')->toArray();
+            $raw     = $metaMap['location_dna_preferences'] ?? null;
+            if ($raw === null || $raw === '') {
+                return [];
+            }
+            $decoded = is_array($raw) ? $raw : json_decode((string) $raw, true);
+            if (!is_array($decoded) || empty($decoded)) {
+                return [];
+            }
+            return ['location_intelligence_snapshot' => $decoded];
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     private function buildSummaryHtml(

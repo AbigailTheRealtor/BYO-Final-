@@ -289,7 +289,7 @@ class AcceptedBidSummaryService
 
             $html = $this->buildSummaryHtml($listing, $bid, $tenant, $agent, $sourceData, $acceptedCounter);
 
-            $summary = AcceptedBidSummary::create([
+            $summary = AcceptedBidSummary::create(array_merge([
                 'listing_type'        => 'tenant',
                 'listing_id'          => $listing->id,
                 'accepted_bid_id'     => $bid->id,
@@ -297,7 +297,7 @@ class AcceptedBidSummaryService
                 'tenant_user_id'      => $tenant->id,
                 'agent_user_id'       => $agent->id,
                 'summary_html'        => $html,
-            ]);
+            ], $this->extractLocationIntelligenceData($listing)));
 
             // Phase 7 — carry referral attribution from listing into accepted record.
             \App\Services\ReferralLinkService::persistAcceptedHireReferral($summary, $listing);
@@ -721,6 +721,27 @@ class AcceptedBidSummaryService
         $html = str_replace('{{agent_ip_address}}', '—', $html);
 
         return $html;
+    }
+
+    /**
+     * Extract the tenant listing's location_dna_preferences JSON for the
+     * location_intelligence_snapshot column on the accepted bid summary.
+     */
+    protected function extractLocationIntelligenceData(TenantAgentAuction $listing): array
+    {
+        try {
+            $raw = data_get($listing->get, 'location_dna_preferences');
+            if ($raw === null || $raw === '') {
+                return [];
+            }
+            $decoded = is_array($raw) ? $raw : json_decode((string) $raw, true);
+            if (!is_array($decoded) || empty($decoded)) {
+                return [];
+            }
+            return ['location_intelligence_snapshot' => $decoded];
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     protected function buildTargetAreas($listingData): string

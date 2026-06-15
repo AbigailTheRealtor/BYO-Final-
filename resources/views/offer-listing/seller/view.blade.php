@@ -836,6 +836,25 @@
         @endif
     </div>
 
+    {{-- ===== Property Location Map ===== --}}
+    @php
+        $_sellerLat    = isset($meta['property_lat']) && $meta['property_lat'] !== '' ? $meta['property_lat'] : null;
+        $_sellerLng    = isset($meta['property_lng']) && $meta['property_lng'] !== '' ? $meta['property_lng'] : null;
+        $_sellerMapKey = config('services.google.places_key', '');
+    @endphp
+    @if($_sellerLat !== null && $_sellerLng !== null && $_sellerMapKey !== '')
+        <div class="mb-4">
+            <img src="https://maps.googleapis.com/maps/api/staticmap?center={{ $_sellerLat }},{{ $_sellerLng }}&zoom=15&size=800x280&markers=color:red|{{ $_sellerLat }},{{ $_sellerLng }}&key={{ $_sellerMapKey }}"
+                 alt="Property Location"
+                 class="img-fluid rounded shadow-sm"
+                 style="width:100%;max-height:280px;object-fit:cover;">
+        </div>
+    @else
+        <div class="mb-4 p-3 bg-light rounded text-center text-muted" style="font-size:.875rem;">
+            <i class="fa-solid fa-map-location-dot me-1"></i>Location map unavailable — no coordinates on record
+        </div>
+    @endif
+
     {{-- =====================================================================
          INTENTIONAL FIELD EXCLUSIONS (not rendered on this view page):
          - listing_ai_faq        : AI-generated FAQ, internal content only.

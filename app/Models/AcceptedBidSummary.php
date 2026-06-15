@@ -18,6 +18,17 @@ class AcceptedBidSummary extends Model
         'agent_user_id',
         'summary_html',
         'summary_pdf_path',
+        'property_address',
+        'property_city',
+        'property_county',
+        'property_state',
+        'property_zip',
+        'property_lat',
+        'property_lng',
+        'google_place_id',
+        'legal_description',
+        'parcel_id',
+        'location_intelligence_snapshot',
         'tenant_signature_name',
         'tenant_signed_at',
         'tenant_ip_address',
@@ -31,8 +42,11 @@ class AcceptedBidSummary extends Model
     ];
 
     protected $casts = [
-        'tenant_signed_at' => 'datetime',
-        'agent_signed_at' => 'datetime',
+        'tenant_signed_at'               => 'datetime',
+        'agent_signed_at'                => 'datetime',
+        'property_lat'                   => 'float',
+        'property_lng'                   => 'float',
+        'location_intelligence_snapshot' => 'array',
     ];
 
     public function listing()

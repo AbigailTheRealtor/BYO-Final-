@@ -1858,7 +1858,7 @@
             });
         });
 
-        function initStructuralSelect2() {
+        window.initStructuralSelect2 = function() {
             _structuralCfgs.forEach(function(cfg) {
                 var $el = $(cfg.selector);
                 if (!$el.length || $el.hasClass('select2-hidden-accessible')) return;
