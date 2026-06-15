@@ -35,6 +35,8 @@
 
 ## MVP Success Criteria
 
+All nine criteria below must be verified in the production environment (or a staging environment that mirrors production) before go/no-go approval is granted.
+
 ### Criterion 1 — Foundation & Contracts (Build 1 / #2777)
 
 **Verified when:**
@@ -75,6 +77,8 @@
 - Multi-turn conversation context is passed correctly for sessions up to the configured maximum turn limit
 - Prohibited questions (fair-housing violations) are refused before any OpenAI call — verified by test
 - The feature flag gates all traffic: V1 behaviour is unchanged when `AGENT_AI_V2_ENABLED = false`
+- **OpenAI outage returns the configured fallback response** — raw API errors are never exposed to visitors
+- Failure paths (timeout, rate limit, API error) are logged and do not silently swallow errors
 
 ---
 
@@ -166,6 +170,9 @@ All of the following safety gate tests pass in CI:
 - The admin analytics route (`/admin/ask-ai/analytics`) returns data from V2 logs, not only V1 logs
 - Token cost monitoring alert is configured: an alert fires when daily estimated cost exceeds a configurable threshold
 - Analytics data is verified to be present after at least one full day of staging traffic
+- Agent-scoped analytics are verified: an agent cannot see another agent's metrics
+- CTA click metrics are tracked and attributed correctly to the originating listing and agent
+- Lead conversion calculations are accurate and consistent with the raw lead records
 
 ---
 
