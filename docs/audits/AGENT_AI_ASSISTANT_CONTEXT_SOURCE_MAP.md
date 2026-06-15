@@ -55,6 +55,9 @@ This audit is Phase 1 of the following approved ticket sequence. References to s
 12. [Privacy Boundary Table](#12-privacy-boundary-table)
 13. [Gaps & Missing Fields](#13-gaps--missing-fields)
 14. [Future Channel Support (Reserved)](#14-future-channel-support-reserved)
+15. [Future Context Source: Uploaded Listing Documents / Disclosure Documents](#15-future-context-source-uploaded-listing-documents--disclosure-documents)
+16. [Future Context Source: MLS Import Snapshot / Raw Parsed MLS Payload](#16-future-context-source-mls-import-snapshot--raw-parsed-mls-payload)
+17. [Future Context Source: Knowledge Documents / Educational Content Library](#17-future-context-source-knowledge-documents--educational-content-library)
 
 ---
 
@@ -1197,30 +1200,35 @@ All V2 context loaders must return fragments conforming to this contract. `Agent
 
 ### 10.2 Source Keys Registry
 
+Priority follows the **lower = higher priority** convention defined in Section 10.1 above: priority 1 is most important (never dropped), higher numbers are dropped first when the token budget is exceeded. Future reserved loaders (marked *reserved*) are defined in Sections 15–17 and must not be implemented until the prerequisite data sources exist.
+
 | source_key | Priority | Roles | Cache TTL | Notes |
 |---|---|---|---|---|
 | `listing_base` | 1 | all | 300s | Core listing metadata; changes rarely |
 | `listing_facts` | 2 | all | 300s | Property detail fields; changes on save |
 | `listing_description` | 3 | seller, landlord | 600s | Native description column |
+| `mls_snapshot` | 3 | seller, landlord | 86400s | **Reserved** — public-safe MLS payload; see Section 16 |
+| `agent_profile` | 3 | agent_profile_chat | 1800s | Preset data |
 | `faq_answers` | 4 | seller, landlord | 3600s | Agent-authored Q&A; infrequent changes |
+| `uploaded_document` | 4 | seller, landlord | 86400s | **Reserved** — public-safe document fragments; see Section 15 |
 | `property_intelligence` | 5 | seller, landlord | 3600s | DNA profile; updated on listing save |
-| `location_intelligence` | 6 | all | 86400s | Location data; daily refresh |
 | `buyer_avatar` | 5 | buyer | 3600s | DNA profile |
 | `tenant_avatar` | 5 | tenant | 3600s | DNA profile |
+| `location_intelligence` | 6 | all | 86400s | Location data; daily refresh |
 | `compatibility` | 6 | all (pair context) | 600s | Score changes with new bids |
-| `agent_profile` | 3 | agent_profile_chat | 1800s | Preset data |
 | `knowledge_snapshot` | 7 | all | 86400s | Pre-computed snapshot answers |
+| `knowledge_document` | 7 | all | 86400s | **Reserved** — public educational content; see Section 17 |
 
 ### 10.3 Token Budget Enforcement and Truncation Order
 
 When the assembled context exceeds the per-turn token budget (recommended: 3,000 input tokens for listing chats, 1,500 for buyer/tenant, 1,000 for agent profile), fragments are dropped in this order:
 
-1. **Drop first:** `knowledge_snapshot` (priority 7) — already in snapshot DB; can be queried separately
+1. **Drop first:** `knowledge_snapshot` (priority 7), `knowledge_document` (priority 7) — educational content and pre-computed snapshots; can be queried separately if needed
 2. **Drop second:** `location_intelligence` (priority 6) — optional for all question types
 3. **Drop third:** `compatibility` (priority 6) — only required for `buyer_tenant_match`
-4. **Drop fourth:** `property_intelligence` (priority 5) — optional; FAQ covers most property detail
-5. **Drop fifth:** `faq_answers` (priority 4) — drop entries by sort_order descending (least relevant last)
-6. **Drop sixth:** `listing_description` (priority 3) — only needed as fallback when facts are absent
+4. **Drop fourth:** `property_intelligence` (priority 5), `buyer_avatar` (priority 5), `tenant_avatar` (priority 5) — optional; FAQ covers most property detail
+5. **Drop fifth:** `faq_answers` (priority 4), `uploaded_document` (priority 4) — drop by relevance; `faq_answers` entries dropped by sort_order descending (least relevant last)
+6. **Drop sixth:** `listing_description` (priority 3), `mls_snapshot` (priority 3) — contextual supplements; drop when listing_facts already covers the same information
 7. **Never drop:** `listing_base` (priority 1), `listing_facts` (priority 2)
 
 Within `faq_answers`, individual FAQ entries may be dropped starting with `intelligence_category = null` entries, then by reverse question group priority.
@@ -1395,4 +1403,253 @@ These integrations are out of scope for the V2 MVP. No channel beyond `web` shou
 
 ---
 
-*End of Context Source Map. This document reflects the system state as of June 15, 2026. All field inventories are verified against the current production PostgreSQL schema and PHP service code. No V2 implementation code was created during this audit. OpenAI connectivity is intentionally deferred to build #2780.*
+## 15. Future Context Source: Uploaded Listing Documents / Disclosure Documents
+
+**Status:** Reserved — no extraction infrastructure currently exists.  
+**Future loader name:** `UploadedDocumentLoader`  
+**Source key:** `uploaded_document`  
+**Priority:** 4 (Section 10 convention: lower = higher priority; same tier as `faq_answers`; dropped before listing facts and MLS snapshot, retained before property intelligence and below)
+
+### 15.1 Public-Safe Document Examples
+
+The following uploaded document types are eligible for Ask AI context when text extraction is available:
+
+| Document Type | Scope | Notes |
+|---|---|---|
+| Seller property condition disclosure | Seller | General condition facts; no private party info |
+| AS-IS disclosure | Seller | States known condition status |
+| HOA declaration / rules / bylaws | Seller, Landlord | Association rules applicable to prospective buyers/tenants |
+| HOA meeting minutes (public summaries) | Seller, Landlord | Budget votes, rule changes — exclude confidential member matters |
+| Flood zone elevation certificate | Seller, Landlord | Public compliance document |
+| Survey / plat map | Seller, Landlord | Legal lot boundaries |
+| Floor plan (publicly shared) | Seller, Landlord | Layout only; no security or access details |
+| Publicly shared inspection report | Seller | Only when explicitly released by seller for buyer review |
+| Lead paint disclosure | Landlord | Federal compliance document |
+| Mold / radon disclosure | Landlord | State-required disclosures |
+| Lease document summary (term sheet) | Landlord | Publicly stated terms; no private tenant data |
+
+### 15.2 Excluded Document Examples
+
+The following document types must never enter any Ask AI context under any circumstances:
+
+| Excluded Document | Reason |
+|---|---|
+| Private offer or purchase contract | Contains competing negotiation data |
+| Signed accepted contract / closing docs | Private transaction terms |
+| Identity documents (IDs, passports, licenses) | Personal identifying information |
+| Financial documents (bank statements, tax returns, pay stubs, pre-approval letters with amounts) | Private financial data |
+| Competing-agent bid documents | Private agent/buyer data |
+| Internal inspection reports not released by seller | Private due-diligence data |
+| Attorney correspondence | Privileged |
+| Any document containing another party's private contact information | Privacy violation |
+
+### 15.3 Standard Fragment Contract
+
+```
+{
+  source_key:     "uploaded_document",
+  priority:       4,
+  content:        "<extracted text fragment — public-safe sections only>",
+  token_estimate: <integer>
+}
+```
+
+Multiple documents may produce multiple fragments. Each fragment must carry the document type as a label prefix (e.g., `[HOA Rules] …`) so the prompt builder can identify the source.
+
+### 15.4 Example Future Questions
+
+- "What does the HOA disclosure say about pets?"
+- "Are there any known defects listed in the seller disclosure?"
+- "What does the AS-IS disclosure cover?"
+- "Does the survey show any easements on the property?"
+- "What flood elevation certificate data is available?"
+
+### 15.5 Gap Note
+
+No OCR, document parsing, or text extraction pipeline currently exists for uploaded listing documents. Files are stored on the public disk under `{role}-disclosures/{id}/{type}/` (as documented in `replit.md`), but no queryable text index is maintained. The `UploadedDocumentLoader` must not be implemented until:
+
+1. A text extraction pipeline exists that produces per-document queryable text (raw OCR output or structured parsed text).
+2. Each extracted document is classified as public-safe by the uploader or platform workflow before extraction is allowed to flow into Ask AI.
+3. A document-level privacy flag or allowlist governs which uploaded files may be surfaced in chat context.
+
+Until these conditions are met, the loader contract (`uploaded_document` source_key, priority 4, fragment shape) is reserved and must not be implemented with live data access.
+
+---
+
+## 16. Future Context Source: MLS Import Snapshot / Raw Parsed MLS Payload
+
+**Status:** Reserved — full-payload persistence does not currently exist as a separate store.  
+**Future loader name:** `MlsImportSnapshotLoader`  
+**Source key:** `mls_snapshot`  
+**Priority:** 3 (Section 10 convention: lower = higher priority; same tier as `listing_description`; dropped only when listing facts already cover the same information)
+
+### 16.1 Correct Model
+
+The MLS importer (`HasMlsImport` trait + `MlsFieldMap`) currently maps parsed MLS fields to form fields at apply-time. The full raw parsed payload is not separately persisted after the form fields are populated. The correct V2 model is:
+
+1. **Map supported fields to form** (current behavior — unchanged).
+2. **Preserve the full parsed payload separately** in a dedicated store (e.g., `mls_import_snapshots` table) so Ask AI can access MLS-specific data that was not mapped to a form field, without re-parsing the original import.
+
+The `MlsImportSnapshotLoader` reads from the preserved snapshot, not from re-parsing the raw import source.
+
+### 16.2 Public-Safe MLS Fields
+
+| MLS Field Category | Example Fields | Ask AI Access |
+|---|---|---|
+| Legal description | Parcel ID, legal description text | Public |
+| Tax data | Tax year, annual taxes, tax ID | Public |
+| Utilities | Water source, sewer type, electric, gas, internet/telecom | Public |
+| Zoning | Zoning code, zoning description | Public |
+| Construction details | Roof type, exterior construction, foundation type | Public |
+| Year built | Year built, effective year built | Public |
+| Lot data | Lot dimensions, total acreage, front footage | Public |
+| Flood zone | Flood zone code, panel number, date, elevation cert indicator | Compliance-Sensitive |
+| HOA / CDD | HOA name, HOA fee, fee frequency, CDD amount | Public |
+| Schools | School district, elementary/middle/high school names | Public (no ratings — see Section 12) |
+| Public remarks | MLS public remarks field | Public |
+
+### 16.3 Excluded MLS Fields
+
+The following MLS field categories must never enter any Ask AI context:
+
+| Excluded Category | Reason |
+|---|---|
+| Private remarks | Listing-agent-only remarks; may contain access codes, negotiation notes, or private seller instructions |
+| Owner / seller contact information | Name, phone number, email address — private party data |
+| Agent-only compensation | Buyer-agent commission percentage, bonuses, variable compensation — not public disclosure |
+| Lockbox / showing access instructions | Security-sensitive; contains access codes or showing-service authorization details |
+| Offer / transaction data | Pending offer count, contract price, days under contract, multiple-offer indicator |
+| Listing-agent contact details | Direct phone/email of listing agent — use agent profile scope instead |
+
+### 16.4 Standard Fragment Contract
+
+```
+{
+  source_key:     "mls_snapshot",
+  priority:       3,
+  content:        "<structured text of approved public-safe MLS fields>",
+  token_estimate: <integer>
+}
+```
+
+The content string should label each field (e.g., `School District: Hillsborough County Public Schools`) so the prompt builder can identify MLS-sourced facts. Raw MLS field codes or internal MLS IDs must not be included in the fragment.
+
+### 16.5 Example Future Questions
+
+- "What does the MLS say about the school district?"
+- "What utilities are listed in the MLS record?"
+- "What is the legal description of the property?"
+- "What flood zone information is in the MLS filing?"
+- "What are the HOA details from the MLS listing?"
+
+### 16.6 Gap Note
+
+The current MLS import system maps parsed fields to form fields at apply-time and does not separately persist the full parsed payload. The `MlsImportSnapshotLoader` must not be implemented until:
+
+1. A separate persistence layer (e.g., `mls_import_snapshots` table with `listing_type`, `listing_id`, `parsed_payload` JSON, and `imported_at`) exists to store the full parsed MLS payload independently of the form-mapped fields.
+2. The snapshot is linked to the specific listing so the loader can query by `(listing_type, listing_id)`.
+3. The snapshot store distinguishes public-safe fields from excluded fields at query time (either via a field allowlist query or by storing public-safe fields separately from the raw payload).
+
+Until these conditions are met, the loader contract (`mls_snapshot` source_key, priority 3, fragment shape) is reserved and must not be implemented with live data access. The existing `MlsFieldMap` and `HasMlsImport` trait must not be modified as part of this reserved contract.
+
+---
+
+## 17. Future Context Source: Knowledge Documents / Educational Content Library
+
+**Status:** Reserved — no centralized educational-content repository currently exists.  
+**Future loader name:** `KnowledgeDocumentLoader`  
+**Source key:** `knowledge_document`  
+**Priority:** 7 (Section 10 convention: lower = higher priority; same tier as `knowledge_snapshot`; dropped first before any other source)
+
+### 17.1 Purpose
+
+The Knowledge Documents context source provides brokerage-controlled real estate education content that is not tied to any specific listing. It answers general process questions that a prospective buyer, seller, landlord, or tenant might have during their research — questions that cannot be answered from listing facts alone but that the brokerage can address with curated, vetted, public-safe educational content.
+
+### 17.2 Public-Safe Content Categories
+
+| Content Category | Examples | Eligible Scopes |
+|---|---|---|
+| Buyer process guides | Home buying steps, what to expect at closing, how to make an offer | buyer_criteria, public_listing_seller |
+| Seller process guides | Listing process, preparing your home, pricing strategies, seller timelines | public_listing_seller |
+| Landlord process guides | Rental property management overview, screening tenants, fair-housing basics for landlords | public_listing_landlord |
+| Tenant process guides | Renting process overview, what to look for in a lease, move-in checklist | tenant_criteria, public_listing_landlord |
+| Brokerage platform FAQs | How auction listings work, what is a buyer agent auction, how bids are submitted | All five scopes |
+| Transaction process guides | Offer-to-close timeline, escrow overview, title insurance basics | public_listing_seller, public_listing_landlord |
+| Offer / contract education | What is earnest money, contingencies explained, inspection period overview | buyer_criteria, public_listing_seller |
+| Financing education | Mortgage types overview, pre-approval process, down payment options | buyer_criteria, public_listing_seller |
+| Inspection education | What home inspectors look for, how to read an inspection report | buyer_criteria, public_listing_seller |
+| Closing education | Closing costs explained, what happens at closing, title transfer overview | All listing scopes |
+| Fair housing education | Fair Housing Act overview, protected classes awareness, prohibited questions | All five scopes |
+| Relocation education | Moving timelines, school district research tips, neighborhood resources | All five scopes |
+
+### 17.3 Excluded Content Examples
+
+The following content types must never enter any Ask AI context from the Knowledge Documents source:
+
+| Excluded Content | Reason |
+|---|---|
+| Internal brokerage training material | Not public-safe; may contain proprietary procedures |
+| Agent onboarding / playbooks | Internal agent-facing content |
+| Internal sales scripts or follow-up cadences | Private operating procedures |
+| Agent performance data (production reports, rankings, quotas) | Private agent data |
+| Client records of any kind | Privacy violation |
+| Offer, counteroffer, or accepted-bid data | Permanently excluded from all V2 public chat scopes (see Section 12.1) |
+| Compensation information (agent commission rates, referral terms) | Private negotiated terms |
+| Transaction-specific records | Any record tied to a specific deal or client |
+| Any content not explicitly classified as public-safe educational material | Default exclude — if classification is unclear, omit |
+
+### 17.4 Standard Fragment Contract
+
+```
+{
+  source_key:     "knowledge_document",
+  priority:       7,
+  content:        "<approved public educational content fragment>",
+  token_estimate: <integer>
+}
+```
+
+Fragments should label their content category (e.g., `[Buyer Guide — Earnest Money] …`) so the prompt builder can identify the knowledge source. Raw document IDs, internal CMS identifiers, or author information must not be included in the fragment.
+
+### 17.5 Scope Support
+
+`KnowledgeDocumentLoader` registers under all five scopes:
+
+| Scope | Example Use |
+|---|---|
+| `public_listing_seller` | Buyer asks "How does the offer process work?" on a seller listing |
+| `public_listing_landlord` | Tenant asks "What should I know about signing a lease?" on a rental listing |
+| `buyer_criteria` | Buyer asks "What is a contingency?" during a buyer-criteria chat |
+| `tenant_criteria` | Tenant asks "What is a security deposit?" during a tenant-criteria chat |
+| `agent_profile_chat` | Visitor asks "How does your auction platform work?" on an agent profile chat |
+
+### 17.6 Priority Guidance
+
+`KnowledgeDocumentLoader` runs at priority 7 — same tier as `knowledge_snapshot`, dropped first alongside pre-computed snapshots before any other source when the token budget is tight. The full recommended truncation order for `AgentAiContextBuilder`, stated in drop-first order (highest number = dropped first), is:
+
+| Drop Order | Source | Priority (Section 10 scale) | Notes |
+|---|---|---|---|
+| 1st (drop first) | `knowledge_document`, `knowledge_snapshot` | 7 | Educational content and pre-computed snapshots — queried separately if needed |
+| 2nd | `location_intelligence` | 6 | Optional for all question types |
+| 3rd | `compatibility` | 6 | Only required for `buyer_tenant_match` |
+| 4th | `property_intelligence`, `buyer_avatar`, `tenant_avatar` | 5 | Optional; FAQ covers most property detail |
+| 5th | `faq_answers`, `uploaded_document` | 4 | Drop by relevance; individual FAQ entries by sort_order descending |
+| 6th | `listing_description`, `mls_snapshot` | 3 | Contextual supplements; drop when listing_facts already covers the same data |
+| Never drop | `listing_base`, `listing_facts` | 1, 2 | Core listing data — always included |
+
+When context must be truncated to fit the token budget, sources at priority 7 are dropped first; sources at priority 1–2 are never dropped. This table is derived from and fully consistent with the truncation order defined in Section 10.3, which is the authoritative reference.
+
+### 17.7 Gap Note
+
+No centralized educational-content repository currently exists. The existing `ask_ai_knowledge` table (if present) stores per-listing FAQ snapshots, not general educational content. The `AskAiKnowledgeSnapshotBuilderService` is listing-specific and cannot serve as the knowledge library backend. The `KnowledgeDocumentLoader` must not be implemented until:
+
+1. A centralized educational-content store exists (e.g., a `knowledge_library_documents` table or an approved CMS integration) containing brokerage-curated educational content.
+2. Each document in the store is explicitly classified with a `content_category` and a `public_safe` flag before it is eligible for Ask AI access.
+3. A `scope_tags` or equivalent field governs which of the five scopes each document may be surfaced in.
+4. A curation and review workflow exists so that internal training material cannot be inadvertently published to the knowledge library.
+
+Until these conditions are met, the loader contract (`knowledge_document` source_key, priority 7, fragment shape) is reserved and must not be implemented with live data access.
+
+---
+
+*End of Context Source Map. This document reflects the system state as of June 15, 2026. Sections 1–14 are verified against the current production PostgreSQL schema and PHP service code. Sections 15–17 define reserved future context-source contracts; no underlying data stores or extraction infrastructure for these sources currently exist. No V2 implementation code was created during this audit. OpenAI connectivity is intentionally deferred to build #2780.*
