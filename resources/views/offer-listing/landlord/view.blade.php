@@ -830,9 +830,6 @@
             || $str('pet_deposit_amount') || $str('pet_monthly_fee')
             || count($arr('pet_species_allowed')) > 0;
 
-        /* Compensation */
-        $navHasCompensation = (bool)$str('tenant_broker_commission_structure');
-
         /* Contact */
         $navHasContact = $str('first_name') || $str('last_name') || $str('email')
             || $str('phone_number') || $str('agent_brokerage') || $str('agent_license_number');
@@ -874,9 +871,6 @@
             <li><a href="#section-tenant">Tenant Criteria</a></li>
             @if($navHasPets)
             <li><a href="#section-pets">Pets &amp; Occupancy</a></li>
-            @endif
-            @if($navHasCompensation)
-            <li><a href="#section-tenant-broker">Compensation</a></li>
             @endif
             @if($navHasContact)
             <li><a href="#section-contact">Contact</a></li>
@@ -1409,44 +1403,6 @@
             @if(count($petSpecies))
             <div class="row"><div class="col-md-12">{!! $listRow('Pet Species Allowed', $petSpecies) !!}</div></div>
             @endif
-        </div>
-    </div>
-    @endif
-
-    {{-- ================================================================
-         TENANT'S BROKER COMPENSATION
-         ============================================================== --}}
-    @if($navHasCompensation)
-    <div class="card section-card" id="section-tenant-broker">
-        <div class="card-header"><i class="fa-solid fa-handshake me-2"></i>Tenant's Broker Compensation</div>
-        <div class="card-body">
-            @php
-                $_tbcs  = $str('tenant_broker_commission_structure');
-                $_tbfs  = $str('tenant_broker_fee_structure');
-            @endphp
-            <div class="row">
-                <div class="col-md-6">
-                    {!! $row("Tenant's Broker Commission Structure", $_tbcs) !!}
-                    @if($_tbfs)
-                        {!! $row("Tenant's Broker Commission Fee Type", $_tbfs) !!}
-                        @if($_tbfs === 'Percentage of the Rent Due Each Rental Period')
-                            {!! $row("Tenant's Broker Fee", $fmtPercent($str('tenant_broker_percentage'))) !!}
-                        @elseif($_tbfs === 'Percentage of the Gross Lease Value')
-                            {!! $row("Tenant's Broker Fee", $fmtPercent($str('tenant_broker_gross_lease'))) !!}
-                        @elseif($_tbfs === "Percentage of the First Month's Rent")
-                            {!! $row("Tenant's Broker Fee", $fmtPercent($str('tenant_broker_first_month_rent'))) !!}
-                        @elseif($_tbfs === 'Percentage of the Net Aggregate Rent')
-                            {!! $row("Tenant's Broker Fee", $fmtPercent($str('tenant_broker_percentage'))) !!}
-                        @elseif($_tbfs === 'Percentage of the Gross Rent')
-                            {!! $row("Tenant's Broker Fee", $fmtPercent($str('tenant_broker_gross_lease'))) !!}
-                        @elseif($_tbfs === 'Flat fee')
-                            {!! $row("Tenant's Broker Fee", $fmtMoney($str('tenant_broker_flat_fee'))) !!}
-                        @elseif($_tbfs === 'Other')
-                            {!! $row("Tenant's Broker Fee", $str('tenant_broker_other')) !!}
-                        @endif
-                    @endif
-                </div>
-            </div>
         </div>
     </div>
     @endif

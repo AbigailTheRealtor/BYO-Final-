@@ -346,9 +346,7 @@
                         <div class="d-flex" style="flex-wrap: wrap;">
                             <div class="col-md-4 col-6 fw-bold mt-1 mb-1">Escrow Amount: {{@$auction->terms->escrow_amount}}</div>
                             <div class="col-md-4 col-6 fw-bold mt-1 mb-1">Inspection Period: {{@$auction->terms->inspection_perion}}</div>
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1">Buyer’s Agent Commission: {{@$auction->terms->buyer_agent_commission}}</div>
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1">Buyer’s Premium: {{@$auction->terms->buyer_premium}}</div>
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1">Seller’s Premium: {{@$auction->terms->seller_premium}}</div>
+
                             <div class="col-md-4 col-6 fw-bold mt-1 mb-1">Success fee to be paid by: {{@$auction->terms->success_fee_to_be_paid_by}}</div>
                             <div class="col-md-4 col-6 fw-bold mt-1 mb-1">Any Additional Remarks: {{@$auction->terms->additional_remarks}}</div>
                             <div class="col-md-4 col-6 fw-bold mt-1 mb-1">Property list date: {{@$auction->terms->property_list_date}}</div>

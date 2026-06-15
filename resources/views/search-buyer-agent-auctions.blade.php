@@ -194,24 +194,6 @@
                             $sqftDisplay = @$auction->get->minimum_heated_square ?: (@$auction->get->minimum_leaseable ?? '');
                         }
 
-                        $fmtMoney = function($v) { return '$' . number_format((float)$v, 2); };
-                        $fmtPct   = function($v) { return $v . '%'; };
-                        $buyerCommStructure = str_replace('"', '', @$auction->get->commission_structure ?? '');
-                        $buyerFeeType = @$auction->get->purchase_fee_type ?? '';
-                        $buyerFeeCombined = '';
-                        if ($buyerFeeType === 'Flat Fee' && !empty(@$auction->get->purchase_fee_flat)) {
-                            $buyerFeeCombined = $fmtMoney($auction->get->purchase_fee_flat);
-                        } elseif ($buyerFeeType === 'Percentage of the Total Purchase Price' && !empty(@$auction->get->purchase_fee_percentage)) {
-                            $buyerFeeCombined = $fmtPct($auction->get->purchase_fee_percentage) . ' of Total Purchase Price';
-                        } elseif ($buyerFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
-                            $pts = [];
-                            if (!empty(@$auction->get->purchase_fee_flat_combo)) $pts[] = $fmtMoney($auction->get->purchase_fee_flat_combo);
-                            if (!empty(@$auction->get->purchase_fee_percentage_combo)) $pts[] = $fmtPct($auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price';
-                            $buyerFeeCombined = implode(' + ', $pts);
-                        } elseif (strtolower($buyerFeeType) === 'other' && !empty(@$auction->get->purchase_fee_other)) {
-                            $buyerFeeCombined = @$auction->get->purchase_fee_other;
-                        }
-
                         $rawCounties = @$auction->get->counties ?? [];
                         $countyDisplay = '';
                         if (is_array($rawCounties) && count($rawCounties) > 0) {
@@ -306,12 +288,6 @@
 
                                     <p class="mb-1">&#x1F464; Buyer's Agent Required</p>
 
-                                    @if (!empty($buyerCommStructure))
-                                        <p class="mb-1">&#x1F4BC; <b>Buyer's Broker Commission Structure:</b> {{ $buyerCommStructure }}</p>
-                                    @endif
-                                    @if (!empty($buyerFeeCombined))
-                                        <p class="mb-1">&#x1F4BC; <b>Buyer's Broker Purchase Fee:</b> {{ $buyerFeeCombined }}</p>
-                                    @endif
                                 </div>
 
                                 @if ($rawDays !== '')

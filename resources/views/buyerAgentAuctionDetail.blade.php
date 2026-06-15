@@ -1719,6 +1719,7 @@
                         </div>
                         @endif
 
+                        @auth
                         <!-- Buyer's Broker Compensation Sub-section -->
                         @if (@$auction->get->commission_structure != null || @$auction->get->purchase_fee_type != null)
                         <h5 class="mt-3 mb-2"><strong>Buyer's Broker Compensation:</strong></h5>
@@ -1760,6 +1761,9 @@
                         @if (@$auction->get->commission_structure != null || @$auction->get->purchase_fee_type != null)
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
                         @endif
+
+                        </div>
+                        @endauth
 
                         <!-- Buyer's Broker Lease Fee Sub-section -->
                         @if (@$auction->get->interested_lease_option != null || @$auction->get->lease_fee_type != null)

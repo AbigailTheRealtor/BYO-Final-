@@ -948,7 +948,6 @@
             || $ifFilled($str('email')) || $ifFilled($str('phone_number'))
             || $ifFilled($str('video_link')) || $ifFilled($str('video'));
 
-        $hasBrokerComp = $ifFilled($str('commission_structure')) || $ifFilled($str('lease_fee_type'));
     @endphp
 
     {{-- ===== SMOOTH-SCROLL NAV TABS ===== --}}
@@ -962,7 +961,6 @@
             @if($navHasParking)<li><a href="#section-parking">Parking</a></li>@endif
             @if($navHasPrescreening)<li><a href="#section-prescreening">Pre-Screening</a></li>@endif
             @if($navHasLeasePrefs)<li><a href="#section-lease-prefs">Lease Preferences</a></li>@endif
-            @if($hasBrokerComp)<li><a href="#section-broker-compensation">Broker Compensation</a></li>@endif
             @if($navHasContact)<li><a href="#section-contact">Contact</a></li>@endif
         </ul>
     </div>
@@ -1340,49 +1338,6 @@
                     {!! $row('Commercial Approval Conditions', $str('commercial_approval_conditions')) !!}
                 </div>
             </div>
-        </div>
-    </div>
-    @endif
-
-    {{-- ===== BROKER COMPENSATION & AGENCY AGREEMENT TERMS ===== --}}
-    @if($hasBrokerComp)
-    <div class="card section-card" id="section-broker-compensation">
-        <div class="card-header"><i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms</div>
-        <div class="card-body">
-            {!! $row("Tenant's Broker Commission Structure", $str('commission_structure')) !!}
-            @php
-                $listingLeaseFeeType     = $str('lease_fee_type');
-                $listingLeaseFeeCombined = null;
-
-                if ($listingLeaseFeeType === 'Flat Fee' && $str('lease_fee_flat') !== '') {
-                    $listingLeaseFeeCombined = $fmtMoney($str('lease_fee_flat'));
-                } elseif ($listingLeaseFeeType === 'Percentage of the Gross Lease Value' && $str('lease_fee_percentage') !== '') {
-                    $listingLeaseFeeCombined = $fmtPercent($str('lease_fee_percentage')) . ' of Gross Lease Value';
-                } elseif ($listingLeaseFeeType === 'Percentage of Monthly Rent' && $str('lease_fee_percentage_monthly_rent') !== '') {
-                    $_mDisplay = $fmtPercent($str('lease_fee_percentage_monthly_rent')) . ' of Monthly Rent';
-                    if ($str('lease_fee_percentage_monthly_number') !== '') {
-                        $_mDisplay .= ' x ' . $str('lease_fee_percentage_monthly_number') . ' Months';
-                    }
-                    $listingLeaseFeeCombined = $_mDisplay;
-                } elseif ($listingLeaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
-                    $listingLeaseFeeCombined = $joinParts([
-                        $fmtMoney($str('lease_fee_flat_combo')),
-                        $str('lease_fee_percentage_combo') !== '' ? ($fmtPercent($str('lease_fee_percentage_combo')) . ' of Gross Lease Value') : null,
-                    ]);
-                } elseif ($listingLeaseFeeType === 'Percentage of the Net Aggregate Rent' && $str('lease_fee_percentage_net') !== '') {
-                    $listingLeaseFeeCombined = $fmtPercent($str('lease_fee_percentage_net')) . ' of Net Aggregate Rent';
-                } elseif ($listingLeaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
-                    $listingLeaseFeeCombined = $joinParts([
-                        $fmtMoney($str('lease_fee_flat_combo_net')),
-                        $str('lease_fee_percentage_combo_net') !== '' ? ($fmtPercent($str('lease_fee_percentage_combo_net')) . ' of Net Aggregate Rent') : null,
-                    ]);
-                } elseif (strtolower($listingLeaseFeeType) === 'other' && $str('lease_fee_other') !== '') {
-                    $listingLeaseFeeCombined = $str('lease_fee_other');
-                } elseif ($listingLeaseFeeType !== '') {
-                    $listingLeaseFeeCombined = $listingLeaseFeeType;
-                }
-            @endphp
-            {!! $row("Tenant's Broker Lease Fee", $listingLeaseFeeCombined) !!}
         </div>
     </div>
     @endif

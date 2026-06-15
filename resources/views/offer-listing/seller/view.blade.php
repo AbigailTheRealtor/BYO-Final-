@@ -2134,43 +2134,6 @@
     </div>
     @endif
 
-    {{-- Broker Compensation & Agency Agreement --}}
-    @php
-        $hasBrokerComp = $str('commission_structure') || $str('commission_structure_type')
-            || $str('commission_structure_type_fee_flat') || $str('commission_structure_type_fee_percentage')
-            || $str('commission_structure_type_fee_percentage_combo') || $str('commission_structure_type_fee_flat_combo')
-            || $str('commission_structure_type_fee_other') || $str('agency_agreement_timeframe')
-            || $str('agency_agreement_custom');
-    @endphp
-    @if($hasBrokerComp)
-    <div class="card section-card">
-        <div class="card-header"><i class="fa-solid fa-file-contract me-2"></i>Broker Compensation &amp; Agency Agreement</div>
-        <div class="card-body">
-
-            {{-- Buyer's Broker Compensation --}}
-            <div class="row">
-                <div class="col-md-6">
-                    {!! $row('Buyer\'s Broker Commission Structure', $str('commission_structure')) !!}
-                    @if($str('commission_structure_type') === 'Flat Fee')
-                        {!! $row('Buyer\'s Broker Commission Fee', $fmtMoney($str('commission_structure_type_fee_flat'))) !!}
-                    @elseif($str('commission_structure_type') === 'Percentage of the Total Purchase Price')
-                        {!! $row('Buyer\'s Broker Commission Fee', $fmtPercent($str('commission_structure_type_fee_percentage'))) !!}
-                    @elseif($str('commission_structure_type') === 'Percentage of the Total Purchase Price + Flat Fee')
-                        @php
-                            $_bbPct = $fmtPercent($str('commission_structure_type_fee_percentage_combo'));
-                            $_bbFlat = $fmtMoney($str('commission_structure_type_fee_flat_combo'));
-                            $_bbCombo = ($_bbPct && $_bbFlat) ? $_bbPct . ' + ' . $_bbFlat : ($_bbPct ?: $_bbFlat);
-                        @endphp
-                        {!! $row('Buyer\'s Broker Commission Fee', $_bbCombo) !!}
-                    @elseif($str('commission_structure_type') === 'other')
-                        {!! $row('Buyer\'s Broker Commission Fee', $str('commission_structure_type_fee_other')) !!}
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-
     {{-- Financial Details (Income / Commercial / Business property types only) --}}
     {{-- Fields: minimum_annual_net_income, minimum_cap_rate, gross_annual_income, annual_operating_expenses,
          rent_roll_available, operating_statement_available (Income);

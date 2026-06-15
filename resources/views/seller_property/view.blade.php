@@ -2761,15 +2761,7 @@
                 <hr>
               @endif
               {{-- Driving Directions --}}
-              {{-- Buyer’s Agent Compensation --}}
-              @if (isset($auction->get->compensation_amount) || isset($auction->get->compensation_amount_com) || isset($auction->get->compensation_amount_vac))
-                <div class="col-md-12 col-12 fw-bold mt-1 mb-1">
-                  <h4>Buyer’s Agent Compensation:</h4>
-                    <span class="removeBold">{{ $auction->get->compensation_amount ?? $auction->get->compensation_amount_com ?? $auction->get->compensation_amount_vac ?? '' }}</span>
-                </div>
-                <hr>
-              @endif
-              {{-- Buyer’s Agent Compensation --}}
+
               {{-- Is the Seller actively seeking to purchase another property? --}}
               @if (isset($auction->get->looking_other_property) || isset($auction->get->looking_other_property_com) || isset($auction->get->looking_other_property_vac))
                 <div class="col-md-12 col-12 fw-bold mt-1 mb-1">
@@ -3034,38 +3026,8 @@
                   Number of days seller will accept for closing: <span class="removeBold">
                     {{ @$auction->get->closing_days }} </span></div>
               @endif
-              @if (@$auction->get->buyer_agent_commission != null)
-                <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa-regular fa-check-square"></i>
-                  Buyer's Agent Commission: <span class="removeBold"> {{ @$auction->get->buyer_agent_commission }}
-                  </span></div>
-              @endif
-              @if (@$auction->get->buyer_premium != null)
-                <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa-regular fa-check-square"></i>
-                  Buyer's Premium: <span class="removeBold"> {{ @$auction->get->buyer_premium }} </span></div>
-              @endif
-              <div class="d-none">
-                @if (@$auction->get->seller_premium != null)
-                  <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa-regular fa-check-square"></i>
-                    Seller's Premium: <span class="removeBold"> {{ @$auction->get->seller_premium }} </span></div>
-                @endif
-                @if (@$auction->get->wholesaler_fee != null)
-                  <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa-regular fa-check-square"></i>
-                    Wholesaler fee: <span class="removeBold"> {{ @$auction->get->wholesaler_fee }} </span></div>
-                @endif
-                @if (@$auction->get->builder_fee != null)
-                  <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa-regular fa-check-square"></i>
-                    Builder fees to Buyer: <span class="removeBold"> {{ @$auction->get->builder_fee }} </span></div>
-                @endif
-                @if (@$auction->get->builder_incentives != null)
-                  <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa-regular fa-check-square"></i>
-                    Builder Incentives: <span class="removeBold"> {{ @$auction->get->builder_incentives }} </span></div>
-                @endif
-                @if (@$auction->get->attorney_fee != null)
-                  <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa-regular fa-check-square"></i>
-                    Attorney Fee to Buyer for contract reviewal: <span class="removeBold">
-                      {{ @$auction->get->attorney_fee }} </span></div>
-                @endif
-              </div>
+
+
             </div>
             <div class="d-flex" style="flex-wrap: wrap;">
               @if (@$auction->get->prop_condition != null)
