@@ -49,7 +49,11 @@ use Illuminate\Support\ServiceProvider;
  *   Build 2 — 7 context loaders registered; AgentAiContextBuilder::buildForScope()
  *              and AgentAiPermissionGuard::validateAgentScope() implemented.
  *              Three future loaders reserved as gap contracts (see boot()).
- *   Build 3+ — Replace remaining RuntimeException stubs with real implementations.
+ *   Build 3 — AgentAiPermissionGuard::check(), AgentAiPromptBuilder::build(),
+ *              AgentAiOpenAiOrchestrator::call(), AgentAiFinalResponseBuilder::build()
+ *              all implemented. agent_ai_chat_sessions and agent_ai_chat_messages
+ *              tables migrated. Full conversation pipeline wired in controller.
+ *   Build 4+ — CTA/action resolver (not yet implemented).
  */
 class AgentAiServiceProvider extends ServiceProvider
 {
@@ -75,11 +79,16 @@ class AgentAiServiceProvider extends ServiceProvider
             );
         });
 
-        // ── Build 3+ stubs (bodies throw RuntimeException — not yet wired) ───
+        // ── Build 3: fully implemented services ──────────────────────────────
+        // AgentAiPromptBuilder, AgentAiOpenAiOrchestrator, AgentAiFinalResponseBuilder,
+        // and AgentAiPermissionGuard::check() are all implemented in Build 3.
+        // AgentAiChatSession and AgentAiChatMessage models are also new in Build 3.
         $this->app->singleton(AgentAiContextScopeResolver::class);
         $this->app->singleton(AgentAiPromptBuilder::class);
         $this->app->singleton(AgentAiOpenAiOrchestrator::class);
         $this->app->singleton(AgentAiFinalResponseBuilder::class);
+
+        // ── Build 4+ stubs (not yet implemented) ─────────────────────────────
         $this->app->singleton(AgentAiLeadCaptureService::class);
         $this->app->singleton(AgentAiLeadScoringService::class);
         $this->app->singleton(AgentAiActionResolver::class);

@@ -1,3 +1,4 @@
+- [users table NOT NULL columns for test helpers](users-not-null-columns.md) — DB::table('users')->insertGetId() requires: first_name, last_name, name, short_id, user_name, email, password, user_type; boolean cols (is_approved/is_super/is_deleted) default false.
 - [MLS property_type role-specific normalization](mls-property-type-normalization.md) — seller uses 'Residential' (no suffix); landlord uses 'Residential Property' (full form); fix lives in HasMlsImport::normalizePropertyTypeForRole().
 - [Phase D year_built collision resolution](phase-d-year-built-collision.md) — year_built was pre-existing in both Landlord components before Phase D; skipped per stop-and-report rule.
 - [Seller schema typo — rental_restrictions_desription](seller-schema-typo.md) — DB column is misspelled (missing 'c'); use the typo in code until a migration renames it.

@@ -8,15 +8,17 @@ use Tests\TestCase;
 /**
  * AgentAiV2SmokeTest
  *
- * Build 1 smoke tests — verifies the feature flag gate and placeholder responses.
- * No OpenAI calls. No DB writes. No context loading.
+ * Feature-flag gate tests for the V2 routes.
  *
  * Assertions:
- *  - Flag OFF  → POST /agent-ai/ask        returns 404
+ *  - Flag OFF  → POST /agent-ai/ask           returns 404
  *  - Flag OFF  → POST /agent-ai/session/start returns 404
- *  - Flag ON   → POST /agent-ai/ask        returns 200 with {"status":"not_implemented"}
- *  - Flag ON   → POST /agent-ai/session/start returns 200 with {"status":"not_implemented"}
- *  - V1 route  → POST /ask-ai/ask          still resolves (unchanged)
+ *  - Flag ON   → POST /agent-ai/ask           returns a real response (not 404/405)
+ *  - Flag ON   → POST /agent-ai/session/start returns a real response (not 404/405)
+ *  - V1 route  → POST /ask-ai/ask             still resolves (unchanged)
+ *
+ * Build 1 note: Originally asserted {"status":"not_implemented"}. Updated in
+ * Build 3 when the controller was fully implemented.
  */
 class AgentAiV2SmokeTest extends TestCase
 {
@@ -45,27 +47,32 @@ class AgentAiV2SmokeTest extends TestCase
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // Flag ON — both V2 routes must return placeholder JSON
+    // Flag ON — both V2 routes must be reachable (controller is implemented)
     // ──────────────────────────────────────────────────────────────────────
 
-    public function test_ask_returns_placeholder_json_when_flag_is_on(): void
+    public function test_ask_is_reachable_when_flag_is_on(): void
     {
         config(['ask_ai.agent_ai_v2_enabled' => true]);
 
         $response = $this->postJson('/agent-ai/ask', []);
 
-        $response->assertStatus(200);
-        $response->assertJson(['status' => 'not_implemented']);
+        // A 422 (missing question) or 400 (missing session token) means the controller
+        // ran — it is no longer returning not_implemented.
+        $this->assertNotEquals(404, $response->getStatusCode(), 'V2 /agent-ai/ask must not return 404 when flag is on');
+        $this->assertNotEquals(405, $response->getStatusCode(), 'V2 /agent-ai/ask must not return 405');
+        $this->assertNotEquals(500, $response->getStatusCode(), 'V2 /agent-ai/ask must not return 500');
     }
 
-    public function test_session_start_returns_placeholder_json_when_flag_is_on(): void
+    public function test_session_start_is_reachable_when_flag_is_on(): void
     {
         config(['ask_ai.agent_ai_v2_enabled' => true]);
 
         $response = $this->postJson('/agent-ai/session/start', []);
 
-        $response->assertStatus(200);
-        $response->assertJson(['status' => 'not_implemented']);
+        // A 422 (invalid scope) means the controller ran validation — it is implemented.
+        $this->assertNotEquals(404, $response->getStatusCode(), 'V2 /agent-ai/session/start must not return 404 when flag is on');
+        $this->assertNotEquals(405, $response->getStatusCode(), 'V2 /agent-ai/session/start must not return 405');
+        $this->assertNotEquals(500, $response->getStatusCode(), 'V2 /agent-ai/session/start must not return 500');
     }
 
     // ──────────────────────────────────────────────────────────────────────

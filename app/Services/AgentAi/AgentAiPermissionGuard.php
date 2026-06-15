@@ -4,21 +4,37 @@ namespace App\Services\AgentAi;
 
 use App\Enums\AgentAiContextScope;
 use App\Exceptions\AgentAiPermissionException;
+use App\Models\AgentAiChatSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
  * AgentAiPermissionGuard
  *
- * Enforces access control for Agent AI V2 chat requests. This partial Build 2
- * implementation adds agent-ownership validation for listing and criteria scopes.
+ * Enforces access control for Agent AI V2 chat requests.
  *
- * Build 2 implements: validateAgentScope() — validates agentId against the
- * listing/criteria owner before any loader runs, throwing
- * AgentAiPermissionException on mismatch.
+ * Build 3 implements:
+ *   - check()               — validates an HTTP request carrying a session token,
+ *                             resolves the session, checks agent ownership.
+ *   - validateAgentScope()  — validates agentId against the listing/criteria owner
+ *                             before any loader runs.
  *
- * Build 3 will complete: HTTP request check(), rate limit eligibility, and
- * full authentication requirements.
+ * BLOCKED TABLES: The following tables contain bid, offer, and counter-offer
+ * data that must NEVER appear in any context query performed by the V2 pipeline:
+ *
+ *   seller_agent_auction_bids
+ *   buyer_agent_auction_bids
+ *   landlord_agent_auction_bids
+ *   tenant_agent_auction_bids
+ *   property_auction_bids
+ *   buyer_criteria_auction_bids
+ *   seller_offer_listing_bids  (any future offer bid table)
+ *   accepted_bid_summaries
+ *   counter_bids
+ *   seller_counter_bids
+ *   landlord_countered_terms
+ *   tenant_countered_terms
+ *   buyer_countered_terms
  *
  * GOVERNANCE: No DB writes. No external calls. Must never expose private
  * listing or agent data to unauthenticated callers unless the scope is
@@ -27,8 +43,36 @@ use Illuminate\Support\Facades\DB;
 class AgentAiPermissionGuard
 {
     /**
-     * Check whether the given request is allowed to proceed for the scope.
-     * (Build 3 — not yet fully implemented)
+     * Tables that must never be queried during any V2 context assembly.
+     * Asserted in integration tests (Build 3 step 11d).
+     */
+    public const BLOCKED_TABLES = [
+        'seller_agent_auction_bids',
+        'buyer_agent_auction_bids',
+        'landlord_agent_auction_bids',
+        'tenant_agent_auction_bids',
+        'property_auction_bids',
+        'buyer_criteria_auction_bids',
+        'seller_offer_listing_bids',
+        'accepted_bid_summaries',
+        'counter_bids',
+        'seller_counter_bids',
+        'landlord_countered_terms',
+        'tenant_countered_terms',
+        'buyer_countered_terms',
+    ];
+
+    /**
+     * Check whether the given request is allowed to proceed.
+     *
+     * Validates:
+     *   1. session_token is present in the request payload.
+     *   2. A matching AgentAiChatSession exists.
+     *   3. The session has not been ended.
+     *   4. The session's agent_id resolves to a valid agent user.
+     *
+     * Returns an array describing permission state. Never throws; the caller
+     * (AgentAiChatController) converts the `allowed: false` result to a 403/404.
      *
      * @param  Request             $request
      * @param  AgentAiContextScope $scope
@@ -37,11 +81,93 @@ class AgentAiPermissionGuard
      *   allowed: bool,
      *   reason: string|null,
      *   http_status: int,
+     *   session: AgentAiChatSession|null,
      * }
      */
     public function check(Request $request, AgentAiContextScope $scope, array $options = []): array
     {
-        throw new \RuntimeException('AgentAiPermissionGuard::check() is not yet implemented — Build 3.');
+        $token = $request->input('session_token');
+
+        if (empty($token)) {
+            return [
+                'allowed'     => false,
+                'reason'      => 'missing_session_token',
+                'http_status' => 400,
+                'session'     => null,
+            ];
+        }
+
+        $session = AgentAiChatSession::where('session_token', $token)->first();
+
+        if ($session === null) {
+            return [
+                'allowed'     => false,
+                'reason'      => 'session_not_found',
+                'http_status' => 404,
+                'session'     => null,
+            ];
+        }
+
+        if ($session->ended_at !== null) {
+            return [
+                'allowed'     => false,
+                'reason'      => 'session_ended',
+                'http_status' => 403,
+                'session'     => null,
+            ];
+        }
+
+        $userType = DB::table('users')
+            ->where('id', $session->agent_id)
+            ->value('user_type');
+
+        if ($userType === null) {
+            return [
+                'allowed'     => false,
+                'reason'      => 'agent_not_found',
+                'http_status' => 403,
+                'session'     => null,
+            ];
+        }
+
+        if ($userType !== 'agent') {
+            return [
+                'allowed'     => false,
+                'reason'      => 'not_an_agent',
+                'http_status' => 403,
+                'session'     => null,
+            ];
+        }
+
+        // ── Re-validate session ownership on every ask ────────────────────────
+        // Resolves the session's stored scope and confirms the agent still owns
+        // the associated listing (or is a valid agent for profile scope).
+        // This prevents hijacking via a recycled or stolen session token.
+        $sessionScope = AgentAiContextScope::tryFrom((string) $session->scope);
+        if ($sessionScope !== null) {
+            try {
+                $this->validateAgentScope(
+                    $sessionScope,
+                    (int) $session->agent_id,
+                    $session->listing_type,
+                    $session->listing_id !== null ? (int) $session->listing_id : null
+                );
+            } catch (AgentAiPermissionException $e) {
+                return [
+                    'allowed'     => false,
+                    'reason'      => $e->getReason(),
+                    'http_status' => $e->getHttpStatus(),
+                    'session'     => null,
+                ];
+            }
+        }
+
+        return [
+            'allowed'     => true,
+            'reason'      => null,
+            'http_status' => 200,
+            'session'     => $session,
+        ];
     }
 
     /**
@@ -119,8 +245,6 @@ class AgentAiPermissionGuard
 
     /**
      * Assert that a user with the given ID exists and is an agent.
-     *
-     * Uses raw DB to avoid Eloquent eager-load transaction poisoning.
      *
      * @param  int $agentId
      * @throws AgentAiPermissionException

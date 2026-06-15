@@ -69,4 +69,69 @@ return [
      * GOVERNANCE REVIEW REQUIRED before enabling in production.
      */
     'agent_ai_v2_enabled' => env('AGENT_AI_ASSISTANT_V2', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Agent AI V2 — Model Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Two model tiers are supported: a "fast" model for straightforward questions
+    | and a "reasoning" model for complex multi-step analysis. Model names are
+    | configuration-driven — never hardcoded in application logic.
+    |
+    | fast_model    — Used for simple factual questions (property details, etc.)
+    |                 Default: gpt-4o-mini
+    | reasoning_model — Used for complex analysis, comparison, or multi-part
+    |                   questions detected by AgentAiOpenAiOrchestrator.
+    |                   Default: gpt-4o
+    |
+    | Set AGENT_AI_FAST_MODEL and AGENT_AI_REASONING_MODEL in .env to override.
+    | GOVERNANCE REVIEW REQUIRED before changing models in production.
+    |
+    */
+    'agent_ai_fast_model'      => env('AGENT_AI_FAST_MODEL', 'gpt-4o-mini'),
+    'agent_ai_reasoning_model' => env('AGENT_AI_REASONING_MODEL', 'gpt-4o'),
+
+    /*
+    | Agent AI V2 — Generation Parameters
+    |
+    | max_tokens    — Maximum completion tokens per response (caps verbosity).
+    | temperature   — Sampling temperature. Low value = more deterministic answers.
+    | timeout_secs  — Per-request timeout in seconds before treating as failed.
+    */
+    'agent_ai_max_tokens'      => (int)   env('AGENT_AI_MAX_TOKENS', 1024),
+    'agent_ai_temperature'     => (float) env('AGENT_AI_TEMPERATURE', 0.3),
+    'agent_ai_timeout_seconds' => (int)   env('AGENT_AI_TIMEOUT_SECONDS', 60),
+
+    /*
+    | Agent AI V2 — Conversation History
+    |
+    | verbatim_turns — Number of recent turns passed verbatim to the prompt.
+    |                  Older turns beyond this limit are condensed into a
+    |                  single "Prior conversation summary:" prefix line.
+    */
+    'agent_ai_verbatim_turns' => (int) env('AGENT_AI_VERBATIM_TURNS', 6),
+
+    /*
+    | Agent AI V2 — Maximum Context Token Budget
+    |
+    | Total estimated token budget for the assembled prompt (system + context +
+    | history + question). When the estimate exceeds this value, the oldest
+    | history messages are trimmed by AgentAiPromptBuilder::enforceTokenBudget()
+    | until the prompt fits. System message, context block, and current question
+    | are always preserved. Set conservatively below actual model limits to leave
+    | headroom for the completion (max_tokens above).
+    */
+    'agent_ai_max_context_tokens' => (int) env('AGENT_AI_MAX_CONTEXT_TOKENS', 6000),
+
+    /*
+    | Agent AI V2 — Fallback Response
+    |
+    | Returned to the caller when OpenAI is unavailable, times out, or returns
+    | an API error. Must not expose internal details or model names.
+    */
+    'agent_ai_fallback_message' => env(
+        'AGENT_AI_FALLBACK_MESSAGE',
+        'I can help connect you with the agent to confirm — please reach out directly for this information.'
+    ),
 ];
