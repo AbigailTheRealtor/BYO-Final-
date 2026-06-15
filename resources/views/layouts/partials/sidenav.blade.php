@@ -149,6 +149,15 @@
             </div>
         </div>
     </a>
+    <a href="{{ route('agent.ai-analytics') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa-solid fa-chart-line" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>AI Analytics</b></div>
+                <div class="opacity-50 text-400 small">Questions, leads, CTAs and listing views from your AI assistant.</div>
+            </div>
+        </div>
+    </a>
     <a href="{{ route('agent.presets.index') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa-solid fa-sliders" style="font-size:1.1rem;line-height:1.5rem;"></i></div>

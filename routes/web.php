@@ -196,6 +196,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/agent/ai-inbox/{sessionId}', [\App\Http\Controllers\AgentAi\AgentAiInboxController::class, 'show'])->name('agent.ai-inbox.show');
     Route::post('/agent/ai-inbox/{sessionId}/mark-reviewed', [\App\Http\Controllers\AgentAi\AgentAiInboxController::class, 'markReviewed'])->name('agent.ai-inbox.mark-reviewed');
 
+    // Build 8: Agent AI Analytics — agent-only, scoped to owning agent
+    Route::get('/agent/ai-analytics', [\App\Http\Controllers\AgentAi\AgentAiAnalyticsController::class, 'index'])->name('agent.ai-analytics');
+
     Route::get('/notifications/fetch', [NotificationController::class, 'fetch'])->name('notifications.fetch');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.markRead');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');

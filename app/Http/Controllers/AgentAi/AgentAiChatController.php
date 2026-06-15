@@ -98,6 +98,16 @@ class AgentAiChatController extends Controller
             ], 422);
         }
 
+        // ── Per-scope rollout flag check ───────────────────────────────────────
+        // If neither the global flag nor this scope's individual flag is enabled,
+        // return 404 — V1 serves this page type.
+        if (!$this->isScopeEnabled($scope)) {
+            return response()->json([
+                'status' => 'error',
+                'error'  => 'This scope is not yet available.',
+            ], 404);
+        }
+
         // ── Validate channel if provided ──────────────────────────────────────
         if ($channel !== null && !in_array($channel, AgentAiChatSession::ALLOWED_CHANNELS, true)) {
             return response()->json([
@@ -236,6 +246,16 @@ class AgentAiChatController extends Controller
                 'status' => 'error',
                 'error'  => 'Session scope is invalid.',
             ], 500);
+        }
+
+        // ── Per-scope rollout flag check ───────────────────────────────────────
+        // Re-validates that the scope is still enabled; guards against sessions
+        // that were started before a scope was rolled back.
+        if (!$this->isScopeEnabled($resolvedScope)) {
+            return response()->json([
+                'status' => 'error',
+                'error'  => 'This scope is not yet available.',
+            ], 404);
         }
 
         $agentId   = (int) $session->agent_id;
@@ -497,6 +517,16 @@ class AgentAiChatController extends Controller
 
         /** @var AgentAiChatSession $session */
         $session = $guard['session'];
+
+        // ── Per-scope rollout flag check ───────────────────────────────────────
+        $escalationScope = AgentAiContextScope::tryFrom((string) $session->scope);
+        if ($escalationScope !== null && !$this->isScopeEnabled($escalationScope)) {
+            return response()->json([
+                'status' => 'error',
+                'error'  => 'This scope is not yet available.',
+            ], 404);
+        }
+
         $agentId = (int) $session->agent_id;
 
         $visitorData = array_filter([
@@ -575,6 +605,7 @@ class AgentAiChatController extends Controller
             'session_id'    => $session->id,
             'role'          => AgentAiChatMessage::ROLE_USER,
             'content'       => $userContent,
+            'action_key'    => AgentAiActionResolver::ACTION_VIEW_AGENT_SERVICES,
             'context_scope' => $contextScope,
             'tokens_used'   => null,
             'created_at'    => now(),
@@ -597,6 +628,35 @@ class AgentAiChatController extends Controller
             'escalate' => $inlineResponse['escalate'],
             'actions'  => $inlineResponse['actions'] ?? [],
         ]);
+    }
+
+    /**
+     * Return the config key for a scope's per-scope rollout flag.
+     */
+    private function scopeConfigKey(AgentAiContextScope $scope): string
+    {
+        return match ($scope) {
+            AgentAiContextScope::PublicListingSeller   => 'agent_ai_v2_seller_enabled',
+            AgentAiContextScope::PublicListingLandlord => 'agent_ai_v2_landlord_enabled',
+            AgentAiContextScope::BuyerCriteria         => 'agent_ai_v2_buyer_enabled',
+            AgentAiContextScope::TenantCriteria        => 'agent_ai_v2_tenant_enabled',
+            AgentAiContextScope::AgentProfile          => 'agent_ai_v2_agent_profile_enabled',
+        };
+    }
+
+    /**
+     * Return true if either the global V2 flag or the scope-specific flag is enabled.
+     *
+     * The global flag (agent_ai_v2_enabled) enables all scopes at once.
+     * The per-scope flags allow individual scopes to be turned on/off independently.
+     */
+    private function isScopeEnabled(AgentAiContextScope $scope): bool
+    {
+        if (config('ask_ai.agent_ai_v2_enabled', false)) {
+            return true;
+        }
+
+        return (bool) config('ask_ai.' . $this->scopeConfigKey($scope), false);
     }
 
     /**

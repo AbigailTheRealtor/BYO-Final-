@@ -71,6 +71,30 @@ return [
     'agent_ai_v2_enabled' => env('AGENT_AI_ASSISTANT_V2', false),
 
     /*
+     * Per-scope V2 rollout flags — phased production enablement.
+     *
+     * Each flag independently enables V2 for one page type (scope).
+     * V1 continues serving any scope where the corresponding flag is false.
+     * When a scope flag is true, V2 handles requests for that scope.
+     * A single global flag is not used for phased rollout — these five flags
+     * allow independent enablement and independent rollback without code deployment.
+     *
+     * Rollout order: seller → landlord → buyer → tenant → agent_profile.
+     * Each scope should be manually verified on at least one live listing
+     * before its flag is flipped.
+     *
+     * Set the corresponding env var to true in production to enable a scope.
+     * Set it back to false to roll back to V1 for that scope with no code change.
+     *
+     * GOVERNANCE: Verify scope on a live listing before setting to true.
+     */
+    'agent_ai_v2_seller_enabled'       => env('AGENT_AI_V2_SELLER_ENABLED', false),
+    'agent_ai_v2_landlord_enabled'     => env('AGENT_AI_V2_LANDLORD_ENABLED', false),
+    'agent_ai_v2_buyer_enabled'        => env('AGENT_AI_V2_BUYER_ENABLED', false),
+    'agent_ai_v2_tenant_enabled'       => env('AGENT_AI_V2_TENANT_ENABLED', false),
+    'agent_ai_v2_agent_profile_enabled' => env('AGENT_AI_V2_AGENT_PROFILE_ENABLED', false),
+
+    /*
     |--------------------------------------------------------------------------
     | Agent AI V2 — Model Configuration
     |--------------------------------------------------------------------------

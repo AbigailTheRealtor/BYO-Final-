@@ -37,6 +37,7 @@ class AgentAiChatMessage extends Model
         'role',
         'content',
         'detected_intent',
+        'action_key',
         'lead_score_snapshot',
         'context_scope',
         'tokens_used',
