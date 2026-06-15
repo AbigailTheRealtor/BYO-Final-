@@ -15,21 +15,27 @@
                                         @if ($user_type === 'seller')
                                             @if ($property_type === 'Residential')
                                                 <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
+                                                    x-on:input="document.getElementById('seller-desc-counter').textContent = $el.value.length + ' characters'"
                                                     placeholder="Enter a description of this residential property, including key features, recent renovations, amenities, and standout highlights (e.g., Newly renovated kitchen, Hardwood floors, Large backyard)."></textarea>
                                             @elseif ($property_type === 'Commercial')
                                                 <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
+                                                    x-on:input="document.getElementById('seller-desc-counter').textContent = $el.value.length + ' characters'"
                                                     placeholder="Enter a description of this commercial property, including property class, recent improvements, layout, zoning, and key highlights (e.g., Class A office space, Recent HVAC upgrade, High-traffic location)."></textarea>
                                             @elseif ($property_type === 'Vacant Land')
                                                 <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
+                                                    x-on:input="document.getElementById('seller-desc-counter').textContent = $el.value.length + ' characters'"
                                                     placeholder="Enter a description of this vacant land, including lot size, zoning, utilities, access, and development potential (e.g., 2-acre cleared parcel, Residential zoning, Public utilities available)."></textarea>
                                             @else
                                                 <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
-                                                    placeholder="Enter a detailed description of the property to help interested parties understand its key features, improvements, and standout highlights."></textarea>
+                                                    x-on:input="document.getElementById('seller-desc-counter').textContent = $el.value.length + ' characters'"
+                                                    placeholder="Enter property description (e.g., Updated 4BR/3BA home with new roof 2022, open floor plan, two-car garage, close to top schools)"></textarea>
                                             @endif
                                         @else
                                             <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
+                                                x-on:input="document.getElementById('seller-desc-counter').textContent = $el.value.length + ' characters'"
                                                 placeholder="Enter property description (e.g., Recently renovated kitchen, Waterfront views, Flexible lease terms)"></textarea>
                                         @endif
                                     </div>
+                                    <div class="text-end mt-1"><small class="text-muted" id="seller-desc-counter">{{ strlen($additional_details ?? '') }} characters</small></div>
                                 </div>
 

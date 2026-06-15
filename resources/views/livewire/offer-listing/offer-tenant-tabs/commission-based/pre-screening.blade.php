@@ -11,7 +11,7 @@
 </div>
 <!-- Number of Occupants -->
 <div class="form-group">
-    <label class="fw-bold">Number of Occupants:<span class="text-danger">*</span>
+    <label class="fw-bold">Number of Occupants: <span class="text-danger">*</span>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" title="Enter the total number of occupants.">
             <i class="fa-solid fa-circle-info"></i>
@@ -28,7 +28,7 @@
 
 <!--2.  Total Monthly Net Household Income: -->
 <div class="form-group">
-    <label class="fw-bold">Estimated Monthly Net Household Income:<span class="text-danger">*</span>
+    <label class="fw-bold">Estimated Monthly Net Household Income: <span class="text-danger">*</span>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the total post-tax income for all occupants.">
             <i class="fa-solid fa-circle-info"></i>
@@ -214,7 +214,7 @@
         <div class="input-cover">
             <input type="text" wire:model="screening_concerns_explanation" class="form-control has-icon"
                 data-icon="fa-solid fa-list"
-                placeholder="Enter screening concerns (e.g, Low Credit, Prior Eviction, Background Check Issues)">
+                placeholder="Enter screening concerns (e.g., low credit score, prior eviction, background check issues)">
         </div>
     </div>
 @endif

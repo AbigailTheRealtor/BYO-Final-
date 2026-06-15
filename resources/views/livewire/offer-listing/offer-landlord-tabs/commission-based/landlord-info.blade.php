@@ -11,28 +11,28 @@
 </div>
 <!-- First Name -->
 <div class="form-group">
-    <label class="fw-bold">First Name:<span class="text-danger">*</span></label>
+    <label class="fw-bold">First Name: <span class="text-danger">*</span></label>
 
     <div class="input-cover">
         <input type="text" wire:model="first_name" class="form-control has-icon" data-icon="fa-solid fa-user"
-            placeholder="Enter first name" required>
+            placeholder="Enter first name (e.g., John)" required>
     </div>
     @error('first_name') <span class="text-danger">{{ $message }}</span> @enderror
 </div>
 
 <!-- Last Name -->
 <div class="form-group">
-    <label class="fw-bold">Last Name:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Last Name: <span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model="last_name" class="form-control has-icon" data-icon="fa-solid fa-user"
-            placeholder="Enter last name" required>
+            placeholder="Enter last name (e.g., Smith)" required>
     </div>
     @error('last_name') <span class="text-danger">{{ $message }}</span> @enderror
 </div>
 
 <!-- Phone Number -->
 <div class="form-group">
-  <label class="fw-bold">Phone Number:<span class="text-danger">*</span></label>
+  <label class="fw-bold">Phone Number: <span class="text-danger">*</span></label>
   <div class="input-cover">
    <input
   type="text"
@@ -40,7 +40,7 @@
   wire:model.defer="phone_number"
   class="form-control has-icon"
   data-icon="fa-solid fa-phone"
-  placeholder="(555) 555-5555"
+  placeholder="Enter phone number (e.g., (727) 555-1234)"
   inputmode="numeric"
   autocomplete="tel"
   maxlength="14"
@@ -53,10 +53,10 @@
 
 <!-- Email -->
 <div class="form-group">
-    <label class="fw-bold">Email Address:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Email Address: <span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="email" wire:model="email" class="form-control has-icon" data-icon="fa-solid fa-envelope"
-            placeholder="Enter email address" required>
+            placeholder="Enter email address (e.g., john@example.com)" required>
     </div>
     @error('email') <span class="text-danger">{{ $message }}</span> @enderror
 </div>

@@ -8,5 +8,7 @@
         </span>
     </label>
     <textarea wire:model.lazy="additional_details_broker" class="form-control mt-2" rows="3"
-        placeholder="Enter any additional terms"></textarea>
+        x-on:input="$el.nextElementSibling.querySelector('small').textContent = $el.value.length + ' characters'"
+        placeholder="Enter additional broker compensation terms (e.g., custom arrangements, referral notes)"></textarea>
+    <div class="text-end mt-1"><small class="text-muted">{{ strlen($additional_details_broker ?? '') }} characters</small></div>
 </div>

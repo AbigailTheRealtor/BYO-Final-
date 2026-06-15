@@ -39,7 +39,7 @@
     ];
 @endphp
 <!-- Section Heading -->
-<h3> Sale Terms </h3>
+<h3>Sale Terms</h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
@@ -51,7 +51,7 @@
 </div>
 
 <div class="form-group">
-    <label class="fw-bold"> Special Sale Provision: <span class="text-danger">*</span></label>
+    <label class="fw-bold">Special Sale Provision: <span class="text-danger">*</span></label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select any special sale conditions that apply to the property. If the applicable sale provision isn’t listed, select “Other” to describe it.">
@@ -189,7 +189,7 @@
 </div>
 
 <div class="form-group mt-4">
-    <label class="fw-bold">Target Closing Timeframe:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Target Closing Timeframe: <span class="text-danger">*</span></label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the Seller’s preferred closing timeframe. This helps Buyers and their Agents understand the Seller’s desired timing and evaluate whether it can be met.">
@@ -220,7 +220,7 @@
 @if ($property_type != 'Vacant Land')
 
     <div class="form-group">
-        <label class="fw-bold">Occupant Type:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Occupant Type: <span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select who currently occupies the property. If Tenant or Owner is selected, enter the Occupied Until date. If Vacant is selected, no date is required.">
             <i class="fa-solid fa-circle-info"></i>
@@ -241,7 +241,7 @@
         <label class="fw-bold">Occupied Until:</label>
         <div class="input-cover">
             <input type="date" wire:model="occupant_tenant" class="form-control has-icon"
-                data-icon="fa-regular fa-clock" placeholder="Enter other Occupied until">
+                data-icon="fa-regular fa-clock" placeholder="Enter occupied until date (e.g., June 30, 2026)">
         </div>
     </div>
 @endif
@@ -254,7 +254,7 @@
     </h5>
 </div>
 <div class="form-group">
-    <label class="fw-bold">Desired Sale Price:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Desired Sale Price: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the amount the Seller would like to receive for the property.">
         <i class="fa-solid fa-circle-info"></i>
@@ -312,7 +312,7 @@
 @else
 <div>
     <div class="form-group">
-        <label class="fw-bold">Desired Sale Price:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Desired Sale Price: <span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the amount the Seller would like to receive for the property.">
             <i class="fa-solid fa-circle-info"></i>
@@ -1432,7 +1432,7 @@
     </div>
 
     <div class="form-group">
-        <label class="fw-bold"> Purchase Price:</label>
+        <label class="fw-bold">Purchase Price:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the total price the Seller is seeking for the property.">
@@ -1450,7 +1450,7 @@
     </div>
 
     <div class="form-group mt-2">
-        <label class="fw-bold"> Down Payment:</label>
+        <label class="fw-bold">Down Payment:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the minimum down payment amount the Seller will accept from the Buyer.">
             <i class="fa-solid fa-circle-info"></i>
@@ -1480,7 +1480,7 @@
     </div>
 
     <div class="form-group mt-2">
-        <label class="fw-bold"> Seller Financing:</label>
+        <label class="fw-bold">Seller Financing:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the portion of the purchase price the Seller is willing to finance for the Buyer.">
             <i class="fa-solid fa-circle-info"></i>
@@ -1510,7 +1510,7 @@
     </div>
 
     <div class="form-group">
-        <label class="fw-bold"> Interest Rate:</label>
+        <label class="fw-bold">Interest Rate:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the interest rate the Seller will charge on the seller-financed amount.">
@@ -1526,7 +1526,7 @@
     </div>
 
     <div class="form-group">
-        <label class="fw-bold"> Loan Duration (Years):</label>
+        <label class="fw-bold">Loan Duration (Years):</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the term of the loan in years.">
@@ -2064,8 +2064,10 @@
     <div class="input-cover">
         <textarea wire:model="additional_seller_sale_terms" class="form-control has-icon seller-compact-textarea" rows="1"
             data-icon="fa-solid fa-file-lines"
-            placeholder="Enter any additional sale terms or special conditions the Seller requires"></textarea>
+            x-on:input="$el.parentElement.nextElementSibling.querySelector('small').textContent = $el.value.length + ' characters'"
+            placeholder="Enter additional sale terms (e.g., seller retains mineral rights, closing cost contribution required)"></textarea>
     </div>
+    <div class="text-end mt-1"><small class="text-muted">{{ strlen($additional_seller_sale_terms ?? '') }} characters</small></div>
 </div>
 
 {{-- 20. Estimated Payment Assumptions --}}

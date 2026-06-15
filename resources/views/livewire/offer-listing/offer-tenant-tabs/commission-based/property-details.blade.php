@@ -15,19 +15,19 @@
     <label class="fw-bold">Unit Number:</label>
     <div class="input-cover">
         <input type="text" wire:model="number_of_unit" class="form-control has-icon" data-icon="fa-solid fa-home"
-            placeholder="Enter unit number">
+            placeholder="Enter unit number (e.g., Apt 4B)">
     </div>
     <span class="error mt-2" id="number_of_unit_error"></span>
 </div> --}}
 
 {{-- <div class="form-group mb-3">
-    <label class="fw-bold mb-2">City:<span class="text-danger">*</span></label>
+    <label class="fw-bold mb-2">City: <span class="text-danger">*</span></label>
     <div class="input-cover position-relative">
         <input type="text" wire:model="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementHighlight('City')"
             wire:keydown.arrow-down.prevent="incrementHighlight('City')"
             class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
-            autocomplete="off" placeholder="Enter city">
+            autocomplete="off" placeholder="Enter city (e.g., Miami)">
 
         @if (count($citySuggestions) > 0)
             <div class="autocomplete-dropdown shadow-sm">
@@ -51,13 +51,13 @@
 </div>
 
 <div class="form-group mb-3">
-    <label class="fw-bold mb-2">County:<span class="text-danger">*</span></label>
+    <label class="fw-bold mb-2">County: <span class="text-danger">*</span></label>
     <div class="input-cover position-relative">
         <input type="text" wire:model="newCounty" wire:keydown.enter.prevent="selectCountySuggestion()"
             wire:keydown.arrow-up.prevent="decrementHighlight('County')"
             wire:keydown.arrow-down.prevent="incrementHighlight('County')"
             class="form-control has-icon @error('newCounty') is-invalid @enderror" data-icon="fa-solid fa-map"
-            autocomplete="off" placeholder="Enter county">
+            autocomplete="off" placeholder="Enter county (e.g., Miami-Dade County)">
 
         @if (count($countySuggestions) > 0)
             <div class="autocomplete-dropdown shadow-sm">
@@ -93,7 +93,7 @@
             wire:keydown.arrow-up.prevent="decrementHighlight('City')"
             wire:keydown.arrow-down.prevent="incrementHighlight('City')"
             class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
-            autocomplete="off" placeholder="Enter city or cities">
+            autocomplete="off" placeholder="Enter city or cities (e.g., Miami, Austin)">
 
         <!-- City Suggestions Dropdown -->
         @if (count($citySuggestions) > 0)
@@ -134,7 +134,7 @@
 
 <!-- Acceptable Counties -->
 <div class="form-group mb-3">
-    <label class="fw-bold">Acceptable Counties:<span class="text-danger">*</span>
+    <label class="fw-bold">Acceptable Counties: <span class="text-danger">*</span>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the counties where the Tenant is willing to lease a property. If a county is selected, the state will automatically populate.">
             <i class="fa-solid fa-circle-info"></i>
@@ -145,7 +145,7 @@
             wire:keydown.arrow-up.prevent="decrementHighlight('County')"
             wire:keydown.arrow-down.prevent="incrementHighlight('County')"
             class="form-control has-icon @error('newCounty') is-invalid @enderror" data-icon="fa-solid fa-map"
-            autocomplete="off" placeholder="Enter county or counties">
+            autocomplete="off" placeholder="Enter county or counties (e.g., Miami-Dade, Broward)">
 
         <!-- County Suggestions Dropdown -->
         @if (count($countySuggestions) > 0)
@@ -186,7 +186,7 @@
 </div>
 
 <div class="form-group">
-    <label class="fw-bold">Acceptable State:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Acceptable State: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the state where the Tenant is looking to lease a property. This may be automatically filled based on the counties selected.">
         <i class="fa-solid fa-circle-info"></i>
@@ -196,7 +196,7 @@
         <input type="text" wire:model="state" wire:keydown.enter.prevent="selectStateSuggestion"
             wire:keydown.arrow-up="decrementHighlight('state')" wire:keydown.arrow-down="incrementHighlight('state')"
             class="form-control has-icon @error('state') is-invalid @enderror" data-icon="fa-solid fa-flag-usa"
-            autocomplete="off" placeholder="Enter state" required>
+            autocomplete="off" placeholder="Enter state (e.g., FL)" required>
 
         @if (count($stateSuggestions) > 0)
             <div class="autocomplete-dropdown-counties shadow-sm">
@@ -243,7 +243,7 @@
 <!-- Property Type Dropdown -->
 
 <div class="form-group">
-    <label class="fw-bold"> Acceptable Property Type:<span class="text-danger">*</span>
+    <label class="fw-bold">Acceptable Property Type: <span class="text-danger">*</span>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type of property the Tenant is looking to lease.">
             <i class="fa-solid fa-circle-info"></i>
@@ -264,7 +264,7 @@
 
 <!-- Property Items Dropdown -->
 <div class="form-group mt-3">
-    <label class="fw-bold"> Acceptable Property Styles:</label>
+    <label class="fw-bold">Acceptable Property Styles:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the Tenant’s preferred architectural or structural styles.">
@@ -372,7 +372,7 @@
 <div wire:key="tenant-property-fields-{{ $property_type ?? 'none' }}">
 @if ($property_type === 'Residential Property')
     <div class="form-group">
-        <label class="fw-bold">Minimum Bedrooms Needed:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Minimum Bedrooms Needed: <span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the minimum number of bedrooms the Tenant requires.">
@@ -406,7 +406,7 @@
 
 <!-- Minimum Bathrooms Needed -->
 <div class="form-group">
-    <label class="fw-bold">Minimum Bathrooms Needed:<span class="text-danger">*</span>
+    <label class="fw-bold">Minimum Bathrooms Needed: <span class="text-danger">*</span>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the minimum number of bathrooms the Tenant requires.">
@@ -438,7 +438,7 @@
 <!-- Minimum Heated Sqft Needed -->
 @if ($property_type === 'Residential Property')
     <div class="form-group">
-        <label class="fw-bold"> Minimum Heated SqFt Needed:</label>
+        <label class="fw-bold">Minimum Heated SqFt Needed:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the minimum heated (climate-controlled) square footage the Tenant requires.">

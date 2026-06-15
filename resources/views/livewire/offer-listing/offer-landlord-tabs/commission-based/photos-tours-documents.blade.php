@@ -126,26 +126,26 @@
     @endif
 </div>
 
-<!-- Video Tour URL -->
+<!-- Virtual Tour URL -->
 <div class="form-group mt-4">
     <label class="fw-bold">
-        Video Tour URL:
+        Virtual Tour URL:
         <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top"
-            title="Paste a link to a video tour of the property (e.g., YouTube, Vimeo, or direct video URL).">
+            title="Paste a link to a virtual tour of the property (e.g., Matterport, Zillow 3D Home, or YouTube walkthrough).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div class="input-cover">
         <input type="url" wire:model="videoTourUrl" class="form-control has-icon"
             data-icon="fa-solid fa-video"
-            placeholder="Enter video tour URL (e.g., https://www.youtube.com/watch?v=...)">
+            placeholder="Enter virtual tour URL (e.g., https://my.matterport.com/show/...)">
     </div>
     @if ($videoTourUrl)
         @php $landlordEmbedUrl = \App\Support\VideoEmbedHelper::getEmbedUrl($videoTourUrl); @endphp
         @if ($landlordEmbedUrl)
             <div class="ratio ratio-16x9 mt-2" style="max-width: 560px;">
                 <iframe src="{{ $landlordEmbedUrl }}"
-                        title="Video Tour Preview"
+                        title="Virtual Tour Preview"
                         allowfullscreen
                         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
                 </iframe>

@@ -218,7 +218,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="flood_zone_date" class="form-control has-icon"
                     data-icon="fa-solid fa-calendar-days"
-                    placeholder="May 15, 2019">
+                    placeholder="Enter flood map effective date (e.g., May 15, 2019)">
             </div>
         </div>
 

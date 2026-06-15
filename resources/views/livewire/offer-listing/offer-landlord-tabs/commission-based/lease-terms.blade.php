@@ -67,7 +67,7 @@
 
         <div class="input-cover">
             <input type="date" wire:model="occupant_tenant" class="form-control has-icon"
-                data-icon="fa-regular fa-clock" placeholder="Enter Occupied until" required>
+                data-icon="fa-regular fa-clock" placeholder="Enter occupied until date (e.g., June 30, 2026)" required>
         </div>
     </div>
 @endif
@@ -77,7 +77,7 @@
 {{-- @if ($property_type === 'Residential Property') --}}
 
 <div class="form-group">
-    <label class="fw-bold"> Leasing Space:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Leasing Space: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Indicate what part of the property is available for lease.">
         <i class="fa-solid fa-circle-info"></i>
@@ -153,7 +153,7 @@
             </div>
 
             <div class="form-group" wire:key="included-storage-space-res-both-{{ $property_type }}">
-                <label class="fw-bold"> Included Storage Space:
+                <label class="fw-bold">Included Storage Space:
 
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
@@ -304,7 +304,7 @@
             </div>
 
             <div class="form-group" wire:key="included-storage-space-res-single-{{ $property_type }}">
-                <label class="fw-bold"> Included Storage Space:
+                <label class="fw-bold">Included Storage Space:
 
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
@@ -426,7 +426,7 @@
             </div>
 
             <div class="form-group" wire:key="included-storage-space-com-entire-{{ $property_type }}">
-                <label class="fw-bold"> Included Storage Space:
+                <label class="fw-bold">Included Storage Space:
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
                         <i class="fa-solid fa-circle-info"></i>
@@ -521,7 +521,7 @@
 
             {{-- 🧱 Space Features --}}
             <div class="form-group">
-                <label class="fw-bold"> Space Features:</label>
+                <label class="fw-bold">Space Features:</label>
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Describe the layout or functional aspects of the space (e.g., private offices, warehouse bay, open floor plan, loading dock).">
@@ -667,7 +667,7 @@
             </div>
 
             <div class="form-group" wire:key="included-storage-space-com-single-{{ $property_type }}">
-                <label class="fw-bold"> Included Storage Space:
+                <label class="fw-bold">Included Storage Space:
 
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
@@ -811,7 +811,7 @@
         </div>
 
         <div class="form-group">
-            <label class="fw-bold"> Space Features:</label>
+            <label class="fw-bold">Space Features:</label>
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Describe the layout or functional aspects of the space (e.g., private offices, warehouse bay, open floor plan, loading dock).">
@@ -826,7 +826,7 @@
         </div>
 
         <div class="form-group" wire:ignore wire:key="included-storage-space-res-single-{{ $property_type }}">
-            <label class="fw-bold"> Included Storage Space:
+            <label class="fw-bold">Included Storage Space:
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
                     <i class="fa-solid fa-circle-info"></i>
@@ -939,7 +939,7 @@
 
     {{-- 📜 Terms of Lease --}}
     {{-- <div class="form-group" wire:ignore>
-        <label class="fw-bold">Terms of Lease:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Terms of Lease: <span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the lease term offered for this property. This defines how costs and responsibilities—such as taxes, insurance, and maintenance—are structured between the Landlord and Tenant.">
             <i class="fa-solid fa-circle-info"></i>
@@ -995,7 +995,7 @@
     </h5>
 </div>
 <div class="form-group">
-    <label class="fw-bold">Desired Lease Price:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Desired Lease Price: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the lease price the Landlord would like to receive.">
         <i class="fa-solid fa-circle-info"></i>
@@ -1053,7 +1053,7 @@
 </div>
 @else
 <div class="form-group">
-    <label class="fw-bold">Desired Lease Price:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Desired Lease Price: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the monthly rent amount the Landlord would like to collect. ">
         <i class="fa-solid fa-circle-info"></i>
@@ -1227,7 +1227,7 @@
     </span>
     <div class="input-cover">
         <input type="date" wire:model="available_date" class="form-control has-icon"
-            data-icon="fa-regular fa-calendar" placeholder="Select available date">
+            data-icon="fa-regular fa-calendar" placeholder="Select available date (e.g., 01/15/2026)">
     </div>
 </div>
 
@@ -1407,8 +1407,10 @@
     <div class="input-cover">
         <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-file-lines"
-            placeholder="Enter any additional lease terms or special conditions"></textarea>
+            x-on:input="$el.parentElement.nextElementSibling.querySelector('small').textContent = $el.value.length + ' characters'"
+            placeholder="Enter additional lease terms (e.g., early termination clause, month-to-month option after year 1)"></textarea>
     </div>
+    <div class="text-end mt-1"><small class="text-muted">{{ strlen($additional_landlord_lease_terms ?? '') }} characters</small></div>
 </div>
 
 {{-- ===== COMMERCIAL-ONLY LEASING TERM FIELDS ===== --}}

@@ -364,7 +364,7 @@
 
     $business_assets = $business_assets ?? [];
 @endphp
-<h3>Property Details </h3>
+<h3>Property Details</h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
@@ -376,7 +376,7 @@
 </div>
 <!-- Street Address -->
 <div class="form-group mb-3">
-    <label class="fw-bold"> Street Address:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Street Address: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the street address of the property (e.g., 123 Main Street). City, County, and State will be entered separately below.">
         <i class="fa-solid fa-circle-info"></i>
@@ -400,7 +400,7 @@
 
 <!-- Property City -->
 <div class="form-group mb-3">
-    <label class="fw-bold">City:<span class="text-danger">*</span></label>
+    <label class="fw-bold">City: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the city where the property is located. Selecting a city will automatically populate the county and state.">
         <i class="fa-solid fa-circle-info"></i>
@@ -413,7 +413,7 @@
             class="form-control has-icon @error('property_city') is-invalid @enderror" 
             data-icon="fa-solid fa-city"
             autocomplete="off" 
-            placeholder="Enter city"
+            placeholder="Enter city (e.g., Miami)"
             required>
 
         @if (!empty($propertyCitySuggestions) && count($propertyCitySuggestions) > 0)
@@ -439,7 +439,7 @@
 
 <!-- Property State -->
 <div class="form-group mb-3">
-    <label class="fw-bold">State:<span class="text-danger">*</span></label>
+    <label class="fw-bold">State: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the state where the property is located. This will be automatically populated when a city or county is selected.">
         <i class="fa-solid fa-circle-info"></i>
@@ -448,7 +448,7 @@
         <input type="text" wire:model="property_state" 
             class="form-control has-icon @error('property_state') is-invalid @enderror" 
             data-icon="fa-solid fa-flag-usa"
-            placeholder="Enter state" 
+            placeholder="Enter state (e.g., FL)" 
             required>
         @error('property_state')
             <div class="error-message">{{ $message }}</div>
@@ -458,7 +458,7 @@
 
 <!-- Property County -->
 <div class="form-group mb-3">
-    <label class="fw-bold">County:<span class="text-danger">*</span></label>
+    <label class="fw-bold">County: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the county where the property is located. This may be automatically populated when a city is selected.">
         <i class="fa-solid fa-circle-info"></i>
@@ -467,7 +467,7 @@
         <input type="text" wire:model="property_county" 
             class="form-control has-icon @error('property_county') is-invalid @enderror" 
             data-icon="fa-solid fa-map"
-            placeholder="Enter county" 
+            placeholder="Enter county (e.g., Miami-Dade County)" 
             required>
         @error('property_county')
             <div class="error-message">{{ $message }}</div>
@@ -477,7 +477,7 @@
 
 <!-- Property ZIP Code -->
 <div class="form-group mb-3">
-    <label class="fw-bold">ZIP Code:<span class="text-danger">*</span></label>
+    <label class="fw-bold">ZIP Code: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the ZIP code where the property is located.">
         <i class="fa-solid fa-circle-info"></i>
@@ -486,7 +486,7 @@
         <input type="text" wire:model="property_zip" 
             class="form-control has-icon @error('property_zip') is-invalid @enderror" 
             data-icon="fa-solid fa-map-pin"
-            placeholder="Enter ZIP code" 
+            placeholder="Enter ZIP code (e.g., 33101)" 
             required
             maxlength="10">
         @error('property_zip')
@@ -498,7 +498,7 @@
 
 @if ($cityFieldVisible)
     <div class="form-group mb-3">
-        <label class="fw-bold">City:<span class="text-danger">*</span></label>
+        <label class="fw-bold">City: <span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the cities where you’re interested in selling a property.">
@@ -510,7 +510,7 @@
                 wire:keydown.arrow-up.prevent="decrementHighlight('City')"
                 wire:keydown.arrow-down.prevent="incrementHighlight('City')"
                 class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
-                autocomplete="off" placeholder="Enter city or cities">
+                autocomplete="off" placeholder="Enter city or cities (e.g., Miami, Austin)">
 
             <!-- City Suggestions Dropdown -->
             @if (count($citySuggestions) > 0)
@@ -564,7 +564,7 @@
                 wire:keydown.arrow-up.prevent="decrementHighlight('ZipCode')"
                 wire:keydown.arrow-down.prevent="incrementHighlight('ZipCode')"
                 class="form-control has-icon @error('zip_code') is-invalid @enderror" data-icon="fa-solid fa-map-pin"
-                autocomplete="off" placeholder="Enter one or more ZIP codes">
+                autocomplete="off" placeholder="Enter one or more ZIP codes (e.g., 33101, 33102)">
 
             @if (count($zipCodeSuggestions) > 0)
                 <div class="autocomplete-dropdown shadow-sm">
@@ -607,7 +607,7 @@
 @if ($stateFieldVisible)
 
     <div class="form-group">
-        <label class="fw-bold">State:<span class="text-danger">*</span></label>
+        <label class="fw-bold">State: <span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the state where you’re looking to sell.">
@@ -619,7 +619,7 @@
                 wire:keydown.arrow-up="decrementHighlight('state')"
                 wire:keydown.arrow-down="incrementHighlight('state')"
                 class="form-control has-icon @error('state') is-invalid @enderror" data-icon="fa-solid fa-flag-usa"
-                autocomplete="off" placeholder="Enter state" required>
+                autocomplete="off" placeholder="Enter state (e.g., FL)" required>
 
             @if (count($stateSuggestions) > 0)
                 <div class="autocomplete-dropdown-counties shadow-sm">
@@ -648,7 +648,7 @@
 
 {{-- /////////////////////// --}}
 <div class="form-group">
-    <label class="fw-bold"> Property Type:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Property Type: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the type of property being offered for sale.">
         <i class="fa-solid fa-circle-info"></i>
@@ -669,7 +669,7 @@
 </div>
 
 <div class="form-group mt-3">
-    <label class="fw-bold"> Property Style:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Property Style: <span class="text-danger">*</span></label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the specific architectural or structural style of the property.">
@@ -760,7 +760,7 @@
 @if ($property_type != 'Vacant Land')
 
     <div class="form-group">
-        <label class="fw-bold">Property Condition:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Property Condition: <span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the current condition of the property being offered for sale.">
             <i class="fa-solid fa-circle-info"></i>
@@ -792,7 +792,7 @@
 <div wire:key="seller-property-fields-{{ $property_type ?? 'none' }}">
 @if ($property_type === 'Residential')
     <div class="form-group">
-        <label class="fw-bold"> Bedrooms:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Bedrooms: <span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the number of bedrooms in the property.">
@@ -826,7 +826,7 @@
 @if (in_array($property_type, ['Residential', 'Business', 'Commercial']))
 
     <div class="form-group">
-        <label class="fw-bold"> Bathrooms :<span class="text-danger">*</span></label>
+        <label class="fw-bold">Bathrooms: <span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the number of bathrooms in the property.">
@@ -859,7 +859,7 @@
 <!-- Minimum Heated SqFt Needed -->
 {{-- @if (in_array($property_type, ['Residential', 'Business', 'Commercial']))
     <div class="form-group" wire:key="heated-square-select-{{ $property_type }}">
-        <label class="fw-bold"> Heated SqFt:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Heated SqFt: <span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the total square footage of climate-controlled (heated/cooled) interior space.">
@@ -927,7 +927,7 @@
 
 <!-- Minimum Total Acreage Needed -->
 <div class="form-group">
-    <label class="fw-bold"> Total Acreage:</label>
+    <label class="fw-bold">Total Acreage:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the total land area of the property, measured in acres.">
@@ -979,7 +979,7 @@
 <!-- Furnishings Needed -->
 {{-- @if ($property_type === 'Residential')
                                 <div class="form-group">
-                                    <label class="fw-bold">Furnishings Needed:<span class="text-danger">*</span></label>
+                                    <label class="fw-bold">Furnishings Needed: <span class="text-danger">*</span></label>
                                     <div class="input-cover">
                                         <select wire:model="tenant_require" id="tenant_require"
                                             class="form-control has-icon" data-icon="fa-solid fa-couch" required>
@@ -1068,7 +1068,7 @@
 
     {{-- @if ($property_type === 'Business') --}}
     {{-- <div class="form-group">
-        <label class="fw-bold">Garage/Parking Features:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Garage/Parking Features: <span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type of garage or parking features available.">
@@ -1490,7 +1490,7 @@
 @endif
 @if ($property_type === 'Business')
     <div class="form-group">
-        <label class="fw-bold">Business & Real Estate Purchase Requirements:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Business & Real Estate Purchase Requirements: <span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select whether the purchase includes both the real estate and the business, or only the business operation.">
@@ -2437,7 +2437,7 @@
         </span>
         <div class="input-cover">
             <input type="text" wire:model.defer="business_name" class="form-control has-icon"
-                data-icon="fa-solid fa-store" placeholder="Enter business name">
+                data-icon="fa-solid fa-store" placeholder="Enter business name (e.g., ABC Properties LLC)">
         </div>
         <span class="error mt-2" id="business_name_error"></span>
     </div>

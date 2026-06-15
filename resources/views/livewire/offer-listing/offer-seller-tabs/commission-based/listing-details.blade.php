@@ -9,7 +9,7 @@ $auction_lengths_seller = [
 ];
 @endphp
 <div class="dashboard-section">
-    <h3>Listing Details </h3>
+    <h3>Listing Details</h3>
     <div class="alert alert-info bg-light-info border-info mb-4">
         <div class="d-flex align-items-center">
             <div>
@@ -163,7 +163,7 @@ $auction_lengths_seller = [
 
     <!-- Listing Date -->
     <div class="form-group">
-        <label class="fw-bold">Listing Date:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Listing Date: <span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="This date establishes when the listing becomes active.">
             <i class="fa-solid fa-circle-info"></i>
@@ -177,7 +177,7 @@ $auction_lengths_seller = [
 
     <!-- Expiration Date -->
     <div class="form-group">
-        <label class="fw-bold">Expiration Date:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Expiration Date: <span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="This date determines when the listing expires or stops accepting offers. Extend the expiration before this date to keep the listing active.">
             <i class="fa-solid fa-circle-info"></i>
@@ -190,7 +190,7 @@ $auction_lengths_seller = [
     </div>
 
     <div class="form-group">
-        <label class="fw-bold">Listing Type:<span class="text-danger">*</span>
+        <label class="fw-bold">Listing Type: <span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select how offers are submitted for this listing. Choose Bidding Period for a structured window where offers may be submitted until a deadline. Choose Traditional to allow offers to be submitted at any time while the listing remains active.">
                 <i class="fa-solid fa-circle-info"></i>

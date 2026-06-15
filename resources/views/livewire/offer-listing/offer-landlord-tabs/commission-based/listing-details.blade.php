@@ -161,9 +161,7 @@ $auction_lengths_seller = [
 
     <!-- Listing Date -->
     <div class="form-group">
-        <label class="fw-bold">Listing Date:<span class="text-danger">*</span>
-
-        </label>
+        <label class="fw-bold">Listing Date: <span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="This date establishes when the listing becomes active.">
             <i class="fa-solid fa-circle-info"></i>
@@ -177,9 +175,7 @@ $auction_lengths_seller = [
 
     <!-- Expiration Date -->
     <div class="form-group">
-        <label class="fw-bold">Expiration Date:<span class="text-danger">*</span>
-
-        </label>
+        <label class="fw-bold">Expiration Date: <span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="This date determines when the listing expires or stops accepting offers. Extend the expiration before this date to keep the listing active.">
             <i class="fa-solid fa-circle-info"></i>
@@ -193,7 +189,7 @@ $auction_lengths_seller = [
     </div>
 
     {{-- <div class="form-group">
-        <label class="fw-bold">Listing Type:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Listing Type: <span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select how offers are submitted for this listing. This choice controls timing, offer visibility, and how offers are reviewed.">
             <i class="fa-solid fa-circle-info"></i>
@@ -232,7 +228,7 @@ $auction_lengths_seller = [
 
     <!-- Agent Bid Visibility (Only for Traditional) -->
     <div class="form-group mt-3" @if ($auction_type !== 'Traditional') style="display: none;" @endif>
-        <label class="fw-bold">Agent Bid Visibility Preference:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Agent Bid Visibility Preference: <span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Choose whether Agent bids will be public or private. Public bids encourage competition; private bids are only visible to the listing creator.">
             <i class="fa-solid fa-circle-info"></i>
@@ -249,7 +245,7 @@ $auction_lengths_seller = [
     </div> --}}
 
 <div class="form-group">
-        <label class="fw-bold">Listing Type:<span class="text-danger">*</span>
+        <label class="fw-bold">Listing Type: <span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select how offers are submitted for this listing. Choose Bidding Period for a structured window where offers may be submitted until a deadline. Choose Traditional to allow offers to be submitted at any time while the listing remains active.">
                 <i class="fa-solid fa-circle-info"></i>

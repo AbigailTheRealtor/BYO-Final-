@@ -24,7 +24,7 @@
         <div class="mt-3">
             @if ($purchase_fee_type === 'Flat Fee')
                 <div class="form-group">
-                    {{-- <label class="fw-bold"> Flat Fee :</label> --}}
+                    {{-- <label class="fw-bold">Flat Fee :</label> --}}
 
                     <div class="input-group">
 
@@ -56,7 +56,7 @@
                 </div>
             @elseif($purchase_fee_type === 'Percentage of the Rent Due Each Rental Period')
                 <div class="form-group">
-                    {{-- <label class="fw-bold"> Percentage of the Rent Due Each Rental Period:</label> --}}
+                    {{-- <label class="fw-bold">Percentage of the Rent Due Each Rental Period:</label> --}}
 
                     <div class="input-group">
 
@@ -68,7 +68,7 @@
                 </div>
             @elseif($purchase_fee_type === 'Percentage of the Gross Lease Value')
                 <div class="form-group">
-                    {{-- <label class="fw-bold"> Percentage of the Gross Lease Value:</label> --}}
+                    {{-- <label class="fw-bold">Percentage of the Gross Lease Value:</label> --}}
 
                     <div class="input-group">
 

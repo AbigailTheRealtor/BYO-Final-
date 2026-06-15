@@ -172,7 +172,7 @@
                             <textarea
                                 class="form-control"
                                 rows="2"
-                                placeholder="Enter a brief description of this document"
+                                placeholder="Enter a brief description of this document (e.g., Signed HOA disclosure, Flood zone notice)"
                                 x-model="row.description"
                                 @input="sync()"
                             ></textarea>

@@ -147,7 +147,7 @@
             wire:keydown.arrow-up.prevent="decrementHighlight('City')"
             wire:keydown.arrow-down.prevent="incrementHighlight('City')"
             class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
-            autocomplete="off" placeholder="Enter city or cities">
+            autocomplete="off" placeholder="Enter city or cities (e.g., Miami, Austin)">
 
 
         <!-- City Suggestions Dropdown -->
@@ -189,7 +189,7 @@
 
 <!-- Acceptable Counties -->
 <div class="form-group mb-3">
-    <label class="fw-bold">Acceptable Counties:<span class="text-danger">*</span>
+    <label class="fw-bold">Acceptable Counties: <span class="text-danger">*</span>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the counties where the Buyer is willing to purchase a property. If a county is selected, the state will automatically populate.">
@@ -201,7 +201,7 @@
             wire:keydown.arrow-up.prevent="decrementHighlight('County')"
             wire:keydown.arrow-down.prevent="incrementHighlight('County')"
             class="form-control has-icon @error('newCounty') is-invalid @enderror" data-icon="fa-solid fa-map"
-            autocomplete="off" placeholder="Enter county or counties">
+            autocomplete="off" placeholder="Enter county or counties (e.g., Miami-Dade, Broward)">
 
         <!-- County Suggestions Dropdown -->
         @if (count($countySuggestions) > 0)
@@ -246,7 +246,7 @@
     <span class="error mt-2" id="counties_error"></span>
 </div>
 <div class="form-group">
-    <label class="fw-bold">Acceptable State:<span class="text-danger">*</span>
+    <label class="fw-bold">Acceptable State: <span class="text-danger">*</span>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the state where the Buyer is looking to purchase a property. This may be automatically filled based on the counties selected.">
             <i class="fa-solid fa-circle-info"></i>
@@ -258,7 +258,7 @@
         <input type="text" wire:model.defer="state" wire:keydown.enter.prevent="selectStateSuggestion"
             wire:keydown.arrow-up="decrementHighlight('state')" wire:keydown.arrow-down="incrementHighlight('state')"
             class="form-control has-icon @error('state') is-invalid @enderror" data-icon="fa-solid fa-flag-usa"
-            autocomplete="off" placeholder="Enter state" required>
+            autocomplete="off" placeholder="Enter state (e.g., FL)" required>
 
         @if (count($stateSuggestions) > 0)
             <div class="autocomplete-dropdown-counties shadow-sm">
@@ -305,7 +305,7 @@
 <!-- Property Type Dropdown -->
 
 <div class="form-group">
-    <label class="fw-bold">Acceptable Property Type:<span class="text-danger">*</span>
+    <label class="fw-bold">Acceptable Property Type: <span class="text-danger">*</span>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type of property the Buyer is looking to purchase.">
@@ -328,7 +328,7 @@
 </div>
 
 <div class="form-group mt-3">
-    <label class="fw-bold">Acceptable Property Style:<span class="text-danger">*</span>
+    <label class="fw-bold">Acceptable Property Style: <span class="text-danger">*</span>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the Buyer’s preferred architectural or structural styles.">
             <i class="fa-solid fa-circle-info"></i>
@@ -454,7 +454,7 @@
 <div wire:key="buyer-property-fields-{{ $property_type ?? 'none' }}">
 @if ($property_type === 'Residential')
     <div class="form-group">
-        <label class="fw-bold"> Minimum Bedrooms Needed:<span class="text-danger">*</span>
+        <label class="fw-bold">Minimum Bedrooms Needed: <span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select the minimum number of bedrooms the Buyer requires.">
                 <i class="fa-solid fa-circle-info"></i>
@@ -487,7 +487,7 @@
 <!-- Minimum Bathrooms Needed -->
 @if (in_array($property_type, ['Residential', 'Commercial', 'Business']))
     <div class="form-group">
-        <label class="fw-bold">Minimum Bathrooms Needed:<span class="text-danger">*</span>
+        <label class="fw-bold">Minimum Bathrooms Needed: <span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select the minimum number of bathrooms the Buyer requires.">
                 <i class="fa-solid fa-circle-info"></i>
@@ -520,7 +520,7 @@
 <!-- Minimum Heated Sqft Needed -->
 @if ($property_type === 'Residential' or $property_type === 'Commercial' or $property_type === 'Business')
     <div class="form-group">
-        <label class="fw-bold"> Minimum Heated SqFt Needed:
+        <label class="fw-bold">Minimum Heated SqFt Needed:
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter the minimum heated (climate-controlled) square footage the Buyer requires.">
@@ -577,7 +577,7 @@
 <!-- Furnishings Needed -->
 {{-- @if ($property_type === 'Residential')
                                 <div class="form-group">
-                                    <label class="fw-bold">Furnishings Needed:<span class="text-danger">*</span></label>
+                                    <label class="fw-bold">Furnishings Needed: <span class="text-danger">*</span></label>
                                     <div class="input-cover">
                                         <select wire:model="tenant_require" id="tenant_require"
                                             class="form-control has-icon" data-icon="fa-solid fa-couch" required>
@@ -992,7 +992,7 @@
 @if ($property_type === 'Business')
     <div class="form-group">
         <label class="fw-bold">
-            Business &amp; Real Estate Purchase Requirements:<span class="text-danger">*</span>
+            Business &amp; Real Estate Purchase Requirements: <span class="text-danger">*</span>
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select whether the Buyer is looking to purchase both the real estate and the business, or just the business operation.">
@@ -1349,8 +1349,11 @@
 
     <div class="input-cover">
         <textarea wire:model.defer="preferance_details" class="form-control" rows="4"
-            style="padding: 10px; font-size: 16px;" placeholder="Enter any additional preferences (e.g., Prefer open floor plan, No HOA, Near public transit)"></textarea>
+            style="padding: 10px; font-size: 16px;"
+            x-on:input="$el.parentElement.nextElementSibling.querySelector('small').textContent = $el.value.length + ' characters'"
+            placeholder="Enter any additional preferences (e.g., Prefer open floor plan, No HOA, Near public transit)"></textarea>
     </div>
+    <div class="text-end mt-1"><small class="text-muted">{{ strlen($preferance_details ?? '') }} characters</small></div>
 </div>
 @endif
 </div>

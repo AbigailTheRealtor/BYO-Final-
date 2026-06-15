@@ -9,7 +9,7 @@
 
 <!-- Maximum Monthly Lease Price -->
 <div class="form-group">
-    <label class="fw-bold">Maximum Monthly Lease Price:<span class="text-danger">*</span>
+    <label class="fw-bold">Maximum Monthly Lease Price: <span class="text-danger">*</span>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the maximum rent the Tenant is willing to pay each month.">
             <i class="fa-solid fa-circle-info"></i>
@@ -32,7 +32,7 @@
 @if ($property_type === 'Residential Property')
 
 <div class="form-group">
-    <label class="fw-bold">Offered Lease Term:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Offered Lease Term: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" title="Select the Tenant's preferred lease term length.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
@@ -61,7 +61,7 @@
 
 
 <div class="form-group">
-    <label class="fw-bold">Offered Lease Term:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Offered Lease Term: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" title="Select the Tenant's preferred lease term length.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
@@ -99,7 +99,7 @@
 
 <!-- Offered Lease Date -->
 <div class="form-group">
-    <label class="fw-bold">Offered Lease Date:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Offered Lease Date: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the date the Tenant would like the lease to begin.">
         <i class="fa-solid fa-circle-info"></i>
@@ -114,7 +114,7 @@
 
 
 <div class="form-group" wire:ignore>
-    <label class="fw-bold"> Leasing Space:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Leasing Space: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the type of space the Tenant is open to leasing.">
         <i class="fa-solid fa-circle-info"></i>
@@ -420,8 +420,10 @@
         <textarea wire:model="tenant_conditions" class="form-control has-icon" rows="1"
             data-icon="fa-solid fa-clipboard-list"
             style="height: calc(1.5em + 0.75rem + 2px); min-height: unset; resize: vertical;"
-            placeholder="Enter any preferred lease or occupancy conditions requested by the Tenant."></textarea>
+            x-on:input="$el.parentElement.nextElementSibling.querySelector('small').textContent = $el.value.length + ' characters'"
+            placeholder="Enter tenant conditions (e.g., early termination clause, no-subletting waiver, move-in date flexibility)"></textarea>
     </div>
+    <div class="text-end mt-1"><small class="text-muted">{{ strlen($tenant_conditions ?? '') }} characters</small></div>
 </div>
 
 <!-- Field 14: Additional Tenant Lease Terms -->
@@ -579,7 +581,7 @@
         <textarea wire:model="commercial_approval_conditions" class="form-control has-icon" rows="1"
             data-icon="fa-solid fa-clipboard-check"
             style="height: calc(1.5em + 0.75rem + 2px); min-height: unset; resize: vertical;"
-            placeholder="Enter any approval conditions, business-use requirements, or documentation the Tenant may need before leasing the space."></textarea>
+            placeholder="Enter any approval conditions, business-use requirements, or documentation the Tenant may need before leasing the space (e.g., commercial use permit, HOA board approval)."></textarea>
     </div>
 </div>
 

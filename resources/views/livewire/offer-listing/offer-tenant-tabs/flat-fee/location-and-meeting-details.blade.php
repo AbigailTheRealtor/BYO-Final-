@@ -48,7 +48,7 @@
 
 <!-- Acceptable Counties -->
 <div class="form-group mb-3">
-    <label class="fw-bold mb-2"> County:</label>
+    <label class="fw-bold mb-2">County:</label>
     <div class="input-cover position-relative">
         <input type="text" wire:model.live.debounce.300ms="newCounty" wire:keydown.enter.prevent="selectCountySuggestion()"
             wire:keydown.arrow-up.prevent="decrementHighlight('County')"
@@ -96,7 +96,7 @@
 
 <!-- Acceptable State -->
 <div class="form-group">
-    <label class="fw-bold"> State:</label>
+    <label class="fw-bold">State:</label>
     <div class="input-cover position-relative">
         <input type="text" wire:model="state" class="form-control has-icon" data-icon="fa-solid fa-flag-usa" required
             wire:keydown.arrow-up="decrementHighlight('state')" wire:keydown.arrow-down="incrementHighlight('state')"
@@ -143,7 +143,7 @@
 
             <!-- Date -->
             <div class="form-group mb-3">
-                <label class="fw-bold"> Date:</label>
+                <label class="fw-bold">Date:</label>
                 <div class="input-cover">
                     <input type="date" wire:model="meeting_details_meeting_date" class="form-control has-icon"
                         data-icon="fa-regular fa-calendar-days" min="{{ now()->format('Y-m-d') }}" required>
@@ -152,7 +152,7 @@
 
             <!-- Time -->
             <div class="form-group mb-3">
-                <label class="fw-bold"> Time:</label>
+                <label class="fw-bold">Time:</label>
                 <div class="input-cover">
                     <input type="time" wire:model="meeting_details_meeting_time" class="form-control has-icon"
                         data-icon="fa-solid fa-clock" required>
@@ -224,7 +224,7 @@
 
                 <!-- Property Address -->
                 <div class="form-group mb-3">
-                    <label class="fw-bold"> Property Address:</label>
+                    <label class="fw-bold">Property Address:</label>
                     <div class="input-cover position-relative">
                         <input type="text" wire:model="address" class="form-control has-icon"
                             data-icon="fa-solid fa-map-pin" placeholder="Enter property address"
@@ -288,7 +288,7 @@
 
             <!-- Time -->
             <div class="form-group mb-3">
-                <label class="fw-bold"> Time:</label>
+                <label class="fw-bold">Time:</label>
                 <div class="input-cover">
                     <input type="time" wire:model="service_completion_time" class="form-control has-icon"
                         data-icon="fa-solid fa-clock" required>
@@ -297,7 +297,7 @@
 
             <!-- Time Zone -->
             <div class="form-group">
-                <label class="fw-bold"> Time Zone:</label>
+                <label class="fw-bold">Time Zone:</label>
                 <div class="input-cover">
                     <select wire:model="service_time_zone" class="form-control has-icon"
                         data-icon="fa-solid fa-globe" required>

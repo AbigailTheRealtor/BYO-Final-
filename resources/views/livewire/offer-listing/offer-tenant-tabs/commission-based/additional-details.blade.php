@@ -9,10 +9,12 @@
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="fw-bold">Criteria &amp; Preferences</label>
+                                    <label class="fw-bold">Why This Rental Matches</label>
                                     <div class="input-cover">
                                         <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
-                                            placeholder="@if($property_type === 'Commercial Property')Describe your commercial space criteria and preferences (e.g., Open floor plan, High foot traffic area, Loading dock access, Zoning requirements, Signage allowance).@elseif($property_type === 'Residential Property')Describe your residential criteria and preferences (e.g., 3-bedroom home, Pet-friendly, Close to downtown, Laundry in-unit, Parking included).@else Enter your criteria and preferences (e.g., 3-bedroom home, Pet-friendly, Close to downtown)@endif"></textarea>
+                                            x-on:input="$el.closest('.input-cover').nextElementSibling.querySelector('small').textContent = $el.value.length + ' characters'"
+                                            placeholder="Enter why this rental matches the tenant's criteria (e.g., preferred location, lease terms, pet-friendly, move-in timing)"></textarea>
                                     </div>
+                                    <div class="text-end mt-1"><small class="text-muted">{{ strlen($additional_details ?? '') }} characters</small></div>
                                 </div>
 

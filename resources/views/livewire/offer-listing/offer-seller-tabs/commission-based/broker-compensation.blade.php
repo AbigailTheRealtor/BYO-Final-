@@ -847,7 +847,9 @@ $safeKey = function(...$parts) {
         </span>
     </label>
     <textarea wire:model="additional_details_broker" class="form-control mt-2" rows="3"
-        placeholder="Enter any additional terms"></textarea>
+        x-on:input="$el.nextElementSibling.querySelector('small').textContent = $el.value.length + ' characters'"
+        placeholder="Enter additional broker compensation terms (e.g., dual agency notes, custom fee arrangements)"></textarea>
+    <div class="text-end mt-1"><small class="text-muted">{{ strlen($additional_details_broker ?? '') }} characters</small></div>
 </div>
 
 @endif
