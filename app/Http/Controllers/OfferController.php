@@ -765,6 +765,9 @@ class OfferController extends Controller
             'prop_attr_zoning'             => 'nullable|string|max:100',
             'match_explanation'            => 'nullable|string|max:5000',
             'match_compromise_note'        => 'nullable|string|max:5000',
+            'prop_description'             => 'nullable|string|max:5000',
+            'prop_highlights'              => 'nullable|array|max:20',
+            'prop_highlights.*'            => 'nullable|string|max:100',
         ]);
 
         // Sanitize prop_photo_urls: keep only absolute http/https URLs to prevent
@@ -816,6 +819,7 @@ class OfferController extends Controller
             'prop_attr_pool', 'prop_attr_pool_private', 'prop_attr_pool_community',
             'prop_attr_year_built', 'prop_attr_zoning',
             'match_explanation', 'match_compromise_note',
+            'prop_description',
         ];
 
         $offer->load('metas');
@@ -823,6 +827,13 @@ class OfferController extends Controller
             $offer->saveMeta($key, $validated[$key] ?? null);
         }
         $offer->saveMeta('prop_photos', json_encode($existingPhotos));
+
+        // Highlights — JSON array; empty submission means no checkboxes were ticked.
+        $highlights = array_values(array_filter(
+            array_map('trim', (array) ($validated['prop_highlights'] ?? [])),
+            fn ($v) => $v !== ''
+        ));
+        $offer->saveMeta('prop_highlights', json_encode($highlights));
 
         $successMsg = 'Property information saved.';
         if ($photosSkippedNote) {

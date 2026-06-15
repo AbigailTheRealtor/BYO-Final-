@@ -829,12 +829,168 @@
                                     <td class="small">{{ $bid->get->commissionAmmountOffered !== 'Other' ?  $bid->get->commissionAmmountOffered : $bid->get->landlordPaysAmount }}</td>
                                   </tr>
                                 @endif
+                                @if (isset($bid->get->property_description) && $bid->get->property_description)
+                                  <tr>
+                                    <th class="small">Property Description:</th>
+                                    <td class="small" style="white-space:pre-wrap;">{{ $bid->get->property_description }}</td>
+                                  </tr>
+                                @endif
+                                @php
+                                  $bidHighlights  = $bid->get->rental_highlights;
+                                  $bidIncentives  = $bid->get->leasing_incentives;
+                                  if (is_string($bidHighlights))  $bidHighlights  = json_decode($bidHighlights, true);
+                                  if (is_string($bidIncentives))  $bidIncentives  = json_decode($bidIncentives, true);
+                                @endphp
+                                @if (!empty($bidHighlights))
+                                  <tr>
+                                    <th class="small">Rental Highlights:</th>
+                                    <td class="small">
+                                      @foreach($bidHighlights as $hl)
+                                        <span class="badge bg-success me-1 mb-1">{{ $hl }}</span>
+                                      @endforeach
+                                    </td>
+                                  </tr>
+                                @endif
+                                @if (!empty($bidIncentives))
+                                  <tr>
+                                    <th class="small">Leasing Incentives:</th>
+                                    <td class="small">
+                                      @foreach($bidIncentives as $inc)
+                                        <span class="badge bg-primary me-1 mb-1">{{ $inc }}</span>
+                                      @endforeach
+                                      @if(isset($bid->get->leasing_incentives_other) && $bid->get->leasing_incentives_other)
+                                        <span class="badge bg-secondary me-1 mb-1">{{ $bid->get->leasing_incentives_other }}</span>
+                                      @endif
+                                    </td>
+                                  </tr>
+                                @endif
                                 <tr>
                                   <th class="small">Additional Details or Countered Terms:</th>
                                   <td class="small"></td>
                                 </tr>
                               </tbody>
                             </table>
+
+                            {{-- ─── Criteria Match Summary ───────────────────────────────────────
+                                 Compares submitted bid terms against the tenant's stated criteria.
+                                 Field mapping mirrors the TenantBidMatchScoreHelper logical-group
+                                 approach: each criterion is ONE scored decision.
+                                 Rental terms displayed in the table above (price/leaseTime/leaseDate)
+                                 cover the same fields that offers/_offer_terms_form.blade.php would
+                                 provide — this direct-save wizard (flat POST) is the equivalent.
+                            ─────────────────────────────────────────────────────────────────── --}}
+                            @php
+                              $ag          = $auction->get;
+                              $critMaxRent = (float)($ag->max_rent_budget ?: ($ag->monthly_price ?? 0));
+                              $critMinBeds = (int)($ag->bedrooms ?? 0);
+                              $critMinBaths= (float)($ag->bathrooms ?? 0);
+                              $critPets    = strtolower($ag->has_pets ?? '');
+                              $critFurnRaw = $ag->furnished ?? null;
+                              $critFurn    = is_array($critFurnRaw)
+                                ? array_map('strtolower', $critFurnRaw)
+                                : ($critFurnRaw ? [strtolower($critFurnRaw)] : []);
+
+                              $bidRent  = (float)($bid->get->price    ?? 0);
+                              $bidBeds  = (int)($bid->get->bedroom     ?? 0);
+                              $bidBaths = (float)($bid->get->bathrooms ?? 0);
+                              $bidPets  = strtolower($bid->get->petsOpt    ?? '');
+                              $bidFurn  = strtolower($bid->get->furnishings ?? '');
+
+                              /* Per-field match logic */
+                              $rentMatch  = ($critMaxRent > 0 && $bidRent > 0)  ? ($bidRent  <= $critMaxRent)  : null;
+                              $bedsMatch  = ($critMinBeds > 0 && $bidBeds > 0)  ? ($bidBeds  >= $critMinBeds)  : null;
+                              $bathsMatch = ($critMinBaths > 0 && $bidBaths > 0)? ($bidBaths >= $critMinBaths) : null;
+                              $petsMatch  = ($critPets && $bidPets)
+                                ? !(str_contains($critPets,'no') && !str_contains($bidPets,'no'))
+                                : null;
+                              $furnMatch  = (count($critFurn) && $bidFurn)
+                                ? (in_array($bidFurn, $critFurn) || in_array('either', $critFurn) || $bidFurn === 'either')
+                                : null;
+
+                              $hasIndicators = ($rentMatch !== null || $bedsMatch !== null
+                                             || $bathsMatch !== null || $petsMatch !== null
+                                             || $furnMatch !== null);
+                            @endphp
+
+                            @if($hasIndicators)
+                            <div class="mt-2 mb-3 p-2 border rounded bg-light" style="font-size:0.82rem;">
+                              <div class="fw-semibold mb-1 text-muted" style="font-size:0.8rem;">
+                                <i class="fa-solid fa-chart-bar me-1"></i>Criteria Match Summary
+                              </div>
+                              <div class="d-flex flex-wrap gap-2">
+                                @php
+                                  /* Use a closure (not a named function) to avoid Cannot redeclare
+                                     errors when multiple bids render this block in the same loop. */
+                                  $tcBadge = function($label, $matched) {
+                                    if ($matched === null) return '';
+                                    $cls  = $matched ? 'bg-success' : 'bg-danger';
+                                    $icon = $matched ? '✓' : '✗';
+                                    return "<span class=\"badge {$cls} fw-normal\">{$icon} " . e($label) . "</span>";
+                                  };
+                                @endphp
+                                {!! $tcBadge('Rent',       $rentMatch)  !!}
+                                {!! $tcBadge('Bedrooms',   $bedsMatch)  !!}
+                                {!! $tcBadge('Bathrooms',  $bathsMatch) !!}
+                                {!! $tcBadge('Pets Policy',$petsMatch)  !!}
+                                {!! $tcBadge('Furnished',  $furnMatch)  !!}
+                              </div>
+                            </div>
+                            @endif
+
+                            {{-- ─── Location DNA Compatibility Panel ────────────────────────────
+                                 Displays the tenant's location preferences from the parent auction.
+                            ─────────────────────────────────────────────────────────────────── --}}
+                            @php
+                              $dnaPrefRaw = $auction->info('location_dna_preferences');
+                              $dnaPrefs   = $dnaPrefRaw ? json_decode($dnaPrefRaw, true) : null;
+                            @endphp
+                            <div class="mt-2 mb-3 p-2 border rounded bg-light" style="font-size:0.82rem;">
+                              <div class="fw-semibold mb-1 text-muted" style="font-size:0.8rem;">
+                                <i class="fa-solid fa-map-location-dot me-1"></i>Tenant's Location Preferences
+                              </div>
+                              @if($dnaPrefs)
+                                @if(!empty($dnaPrefs['cities']))
+                                  <div class="mb-1"><strong>Cities:</strong>
+                                    @foreach((array)$dnaPrefs['cities'] as $city)
+                                      <span class="badge bg-info text-dark me-1">{{ $city }}</span>
+                                    @endforeach
+                                  </div>
+                                @endif
+                                @if(!empty($dnaPrefs['zip_codes']))
+                                  <div class="mb-1"><strong>ZIP Codes:</strong>
+                                    @foreach((array)$dnaPrefs['zip_codes'] as $zip)
+                                      <span class="badge bg-secondary me-1">{{ $zip }}</span>
+                                    @endforeach
+                                  </div>
+                                @endif
+                                @if(!empty($dnaPrefs['neighborhoods']))
+                                  <div class="mb-1"><strong>Neighborhoods:</strong>
+                                    @foreach((array)$dnaPrefs['neighborhoods'] as $nbhd)
+                                      <span class="badge bg-secondary me-1">{{ $nbhd }}</span>
+                                    @endforeach
+                                  </div>
+                                @endif
+                                @if(!empty($dnaPrefs['radius_searches']))
+                                  <div class="mb-1"><strong>Radius Searches:</strong>
+                                    @foreach((array)$dnaPrefs['radius_searches'] as $rs)
+                                      <span class="badge bg-secondary me-1">{{ $rs['address'] ?? $rs }}</span>
+                                    @endforeach
+                                  </div>
+                                @endif
+                                @if(!empty($dnaPrefs['location_notes']))
+                                  <div class="mt-1 text-muted" style="font-size:0.8rem;">
+                                    <i class="fa-solid fa-note-sticky me-1"></i>{{ $dnaPrefs['location_notes'] }}
+                                  </div>
+                                @endif
+                                @if(!empty($dnaPrefs['flexible_location']) && $dnaPrefs['flexible_location'])
+                                  <div class="mt-1">
+                                    <span class="badge bg-success fw-normal">Flexible on location</span>
+                                  </div>
+                                @endif
+                              @else
+                                <span class="text-muted small">No Location DNA preferences were provided.</span>
+                              @endif
+                            </div>
 
                             @if (@$auction->user_id == $auth_id)
                               @if (!@$auction->is_sold)

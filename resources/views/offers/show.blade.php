@@ -308,6 +308,151 @@
             </div>
             @endif
 
+            {{-- ── Criteria Summary + Location DNA panels ───────────────────────── --}}
+            {{--
+                Linkage path (confirmed via OfferController::resolveOfferAuctionId):
+                  offers.offer_auction_id → offer_auctions.id
+                  offer_auctions.listing_id → encoded string:
+                    "buyer_criteria:{id}"  → BuyerAgentAuction::find($id)
+                    "tenant_criteria:{id}" → TenantAgentAuction::find($id)
+                    anything else          → no criteria linked (regular OfferAuction)
+
+                If the criteria model cannot be loaded, both panels show a clean
+                empty-state rather than erroring. Location DNA only appears when
+                the criteria listing has a populated location_dna_preferences meta.
+            --}}
+            @php
+                $criteriaModel    = null;
+                $criteriaRole     = null;   // 'buyer' or 'tenant'
+                $criteriaLoadErr  = null;
+
+                try {
+                    $oa = $offer->offerAuction;   // Offer belongsTo OfferAuction
+                    if ($oa && is_string($oa->listing_id)) {
+                        if (str_starts_with($oa->listing_id, 'buyer_criteria:')) {
+                            $cId = (int) substr($oa->listing_id, strlen('buyer_criteria:'));
+                            $cm  = \App\Models\BuyerAgentAuction::find($cId);
+                            if ($cm) {
+                                $cm->loadMissing('meta');
+                                $criteriaModel = $cm;
+                                $criteriaRole  = 'buyer';
+                            }
+                        } elseif (str_starts_with($oa->listing_id, 'tenant_criteria:')) {
+                            $cId = (int) substr($oa->listing_id, strlen('tenant_criteria:'));
+                            $cm  = \App\Models\TenantAgentAuction::find($cId);
+                            if ($cm) {
+                                $cm->loadMissing('meta');
+                                $criteriaModel = $cm;
+                                $criteriaRole  = 'tenant';
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    $criteriaLoadErr = $e->getMessage();
+                }
+
+                // Helper: read a meta value from the criteria model; returns '' if absent/false.
+                $cInfo = fn($key) => ($criteriaModel ? ($criteriaModel->info($key) ?: '') : '');
+
+                // Location DNA — only shown when populated.
+                $dnaPrefRaw = $criteriaModel ? ($criteriaModel->info('location_dna_preferences') ?: '') : '';
+                $dnaPrefs   = [];
+                if ($dnaPrefRaw) {
+                    $decoded = json_decode($dnaPrefRaw, true);
+                    $dnaPrefs = is_array($decoded) ? array_filter($decoded, fn($v) => $v !== '' && $v !== null) : [];
+                }
+
+                // Buyer-specific native fields (stored as native columns, not metas).
+                $buyerBudget     = '';
+                $buyerFinancing  = '';
+                if ($criteriaRole === 'buyer' && $criteriaModel) {
+                    $buyerBudget    = trim(implode(' / ', array_filter([
+                        $criteriaModel->preapproval_amount ? 'Pre-approved: $' . number_format($criteriaModel->preapproval_amount) : '',
+                        $criteriaModel->cash_budget        ? 'Cash: $' . number_format($criteriaModel->cash_budget) : '',
+                        $cInfo('max_purchase_budget')      ? 'Budget: $' . number_format((float)$cInfo('max_purchase_budget')) : '',
+                    ])));
+                    $buyerFinancing = $criteriaModel->financing_approved ? 'Pre-approved' : ($criteriaModel->financing_approved === false ? 'Not pre-approved' : '');
+                }
+            @endphp
+
+            @if($criteriaModel || $criteriaLoadErr)
+            {{-- Criteria Summary --}}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <strong>{{ $criteriaRole === 'tenant' ? 'Tenant' : 'Buyer' }} Criteria Summary</strong>
+                    <span class="badge bg-secondary ms-2" style="font-size:0.75rem;">Linked Listing Requirements</span>
+                </div>
+                <div class="card-body">
+                    @if($criteriaLoadErr)
+                        {{-- Linkage error — document and surface clean empty-state --}}
+                        <p class="text-muted mb-0"><em>Criteria information could not be loaded.</em></p>
+                        {{-- Developer note: {{ $criteriaLoadErr }} --}}
+                    @elseif(!$criteriaModel)
+                        <p class="text-muted mb-0"><em>No criteria listing is linked to this offer.</em></p>
+                    @else
+                        @php
+                            $critRows = array_filter([
+                                'Property Type'  => $cInfo('property_type'),
+                                'Bedrooms'       => $cInfo('bedrooms'),
+                                'Bathrooms'      => $cInfo('bathrooms'),
+                                ($criteriaRole === 'tenant' ? 'Max Rent / Budget' : 'Budget / Pre-approval')
+                                    => $criteriaRole === 'tenant'
+                                        ? ($cInfo('max_rent_budget') ?: ($cInfo('monthly_price') ? '$'.number_format((float)$cInfo('monthly_price')).' /mo' : ''))
+                                        : $buyerBudget,
+                                'Financing'      => $criteriaRole === 'buyer' ? $buyerFinancing : '',
+                                'Move-in / Target Date' => $cInfo('move_in_date') ?: $cInfo('target_move_date'),
+                                'Lease Duration' => $criteriaRole === 'tenant' ? $cInfo('lease_duration') : '',
+                                'Pets'           => $criteriaRole === 'tenant' ? $cInfo('has_pets') : '',
+                                'Furnished'      => $criteriaRole === 'tenant' ? $cInfo('furnished') : '',
+                                'Additional Notes' => $cInfo('additional_details'),
+                            ], fn($v) => $v !== '' && $v !== false && $v !== null);
+                        @endphp
+                        @if(count($critRows))
+                        <dl class="row mb-0">
+                            @foreach($critRows as $label => $val)
+                            <dt class="col-sm-4 text-muted" style="font-size:0.9rem;">{{ $label }}</dt>
+                            <dd class="col-sm-8" style="font-size:0.9rem;">{{ $val }}</dd>
+                            @endforeach
+                        </dl>
+                        @else
+                        <p class="text-muted mb-0"><em>No criteria details were specified on the linked listing.</em></p>
+                        @endif
+                    @endif
+                </div>
+            </div>
+            @endif
+
+            @if($criteriaModel && count($dnaPrefs))
+            {{-- Location DNA Compatibility --}}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <strong>Location DNA Compatibility</strong>
+                    <span class="badge bg-secondary ms-2" style="font-size:0.75rem;">From Linked Listing</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach($dnaPrefs as $dnaPref)
+                        @if(is_string($dnaPref) && trim($dnaPref) !== '')
+                        <span class="badge rounded-pill bg-info text-dark" style="font-size:0.8rem;padding:0.35em 0.75em;">
+                            <i class="fa-solid fa-location-dot me-1"></i>{{ trim($dnaPref) }}
+                        </span>
+                        @endif
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @elseif($criteriaModel && !count($dnaPrefs))
+            {{-- Criteria IS linked but no DNA prefs recorded — silent (no panel shown) --}}
+            {{-- If you want to surface an empty state, uncomment:
+            <div class="card mb-4">
+                <div class="card-header"><strong>Location DNA Compatibility</strong></div>
+                <div class="card-body">
+                    <p class="text-muted mb-0"><em>No Location DNA preferences were provided on the linked listing.</em></p>
+                </div>
+            </div>
+            --}}
+            @endif
+
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <strong>Offer Terms</strong>

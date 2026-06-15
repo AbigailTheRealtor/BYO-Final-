@@ -257,6 +257,10 @@ class TenantCriteriaAuctionBidController extends Controller
             $bid->saveMeta("communityOther", $request->communityOther);
             $bid->saveMeta("association_amenitie",json_encode($request->association_amenitie));
             $bid->saveMeta("description",$request->description);
+            $bid->saveMeta("property_description",$request->property_description);
+            $bid->saveMeta("rental_highlights",json_encode($request->rental_highlights ?? []));
+            $bid->saveMeta("leasing_incentives",json_encode($request->leasing_incentives ?? []));
+            $bid->saveMeta("leasing_incentives_other",$request->leasing_incentives_other);
             $bid->saveMeta("disclaimer",$request->disclaimer);
             $bid->saveMeta("driving_directions",$request->driving_directions);
             $bid->saveMeta("tenant_agent_compensation",$request->tenant_agent_compensation);

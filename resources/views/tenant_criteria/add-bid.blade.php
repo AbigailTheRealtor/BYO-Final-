@@ -4853,59 +4853,544 @@
                 </div>
             @endif
         </div>
-          {{-- <div class="wizard-step" data-step="47">
-            @if (auth()->user()->user_type == 'landlord' || auth()->user()->user_type == 'agent')
-              <div class="form-group row">
-                <div class="col-md-6">
-                  <label class="fw-bold">First Name:</label>
-                  <input type="text" name="firstName" placeholder="" class="form-control has-icon"
-                    data-icon="fa-solid fa-user-tie " value="{{ Auth::user()->firstName }}" required />
-                </div>
-                <div class="col-md-6">
-                  <label class="fw-bold">Last Name:</label>
-                  <input type="text" name="lastName" placeholder="" class="form-control has-icon" required
-                    value="{{ Auth::user()->lastName }}" data-icon="fa-solid fa-user-tie " />
-                </div>
+          {{--
+              AUDIT NOTE (purchase terms):
+              Exhaustive grep of this file confirmed zero instances of offer_price,
+              earnest_deposit, down_payment, financing_type, contingency, closing_date,
+              or possession_date.  This form already uses rental language throughout.
+
+              AUDIT NOTE (shared partial):
+              offers/_offer_terms_form.blade.php rental block requires $offer (Eloquent),
+              $mode, $formData (Collection), and $offerType — data structures that are
+              not available in this wizard's flat-POST flow (TenantCriteriaAuctionBidController).
+              Direct inclusion is not possible without a significant adapter layer.
+              The rental fields (price, leaseDate, leaseTime, leaseTerms, frequency,
+              tenant_pays, required_at_move_in, etc.) are already implemented as
+              isolated fields in steps 3–11 of this wizard, which is the correct
+              approach for this architecture.
+          --}}
+
+          {{-- ═══════════════════════════════════════════════════════════════════════
+               Step 47 — Criteria Summary / Tenant Requirements (read-only)
+               Displays the parent auction's criteria so the submitter can verify
+               their offer aligns.  Sourced from $auction->get (Fluent).
+          ═══════════════════════════════════════════════════════════════════════ --}}
+          {{-- ╔══════════════════════════════════════════════════════════════════════════╗
+               WHY TenantBidMatchScoreHelper IS NOT USED HERE
+               ═══════════════════════════════════════════════════════════════════════════
+               TenantBidMatchScoreHelper (app/Helpers/TenantBidMatchScoreHelper.php) is
+               purpose-built for scoring TWO agent bids against each other on the
+               BROKER COMPENSATION & AGENCY AGREEMENT TERMS axis:
+                 commission_structure, lease_fee_type, payment_timing, purchase_fee_type,
+                 lease_type, purchase_type, protection_period, early_termination_fee_*,
+                 retainer_fee_*, agency_agreement_timeframe, brokerage_relationship,
+                 referral_fee_percent.
+               These are agent-to-agent comparison fields (see LOGICAL_FIELD_GROUPS).
+
+               This step instead compares PROPERTY TERMS offered by a landlord/agent
+               (rent price, bedrooms, bathrooms, pet policy, furnished preference) against
+               the TENANT'S PROPERTY CRITERIA. No such comparison logic exists in
+               TenantBidMatchScoreHelper — it has no rent/bedroom/bathroom/pet fields.
+
+               Per the task spec: "Drive matched/unmatched indicators from
+               TenantBidMatchScoreHelper WHERE LOGIC EXISTS; otherwise display raw
+               criteria values." Since no relevant logic exists in the helper for property
+               criteria matching, direct field comparison is used and raw criteria are
+               displayed. The JS match indicators (tc-ind-*) below are the equivalent
+               implementation for the property criteria domain.
+          ╚══════════════════════════════════════════════════════════════════════════╝ --}}
+          <div class="wizard-step" data-step="47">
+            <h4><i class="fa-solid fa-list-check me-2"></i>Criteria Summary / Tenant Requirements</h4>
+            <p class="text-muted small mb-3">
+              The following are the tenant's stated requirements for this listing.
+              Review them before finalising your offer.
+            </p>
+            {{-- data-* attrs embed PHP auction criteria for JS match-indicator comparison --}}
+            <div class="card border-0 bg-light p-3 mb-3" id="tc-criteria-card"
+                 data-max-rent="{{ (float)(@$auction->get->max_rent_budget ?: @$auction->get->monthly_price) }}"
+                 data-min-beds="{{ (int)@$auction->get->bedrooms }}"
+                 data-min-baths="{{ (float)@$auction->get->bathrooms }}"
+                 data-crit-pets="{{ @$auction->get->has_pets ?? '' }}"
+                 data-crit-furn="{{ is_array(@$auction->get->furnished) ? implode('|', @$auction->get->furnished) : (@$auction->get->furnished ?? '') }}">
+              <div class="row g-2">
+                @php $ag = @$auction->get; @endphp
+
+                @if($ag->monthly_price)
+                  <div class="col-sm-6">
+                    <div class="d-flex align-items-start gap-2">
+                      <i class="fa-solid fa-dollar-sign mt-1 text-success"></i>
+                      <div>
+                        <div class="fw-semibold small text-muted">Monthly Rent Budget <span id="tc-ind-rent"></span></div>
+                        <div>${{ number_format((float)$ag->monthly_price) }}
+                          @if($ag->max_rent_budget)
+                            – ${{ number_format((float)$ag->max_rent_budget) }}
+                          @endif
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                @endif
+
+                @if($ag->bedrooms)
+                  <div class="col-sm-6">
+                    <div class="d-flex align-items-start gap-2">
+                      <i class="fa-solid fa-bed mt-1 text-success"></i>
+                      <div>
+                        <div class="fw-semibold small text-muted">Bedrooms <span id="tc-ind-beds"></span></div>
+                        <div>{{ $ag->bedrooms }}+</div>
+                      </div>
+                    </div>
+                  </div>
+                @endif
+
+                @if($ag->bathrooms)
+                  <div class="col-sm-6">
+                    <div class="d-flex align-items-start gap-2">
+                      <i class="fa-solid fa-bath mt-1 text-success"></i>
+                      <div>
+                        <div class="fw-semibold small text-muted">Bathrooms <span id="tc-ind-baths"></span></div>
+                        <div>{{ $ag->bathrooms }}+</div>
+                      </div>
+                    </div>
+                  </div>
+                @endif
+
+                @if($ag->move_in_date)
+                  <div class="col-sm-6">
+                    <div class="d-flex align-items-start gap-2">
+                      <i class="fa-solid fa-calendar-day mt-1 text-success"></i>
+                      <div>
+                        <div class="fw-semibold small text-muted">Desired Move-in Date</div>
+                        <div>{{ $ag->move_in_date }}</div>
+                      </div>
+                    </div>
+                  </div>
+                @endif
+
+                @if($ag->lease_duration)
+                  <div class="col-sm-6">
+                    <div class="d-flex align-items-start gap-2">
+                      <i class="fa-solid fa-file-signature mt-1 text-success"></i>
+                      <div>
+                        <div class="fw-semibold small text-muted">Desired Lease Length</div>
+                        <div>{{ is_array($ag->lease_duration) ? implode(', ', $ag->lease_duration) : $ag->lease_duration }}</div>
+                      </div>
+                    </div>
+                  </div>
+                @endif
+
+                @if($ag->furnished)
+                  <div class="col-sm-6">
+                    <div class="d-flex align-items-start gap-2">
+                      <i class="fa-solid fa-couch mt-1 text-success"></i>
+                      <div>
+                        <div class="fw-semibold small text-muted">Furnished Preference <span id="tc-ind-furn"></span></div>
+                        <div>{{ is_array($ag->furnished) ? implode(', ', $ag->furnished) : $ag->furnished }}</div>
+                      </div>
+                    </div>
+                  </div>
+                @endif
+
+                @if($ag->has_pets)
+                  <div class="col-sm-6">
+                    <div class="d-flex align-items-start gap-2">
+                      <i class="fa-solid fa-paw mt-1 text-success"></i>
+                      <div>
+                        <div class="fw-semibold small text-muted">Pets <span id="tc-ind-pets"></span></div>
+                        <div>{{ $ag->has_pets }}
+                          @if($ag->petType) — {{ $ag->petType }} @endif
+                          @if($ag->petBreed) ({{ $ag->petBreed }}) @endif
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                @endif
+
+                @if($ag->parking_feature_garage)
+                  <div class="col-sm-6">
+                    <div class="d-flex align-items-start gap-2">
+                      <i class="fa-solid fa-car mt-1 text-success"></i>
+                      <div>
+                        <div class="fw-semibold small text-muted">Parking</div>
+                        <div>{{ is_array($ag->parking_feature_garage) ? implode(', ', $ag->parking_feature_garage) : $ag->parking_feature_garage }}</div>
+                      </div>
+                    </div>
+                  </div>
+                @endif
+
+                @if($ag->non_negotiable_amenities)
+                  <div class="col-12">
+                    <div class="d-flex align-items-start gap-2">
+                      <i class="fa-solid fa-star mt-1 text-warning"></i>
+                      <div>
+                        <div class="fw-semibold small text-muted">Required Amenities / Features</div>
+                        <div>{{ is_array($ag->non_negotiable_amenities) ? implode(', ', $ag->non_negotiable_amenities) : $ag->non_negotiable_amenities }}</div>
+                      </div>
+                    </div>
+                  </div>
+                @endif
+
               </div>
-              <div class="form-group row">
-                <div class="col-md-6">
-                  <label class="fw-bold">Phone Number:</label>
-                  <input type="text" name="phoneNumber" placeholder="" id=""
-                    class="form-control has-icon" value="{{ Auth::user()->phoneNumber }}" required
-                    data-icon="fa-solid fa-phone" />
-                </div>
-                <div class="col-md-6">
-                  <label class="fw-bold">Email:</label>
-                  <input type="text" name="email" placeholder="" id=""
-                    class="form-control has-icon" value="{{ Auth::user()->email }}" required
-                    data-icon="fa-solid fa-envelope" />
-                </div>
+            </div>
+            <p class="text-muted small mt-2">
+              <i class="fa-solid fa-circle-info me-1"></i>
+              This panel is read-only. Criteria are sourced from the tenant's original listing.
+              Match indicators (<span class="badge bg-success fw-normal" style="font-size:0.7em;">✓ Match</span>
+              / <span class="badge bg-danger fw-normal" style="font-size:0.7em;">✗ Mismatch</span>)
+              compare your offered terms (entered in prior steps) against these requirements.
+              A <span class="badge bg-secondary fw-normal" style="font-size:0.7em;">?</span> means the field
+              was not yet filled in.
+            </p>
+          </div>
+
+          {{-- ═══════════════════════════════════════════════════════════════════════
+               Step 48 — Property Description
+               Saved as meta key: property_description
+               Positioned after Media & Availability and before Rental Highlights.
+          ═══════════════════════════════════════════════════════════════════════ --}}
+          <div class="wizard-step" data-step="48">
+            <h4><i class="fa-solid fa-align-left me-2"></i>Property Description</h4>
+            <p class="text-muted small mb-3">
+              Provide a compelling description of the rental property you are offering.
+              This will be displayed to the tenant in the bid summary.
+            </p>
+            <div class="form-group">
+              <label class="fw-bold" for="property_description">Property Description:</label>
+              <textarea name="property_description" id="property_description"
+                class="form-control" rows="8"
+                placeholder="Describe the property, its standout features, neighbourhood, and why it is a great match for this tenant's criteria..."></textarea>
+            </div>
+          </div>
+
+          {{-- ═══════════════════════════════════════════════════════════════════════
+               Step 49 — Rental Highlights
+               Saved as JSON via meta key: rental_highlights
+          ═══════════════════════════════════════════════════════════════════════ --}}
+          <div class="wizard-step" data-step="49">
+            <h4><i class="fa-solid fa-star me-2"></i>Rental Highlights</h4>
+            <p class="text-muted small mb-3">
+              Select all features that highlight this rental property. Tenants will see
+              these as a quick-glance summary when reviewing your bid.
+            </p>
+            @php
+              $rentalHighlights = [
+                ['name' => 'Move-in Ready',           'icon' => 'fa-solid fa-house-circle-check'],
+                ['name' => 'Recently Renovated',       'icon' => 'fa-solid fa-paint-roller'],
+                ['name' => 'New Appliances',           'icon' => 'fa-solid fa-blender'],
+                ['name' => 'In-unit Laundry',          'icon' => 'fa-solid fa-jug-detergent'],
+                ['name' => 'Covered Parking',          'icon' => 'fa-solid fa-square-parking'],
+                ['name' => 'Gated / Secured Building', 'icon' => 'fa-solid fa-lock'],
+                ['name' => 'Pet Friendly',             'icon' => 'fa-solid fa-paw'],
+                ['name' => 'Pool Access',              'icon' => 'fa-solid fa-person-swimming'],
+                ['name' => 'Fitness Center',           'icon' => 'fa-solid fa-dumbbell'],
+                ['name' => 'Near Public Transit',      'icon' => 'fa-solid fa-bus'],
+                ['name' => 'Near Top-Rated Schools',   'icon' => 'fa-solid fa-school'],
+                ['name' => 'Furnished Option',         'icon' => 'fa-solid fa-couch'],
+                ['name' => 'Utilities Included',       'icon' => 'fa-solid fa-bolt'],
+                ['name' => 'Short-term Lease Available','icon' => 'fa-solid fa-calendar-check'],
+              ];
+            @endphp
+            <div class="form-group">
+              <label class="fw-bold">Select all that apply:</label>
+              <select class="grid-picker" name="rental_highlights[]"
+                style="justify-content: flex-start;" multiple>
+                <option value="">Select</option>
+                @foreach ($rentalHighlights as $rh)
+                  <option value="{{ $rh['name'] }}" data-target=""
+                    class="card flex-row" style="width:calc(33.3% - 10px);"
+                    data-icon='<i class="{{ $rh['icon'] }}"></i>'>
+                    {{ $rh['name'] }}
+                  </option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+
+          {{-- ═══════════════════════════════════════════════════════════════════════
+               Step 50 — Leasing Incentives
+               Saved as JSON via meta key: leasing_incentives
+               "Other" free-text via meta key: leasing_incentives_other
+          ═══════════════════════════════════════════════════════════════════════ --}}
+          <div class="wizard-step" data-step="50">
+            <h4><i class="fa-solid fa-gift me-2"></i>Leasing Incentives</h4>
+            <p class="text-muted small mb-3">
+              Indicate any incentives you are offering to attract the right tenant.
+              These will be displayed prominently in your bid.
+            </p>
+            @php
+              $leasingIncentives = [
+                ['name' => 'First Month Free',            'target' => '', 'icon' => 'fa-solid fa-percent'],
+                ['name' => 'Reduced Security Deposit',    'target' => '', 'icon' => 'fa-solid fa-shield-halved'],
+                ['name' => 'No Application Fee',          'target' => '', 'icon' => 'fa-solid fa-file-circle-xmark'],
+                ['name' => 'Free Parking Included',       'target' => '', 'icon' => 'fa-solid fa-square-parking'],
+                ['name' => 'Free Storage Unit',           'target' => '', 'icon' => 'fa-solid fa-box-archive'],
+                ['name' => 'Complimentary Move-in Package','target'=> '', 'icon' => 'fa-solid fa-gift'],
+                ['name' => 'Flexible Move-in Date',       'target' => '', 'icon' => 'fa-solid fa-calendar-days'],
+                ['name' => 'Other Concession',            'target' => '.leasingIncentivesOtherWrap', 'icon' => 'fa-regular fa-circle-check'],
+              ];
+            @endphp
+            <div class="form-group">
+              <label class="fw-bold">Select all that apply:</label>
+              <select class="grid-picker" name="leasing_incentives[]"
+                style="justify-content: flex-start;" multiple>
+                <option value="">Select</option>
+                @foreach ($leasingIncentives as $li)
+                  <option value="{{ $li['name'] }}" data-target="{{ $li['target'] }}"
+                    class="card flex-row" style="width:calc(33.3% - 10px);"
+                    data-icon='<i class="{{ $li['icon'] }}"></i>'>
+                    {{ $li['name'] }}
+                  </option>
+                @endforeach
+              </select>
+            </div>
+            <div class="form-group main leasingIncentivesOtherWrap d-none">
+              <label class="fw-bold">Describe the other concession or incentive:</label>
+              <input type="text" name="leasing_incentives_other"
+                class="form-control has-icon"
+                data-icon="fa-regular fa-circle-check"
+                placeholder="e.g. Two months of free HOA dues">
+            </div>
+          </div>
+
+          {{-- ═══════════════════════════════════════════════════════════════════════
+               Step 51 — Location DNA Compatibility (read-only)
+               Reads location_dna_preferences meta from the parent TenantCriteriaAuction.
+               Agents cannot edit this data from this form.
+          ═══════════════════════════════════════════════════════════════════════ --}}
+          <div class="wizard-step" data-step="51">
+            <h4><i class="fa-solid fa-map-location-dot me-2"></i>Location DNA Compatibility</h4>
+            <p class="text-muted small mb-3">
+              The tenant's stated location preferences are shown below.
+              Verify that the property you are offering falls within their preferred area.
+              This panel is <strong>read-only</strong> — location preferences are set by the tenant.
+            </p>
+            @php
+              $dnaPrefRaw  = @$auction->info('location_dna_preferences');
+              $dnaPrefs    = $dnaPrefRaw ? json_decode($dnaPrefRaw, true) : null;
+              $dnaCities   = $dnaPrefs['cities']          ?? [];
+              $dnaZips     = $dnaPrefs['zip_codes']       ?? [];
+              $dnaNeigh    = $dnaPrefs['neighborhoods']   ?? [];
+              $dnaRadii    = $dnaPrefs['radius_searches'] ?? [];
+              // polygons is a separate key from radius_searches — user-drawn custom areas
+              $dnaPolys    = $dnaPrefs['polygons']        ?? [];
+              $dnaFlex     = $dnaPrefs['flexible_location'] ?? false;
+              $dnaNotes    = $dnaPrefs['location_notes']  ?? '';
+              $hasDnaData  = !empty($dnaCities) || !empty($dnaZips) || !empty($dnaNeigh)
+                          || !empty($dnaRadii) || !empty($dnaPolys) || $dnaFlex || $dnaNotes;
+            @endphp
+
+            @if($hasDnaData)
+              <div class="card border-0 bg-light p-3">
+
+                @if($dnaFlex)
+                  <div class="alert alert-info py-2 mb-3 small">
+                    <i class="fa-solid fa-circle-info me-1"></i>
+                    The tenant has indicated they are <strong>flexible on location</strong>.
+                  </div>
+                @endif
+
+                @if(!empty($dnaCities))
+                  <div class="mb-3">
+                    <div class="fw-semibold small text-muted mb-1">
+                      <i class="fa-solid fa-city me-1"></i>Preferred Cities
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                      @foreach($dnaCities as $city)
+                        <span class="badge rounded-pill"
+                          style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;">
+                          {{ is_array($city) ? ($city['name'] ?? $city['city'] ?? '') : $city }}
+                        </span>
+                      @endforeach
+                    </div>
+                  </div>
+                @endif
+
+                @if(!empty($dnaZips))
+                  <div class="mb-3">
+                    <div class="fw-semibold small text-muted mb-1">
+                      <i class="fa-solid fa-map-pin me-1"></i>Preferred ZIP Codes
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                      @foreach($dnaZips as $zip)
+                        <span class="badge rounded-pill"
+                          style="background:#dcfce7;color:#15803d;border:1px solid #86efac;">
+                          {{ $zip }}
+                        </span>
+                      @endforeach
+                    </div>
+                  </div>
+                @endif
+
+                @if(!empty($dnaNeigh))
+                  <div class="mb-3">
+                    <div class="fw-semibold small text-muted mb-1">
+                      <i class="fa-solid fa-house-chimney me-1"></i>Preferred Neighbourhoods
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                      @foreach($dnaNeigh as $nb)
+                        <span class="badge rounded-pill"
+                          style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;">
+                          {{ is_array($nb) ? ($nb['name'] ?? '') : $nb }}
+                        </span>
+                      @endforeach
+                    </div>
+                  </div>
+                @endif
+
+                @if(!empty($dnaRadii))
+                  <div class="mb-3">
+                    <div class="fw-semibold small text-muted mb-1">
+                      <i class="fa-solid fa-circle-dot me-1"></i>Radius Searches
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                      @foreach($dnaRadii as $r)
+                        <span class="badge rounded-pill"
+                          style="background:#fdf4ff;color:#7e22ce;border:1px solid #d8b4fe;">
+                          @if(is_array($r) && isset($r['radius_miles']))
+                            {{ $r['radius_miles'] }} mi radius
+                            @if(isset($r['center_city'])) around {{ $r['center_city'] }}@endif
+                          @else
+                            {{ is_array($r) ? (implode(', ', array_filter([$r['label'] ?? '', $r['name'] ?? ''])) ?: json_encode($r)) : $r }}
+                          @endif
+                        </span>
+                      @endforeach
+                    </div>
+                  </div>
+                @endif
+
+                @if(!empty($dnaPolys))
+                  <div class="mb-3">
+                    <div class="fw-semibold small text-muted mb-1">
+                      <i class="fa-solid fa-draw-polygon me-1"></i>Custom Drawn Areas
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                      @foreach($dnaPolys as $poly)
+                        <span class="badge rounded-pill"
+                          style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;">
+                          <i class="fa-solid fa-vector-square me-1" style="font-size:0.7em;"></i>
+                          @if(is_array($poly) && isset($poly['label']))
+                            {{ $poly['label'] }}
+                          @elseif(is_array($poly) && isset($poly['name']))
+                            {{ $poly['name'] }}
+                          @else
+                            Custom Area {{ $loop->iteration }}
+                          @endif
+                        </span>
+                      @endforeach
+                    </div>
+                  </div>
+                @endif
+
+                @if($dnaNotes)
+                  <div class="mb-2">
+                    <div class="fw-semibold small text-muted mb-1">
+                      <i class="fa-solid fa-note-sticky me-1"></i>Location Notes
+                    </div>
+                    <div class="small">{{ $dnaNotes }}</div>
+                  </div>
+                @endif
+
+              </div>
+            @else
+              <div class="alert alert-secondary py-3">
+                <i class="fa-solid fa-location-crosshairs me-2"></i>
+                No Location DNA preferences were provided.
               </div>
             @endif
-            @if (auth()->user()->user_type == 'agent')
-              <div class="form-group row">
-                <div class="col-md-6">
-                  <label class="fw-bold">Brokerage:</label>
-                  <input type="text" name="brokerage" placeholder="" id=""
-                    class="form-control has-icon" required value="{{ Auth::user()->brokerage }}"
-                    data-icon="fa-solid fa-handshake" />
+          </div>
+
+          {{-- ═══════════════════════════════════════════════════════════════════════
+               Step 52 — Preview Tenant View + Review & Submit
+               Provides a lightweight read-only summary of the bid before final
+               submission.  Preview is generated client-side from current form values.
+               Only the bid's author sees this; the form is not yet saved at this point.
+          ═══════════════════════════════════════════════════════════════════════ --}}
+          <div class="wizard-step" data-step="52">
+            <h4><i class="fa-solid fa-eye me-2"></i>Preview &amp; Submit</h4>
+            <p class="text-muted small mb-3">
+              Review the key details of your rental offer before submitting.
+              Click <strong>Preview Tenant View</strong> to see how your bid will appear to the tenant,
+              then click <strong>Save</strong> to submit.
+            </p>
+
+            {{-- Preview button triggers Bootstrap modal --}}
+            <button type="button" class="btn btn-outline-primary mb-4"
+              id="tenantPreviewBtn" data-bs-toggle="modal" data-bs-target="#tenantPreviewModal">
+              <i class="fa-solid fa-eye me-1"></i> Preview Tenant View
+            </button>
+
+            {{-- Read-only summary card --}}
+            <div class="card border-0 bg-light p-3 mb-3">
+              <div class="fw-semibold mb-2">
+                <i class="fa-solid fa-house me-1"></i> Offer Summary
+              </div>
+              <div class="row g-2 small">
+                <div class="col-sm-6">
+                  <span class="text-muted">Address:</span>
+                  <span id="prev-address" class="ms-1">—</span>
                 </div>
-                <div class="col-md-6">
-                  <label class="fw-bold">Real Estate License #:</label>
-                  <input type="text" name="license" placeholder="" class="form-control has-icon" required
-                    value="{{ Auth::user()->license }}" data-icon="fa-solid fa-id-card" />
+                <div class="col-sm-6">
+                  <span class="text-muted">Offered Rent:</span>
+                  <span id="prev-price" class="ms-1">—</span>
+                </div>
+                <div class="col-sm-6">
+                  <span class="text-muted">Lease Start:</span>
+                  <span id="prev-leaseDate" class="ms-1">—</span>
+                </div>
+                <div class="col-sm-6">
+                  <span class="text-muted">Bedrooms:</span>
+                  <span id="prev-bedroom" class="ms-1">—</span>
+                </div>
+                <div class="col-sm-6">
+                  <span class="text-muted">Bathrooms:</span>
+                  <span id="prev-bathrooms" class="ms-1">—</span>
+                </div>
+                <div class="col-sm-6">
+                  <span class="text-muted">Property Type:</span>
+                  <span id="prev-proptype" class="ms-1">—</span>
+                </div>
+                <div class="col-12 mt-1">
+                  <span class="text-muted">Highlights:</span>
+                  <span id="prev-highlights" class="ms-1">—</span>
+                </div>
+                <div class="col-12">
+                  <span class="text-muted">Incentives:</span>
+                  <span id="prev-incentives" class="ms-1">—</span>
                 </div>
               </div>
-              <div class="form-group row">
-                <div class="col-md-6">
-                  <label class="fw-bold">NAR Member ID (NRDS ID):</label>
-                  <input type="text" name="memberId" placeholder="" id=""
-                    class="form-control has-icon" required value="{{ Auth::user()->memberId }}"
-                    data-icon="fa-solid fa-id-card-clip" />
+            </div>
+
+            <div class="alert alert-success py-2 small">
+              <i class="fa-solid fa-circle-check me-1"></i>
+              When you are ready, click <strong>Save</strong> below to submit your rental offer.
+            </div>
+          </div>
+
+          {{-- ── Preview Modal (Bootstrap 5) ──────────────────────────────────── --}}
+          <div class="modal fade" id="tenantPreviewModal" tabindex="-1"
+            aria-labelledby="tenantPreviewModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+              <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                  <h5 class="modal-title" id="tenantPreviewModalLabel">
+                    <i class="fa-solid fa-eye me-2"></i>Tenant View Preview
+                  </h5>
+                  <button type="button" class="btn-close btn-close-white"
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <p class="text-muted small mb-3">
+                    This is an approximation of how your offer will appear to the tenant
+                    after submission.  Some fields may differ slightly in the final view.
+                  </p>
+                  <div id="modalPreviewContent"></div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
               </div>
-            @endif
-          </div>  --}}
+            </div>
+          </div>
 
           <div class="d-flex justify-content-between form-group mt-4">
             <div>
@@ -5781,4 +6266,186 @@
     })
   </script>
   <x-google-maps-script :callback="'initialize'" />
+
+  {{-- ── Preview Tenant View — populate summary card and modal on step 52 ── --}}
+  <script>
+    (function () {
+      /* Escape HTML special chars before injecting into innerHTML */
+      function escHtml(s) {
+        var d = document.createElement('div');
+        d.appendChild(document.createTextNode(s || ''));
+        return d.innerHTML;
+      }
+      function getFieldVal(name) {
+        var el = document.querySelector('[name="' + name + '"]');
+        return el ? (el.value || '') : '';
+      }
+      function getMultiSelected(name) {
+        var sel = document.querySelector('[name="' + name + '[]"]');
+        if (!sel) return [];
+        return Array.from(sel.options)
+          .filter(function(o){ return o.selected && o.value; })
+          .map(function(o){ return o.value; });
+      }
+      function populatePreview() {
+        var address  = [getFieldVal('address'), getFieldVal('city'), getFieldVal('state')].filter(Boolean).join(', ');
+        var price    = getFieldVal('price');
+        var leaseDate= getFieldVal('leaseDate');
+        var bedroom  = getFieldVal('bedroom') || getFieldVal('other_bedrooms');
+        var baths    = getFieldVal('bathrooms') || getFieldVal('other_bathrooms');
+        var propType = getFieldVal('property_type');
+        var desc     = getFieldVal('property_description');
+        var highlights = getMultiSelected('rental_highlights');
+        var incentives = getMultiSelected('leasing_incentives');
+
+        /* Summary card (step 52) */
+        var fmt = function(v){ return v || '—'; };
+        document.getElementById('prev-address').textContent     = fmt(address);
+        document.getElementById('prev-price').textContent       = price ? '$' + Number(price).toLocaleString() : '—';
+        document.getElementById('prev-leaseDate').textContent   = fmt(leaseDate);
+        document.getElementById('prev-bedroom').textContent     = fmt(bedroom);
+        document.getElementById('prev-bathrooms').textContent   = fmt(baths);
+        document.getElementById('prev-proptype').textContent    = fmt(propType);
+        document.getElementById('prev-highlights').textContent  = highlights.length ? highlights.join(', ') : '—';
+        document.getElementById('prev-incentives').textContent  = incentives.length ? incentives.join(', ') : '—';
+
+        /* Modal content — all user-input values wrapped in escHtml() */
+        var html = '<div class="table-responsive">'
+          + '<table class="table table-bordered table-sm">'
+          + '<tbody>'
+          + '<tr><th class="small">Property Address</th><td class="small">' + escHtml(address || '—') + '</td></tr>'
+          + '<tr><th class="small">Offered Monthly Rent</th><td class="small">' + (price ? '$' + Number(price).toLocaleString() : '—') + '</td></tr>'
+          + '<tr><th class="small">Lease Start Date</th><td class="small">' + escHtml(leaseDate || '—') + '</td></tr>'
+          + '<tr><th class="small">Bedrooms</th><td class="small">' + escHtml(bedroom || '—') + '</td></tr>'
+          + '<tr><th class="small">Bathrooms</th><td class="small">' + escHtml(baths || '—') + '</td></tr>'
+          + '<tr><th class="small">Property Type</th><td class="small">' + escHtml(propType || '—') + '</td></tr>';
+
+        if (desc) {
+          html += '<tr><th class="small">Property Description</th><td class="small" style="white-space:pre-wrap;">' + escHtml(desc) + '</td></tr>';
+        }
+        if (highlights.length) {
+          html += '<tr><th class="small">Rental Highlights</th><td class="small">'
+            + highlights.map(function(h){ return '<span class="badge bg-success me-1">' + escHtml(h) + '</span>'; }).join('')
+            + '</td></tr>';
+        }
+        if (incentives.length) {
+          html += '<tr><th class="small">Leasing Incentives</th><td class="small">'
+            + incentives.map(function(i){ return '<span class="badge bg-primary me-1">' + escHtml(i) + '</span>'; }).join('')
+            + '</td></tr>';
+        }
+        html += '</tbody></table></div>';
+        document.getElementById('modalPreviewContent').innerHTML = html;
+      }
+
+      /* Populate when user arrives at step 52 via the wizard's setStep hook */
+      var origSetStep = null;
+      $(function(){
+        /* Re-populate every time the preview step becomes active */
+        $(document).on('click', '.wizard-step-next, .wizard-step-back', function(){
+          setTimeout(function(){
+            if ($('.wizard-step.active').data('step') == 52) {
+              populatePreview();
+            }
+          }, 50);
+        });
+        /* Also populate when the modal is about to open */
+        document.getElementById('tenantPreviewModal') && document.getElementById('tenantPreviewModal').addEventListener('show.bs.modal', function(){
+          populatePreview();
+        });
+      });
+    })();
+  </script>
+
+  {{-- ═══════════════════════════════════════════════════════════════════════
+       Step 47 — Tenant Criteria Match Indicators
+       Compares bid form values (price, bedroom, bathrooms, petsOpt, furnishings)
+       entered in earlier steps against auction criteria embedded as data-* attrs
+       on #tc-criteria-card. Uses TenantBidMatchScoreHelper field groupings as
+       the conceptual baseline; direct field comparison replaces the helper here
+       since it targets TenantAgentAuction (not TenantCriteriaAuction) bids.
+  ═══════════════════════════════════════════════════════════════════════ --}}
+  <script>
+    (function () {
+      /**
+       * runTCMatchIndicators — fires when the user reaches step 47.
+       * Reads offered terms from prior form steps and compares against
+       * the tenant's auction criteria embedded on #tc-criteria-card.
+       * Badge semantics:
+       *   ✓ Match   (green)  — offered value satisfies the criterion
+       *   ✗ Mismatch(red)    — offered value does not satisfy the criterion
+       *   ?         (grey)   — criterion or bid field is blank/not yet filled
+       */
+      function runTCMatchIndicators() {
+        var card = document.getElementById('tc-criteria-card');
+        if (!card) return;
+
+        var maxRent  = parseFloat(card.dataset.maxRent)  || 0;
+        var minBeds  = parseInt(card.dataset.minBeds)    || 0;
+        var minBaths = parseFloat(card.dataset.minBaths) || 0;
+        var critPets = (card.dataset.critPets || '').toLowerCase();
+        var critFurn = (card.dataset.critFurn || '').split('|').map(function(s){ return s.trim().toLowerCase(); }).filter(Boolean);
+
+        function badge(matched) {
+          if (matched === null) return '<span class="badge bg-secondary ms-1 fw-normal" style="font-size:0.68em;">?</span>';
+          if (matched)          return '<span class="badge bg-success ms-1 fw-normal" style="font-size:0.68em;">✓ Match</span>';
+          return                       '<span class="badge bg-danger ms-1 fw-normal" style="font-size:0.68em;">✗ Mismatch</span>';
+        }
+
+        function setInd(id, matched) {
+          var el = document.getElementById(id);
+          if (el) el.innerHTML = badge(matched);
+        }
+
+        /* Rent — bid price must be ≤ tenant's max budget */
+        var rentEl = document.querySelector('input[name="price"]');
+        var rent   = rentEl ? parseFloat(rentEl.value) : 0;
+        setInd('tc-ind-rent', (maxRent > 0 && rent > 0) ? (rent <= maxRent) : null);
+
+        /* Bedrooms — offered must be ≥ tenant's minimum */
+        var bedEl = document.querySelector('select[name="bedroom"]');
+        var beds  = bedEl ? parseInt(bedEl.value) : 0;
+        setInd('tc-ind-beds', (minBeds > 0 && beds > 0) ? (beds >= minBeds) : null);
+
+        /* Bathrooms — offered must be ≥ tenant's minimum */
+        var bathEl = document.querySelector('select[name="bathrooms"]');
+        var baths  = bathEl ? parseFloat(bathEl.value) : 0;
+        setInd('tc-ind-baths', (minBaths > 0 && baths > 0) ? (baths >= minBaths) : null);
+
+        /* Pets — if tenant requires no-pets property, bid must not allow pets */
+        var petsEl  = document.querySelector('select[name="petsOpt"] option:checked');
+        var bidPets = petsEl ? petsEl.value.toLowerCase() : '';
+        if (critPets && bidPets) {
+          var petsFail = (critPets.indexOf('no') !== -1) && (bidPets.indexOf('no') === -1);
+          setInd('tc-ind-pets', !petsFail);
+        } else {
+          setInd('tc-ind-pets', null);
+        }
+
+        /* Furnished — offered preference must overlap tenant's requirement */
+        var furnEl  = document.querySelector('select[name="furnishings"] option:checked');
+        var bidFurn = furnEl ? furnEl.value.trim().toLowerCase() : '';
+        if (critFurn.length && bidFurn) {
+          var furnMatch = critFurn.indexOf(bidFurn) !== -1
+            || critFurn.indexOf('either') !== -1
+            || bidFurn === 'either';
+          setInd('tc-ind-furn', furnMatch);
+        } else {
+          setInd('tc-ind-furn', null);
+        }
+      }
+
+      window.runTCMatchIndicators = runTCMatchIndicators;
+
+      /* Hook into the wizard navigation buttons */
+      $(function () {
+        $(document).on('click', '.wizard-step-next, .wizard-step-back', function () {
+          setTimeout(function () {
+            if ($('.wizard-step.active').data('step') == 47) {
+              runTCMatchIndicators();
+            }
+          }, 60);
+        });
+      });
+    })();
+  </script>
 @endpush

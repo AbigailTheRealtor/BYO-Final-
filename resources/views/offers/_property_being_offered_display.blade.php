@@ -42,7 +42,8 @@
 
     $hasPhotos  = count($propPhotos) > 0 || count($propPhotoUrls) > 0;
     $hasAnyData = $propStreet || $propCity || $propType || $propMls
-        || $hasPhotos || $pm->get('match_explanation');
+        || $hasPhotos || $pm->get('match_explanation')
+        || $pm->get('prop_description') || $pm->get('prop_highlights');
 @endphp
 
 @if(!$hasAnyData)
@@ -239,6 +240,26 @@
     <dd class="col-sm-9">{{ $propShowing }}</dd>
     @endif
 </dl>
+@endif
+
+{{-- ── Property Description ──────────────────────────────────────────────── --}}
+@if($pm->get('prop_description'))
+<p class="fw-semibold text-secondary" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #dee2e6;padding-bottom:4px;margin:0 0 8px;">Property Description</p>
+<p class="mb-3" style="white-space:pre-wrap;">{{ $pm->get('prop_description') }}</p>
+@endif
+
+{{-- ── Highlights ──────────────────────────────────────────────────────────── --}}
+@php
+    $dispHighlights = json_decode($pm->get('prop_highlights', '[]'), true) ?: [];
+    $dispRole = $offer->role ?? 'buyer';
+@endphp
+@if(count($dispHighlights))
+<p class="fw-semibold text-secondary" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #dee2e6;padding-bottom:4px;margin:0 0 8px;">{{ $dispRole === 'tenant' ? 'Rental Highlights' : 'Property Highlights' }}</p>
+<div class="d-flex flex-wrap gap-2 mb-3">
+    @foreach($dispHighlights as $hl)
+    <span class="badge rounded-pill bg-primary" style="font-size:0.8rem;padding:0.35em 0.75em;">{{ $hl }}</span>
+    @endforeach
+</div>
 @endif
 
 {{-- ── Match Explanation (dedicated display partial) ────────────────────── --}}
