@@ -53,7 +53,9 @@ use Illuminate\Support\ServiceProvider;
  *              AgentAiOpenAiOrchestrator::call(), AgentAiFinalResponseBuilder::build()
  *              all implemented. agent_ai_chat_sessions and agent_ai_chat_messages
  *              tables migrated. Full conversation pipeline wired in controller.
- *   Build 4+ — CTA/action resolver (not yet implemented).
+ *   Build 4 — AgentAiActionResolver implemented. Actions envelope added to every
+              response. Inline view_agent_services handler bypasses OpenAI.
+              AgentAiFinalResponseBuilder now takes AgentAiActionResolver via DI.
  */
 class AgentAiServiceProvider extends ServiceProvider
 {
@@ -88,10 +90,14 @@ class AgentAiServiceProvider extends ServiceProvider
         $this->app->singleton(AgentAiOpenAiOrchestrator::class);
         $this->app->singleton(AgentAiFinalResponseBuilder::class);
 
-        // ── Build 4+ stubs (not yet implemented) ─────────────────────────────
+        // ── Build 4: CTA / Action Resolver (implemented) ─────────────────────
+        // AgentAiActionResolver is implemented. AgentAiFinalResponseBuilder now
+        // depends on it via constructor injection; Laravel auto-resolves it.
+        $this->app->singleton(AgentAiActionResolver::class);
+
+        // ── Build 5+ stubs (not yet implemented) ─────────────────────────────
         $this->app->singleton(AgentAiLeadCaptureService::class);
         $this->app->singleton(AgentAiLeadScoringService::class);
-        $this->app->singleton(AgentAiActionResolver::class);
         $this->app->singleton(AgentAiNotificationService::class);
         $this->app->singleton(AgentAiEscalationService::class);
     }

@@ -7,6 +7,7 @@ use App\Exceptions\AgentAiPermissionException;
 use App\Http\Controllers\Controller;
 use App\Models\AgentAiChatMessage;
 use App\Models\AgentAiChatSession;
+use App\Services\AgentAi\AgentAiActionResolver;
 use App\Services\AgentAi\AgentAiContextBuilder;
 use App\Services\AgentAi\AgentAiFinalResponseBuilder;
 use App\Services\AgentAi\AgentAiOpenAiOrchestrator;
@@ -36,11 +37,12 @@ use Illuminate\Support\Str;
 class AgentAiChatController extends Controller
 {
     public function __construct(
-        private readonly AgentAiPermissionGuard  $permissionGuard,
-        private readonly AgentAiContextBuilder   $contextBuilder,
-        private readonly AgentAiPromptBuilder    $promptBuilder,
+        private readonly AgentAiPermissionGuard       $permissionGuard,
+        private readonly AgentAiContextBuilder        $contextBuilder,
+        private readonly AgentAiPromptBuilder         $promptBuilder,
         private readonly AgentAiOpenAiOrchestrator    $orchestrator,
         private readonly AgentAiFinalResponseBuilder  $responseBuilder,
+        private readonly AgentAiActionResolver        $actionResolver,
     ) {}
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -155,10 +157,11 @@ class AgentAiChatController extends Controller
      * Request body:
      *   session_token (string, required)
      *   question      (string, required)
+     *   action_key    (string, optional) — when 'view_agent_services', bypasses OpenAI
      *
-     * Response: { status, answer, escalate }
+     * Response: { status, answer, escalate, actions }
      *
-     * Pipeline:
+     * Pipeline (standard):
      *   1. permission guard (check session token)
      *   2. load context (AgentAiContextBuilder::buildForScope)
      *   3. build prompt (AgentAiPromptBuilder::build)
@@ -166,12 +169,24 @@ class AgentAiChatController extends Controller
      *   5. normalize response (AgentAiFinalResponseBuilder::build)
      *   6. persist user + assistant messages
      *   7. update session last_active_at
+     *
+     * Pipeline (action_key = 'view_agent_services'):
+     *   1. permission guard (check session token)
+     *   2. AgentAiActionResolver::resolveInlineServices() — OpenAI is bypassed
+     *   3. persist user + assistant messages
+     *   4. update session last_active_at
      */
     public function ask(Request $request): JsonResponse
     {
-        $question = trim((string) $request->input('question', ''));
+        $question  = trim((string) $request->input('question', ''));
+        $actionKey = trim((string) $request->input('action_key', ''));
 
-        if ($question === '') {
+        // Known action keys that can replace a question (bypass or enrich the pipeline).
+        $knownActionKeys = [
+            AgentAiActionResolver::ACTION_VIEW_AGENT_SERVICES,
+        ];
+
+        if ($question === '' && !in_array($actionKey, $knownActionKeys, true)) {
             return response()->json([
                 'status' => 'error',
                 'error'  => 'question is required.',
@@ -191,7 +206,7 @@ class AgentAiChatController extends Controller
         }
 
         /** @var AgentAiChatSession $session */
-        $session     = $guard['session'];
+        $session       = $guard['session'];
         $resolvedScope = AgentAiContextScope::tryFrom($session->scope);
 
         if ($resolvedScope === null) {
@@ -203,6 +218,16 @@ class AgentAiChatController extends Controller
                 'status' => 'error',
                 'error'  => 'Session scope is invalid.',
             ], 500);
+        }
+
+        $agentId   = (int) $session->agent_id;
+        $listingId = $session->listing_id ? (int) $session->listing_id : null;
+
+        // ── Inline handler: View Agent's Services ─────────────────────────────
+        // Triggered by action_key, not by question text, so it works regardless
+        // of how the user words their request.
+        if ($actionKey === AgentAiActionResolver::ACTION_VIEW_AGENT_SERVICES) {
+            return $this->handleViewAgentServices($session, $resolvedScope, $agentId, $listingId, $question);
         }
 
         // ── Load conversation history ─────────────────────────────────────────
@@ -217,9 +242,9 @@ class AgentAiChatController extends Controller
         try {
             $context = $this->contextBuilder->buildForScope(
                 $resolvedScope,
-                (int) $session->agent_id,
+                $agentId,
                 $session->listing_type,
-                $session->listing_id ? (int) $session->listing_id : null
+                $listingId
             );
         } catch (AgentAiPermissionException $e) {
             return response()->json([
@@ -234,12 +259,12 @@ class AgentAiChatController extends Controller
             ]);
             // Non-fatal — continue with empty context; prompt builder handles gracefully
             $context = [
-                'scope'             => $resolvedScope->value,
-                'context_string'    => '',
+                'scope'                => $resolvedScope->value,
+                'context_string'       => '',
                 'total_token_estimate' => 0,
-                'missing_sources'   => ['all'],
-                'truncated_sources' => [],
-                'assembled_at'      => now()->toISOString(),
+                'missing_sources'      => ['all'],
+                'truncated_sources'    => [],
+                'assembled_at'         => now()->toISOString(),
             ];
         }
 
@@ -254,11 +279,15 @@ class AgentAiChatController extends Controller
         // ── Call OpenAI ───────────────────────────────────────────────────────
         $adapterResult = $this->orchestrator->call($promptPackage);
 
-        // ── Normalize response ────────────────────────────────────────────────
-        $finalResponse = $this->responseBuilder->build($promptPackage, $adapterResult);
+        // ── Normalize response (includes action resolution) ───────────────────
+        $finalResponse = $this->responseBuilder->build($promptPackage, $adapterResult, [
+            'scope'      => $resolvedScope,
+            'agent_id'   => $agentId,
+            'listing_id' => $listingId,
+        ]);
 
         // ── Persist messages ──────────────────────────────────────────────────
-        $tokensUsed  = $finalResponse['tokens_used'] ?? 0;
+        $tokensUsed   = $finalResponse['tokens_used'] ?? 0;
         $contextScope = $resolvedScope->value;
 
         AgentAiChatMessage::create([
@@ -289,6 +318,56 @@ class AgentAiChatController extends Controller
             'status'   => $finalResponse['status'],
             'answer'   => $finalResponse['answer'],
             'escalate' => $finalResponse['escalate'],
+            'actions'  => $finalResponse['actions'] ?? [],
+        ]);
+    }
+
+    // ── Private handlers ──────────────────────────────────────────────────────
+
+    /**
+     * Handle the "View Agent's Services" inline action.
+     *
+     * Bypasses context build, prompt build, and OpenAI entirely.
+     * Persists user + assistant messages and updates session activity.
+     */
+    private function handleViewAgentServices(
+        AgentAiChatSession $session,
+        AgentAiContextScope $resolvedScope,
+        int $agentId,
+        ?int $listingId,
+        string $userQuestion
+    ): JsonResponse {
+        $inlineResponse = $this->actionResolver->resolveInlineServices($agentId);
+
+        $contextScope    = $resolvedScope->value;
+        $userContent     = $userQuestion !== '' ? $userQuestion : "View Agent's Services";
+        $assistantAnswer = $inlineResponse['answer'] ?? '';
+
+        AgentAiChatMessage::create([
+            'session_id'    => $session->id,
+            'role'          => AgentAiChatMessage::ROLE_USER,
+            'content'       => $userContent,
+            'context_scope' => $contextScope,
+            'tokens_used'   => null,
+            'created_at'    => now(),
+        ]);
+
+        AgentAiChatMessage::create([
+            'session_id'    => $session->id,
+            'role'          => AgentAiChatMessage::ROLE_ASSISTANT,
+            'content'       => $assistantAnswer,
+            'context_scope' => $contextScope,
+            'tokens_used'   => null,
+            'created_at'    => now(),
+        ]);
+
+        $session->update(['last_active_at' => now()]);
+
+        return response()->json([
+            'status'   => $inlineResponse['status'],
+            'answer'   => $assistantAnswer,
+            'escalate' => $inlineResponse['escalate'],
+            'actions'  => $inlineResponse['actions'] ?? [],
         ]);
     }
 

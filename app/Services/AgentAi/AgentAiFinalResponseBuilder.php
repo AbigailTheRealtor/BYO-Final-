@@ -2,14 +2,20 @@
 
 namespace App\Services\AgentAi;
 
+use App\Enums\AgentAiContextScope;
+
 /**
  * AgentAiFinalResponseBuilder
  *
  * Normalizes raw OpenAI adapter output into the canonical V2 public response
  * contract. Handles status routing, text normalization, disclosure injection,
- * and low-confidence detection.
+ * low-confidence detection, and action resolution.
  *
- * GOVERNANCE: Pure transformation. No external calls. No DB writes.
+ * Response envelope (Build 4+):
+ *   { success, status, answer, escalate, disclosures, tokens_used, actions }
+ *
+ * GOVERNANCE: Pure transformation. No external calls. No DB writes (action
+ * resolution is delegated to AgentAiActionResolver which is read-only).
  * Must never include prompt contents, raw context blocks, API keys, or
  * internal model-selection details in the output.
  */
@@ -92,8 +98,19 @@ class AgentAiFinalResponseBuilder
 
     private const COMPLIANCE_DISCLAIMER = 'Note: For legal, financial, or contractual matters, please consult the agent or a qualified professional directly.';
 
+    public function __construct(
+        private readonly AgentAiActionResolver $actionResolver,
+    ) {}
+
     /**
      * Build the final public response from a prompt package and orchestrator result.
+     *
+     * Pass scope, agent_id, and listing_id via $options to enable action resolution:
+     *   $options = [
+     *     'scope'      => AgentAiContextScope,
+     *     'agent_id'   => int,
+     *     'listing_id' => int|null,
+     *   ]
      *
      * @param  array $promptPackage   Output of AgentAiPromptBuilder::build()
      * @param  array $adapterResult   Output of AgentAiOpenAiOrchestrator::call()
@@ -105,10 +122,15 @@ class AgentAiFinalResponseBuilder
      *   escalate: bool,
      *   disclosures: string|null,
      *   tokens_used: int,
+     *   actions: array,
      * }
      */
     public function build(array $promptPackage, array $adapterResult, array $options = []): array
     {
+        $scope     = $options['scope']      ?? null;
+        $agentId   = isset($options['agent_id']) ? (int) $options['agent_id'] : 0;
+        $listingId = isset($options['listing_id']) ? ((int) $options['listing_id'] ?: null) : null;
+
         // ── Fallback: OpenAI call failed ─────────────────────────────────────
         if (!($adapterResult['success'] ?? false)) {
             $fallback = (string) config(
@@ -123,6 +145,7 @@ class AgentAiFinalResponseBuilder
                 'escalate'    => true,
                 'disclosures' => null,
                 'tokens_used' => 0,
+                'actions'     => $this->resolveActions($scope, $agentId, $listingId),
             ];
         }
 
@@ -146,6 +169,7 @@ class AgentAiFinalResponseBuilder
                 'escalate'    => true,
                 'disclosures' => null,
                 'tokens_used' => $tokensUsed,
+                'actions'     => $this->resolveActions($scope, $agentId, $listingId),
             ];
         }
 
@@ -173,7 +197,25 @@ class AgentAiFinalResponseBuilder
             'escalate'    => $escalate,
             'disclosures' => $disclosures,
             'tokens_used' => $tokensUsed,
+            'actions'     => $this->resolveActions($scope, $agentId, $listingId),
         ];
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    /**
+     * Call the action resolver when scope and agentId are available,
+     * returning an empty array when context is insufficient.
+     *
+     * @return array<int, array{label: string, action_key: string, href: string|null, unavailable_reason: string|null}>
+     */
+    private function resolveActions(?AgentAiContextScope $scope, int $agentId, ?int $listingId): array
+    {
+        if ($scope === null || $agentId <= 0) {
+            return [];
+        }
+
+        return $this->actionResolver->resolve($scope, $agentId, $listingId);
     }
 
     /**
