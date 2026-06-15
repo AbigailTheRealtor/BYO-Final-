@@ -841,6 +841,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Only Admin can access these routes
     Route::prefix('admin')->middleware('adminAuth')->name('admin.')->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+
+        // TEMPORARY: diagnostic only — verify Bridge env vars are loaded at runtime; remove once confirmed.
+        Route::get('bridge/env-test', function () {
+            $dataset = config('bridge.dataset');
+            $token   = config('bridge.token');
+
+            return response()->json([
+                'bridge_dataset'       => $dataset ? 'SET' : 'MISSING',
+                'bridge_dataset_value' => $dataset ?: null,
+                'bridge_server_token'  => $token ? 'SET' : 'MISSING',
+            ]);
+        })->name('bridge.env-test');
         Route::get('buyer', [BuyerController::class, 'buyer'])->name('buyer');
         Route::post('buyer', [BuyerController::class, 'store']);
         Route::post('buyer/update', [BuyerController::class, 'update'])->name('buyer.update');
