@@ -130,6 +130,25 @@
             </div>
         </div>
     </a>
+    <a href="{{ route('agent.ai-inbox.index') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa-solid fa-robot" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>AI Inbox</b>
+                    @php
+                        try {
+                            $ai_inbox_hot = \App\Models\AgentAiChatSession::where('agent_id', auth()->id())
+                                ->whereNull('reviewed_at')
+                                ->whereHas('lead', function($q) { $q->where('lead_score', '>=', 75); })
+                                ->count();
+                        } catch (\Throwable $_) { $ai_inbox_hot = 0; }
+                    @endphp
+                    @if($ai_inbox_hot)<span class="badge bg-danger ms-2">{{ $ai_inbox_hot }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">Hot leads from your Agent AI assistant.</div>
+            </div>
+        </div>
+    </a>
     <a href="{{ route('agent.presets.index') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa-solid fa-sliders" style="font-size:1.1rem;line-height:1.5rem;"></i></div>

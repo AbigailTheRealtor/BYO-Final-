@@ -9,12 +9,18 @@ use App\Models\AgentAiChatMessage;
 use App\Models\AgentAiChatSession;
 use App\Services\AgentAi\AgentAiActionResolver;
 use App\Services\AgentAi\AgentAiContextBuilder;
+use App\Services\AgentAi\AgentAiEscalationService;
 use App\Services\AgentAi\AgentAiFinalResponseBuilder;
+use App\Services\AgentAi\AgentAiLeadCaptureService;
+use App\Services\AgentAi\AgentAiLeadIntentDetector;
+use App\Services\AgentAi\AgentAiLeadScoringService;
+use App\Services\AgentAi\AgentAiNotificationService;
 use App\Services\AgentAi\AgentAiOpenAiOrchestrator;
 use App\Services\AgentAi\AgentAiPermissionGuard;
 use App\Services\AgentAi\AgentAiPromptBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -25,12 +31,13 @@ use Illuminate\Support\Str;
  *
  *   POST /agent-ai/session/start  — create or resume a session
  *   POST /agent-ai/ask            — submit a question and receive an AI answer
+ *   POST /agent-ai/escalate       — confirm visitor escalation to agent (Build 5)
  *
  * GOVERNANCE:
  *   - Never expose prompt contents, raw context blocks, API keys, or internal
  *     model-selection details in any response.
  *   - All reads go through AgentAiPermissionGuard before context is loaded.
- *   - Message persistence uses AgentAiChatMessage; no other tables are written.
+ *   - Message persistence uses AgentAiChatMessage; lead data uses AgentAiChatLead.
  *   - Offer, counter-offer, and competing-bid tables are never queried
  *     (enforced by AgentAiPermissionGuard::BLOCKED_TABLES and asserted in tests).
  */
@@ -43,6 +50,11 @@ class AgentAiChatController extends Controller
         private readonly AgentAiOpenAiOrchestrator    $orchestrator,
         private readonly AgentAiFinalResponseBuilder  $responseBuilder,
         private readonly AgentAiActionResolver        $actionResolver,
+        private readonly AgentAiLeadIntentDetector    $intentDetector,
+        private readonly AgentAiLeadScoringService    $leadScorer,
+        private readonly AgentAiLeadCaptureService    $leadCapture,
+        private readonly AgentAiNotificationService   $notificationService,
+        private readonly AgentAiEscalationService     $escalationService,
     ) {}
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -125,17 +137,21 @@ class AgentAiChatController extends Controller
             }
         }
 
+        // ── Auto-attach signed-in visitor (Build 5) ───────────────────────────
+        $visitorUserId = Auth::id();
+
         // ── Create new session ─────────────────────────────────────────────────
         $session = AgentAiChatSession::create([
-            'session_token'  => $this->generateSecureToken(),
-            'agent_id'       => $agentId,
-            'scope'          => $scope->value,
-            'listing_type'   => $listingType,
-            'listing_id'     => $listingId,
-            'visitor_ip'     => $request->ip(),
-            'started_at'     => now(),
-            'last_active_at' => now(),
-            'channel'        => $channel,
+            'session_token'   => $this->generateSecureToken(),
+            'agent_id'        => $agentId,
+            'scope'           => $scope->value,
+            'listing_type'    => $listingType,
+            'listing_id'      => $listingId,
+            'visitor_user_id' => $visitorUserId,
+            'visitor_ip'      => $request->ip(),
+            'started_at'      => now(),
+            'last_active_at'  => now(),
+            'channel'         => $channel,
             'channel_user_id' => $channelUserId,
         ]);
 
@@ -159,7 +175,7 @@ class AgentAiChatController extends Controller
      *   question      (string, required)
      *   action_key    (string, optional) — when 'view_agent_services', bypasses OpenAI
      *
-     * Response: { status, answer, escalate, actions }
+     * Response: { status, answer, escalate, actions, capture_contact_prompt? }
      *
      * Pipeline (standard):
      *   1. permission guard (check session token)
@@ -167,8 +183,10 @@ class AgentAiChatController extends Controller
      *   3. build prompt (AgentAiPromptBuilder::build)
      *   4. call OpenAI (AgentAiOpenAiOrchestrator::call)
      *   5. normalize response (AgentAiFinalResponseBuilder::build)
-     *   6. persist user + assistant messages
-     *   7. update session last_active_at
+     *   6. detect intent, score turn, update lead record (Build 5)
+     *   7. persist user + assistant messages (with detected_intent + lead_score_snapshot)
+     *   8. fire threshold notifications (Build 5)
+     *   9. update session last_active_at
      *
      * Pipeline (action_key = 'view_agent_services'):
      *   1. permission guard (check session token)
@@ -224,17 +242,11 @@ class AgentAiChatController extends Controller
         $listingId = $session->listing_id ? (int) $session->listing_id : null;
 
         // ── Inline handler: View Agent's Services ─────────────────────────────
-        // Triggered by action_key, not by question text, so it works regardless
-        // of how the user words their request.
         if ($actionKey === AgentAiActionResolver::ACTION_VIEW_AGENT_SERVICES) {
             return $this->handleViewAgentServices($session, $resolvedScope, $agentId, $listingId, $question);
         }
 
         // ── Load conversation history ─────────────────────────────────────────
-        // Load the FULL session history (oldest first) and let AgentAiPromptBuilder
-        // decide which turns are verbatim and which are condensed into a summary.
-        // Never pre-cap here — silently dropping older turns would bypass
-        // the prompt builder's summarization logic.
         $historyMessages = $session->messages()->get()->all();
 
         // ── Build context ─────────────────────────────────────────────────────
@@ -257,7 +269,6 @@ class AgentAiChatController extends Controller
                 'session_id' => $session->id,
                 'error'      => $e->getMessage(),
             ]);
-            // Non-fatal — continue with empty context; prompt builder handles gracefully
             $context = [
                 'scope'                => $resolvedScope->value,
                 'context_string'       => '',
@@ -286,27 +297,118 @@ class AgentAiChatController extends Controller
             'listing_id' => $listingId,
         ]);
 
+        // ── Build 5: Intent detection + lead scoring ───────────────────────────
+        // $detectedSignal is used for scoring only (not stored on the message).
+        // $detectedIntent stores the lead-type taxonomy (buyer/seller/etc.) on
+        // agent_ai_chat_messages.detected_intent for inbox display.
+        $detectedSignal = $this->intentDetector->detectSignal($question);
+        $detectedIntent = $this->intentDetector->detectLeadType($question);
+
+        // Determine which contact fields have already been collected from prior
+        // persisted messages so scoreTurn() does not double-award bonuses.
+        $priorUserMessages = array_filter($historyMessages, fn ($m) => $m->role === 'user');
+        $collectedFields   = [];
+        foreach ($priorUserMessages as $msg) {
+            if ($this->intentDetector->containsEmail($msg->content)) {
+                $collectedFields[] = 'email';
+            }
+            if ($this->intentDetector->containsPhone($msg->content)) {
+                $collectedFields[] = 'phone';
+            }
+        }
+        $collectedFields = array_unique($collectedFields);
+
+        $currentScore    = $this->leadScorer->accumulateForSession($session->id);
+        $turnResult      = $this->leadScorer->scoreTurn($question, $collectedFields);
+        $newScore        = min($currentScore + $turnResult['points'], 100);
+
+        // ── Build 5: Contact capture trigger for anonymous high-intent visitors
+        $captureContactPrompt = null;
+        $visitorUserId        = $session->visitor_user_id;
+
+        if ($this->leadCapture->shouldPromptForContact($detectedSignal, $visitorUserId)) {
+            $captureContactPrompt = 'It looks like you\'re interested in taking the next step! '
+                . 'Please share your name and best contact info so the agent can follow up with you.';
+        }
+
+        // ── Build 5: Upsert lead record when high-intent or score >= 50 ───────
+        $lead = null;
+        if ($detectedSignal !== null || $newScore >= 50) {
+            try {
+                $detectedLeadType = $this->intentDetector->detectLeadType($question);
+                $lead = $this->leadCapture->recordOrUpdate($session->id, array_filter([
+                    'lead_type'    => $detectedLeadType,
+                    'intent_phrase' => $question,
+                    'lead_score'   => $newScore,
+                    'listing_type' => $session->listing_type,
+                    'listing_id'   => $listingId,
+                    'question'     => $question,
+                ], fn ($v) => $v !== null));
+
+                // Finalize: generate a deterministic conversation summary and
+                // follow-up suggestion once the lead crosses score >= 50.
+                if ($newScore >= 50 && empty($lead->conversation_summary)) {
+                    $questions = $lead->questions_asked ?? [];
+                    $leadTypeLabel = $lead->lead_type
+                        ? ucfirst(str_replace('_', ' ', $lead->lead_type))
+                        : 'Unclassified';
+                    $topQuestions = implode('; ', array_slice($questions, 0, 5));
+                    $summary = "Lead expressed interest as a {$leadTypeLabel}."
+                        . ($topQuestions ? " Asked about: {$topQuestions}." : '');
+                    $followUp = 'Follow up about their interest in '
+                        . ($lead->intent_phrase ?? 'your services') . '.';
+                    $this->leadCapture->finalize($session->id, $summary, $followUp);
+                    $lead->refresh();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('AgentAiChatController: lead record upsert failed', [
+                    'session_id' => $session->id,
+                    'error'      => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // ── Build 5: Escalation — if escalate: true, trigger escalation prompt
+        $escalatePromptText = null;
+        if (!empty($finalResponse['escalate'])) {
+            $escalatePromptText = $this->escalationService->buildEscalationPrompt();
+        }
+
         // ── Persist messages ──────────────────────────────────────────────────
         $tokensUsed   = $finalResponse['tokens_used'] ?? 0;
         $contextScope = $resolvedScope->value;
 
         AgentAiChatMessage::create([
-            'session_id'    => $session->id,
-            'role'          => AgentAiChatMessage::ROLE_USER,
-            'content'       => $question,
-            'context_scope' => $contextScope,
-            'tokens_used'   => null,
-            'created_at'    => now(),
+            'session_id'          => $session->id,
+            'role'                => AgentAiChatMessage::ROLE_USER,
+            'content'             => $question,
+            'context_scope'       => $contextScope,
+            'detected_intent'     => $detectedIntent,
+            'lead_score_snapshot' => $newScore,
+            'tokens_used'         => null,
+            'created_at'          => now(),
         ]);
 
         AgentAiChatMessage::create([
-            'session_id'    => $session->id,
-            'role'          => AgentAiChatMessage::ROLE_ASSISTANT,
-            'content'       => $finalResponse['answer'] ?? '',
-            'context_scope' => $contextScope,
-            'tokens_used'   => $tokensUsed > 0 ? $tokensUsed : null,
-            'created_at'    => now(),
+            'session_id'          => $session->id,
+            'role'                => AgentAiChatMessage::ROLE_ASSISTANT,
+            'content'             => $finalResponse['answer'] ?? '',
+            'context_scope'       => $contextScope,
+            'detected_intent'     => null,
+            'lead_score_snapshot' => $newScore,
+            'tokens_used'         => $tokensUsed > 0 ? $tokensUsed : null,
+            'created_at'          => now(),
         ]);
+
+        // ── Build 5: Fire threshold notifications ─────────────────────────────
+        try {
+            $this->notificationService->checkAndNotify($session, $newScore, $lead);
+        } catch (\Throwable $e) {
+            Log::warning('AgentAiChatController: notification check failed', [
+                'session_id' => $session->id,
+                'error'      => $e->getMessage(),
+            ]);
+        }
 
         // ── Update session activity ───────────────────────────────────────────
         $session->update(['last_active_at' => now()]);
@@ -314,11 +416,117 @@ class AgentAiChatController extends Controller
         // ── Return public response ────────────────────────────────────────────
         // GOVERNANCE: Never expose prompt contents, raw context, API keys,
         // model names, or internal orchestrator details in the response.
-        return response()->json([
+        $publicResponse = [
             'status'   => $finalResponse['status'],
             'answer'   => $finalResponse['answer'],
             'escalate' => $finalResponse['escalate'],
             'actions'  => $finalResponse['actions'] ?? [],
+        ];
+
+        if ($captureContactPrompt !== null) {
+            $publicResponse['capture_contact_prompt'] = $captureContactPrompt;
+        }
+
+        if ($escalatePromptText !== null) {
+            $publicResponse['escalation_prompt'] = $escalatePromptText;
+        }
+
+        return response()->json($publicResponse);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // POST /agent-ai/escalate
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Confirm a visitor's request to escalate to the agent.
+     *
+     * Request body:
+     *   session_token (string, required)
+     *   question      (string, required) — the visitor's exact unanswered question
+     *   visitor_name  (string, optional)
+     *   visitor_email (string, optional)
+     *   visitor_phone (string, optional)
+     *
+     * Creates/updates the lead record with lead_type = agent_question and
+     * the exact question as intent_phrase.
+     *
+     * Response: { status, message, lead_id }
+     */
+    public function confirmEscalation(Request $request): JsonResponse
+    {
+        $question = trim((string) $request->input('question', ''));
+
+        if ($question === '') {
+            return response()->json([
+                'status' => 'error',
+                'error'  => 'question is required.',
+            ], 422);
+        }
+
+        // ── Permission guard ─────────────────────────────────────────────────
+        $guard = $this->permissionGuard->check($request, AgentAiContextScope::AgentProfile);
+
+        if (!$guard['allowed']) {
+            return response()->json([
+                'status' => 'error',
+                'error'  => 'Access denied.',
+                'reason' => $guard['reason'],
+            ], $guard['http_status']);
+        }
+
+        /** @var AgentAiChatSession $session */
+        $session = $guard['session'];
+        $agentId = (int) $session->agent_id;
+
+        $visitorData = array_filter([
+            'name'  => $request->input('visitor_name'),
+            'email' => $request->input('visitor_email'),
+            'phone' => $request->input('visitor_phone'),
+        ]);
+
+        $result = $this->escalationService->confirmEscalation(
+            $session->id,
+            $agentId,
+            $question,
+            $visitorData
+        );
+
+        if (!$result['escalated']) {
+            return response()->json([
+                'status' => 'error',
+                'error'  => $result['error'],
+            ], 500);
+        }
+
+        // Score escalation signal, persist updated lead_score, and fire notifications.
+        try {
+            $escalationPoints = $this->leadScorer->pointsForSignal(
+                AgentAiLeadIntentDetector::SIGNAL_ESCALATION_REQUESTED
+            );
+            $currentScore = $this->leadScorer->accumulateForSession($session->id);
+            $newScore     = min($currentScore + $escalationPoints, 100);
+
+            $lead = \App\Models\AgentAiChatLead::where('session_id', $session->id)->first();
+
+            // Persist the updated score so inbox queries reflect escalated urgency.
+            if ($lead !== null) {
+                $lead->lead_score = $newScore;
+                $lead->save();
+            }
+
+            $this->notificationService->checkAndNotify($session, $newScore, $lead);
+        } catch (\Throwable $e) {
+            Log::warning('AgentAiChatController: escalation notification failed', [
+                'session_id' => $session->id,
+                'error'      => $e->getMessage(),
+            ]);
+        }
+
+        return response()->json([
+            'status'  => 'escalated',
+            'message' => $result['suggested_cta'],
+            'lead_id' => $result['lead_id'],
         ]);
     }
 

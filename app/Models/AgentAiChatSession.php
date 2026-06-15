@@ -89,6 +89,11 @@ class AgentAiChatSession extends Model
         return $this->hasMany(AgentAiChatMessage::class, 'session_id')->orderBy('created_at');
     }
 
+    public function lead(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Models\AgentAiChatLead::class, 'session_id');
+    }
+
     /**
      * Return the last N messages, ordered oldest-first (for history injection).
      */

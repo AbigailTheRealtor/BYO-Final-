@@ -134,4 +134,42 @@ return [
         'AGENT_AI_FALLBACK_MESSAGE',
         'I can help connect you with the agent to confirm — please reach out directly for this information.'
     ),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Agent AI V2 — Lead Scoring Point Table (Build 5)
+    |--------------------------------------------------------------------------
+    |
+    | Canonical point values for each scoring signal. AgentAiLeadScoringService
+    | reads from this configuration so thresholds can be tuned without code changes.
+    |
+    | Signal keys correspond to AgentAiLeadIntentDetector::SIGNAL_* constants.
+    | Contact-field signals (phone_provided, email_provided) are also applied here.
+    |
+    | Notification thresholds:
+    |   score >= 50  → dashboard notification card
+    |   score >= 75  → dashboard card + email to agent
+    |   score >= 90  → dashboard card + email + in-app nav badge
+    |
+    | Scores are capped at 100 in AgentAiLeadScoringService::accumulateForSession().
+    */
+    'agent_ai_lead_scoring' => [
+        'points' => [
+            'property_question'        => 5,
+            'financial_question'       => 10,
+            'showing_request'          => 25,
+            'offer_question'           => 35,
+            'submit_offer_intent'      => 50,
+            'consultation_request'     => 40,
+            'human_escalation_requested' => 15,
+            'phone_provided'           => 20,
+            'email_provided'           => 10,
+        ],
+        'thresholds' => [
+            'dashboard_card'  => 50,
+            'email'           => 75,
+            'nav_badge'       => 90,
+        ],
+        'max_score' => 100,
+    ],
 ];

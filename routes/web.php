@@ -191,6 +191,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/agent/presets/{role}/{propertyType}', [\App\Http\Controllers\AgentPresetController::class, 'save'])->name('agent.presets.save');
     Route::post('/agent/avatar', [\App\Http\Controllers\AgentPresetController::class, 'uploadAvatar'])->name('agent.avatar.upload');
 
+    // Build 5: Agent AI Inbox — agent-only, scoped to owning agent
+    Route::get('/agent/ai-inbox', [\App\Http\Controllers\AgentAi\AgentAiInboxController::class, 'index'])->name('agent.ai-inbox.index');
+    Route::get('/agent/ai-inbox/{sessionId}', [\App\Http\Controllers\AgentAi\AgentAiInboxController::class, 'show'])->name('agent.ai-inbox.show');
+    Route::post('/agent/ai-inbox/{sessionId}/mark-reviewed', [\App\Http\Controllers\AgentAi\AgentAiInboxController::class, 'markReviewed'])->name('agent.ai-inbox.mark-reviewed');
+
     Route::get('/notifications/fetch', [NotificationController::class, 'fetch'])->name('notifications.fetch');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.markRead');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
@@ -261,6 +266,9 @@ Route::middleware('agent-ai-v2')->group(function () {
         ->name('agent-ai.ask');
     Route::post('/agent-ai/session/start', [\App\Http\Controllers\AgentAi\AgentAiChatController::class, 'startSession'])
         ->name('agent-ai.session.start');
+    // Build 5: escalation confirmation endpoint
+    Route::post('/agent-ai/escalate', [\App\Http\Controllers\AgentAi\AgentAiChatController::class, 'confirmEscalation'])
+        ->name('agent-ai.escalate');
 });
 
 // Route::post('/notification', [NotificationController::class, 'notification']);
