@@ -271,7 +271,7 @@
 
 {{-- ── Property Description ──────────────────────────────────────────────── --}}
 @if($pm->get('prop_description'))
-<p class="fw-semibold text-secondary" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #dee2e6;padding-bottom:4px;margin:0 0 8px;">Property Description</p>
+<p class="fw-semibold text-secondary" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #dee2e6;padding-bottom:4px;margin:0 0 8px;">{{ ($offer->role ?? 'buyer') === 'tenant' ? 'Rental Description' : 'Property Description' }}</p>
 <p class="mb-3" style="white-space:pre-wrap;">{{ $pm->get('prop_description') }}</p>
 @endif
 
@@ -290,6 +290,6 @@
 @endif
 
 {{-- ── Match Explanation (dedicated display partial) ────────────────────── --}}
-@include('offers._match_explanation_display', ['metas' => $pm])
+@include('offers._match_explanation_display', ['metas' => $pm, 'offer' => $offer])
 
 @endif{{-- end hasAnyData --}}

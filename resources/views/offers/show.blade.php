@@ -436,6 +436,139 @@
             </div>
             @endif
 
+            {{-- ── Tenant Criteria Summary (only when offer is linked to a Tenant Criteria listing) --}}
+            @if($offer->role === 'tenant' && $tenantCriteriaAuction)
+            @php
+                $tcType       = $tenantCriteriaMetas->get('property_type');
+                $tcMaxRent    = $tenantCriteriaMetas->get('max_rent') ?: $tenantCriteriaMetas->get('rental_budget') ?: $tenantCriteriaMetas->get('maximum_budget');
+                $tcBeds       = $tenantCriteriaMetas->get('bedrooms') ?: $tenantCriteriaMetas->get('custom_bedrooms');
+                $tcBaths      = $tenantCriteriaMetas->get('bathroomsRes') ?: $tenantCriteriaMetas->get('bathrooms') ?: $tenantCriteriaMetas->get('custom_bathroomsRes');
+                $_tcLeaseRaw  = $tenantCriteriaMetas->get('desired_lease_length') ?: $tenantCriteriaMetas->get('desired_lease_term');
+                $_tcLeaseArr  = is_string($_tcLeaseRaw) ? json_decode($_tcLeaseRaw, true) : null;
+                $tcLease      = is_array($_tcLeaseArr) ? implode(', ', array_filter($_tcLeaseArr)) : $_tcLeaseRaw;
+                $tcCitiesRaw  = $tenantCriteriaMetas->get('cities');
+                $tcCities     = $tcCitiesRaw ? implode(', ', array_filter((array) json_decode($tcCitiesRaw, true))) : null;
+                $tcCountiesRaw = $tenantCriteriaMetas->get('counties');
+                $tcCounties   = $tcCountiesRaw ? implode(', ', array_filter((array) json_decode($tcCountiesRaw, true))) : null;
+                $tcState      = $tenantCriteriaMetas->get('state') ?: $tenantCriteriaMetas->get('states');
+                $tcTitle      = $tenantCriteriaMetas->get('titleListing') ?: ($tenantCriteriaAuction->title ?? ('Tenant Criteria #' . $tenantCriteriaAuction->id));
+                $tcFmtMoney   = fn($v) => $v ? '$' . number_format((float) str_replace([',','$'], '', $v)) : null;
+            @endphp
+            <div class="card mb-4 border-primary border-opacity-25">
+                <div class="card-header bg-primary bg-opacity-10 d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-house-check-fill text-primary flex-shrink-0" viewBox="0 0 16 16"><path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m1.679-4.493-1.335 2.226a.75.75 0 0 1-1.174.144l-.774-.773a.5.5 0 0 1 .708-.707l.547.547 1.17-1.951a.5.5 0 1 1 .858.514"/><path d="M8.707 1.5l.001.002.001.002 5.388 5.17A1.5 1.5 0 0 0 14 5.5v-.009l-.001-.004A1.5 1.5 0 0 0 12.5 4h-1V2.5A1.5 1.5 0 0 0 10 1H6a1.5 1.5 0 0 0-1.5 1.5V4H3.5A1.5 1.5 0 0 0 2 5.5v8A1.5 1.5 0 0 0 3.5 15H9.05a4.5 4.5 0 0 1-.05-.5V14H3.5V5.5l4.5-4.5z"/></svg>
+                    <strong class="text-primary" style="font-size:0.9rem;">Tenant Criteria Summary</strong>
+                </div>
+                <div class="card-body py-3">
+                    <p class="text-muted mb-2" style="font-size:0.82rem;">Linked listing: <em>{{ $tcTitle }}</em></p>
+                    <dl class="row mb-0" style="font-size:0.9rem;">
+                        @if($tcType)
+                        <dt class="col-sm-4 fw-semibold">Property Type</dt>
+                        <dd class="col-sm-8">{{ $tcType }}</dd>
+                        @endif
+                        @if($tcMaxRent)
+                        <dt class="col-sm-4 fw-semibold">Max Monthly Rent</dt>
+                        <dd class="col-sm-8">{{ $tcFmtMoney($tcMaxRent) ?? $tcMaxRent }}</dd>
+                        @endif
+                        @if($tcBeds)
+                        <dt class="col-sm-4 fw-semibold">Bedrooms</dt>
+                        <dd class="col-sm-8">{{ $tcBeds }}+</dd>
+                        @endif
+                        @if($tcBaths)
+                        <dt class="col-sm-4 fw-semibold">Bathrooms</dt>
+                        <dd class="col-sm-8">{{ $tcBaths }}+</dd>
+                        @endif
+                        @if($tcLease)
+                        <dt class="col-sm-4 fw-semibold">Desired Lease Length</dt>
+                        <dd class="col-sm-8">{{ $tcLease }}</dd>
+                        @endif
+                        @if($tcCities)
+                        <dt class="col-sm-4 fw-semibold">Cities</dt>
+                        <dd class="col-sm-8">{{ $tcCities }}</dd>
+                        @endif
+                        @if($tcCounties)
+                        <dt class="col-sm-4 fw-semibold">Counties</dt>
+                        <dd class="col-sm-8">{{ $tcCounties }}</dd>
+                        @endif
+                        @if($tcState)
+                        <dt class="col-sm-4 fw-semibold">State</dt>
+                        <dd class="col-sm-8">{{ $tcState }}</dd>
+                        @endif
+                    </dl>
+                </div>
+            </div>
+            @endif
+
+            {{-- ── Location DNA Compatibility (tenant criteria) --}}
+            @if($offer->role === 'tenant' && $tenantCriteriaAuction)
+            @if($tenantLocationDna)
+            @php
+                $tcDnaJson       = $tenantLocationDna->summary_json ?? [];
+                $tcDnaCity       = $tenantLocationDna->source_city;
+                $tcDnaState      = $tenantLocationDna->source_state;
+                $tcDnaZip        = $tenantLocationDna->source_zip;
+                $tcDnaStatus     = $tenantLocationDna->geocode_status;
+                $tcDnaPrefCities = data_get($tcDnaJson, 'preferred_cities', []);
+                $tcDnaPrefZips   = data_get($tcDnaJson, 'preferred_zips', []);
+                $tcDnaPrefNeigh  = data_get($tcDnaJson, 'preferred_neighborhoods', []);
+                $tcDnaFlexible   = data_get($tcDnaJson, 'flexible_location');
+                $tcDnaRadius     = data_get($tcDnaJson, 'radius_miles');
+                $tcDnaNote       = data_get($tcDnaJson, 'location_notes');
+            @endphp
+            <div class="card mb-4 border-success border-opacity-25">
+                <div class="card-header bg-success bg-opacity-10 d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill text-success flex-shrink-0" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/></svg>
+                    <strong class="text-success" style="font-size:0.9rem;">Location DNA Compatibility</strong>
+                </div>
+                <div class="card-body py-3">
+                    @if($tcDnaCity || $tcDnaState || $tcDnaZip)
+                    <p class="text-muted mb-2" style="font-size:0.82rem;">
+                        Source address:
+                        {{ implode(', ', array_filter([$tcDnaCity, $tcDnaState, $tcDnaZip])) }}
+                        @if($tcDnaStatus === 'ok') <span class="badge bg-success bg-opacity-25 text-success ms-1" style="font-size:0.7rem;">Geocoded</span> @endif
+                    </p>
+                    @endif
+                    <dl class="row mb-0" style="font-size:0.9rem;">
+                        @if(count($tcDnaPrefCities) > 0)
+                        <dt class="col-sm-4 fw-semibold">Preferred Cities</dt>
+                        <dd class="col-sm-8">{{ implode(', ', $tcDnaPrefCities) }}</dd>
+                        @endif
+                        @if(count($tcDnaPrefZips) > 0)
+                        <dt class="col-sm-4 fw-semibold">Preferred ZIPs</dt>
+                        <dd class="col-sm-8">{{ implode(', ', $tcDnaPrefZips) }}</dd>
+                        @endif
+                        @if(count($tcDnaPrefNeigh) > 0)
+                        <dt class="col-sm-4 fw-semibold">Neighborhoods</dt>
+                        <dd class="col-sm-8">{{ implode(', ', $tcDnaPrefNeigh) }}</dd>
+                        @endif
+                        @if($tcDnaRadius !== null)
+                        <dt class="col-sm-4 fw-semibold">Search Radius</dt>
+                        <dd class="col-sm-8">{{ $tcDnaRadius }} miles</dd>
+                        @endif
+                        @if($tcDnaFlexible !== null)
+                        <dt class="col-sm-4 fw-semibold">Flexible Location</dt>
+                        <dd class="col-sm-8">{{ $tcDnaFlexible ? 'Yes' : 'No' }}</dd>
+                        @endif
+                        @if($tcDnaNote)
+                        <dt class="col-sm-4 fw-semibold">Notes</dt>
+                        <dd class="col-sm-8">{{ $tcDnaNote }}</dd>
+                        @endif
+                    </dl>
+                </div>
+            </div>
+            @else
+            <div class="card mb-4 border-success border-opacity-25">
+                <div class="card-header bg-success bg-opacity-10 d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill text-success flex-shrink-0" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/></svg>
+                    <strong class="text-success" style="font-size:0.9rem;">Location DNA Compatibility</strong>
+                </div>
+                <div class="card-body py-3">
+                    <p class="text-muted mb-0" style="font-size:0.9rem;">No Location DNA preferences were provided.</p>
+                </div>
+            </div>
+            @endif
+            @endif
+
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <strong>Offer Terms</strong>

@@ -68,9 +68,9 @@ class OfferController extends Controller
             'status'           => 'draft',
         ]);
 
-        // Stamp offer_type=rental for landlord-role offers so resolveOfferType()
+        // Stamp offer_type=rental for landlord/tenant-role offers so resolveOfferType()
         // returns the correct type immediately, before any terms are saved.
-        if ($validated['role'] === 'landlord') {
+        if (in_array($validated['role'], ['landlord', 'tenant'])) {
             $offer->saveMeta('offer_type', 'rental');
         }
 
@@ -999,8 +999,8 @@ class OfferController extends Controller
             return $raw;
         }
 
-        // Final fallback: role=landlord means a rental application.
-        if ($offer->role === 'landlord') {
+        // Final fallback: role=landlord or role=tenant means a rental offer.
+        if (in_array($offer->role, ['landlord', 'tenant'])) {
             return 'rental';
         }
 
@@ -1358,6 +1358,11 @@ class OfferController extends Controller
             $offerType = 'sale';
         }
 
+        // Role-based fallback for existing offers without offer_type meta stamped.
+        if ($offerType === 'sale' && in_array($offer->role, ['landlord', 'tenant'])) {
+            $offerType = 'rental';
+        }
+
         // Walk the parent_offer_id chain to find the root (original) offer.
         // Used to pin the "Application Submitted" timestamp and display original
         // pre-screening data as read-only context in counter mode.
@@ -1531,12 +1536,32 @@ class OfferController extends Controller
             }
         }
 
+        // ── Tenant Criteria link resolution ───────────────────────────────────
+        // If the OfferAuction bridge has a listing_id like "tenant_criteria:{id}",
+        // load the TenantAgentAuction (source listing) and its Location DNA for the sidebar panels.
+        $tenantCriteriaAuction = null;
+        $tenantCriteriaMetas   = collect();
+        $tenantLocationDna     = null;
+
+        if ($offer->role === 'tenant') {
+            $listingId = $offer->offerAuction?->listing_id;
+            if ($listingId && str_starts_with($listingId, 'tenant_criteria:')) {
+                $criteriaId = (int) substr($listingId, strlen('tenant_criteria:'));
+                $tenantCriteriaAuction = \App\Models\TenantAgentAuction::with('meta')->find($criteriaId);
+                $tenantCriteriaMetas   = $tenantCriteriaAuction?->meta->pluck('meta_value', 'meta_key') ?? collect();
+                $tenantLocationDna = \App\Models\PropertyLocationDna::where('listing_type', 'tenant_criteria')
+                    ->where('listing_id', $criteriaId)
+                    ->first();
+            }
+        }
+
         return view('offers.show', compact(
             'offer', 'timeline', 'actions', 'metas', 'offerType',
             'counterDefaults', 'rootOffer', 'rootMetas',
             'terminalLeaf', 'isTerminal', 'isHistorical', 'chainSummary',
             'finalTerms', 'snapshotMissing', 'terminalOutcomeAt',
-            'buyerCriteriaAuction', 'buyerCriteriaMetas', 'locationDna'
+            'buyerCriteriaAuction', 'buyerCriteriaMetas', 'locationDna',
+            'tenantCriteriaAuction', 'tenantCriteriaMetas', 'tenantLocationDna'
         ));
     }
 

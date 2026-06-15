@@ -11,13 +11,13 @@
 
 <div class="mb-3">
     <label class="form-label fw-semibold">
-        Why This Property Matches
+        {{ $isTenant ? 'Why This Rental Matches' : 'Why This Property Matches' }}
         <span class="text-danger">*</span>
     </label>
     <textarea name="match_explanation" class="form-control" rows="4"
-        placeholder="Explain how this property meets the criteria listed in the {{ $isTenant ? 'tenant' : 'buyer' }}'s listing...">{{ old('match_explanation', $pm->get('match_explanation')) }}</textarea>
+        placeholder="Explain how this {{ $isTenant ? 'rental' : 'property' }} meets the criteria listed in the {{ $isTenant ? 'tenant' : 'buyer' }}'s listing...">{{ old('match_explanation', $pm->get('match_explanation')) }}</textarea>
     <div class="form-text">
-        Required before submitting. Describe how this property aligns with the stated requirements.
+        Required before submitting. Describe how this {{ $isTenant ? 'rental' : 'property' }} aligns with the stated requirements.
     </div>
 </div>
 

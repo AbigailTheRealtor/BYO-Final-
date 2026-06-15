@@ -326,9 +326,9 @@
     </div>
 
     {{-- ── Property Description ──────────────────────────────────────────── --}}
-    <p class="offer-section-header">Property Description</p>
+    <p class="offer-section-header">{{ $isTenant ? 'Rental Description' : 'Property Description' }}</p>
     <div class="mb-3">
-        <label class="form-label fw-semibold">Property Description</label>
+        <label class="form-label fw-semibold">{{ $isTenant ? 'Rental Description' : 'Property Description' }}</label>
         <textarea name="prop_description" id="prop_description" class="form-control" rows="5"
             placeholder="{{ $isTenant ? 'Describe the rental property — features, neighbourhood, what makes it a great fit...' : 'Describe the property — features, neighbourhood, why it stands out...' }}">{{ old('prop_description', $pm->get('prop_description')) }}</textarea>
         <div class="form-text">Give a detailed overview of the property to help the {{ $isTenant ? 'tenant' : 'buyer' }} understand what is being offered.</div>
