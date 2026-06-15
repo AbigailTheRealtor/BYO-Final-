@@ -4840,6 +4840,8 @@ class TenantOfferListing extends Component
             $auction->saveMeta('video', $videoName);
             $this->video = $videoName;
         }
+
+        $this->saveSnapshotMeta($auction);
     }
 
     public function store()

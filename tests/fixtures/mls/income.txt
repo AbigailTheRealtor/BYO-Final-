@@ -15,6 +15,10 @@ Zoning: MF-2
 Pool: No
 Garage: No
 Carport: Yes
+Number of Units: 8
+Annual Gross Income: $96,000
+Annual Operating Expenses: $28,000
+Cap Rate: 7.2%
 Waterfront: No
 Flood Zone Code: X
 Flood Zone Date: 09/01/2021

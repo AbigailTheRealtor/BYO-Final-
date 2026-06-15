@@ -5,6 +5,12 @@ State: FL
 Zip Code: 33765
 County: Pinellas
 List Price: $375,000
+Business Type: Retail/Service
+Annual Revenue: $520,000
+Annual Net Income: $87,000
+Number of Employees: 6
+Inventory Included Y/N: Yes
+Seller Financing Y/N: No
 Flood Zone Code: X
 Flood Zone Date: 09/01/2021
 Flood Zone Panel: 12103C0241G

@@ -3761,6 +3761,8 @@ class SellerOfferListing extends Component
         }
 
         $this->ensureLinkedOfferAuction($auction);
+
+        $this->saveSnapshotMeta($auction);
     }
 
     private function ensureLinkedOfferAuction(SellerAgentAuctionModel $auction): void

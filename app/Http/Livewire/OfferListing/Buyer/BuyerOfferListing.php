@@ -2796,6 +2796,8 @@ class BuyerOfferListing extends Component
             // Save file name to database
             $auction->saveMeta('video', $videoName);
         }
+
+        $this->saveSnapshotMeta($auction);
     }
 
     public function store()

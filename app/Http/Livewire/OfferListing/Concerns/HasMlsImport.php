@@ -14,6 +14,28 @@ trait HasMlsImport
     public string $importError       = '';
     public bool   $importSuccess     = false;
 
+    /**
+     * Full parsed MLS payload (JSON) held across the preview → apply lifecycle.
+     *
+     * Populated in importListingFromUrl() with the raw service result.
+     * Consumed (and cleared) in applyImportedFields() to build the snapshot.
+     * Livewire public prop so it survives the round-trip between the two steps.
+     */
+    public string $mlsParsedDataJson = '';
+
+    /**
+     * The finalised MLS import snapshot (JSON) for this listing.
+     *
+     * Built in applyImportedFields() after the user confirms which fields to apply.
+     * Persisted immediately to meta if the listing already exists (listingId set),
+     * and also kept here so saveAllMetadata() can persist it on the next save if
+     * the listing is brand-new (listingId was null at apply time).
+     *
+     * Call $this->saveSnapshotMeta($auction) at the end of saveAllMetadata() in
+     * each component to ensure the snapshot is always written to meta.
+     */
+    public string $mlsImportSnapshotJson = '';
+
     // ─── Modal control ───────────────────────────────────────────────────────
 
     public function closeImportModal(): void
@@ -24,6 +46,7 @@ trait HasMlsImport
         $this->importUrlInput    = '';
         $this->importRawText     = '';
         $this->importSuccess     = false;
+        $this->mlsParsedDataJson = '';
     }
 
     // ─── Step 1: fetch + parse ────────────────────────────────────────────────
@@ -38,7 +61,8 @@ trait HasMlsImport
             return;
         }
 
-        $this->importError = '';
+        $this->importError       = '';
+        $this->mlsParsedDataJson = '';
 
         /** @var MlsListingImportService $service */
         $service = app(MlsListingImportService::class);
@@ -48,6 +72,14 @@ trait HasMlsImport
             $this->importError = $result['error'];
             return;
         }
+
+        // ── Store the full parsed payload for snapshot building at apply time ──
+        // We record the source so the snapshot knows where the data came from.
+        $source = ($url !== '') ? $url : 'raw_text';
+        $this->mlsParsedDataJson = json_encode([
+            'source'     => $source,
+            'raw_fields' => $result['data'],
+        ]);
 
         $role     = $this->resolveImportRole();
         $fieldMap = MlsFieldMap::forRole($role);
@@ -109,6 +141,38 @@ trait HasMlsImport
         $previewByKey = [];
         foreach ($this->importPreviewData as $row) {
             $previewByKey[$row['canonical_key']] = $row;
+        }
+
+        // ── Pre-apply: capture all data needed for the snapshot ───────────────
+        $parsedMeta      = $this->mlsParsedDataJson !== ''
+            ? json_decode($this->mlsParsedDataJson, true)
+            : [];
+        $allParsedFields = $parsedMeta['raw_fields'] ?? [];
+        $source          = $parsedMeta['source']     ?? 'unknown';
+
+        $mappedFormFields   = [];
+        $unsupportedFields  = [];
+
+        foreach ($allParsedFields as $canonicalKey => $value) {
+            if ($canonicalKey === 'listing_type_hint') {
+                continue;
+            }
+
+            if (!isset($fieldMap[$canonicalKey])) {
+                // Not in the field map for this role at all
+                $unsupportedFields[$canonicalKey] = $value;
+                continue;
+            }
+
+            $propNameRaw = $fieldMap[$canonicalKey];
+            $propName    = ltrim($propNameRaw, '*');
+
+            if (!property_exists($this, $propName)) {
+                // In the map but no matching Livewire property
+                $unsupportedFields[$canonicalKey] = $value;
+            } else {
+                $mappedFormFields[$canonicalKey] = $value;
+            }
         }
 
         foreach ($selected as $canonicalKey) {
@@ -186,7 +250,48 @@ trait HasMlsImport
             }
         }
 
+        // ── Build and store mls_address_raw ──────────────────────────────────
+        // Assemble a raw address string from any address-related fields that were
+        // present in the parsed data (regardless of whether the user applied them).
+        $mls_address_raw = $this->buildMlsAddressRaw($allParsedFields);
+
+        // ── Build the mls_import_snapshot ────────────────────────────────────
+        $snapshot = [
+            'imported_at'       => now()->toIso8601String(),
+            'source'            => $source,
+            'raw_fields'        => $allParsedFields,
+            // TODO: normalized_fields is currently IDENTICAL to raw_fields.
+            // It is a placeholder for a future normalization pass that should apply
+            // platform crosswalk transformations to the raw parsed values before storing.
+            // The following normalizations already happen DURING applyImportedFields()
+            // (written directly to Livewire props) but are NOT yet captured here:
+            //   1. property_type → normalizePropertyTypeForRole() (e.g. "Residential Property" → "Residential" for seller)
+            //   2. terms_of_lease → re-routed to desired_lease_length for landlord + Residential Property
+            //   3. furnished → merged into building_features array for seller
+            // Future work: run these crosswalks on $allParsedFields BEFORE the apply
+            // loop and store the result as normalized_fields, keeping raw_fields untouched.
+            'normalized_fields' => $allParsedFields,
+            'mapped_form_fields'  => $mappedFormFields,
+            'unsupported_fields'  => $unsupportedFields,
+            'mls_address_raw'     => $mls_address_raw,
+        ];
+
+        $this->mlsImportSnapshotJson = json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        // ── Persist immediately if the listing already exists ─────────────────
+        $listingId = property_exists($this, 'listingId') ? $this->listingId : null;
+        if ($listingId) {
+            $model = $this->resolveMlsModel($role, $listingId);
+            if ($model) {
+                $model->saveMeta('mls_import_snapshot', $this->mlsImportSnapshotJson);
+                if ($mls_address_raw !== '') {
+                    $model->saveMeta('mls_address_raw', $mls_address_raw);
+                }
+            }
+        }
+
         $this->importPreviewData = [];
+        $this->mlsParsedDataJson = '';
         $this->importSuccess     = true;
         $this->showImportModal   = false;
 
@@ -196,7 +301,81 @@ trait HasMlsImport
         $this->dispatchBrowserEvent('mlsApplied');
     }
 
+    // ─── Snapshot persistence helper (call from saveAllMetadata) ─────────────
+
+    /**
+     * Persist the MLS import snapshot and raw address to the listing's meta table.
+     *
+     * Call $this->saveSnapshotMeta($auction) at the end of saveAllMetadata() in
+     * each OfferListing component.  This ensures that:
+     *   - listings imported before their first save (listingId was null at apply time)
+     *     still get the snapshot written when the draft/listing is eventually saved.
+     *   - re-saves after import never overwrite a snapshot with an empty string.
+     */
+    protected function saveSnapshotMeta($auction): void
+    {
+        if ($this->mlsImportSnapshotJson !== '') {
+            $auction->saveMeta('mls_import_snapshot', $this->mlsImportSnapshotJson);
+
+            // Also persist mls_address_raw from inside the snapshot
+            $decoded = json_decode($this->mlsImportSnapshotJson, true);
+            $raw     = $decoded['mls_address_raw'] ?? '';
+            if ($raw !== '') {
+                $auction->saveMeta('mls_address_raw', $raw);
+            }
+        }
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    /**
+     * Assemble a human-readable "Street, City, State ZIP" string from parsed MLS
+     * address fields.  Returns an empty string if no address components are present.
+     */
+    private function buildMlsAddressRaw(array $parsedFields): string
+    {
+        $parts = [];
+
+        if (!empty($parsedFields['address'])) {
+            $parts[] = trim((string) $parsedFields['address']);
+        }
+
+        $city  = trim((string) ($parsedFields['city']  ?? ''));
+        $state = trim((string) ($parsedFields['state'] ?? ''));
+        $zip   = trim((string) ($parsedFields['zip']   ?? ''));
+
+        $cityStateZip = implode(', ', array_filter([$city, $state]));
+        if ($zip !== '') {
+            $cityStateZip = $cityStateZip !== '' ? "$cityStateZip $zip" : $zip;
+        }
+
+        if ($cityStateZip !== '') {
+            $parts[] = $cityStateZip;
+        }
+
+        return implode(', ', $parts);
+    }
+
+    /**
+     * Resolve the underlying Eloquent model instance for a given role + listingId.
+     * Returns null if listingId is null or the record cannot be found.
+     */
+    private function resolveMlsModel(string $role, int|string $listingId): ?object
+    {
+        $modelClass = match ($role) {
+            'seller'   => \App\Models\SellerAgentAuction::class,
+            'landlord' => \App\Models\LandlordAgentAuction::class,
+            'buyer'    => \App\Models\BuyerAgentAuction::class,
+            'tenant'   => \App\Models\TenantAgentAuction::class,
+            default    => null,
+        };
+
+        if ($modelClass === null) {
+            return null;
+        }
+
+        return $modelClass::find($listingId);
+    }
 
     /**
      * Map a raw MLS "Property Type" string to the canonical value expected by

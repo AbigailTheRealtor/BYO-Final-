@@ -129,7 +129,10 @@ class SellerResidentialAuditTest extends TestCase
             'property_type must appear in importPreviewData for the seller role');
 
         $component->applyImportedFields(['property_type']);
-        $this->assertEquals('Condominium', $component->property_type);
+        // normalizePropertyTypeForRole() maps MLS "Condominium" → "Residential" for the seller
+        // role because the seller form dropdown has "Residential" (not "Condominium") as the
+        // value for all residential-subtype properties.
+        $this->assertEquals('Residential', $component->property_type);
     }
 
     public function test_garage_spaces_maps_to_seller_livewire_property(): void

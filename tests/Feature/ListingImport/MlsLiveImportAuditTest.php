@@ -519,22 +519,35 @@ class MlsLiveImportAuditTest extends TestCase
     }
 
     /**
-     * Regression: the business_opportunity fixture has no business-specific fields
-     * (Annual Revenue, Business Type, etc.).  These keys must be absent from the
-     * parsed output so spurious values are never written to a listing.
+     * The business_opportunity fixture includes all business-specific fields
+     * (Annual Revenue, Business Type, etc.) added as part of the fixture enhancement.
+     * Verifies the parser correctly extracts each field from the fixture.
+     *
+     * business_lease_type is intentionally absent from the fixture (no "Lease Type:"
+     * label exists in the business_opportunity.txt file) so it must remain absent.
      */
-    public function test_parser_business_opportunity_fixture_has_no_business_specific_fields(): void
+    public function test_parser_business_opportunity_fixture_has_business_specific_fields(): void
     {
         $result = $this->service->import('', $this->fixtures['business_opportunity']);
+        $this->assertTrue($result['success'], 'Parser must succeed on business_opportunity fixture');
         $data   = $result['data'];
 
-        $this->assertArrayNotHasKey('business_type',              $data, 'business_type must be absent from fixture');
-        $this->assertArrayNotHasKey('annual_revenue',             $data, 'annual_revenue must be absent from fixture');
-        $this->assertArrayNotHasKey('annual_net_income_business', $data, 'annual_net_income_business must be absent');
-        $this->assertArrayNotHasKey('employee_count',             $data, 'employee_count must be absent from fixture');
-        $this->assertArrayNotHasKey('inventory_included',         $data, 'inventory_included must be absent from fixture');
-        $this->assertArrayNotHasKey('seller_financing_yn',        $data, 'seller_financing_yn must be absent from fixture');
-        $this->assertArrayNotHasKey('business_lease_type',        $data, 'business_lease_type must be absent from fixture');
+        $this->assertSame('Retail/Service', $data['business_type'] ?? null,
+            'business_type: "Business Type: Retail/Service" must be captured');
+        $this->assertSame('520000', $data['annual_revenue'] ?? null,
+            'annual_revenue: "$520,000" must be stripped to numeric string');
+        $this->assertSame('87000', $data['annual_net_income_business'] ?? null,
+            'annual_net_income_business: "$87,000" must be stripped to numeric string');
+        $this->assertSame('6', $data['employee_count'] ?? null,
+            'employee_count: "6" must be captured as string');
+        $this->assertSame('yes', $data['inventory_included'] ?? null,
+            'inventory_included: "Inventory Included Y/N: Yes" must normalise to yes');
+        $this->assertSame('no', $data['seller_financing_yn'] ?? null,
+            'seller_financing_yn: "Seller Financing Y/N: No" must normalise to no');
+
+        // business_lease_type is NOT in the fixture — no "Lease Type:" label.
+        $this->assertArrayNotHasKey('business_lease_type', $data,
+            'business_lease_type must be absent — fixture has no Lease Type label');
     }
 
     // ── Commercial Lease ──────────────────────────────────────────────────────
@@ -1164,6 +1177,19 @@ class MlsLiveImportAuditTest extends TestCase
         $this->assertNotNull($listingId, 'Landlord listingId set after saveDraft');
 
         $fresh = new LandlordOfferListing();
+        $fresh->loadDraft($listingId);
+        $afterLoad($fresh);
+    }
+
+    private function sellerSaveReload(
+        SellerOfferListing $component,
+        callable $afterLoad
+    ): void {
+        $component->saveDraft();
+        $listingId = $component->listingId;
+        $this->assertNotNull($listingId, 'Seller listingId set after saveDraft');
+
+        $fresh = new SellerOfferListing();
         $fresh->loadDraft($listingId);
         $afterLoad($fresh);
     }
@@ -1823,5 +1849,305 @@ class MlsLiveImportAuditTest extends TestCase
             $this->assertNotEmpty($fresh->rent_includes,
                 'Stage 5.5 save/reload: rent_includes has tokens after loadDraft');
         });
+    }
+
+    // =========================================================================
+    // Stage 7: mls_import_snapshot + mls_address_raw storage
+    // =========================================================================
+
+    /**
+     * After applyImportedFields(), mlsParsedDataJson is cleared and
+     * mlsImportSnapshotJson is populated with the full snapshot structure.
+     */
+    public function test_snapshot_json_populated_after_apply(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText =
+            'List Price: $350,000 | Bedrooms: 3 | City: Tampa | State: FL | ZIP: 33610';
+        $component->importListingFromUrl();
+
+        $this->assertNotEmpty($component->mlsParsedDataJson,
+            'mlsParsedDataJson must be populated after importListingFromUrl()');
+
+        $component->applyImportedFields(['price', 'bedrooms']);
+
+        $this->assertEmpty($component->mlsParsedDataJson,
+            'mlsParsedDataJson must be cleared after apply');
+        $this->assertNotEmpty($component->mlsImportSnapshotJson,
+            'mlsImportSnapshotJson must be populated after apply');
+    }
+
+    /**
+     * The snapshot must contain all required top-level keys.
+     */
+    public function test_snapshot_contains_required_structure_keys(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText =
+            'List Price: $350,000 | Bedrooms: 3 | City: Tampa | State: FL | ZIP: 33610 | ' .
+            'Address: 123 Main St | Directions: Take I-4 west';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['price', 'bedrooms']);
+
+        $snapshot = json_decode($component->mlsImportSnapshotJson, true);
+
+        $this->assertIsArray($snapshot, 'snapshot must decode to an array');
+
+        foreach (['imported_at', 'source', 'raw_fields', 'normalized_fields',
+                  'mapped_form_fields', 'unsupported_fields', 'mls_address_raw'] as $key) {
+            $this->assertArrayHasKey($key, $snapshot,
+                "snapshot must contain key: $key");
+        }
+    }
+
+    /**
+     * raw_fields contains ALL parsed canonical keys including ones that have no form mapping.
+     * unsupported_fields contains keys that have no Livewire property (e.g. directions).
+     * mapped_form_fields contains only keys that have a form property.
+     */
+    public function test_snapshot_separates_mapped_from_unsupported_fields(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        // directions is parsed but has no field map entry → lands in unsupported_fields
+        // price is in the field map → lands in mapped_form_fields
+        $component->importRawText =
+            'List Price: $350,000 | Bedrooms: 3 | Directions: Take I-4 west to Exit 5';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['price', 'bedrooms']);
+
+        $snapshot = json_decode($component->mlsImportSnapshotJson, true);
+
+        $this->assertArrayHasKey('price', $snapshot['raw_fields'],
+            'price must appear in raw_fields');
+        $this->assertArrayHasKey('price', $snapshot['mapped_form_fields'],
+            'price must appear in mapped_form_fields (it has a form property)');
+        $this->assertArrayNotHasKey('price', $snapshot['unsupported_fields'],
+            'price must NOT appear in unsupported_fields');
+
+        // directions is parsed but intentionally excluded from the field map
+        if (isset($snapshot['raw_fields']['directions'])) {
+            $this->assertArrayHasKey('directions', $snapshot['unsupported_fields'],
+                'directions must appear in unsupported_fields (not in field map)');
+            $this->assertArrayNotHasKey('directions', $snapshot['mapped_form_fields'],
+                'directions must NOT appear in mapped_form_fields');
+        }
+    }
+
+    /**
+     * mls_address_raw is assembled from address, city, state, and zip parsed fields.
+     */
+    public function test_snapshot_mls_address_raw_assembled_from_address_fields(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText =
+            'Address: 4521 Sunridge Drive | City: Tampa | State: FL | ZIP: 33610 | ' .
+            'List Price: $350,000';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['price']);
+
+        $snapshot = json_decode($component->mlsImportSnapshotJson, true);
+        $raw      = $snapshot['mls_address_raw'] ?? '';
+
+        $this->assertStringContainsString('4521 Sunridge Drive', $raw,
+            'mls_address_raw must include the street address');
+        $this->assertStringContainsString('Tampa', $raw,
+            'mls_address_raw must include the city');
+        $this->assertStringContainsString('FL', $raw,
+            'mls_address_raw must include the state');
+        $this->assertStringContainsString('33610', $raw,
+            'mls_address_raw must include the ZIP');
+    }
+
+    /**
+     * When no address fields are parsed, mls_address_raw is an empty string.
+     */
+    public function test_snapshot_mls_address_raw_empty_when_no_address_fields(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'List Price: $350,000 | Bedrooms: 3 | Bathrooms: 2';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['price', 'bedrooms']);
+
+        $snapshot = json_decode($component->mlsImportSnapshotJson, true);
+
+        $this->assertSame('', $snapshot['mls_address_raw'] ?? '__missing__',
+            'mls_address_raw must be empty string when no address fields were parsed');
+    }
+
+    /**
+     * The snapshot source field reflects the import origin.
+     * Raw text imports should record 'raw_text'; URL imports record the URL.
+     */
+    public function test_snapshot_source_is_raw_text_for_pasted_input(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText = 'List Price: $299,000 | Bedrooms: 2';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['price']);
+
+        $snapshot = json_decode($component->mlsImportSnapshotJson, true);
+
+        $this->assertSame('raw_text', $snapshot['source'] ?? null,
+            'snapshot source must be "raw_text" for pasted input');
+    }
+
+    /**
+     * mlsImportSnapshotJson survives the applyImportedFields() lifecycle and the
+     * snapshot is written to meta when saveSnapshotMeta() is called (simulated
+     * here via a save/reload cycle on the seller component).
+     */
+    public function test_snapshot_persisted_to_meta_on_save_reload(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText =
+            'List Price: $350,000 | Bedrooms: 3 | City: Tampa | State: FL | ZIP: 33610';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['price', 'bedrooms', 'city', 'state', 'zip']);
+
+        $originalSnapshot = $component->mlsImportSnapshotJson;
+        $this->assertNotEmpty($originalSnapshot, 'snapshot must exist before save');
+
+        $this->sellerSaveReload($component, function (SellerOfferListing $fresh) use ($originalSnapshot) {
+            $model = \App\Models\SellerAgentAuction::find($fresh->listingId);
+            $this->assertNotNull($model, 'seller model must exist after save');
+
+            $persisted = $model->info('mls_import_snapshot');
+            $this->assertNotEmpty($persisted,
+                'mls_import_snapshot must be persisted in meta after save');
+
+            $decoded = json_decode($persisted, true);
+            $this->assertIsArray($decoded,
+                'persisted mls_import_snapshot must be valid JSON');
+            $this->assertArrayHasKey('imported_at', $decoded,
+                'persisted snapshot must contain imported_at key');
+            $this->assertArrayHasKey('raw_fields', $decoded,
+                'persisted snapshot must contain raw_fields key');
+        });
+    }
+
+    /**
+     * mls_address_raw is persisted to meta alongside the snapshot on save.
+     */
+    public function test_mls_address_raw_persisted_to_meta_on_save(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        $component->importRawText =
+            'Address: 4521 Sunridge Drive | City: Tampa | State: FL | ZIP: 33610 | ' .
+            'List Price: $350,000 | Bedrooms: 3';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['price', 'bedrooms']);
+
+        $this->sellerSaveReload($component, function (SellerOfferListing $fresh) {
+            $model = \App\Models\SellerAgentAuction::find($fresh->listingId);
+            $this->assertNotNull($model);
+
+            $rawAddr = $model->info('mls_address_raw');
+            $this->assertNotEmpty($rawAddr,
+                'mls_address_raw must be persisted in meta after save');
+            $this->assertStringContainsString('4521 Sunridge Drive', $rawAddr,
+                'persisted mls_address_raw must contain the street address');
+        });
+    }
+
+    /**
+     * Landlord component also stores snapshot and address raw in meta on save.
+     */
+    public function test_snapshot_and_address_raw_persisted_for_landlord(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new LandlordOfferListing();
+        $component->user_type = 'landlord';
+        $component->importRawText =
+            'Address: 100 Bay View Blvd | City: St. Petersburg | State: FL | ZIP: 33701 | ' .
+            'Monthly Rent: $2,500 | Bedrooms: 2';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['price', 'bedrooms']);
+
+        $this->landlordSaveReload($component, function (LandlordOfferListing $fresh) {
+            $model = \App\Models\LandlordAgentAuction::find($fresh->listingId);
+            $this->assertNotNull($model);
+
+            $snapshot = $model->info('mls_import_snapshot');
+            $this->assertNotEmpty($snapshot,
+                'landlord: mls_import_snapshot must be persisted in meta');
+
+            $decoded = json_decode($snapshot, true);
+            $this->assertIsArray($decoded,
+                'landlord: persisted snapshot must be valid JSON');
+
+            $rawAddr = $model->info('mls_address_raw');
+            $this->assertNotEmpty($rawAddr,
+                'landlord: mls_address_raw must be persisted in meta');
+            $this->assertStringContainsString('St. Petersburg', $rawAddr,
+                'landlord: persisted mls_address_raw must contain the city');
+        });
+    }
+
+    /**
+     * Unsupported fields (no form property) are classified in unsupported_fields
+     * and retained in raw_fields — they are NOT silently discarded.
+     */
+    public function test_snapshot_unsupported_fields_are_retained_not_discarded(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component            = new SellerOfferListing();
+        $component->user_type = 'seller';
+        // mls_number is parsed but intentionally excluded from the field map
+        $component->importRawText =
+            'MLS#: MLS12345678 | List Price: $299,000 | Bedrooms: 2';
+        $component->importListingFromUrl();
+        $component->applyImportedFields(['price']);
+
+        $snapshot = json_decode($component->mlsImportSnapshotJson, true);
+
+        // mls_number is in raw_fields if the parser captured it
+        if (isset($snapshot['raw_fields']['mls_number'])) {
+            $this->assertArrayHasKey('mls_number', $snapshot['unsupported_fields'],
+                'mls_number must appear in unsupported_fields (excluded from all role field maps)');
+            $this->assertArrayNotHasKey('mls_number', $snapshot['mapped_form_fields'],
+                'mls_number must NOT appear in mapped_form_fields');
+        }
+
+        // Verify the snapshot itself is well-formed regardless
+        $this->assertIsArray($snapshot['raw_fields'],
+            'raw_fields must be an array even when some fields are unsupported');
+        $this->assertIsArray($snapshot['unsupported_fields'],
+            'unsupported_fields must always be an array');
     }
 }

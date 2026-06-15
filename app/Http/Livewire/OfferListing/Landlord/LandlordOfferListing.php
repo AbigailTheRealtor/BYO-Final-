@@ -3656,6 +3656,8 @@ class LandlordOfferListing extends Component
         } elseif ($this->listingDocuments && is_string($this->listingDocuments)) {
             $auction->saveMeta('listing_documents', $this->listingDocuments);
         }
+
+        $this->saveSnapshotMeta($auction);
     }
 
     private function processPendingPhotoUploads(): void

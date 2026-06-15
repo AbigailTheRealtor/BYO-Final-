@@ -159,6 +159,12 @@ class MlsListingImportService
             // stops captures (bare ":" comes after Y/N in that MLS export form).
             // School District and Neighborhood: not in the original list, causing city
             // and carport fields to bleed into those following label words.
+            // Additional Parcels: stops legal_description and other long captures from
+            // bleeding into "Additional Parcels Y/N:" which follows legal desc in many
+            // Stellar MLS exports.  Include optional Y/N variant so "Additional Parcels
+            // Y/N: No" (colon after Y/N) is caught in addition to bare "Additional
+            // Parcels:" — mirrors the same Y/N-optional pattern used for Special Assessment.
+            '|Additional\s+Parcels(?:\s+Y\/N)?\b' .
             '|Special\s+Assessment(?:\s+Y\/N)?\b|Homeowners?\s+Assoc|Subdivision\b' .
             '|School\s+District\b|Neighborhood\b' .
             // Water\b(?=\s*:): stops captures (e.g. sewer) from bleeding into the bare
@@ -277,9 +283,12 @@ class MlsListingImportService
         }
 
         // ─── County ───────────────────────────────────────────────────────────
-        // Boundary protection: stops at next recognized label so "County: PinellasList"
-        // does not capture the "List" label text.
-        if ($v = $extract(['/County[\s:]+([^\|\n,]{2,50})/i'], true)) {
+        // Requires a colon after "County" to avoid false positives from MLS exports
+        // that embed the school-district label inline as "County Unified" without a
+        // colon (e.g. "City: SEMINOLE County Unified State: FL").  The actual county
+        // line "County: Pinellas" always has a colon and is matched correctly.
+        // Boundary protection also stops at the next recognized label.
+        if ($v = $extract(['/County\s*:[\s]+([^\|\n,]{2,50})/i'], true)) {
             $data['county'] = trim($v, ', ');
         }
 
@@ -316,8 +325,15 @@ class MlsListingImportService
         }
 
         // ─── Heated Sq Ft ─────────────────────────────────────────────────────
+        // The first pattern requires "Heated" or "Living" adjacent to "Sq. Ft." so
+        // that "Lot Sq. Ft.:" on vacant-land exports does NOT trigger a false match.
+        // The bare "Sq. Ft." and "Square Feet" alternatives are intentionally removed
+        // from the first pattern; the fallback catches natural-language occurrences
+        // like "2,184 sq. ft." in description text only when no labeled field fires.
         if ($v = $extract([
-            '/(?:Heated|Living|Sq\.?\s*Ft\.?|Square\s+Feet)[\s:]+(\d[\d,]*)/i',
+            '/(?:Heated|Living)\s+Sq\.?\s*Ft\.?[\s:]+(\d[\d,]*)/i',
+            '/Sq\.?\s*Ft\.?\s+Heated[\s:]+(\d[\d,]*)/i',
+            '/(?:Heated|Living)\s+(?:Area|Square\s+Feet)[\s:]+(\d[\d,]*)/i',
             '/(\d[\d,]+)\s*(?:sq\.?\s*ft\.?|square\s+feet)/i',
         ])) {
             $data['heated_sqft'] = preg_replace('/[^\d]/', '', $v);
@@ -632,7 +648,10 @@ class MlsListingImportService
         }
 
         // ─── Utilities ────────────────────────────────────────────────────────
-        if ($v = $extract(['/Utilities[\s:]+([^\|\n]{1,120})/i'], true)) {
+        // Requires a colon after "Utilities" to avoid false capture when the word
+        // appears inside description text (e.g. "Utilities available at road." in
+        // a vacant-land or commercial listing's Public Remarks).
+        if ($v = $extract(['/Utilities\s*:[\s]*([^\|\n]{1,120})/i'], true)) {
             $data['utilities'] = $v;
         }
 

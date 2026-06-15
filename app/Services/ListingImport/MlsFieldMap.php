@@ -182,6 +182,7 @@ class MlsFieldMap
     {
         return [
             // ── Core property fields ─────────────────────────────────────────
+            'property_type'   => 'property_type',
             'price'           => 'desired_rental_amount',
             'bedrooms'        => 'bedrooms',
             'bathrooms'       => 'bathrooms',

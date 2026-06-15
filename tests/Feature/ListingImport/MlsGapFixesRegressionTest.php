@@ -3,6 +3,7 @@
 namespace Tests\Feature\ListingImport;
 
 use App\Services\ListingImport\MlsListingImportService;
+use App\Services\ListingImport\MlsFieldMap;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -743,5 +744,191 @@ class MlsGapFixesRegressionTest extends TestCase
             $component->terms_of_lease,
             'Seller: terms_of_lease routing must not fire; value stays on terms_of_lease.'
         );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // BUG regressions — parser fixes confirmed in this task
+    // Each test ID (BUG-01 … BUG-05) corresponds to a row in the coverage matrix
+    // at attached_assets/mls-coverage-matrix.md.
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // ─── BUG-01: "Lot Sq. Ft." false-positive on heated_sqft ─────────────────
+
+    /**
+     * BUG-01: "Lot Sq. Ft.:" on vacant-land exports must NOT trigger heated_sqft.
+     *
+     * Fix: the heated_sqft regex now requires "Heated" or "Living" adjacent to
+     * "Sq. Ft." so "Lot Sq. Ft.: 100,188" cannot match.
+     */
+    public function test_bug_01_lot_sqft_does_not_false_positive_as_heated_sqft(): void
+    {
+        $raw = 'Lot Sq. Ft.: 100,188 Lot Dimensions: 200x500 Waterfront: Yes';
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayNotHasKey('heated_sqft', $result['data'],
+            'BUG-01: "Lot Sq. Ft.:" must NOT trigger heated_sqft — only "Heated Sq. Ft." matches.');
+    }
+
+    /**
+     * BUG-01 complement: "Heated Sq. Ft." must still populate heated_sqft correctly.
+     */
+    public function test_bug_01_heated_sqft_label_still_captured(): void
+    {
+        $raw = 'Heated Sq. Ft.: 2,184 Lot Sq. Ft.: 9,600 Year Built: 2005';
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('2184', $result['data']['heated_sqft'] ?? null,
+            'BUG-01: "Heated Sq. Ft." must still populate heated_sqft after the fix.');
+    }
+
+    // ─── BUG-02: utilities bleed from Public Remarks ──────────────────────────
+
+    /**
+     * BUG-02: "Utilities" appearing inside Public Remarks without a colon must NOT
+     * populate the utilities field.
+     *
+     * Fix: utilities regex requires a colon immediately after "Utilities" so bare
+     * occurrences in prose (e.g. "Utilities available at road.") are ignored.
+     */
+    public function test_bug_02_utilities_in_remarks_without_colon_not_captured(): void
+    {
+        $raw = 'Public Remarks: Utilities available at road. Great opportunity for development.';
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayNotHasKey('utilities', $result['data'],
+            'BUG-02: "Utilities" without a colon in remarks prose must NOT populate utilities.');
+    }
+
+    /**
+     * BUG-02 complement: "Utilities: Electricity Connected, Water Available" (with colon)
+     * must still populate the utilities field correctly.
+     */
+    public function test_bug_02_utilities_with_colon_still_captured(): void
+    {
+        $raw = 'Utilities: Electricity Connected, Water Available | Sewer: Public Sewer';
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $this->assertStringContainsStringIgnoringCase('Electricity Connected', $result['data']['utilities'] ?? '',
+            'BUG-02: "Utilities:" with colon must still be captured after the fix.');
+    }
+
+    // ─── BUG-03: county false-positive on "County Unified" (no colon) ────────
+
+    /**
+     * BUG-03: "County Unified" embedded in a city label line (no colon after County)
+     * must NOT populate county with the value "Unified".
+     *
+     * Some Stellar MLS exports emit "City: SEMINOLE County Unified State: FL".
+     * Fix: county regex requires a colon immediately after "County" so the bare
+     * word form "County Unified" is skipped.
+     */
+    public function test_bug_03_county_without_colon_does_not_capture_unified(): void
+    {
+        $raw = 'City: SEMINOLE County Unified State: FL Zip Code: 33771';
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayNotHasKey('county', $result['data'],
+            'BUG-03: "County Unified" without colon must NOT populate county field.');
+        $this->assertSame('SEMINOLE', $result['data']['city'] ?? null,
+            'BUG-03: city must still be captured correctly alongside the county guard.');
+    }
+
+    /**
+     * BUG-03 complement: "County: Pinellas" (with colon) must still populate county.
+     */
+    public function test_bug_03_county_with_colon_still_captured(): void
+    {
+        $raw = 'City: Tampa County: Pinellas State: FL Zip Code: 33610';
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('Pinellas', $result['data']['county'] ?? null,
+            'BUG-03: "County: Pinellas" with colon must still populate county correctly.');
+    }
+
+    // ─── BUG-04: legal_description bleed past "Additional Parcels Y/N:" ──────
+
+    /**
+     * BUG-04: legal_description capture must stop at the "Additional Parcels Y/N:"
+     * label that immediately follows it in many Stellar MLS exports.
+     *
+     * Fix: the labelStop array was extended to include the "Y/N" variant so
+     * "Additional Parcels Y/N:" is treated as a boundary stop.
+     */
+    public function test_bug_04_legal_description_stops_at_additional_parcels_yn_label(): void
+    {
+        $raw = 'Legal Description: PALM GROVE SUBDIVISION LOT 4 BLK 2 PB 19 PG 38 Additional Parcels Y/N: No Total Number of Parcels: 1';
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('legal_description', $result['data'],
+            'BUG-04: legal_description must be captured');
+        $this->assertStringNotContainsStringIgnoringCase(
+            'Additional Parcels',
+            $result['data']['legal_description'],
+            'BUG-04: legal_description must not bleed into "Additional Parcels Y/N:" label'
+        );
+        $this->assertSame(
+            'PALM GROVE SUBDIVISION LOT 4 BLK 2 PB 19 PG 38',
+            trim($result['data']['legal_description']),
+            'BUG-04: legal_description must contain only the legal text'
+        );
+    }
+
+    /**
+     * BUG-04 complement: additional_parcels must still be captured correctly
+     * when it follows legal_description.
+     */
+    public function test_bug_04_additional_parcels_still_captured_after_legal_desc(): void
+    {
+        $raw = 'Legal Description: OAK RIDGE PLAT LOT 7 PB 14 PG 22 Additional Parcels Y/N: No Total Number of Parcels: 1';
+
+        $result = $this->service->import('', $raw);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('no', $result['data']['additional_parcels'] ?? null,
+            'BUG-04: additional_parcels must still be captured after the labelStop fix.');
+    }
+
+    // ─── BUG-05: landlord MlsFieldMap missing property_type ─────────────────
+
+    /**
+     * BUG-05: MlsFieldMap::landlord() must include 'property_type' so that
+     * "Apply Selected" on the landlord MLS preview modal correctly populates
+     * the property_type field on the LandlordOfferListing Livewire component.
+     *
+     * Fix: 'property_type' => 'property_type' was added to MlsFieldMap::landlord().
+     */
+    public function test_bug_05_landlord_field_map_includes_property_type(): void
+    {
+        $map = MlsFieldMap::forRole('landlord');
+
+        $this->assertArrayHasKey('property_type', $map,
+            'BUG-05: MlsFieldMap::forRole("landlord") must include property_type canonical key.');
+        $this->assertSame('property_type', $map['property_type'],
+            'BUG-05: landlord property_type must map to the property_type component prop.');
+    }
+
+    /**
+     * BUG-05 complement: the seller map also has property_type (unchanged by the fix).
+     */
+    public function test_bug_05_seller_field_map_still_has_property_type(): void
+    {
+        $map = MlsFieldMap::forRole('seller');
+
+        $this->assertArrayHasKey('property_type', $map,
+            'BUG-05: MlsFieldMap::forRole("seller") must still include property_type canonical key.');
     }
 }
