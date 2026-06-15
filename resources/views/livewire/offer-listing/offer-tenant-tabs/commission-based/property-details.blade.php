@@ -218,7 +218,7 @@
     </div>
 </div>
 
-@include('partials.location-dna.map-input', ['existingLocationDna' => $existingLocationDna ?? []])
+@include('partials.location-dna.map-input', ['existingLocationDna' => $existingLocationDna ?? [], 'mapPanelId' => 'ldna-map-tenant'])
 <input type="hidden" id="ldna-livewire-bridge" wire:model.defer="location_dna_preferences_json">
 <script>
 (function () {

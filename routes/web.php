@@ -1005,6 +1005,7 @@ require __DIR__ . '/auth.php';
 
 
 // New_Routes
+
 Route::get('/test', function () {
 
     $propertyAuctions = PropertyAuction::where('auto_bid', 1)

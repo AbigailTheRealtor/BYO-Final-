@@ -2584,5 +2584,31 @@
             document.addEventListener('DOMContentLoaded', syncWizardButtons);
         })();
     </script>
-    <x-google-maps-script :libraries="'places,drawing'" />
+    <script>
+        function byoInitBuyerOfferPlaces() {
+            if (typeof window.ldnaRequestInit === 'function') {
+                window.ldnaRequestInit();
+            }
+        }
+        (function () {
+            if (!document._buyerEditMapTabListenerAdded) {
+                document._buyerEditMapTabListenerAdded = true;
+                document.addEventListener('shown.bs.tab', function (e) {
+                    if (e.target && e.target.getAttribute('data-bs-target') === '#property-preferences') {
+                        if (typeof window.ldnaRequestInit === 'function') {
+                            window.ldnaRequestInit();
+                        }
+                    }
+                });
+            }
+            if (window.Livewire && typeof Livewire.hook === 'function') {
+                Livewire.hook('message.processed', function () {
+                    if (typeof window.ldnaRequestInit === 'function') {
+                        window.ldnaRequestInit();
+                    }
+                });
+            }
+        })();
+    </script>
+    <x-google-maps-script :libraries="'places,drawing'" callback="byoInitBuyerOfferPlaces" />
 @endpush

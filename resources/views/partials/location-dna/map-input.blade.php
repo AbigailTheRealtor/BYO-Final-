@@ -39,7 +39,7 @@
   $ldnaFlex    = $ldna['flexible_location'] ?? false;
   $ldnaNotes   = $ldna['location_notes']  ?? '';
   $ldnaJson    = count($ldna) ? json_encode($ldna) : '';
-  $mapPanelId  = 'ldna-map-' . uniqid();
+  $mapPanelId  = $mapPanelId ?? 'ldna-map-panel';
 @endphp
 
 <style>
@@ -133,7 +133,7 @@
     </button>
     <span class="text-muted" style="font-size:.8rem;">or use the radius search below</span>
   </div>
-  <div id="{{ $mapPanelId }}"></div>
+  <div id="{{ $mapPanelId }}" wire:ignore></div>
 
   {{-- ── Overlay list ── --}}
   <ul class="ldna-overlay-list" id="ldna-overlay-list">
@@ -404,6 +404,23 @@
     });
   };
 
+  /* ── Safe public wrapper — called by listing blade callback + tab-show ─────── */
+  /* All external callers use this wrapper; never expose ldnaTryInit directly.   */
+  window.ldnaRequestInit = function () {
+    if (typeof google === 'undefined' || !google.maps || !google.maps.drawing) return;
+    var container = document.getElementById('{{ $mapPanelId }}');
+    if (!container) return;
+    if (!ldnaMapInitialized) {
+      ldnaTryInit();
+    } else if (ldnaMap && container.offsetWidth > 0) {
+      google.maps.event.trigger(ldnaMap, 'resize');
+      if (!ldnaState.polygons.length && !ldnaState.radius_searches.length
+          && !ldnaState.cities.length && !ldnaState.zip_codes.length) {
+        ldnaMap.setCenter({ lat: 27.9944024, lng: -81.7602544 });
+      }
+    }
+  };
+
   /* ── Wire up Google Maps once the API is loaded ───────────────────────────── */
   /* The host form already loads the Maps JS API.
      We poll until google.maps.drawing is available, then check visibility.
@@ -443,14 +460,11 @@
 
   /* ── Post-init resize trigger for Bootstrap tab transitions ──────────────── */
   /* If Maps was initialized while a CSS transition was still running, the SDK
-     may have measured a stale size. Re-trigger resize + re-center on tab show. */
+     may have measured a stale size. Re-trigger resize + re-center on tab show.
+     Only fall back to Florida centroid when no saved Location DNA data exists. */
   document.addEventListener('shown.bs.tab', function () {
-    var container = document.getElementById('{{ $mapPanelId }}');
-    if (!container) return;
-    if (ldnaMap && container.offsetWidth > 0) {
-      var defaultCenter = { lat: 27.9944024, lng: -81.7602544 };
-      google.maps.event.trigger(ldnaMap, 'resize');
-      ldnaMap.setCenter(defaultCenter);
+    if (typeof window.ldnaRequestInit === 'function') {
+      window.ldnaRequestInit();
     }
   });
 
