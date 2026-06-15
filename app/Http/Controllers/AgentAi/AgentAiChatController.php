@@ -288,7 +288,27 @@ class AgentAiChatController extends Controller
         );
 
         // ── Call OpenAI ───────────────────────────────────────────────────────
-        $adapterResult = $this->orchestrator->call($promptPackage);
+        // Wrap in try/catch so transport-layer exceptions (timeout, misconfigured
+        // HTTP client, unexpected provider error) never bubble up as HTTP 500.
+        // Any throw is normalized to success: false so AgentAiFinalResponseBuilder
+        // applies the standard graceful fallback path.
+        try {
+            $adapterResult = $this->orchestrator->call($promptPackage);
+        } catch (\Throwable $e) {
+            Log::error('AgentAiChatController: orchestrator threw an uncaught exception', [
+                'session_id' => $session->id,
+                'error'      => $e->getMessage(),
+                'class'      => get_class($e),
+            ]);
+            $adapterResult = [
+                'success'     => false,
+                'raw_content' => null,
+                'usage'       => null,
+                'model'       => null,
+                'model_tier'  => null,
+                'error'       => 'orchestrator_exception',
+            ];
+        }
 
         // ── Normalize response (includes action resolution) ───────────────────
         $finalResponse = $this->responseBuilder->build($promptPackage, $adapterResult, [
