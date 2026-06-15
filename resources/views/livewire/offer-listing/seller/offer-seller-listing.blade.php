@@ -2200,6 +2200,7 @@
             // RC-3: Register all inner message.processed hooks exactly once, regardless of how
             // many times initializeFullService() is called across Livewire round-trips.
             if (!window.__innerHooksBound) {
+                if (window.Livewire && typeof window.Livewire.hook === 'function') {
                 window.__innerHooksBound = true;
                 Livewire.hook('message.processed', () => {
                     attachAuctionDropdownListener();
@@ -2241,6 +2242,7 @@
                     // Restore "Other" wrapper visibility after every Livewire re-render
                     _restoreOtherSelectVisibility();
                 });
+                } // end window.Livewire guard
             }
 
         }
@@ -2612,6 +2614,7 @@
         }
 
 
+        if (window.Livewire && typeof window.Livewire.hook === 'function') {
         Livewire.hook('message.processed', () => {
             addIconsToInputs(); // synchronous — runs immediately after morphdom, like Buyer
             setTimeout(function() { addIconsToInputs(); }, 0); // deferred safety net
@@ -2666,6 +2669,7 @@
                 }
             }
         });
+        } // end window.Livewire guard
 
         document.addEventListener('shown.bs.tab', function() {
             setTimeout(function() { addIconsToInputs(); }, 0);
@@ -2988,9 +2992,11 @@
         // Re-initialize after Livewire updates (Livewire v2)
         if (typeof Livewire !== 'undefined') {
             document.addEventListener('livewire:load', function() {
-                Livewire.hook('message.processed', function() {
-                    initializeMoneyInputs();
-                });
+                if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                    Livewire.hook('message.processed', function() {
+                        initializeMoneyInputs();
+                    });
+                }
             });
         }
     </script>
@@ -3038,9 +3044,11 @@
         });
 
         document.addEventListener('livewire:load', function () {
-            Livewire.hook('message.processed', function () {
-                sellerAutoFillBuyNow();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', function () {
+                    sellerAutoFillBuyNow();
+                });
+            }
         });
     </script>
     <x-google-maps-script callback="byoInitSellerOfferPlaces" />

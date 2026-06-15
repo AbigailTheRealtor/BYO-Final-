@@ -454,11 +454,11 @@ if (window.google && window.google.maps && window.google.maps.places) {
     window.byoInitSellerOfferPlaces();
 }
 
-document.addEventListener('livewire:load', function() {
-    Livewire.hook('message.processed', function() {
-        window.byoInitSellerOfferPlaces();
+if (window.Livewire && typeof window.Livewire.hook === 'function') {
+    window.Livewire.hook('message.processed', function () {
+        window.byoInitSellerOfferPlaces && window.byoInitSellerOfferPlaces();
     });
-});
+}
 </script>
 
 <!-- Property City -->
