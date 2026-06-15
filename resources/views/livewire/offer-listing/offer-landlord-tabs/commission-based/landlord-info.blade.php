@@ -254,11 +254,15 @@ document.addEventListener('DOMContentLoaded', initLandlordPhoneFormatting);
 
 // Re-initialize after any Livewire update
 document.addEventListener('livewire:load', function() {
-    Livewire.hook('message.processed', initLandlordPhoneFormatting);
+    if (window.Livewire && typeof window.Livewire.hook === 'function') {
+        Livewire.hook('message.processed', initLandlordPhoneFormatting);
+    }
 });
 
 // For Livewire v3 compatibility
 document.addEventListener('livewire:init', function() {
-    Livewire.hook('morph.updated', initLandlordPhoneFormatting);
+    if (window.Livewire && typeof window.Livewire.hook === 'function') {
+        Livewire.hook('morph.updated', initLandlordPhoneFormatting);
+    }
 });
 </script>

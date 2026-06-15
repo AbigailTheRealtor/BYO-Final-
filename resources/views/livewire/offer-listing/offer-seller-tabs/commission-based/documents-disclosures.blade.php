@@ -75,20 +75,22 @@
                             return row;
                         });
                         this.uploading = this.rows.map(() => false);
-                        this._offFileStored = Livewire.on('docFileStored', (index, path) => {
-                            if (this.rows[index] !== undefined) {
-                                this.rows[index].file_path = path;
-                                this.uploading[index]      = false;
-                                this.sync();
-                            }
-                        });
-                        this._offFileRemoved = Livewire.on('docRowFileRemoved', (index) => {
-                            if (this.rows[index] !== undefined) {
-                                this.rows[index].file_path     = '';
-                                this.rows[index].original_name = '';
-                                this.sync();
-                            }
-                        });
+                        if (window.Livewire) {
+                            this._offFileStored = Livewire.on('docFileStored', (index, path) => {
+                                if (this.rows[index] !== undefined) {
+                                    this.rows[index].file_path = path;
+                                    this.uploading[index]      = false;
+                                    this.sync();
+                                }
+                            });
+                            this._offFileRemoved = Livewire.on('docRowFileRemoved', (index) => {
+                                if (this.rows[index] !== undefined) {
+                                    this.rows[index].file_path     = '';
+                                    this.rows[index].original_name = '';
+                                    this.sync();
+                                }
+                            });
+                        }
                     },
                     destroy() {
                         if (typeof this._offFileStored === 'function') this._offFileStored();

@@ -677,9 +677,11 @@ $auction_lengths_seller = [
         });
 
         // Re-attach the event listener after Livewire re-renders the DOM
-        Livewire.hook('message.processed', () => {
-            attachAuctionDropdownListener1();
-        });
+        if (window.Livewire && typeof window.Livewire.hook === 'function') {
+            Livewire.hook('message.processed', () => {
+                attachAuctionDropdownListener1();
+            });
+        }
 
     })();
 </script>

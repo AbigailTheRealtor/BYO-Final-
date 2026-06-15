@@ -67,21 +67,23 @@
                     _offFileRemoved: null,
                     init() {
                         this.uploading = this.rows.map(() => false);
-                        this._offFileStored = Livewire.on('landlordDocFileStored', (index, path, originalName) => {
-                            if (this.rows[index] !== undefined) {
-                                this.rows[index].stored_path   = path;
-                                this.rows[index].original_name = originalName;
-                                this.uploading[index]          = false;
-                                this.sync();
-                            }
-                        });
-                        this._offFileRemoved = Livewire.on('landlordDocRowFileRemoved', (index) => {
-                            if (this.rows[index] !== undefined) {
-                                this.rows[index].stored_path   = '';
-                                this.rows[index].original_name = '';
-                                this.sync();
-                            }
-                        });
+                        if (window.Livewire) {
+                            this._offFileStored = Livewire.on('landlordDocFileStored', (index, path, originalName) => {
+                                if (this.rows[index] !== undefined) {
+                                    this.rows[index].stored_path   = path;
+                                    this.rows[index].original_name = originalName;
+                                    this.uploading[index]          = false;
+                                    this.sync();
+                                }
+                            });
+                            this._offFileRemoved = Livewire.on('landlordDocRowFileRemoved', (index) => {
+                                if (this.rows[index] !== undefined) {
+                                    this.rows[index].stored_path   = '';
+                                    this.rows[index].original_name = '';
+                                    this.sync();
+                                }
+                            });
+                        }
                     },
                     destroy() {
                         if (typeof this._offFileStored === 'function') this._offFileStored();

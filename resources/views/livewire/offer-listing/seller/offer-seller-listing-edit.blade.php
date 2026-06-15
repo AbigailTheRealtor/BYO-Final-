@@ -1193,7 +1193,7 @@
                 initializeFullService();
             }
 
-            Livewire.emit('serviceTypeChanged', serviceType);
+            if (window.Livewire) { Livewire.emit('serviceTypeChanged', serviceType); }
         }
 
         function initializeFullService() {
@@ -1367,9 +1367,11 @@
             });
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachAuctionDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachAuctionDropdownListener();
+                });
+            }
 
 
             // Function to toggle "Other Bathrooms" input field
@@ -1404,9 +1406,11 @@
             attachBathroomsDropdownListener();
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachBathroomsDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachBathroomsDropdownListener();
+                });
+            }
 
 
 
@@ -1422,9 +1426,11 @@
 
             toggleGarageOtherCompanion();
 
-            Livewire.hook('message.processed', () => {
-                toggleGarageOtherCompanion();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    toggleGarageOtherCompanion();
+                });
+            }
 
 
 
@@ -1444,7 +1450,7 @@
                         const inputField = inputDiv.querySelector('input');
                         if (inputField) {
                             inputField.value = '';
-                            Livewire.emit('updateModel', inputField.getAttribute('wire:model'), '');
+                            if (window.Livewire) { Livewire.emit('updateModel', inputField.getAttribute('wire:model'), ''); }
                         }
                     }
                 });
@@ -1460,10 +1466,12 @@
             toggleSpaceInput('garage-needed', 'other-garage-needed');
 
             // Reinitialize after Livewire updates
-            Livewire.hook('message.processed', () => {
-                toggleSpaceInput('carport-needed', 'other-carport-needed');
-                toggleSpaceInput('garage-needed', 'other-garage-needed');
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    toggleSpaceInput('carport-needed', 'other-carport-needed');
+                    toggleSpaceInput('garage-needed', 'other-garage-needed');
+                });
+            }
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
@@ -1474,7 +1482,7 @@
                 });
                 $('#view_preference').on('change', function() {
                     let selectedValues = $(this).val();
-                    Livewire.emit('updatePreference', selectedValues);
+                    if (window.Livewire) { Livewire.emit('updatePreference', selectedValues); }
                     if (selectedValues.includes('Other')) {
                         $('#other_preferences').show();
                     } else {
@@ -1529,9 +1537,11 @@
             attachAmenitiesDropdownListener();
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachAmenitiesDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachAmenitiesDropdownListener();
+                });
+            }
 
             // Function to toggle "Other Bedrooms" input field
             function toggleOtherBedrooms(selectElement) {
@@ -1565,9 +1575,11 @@
             attachBedroomsDropdownListener();
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachBedroomsDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachBedroomsDropdownListener();
+                });
+            }
 
             // Function to toggle "Other Property Condition" input field
             function toggleOtherCondition(selectElement) {
@@ -1604,9 +1616,11 @@
             });
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachConditionDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachConditionDropdownListener();
+                });
+            }
 
 
 
@@ -1645,9 +1659,11 @@
             });
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachItemConditionDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachItemConditionDropdownListener();
+                });
+            }
 
             const photoInput = document.getElementById("photo-input");
             const photoError = document.getElementById("photo-error");
@@ -1730,7 +1746,7 @@
                 if (!validateVideo(file)) return;
 
                 // Trigger Livewire video upload and show the loader
-                Livewire.emit("upload:start");
+                if (window.Livewire) { Livewire.emit("upload:start"); }
                 showLoaderForMinimumTime();
             }
 
@@ -1741,7 +1757,7 @@
                 if (!validatePhoto(file)) return;
 
                 // Trigger Livewire photo upload and show the loader
-                Livewire.emit("upload:start");
+                if (window.Livewire) { Livewire.emit("upload:start"); }
                 showLoaderForMinimumTime();
             }
 
@@ -1755,16 +1771,18 @@
             }
 
             // Livewire event listeners
-            Livewire.on("upload:start", () => {
-                showLoaderForMinimumTime();
-            });
+            if (window.Livewire) {
+                Livewire.on("upload:start", () => {
+                    showLoaderForMinimumTime();
+                });
 
-            Livewire.on("upload:finish", () => {
-                // Wait for at least 20 seconds before hiding the loader
-                setTimeout(() => {
-                    videoLoader.style.visibility = "hidden";
-                }, 30000);
-            });
+                Livewire.on("upload:finish", () => {
+                    // Wait for at least 20 seconds before hiding the loader
+                    setTimeout(() => {
+                        videoLoader.style.visibility = "hidden";
+                    }, 30000);
+                });
+            }
 
 
             // Function to check if all required fields are filled
@@ -2050,6 +2068,7 @@
             });
         }
 
+        if (window.Livewire && typeof window.Livewire.hook === 'function') {
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
             checkRepresentationStatus();
@@ -2101,6 +2120,7 @@
             }
             if (typeof window._syncWizardButtons === 'function') window._syncWizardButtons();
         });
+        }
     </script>
 
     <script>

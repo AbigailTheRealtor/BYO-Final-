@@ -205,11 +205,15 @@ document.addEventListener('DOMContentLoaded', initSellerPhoneFormatting);
 
 // Re-initialize after any Livewire update
 document.addEventListener('livewire:load', function() {
-    Livewire.hook('message.processed', initSellerPhoneFormatting);
+    if (window.Livewire && typeof window.Livewire.hook === 'function') {
+        Livewire.hook('message.processed', initSellerPhoneFormatting);
+    }
 });
 
 // For Livewire v3 compatibility
 document.addEventListener('livewire:init', function() {
-    Livewire.hook('morph.updated', initSellerPhoneFormatting);
+    if (window.Livewire && typeof window.Livewire.hook === 'function') {
+        Livewire.hook('morph.updated', initSellerPhoneFormatting);
+    }
 });
 </script>

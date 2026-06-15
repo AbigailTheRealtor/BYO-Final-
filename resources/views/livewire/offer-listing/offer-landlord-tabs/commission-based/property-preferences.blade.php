@@ -90,9 +90,11 @@ if (window.google && window.google.maps && window.google.maps.places) {
 }
 
 document.addEventListener('livewire:load', function() {
-    Livewire.hook('message.processed', function() {
-        window.byoInitLandlordOfferPlaces();
-    });
+    if (window.Livewire && typeof window.Livewire.hook === 'function') {
+        Livewire.hook('message.processed', function() {
+            window.byoInitLandlordOfferPlaces();
+        });
+    }
 });
 </script>
 

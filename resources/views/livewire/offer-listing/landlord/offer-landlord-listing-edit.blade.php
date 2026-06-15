@@ -1193,7 +1193,7 @@ $tenantPays = [
                 initializeFullService();
             }
 
-            Livewire.emit('serviceTypeChanged', serviceType);
+            if (window.Livewire) { Livewire.emit('serviceTypeChanged', serviceType); }
         }
 
         function syncSelectValues() {
@@ -1483,7 +1483,7 @@ $tenantPays = [
                         const inputField = inputDiv.querySelector('input');
                         if (inputField) {
                             inputField.value = '';
-                            Livewire.emit('updateModel', inputField.getAttribute('wire:model'), '');
+                            if (window.Livewire) { Livewire.emit('updateModel', inputField.getAttribute('wire:model'), ''); }
                         }
                     }
                 });
@@ -1504,7 +1504,7 @@ $tenantPays = [
             var _vpRsVals = @json($this->view_preference ?? []);
             try {
                 var _vpRsEl = document.querySelector('[wire\\:id]');
-                var _vpRsComp = _vpRsEl ? Livewire.find(_vpRsEl.getAttribute('wire:id')) : null;
+                var _vpRsComp = _vpRsEl && window.Livewire ? Livewire.find(_vpRsEl.getAttribute('wire:id')) : null;
                 if (_vpRsComp) _vpRsVals = _vpRsComp.get('view_preference') || [];
             } catch(e) {}
             window.restoreViewPreferenceState(_vpRsVals);
@@ -2033,7 +2033,7 @@ $tenantPays = [
                 if (!validateVideo(file)) return;
 
                 // Trigger Livewire video upload and show the loader
-                Livewire.emit("upload:start");
+                if (window.Livewire) { Livewire.emit("upload:start"); }
                 showLoaderForMinimumTime();
             }
 
@@ -2044,7 +2044,7 @@ $tenantPays = [
                 if (!validatePhoto(file)) return;
 
                 // Trigger Livewire photo upload and show the loader
-                Livewire.emit("upload:start");
+                if (window.Livewire) { Livewire.emit("upload:start"); }
                 showLoaderForMinimumTime();
             }
 
@@ -2058,16 +2058,18 @@ $tenantPays = [
             }
 
             // Livewire event listeners
-            Livewire.on("upload:start", () => {
-                showLoaderForMinimumTime();
-            });
+            if (window.Livewire) {
+                Livewire.on("upload:start", () => {
+                    showLoaderForMinimumTime();
+                });
 
-            Livewire.on("upload:finish", () => {
-                // Wait for at least 20 seconds before hiding the loader
-                setTimeout(() => {
-                    videoLoader.style.visibility = "hidden";
-                }, 30000);
-            });
+                Livewire.on("upload:finish", () => {
+                    // Wait for at least 20 seconds before hiding the loader
+                    setTimeout(() => {
+                        videoLoader.style.visibility = "hidden";
+                    }, 30000);
+                });
+            }
 
 
             // Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
@@ -2540,6 +2542,7 @@ $tenantPays = [
             setTimeout(addIconsToInputs, 800);
         });
 
+        if (window.Livewire && typeof window.Livewire.hook === 'function') {
         Livewire.hook('message.processed', () => {
             var _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
 
@@ -2613,6 +2616,7 @@ $tenantPays = [
 
             requestAnimationFrame(() => { window.scrollTo(0, _scrollY); });
         });
+        }
     </script>
 
     <script>

@@ -121,9 +121,13 @@ function initAgentCredPhoneFormatting() {
 initAgentCredPhoneFormatting();
 document.addEventListener('DOMContentLoaded', initAgentCredPhoneFormatting);
 document.addEventListener('livewire:load', function() {
-    Livewire.hook('message.processed', initAgentCredPhoneFormatting);
+    if (window.Livewire && typeof window.Livewire.hook === 'function') {
+        Livewire.hook('message.processed', initAgentCredPhoneFormatting);
+    }
 });
 document.addEventListener('livewire:init', function() {
-    Livewire.hook('morph.updated', initAgentCredPhoneFormatting);
+    if (window.Livewire && typeof window.Livewire.hook === 'function') {
+        Livewire.hook('morph.updated', initAgentCredPhoneFormatting);
+    }
 });
 </script>

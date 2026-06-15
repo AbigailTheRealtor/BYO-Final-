@@ -1618,7 +1618,7 @@
                 initializeFullService();
             }
 
-            Livewire.emit('serviceTypeChanged', serviceType);
+            if (window.Livewire) { Livewire.emit('serviceTypeChanged', serviceType); }
         }
 
         // Shared visibility helper — used across all validation functions in this file
@@ -1911,7 +1911,7 @@
                         const inputField = inputDiv.querySelector('input');
                         if (inputField) {
                             inputField.value = '';
-                            Livewire.emit('updateModel', inputField.getAttribute('wire:model'), '');
+                            if (window.Livewire) { Livewire.emit('updateModel', inputField.getAttribute('wire:model'), ''); }
                         }
                     }
                 });
@@ -2164,7 +2164,7 @@
                 if (!validateVideo(file)) return;
 
                 // Trigger Livewire video upload and show the loader
-                Livewire.emit("upload:start");
+                if (window.Livewire) { Livewire.emit("upload:start"); }
                 showLoaderForMinimumTime();
             }
 
@@ -2175,7 +2175,7 @@
                 if (!validatePhoto(file)) return;
 
                 // Trigger Livewire photo upload and show the loader
-                Livewire.emit("upload:start");
+                if (window.Livewire) { Livewire.emit("upload:start"); }
                 showLoaderForMinimumTime();
             }
 
@@ -2189,13 +2189,15 @@
             }
 
             // Livewire event listeners
-            Livewire.on("upload:start", () => {
-                showLoaderForMinimumTime();
-            });
+            if (window.Livewire) {
+                Livewire.on("upload:start", () => {
+                    showLoaderForMinimumTime();
+                });
 
-            Livewire.on("upload:finish", () => {
-                videoLoader.style.visibility = "hidden";
-            });
+                Livewire.on("upload:finish", () => {
+                    videoLoader.style.visibility = "hidden";
+                });
+            }
 
             // RC-3: Register all inner message.processed hooks exactly once, regardless of how
             // many times initializeFullService() is called across Livewire round-trips.

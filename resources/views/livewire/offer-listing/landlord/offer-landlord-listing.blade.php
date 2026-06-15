@@ -1461,7 +1461,7 @@
                 initializeFullService();
             }
 
-            Livewire.emit('serviceTypeChanged', serviceType);
+            if (window.Livewire) { Livewire.emit('serviceTypeChanged', serviceType); }
         }
 
         function removeWizardEventListeners() {
@@ -1614,9 +1614,11 @@
             });
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachAuctionDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachAuctionDropdownListener();
+                });
+            }
 
 
             // Function to toggle "Other Bathrooms" input field
@@ -1680,9 +1682,11 @@
             toggleGarageOptions();
 
             // Listen for Livewire updates
-            Livewire.hook('message.processed', () => {
-                toggleGarageOptions();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    toggleGarageOptions();
+                });
+            }
 
             // Add event listeners
             let garageSelect = document.getElementById('garage_parking_spaces');
@@ -1714,7 +1718,7 @@
                         const inputField = inputDiv.querySelector('input');
                         if (inputField) {
                             inputField.value = '';
-                            Livewire.emit('updateModel', inputField.getAttribute('wire:model'), '');
+                            if (window.Livewire) { Livewire.emit('updateModel', inputField.getAttribute('wire:model'), ''); }
                         }
                     }
                 });
@@ -1730,13 +1734,15 @@
             toggleSpaceInput('garage-needed', 'other-garage-needed');
 
             // Reinitialize after Livewire updates
-            Livewire.hook('message.processed', () => {
-                setTimeout(() => {
-                    attachBathroomsDropdownListener();
-                    toggleSpaceInput('carport-needed', 'other-carport-needed');
-                    toggleSpaceInput('garage-needed', 'other-garage-needed');
-                }, 150);
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    setTimeout(() => {
+                        attachBathroomsDropdownListener();
+                        toggleSpaceInput('carport-needed', 'other-carport-needed');
+                        toggleSpaceInput('garage-needed', 'other-garage-needed');
+                    }, 150);
+                });
+            }
 
             function initViewPreferenceSelect2() {
                 if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
@@ -1817,13 +1823,15 @@
                 });
             }
             initMlsMultiSelects();
-            Livewire.hook('message.processed', () => {
-                setTimeout(function() {
-                    initMlsMultiSelects();
-                    initViewPreferenceSelect2();
-                    initAppliancesSelect2();
-                }, 150);
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    setTimeout(function() {
+                        initMlsMultiSelects();
+                        initViewPreferenceSelect2();
+                        initAppliancesSelect2();
+                    }, 150);
+                });
+            }
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
@@ -1857,9 +1865,11 @@
             attachAmenitiesDropdownListener();
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachAmenitiesDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachAmenitiesDropdownListener();
+                });
+            }
 
             // Function to toggle "Other Bedrooms" input field
             function toggleOtherBedrooms(selectElement) {
@@ -1893,9 +1903,11 @@
             attachBedroomsDropdownListener();
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachBedroomsDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachBedroomsDropdownListener();
+                });
+            }
 
             // Function to toggle "Other Property Condition" input field
             function toggleOtherCondition(selectElement) {
@@ -1932,9 +1944,11 @@
             });
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachConditionDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachConditionDropdownListener();
+                });
+            }
 
 
 
@@ -1973,9 +1987,11 @@
             });
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachItemConditionDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachItemConditionDropdownListener();
+                });
+            }
 
 
 
@@ -2013,9 +2029,11 @@
             });
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachOccupantTypesDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachOccupantTypesDropdownListener();
+                });
+            }
 
 
             ////////////        Desired Rental Amount
@@ -2055,9 +2073,11 @@
             });
 
             // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachDesiredRentalAmountDropdownListener();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', () => {
+                    attachDesiredRentalAmountDropdownListener();
+                });
+            }
 
 
             function initAppliancesSelect2() {
@@ -2297,6 +2317,7 @@
 
             initTaxLegalSelect2();
 
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
             Livewire.hook('message.processed', () => {
                 initLeaseTermSelect2();
                 initTaxLegalSelect2();
@@ -2320,6 +2341,7 @@
                     }
                 });
             });
+            }
 
             window.syncLandlordSelect2BeforeSave = function() {
                 var selects2Map = {
@@ -2438,7 +2460,7 @@
                 if (!validateVideo(file)) return;
 
                 // Trigger Livewire video upload and show the loader
-                Livewire.emit("upload:start");
+                if (window.Livewire) { Livewire.emit("upload:start"); }
                 showLoaderForMinimumTime();
             }
 
@@ -2449,7 +2471,7 @@
                 if (!validatePhoto(file)) return;
 
                 // Trigger Livewire photo upload and show the loader
-                Livewire.emit("upload:start");
+                if (window.Livewire) { Livewire.emit("upload:start"); }
                 showLoaderForMinimumTime();
             }
 
@@ -2463,13 +2485,15 @@
             }
 
             // Livewire event listeners
-            Livewire.on("upload:start", () => {
-                showLoaderForMinimumTime();
-            });
+            if (window.Livewire) {
+                Livewire.on("upload:start", () => {
+                    showLoaderForMinimumTime();
+                });
 
-            Livewire.on("upload:finish", () => {
-                videoLoader.style.visibility = "hidden";
-            });
+                Livewire.on("upload:finish", () => {
+                    videoLoader.style.visibility = "hidden";
+                });
+            }
 
             // Function to check if all required fields are filled
             function checkFormValidity() {
@@ -2664,9 +2688,11 @@
                 });
             }, 150);
 
-            Livewire.hook('message.processed', function() {
-                setTimeout(checkFormValidity, 150);
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', function() {
+                    setTimeout(checkFormValidity, 150);
+                });
+            }
 
 
         }
@@ -2762,9 +2788,11 @@
                 });
             }, 150);
 
-            Livewire.hook('message.processed', function() {
-                setTimeout(checkFormValidity, 150);
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', function() {
+                    setTimeout(checkFormValidity, 150);
+                });
+            }
         }
 
 
@@ -2816,6 +2844,7 @@
         }
 
 
+        if (window.Livewire && typeof window.Livewire.hook === 'function') {
         Livewire.hook('message.processed', () => {
             var _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
 
@@ -2843,6 +2872,7 @@
 
             requestAnimationFrame(() => { window.scrollTo(0, _scrollY); });
         });
+        }
     </script>
 
     <script>
@@ -3375,9 +3405,11 @@
         });
 
         document.addEventListener('livewire:load', function () {
-            Livewire.hook('message.processed', function () {
-                landlordAutoFillLeaseNow();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', function () {
+                    landlordAutoFillLeaseNow();
+                });
+            }
         });
     </script>
     <script>
@@ -3412,9 +3444,11 @@
         });
 
         document.addEventListener('livewire:load', function () {
-            Livewire.hook('message.processed', function () {
-                initSelect2Fields();
-            });
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', function () {
+                    initSelect2Fields();
+                });
+            }
         });
     </script>
     <x-google-maps-script callback="byoInitLandlordOfferPlaces" />
