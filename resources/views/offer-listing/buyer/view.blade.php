@@ -700,6 +700,7 @@
                             @csrf
                             <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
                             <input type="hidden" name="role" value="buyer">
+                            <input type="hidden" name="listing_type" value="buyer_criteria">
                             <button type="submit" class="btn btn-primary" aria-label="Respond to this Buyer Criteria listing">
                                 <i class="fa-solid fa-reply me-1"></i>Respond to Buyer Criteria
                             </button>
@@ -730,6 +731,7 @@
                     @csrf
                     <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
                     <input type="hidden" name="role" value="buyer">
+                    <input type="hidden" name="listing_type" value="buyer_criteria">
                     <button type="submit" class="bol-interaction-cta bol-interaction-cta-primary"
                             aria-label="Respond to this Buyer Criteria listing">
                         <i class="fa-solid fa-reply"></i>Respond
@@ -1541,6 +1543,7 @@
                     @csrf
                     <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
                     <input type="hidden" name="role" value="buyer">
+                    <input type="hidden" name="listing_type" value="buyer_criteria">
                     <button type="submit" class="bol-action-btn bol-action-primary">
                         <i class="fa-solid fa-reply"></i>Respond to Buyer Criteria
                     </button>
@@ -1851,6 +1854,7 @@
         @csrf
         <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
         <input type="hidden" name="role" value="buyer">
+        <input type="hidden" name="listing_type" value="buyer_criteria">
         <button type="submit" class="bol-mobile-bar-btn bol-mobile-bar-respond">
             <i class="fa-solid fa-reply"></i>
             <span>Respond</span>

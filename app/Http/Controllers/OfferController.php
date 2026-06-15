@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BuyerAgentAuction;
 use App\Models\Offer;
+use App\Models\OfferAuction;
+use App\Models\TenantAgentAuction;
 use App\Notifications\Offers\OfferAcceptedNotification;
 use App\Notifications\Offers\OfferCounteredNotification;
 use App\Notifications\Offers\OfferRejectedNotification;
@@ -33,12 +36,28 @@ class OfferController extends Controller
 
     public function store(Request $request): JsonResponse|RedirectResponse
     {
-        $validated = $request->validate([
-            'offer_auction_id' => 'required|integer|exists:offer_auctions,id',
-            'role'             => 'required|string|max:64',
-            'listing_snapshot' => 'nullable|array',
-            'expires_at'       => 'nullable|date',
-        ]);
+        $listingType = $request->input('listing_type');
+        $isCriteriaType = in_array($listingType, ['buyer_criteria', 'tenant_criteria'], true);
+
+        if ($isCriteriaType) {
+            $validated = $request->validate([
+                'offer_auction_id' => 'required|integer',
+                'role'             => 'required|string|max:64',
+                'listing_snapshot' => 'nullable|array',
+                'expires_at'       => 'nullable|date',
+            ]);
+            $validated['offer_auction_id'] = $this->resolveOfferAuctionId(
+                $listingType,
+                (int) $validated['offer_auction_id']
+            );
+        } else {
+            $validated = $request->validate([
+                'offer_auction_id' => 'required|integer|exists:offer_auctions,id',
+                'role'             => 'required|string|max:64',
+                'listing_snapshot' => 'nullable|array',
+                'expires_at'       => 'nullable|date',
+            ]);
+        }
 
         $offer = Offer::create([
             'user_id'          => Auth::id(),
@@ -1481,5 +1500,34 @@ class OfferController extends Controller
             'terminalLeaf', 'isTerminal', 'isHistorical', 'chainSummary',
             'finalTerms', 'snapshotMissing', 'terminalOutcomeAt'
         ));
+    }
+
+    private function resolveOfferAuctionId(string $listingType, int $sourceId): int
+    {
+        if ($listingType === 'buyer_criteria') {
+            $source = BuyerAgentAuction::findOrFail($sourceId);
+            $bridge = OfferAuction::firstOrCreate(
+                ['listing_id' => "buyer_criteria:{$sourceId}"],
+                [
+                    'user_id'     => $source->user_id,
+                    'title'       => $source->title,
+                    'is_draft'    => false,
+                    'is_approved' => true,
+                ]
+            );
+            return $bridge->id;
+        }
+
+        $source = TenantAgentAuction::findOrFail($sourceId);
+        $bridge = OfferAuction::firstOrCreate(
+            ['listing_id' => "tenant_criteria:{$sourceId}"],
+            [
+                'user_id'     => $source->user_id,
+                'title'       => $source->title,
+                'is_draft'    => false,
+                'is_approved' => true,
+            ]
+        );
+        return $bridge->id;
     }
 }

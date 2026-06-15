@@ -702,6 +702,7 @@
                             @csrf
                             <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
                             <input type="hidden" name="role" value="tenant">
+                            <input type="hidden" name="listing_type" value="tenant_criteria">
                             <button type="submit" class="btn btn-primary respond-criteria-btn" aria-label="Respond to this Tenant Criteria listing">
                                 <i class="fa-solid fa-reply me-1"></i>Respond to Tenant Criteria
                             </button>
@@ -742,6 +743,7 @@
                     @csrf
                     <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
                     <input type="hidden" name="role" value="tenant">
+                    <input type="hidden" name="listing_type" value="tenant_criteria">
                     <button type="submit" class="tcl-interaction-cta tcl-interaction-cta-primary"
                             aria-label="Respond to this Tenant Criteria listing">
                         <i class="fa-solid fa-reply"></i>Respond
@@ -1641,6 +1643,7 @@
                     @csrf
                     <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
                     <input type="hidden" name="role" value="tenant">
+                    <input type="hidden" name="listing_type" value="tenant_criteria">
                     <button type="submit" class="tcl-action-btn tcl-action-primary">
                         <i class="fa-solid fa-reply"></i>Respond to Tenant Criteria
                     </button>
@@ -1764,6 +1767,7 @@
         @csrf
         <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
         <input type="hidden" name="role" value="tenant">
+        <input type="hidden" name="listing_type" value="tenant_criteria">
         <button type="submit" class="tcl-mobile-bar-btn tcl-mobile-primary">
             <i class="fa-solid fa-reply"></i>
             <span>Respond</span>
