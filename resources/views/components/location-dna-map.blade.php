@@ -138,7 +138,7 @@
   }
 
   $componentId = 'ldna-display-' . uniqid();
-  $mapsKey     = config('services.google.places_key') ?: env('GOOGLE_PLACES_API_KEY', '');
+  $mapsKey     = config('services.google.places_key', '');
 @endphp
 
 @push('styles')

@@ -1262,10 +1262,12 @@
         })
         
     </script>
+    @php $mapsKey = config('services.google.places_key', ''); @endphp
+    @if($mapsKey !== '' && $mapsKey !== null)
     <script>
         function loadGoogleMapsScript() {
             var script = document.createElement('script');
-            let googlePlacesApiKey = "{{env('GOOGLE_PLACES_API_KEY')}}";
+            let googlePlacesApiKey = "{{ $mapsKey }}";
             script.src = `https://maps.googleapis.com/maps/api/js?key=${googlePlacesApiKey}&libraries=places&callback=initializeMap`;
             script.async = true;
             script.defer = true;
@@ -1273,7 +1275,9 @@
             document.body.appendChild(script);
         }
     </script>
-    {{-- <script
-        src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_PLACES_API_KEY') }}&libraries=places&callback=initialize">
-    </script> --}}
+    @else
+    <div style="border: 2px solid #f59e0b; background-color: #fffbeb; color: #92400e; padding: 8px 12px; border-radius: 4px; font-size: 13px; margin: 4px 0;">
+        &#9888; Google Maps is not configured for this environment &mdash; address autocomplete is unavailable.
+    </div>
+    @endif
 @endpush

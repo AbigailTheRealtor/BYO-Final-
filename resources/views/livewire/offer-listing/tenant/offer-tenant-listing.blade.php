@@ -5888,8 +5888,6 @@ $lease_types = [
         });
     });
 </script>
-<script async defer
-    src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_PLACES_API_KEY') }}&libraries=places,drawing">
-</script>
+<x-google-maps-script :libraries="'places,drawing'" />
 
 @endpush

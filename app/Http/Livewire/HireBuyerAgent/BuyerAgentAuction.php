@@ -1039,7 +1039,7 @@ class BuyerAgentAuction extends Component
         $query = [
             'input' => $input,
             'components' => 'country:us',
-            'key' => env('GOOGLE_PLACES_API_KEY')
+            'key' => config('services.google.places_key', '')
         ];
 
         if ($type === 'address') {

@@ -1351,7 +1351,7 @@ class SellerOfferListingEdit extends Component
                     'input' => $input,
                     'components' => 'country:us',
                     'types' => 'address',
-                    'key' => env('GOOGLE_PLACES_API_KEY'),
+                    'key' => config('services.google.places_key', ''),
                 ]
             ]);
             $predictions = json_decode($response->getBody(), true)['predictions'] ?? [];

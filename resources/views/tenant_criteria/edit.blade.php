@@ -3494,8 +3494,6 @@
         changePropertyType(val);
     })
   </script>
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_PLACES_API_KEY') }}&libraries=places,drawing&callback=initialize">
-  </script>
+  <x-google-maps-script :libraries="'places,drawing'" :callback="'initialize'" />
 @endpush
 

@@ -1785,9 +1785,7 @@
       initialize();
     }
   </script>
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_PLACES_API_KEY') }}&libraries=places&callback=initialize">
-  </script>
+  <x-google-maps-script :callback="'initialize'" />
 @endpush
 
 

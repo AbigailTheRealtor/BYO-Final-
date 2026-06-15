@@ -1970,7 +1970,7 @@ class TenantOfferListing extends Component
 
         $query = [
             'address' => $address,
-            'key' => env('GOOGLE_PLACES_API_KEY'),
+            'key' => config('services.google.places_key', ''),
         ];
 
         try {
@@ -2087,7 +2087,7 @@ class TenantOfferListing extends Component
             $response = $client->get('https://maps.googleapis.com/maps/api/geocode/json', [
                 'query' => [
                     'address' => $county,
-                    'key' => env('GOOGLE_PLACES_API_KEY')
+                    'key' => config('services.google.places_key', '')
                 ]
             ]);
 
@@ -2219,7 +2219,7 @@ class TenantOfferListing extends Component
         $query = [
             'input' => $input,
             'components' => 'country:us',
-            'key' => env('GOOGLE_PLACES_API_KEY')
+            'key' => config('services.google.places_key', '')
         ];
 
         if ($type === 'address') {

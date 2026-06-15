@@ -1665,7 +1665,5 @@
     </script>
 
     {{-- <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBu-916DdpKAjTmJNIgngS6HL_kDIKU0aU&libraries=places&callback=myMap"> --}}
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key={{env('GOOGLE_PLACES_API_KEY')}}&libraries=places&callback=initialize">
-    </script>
+    <x-google-maps-script :callback="'initialize'" />
 @endpush

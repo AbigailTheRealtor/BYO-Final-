@@ -1181,7 +1181,7 @@ class LandLordAgentAuctionEdit extends Component
         $query = [
             'input' => $input,
             'components' => 'country:us',
-            'key' => env('GOOGLE_PLACES_API_KEY')
+            'key' => config('services.google.places_key', '')
         ];
         // Set types based on what we're searching for
         if ($type === 'state') {
