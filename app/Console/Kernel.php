@@ -17,6 +17,7 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\ImportBridgeProperties::class,
         \App\Console\Commands\AuditBridgeFields::class,
         \App\Console\Commands\ValidatePhase0Fields::class,
+        \App\Console\Commands\BackfillNativeColumns::class,
     ];
     /**
      * Define the application's command schedule.

@@ -132,9 +132,15 @@ class ImportBridgeProperties extends Command
             ? \Carbon\Carbon::parse($record['ModificationTimestamp'])->toDateTimeString()
             : null;
 
+        // PetsAllowed normalisation — source field is an array in the Stellar API (e.g. ["Yes"], ["Dogs","Cats"]).
+        // Store only the first element as the canonical VARCHAR(50) value.
+        $petsRaw     = $record['PetsAllowed'] ?? null;
+        $petsAllowed = is_array($petsRaw) ? ($petsRaw[0] ?? null) : (is_string($petsRaw) ? $petsRaw : null);
+
         BridgeProperty::updateOrCreate(
             ['listing_key' => $listingKey],
             [
+                // Existing columns
                 'listing_id'              => $record['ListingId'] ?? null,
                 'standard_status'         => $record['StandardStatus'] ?? null,
                 'property_type'           => $record['PropertyType'] ?? null,
@@ -149,9 +155,61 @@ class ImportBridgeProperties extends Command
                 'modification_timestamp'  => $modTs,
                 'raw_json'                => json_encode($record),
                 'imported_at'             => now(),
+
+                // --- Phase 1 native column promotions ---
+
+                // Geospatial
+                'latitude'             => isset($record['Latitude']) ? (float) $record['Latitude'] : null,
+                'longitude'            => isset($record['Longitude']) ? (float) $record['Longitude'] : null,
+
+                // Location
+                'county_or_parish'     => $record['CountyOrParish'] ?? null,
+
+                // Property classification
+                'property_sub_type'    => $record['PropertySubType'] ?? null,
+                'mls_status'           => $record['MlsStatus'] ?? null,
+
+                // Age
+                'year_built'           => isset($record['YearBuilt']) ? (int) $record['YearBuilt'] : null,
+
+                // Financial
+                'association_fee'      => isset($record['AssociationFee']) ? (float) $record['AssociationFee'] : null,
+                'tax_annual_amount'    => isset($record['TaxAnnualAmount']) ? (float) $record['TaxAnnualAmount'] : null,
+
+                // Size — use !== null guard to avoid PHP zero-falsy gotcha on string "0" values
+                'lot_size_sqft'        => ($v = $record['LotSizeSquareFeet'] ?? null) !== null ? (int) $v : null,
+
+                // Rental qualifiers
+                'pets_allowed'         => $petsAllowed,
+                // NOTE: 'furnished' is EXCLUDED from Phase 1 (blocked at Phase 0 — 35% population rate).
+                //       Do not add it here. It is promoted in Phase 2R once the rental feed is active.
+
+                // Boolean feature flags — array_key_exists ensures a missing key stores NULL (not false).
+                // filter_var handles both native PHP bool and edge-case string representations ("true"/"false").
+                'senior_community_yn'  => $this->filterBool($record, 'SeniorCommunityYN'),
+                'garage_yn'            => $this->filterBool($record, 'GarageYN'),
+                'pool_private_yn'      => $this->filterBool($record, 'PoolPrivateYN'),
+                'waterfront_yn'        => $this->filterBool($record, 'WaterfrontYN'),
+                'association_yn'       => $this->filterBool($record, 'AssociationYN'),
+                'new_construction_yn'  => $this->filterBool($record, 'NewConstructionYN'),
+                'view_yn'              => $this->filterBool($record, 'ViewYN'),
+                'water_view_yn'        => $this->filterBool($record, 'STELLAR_WaterViewYN'),
+                'cdd_yn'               => $this->filterBool($record, 'STELLAR_CDDYN'),
             ]
         );
 
         return true;
+    }
+
+    /**
+     * Return true/false for a known boolean API field, or null if the key is absent.
+     * Uses array_key_exists so a missing key → null (not false), matching nullable column semantics.
+     */
+    private function filterBool(array $record, string $key): ?bool
+    {
+        if (!array_key_exists($key, $record)) {
+            return null;
+        }
+        return filter_var($record[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
     }
 }
