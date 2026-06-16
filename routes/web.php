@@ -876,6 +876,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 'properties' => $properties,
             ]);
         })->name('bridge.properties-preview');
+        // Stellar — buyer matching diagnostic (admin-only, no public UI).
+        Route::get('stellar/buyer-matches-test', function () {
+            /** @var \App\Services\Stellar\Matching\BuyerMatchService $service */
+            $service = app(\App\Services\Stellar\Matching\BuyerMatchService::class);
+
+            $criteria = new \App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload([
+                'property_types'      => ['Residential'],
+                'is_55_plus_eligible' => false,
+                'max_price'           => 500000,
+                'preferred_counties'  => ['Orange'],
+                'min_bedrooms'        => 3,
+                'min_bathrooms'       => 2,
+            ]);
+
+            $results = $service->match($criteria);
+
+            $matches = $results->map(function (\App\Services\Stellar\Matching\DTO\BuyerMatchResult $result) {
+                return array_merge([
+                    'listing_key' => $result->listingKey,
+                    'list_price'  => $result->listing->list_price,
+                    'city'        => $result->listing->city,
+                    'postal_code' => $result->listing->postal_code,
+                ], $result->toArray());
+            })->values()->all();
+
+            return response()->json([
+                'count'   => count($matches),
+                'matches' => $matches,
+            ]);
+        })->name('stellar.buyer-matches-test');
+
         Route::get('buyer', [BuyerController::class, 'buyer'])->name('buyer');
         Route::post('buyer', [BuyerController::class, 'store']);
         Route::post('buyer/update', [BuyerController::class, 'update'])->name('buyer.update');
