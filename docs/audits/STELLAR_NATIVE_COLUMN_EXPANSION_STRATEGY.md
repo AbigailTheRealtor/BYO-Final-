@@ -6,6 +6,9 @@
 > Migration baseline: `database/migrations/2026_06_15_000010_create_bridge_properties_table.php`  
 > Scope: Analysis only — no migrations, no schema changes, no code changes
 
+> **⚠ Phase 0 Validation Addendum — 2026-06-16**  
+> Phase 0 validation (`docs/audits/STELLAR_PHASE0_DATA_VALIDATION_REPORT.md`) was executed against 1,000 live Stellar records after this document was written. **Phase 0 validation is authoritative and supersedes the original 20-column promotion list when live population-rate evidence warrants adjustment.** The validated Phase 1 column count is **19** — `furnished` was demoted to Phase 2 (35% population rate in the for-sale feed, below the 50% Block threshold). All other 19 fields passed the Go threshold. See Section 8 below for the annotated field table and `STELLAR_PHASE1_NATIVE_COLUMN_MIGRATION_PLAN.md` Section 9 for the demotion rationale and Phase 2 promotion gate.
+
 ---
 
 ## Table of Contents
@@ -41,7 +44,7 @@ This is the central problem: no matching engine built on JSON extraction can run
 
 ### Recommended Action
 
-Promote the **top 20 fields** listed in Section 8 before building either the buyer or tenant matching engine. This single migration will take buyer matching from 21% to ~60% Tier 1 field coverage and unlock the core matching query patterns needed for launch.
+Promote the **top 19 fields** (adjusted from 20 per Phase 0 validation — see addendum above) listed in Section 8 before building either the buyer or tenant matching engine. This single migration will take buyer matching from 21% to ~60% Tier 1 field coverage and unlock the core matching query patterns needed for launch.
 
 ---
 
@@ -412,7 +415,7 @@ Each field is scored across four feature dimensions:
 
 **Total score = buyer + tenant + alert + ask_ai**. Ties broken by population rate (higher population ranked first), then by compliance sensitivity (legally-gated fields ranked higher to ensure they are never missed).
 
-### Top 20 Fields to Promote
+### Top 19 Fields to Promote (Adjusted from 20 per Phase 0 Validation)
 
 | # | Field Name | SQL Type | Reason | Feature Unlocked | Score |
 |---|---|---|---|---|---|
@@ -425,7 +428,7 @@ Each field is scored across four feature dimensions:
 | 7 | `year_built` | `SMALLINT` | High for buyer (decade filter); 25/25 populated; Ask AI | Age-range filter + "how old is this home?" Ask AI | 4 |
 | 8 | `association_fee` | `DECIMAL(10,2)` | High for buyer (HOA cost range); 22/25; Ask AI | HOA fee filter + Ask AI ownership cost answers | 4 |
 | 9 | `pets_allowed` | `VARCHAR(50)` | Critical for tenant (pet policy gate); 24/25 | Pet policy filter for rental matching + Ask AI | 4 |
-| 10 | `furnished` | `VARCHAR(50)` | Critical for tenant (furnished toggle); 9/25 sale sample (higher in rental feed) | Furnished/unfurnished filter for rental matching + Ask AI | 4 |
+| 10 | ~~`furnished`~~ | ~~`VARCHAR(50)`~~ | ~~Critical for tenant (furnished toggle); 9/25 sale sample (higher in rental feed)~~ **✗ DEMOTED — Phase 0 validation measured 35% population rate (Block tier). Moved to Phase 2R (rental feed gate). See addendum above.** | Deferred to Phase 2R | 4 |
 | 11 | `garage_yn` | `BOOLEAN` | High for buyer (top-5 national filter); 25/25 | Garage toggle filter for buyer matching | 3 |
 | 12 | `pool_private_yn` | `BOOLEAN` | High for buyer (FL primary feature); 25/25 | Pool toggle filter for buyer matching | 3 |
 | 13 | `waterfront_yn` | `BOOLEAN` | High for buyer (FL premium differentiator); 25/25 | Waterfront toggle for buyer matching | 3 |

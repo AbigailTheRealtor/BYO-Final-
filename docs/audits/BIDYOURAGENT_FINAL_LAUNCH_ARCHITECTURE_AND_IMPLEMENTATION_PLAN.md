@@ -7,6 +7,11 @@
 
 ---
 
+> **⚠ Phase 0 Validation Addendum — 2026-06-16**
+> Phase 0 live-data validation (`docs/audits/STELLAR_PHASE0_DATA_VALIDATION_REPORT.md`) was executed against 1,000 live Stellar records after this document was written. **Phase 0 validation supersedes the original 20-column Phase 1 list when live data proves a field is under-populated.** After Phase 0, Phase 1 is adjusted to **19 columns**: `furnished` is removed and deferred to Phase 2R (rental feed gate; 35% population rate in the for-sale feed, below the 50% Block threshold). All implementation details are in `STELLAR_PHASE1_NATIVE_COLUMN_MIGRATION_PLAN.md` Section 9.
+
+---
+
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
