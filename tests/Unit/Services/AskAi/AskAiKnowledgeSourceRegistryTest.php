@@ -12,9 +12,9 @@ use PHPUnit\Framework\TestCase;
  * AskAiKnowledgeSourceRegistry is stateless and requires no mocking.
  *
  * Test coverage (cases A–F):
- *   A. all() returns exactly the eight expected source keys
+ *   A. all() returns exactly the ten expected source keys
  *   B. Each source definition contains the required fields
- *   C. isApproved() returns true for all eight valid keys and false for unknown key
+ *   C. isApproved() returns true for all ten valid keys and false for unknown key
  *   D. getSource() returns the correct definition for a valid key and null for unknown
  *   E. requiredVersionKey() returns the version_key string for a valid source and null for unknown
  *   F. Service file contains no prohibited write or OpenAI calls (static grep on non-comment lines)
@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
 class AskAiKnowledgeSourceRegistryTest extends TestCase
 {
     /**
-     * The eight canonical source keys that must be registered.
+     * The ten canonical source keys that must be registered.
      */
     private const EXPECTED_SOURCE_KEYS = [
         'listing',
@@ -33,6 +33,8 @@ class AskAiKnowledgeSourceRegistryTest extends TestCase
         'compatibility',
         'offer_analysis',
         'governance_documents',
+        'agent_profile',
+        'agent_presets',
     ];
 
     /**
@@ -61,19 +63,19 @@ class AskAiKnowledgeSourceRegistryTest extends TestCase
     }
 
     // =========================================================================
-    // Case A — all() returns exactly the eight expected source keys
+    // Case A — all() returns exactly the ten expected source keys
     // =========================================================================
 
-    public function test_case_A_all_returns_exactly_eight_sources(): void
+    public function test_case_A_all_returns_exactly_ten_sources(): void
     {
         $registry = $this->makeRegistry();
         $all      = $registry->all();
 
         $this->assertIsArray($all);
-        $this->assertCount(8, $all, 'all() must return exactly 8 source definitions');
+        $this->assertCount(10, $all, 'all() must return exactly 10 source definitions');
     }
 
-    public function test_case_A_all_returns_all_eight_expected_source_keys(): void
+    public function test_case_A_all_returns_all_ten_expected_source_keys(): void
     {
         $registry = $this->makeRegistry();
         $all      = $registry->all();
@@ -98,7 +100,7 @@ class AskAiKnowledgeSourceRegistryTest extends TestCase
         $expected = self::EXPECTED_SOURCE_KEYS;
         sort($expected);
 
-        $this->assertSame($expected, $keys, 'all() must not contain any extra source keys beyond the eight expected');
+        $this->assertSame($expected, $keys, 'all() must not contain any extra source keys beyond the ten expected');
     }
 
     // =========================================================================

@@ -49,3 +49,12 @@ In the development environment, `seller_agent_auctions.description` and
 `buyer_agent_auctions.additional_details` were empty for all rows initially.
 Smoke-test content was added directly to listings 121 (seller) and 5 (buyer).
 Landlord listing 12 has a real `additional_details` EAV entry confirmed working.
+
+## Known storage inconsistency — seller description
+
+Some seller listings (confirmed: listing 121) store their public description in
+`seller_agent_auction_metas` under `additional_details` (EAV) rather than the
+native `description` column. The Ask AI runner fallback (`loadListingDescription`)
+handles this transparently, so Ask AI works correctly. However the native column
+remains empty for those listings. A future cleanup task should normalize seller
+description storage so all rows use the native column.

@@ -12,6 +12,8 @@ use App\Models\PropertyDnaProfile;
 use App\Models\PropertyLocationDna;
 use App\Models\SellerAgentAuction;
 use App\Models\TenantAgentAuction;
+use App\Services\AgentAi\Loaders\AgentPresetLoader;
+use App\Services\AgentAi\Loaders\AgentProfileLoader;
 use App\Services\Dna\PropertyIntelligenceProfileService;
 use App\Services\LocationDna\LocationDnaIntelligenceContextService;
 use App\Services\LocationDna\LocationDnaMarketingContextService;
@@ -96,14 +98,18 @@ class AskAiContextBuilderService
     public function buildChipContext(object $listing, string $canonicalType): array
     {
         try {
-            $canonical  = $this->normalizeListingType($canonicalType);
-            $listingId  = (int) ($listing->id ?? 0);
-            $fields     = $this->extractListingFields($listing, $canonical, $listingId);
-            $faqAnswers = $this->buildFaqAnswers($listing, $canonical);
+            $canonical    = $this->normalizeListingType($canonicalType);
+            $listingId    = (int) ($listing->id ?? 0);
+            $fields       = $this->extractListingFields($listing, $canonical, $listingId);
+            $faqAnswers   = $this->buildFaqAnswers($listing, $canonical);
+            $agentProfile = $this->buildAgentProfile($canonical, $listing);
+            $agentPresets = $this->buildAgentPresets($canonical, $listing);
 
             return [
-                'listing'     => $fields,
-                'faq_answers' => $faqAnswers,
+                'listing'       => $fields,
+                'faq_answers'   => $faqAnswers,
+                'agent_profile' => $agentProfile,
+                'agent_presets' => $agentPresets,
             ];
         } catch (\Throwable) {
             return [];
@@ -186,9 +192,13 @@ class AskAiContextBuilderService
 
             $offerAnalysis = $this->buildOfferAnalysis($canonical, $listingId);
 
+            $agentProfile = $this->buildAgentProfile($canonical, $listing);
+            $agentPresets = $this->buildAgentPresets($canonical, $listing);
+
             $sourceVersions = $this->buildSourceVersions(
                 $propertyIntelligence, $locationIntelligence,
-                $buyerAvatar, $tenantAvatar, $compatibility
+                $buyerAvatar, $tenantAvatar, $compatibility,
+                $agentProfile, $agentPresets
             );
 
             $status = $this->determineStatus(
@@ -210,6 +220,8 @@ class AskAiContextBuilderService
                 'tenant_avatar'         => $tenantAvatar,
                 'compatibility'         => $compatibility,
                 'offer_analysis'        => $offerAnalysis,
+                'agent_profile'         => $agentProfile,
+                'agent_presets'         => $agentPresets,
                 'missing_sources'       => $missingSources,
                 'warnings'              => $warnings,
                 'source_versions'       => $sourceVersions,
@@ -1578,13 +1590,19 @@ class AskAiContextBuilderService
      *
      * location_dna_lifestyle_version is populated from location_intelligence['lifestyle_version']
      * when the location intelligence section is available.
+     *
+     * agent_profile_available and agent_presets_count track whether agent context
+     * is present in this payload, allowing callers to determine if agent-related
+     * questions can be answered without a separate lookup.
      */
     protected function buildSourceVersions(
         ?array $propertyIntelligence,
         ?array $locationIntelligence,
         ?array $buyerAvatar,
         ?array $tenantAvatar,
-        ?array $compatibility
+        ?array $compatibility,
+        ?array $agentProfile = null,
+        ?array $agentPresets = null
     ): array {
         $versions = [
             'ask_ai_context'                => self::CONTEXT_VERSION,
@@ -1593,6 +1611,8 @@ class AskAiContextBuilderService
             'buyer_avatar_version'          => null,
             'tenant_avatar_version'         => null,
             'compatibility_version'         => null,
+            'agent_profile_available'       => false,
+            'agent_presets_count'           => 0,
         ];
 
         if ($propertyIntelligence !== null) {
@@ -1615,6 +1635,14 @@ class AskAiContextBuilderService
 
         if ($compatibility !== null) {
             $versions['compatibility_version'] = $compatibility['version'] ?? null;
+        }
+
+        if ($agentProfile !== null) {
+            $versions['agent_profile_available'] = true;
+        }
+
+        if ($agentPresets !== null) {
+            $versions['agent_presets_count'] = (int) ($agentPresets['preset_count'] ?? 0);
         }
 
         return $versions;
@@ -1660,6 +1688,77 @@ class AskAiContextBuilderService
     }
 
     // =========================================================================
+    // Agent Profile & Preset Context
+    // =========================================================================
+
+    /**
+     * Load the public-safe agent profile fragment for the listing's linked agent.
+     *
+     * The agent is resolved from the listing's `user_id` column (present on all four
+     * listing models). Returns null when the listing has no linked agent or when
+     * AgentProfileLoader returns null (e.g. user not found, no profile data).
+     *
+     * DATA GOVERNANCE: AgentProfileLoader already excludes all PRIVATE_KEYS
+     * (email, phone, fee amounts, commission rates). This method forwards the
+     * loader's `content` array directly — no further filtering required.
+     *
+     * @param  string $canonicalType  One of 'seller', 'buyer', 'landlord', 'tenant'.
+     * @param  object $listing        The resolved listing model instance.
+     * @return array|null
+     */
+    protected function buildAgentProfile(string $canonicalType, object $listing): ?array
+    {
+        $agentId = (int) ($listing->user_id ?? 0);
+        if ($agentId <= 0) {
+            return null;
+        }
+
+        $loader   = new AgentProfileLoader();
+        $fragment = $loader([
+            'agent_id'     => $agentId,
+            'listing_type' => $canonicalType,
+            'listing_id'   => (int) ($listing->id ?? 0),
+            'scope'        => $canonicalType,
+        ]);
+
+        return $fragment['content'] ?? null;
+    }
+
+    /**
+     * Load the public-safe agent preset summaries for the listing's linked agent.
+     *
+     * Returns null when the listing has no linked agent or when the agent has
+     * no presets (AgentPresetLoader returns null). When presets exist, the
+     * returned array has keys: `presets` (array of preset summaries) and
+     * `preset_count` (int).
+     *
+     * DATA GOVERNANCE: AgentPresetLoader already excludes all PRIVATE_KEYS
+     * (email, phone, fee amounts, commission percentages, personal details).
+     * This method forwards the loader's `content` array directly.
+     *
+     * @param  string $canonicalType  One of 'seller', 'buyer', 'landlord', 'tenant'.
+     * @param  object $listing        The resolved listing model instance.
+     * @return array|null
+     */
+    protected function buildAgentPresets(string $canonicalType, object $listing): ?array
+    {
+        $agentId = (int) ($listing->user_id ?? 0);
+        if ($agentId <= 0) {
+            return null;
+        }
+
+        $loader   = new AgentPresetLoader();
+        $fragment = $loader([
+            'agent_id'     => $agentId,
+            'listing_type' => $canonicalType,
+            'listing_id'   => (int) ($listing->id ?? 0),
+            'scope'        => $canonicalType,
+        ]);
+
+        return $fragment['content'] ?? null;
+    }
+
+    // =========================================================================
     // Fixed-shape response helpers
     // =========================================================================
 
@@ -1669,7 +1768,7 @@ class AskAiContextBuilderService
      * Includes success=false plus top-level listing_type/listing_id to match the full contract.
      * The `error` key is always present (null in this base payload).
      */
-    private function buildEmptyPayload(string $status, string $listingType, int $listingId): array
+    protected function buildEmptyPayload(string $status, string $listingType, int $listingId): array
     {
         return [
             'success'               => false,
@@ -1685,6 +1784,8 @@ class AskAiContextBuilderService
             'tenant_avatar'         => null,
             'compatibility'         => null,
             'offer_analysis'        => null,
+            'agent_profile'         => null,
+            'agent_presets'         => null,
             'missing_sources'       => [],
             'warnings'              => [],
             'source_versions'       => [
@@ -1694,6 +1795,8 @@ class AskAiContextBuilderService
                 'buyer_avatar_version'          => null,
                 'tenant_avatar_version'         => null,
                 'compatibility_version'         => null,
+                'agent_profile_available'       => false,
+                'agent_presets_count'           => 0,
             ],
             'assembled_at'          => now()->toISOString(),
             'error'                 => null,

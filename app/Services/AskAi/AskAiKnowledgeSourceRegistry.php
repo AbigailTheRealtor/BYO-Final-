@@ -125,6 +125,26 @@ class AskAiKnowledgeSourceRegistry
                 'educational',
             ],
         ],
+
+        'agent_profile' => [
+            'key'         => 'agent_profile',
+            'label'       => 'Agent Profile',
+            'description' => 'Public-safe agent profile data including name, brokerage, bio, credentials, license number, years of experience, availability, service areas, and review excerpts. Private fields (email, phone, fee amounts) are never included.',
+            'version_key' => 'AGENT_PROFILE_V1',
+            'allowed_for_question_types' => [
+                'agent_profile',
+            ],
+        ],
+
+        'agent_presets' => [
+            'key'         => 'agent_presets',
+            'label'       => 'Agent Service Presets',
+            'description' => 'Agent preset service profiles per role and property type, including services offered, commission structure type, fee type labels, and interested-in flags. Specific fee amounts and commission percentages are never included.',
+            'version_key' => 'AGENT_PRESETS_V1',
+            'allowed_for_question_types' => [
+                'agent_profile',
+            ],
+        ],
     ];
 
     /**

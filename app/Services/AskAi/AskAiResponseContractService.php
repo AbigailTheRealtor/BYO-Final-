@@ -363,6 +363,11 @@ class AskAiResponseContractService
                 'listing.business_lease_assignable',
                 // FAQ answers — seller/landlord-provided answers to common questions
                 'faq_answers',
+                // Agent profile & presets — supplemental context for compound questions
+                // (e.g. "What financing is accepted and what services does the agent offer?").
+                // Both keys are optional (null when listing has no linked agent or no presets).
+                'agent_profile',
+                'agent_presets',
             ],
             'required_sources' => ['listing'],
             'response_rules' => [
@@ -375,6 +380,35 @@ class AskAiResponseContractService
             ],
             'required_disclosures' => [
                 'Information is sourced directly from the listing data provided by the seller or landlord. Verify all details independently before making any financial or legal decision.',
+            ],
+            'refusal_template' => null,
+        ],
+
+        // -----------------------------------------------------------------------
+        // agent_profile — Public-safe agent profile and preset service data.
+        // required_sources is empty so the contract always returns contract_ready
+        // even when the listing has no linked agent or the agent has no presets;
+        // the prompt builder will simply receive null context for those keys and
+        // the response rules instruct the LLM to state the information is unavailable.
+        // -----------------------------------------------------------------------
+        'agent_profile' => [
+            'allowed_context' => [
+                'agent_profile',
+                'agent_presets',
+                'listing.listing_type',
+                'listing.listing_id',
+            ],
+            'required_sources' => [],
+            'response_rules' => [
+                'Base response only on the public agent profile and preset data explicitly provided in the context.',
+                'Do not reveal private contact information such as email addresses or phone numbers.',
+                'Do not reference protected class characteristics.',
+                'Do not invent agent credentials, services, or experience not present in the context.',
+                'If agent profile data is null or absent, state clearly that the agent profile information is not available for this listing.',
+                'Do not generate marketing copy or recommendations beyond what the structured profile data supports.',
+            ],
+            'required_disclosures' => [
+                'Agent profile information is provided by the agent and has not been independently verified by this platform.',
             ],
             'refusal_template' => null,
         ],

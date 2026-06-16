@@ -62,6 +62,8 @@ class AskAiContextBuilderServiceTest extends TestCase
         'tenant_avatar',
         'compatibility',
         'offer_analysis',
+        'agent_profile',
+        'agent_presets',
         'missing_sources',
         'warnings',
         'source_versions',

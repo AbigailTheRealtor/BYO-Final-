@@ -90,6 +90,51 @@ class AskAiQuestionClassifierService
         ],
 
         // -----------------------------------------------------------------------
+        // agent_profile — Questions about the listing agent's public profile,
+        // background, credentials, services, and preset offerings.
+        // Placed before listing_facts so that agent-intent questions (e.g.
+        // "who is the agent?", "tell me about the agent") are not accidentally
+        // swallowed by the generic listing_facts keyword list.
+        // -----------------------------------------------------------------------
+        'agent_profile' => [
+            'who is the agent',
+            'tell me about the agent',
+            'about the agent',
+            'agent profile',
+            'agent bio',
+            'agent background',
+            'agent credentials',
+            'agent experience',
+            'agent brokerage',
+            'agent license',
+            'agent qualifications',
+            'agent services',
+            'what does the agent offer',
+            'what services does the agent offer',
+            'what services does the agent provide',
+            'services does the agent provide',
+            'services the agent provides',
+            'what can this agent do',
+            'what can the agent do',
+            'what can an agent do',
+            'agent service offerings',
+            'agent presets',
+            'agent availability',
+            'agent response time',
+            'who is my agent',
+            'agent specialties',
+            'agent years of experience',
+            'agent areas served',
+            'how long has the agent been licensed',
+            'how many transactions',
+            'what brokerage is the agent with',
+            'is the agent available',
+            'what is the agent communication style',
+            'listing agent',
+            'who is the listing agent',
+        ],
+
+        // -----------------------------------------------------------------------
         // listing_facts — Deterministic factual lookup for listing fields and
         // seller/landlord FAQ answers. Routes before buyer_tenant_match so that
         // structural listing questions (bedrooms, price, lease length) are answered
@@ -222,6 +267,11 @@ class AskAiQuestionClassifierService
             'who pays utilities',
             'does it include utilities',
             'what is included in rent',
+            // Security deposit
+            'security deposit amount',
+            'how much is the security deposit',
+            'what is the security deposit',
+            'security deposit required',
             // Move-in requirements (security deposit, application fee, etc.)
             'required at move in',
             'what is required at move in',
@@ -990,6 +1040,34 @@ class AskAiQuestionClassifierService
             'financing type requested',
             'requested financing',
             'type of financing',
+            'types of financing',
+            'financing options',
+            'what financing',
+            'financing accepted',
+            'accepted financing',
+            'financing available',
+            'financing terms',
+            'what financing options',
+            'accepted loan',
+            'loans accepted',
+            'fha financing',
+            'va financing',
+            'va loan',
+            'fha loan',
+            'usda financing',
+            'usda loan',
+            'conventional financing',
+            'conventional loan',
+            'jumbo financing',
+            'jumbo loan',
+            'non-qm financing',
+            'non qm loan',
+            'no-doc financing',
+            'assumable',
+            'does the seller accept',
+            'seller accept fha',
+            'seller accept va',
+            'seller accept conventional',
             // Seller financing terms — factual retrieval of seller-offered financing.
             // Routes to listing_facts so the full listing context (including faq_answers)
             // is searched before OpenAI is called. Not in buyer_tenant_match because
@@ -1005,6 +1083,14 @@ class AskAiQuestionClassifierService
             'owner finance',
             'seller carry',
             'seller carryback',
+            // Sale terms — general factual retrieval of listing/sale terms.
+            'terms of the sale',
+            'sale terms',
+            'seller terms',
+            'listing terms',
+            'what are the terms',
+            'closing terms',
+            'offer terms',
             // Lease option / rent-to-own — factual retrieval of lease-option terms.
             // 'lease to own' is already covered; adding the 'lease option' variant.
             'lease option',
@@ -1042,6 +1128,14 @@ class AskAiQuestionClassifierService
             'what does the property description say',
             'what does the listing description say',
             'what is the property description',
+            'tell me more about this property',
+            'tell me more about this listing',
+            'tell me about this property',
+            'describe this property',
+            'describe the property',
+            'describe this listing',
+            'describe this home',
+            'describe this rental',
             // Property condition (rental)
             'condition of the rental',
             'rental property condition',
@@ -1100,6 +1194,8 @@ class AskAiQuestionClassifierService
             'current tenant lease on this property',
             // Lease length variants
             'what lease lengths are available',
+            'what lease length is available',
+            'lease length available',
             'lease length options',
             // Tenant pet details
             'tenant pet details',
@@ -1215,6 +1311,20 @@ class AskAiQuestionClassifierService
             'benefits',
             'good about this listing',
             'what is good about',
+            // Neighborhood / area — includes location_intelligence in context.
+            // Must live here (not listing_facts) so location_intelligence payload is included.
+            'what is the neighborhood like',
+            'neighborhood like',
+            'what is the area like',
+            'area like',
+            'about the area',
+            'tell me about the area',
+            'what is the area',
+            'what is the surrounding area',
+            'surrounding area',
+            'surrounding neighborhood',
+            'local area',
+            'what is the local area like',
         ],
 
         'suited_audience' => [
@@ -1266,6 +1376,15 @@ class AskAiQuestionClassifierService
             'tenant fit',
             'buyer match',
             'tenant match',
+            'match my criteria',
+            'matches my criteria',
+            'meet my criteria',
+            'meets my criteria',
+            'match my requirements',
+            'fit my criteria',
+            'does this match',
+            'does this listing match',
+            'does this property match',
             'how well does',
             'how well do',
             'would a buyer',
@@ -1461,6 +1580,7 @@ class AskAiQuestionClassifierService
         return match ($type) {
             'prohibited'            => 1.0,
             'listing_facts'         => 0.90,
+            'agent_profile'         => 0.90,
             'compatibility_signals' => 0.85,
             'property_standout'     => 0.85,
             'suited_audience'       => 0.80,
