@@ -768,9 +768,7 @@
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @php
                                     $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Purchasing Terms'];
-                                    if ($user_type === 'buyer') {
-                                        $fullServiceTabs[] = 'Broker Compensation & Agency Agreement Terms';
-                                    }
+                                    {{-- B7: Broker Compensation tab removed from client listing form --}}
                                     $fullServiceTabs[] = 'Description';
                                     $additionalDetailsIndex = count($fullServiceTabs) - 1;
                                     $aiQuestionsIndex      = count($fullServiceTabs);
@@ -859,14 +857,7 @@
                                     @endif
                                 </div>
 
-                                <!-- Broker Compensation & Agency Agreement Terms Tab (index 3) -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
-                                    id="broker-compensation-agency-agreement-terms" role="tabpanel"
-                                    aria-labelledby="broker-compensation-&-agency-agreement-terms-tab">
-                                    @if ($user_type === 'buyer')
-                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
-                                    @endif
-                                </div>
+                                {{-- B7: Broker Compensation tab hidden from client listing form --}}
 
                                 <!-- Description Tab -->
                                 <div class="tab-pane fade {{ $activeTab === $additionalDetailsIndex ? 'show active' : '' }}"

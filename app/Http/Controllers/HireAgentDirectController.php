@@ -1130,6 +1130,21 @@ class HireAgentDirectController extends Controller
             $bid->saveMeta('other_services', json_encode($clientOtherServices));
             $bid->saveMeta('hire_me_auto_bid', '1');
 
+            // ── 5. Stamp compatibility preferences from agent's preset ────
+            $agentProfile = \App\Models\AgentDefaultProfile::findForAgentWithFallback(
+                $agent->id,
+                $role,
+                strtolower($propertyType)
+            );
+            if ($agentProfile) {
+                $compat = \App\Services\AgentBidMapperService::mapCompatibilityFromProfile(
+                    $agentProfile->profile_data ?? []
+                );
+                if (!empty($compat)) {
+                    $bid->saveCompatibilityPreferences($compat);
+                }
+            }
+
             if (!empty($clientCustomServices)) {
                 $bid->saveMeta('client_custom_services', json_encode($clientCustomServices));
             }

@@ -156,6 +156,7 @@ class LandlordAgentAuctionBid extends Component
     public $interested_in_property_management_fee_other = '';
     public $brokerage_relationship = '';
     public $additional_details_broker = '';
+    public $retained_deposits = '';
 
 
     // Presentation & Promotional Materials
@@ -881,6 +882,7 @@ class LandlordAgentAuctionBid extends Component
                 $this->applyPresetField('early_termination_fee_amount', $mapped['early_termination_fee_amount'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('brokerage_relationship', $mapped['brokerage_relationship'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('additional_details_broker', $mapped['additional_details_broker'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('retained_deposits', $mapped['retained_deposits'] ?? null, $presetFieldsApplied);
                 // Compatibility preferences from preset — blank-field guard:
                 // only fill a section if the current bid has no data for that section yet.
                 $compatFromPreset = AgentBidMapperService::mapCompatibilityFromProfile($profile->profile_data ?? []);
@@ -1473,6 +1475,7 @@ class LandlordAgentAuctionBid extends Component
 
             // Additional Terms
             $bid->saveMeta('additional_details_broker', $this->additional_details_broker);
+            $bid->saveMeta('retained_deposits', $this->retained_deposits);
             $landlordAuction = \App\Models\LandlordAgentAuction::find($this->auctionId);
             if ($landlordAuction && $landlordAuction->isCreatedByAgent()) {
                 $bid->saveMeta('referral_fee_percent', $this->referral_fee_percent);

@@ -288,7 +288,7 @@
         </div>
     </div>
 
-    @if (!empty($data['why_hire_you']) || !empty($data['what_sets_you_apart']))
+    @if (!empty($data['why_hire_you']) || !empty($data['what_sets_you_apart']) || !empty($data['additional_details']))
         <div class="profile-section">
             <div class="profile-section-header">
                 <i class="fa-solid fa-user"></i> About This Agent
@@ -307,9 +307,15 @@
                     </div>
                 @endif
                 @if (!empty($data['what_sets_you_apart']))
-                    <div class="mb-0">
+                    <div class="mb-3">
                         <div class="profile-field-label">What Sets Me Apart</div>
                         <div class="profile-field-value">{{ $data['what_sets_you_apart'] }}</div>
+                    </div>
+                @endif
+                @if (!empty($data['additional_details']))
+                    <div class="mb-0">
+                        <div class="profile-field-label">Additional Notes</div>
+                        <div class="profile-field-value">{{ $data['additional_details'] }}</div>
                     </div>
                 @endif
             </div>
@@ -528,7 +534,8 @@
     {{-- ── PRESENTATION & LINKS ─────────────────────────────────────── --}}
     @php
         $hasLinks = !empty($data['presentation_link']) || !empty($data['business_card_link'])
-            || !empty($data['website_link']) || !empty($data['social_media']);
+            || !empty($data['website_link']) || !empty($data['social_media'])
+            || !empty($data['reviews_links']);
     @endphp
     @if ($hasLinks)
         <div class="profile-section">
@@ -563,12 +570,24 @@
                     </div>
                 @endif
                 @if (!empty($data['social_media']))
-                    <div class="mb-0">
+                    <div class="mb-2">
                         <div class="profile-field-label">Social Media</div>
                         <div>
                             @foreach ($data['social_media'] as $url)
                                 <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="link-pill">
                                     <i class="fa-solid fa-share-alt me-1"></i>{{ $url }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+                @if (!empty($data['reviews_links']))
+                    <div class="mb-0">
+                        <div class="profile-field-label">Reviews &amp; Testimonials</div>
+                        <div>
+                            @foreach ($data['reviews_links'] as $url)
+                                <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="link-pill">
+                                    <i class="fa-solid fa-star me-1"></i>{{ $url }}
                                 </a>
                             @endforeach
                         </div>
@@ -691,6 +710,53 @@
                         </ul>
                     </div>
                 @endif
+            </div>
+        </div>
+    @endif
+
+    {{-- ── WORKING STYLE & COMPATIBILITY ────────────────────────────── --}}
+    @php
+        $compatSectionLabels = [
+            'communication_preferences'   => 'Communication Preferences',
+            'negotiation_approach'         => 'Negotiation Approach',
+            'guidance_style'               => 'Guidance Style',
+            'collaboration_preferences'    => 'Collaboration Preferences',
+            'transaction_strategy'         => 'Transaction Strategy',
+            'representation_philosophy'    => 'Representation Philosophy',
+            'representation_priorities'    => 'Representation Priorities',
+        ];
+        $hasCompatibility = !empty($compatibilityData);
+    @endphp
+    @if ($hasCompatibility)
+        <div class="profile-section">
+            <div class="profile-section-header"><i class="fa-solid fa-handshake-simple"></i> Working Style &amp; Compatibility</div>
+            <div class="profile-section-body">
+                @foreach ($compatSectionLabels as $section => $label)
+                    @if (!empty($compatibilityData[$section]) && is_array($compatibilityData[$section]))
+                        @php
+                            $fields = $compatibilityData[$section];
+                            $nonEmpty = array_filter($fields, fn($v) => $v !== null && $v !== '' && $v !== []);
+                        @endphp
+                        @if (!empty($nonEmpty))
+                            <div class="mb-3">
+                                <div class="profile-field-label">{{ $label }}</div>
+                                <div class="row g-2 mt-1">
+                                    @foreach ($nonEmpty as $fieldKey => $fieldVal)
+                                        <div class="col-sm-6">
+                                            <div class="profile-field-value small">
+                                                @if (is_array($fieldVal))
+                                                    {{ implode(', ', array_filter($fieldVal, fn($v) => $v !== null && $v !== '')) }}
+                                                @else
+                                                    {{ $fieldVal }}
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    @endif
+                @endforeach
             </div>
         </div>
     @endif

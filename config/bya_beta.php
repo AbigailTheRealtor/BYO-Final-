@@ -23,4 +23,18 @@ return [
     */
     'allowed_user_ids' => [],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Bidding Period Feature Flag
+    |--------------------------------------------------------------------------
+    | When false (default), the "Bidding Period" auction type option is hidden
+    | from all offer listing creation / edit forms.  All new listings default
+    | to "Traditional".  Existing listings already saved with auction_type =
+    | "Bidding Period" continue to function normally — this flag only controls
+    | the creation UI.
+    |
+    | Set BIDDING_PERIOD_ENABLED=true in .env to show the option.
+    */
+    'bidding_period_enabled' => (bool) env('BIDDING_PERIOD_ENABLED', false),
+
 ];

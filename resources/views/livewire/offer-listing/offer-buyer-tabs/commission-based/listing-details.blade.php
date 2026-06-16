@@ -182,6 +182,7 @@
     </div>
 
 
+    @if (config('bya_beta.bidding_period_enabled'))
      <div class="form-group">
         <label class="fw-bold">Listing Type: <span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -233,6 +234,10 @@
         <i class="fa-solid fa-circle-info me-1"></i>
         <strong>Bidding Period:</strong> The timer creates a structured window for offers to be submitted. You may review, accept, counter, or reject offers at any time during or after the bidding period.
     </div>
+    @else
+    {{-- Bidding Period disabled (BIDDING_PERIOD_ENABLED=false). Default to Traditional. --}}
+    <input type="hidden" wire:model="auction_type" value="Traditional">
+    @endif
 
 </div>
 

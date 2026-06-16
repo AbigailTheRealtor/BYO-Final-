@@ -203,6 +203,12 @@ class AgentBidMapperService
             'additional_details_broker'           => $profileData['additional_details_broker']           ?? '',
             'retained_deposits'                   => $profileData['retained_deposits']                   ?? '',
 
+            // All roles: availability (used by auto-bid stamp and public profile display)
+            'avg_response_time'                   => $profileData['avg_response_time']                   ?? '',
+            'availability_status'                 => $profileData['availability_status']                 ?? '',
+            'evenings_available'                  => $profileData['evenings_available']                  ?? '',
+            'weekends_available'                  => $profileData['weekends_available']                  ?? '',
+
             // All roles: agent-to-agent referral fee
             'referral_fee_percent'                => $profileData['referral_fee_percent']                ?? '',
 

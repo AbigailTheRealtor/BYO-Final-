@@ -1644,6 +1644,14 @@ class TenantOfferListing extends Component
                 $this->pool_type = [];
             }
         }
+
+        // When Bidding Period is disabled, force auction_type to Traditional so
+        // the server-side property is set correctly.  A Blade hidden-input with
+        // wire:model does NOT fire input events, so it cannot update the property.
+        // loadDraft() will have already overwritten this for existing listings.
+        if (!config('bya_beta.bidding_period_enabled') && empty($this->auction_type)) {
+            $this->auction_type = 'Traditional';
+        }
     }
     public function startNew()
     {

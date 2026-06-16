@@ -189,6 +189,7 @@ $auction_lengths_seller = [
         <span class="error mt-2" id="expiration_date_error"></span>
     </div>
 
+    @if (config('bya_beta.bidding_period_enabled'))
     <div class="form-group">
         <label class="fw-bold">Listing Type: <span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -207,13 +208,10 @@ $auction_lengths_seller = [
         <span class="error mt-2" id="auction_type_error"></span>
     </div>
 
-
     <!-- Auction Length (Only for Bidding Period) -->
     <div class="form-group mt-3" @if ($auction_type !== 'Bidding Period') style="display: none;" @endif>
         <label class="fw-bold">Bidding Period Length: <span class="text-danger">*</span>
-
         </label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select how long offers may be submitted during the active bidding period. You may review, accept, counter, or reject offers at any time during or after the bidding period.">
             <i class="fa-solid fa-circle-info"></i> </span>
@@ -234,6 +232,10 @@ $auction_lengths_seller = [
         <i class="fa-solid fa-circle-info me-1"></i>
         <strong>Bidding Period:</strong> The timer creates a structured window for offers to be submitted. You may review, accept, counter, or reject offers at any time during or after the bidding period.
     </div>
+    @else
+    {{-- Bidding Period disabled (BIDDING_PERIOD_ENABLED=false). Default to Traditional. --}}
+    <input type="hidden" wire:model="auction_type" value="Traditional">
+    @endif
 
 
 </div>

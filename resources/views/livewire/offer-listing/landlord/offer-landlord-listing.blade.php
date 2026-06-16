@@ -1034,17 +1034,7 @@
                                         Description
                                     </button>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(4)"
-                                        id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
-                                        data-bs-target="#broker-compensation-agency-agreement-terms"
-                                        type="button" role="tab"
-                                        aria-controls="broker-compensation-agency-agreement-terms"
-                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        Broker Compensation &amp; Agency Agreement Terms
-                                    </button>
-                                </li>
+                                {{-- B7: Broker Compensation tab hidden from client listing form --}}
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
                                         wire:click="setActiveTab(5)"
@@ -1163,19 +1153,7 @@
 
                                 </div>
 
-                                <!-- Broker Compensation & Agency Agreement Terms Tab (full_service: index 4) -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
-                                    id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
-                                    @endif
-                                </div>
+                                {{-- B7: Broker Compensation panel hidden from client listing form --}}
 
                                 <!-- Tax, Legal, HOA & Disclosures Tab (full_service: index 5) -->
                                 <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"

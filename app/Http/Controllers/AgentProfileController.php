@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AgentDefaultProfile;
 use App\Models\User;
+use App\Services\AgentBidMapperService;
 use App\Services\AgentPresetCatalog;
 use App\Support\ServicesFormatter;
 use Illuminate\Support\Facades\Auth;
@@ -66,6 +67,8 @@ class AgentProfileController extends Controller
         'preferred_contact_method',
         // Marketing plan (visible to all)
         'marketing_plan',
+        // Additional notes (visible to all)
+        'additional_details',
     ];
 
     public function show(string $agentShortId)
@@ -170,6 +173,10 @@ class AgentProfileController extends Controller
             }
         }
 
+        // Extract compatibility data before the whitelist strip so the view can
+        // render a "Working Style & Compatibility" section from the structured sections.
+        $compatibilityData = AgentBidMapperService::mapCompatibilityFromProfile($data);
+
         // Strip every key that is not on the public-safe whitelist so that
         // private compensation/fee fields are never present in the view,
         // regardless of what any future template edit might reference.
@@ -204,7 +211,8 @@ class AgentProfileController extends Controller
             'isOwnerPreview',
             'agentShortId',
             'groupedProfileServices',
-            'compensationData'
+            'compensationData',
+            'compatibilityData'
         ));
     }
 }

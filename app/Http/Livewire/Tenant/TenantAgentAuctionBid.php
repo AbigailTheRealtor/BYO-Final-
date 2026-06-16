@@ -105,6 +105,7 @@ class TenantAgentAuctionBid extends Component
     public $isListingCreatedByAgent = false;
     public $brokerage_relationship;
     public $additional_details_broker;
+    public $retained_deposits = '';
 
     // Broker Fee Timing
     public $broker_fee_timing;
@@ -753,6 +754,7 @@ class TenantAgentAuctionBid extends Component
                 $this->applyPresetField('broker_fee_timing_other', $mapped['broker_fee_timing_other'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('brokerage_relationship', $mapped['brokerage_relationship'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('additional_details_broker', $mapped['additional_details_broker'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('retained_deposits', $mapped['retained_deposits'] ?? null, $presetFieldsApplied);
                 // Compatibility preferences from preset — blank-field guard:
                 // only fill a section if the current bid has no data for that section yet.
                 $compatFromPreset = AgentBidMapperService::mapCompatibilityFromProfile($profile->profile_data ?? []);
@@ -1270,6 +1272,7 @@ class TenantAgentAuctionBid extends Component
             $bid->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
             $bid->saveMeta('brokerage_relationship', $this->brokerage_relationship);
             $bid->saveMeta('additional_details_broker', $this->additional_details_broker);
+            $bid->saveMeta('retained_deposits', $this->retained_deposits);
             if ($auction->isCreatedByAgent()) {
                 $bid->saveMeta('referral_fee_percent', $this->referral_fee_percent);
             }
