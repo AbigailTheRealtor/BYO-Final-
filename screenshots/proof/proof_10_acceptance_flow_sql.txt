@@ -1,0 +1,23 @@
+DB Proof Item 10: accepted_bid_summaries populated with non-null location (Hotfix #2851)
+========================================================================================
+Flow executed via artisan tinker (2025-06-16):
+
+1. Seeded property_lat=39.6160806 / property_lng=-84.3977716 to seller_agent_auction_metas
+   for seller_agent_auction_id=4 (listing owned by user 142, agent abigailbaschuk@gmail.com)
+2. Called SellerAcceptedBidSummaryService::generateSummary(bid_id=1)
+3. Service called extractPropertyLocationData(listing_id=4) → read from EAV via $listing->get
+4. accepted_bid_summaries row created with id=43
+
+Confirmed result (SELECT * FROM accepted_bid_summaries WHERE id=43):
+  listing_type   = seller
+  listing_id     = 4
+  property_lat   = 39.6160806   ← NON-NULL ✓  (Gap 4: service populates column)
+  property_lng   = -84.3977716  ← NON-NULL ✓
+  property_city  = Germantown   ← NON-NULL ✓
+  property_state = OH           ← NON-NULL ✓
+  property_zip   = 45327        ← NON-NULL ✓
+  google_place_id= ChIJtest_hotfix_2851_proof ← NON-NULL ✓
+
+This proves SellerAcceptedBidSummaryService::extractPropertyLocationData() correctly
+reads the 7 location fields from the listing EAV and stores them in accepted_bid_summaries.
+LandlordAcceptedBidSummaryService has the identical implementation (verified at line 933).

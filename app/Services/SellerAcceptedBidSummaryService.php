@@ -622,6 +622,17 @@ class SellerAcceptedBidSummaryService
     /**
      * Extract location fields from the listing's EAV meta for the accepted bid
      * summary snapshot.  Returns only populated keys so array_merge() is safe.
+     *
+     * Hotfix #2851 — populates the seven location columns added to the
+     * accepted_bid_summaries table:
+     *   property_address, property_city, property_county, property_state,
+     *   property_zip, property_lat (numeric), property_lng (numeric)
+     * plus google_place_id, legal_description, and parcel_id.
+     *
+     * Source: seller_agent_auction_metas EAV, keyed by the SellerAgentAuction
+     * model's magic `get` accessor which decodes all stored meta into a stdClass.
+     * Coordinates are cast to float; null/empty strings are filtered out via
+     * array_filter() so no NULL columns overwrite existing data on re-generation.
      */
     protected function extractPropertyLocationData(SellerAgentAuction $listing): array
     {

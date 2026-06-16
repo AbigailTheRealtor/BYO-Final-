@@ -260,6 +260,11 @@ class LandlordOfferListing extends Component
     public $meeting_details_email = '';
 
     public $address = '';
+    // Hotfix #2851 — coordinates wired via Google Places autocomplete callback.
+    // Populated by byoInitLandlordOfferPlaces() JS → Livewire @this.set() calls.
+    // Persisted to landlord_agent_auction_metas EAV via saveMeta() and reloaded
+    // in loadDraft().  Copied into accepted_bid_summaries at acceptance time by
+    // LandlordAcceptedBidSummaryService::extractPropertyLocationData().
     public $property_lat = '';
     public $property_lng = '';
     public $google_place_id = '';

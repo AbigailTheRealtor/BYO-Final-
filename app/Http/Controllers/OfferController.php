@@ -1605,36 +1605,61 @@ class OfferController extends Controller
 
     /**
      * Ensure the offer meta bag contains property coordinates before the acceptance
-     * snapshot is frozen.  If the buyer/tenant never submitted coordinates via the
-     * property form, we fall back to the coordinates stored in the listing_snapshot
-     * that was captured when the offer was first created.
+     * snapshot is frozen.  Seller and landlord listings carry the property address
+     * and coordinates — we read directly from their EAV meta and copy to the offer.
+     * Buyer/tenant offers use Location DNA, not a fixed address, so they are skipped.
      */
     private function inheritListingLocationToOfferMeta(Offer $offer): void
     {
-        // Only inherit for offers that carry a property address (buyer / tenant).
-        if (!in_array($offer->role, ['buyer', 'tenant'])) {
+        // Only inherit for offers linked to a property listing (seller / landlord).
+        if (!in_array($offer->role, ['seller', 'landlord'])) {
             return;
         }
 
-        // Nothing to do if both coordinates are already stored on the offer.
-        $existingLat = $offer->getMeta('prop_lat');
-        $existingLng = $offer->getMeta('prop_lng');
-        if ($existingLat !== null && $existingLat !== '' && $existingLng !== null && $existingLng !== '') {
-            return;
-        }
+        $lat     = null;
+        $lng     = null;
+        $placeId = null;
 
-        // Pull coordinates from the listing snapshot captured at offer-creation time.
-        $snapshot = $offer->listing_snapshot ?? [];
-        $lat      = $snapshot['property_lat'] ?? null;
-        $lng      = $snapshot['property_lng'] ?? null;
-        $placeId  = $snapshot['google_place_id'] ?? null;
-
-        if ($lat !== null && $lat !== '' && $lng !== null && $lng !== '') {
-            $offer->saveMeta('prop_lat', $lat);
-            $offer->saveMeta('prop_lng', $lng);
-            if ($placeId) {
-                $offer->saveMeta('prop_google_place_id', $placeId);
+        if ($offer->role === 'seller') {
+            // The SellerAgentAuction stores a back-reference meta 'linked_offer_auction_id'
+            // pointing at the OfferAuction ID.  Reverse the lookup to find the listing.
+            $metaRow = \App\Models\SellerAgentAuctionMeta::where('meta_key', 'linked_offer_auction_id')
+                ->where('meta_value', (string) $offer->offer_auction_id)
+                ->first();
+            if ($metaRow) {
+                $listing = \App\Models\SellerAgentAuction::with('meta')
+                    ->find($metaRow->seller_agent_auction_id);
+                if ($listing) {
+                    $lat     = $listing->info('property_lat');
+                    $lng     = $listing->info('property_lng');
+                    $placeId = $listing->info('google_place_id');
+                }
             }
+        } elseif ($offer->role === 'landlord') {
+            // The OfferAuction stores 'linked_landlord_auction_id' pointing at the
+            // LandlordAgentAuction ID.
+            $offer->loadMissing('offerAuction.metas');
+            $linkedLandlordId = $offer->offerAuction?->info('linked_landlord_auction_id');
+            if ($linkedLandlordId) {
+                $listing = \App\Models\LandlordAgentAuction::with('meta')
+                    ->find((int) $linkedLandlordId);
+                if ($listing) {
+                    $lat     = $listing->info('property_lat');
+                    $lng     = $listing->info('property_lng');
+                    $placeId = $listing->info('google_place_id');
+                }
+            }
+        }
+
+        // Nothing to copy if the listing has no coordinates yet.
+        if ($lat === null || $lat === '' || $lng === null || $lng === '') {
+            return;
+        }
+
+        $offer->saveMeta('prop_lat', $lat);
+        $offer->saveMeta('prop_lng', $lng);
+        if ($placeId) {
+            $offer->saveMeta('prop_google_place_id', $placeId);
         }
     }
 }

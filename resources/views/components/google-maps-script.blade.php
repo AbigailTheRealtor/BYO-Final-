@@ -1,3 +1,24 @@
+{{--
+  Google Maps Script Loader — Hotfix #2851
+  =========================================
+  Injects the Google Maps JavaScript API <script> tag with the correct API key
+  and requested library set.  Renders a visible amber warning when the key is
+  absent so developers notice the misconfiguration immediately.
+
+  Prerequisites
+  -------------
+  - GOOGLE_PLACES_API_KEY must be set in .env (not only as a Replit secret).
+    The artisan serve / php-fpm process reads from .env via phpdotenv; Replit
+    secrets alone are NOT injected into the workflow process environment.
+  - The key must have the Maps JavaScript API and Places API enabled in Google
+    Cloud Console, and must allow the dev/prod domains as referrers.
+
+  Props
+  -----
+  libraries  (string, default 'places')  — comma-separated Maps JS library list
+  callback   (string|null, default null) — global JS function name called once
+             the API is ready (e.g. 'byoInitSellerOfferPlaces')
+--}}
 @props(['libraries' => 'places', 'callback' => null])
 @php
     $key = config('services.google.places_key', '');

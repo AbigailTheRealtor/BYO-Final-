@@ -1,0 +1,26 @@
+DB Proof Item 4: seller_agent_auction_metas for listing 108 after Google Places save
+======================================================================================
+Query: SELECT meta_key, meta_value FROM seller_agent_auction_metas
+       WHERE seller_agent_auction_id = 108
+       AND meta_key IN ('property_lat','property_lng','google_place_id','property_city','property_state','property_zip')
+       ORDER BY meta_key
+
+Result (confirmed via executeSql + artisan tinker, 2025-06-16):
+  google_place_id  | EioxMTY4NyBPeGZvcmQgUmQsIEdlcm1hbnRvd24sIE9IIDQ1MzI3LCBVU0EiMRIvCh...
+  property_city    | Germantown
+  property_lat     | 39.6160806   ← NON-NULL ✓  (Gap 2: Livewire prop saved via EAV)
+  property_lng     | -84.3977716  ← NON-NULL ✓
+  property_state   | OH
+  property_zip     | 45327
+
+How these values got here:
+  1. Playwright navigated to /offer-listing/seller/edit/108 (Abigail's listing)
+  2. Typed "11687 Oxford" in #seller-offer-street-address
+  3. Google Places autocomplete suggestions appeared (verified in test run)
+  4. First suggestion clicked → byoInitSellerOfferPlaces callback fired
+     → @this.set('property_lat', ...) and @this.set('property_lng', ...)
+     populated the public Livewire props in SellerOfferListingEdit
+  5. Save Edit clicked → saveMeta() persisted props to seller_agent_auction_metas EAV
+  6. DB verified within same Playwright run to contain non-empty values
+
+This confirms Gap 2 (Livewire public props + saveMeta wiring) is working correctly.

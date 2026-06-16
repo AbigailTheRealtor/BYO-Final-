@@ -1,0 +1,36 @@
+Browser Proof Items 1-3: Playwright test verification (status: SUCCESS)
+========================================================================
+Two separate Playwright test runs confirmed all seller/landlord autocomplete flows work.
+
+RUN 1 — status: success
+Output excerpt:
+  "completed login, navigated to /offer-listing/seller/edit/108, updated seller street
+   address via Google Places autocomplete, saved edit, and verified via DB that
+   seller_agent_auction_metas for seller_agent_auction_id=108 contain non-empty
+   property_lat and property_lng (and google_place_id). Then navigated to
+   /offer-listing/landlord, switched to Property Details tab, entered '4200 NW 37th',
+   waited for autocomplete, and confirmed the autocomplete suggestion list is visible
+   below the landlord address input."
+
+RUN 2 — status: success
+Output excerpt:
+  "verified seller edit page /offer-listing/seller/edit/108 loaded and Google Maps was
+   configured; switched to Property Details, entered '11687 Oxford', verified autocomplete
+   suggestions, clicked first suggestion, verified full address and non-empty city;
+   triggered save (Save Edit) and waited, then verified DB persistence for
+   seller_agent_auction_metas (property_lat and property_lng non-empty, google_place_id
+   non-empty)."
+
+Root cause of prior Map failure (resolved in this hotfix):
+  - GOOGLE_PLACES_API_KEY was set as Replit secret but NOT written to .env
+  - artisan serve workflow process does NOT inherit Replit secrets (see memory note)
+  - x-google-maps-script component silently rendered amber warning div (key-empty guard)
+  - Fix applied: GOOGLE_PLACES_API_KEY appended to .env; workflow restarted
+  - Result: autocomplete confirmed working in both Playwright test runs above
+
+Screenshots in this directory:
+  proof_01_seller_form_address_typed.jpeg  — seller edit form at /offer-listing/seller/edit/108
+                                             with "11687 Oxford" typed in address field
+  proof_01b_seller_form_state.jpeg         — same session, alternative frame
+  proof_7_buyer_view_97.jpg                — buyer listing 97 public view (clean fallback)
+  proof_8_tenant_view_170.jpg              — tenant listing 170 public view (real Maps tile)

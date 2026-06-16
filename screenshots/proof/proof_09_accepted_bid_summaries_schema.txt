@@ -1,0 +1,19 @@
+DB Proof Item 9: accepted_bid_summaries location columns (Hotfix #2851)
+=======================================================================
+Query: SELECT column_name, data_type FROM information_schema.columns
+       WHERE table_name = 'accepted_bid_summaries'
+       AND column_name IN ('property_address','property_city','property_county',
+                           'property_lat','property_lng','property_state','property_zip')
+       ORDER BY column_name
+
+Result (confirmed via executeSql):
+  property_address   | character varying
+  property_city      | character varying
+  property_county    | character varying
+  property_lat       | numeric
+  property_lng       | numeric
+  property_state     | character varying
+  property_zip       | character varying
+
+All 7 location columns are present with correct types.
+Migration ran as part of the prior #2851 merge.
