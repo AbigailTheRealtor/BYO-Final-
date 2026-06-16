@@ -3026,6 +3026,11 @@
     var _sellerPlacesNode = null;
     window.byoInitSellerOfferPlaces = function() {
         var input = document.getElementById('seller-offer-street-address');
+        // Early-return when Maps API is not ready yet. _sellerPlacesNode is intentionally
+        // NOT assigned here — the assignment only happens after a successful Autocomplete
+        // construction below. This means the guard on the next line is safe: if we returned
+        // early on a previous call (API not ready), _sellerPlacesNode is still null, so the
+        // next call will try again. Do not move the assignment above this guard.
         if (!input || !window.google || !window.google.maps || !window.google.maps.places) { return; }
         if (input === _sellerPlacesNode) { return; }
         _sellerPlacesNode = input;

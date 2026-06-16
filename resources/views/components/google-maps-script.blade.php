@@ -32,6 +32,26 @@
         }
     @endphp
     <script async defer src="{{ $src }}"></script>
+    {{-- Self-diagnosing warning: if the Maps API fails to load (e.g. RefererNotAllowedMapError),
+         a clear console.error fires after 5 s explaining what the developer must do in Google Cloud
+         Console. This does NOT change any functional behaviour — it is diagnostic-only. --}}
+    <script>
+    (function () {
+        setTimeout(function () {
+            if (typeof google === 'undefined') {
+                console.error(
+                    '[BYO Maps] Google Maps did not load within 5 seconds. ' +
+                    'If you see a RefererNotAllowedMapError or InvalidKeyMapError above, ' +
+                    'add this domain to the API key\'s referrer allowlist in Google Cloud Console: ' +
+                    window.location.hostname + '\n' +
+                    'Common domains to allow:\n' +
+                    '  ' + window.location.hostname + '/*\n' +
+                    'Also ensure the Maps JavaScript API and Places API are enabled for the key.'
+                );
+            }
+        }, 5000);
+    })();
+    </script>
 @else
     <div style="border: 2px solid #f59e0b; background-color: #fffbeb; color: #92400e; padding: 8px 12px; border-radius: 4px; font-size: 13px; margin: 4px 0;">
         &#9888; Google Maps is not configured for this environment &mdash; address autocomplete is unavailable.

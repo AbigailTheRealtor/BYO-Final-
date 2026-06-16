@@ -680,7 +680,7 @@
      multiple location-dna-map components appear on the same view.
      The runtime guard (typeof google check + existing-script check) provides a
      second layer of defence against duplicate network requests.                   --}}
-@if($hasMapData && ($tier === 'polygons' || $tier === 'radii' || $useBoundaryMap))
+@if($hasMapData && ($tier === 'polygons' || $tier === 'radii' || $useBoundaryMap) && $mapsKey !== '')
 @once
 @push('scripts')
 <script>
