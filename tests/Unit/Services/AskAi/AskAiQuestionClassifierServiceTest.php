@@ -1652,4 +1652,55 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $this->assertSame('listing_facts', $result['question_type'],
             '"Is the seller offering concessions?" must remain listing_facts');
     }
+
+    // =========================================================================
+    // Case S — Cost-of-ownership / carrying-cost question routing
+    //
+    // Broad cost-of-ownership questions ("how much it costs to own",
+    // "what are the carrying costs", etc.) previously had no listing_facts
+    // keyword match and fell through to 'unsupported', showing "I may need
+    // the agent to confirm that" in the modal.  A dedicated keyword block was
+    // added to the classifier so these route directly to listing_facts where
+    // the full cost context (taxes, HOA, CDD, etc.) is passed to OpenAI.
+    // =========================================================================
+
+    /** @dataProvider costOfOwnershipProvider */
+    public function test_case_S_cost_of_ownership_classifies_as_listing_facts(string $q): void
+    {
+        $result = $this->makeService()->classify($q);
+        $this->assertSame('listing_facts', $result['question_type'],
+            "\"$q\" must route to listing_facts (cost-of-ownership phrase)");
+    }
+
+    public static function costOfOwnershipProvider(): array
+    {
+        return [
+            'how much it costs to own'       => ['Tell me about how much it costs to own the property'],
+            'cost to own bare'               => ['cost to own'],
+            'cost to own full'               => ['What is the cost to own this property?'],
+            'costs to own'                   => ['What are the costs to own?'],
+            'cost of ownership'              => ['What is the cost of ownership?'],
+            'costs of ownership'             => ['What are the costs of ownership for this home?'],
+            'ownership costs'                => ['What are the ownership costs?'],
+            'carrying costs'                 => ['What are the carrying costs for this property?'],
+            'what does it cost to own'       => ['What does it cost to own this home?'],
+            'costs of owning'                => ['What are the costs of owning this property?'],
+        ];
+    }
+
+    public function test_case_S_existing_cost_phrase_still_routes(): void
+    {
+        // Regression guard: pre-existing "how much does it cost" must not break.
+        $result = $this->makeService()->classify('How much does it cost?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"How much does it cost?" must remain listing_facts');
+    }
+
+    public function test_case_S_what_is_the_cost_still_routes(): void
+    {
+        // Regression guard: pre-existing "what is the cost" must not break.
+        $result = $this->makeService()->classify('What is the cost?');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"What is the cost?" must remain listing_facts');
+    }
 }

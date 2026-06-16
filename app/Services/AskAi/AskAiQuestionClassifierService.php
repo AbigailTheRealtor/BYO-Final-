@@ -163,6 +163,19 @@ class AskAiQuestionClassifierService
             'what is the price',
             'what is the cost',
             'purchase price',
+            // Cost of ownership — broad carrying-cost questions (taxes, HOA, fees, etc.
+            // bundled). These do not resolve to a single field; the full listing_facts
+            // context is passed to OpenAI to synthesize a cost summary from whatever
+            // structured cost data (taxes, HOA, CDD, etc.) is present.
+            'how much it costs',
+            'cost to own',
+            'costs to own',
+            'cost of ownership',
+            'costs of ownership',
+            'ownership costs',
+            'carrying costs',
+            'what does it cost to own',
+            'costs of owning',
             // Rent amount
             'monthly rent',
             'rent amount',

@@ -3783,4 +3783,125 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $this->assertSame('description_fallback_miss', $result['outcome_category'],
             'L12: no-key sentinel → outcome_category must be description_fallback_miss');
     }
+
+    // =========================================================================
+    // Case S — agent_profile question type: routing, contract, and output shape
+    //
+    // "Tell me about the agent" classifies as agent_profile.  The response
+    // contract for agent_profile has required_sources:[] so the contract is
+    // ALWAYS contract_ready regardless of whether agent context is present.
+    // The runner must call the internal runner, get a prompt package, call
+    // OpenAI, and return the nine-key result shape with success=true when all
+    // stages succeed.
+    //
+    // S1. Happy path — classifier returns agent_profile; internal runner, adapter,
+    //     and final builder all succeed; result has success=true, status=ready,
+    //     and all nine required keys.
+    // S2. agent_profile question type is forwarded unchanged to the internal runner
+    //     (i.e. the classification stored in the result reflects agent_profile).
+    // S3. Normalizer is NOT invoked for agent_profile questions (it only fires for
+    //     unsupported question types).
+    // =========================================================================
+
+    private function makeAgentProfileInternalResult(): array
+    {
+        return $this->makeInternalResult([
+            'context'  => ['status' => 'assembled', 'listing_type' => 'seller', 'agent_profile' => ['agent_name' => 'Jane Smith']],
+            'contract' => ['status' => 'contract_ready', 'question_type' => 'agent_profile'],
+            'prompt_package' => [
+                'status'               => 'prompt_ready',
+                'question_type'        => 'agent_profile',
+                'required_disclosures' => [],
+                'source_attribution'   => ['required_sources' => []],
+                'refusal_template'     => null,
+            ],
+        ]);
+    }
+
+    private function makeAgentProfileFinalResponse(): array
+    {
+        return $this->makeFinalResponse([
+            'answer'             => 'Jane Smith is a licensed agent specialising in residential sales.',
+            'disclosures'        => [],
+            'source_attribution' => ['required_sources' => []],
+        ]);
+    }
+
+    // ── S1 ── Happy path: all stages succeed → success=true, status=ready ────
+
+    public function test_case_S1_agent_profile_happy_path_returns_success_true(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('agent_profile'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeAgentProfileInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult([
+            'raw_response' => 'Jane Smith is a licensed agent specialising in residential sales.',
+        ]));
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeAgentProfileFinalResponse());
+
+        $result = $runner->run('seller', 121, 'Tell me about the agent');
+
+        $this->assertTrue($result['success'], 'S1: agent_profile happy path must return success=true');
+        $this->assertSame('ready', $result['status'], 'S1: agent_profile happy path must return status=ready');
+    }
+
+    public function test_case_S1_agent_profile_happy_path_has_all_nine_required_keys(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('agent_profile'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeAgentProfileInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeAgentProfileFinalResponse());
+
+        $result = $runner->run('seller', 121, 'Tell me about the agent');
+
+        foreach (self::REQUIRED_RESULT_KEYS as $key) {
+            $this->assertArrayHasKey($key, $result, "S1: result must contain required key '{$key}'");
+        }
+    }
+
+    // ── S2 ── Classification is forwarded: result['classification'] reflects agent_profile ─
+
+    public function test_case_S2_agent_profile_classification_is_stored_in_result(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('agent_profile'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeAgentProfileInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeAgentProfileFinalResponse());
+
+        $result = $runner->run('seller', 121, 'Tell me about the agent');
+
+        $this->assertIsArray($result['classification'], 'S2: classification must be an array');
+        $this->assertSame(
+            'agent_profile',
+            $result['classification']['question_type'],
+            'S2: classification question_type must be agent_profile'
+        );
+    }
+
+    // ── S3 ── Normalizer is NOT called for agent_profile (only fires for unsupported) ─
+
+    public function test_case_S3_normalizer_not_called_for_agent_profile_question(): void
+    {
+        $mocks               = $this->makeMocks();
+        $mocks['normalizer'] = $this->makeNormalizerMock(true, 'listing.bedrooms');
+        $runner              = $this->makeRunner($mocks);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('agent_profile'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeAgentProfileInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($this->makeAgentProfileFinalResponse());
+
+        // normalize() must never be called — agent_profile is not unsupported.
+        $mocks['normalizer']->expects($this->never())->method('normalize');
+
+        $runner->run('seller', 121, 'Tell me about the agent');
+    }
 }
