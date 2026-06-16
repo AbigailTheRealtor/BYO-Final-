@@ -1095,6 +1095,9 @@ class AskAiRunnerV2Service
             'where is this property located',
             'address of this property',
             'what is the street address',
+            'tell me about the location',
+            'describe the location of this property',
+            'location of this property',
         ],
         // ---- Amenities & Features ----
         'listing.pool' => [
@@ -1280,11 +1283,23 @@ class AskAiRunnerV2Service
             'tenant pet type and size',
         ],
         // ---- Lease & Rental Terms ----
+        // NOTE: bare 'lease terms' is placed here after the more-specific pre-existing
+        // phrases so that "existing lease terms on this property" matches the earlier
+        // explicit phrase first (same key, no change in behavior). The faq_answers
+        // entries for existing-tenant questions live in FAQ_KEY_KEYWORD_MAP (separate
+        // from this map) and are handled by detectFaqFieldKey(), not detectListingFieldKey().
         'listing.lease_terms' => [
             'existing lease terms on this property',
             'current tenant lease on property',
             'is there a tenant currently leasing',
             'inherited lease terms',
+            'lease requirements',
+            'what are the lease requirements',
+            'strongest lease requirements',
+            'required lease terms',
+            'what lease terms are required',
+            'lease terms',
+            'rental requirements',
         ],
         'listing.lease_length' => [
             'minimum lease term',
@@ -1388,6 +1403,11 @@ class AskAiRunnerV2Service
             'what type of financing is the buyer using',
             'how is the buyer financing this purchase',
             'buyer loan type',
+            'what type of financing has this buyer indicated',
+            'what type of financing does the buyer plan to use',
+            'what financing type does the buyer intend to use',
+            'type of financing',
+            'how will this buyer finance the purchase',
         ],
         'listing.inspection_period' => [
             'inspection period',
@@ -1457,7 +1477,13 @@ class AskAiRunnerV2Service
             'seller offering a credit',
             'seller contribution credit',
             'is the seller offering any credits',
+            'is the seller offering any credit',
             'does the seller offer a credit',
+            'what credit does seller offer',
+            'what credit does the seller offer',
+            'what credit is the seller offering',
+            'credit offered by seller',
+            'does the seller offer any credit',
             'closing cost credits',
             'closing cost credit',
             'credit toward closing',
@@ -2591,6 +2617,9 @@ class AskAiRunnerV2Service
 
             $trace = [
                 'question'                    => $question,
+                'scope'                       => $listingType,
+                'listing_id'                  => $listingId,
+                'question_type'               => $questionType,
                 'classifier_result'           => $questionType,
                 'deterministic_question_type' => $questionType,
                 'normalizer_called'           => 'N',
@@ -2604,6 +2633,8 @@ class AskAiRunnerV2Service
                 'deterministic_field_key'     => null,
                 'final_question_type'         => $questionType,
                 'final_status'                => null,
+                'adapter_success'             => null,
+                'adapter_error'               => null,
                 'source_attribution'          => null,
             ];
 
@@ -2748,6 +2779,8 @@ class AskAiRunnerV2Service
 
                     $unsuppPackage = $this->buildDescriptionFallbackPackage($question, trim($unsuppDesc));
                     $unsuppResult  = $this->adapter->generate($unsuppPackage);
+                    $trace['adapter_success'] = ($unsuppResult['status'] ?? null) === 'generated';
+                    $trace['adapter_error']   = $unsuppResult['error'] ?? null;
                     $unsuppAnswer  = $this->parseDescriptionFallbackAnswer($unsuppResult);
 
                     if ($unsuppAnswer !== null && !$this->isBareAnswerPlaceholder($unsuppAnswer)) {
@@ -2853,6 +2886,7 @@ class AskAiRunnerV2Service
                 if ($detectedKey !== null) {
                     $trace['faq_key_detected']        = $detectedKey;
                     $trace['deterministic_field_key'] = $detectedKey;
+                    $trace['normalized_field_key']    = $detectedKey;
                     $classification['normalized_field_key'] = $detectedKey;
                     $options = array_merge($options, ['normalized_field_key' => $detectedKey]);
                 } else {
@@ -2881,6 +2915,7 @@ class AskAiRunnerV2Service
 
                         $trace['listing_key_detected']    = $detectedListingKey;
                         $trace['deterministic_field_key'] = $detectedListingKey;
+                        $trace['normalized_field_key']    = $detectedListingKey;
                         $classification['normalized_field_key'] = $detectedListingKey;
                         $options = array_merge($options, ['normalized_field_key' => $detectedListingKey]);
                     }
@@ -3028,6 +3063,8 @@ class AskAiRunnerV2Service
                     if (is_string($faqDescFallback) && trim($faqDescFallback) !== '') {
                         $faqDescPackage = $this->buildDescriptionFallbackPackage($question, trim($faqDescFallback));
                         $faqDescResult  = $this->adapter->generate($faqDescPackage);
+                        $trace['adapter_success'] = ($faqDescResult['status'] ?? null) === 'generated';
+                        $trace['adapter_error']   = $faqDescResult['error'] ?? null;
                         $faqDescAnswer  = $this->parseDescriptionFallbackAnswer($faqDescResult);
 
                         if ($faqDescAnswer !== null && !$this->isBareAnswerPlaceholder($faqDescAnswer)) {
@@ -3152,6 +3189,8 @@ class AskAiRunnerV2Service
                             $descFallbackAttempted = true;
                             $descPackage           = $this->buildDescriptionFallbackPackage($question, trim($listingDescription));
                             $descAdapterResult     = $this->adapter->generate($descPackage);
+                            $trace['adapter_success'] = ($descAdapterResult['status'] ?? null) === 'generated';
+                            $trace['adapter_error']   = $descAdapterResult['error'] ?? null;
                             $descAnswer            = $this->parseDescriptionFallbackAnswer($descAdapterResult);
 
                             if ($descAnswer !== null && !$this->isBareAnswerPlaceholder($descAnswer)) {
@@ -3388,6 +3427,9 @@ class AskAiRunnerV2Service
             }
 
             $adapterResult = $this->adapter->generate($promptPackage);
+
+            $trace['adapter_success'] = $adapterResult['success'] ?? false;
+            $trace['adapter_error']   = $adapterResult['error'] ?? null;
 
             // ----------------------------------------------------------------
             // FAQ direct-return fallback.
@@ -3867,6 +3909,9 @@ class AskAiRunnerV2Service
         } catch (\Throwable $e) {
             $exceptionTrace = [
                 'question'                    => $question ?? null,
+                'scope'                       => $listingType ?? null,
+                'listing_id'                  => $listingId ?? null,
+                'question_type'               => null,
                 'classifier_result'           => null,
                 'deterministic_question_type' => null,
                 'normalizer_called'           => null,
@@ -3879,6 +3924,8 @@ class AskAiRunnerV2Service
                 'faq_key_detected'            => null,
                 'final_question_type'         => null,
                 'final_status'                => 'failed',
+                'adapter_success'             => null,
+                'adapter_error'               => null,
                 'source_attribution'          => null,
             ];
             $this->emitTrace($exceptionTrace);
@@ -3906,7 +3953,7 @@ class AskAiRunnerV2Service
     private function emitTrace(array $trace): void
     {
         try {
-            Log::debug('AskAiRunnerV2 trace', $trace);
+            Log::info('AskAiRunnerV2 trace', $trace);
         } catch (\Throwable $ignored) {
             // Log facade unavailable in unit test contexts without a booted app.
         }
