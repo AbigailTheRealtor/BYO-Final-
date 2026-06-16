@@ -880,6 +880,9 @@ class LandlordAgentAuctionBid extends Component
                 $this->applyPresetField('protection_period', $mapped['protection_period'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('early_termination_fee_option', $mapped['early_termination_fee_option'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('early_termination_fee_amount', $mapped['early_termination_fee_amount'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('retainer_fee_option', $mapped['retainer_fee_option'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('retainer_fee_amount', $mapped['retainer_fee_amount'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('retainer_fee_application', $mapped['retainer_fee_application'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('brokerage_relationship', $mapped['brokerage_relationship'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('additional_details_broker', $mapped['additional_details_broker'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('retained_deposits', $mapped['retained_deposits'] ?? null, $presetFieldsApplied);
@@ -1068,10 +1071,13 @@ class LandlordAgentAuctionBid extends Component
                 $this->tenant_broker_flat_fee             = $bidData->tenant_broker_flat_fee ?? '';
                 $this->tenant_broker_other                = $bidData->tenant_broker_other ?? '';
 
-                // Protection Period / Early Termination / Agency Agreement / Property Mgmt
+                // Protection Period / Early Termination / Retainer / Agency Agreement / Property Mgmt
                 $this->protection_period                                = $bidData->protection_period ?? '';
                 $this->early_termination_fee_option                     = $bidData->early_termination_fee_option ?? '';
                 $this->early_termination_fee_amount                     = $bidData->early_termination_fee_amount ?? '';
+                $this->retainer_fee_option                              = $bidData->retainer_fee_option ?? '';
+                $this->retainer_fee_amount                              = $bidData->retainer_fee_amount ?? '';
+                $this->retainer_fee_application                         = $bidData->retainer_fee_application ?? '';
                 $this->agency_agreement_timeframe                       = $bidData->agency_agreement_timeframe ?? '';
                 $this->agency_agreement_custom                          = $bidData->agency_agreement_custom ?? '';
                 $this->interested_in_property_management                = $bidData->interested_in_property_management ?? '';
@@ -1457,6 +1463,11 @@ class LandlordAgentAuctionBid extends Component
             // Early Termination Fee
             $bid->saveMeta('early_termination_fee_option', $this->early_termination_fee_option);
             $bid->saveMeta('early_termination_fee_amount', $this->early_termination_fee_amount);
+
+            // Retainer Fee
+            $bid->saveMeta('retainer_fee_option', $this->retainer_fee_option);
+            $bid->saveMeta('retainer_fee_amount', $this->retainer_fee_amount);
+            $bid->saveMeta('retainer_fee_application', $this->retainer_fee_application);
 
             // Landlord Agency Agreement Timeframe
             $bid->saveMeta('agency_agreement_timeframe', $this->agency_agreement_timeframe);

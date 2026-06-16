@@ -39,6 +39,17 @@
                     <div class="alert alert-danger">{{ session('error') }}</div>
                 @endif
 
+                @if (!$isEditMode && !$defaultProfileExists)
+                    <div class="alert alert-warning d-flex align-items-start gap-2 mb-3" role="alert">
+                        <span class="flex-shrink-0 me-2">&#9888;</span>
+                        <div>
+                            <strong>No agent preset found for this property type.</strong>
+                            Some fields could not be pre-filled automatically.
+                            <a href="{{ route('agent.presets.index') }}" class="alert-link" target="_blank">Set up a preset</a> to speed up future bids.
+                        </div>
+                    </div>
+                @endif
+
                 <h2 class="mb-4">Hire a Seller's Agent — Submit Your Bid</h2>
 
                 <form wire:submit.prevent="submit" novalidate id="seller-bid-form">

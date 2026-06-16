@@ -316,7 +316,7 @@ class SellerAgentAuctionBid extends Component
             $profile = AgentDefaultProfile::findForAgentWithFallback(
                 $user->id,
                 'seller',
-                $this->property_type ?: 'residential'
+                strtolower(str_replace(' ', '_', $this->property_type)) ?: 'residential'
             );
             $mapped = $profile ? AgentBidMapperService::mapFromProfile($profile->profile_data ?? []) : null;
             if ($mapped !== null) {
@@ -342,6 +342,25 @@ class SellerAgentAuctionBid extends Component
                 $this->applyPresetField('business_card_link', $mapped['business_card_link'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('business_card_stored_path', $mapped['business_card_stored_path'] ?? null, $presetFieldsApplied);
                 if (!empty($mapped['promoMaterials']))            $this->promoMaterials            = $mapped['promoMaterials'];
+                // Services from preset — blank-value guard: only fill if listing did not pre-populate them
+                if (!empty($mapped['services']) && empty($this->services)) {
+                    $catalog = \App\Helpers\SellerBidMatchScoreHelper::getCatalog($rawPropType ?: 'Residential Property');
+                    $normalizeService = static function (string $s): string {
+                        return mb_strtolower(trim(str_replace(
+                            ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}", "'"],
+                            ["'",        "'",        '"',        '"',        "'"],
+                            $s
+                        )));
+                    };
+                    $filtered = array_values(array_filter((array) $mapped['services'], static fn ($s) =>
+                        in_array($normalizeService((string) $s), $catalog, true)
+                    ));
+                    if (!empty($filtered)) {
+                        $this->services = $filtered;
+                        $this->showEnhancements = in_array('Provide digital photo enhancements', $this->services)
+                                               || in_array('Provide digital enhancements to media assets', $this->services);
+                    }
+                }
                 // Broker Compensation fields from preset
                 $this->applyPresetField('purchase_fee_type', $mapped['purchase_fee_type'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('purchase_fee_flat', $mapped['purchase_fee_flat'] ?? null, $presetFieldsApplied);
@@ -835,7 +854,7 @@ class SellerAgentAuctionBid extends Component
         $user = Auth::user();
         if (!$user) return;
 
-        $profile = AgentDefaultProfile::findForAgentWithFallback($user->id, 'seller', $this->property_type ?: 'residential');
+        $profile = AgentDefaultProfile::findForAgentWithFallback($user->id, 'seller', strtolower(str_replace(' ', '_', $this->property_type)) ?: 'residential');
         if (!$profile) return;
 
         $data = $profile->profile_data ?? [];
