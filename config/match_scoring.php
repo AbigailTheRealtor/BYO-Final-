@@ -287,6 +287,26 @@ return [
         'no_client_location_default_score'  => 50,
 
         /*
+         * Roles for which service-area scoring is explicitly inactive.
+         *
+         * Seller is inactive because city_id / county_id on seller_agent_auctions
+         * are integer foreign keys pointing to us_cities / us_counties. Resolving
+         * them to name strings requires a DB JOIN. Score helpers must remain pure
+         * (no DB calls) — the call site would need to enrich $baselineData with
+         * 'city_name' / 'county_name' keys before service-area scoring is possible.
+         *
+         * Until that enrichment path is built, seller always receives the neutral
+         * score (50) and is excluded from the weighted average when this dimension
+         * is enabled for other roles.
+         *
+         * To activate seller service-area scoring:
+         *   1. Build the enrichment step (DB join at call site — SellerBidMatchScoreHelper
+         *      or ScoreBreakdownService — resolving city_id/county_id to name strings).
+         *   2. Remove 'seller' from this list.
+         */
+        'inactive_for_roles' => ['seller'],
+
+        /*
          * Meta key names by role for client-side location resolution.
          * Used by the implementation to know where to read location data per role.
          */

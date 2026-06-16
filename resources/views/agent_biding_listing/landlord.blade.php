@@ -55,6 +55,19 @@
                                     <p class="small mb-0">Switch the filter above or browse live Landlord's Agent listings to place a bid.</p>
                                 </div>
                             @else
+                                @php
+                                    // Build 4 Phase 1: N+1 guard — memoize profile by property_type key.
+                                    $_landlordProfCache = [];
+                                    $_getLandlordProf   = function(string $ptKey) use (&$_landlordProfCache): array {
+                                        if (!array_key_exists($ptKey, $_landlordProfCache)) {
+                                            $prof = \App\Models\AgentDefaultProfile::findForAgentWithFallback(
+                                                auth()->id(), 'landlord', $ptKey
+                                            );
+                                            $_landlordProfCache[$ptKey] = $prof ? ($prof->profile_data ?? []) : [];
+                                        }
+                                        return $_landlordProfCache[$ptKey];
+                                    };
+                                @endphp
                                 @foreach ($auctions as $auction)
                                 @php
                                     $userBid = $auction->bids->where('user_id', auth()->id())->first();
@@ -86,8 +99,12 @@
                                     $bidData = $userBid ? (json_decode(json_encode($userBid->get ?? []), true) ?: []) : [];
                                     $propType = $auction->get->property_type ?? 'Residential Property';
 
+                                    // Phase 1: retrieve from N+1-safe cache defined above the loop
+                                    $_lAgentPtKey    = strtolower(str_replace(' ', '_', $propType)) ?: 'residential';
+                                    $_lAgentProfData = $_getLandlordProf($_lAgentPtKey);
+
                                     $matchScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
-                                        $auctionBaselineData, $bidData, null, $propType
+                                        $auctionBaselineData, $bidData, null, $propType, $_lAgentProfData
                                     );
                                     $totalScore       = $matchScore['overall_percent'];
                                     $brokerScore      = $matchScore['terms_match_percent'];
@@ -107,6 +124,9 @@
 
                                     $readiness    = \App\Services\MatchReadinessService::evaluate($bidData, 'landlord');
                                     $compatScore  = \App\Services\CompatibilityScoreService::score($auctionBaselineData, $bidData, 'landlord', $propType);
+
+                                    // Phase 1: build human-readable explanation (label always rendered; reasons conditional on profile data)
+                                    $matchExplanation = \App\Services\AgentMatchExplanationBuilder::build($matchScore, $_lAgentProfData);
                                 @endphp
 
                                 <div class="card mb-3 agent-bid-card" style="border-radius:8px;border:1px solid #dee2e6;">
@@ -138,6 +158,20 @@
                                                 <div>{{ $userBid->created_at->format('M d, Y') }}</div>
                                             </div>
                                         </div>
+
+                                        {{-- Phase 1: Match Score Label + Reason Bullets --}}
+                                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                            <span class="badge" style="background:{{ $totalScoreColor }};color:#fff;font-size:.85rem;padding:5px 10px;border-radius:4px;">
+                                                <i class="fa-solid fa-star me-1"></i>{{ $matchExplanation['label'] }}
+                                            </span>
+                                        </div>
+                                        @if(!empty($matchExplanation['reasons']))
+                                        <ul class="mb-2" style="font-size:.78rem;color:#555;padding-left:1.2rem;">
+                                            @foreach($matchExplanation['reasons'] as $reason)
+                                            <li>{{ $reason }}</li>
+                                            @endforeach
+                                        </ul>
+                                        @endif
 
                                         @if($readiness['state'] !== 'not_ready' && (count($brokerMismatches) > 0 || count($servicesAdded) > 0 || count($servicesMissing) > 0))
                                         <div class="mt-3 pt-3" style="border-top:1px solid #eee;">

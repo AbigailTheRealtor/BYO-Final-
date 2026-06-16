@@ -29,6 +29,9 @@ class BuyerAgentAuctionBid extends Component
 
     public $activeTab = 0;
 
+    /** Agent profile_data for Build 4 / Phase 1 match scoring sub-dimensions. */
+    public array $agentProfileData = [];
+
     public bool $defaultProfileExists = false;
     public bool $defaultProfileLoaded = false;
     public array $compatibility_agent_response = [];

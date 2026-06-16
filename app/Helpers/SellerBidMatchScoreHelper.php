@@ -2,6 +2,8 @@
 
 namespace App\Helpers;
 
+use App\Traits\AgentMatchSubScorer;
+
 /**
  * SellerBidMatchScoreHelper
  *
@@ -33,6 +35,8 @@ namespace App\Helpers;
  */
 class SellerBidMatchScoreHelper
 {
+    use AgentMatchSubScorer;
+
     /**
      * Logical field groups — Seller-specific fields.
      * Same structure as TenantBidMatchScoreHelper::LOGICAL_FIELD_GROUPS.
@@ -571,11 +575,24 @@ class SellerBidMatchScoreHelper
      * @param array|null  $brokerFields   Ignored (kept for API parity).
      * @param string|null $propertyType   'Residential Property' | 'Commercial Property' | etc.
      */
+    /**
+     * Calculate the match score between a baseline listing and an agent's bid.
+     *
+     * @param  array       $baselineData     Listing/criteria data (the client's requirements).
+     * @param  array       $comparedData     Agent bid data being evaluated.
+     * @param  array|null  $brokerFields     Reserved for future use (unused).
+     * @param  string|null $propertyType     Activates property-type-specific service catalog.
+     * @param  array|null  $agentProfileData Agent's profile_data from AgentDefaultProfile.
+     *                                       When null, new dimension sub-scores return neutral
+     *                                       values and do not affect the overall score
+     *                                       (safe for all legacy call sites).
+     */
     public static function calculate(
         array $baselineData,
         array $comparedData,
         ?array $brokerFields = null,
-        ?string $propertyType = null
+        ?string $propertyType = null,
+        ?array $agentProfileData = null
     ): array {
         $catalog = ($propertyType !== null) ? self::getCatalog($propertyType) : null;
 
@@ -723,19 +740,36 @@ class SellerBidMatchScoreHelper
             ? (int) round($servicesMatchedCount / $servicesBaselineTotal * 100)
             : 100;
 
-        // ── OVERALL ───────────────────────────────────────────────────────
+        // ── BUILD 4 / PHASE 1 SUB-SCORES ─────────────────────────────────
+        // New dimensions are currently disabled in config (enabled => false).
+        // Sub-scores are computed when agentProfileData is available and are
+        // included in the return array for transparency and future activation.
+        // When agentProfileData is null all new dimensions return neutral values
+        // and the overall formula produces the same result as the legacy 50/50 split.
+        $neutralSa  = (int) config('match_scoring.service_area.no_client_location_default_score', 50);
+        $neutralAvl = (int) config('match_scoring.availability.agent_any_score', 80);
+        $saScore     = ($agentProfileData !== null)
+            ? self::scoreServiceArea($baselineData, $agentProfileData, 'seller')
+            : $neutralSa;
+        $expScore    = ($agentProfileData !== null)
+            ? self::scoreExperience($agentProfileData)
+            : 0;
+        $availScore  = ($agentProfileData !== null)
+            ? self::scoreAvailability($baselineData, $agentProfileData)
+            : $neutralAvl;
+        $compatScore = ($agentProfileData !== null)
+            ? self::scoreCompatibility($baselineData, $agentProfileData)
+            : 0;
+
+        // ── OVERALL (config-driven weighted average) ───────────────────────
         $hasTerms    = $termsBaselineTotal > 0;
         $hasServices = $servicesBaselineTotal > 0;
 
-        if ($hasTerms && $hasServices) {
-            $overallPercent = (int) round(($termsMatchPercent + $servicesMatchPercent) / 2);
-        } elseif ($hasTerms) {
-            $overallPercent = $termsMatchPercent;
-        } elseif ($hasServices) {
-            $overallPercent = $servicesMatchPercent;
-        } else {
-            $overallPercent = 100;
-        }
+        $overallPercent = self::computeWeightedOverall(
+            $servicesMatchPercent, $termsMatchPercent,
+            $hasServices, $hasTerms,
+            $saScore, $expScore, $availScore, $compatScore
+        );
 
         return [
             'overall_percent'         => $overallPercent,
@@ -755,6 +789,11 @@ class SellerBidMatchScoreHelper
             'matched_services'        => $matchedServices,
             'missing_services'        => $missingServices,
             'extra_services'          => $extraServices,
+            // Build 4 / Phase 1 — new dimension sub-scores
+            'service_area_score'      => $saScore,
+            'experience_score'        => $expScore,
+            'availability_score'      => $availScore,
+            'compatibility_score'     => $compatScore,
             // Legacy-compat aliases
             'broker_comp_percent'     => $termsMatchPercent,
             'broker_comp_matched'     => $termsMatchedCount,

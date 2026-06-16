@@ -48,35 +48,49 @@ namespace App\Services;
 class ScoreBreakdownService
 {
     /**
-     * Produce a field-level score breakdown for a listing/bid pair.
-     *
-     * @param  array       $listingData  Decoded listing/criteria data array.
-     * @param  array       $bidData      Decoded bid data array.
-     * @param  string      $role         One of: 'seller', 'buyer', 'landlord', 'tenant'.
-     * @param  string|null $propertyType Property type string (optional).
-     * @return array
+     * Role → helper class map for Phase 1 match scoring.
+     * Keys must be lowercase role strings.
      */
+    private static array $helperMap = [
+        'seller'   => \App\Helpers\SellerBidMatchScoreHelper::class,
+        'buyer'    => \App\Helpers\BuyerBidMatchScoreHelper::class,
+        'landlord' => \App\Helpers\LandlordBidMatchScoreHelper::class,
+        'tenant'   => \App\Helpers\TenantBidMatchScoreHelper::class,
+    ];
+
     public static function breakdown(
         array $listingData,
         array $bidData,
         string $role,
-        ?string $propertyType = null
+        ?string $propertyType = null,
+        ?array $agentProfileData = null
     ): array {
         $scoreData  = CompatibilityScoreService::score($listingData, $bidData, $role, $propertyType);
         $scoreType  = $scoreData['score_type'];
+
+        // Phase 1: compute match score and explanation via role-specific helper.
+        $roleKey     = strtolower($role);
+        $helperClass = self::$helperMap[$roleKey] ?? null;
+        $matchScore  = $helperClass
+            ? $helperClass::calculate($listingData, $bidData, null, $propertyType, $agentProfileData)
+            : null;
+        $matchExplanation = $matchScore
+            ? AgentMatchExplanationBuilder::build($matchScore, $agentProfileData)
+            : null;
 
         $emptySummary = ['strong' => 0, 'weak' => 0, 'partial' => 0, 'missing' => 0, 'total' => 0];
 
         if ($scoreType === 'none') {
             return [
-                'score_data'       => $scoreData,
-                'field_breakdown'  => [],
-                'summary'          => $emptySummary,
-                'active_field_set' => 'none',
+                'score_data'        => $scoreData,
+                'field_breakdown'   => [],
+                'summary'           => $emptySummary,
+                'active_field_set'  => 'none',
+                'match_score'       => $matchScore,
+                'match_explanation' => $matchExplanation,
             ];
         }
 
-        $roleKey            = strtolower($role);
         $config             = config('match_readiness.' . $roleKey, []);
         $globalPlaceholders = config('match_readiness.global_placeholders', []);
         $arrayFields        = $config['array_fields'] ?? [];
@@ -115,10 +129,12 @@ class ScoreBreakdownService
         }
 
         return [
-            'score_data'       => $scoreData,
-            'field_breakdown'  => $fieldBreakdown,
-            'summary'          => $summary,
-            'active_field_set' => $scoreType,
+            'score_data'        => $scoreData,
+            'field_breakdown'   => $fieldBreakdown,
+            'summary'           => $summary,
+            'active_field_set'  => $scoreType,
+            'match_score'       => $matchScore,
+            'match_explanation' => $matchExplanation,
         ];
     }
 

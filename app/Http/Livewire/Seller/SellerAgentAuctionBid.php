@@ -30,6 +30,9 @@ class SellerAgentAuctionBid extends Component
     public bool $defaultProfileLoaded = false;
     public array $compatibility_agent_response = [];
 
+    /** Agent profile_data for Build 4 / Phase 1 match scoring sub-dimensions. */
+    public array $agentProfileData = [];
+
     public $editBidId = null;
     public bool $isEditMode = false;
 

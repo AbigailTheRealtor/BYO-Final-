@@ -30,6 +30,9 @@ class TenantAgentAuctionBid extends Component
 
     public $activeTab = 0;
 
+    /** Agent profile_data for Build 4 / Phase 1 match scoring sub-dimensions. */
+    public array $agentProfileData = [];
+
     public bool $defaultProfileExists = false;
     public bool $defaultProfileLoaded = false;
     public array $compatibility_agent_response = [];
@@ -609,6 +612,7 @@ class TenantAgentAuctionBid extends Component
         $this->service_type = $auction->get->service_type ?? '';
         $this->user_type = $auction->get->user_type ?? '';
         $this->property_type = $auction->get->property_type ?? '';
+
         // Load broker compensation fields
         $this->commission_structure = $auction->get->commission_structure ?? '';
         $this->lease_fee_type = $auction->get->lease_fee_type ?? '';

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Helpers\TenantBidMatchScoreHelper;
+use App\Models\AgentDefaultProfile;
 use App\Models\TenantAgentAuction;
 use App\Models\TenantAgentAuctionBid;
 use App\Models\BiddingPeriodAgentMapping;
@@ -138,7 +139,24 @@ class CompetingBidsService
             unset($competingData['referral_fee_percent']);
         }
 
-        $result = TenantBidMatchScoreHelper::calculate($viewerData, $competingData, null, $propertyType);
+        // Load the competing agent's profile data for Phase 1 sub-score dimensions.
+        // profile_data keys used: cities_served, counties_served, year_licensed,
+        // transactions_last_12_months, availability_status, evenings_available,
+        // weekends_available, preferred_contact_method.
+        $competingProfileData = null;
+        if ($competingBid->user_id) {
+            $propTypeKey = $propertyType
+                ? strtolower(str_replace([' ', '_'], '_', $propertyType))
+                : 'residential';
+            $profile = AgentDefaultProfile::findForAgentWithFallback(
+                $competingBid->user_id, 'tenant', $propTypeKey
+            );
+            $competingProfileData = $profile ? ($profile->profile_data ?? null) : null;
+        }
+
+        $result = TenantBidMatchScoreHelper::calculate(
+            $viewerData, $competingData, null, $propertyType, $competingProfileData
+        );
 
         return array_merge($result, [
             'compared_to_label' => 'Compared to Your Bid',
