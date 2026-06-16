@@ -768,7 +768,7 @@
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @php
                                     $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Purchasing Terms'];
-                                    {{-- B7: Broker Compensation tab removed from client listing form --}}
+                                    // B7: Broker Compensation tab removed from client listing form
                                     $fullServiceTabs[] = 'Description';
                                     $additionalDetailsIndex = count($fullServiceTabs) - 1;
                                     $aiQuestionsIndex      = count($fullServiceTabs);
