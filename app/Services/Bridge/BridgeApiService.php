@@ -9,7 +9,7 @@ class BridgeApiService
 {
     protected string $baseUrl = 'https://api.bridgedataoutput.com/api/v2/OData';
 
-    public function fetchProperties(int $limit = 10): array
+    public function fetchProperties(int $limit = 10, ?string $filter = null): array
     {
         $dataset = config('bridge.dataset');
         $token   = config('bridge.token');
@@ -22,10 +22,16 @@ class BridgeApiService
         $url = "{$this->baseUrl}/{$dataset}/Property";
 
         try {
-            $response = Http::timeout(30)->get($url, [
+            $params = [
                 '$top'         => $limit,
                 'access_token' => $token,
-            ]);
+            ];
+
+            if ($filter !== null) {
+                $params['$filter'] = $filter;
+            }
+
+            $response = Http::timeout(30)->get($url, $params);
 
             Log::info('BridgeApiService: HTTP status ' . $response->status());
 
@@ -49,7 +55,7 @@ class BridgeApiService
      * @param  int  $skip  Zero-based offset — number of records to skip before this page.
      * @return array       Array of property records, or empty array on failure.
      */
-    public function fetchPropertiesPaginated(int $top = 200, int $skip = 0): array
+    public function fetchPropertiesPaginated(int $top = 200, int $skip = 0, ?string $filter = null): array
     {
         $dataset = config('bridge.dataset');
         $token   = config('bridge.token');
@@ -68,7 +74,11 @@ class BridgeApiService
                 'access_token' => $token,
             ];
 
-            Log::info("BridgeApiService: paginated fetch — top={$top}, skip={$skip}");
+            if ($filter !== null) {
+                $params['$filter'] = $filter;
+            }
+
+            Log::info("BridgeApiService: paginated fetch — top={$top}, skip={$skip}" . ($filter !== null ? ", filter={$filter}" : ''));
 
             $response = Http::timeout(60)->get($url, $params);
 

@@ -13,7 +13,9 @@ class ImportBridgeProperties extends Command
     protected $signature = 'bridge:import-properties
                             {--limit=10 : Number of properties to fetch (single-page mode)}
                             {--target=0 : Import until this many total rows are in bridge_properties (paginated mode; 0 = disabled)}
-                            {--page-size=200 : Records per API page in paginated mode}';
+                            {--page-size=200 : Records per API page in paginated mode}
+                            {--status= : OData StandardStatus filter (e.g. Active)}
+                            {--property-type= : OData PropertyType filter (e.g. Residential)}';
 
     protected $description = 'Fetch properties from the Bridge OData API and upsert into bridge_properties';
 
@@ -22,16 +24,39 @@ class ImportBridgeProperties extends Command
         $target   = (int) $this->option('target');
         $pageSize = (int) $this->option('page-size');
 
+        $filter = $this->buildODataFilter();
+
         if ($target > 0) {
-            return $this->runPaginated($service, $target, $pageSize);
+            return $this->runPaginated($service, $target, $pageSize, $filter);
         }
 
-        return $this->runSingle($service, (int) $this->option('limit'));
+        return $this->runSingle($service, (int) $this->option('limit'), $filter);
     }
 
-    private function runSingle(BridgeApiService $service, int $limit): int
+    private function buildODataFilter(): ?string
     {
-        $records = $service->fetchProperties($limit);
+        $clauses = [];
+
+        $status = $this->option('status');
+        if (!empty($status)) {
+            $clauses[] = "StandardStatus eq '" . addslashes($status) . "'";
+        }
+
+        $propertyType = $this->option('property-type');
+        if (!empty($propertyType)) {
+            $clauses[] = "PropertyType eq '" . addslashes($propertyType) . "'";
+        }
+
+        if (empty($clauses)) {
+            return null;
+        }
+
+        return implode(' and ', $clauses);
+    }
+
+    private function runSingle(BridgeApiService $service, int $limit, ?string $filter = null): int
+    {
+        $records = $service->fetchProperties($limit, $filter);
 
         if (empty($records)) {
             $this->warn('No records returned from Bridge API. Check logs for details.');
@@ -50,7 +75,7 @@ class ImportBridgeProperties extends Command
         return self::SUCCESS;
     }
 
-    private function runPaginated(BridgeApiService $service, int $target, int $pageSize): int
+    private function runPaginated(BridgeApiService $service, int $target, int $pageSize, ?string $filter = null): int
     {
         $existingCount = DB::table('bridge_properties')->count();
 
@@ -72,7 +97,7 @@ class ImportBridgeProperties extends Command
             $page++;
             $this->info("Fetching page {$page} (skip={$skip}, top={$pageSize})...");
 
-            $records = $service->fetchPropertiesPaginated($pageSize, $skip);
+            $records = $service->fetchPropertiesPaginated($pageSize, $skip, $filter);
 
             if (empty($records)) {
                 $this->warn("Page {$page}: API returned 0 records — end of feed or API error. Stopping.");
