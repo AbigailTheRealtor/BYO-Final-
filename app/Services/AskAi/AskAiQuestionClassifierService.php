@@ -98,8 +98,11 @@ class AskAiQuestionClassifierService
         // -----------------------------------------------------------------------
         'agent_profile' => [
             'who is the agent',
+            'who is this agent',
             'tell me about the agent',
+            'tell me about this agent',
             'about the agent',
+            'about this agent',
             'agent profile',
             'agent bio',
             'agent background',
@@ -173,6 +176,7 @@ class AskAiQuestionClassifierService
             'cost of ownership',
             'costs of ownership',
             'ownership costs',
+            'monthly costs',
             'carrying costs',
             'what does it cost to own',
             'costs of owning',

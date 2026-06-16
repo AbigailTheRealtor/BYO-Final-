@@ -1682,6 +1682,7 @@ class AskAiQuestionClassifierServiceTest extends TestCase
             'cost of ownership'              => ['What is the cost of ownership?'],
             'costs of ownership'             => ['What are the costs of ownership for this home?'],
             'ownership costs'                => ['What are the ownership costs?'],
+            'monthly costs'                  => ['What are the monthly costs for this property?'],
             'carrying costs'                 => ['What are the carrying costs for this property?'],
             'what does it cost to own'       => ['What does it cost to own this home?'],
             'costs of owning'                => ['What are the costs of owning this property?'],
@@ -1702,5 +1703,84 @@ class AskAiQuestionClassifierServiceTest extends TestCase
         $result = $this->makeService()->classify('What is the cost?');
         $this->assertSame('listing_facts', $result['question_type'],
             '"What is the cost?" must remain listing_facts');
+    }
+
+    // =========================================================================
+    // Case T — agent_profile "this" variant keywords
+    //
+    // Live modal logged "tell me about this agent" as 'unsupported' because
+    // the agent_profile keyword list only had "the" forms ("tell me about the
+    // agent", "who is the agent") but not the natural "this" variants users
+    // actually type.  Three "this" phrasings were added; this case asserts all
+    // three route to agent_profile and that no collision with prohibited or
+    // listing_facts exists.
+    // =========================================================================
+
+    public function test_case_T_tell_me_about_this_agent_classifies_as_agent_profile(): void
+    {
+        $result = $this->makeService()->classify('tell me about this agent');
+        $this->assertSame('agent_profile', $result['question_type'],
+            '"tell me about this agent" must route to agent_profile');
+    }
+
+    public function test_case_T_who_is_this_agent_classifies_as_agent_profile(): void
+    {
+        $result = $this->makeService()->classify('who is this agent');
+        $this->assertSame('agent_profile', $result['question_type'],
+            '"who is this agent" must route to agent_profile');
+    }
+
+    public function test_case_T_about_this_agent_classifies_as_agent_profile(): void
+    {
+        $result = $this->makeService()->classify('about this agent');
+        $this->assertSame('agent_profile', $result['question_type'],
+            '"about this agent" must route to agent_profile');
+    }
+
+    public function test_case_T_tell_me_about_this_agent_mixed_case_classifies_as_agent_profile(): void
+    {
+        $result = $this->makeService()->classify('Tell Me About This Agent');
+        $this->assertSame('agent_profile', $result['question_type'],
+            'Classification must be case-insensitive for "this" variant');
+    }
+
+    public function test_case_T_tell_me_about_this_agent_does_not_collide_with_prohibited(): void
+    {
+        // Prohibited must not fire for a pure agent-profile question.
+        $result = $this->makeService()->classify('tell me about this agent');
+        $this->assertNotSame('prohibited', $result['question_type'],
+            '"tell me about this agent" must not be classified as prohibited');
+    }
+
+    public function test_case_T_existing_the_agent_phrase_still_routes(): void
+    {
+        // Regression guard: the original "the" form must not break after adding "this" variants.
+        $result = $this->makeService()->classify('tell me about the agent');
+        $this->assertSame('agent_profile', $result['question_type'],
+            '"tell me about the agent" must remain agent_profile');
+    }
+
+    public function test_case_T_who_is_the_agent_still_routes(): void
+    {
+        $result = $this->makeService()->classify('who is the agent');
+        $this->assertSame('agent_profile', $result['question_type'],
+            '"who is the agent" must remain agent_profile');
+    }
+
+    public function test_case_T_tell_me_about_this_property_classifies_as_listing_facts(): void
+    {
+        // "tell me about this property" was confirmed in live logs (05:22) as routing to
+        // listing_facts correctly. This test guards that it does not regress.
+        $result = $this->makeService()->classify('tell me about this property');
+        $this->assertSame('listing_facts', $result['question_type'],
+            '"tell me about this property" must route to listing_facts, not unsupported');
+    }
+
+    public function test_case_T_tell_me_about_this_property_not_agent_profile(): void
+    {
+        // Property question must not be swallowed by the new "this" agent phrases.
+        $result = $this->makeService()->classify('tell me about this property');
+        $this->assertNotSame('agent_profile', $result['question_type'],
+            '"tell me about this property" must not route to agent_profile');
     }
 }
