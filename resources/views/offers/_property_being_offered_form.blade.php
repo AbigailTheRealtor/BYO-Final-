@@ -406,11 +406,12 @@
 
     @push('scripts')
     <script>
+    var _offerPropPlacesNode = null;
     window.byoInitOfferPropPlaces = function() {
         var input = document.getElementById('offer-prop-street-address');
         if (!input || !window.google || !window.google.maps || !window.google.maps.places) { return; }
-        if (input._byoPlacesAttached) { return; }
-        input._byoPlacesAttached = true;
+        if (input === _offerPropPlacesNode) { return; }
+        _offerPropPlacesNode = input;
 
         var ac = new google.maps.places.Autocomplete(input, {
             types: ['address'],
@@ -471,6 +472,17 @@
             if (placeIdEl)          { placeIdEl.value = placeId; }
         });
     };
+    document.addEventListener('DOMContentLoaded', function () {
+        window.byoInitOfferPropPlaces && window.byoInitOfferPropPlaces();
+    });
+    document.addEventListener('livewire:load', function () {
+        window.byoInitOfferPropPlaces && window.byoInitOfferPropPlaces();
+        if (window.Livewire && typeof window.Livewire.hook === 'function') {
+            Livewire.hook('message.processed', function () {
+                window.byoInitOfferPropPlaces && window.byoInitOfferPropPlaces();
+            });
+        }
+    });
     </script>
     <x-google-maps-script callback="byoInitOfferPropPlaces" />
     @endpush

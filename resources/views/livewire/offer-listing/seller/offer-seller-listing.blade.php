@@ -3023,11 +3023,12 @@
         });
     </script>
     <script>
+    var _sellerPlacesNode = null;
     window.byoInitSellerOfferPlaces = function() {
         var input = document.getElementById('seller-offer-street-address');
         if (!input || !window.google || !window.google.maps || !window.google.maps.places) { return; }
-        if (input._byoPlacesAttached) { return; }
-        input._byoPlacesAttached = true;
+        if (input === _sellerPlacesNode) { return; }
+        _sellerPlacesNode = input;
 
         var ac = new google.maps.places.Autocomplete(input, {
             types: ['address'],
@@ -3075,7 +3076,11 @@
         });
     };
 
+    document.addEventListener('DOMContentLoaded', function () {
+        window.byoInitSellerOfferPlaces && window.byoInitSellerOfferPlaces();
+    });
     document.addEventListener('livewire:load', function () {
+        window.byoInitSellerOfferPlaces && window.byoInitSellerOfferPlaces();
         if (window.Livewire && typeof window.Livewire.hook === 'function') {
             Livewire.hook('message.processed', function () {
                 window.byoInitSellerOfferPlaces && window.byoInitSellerOfferPlaces();

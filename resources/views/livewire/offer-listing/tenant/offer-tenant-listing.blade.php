@@ -5870,11 +5870,11 @@ $lease_types = [
     });
 </script>
 <script>
-    function byoInitTenantOfferPlaces() {
+    window.byoInitTenantOfferPlaces = function () {
         if (typeof window.ldnaRequestInit === 'function') {
             window.ldnaRequestInit();
         }
-    }
+    };
     (function () {
         if (!document._tenantMapTabListenerAdded) {
             document._tenantMapTabListenerAdded = true;
@@ -5886,13 +5886,19 @@ $lease_types = [
                 }
             });
         }
-        if (window.Livewire && typeof Livewire.hook === 'function') {
-            Livewire.hook('message.processed', function () {
-                if (typeof window.ldnaRequestInit === 'function') {
-                    window.ldnaRequestInit();
-                }
-            });
-        }
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof window.ldnaRequestInit === 'function') { window.ldnaRequestInit(); }
+        });
+        document.addEventListener('livewire:load', function () {
+            if (typeof window.ldnaRequestInit === 'function') { window.ldnaRequestInit(); }
+            if (window.Livewire && typeof Livewire.hook === 'function') {
+                Livewire.hook('message.processed', function () {
+                    if (typeof window.ldnaRequestInit === 'function') {
+                        window.ldnaRequestInit();
+                    }
+                });
+            }
+        });
     })();
 </script>
 <x-google-maps-script :libraries="'places,drawing'" callback="byoInitTenantOfferPlaces" />

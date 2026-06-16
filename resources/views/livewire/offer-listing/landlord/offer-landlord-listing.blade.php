@@ -3432,11 +3432,12 @@
         });
     </script>
     <script>
+    var _landlordPlacesNode = null;
     window.byoInitLandlordOfferPlaces = function() {
         var input = document.getElementById('landlord-offer-street-address');
         if (!input || !window.google || !window.google.maps || !window.google.maps.places) { return; }
-        if (input._byoPlacesAttached) { return; }
-        input._byoPlacesAttached = true;
+        if (input === _landlordPlacesNode) { return; }
+        _landlordPlacesNode = input;
 
         var ac = new google.maps.places.Autocomplete(input, {
             types: ['address'],
@@ -3484,7 +3485,11 @@
         });
     };
 
+    document.addEventListener('DOMContentLoaded', function () {
+        window.byoInitLandlordOfferPlaces && window.byoInitLandlordOfferPlaces();
+    });
     document.addEventListener('livewire:load', function () {
+        window.byoInitLandlordOfferPlaces && window.byoInitLandlordOfferPlaces();
         if (window.Livewire && typeof window.Livewire.hook === 'function') {
             Livewire.hook('message.processed', function () {
                 window.byoInitLandlordOfferPlaces && window.byoInitLandlordOfferPlaces();

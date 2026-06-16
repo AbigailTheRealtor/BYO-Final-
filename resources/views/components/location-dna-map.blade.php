@@ -611,6 +611,10 @@
     @endif
 
     <div class="ldna-chip-map-wrap">
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <i class="fa-solid fa-circle-info" style="color:#64748b;font-size:.9rem;"></i>
+        <span style="font-size:.78rem;color:#64748b;">No custom map drawing saved — preferred locations are shown as area chips below.</span>
+      </div>
       <div class="d-flex align-items-center gap-2 mb-3">
         <i class="fa-solid fa-map-location-dot" style="color:#0369a1;font-size:1.25rem;"></i>
         <span class="ldna-chip-map-title">Preferred Locations</span>

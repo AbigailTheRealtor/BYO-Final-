@@ -133,7 +133,16 @@
     </button>
     <span class="text-muted" style="font-size:.8rem;">or use the radius search below</span>
   </div>
-  <div id="{{ $mapPanelId }}" wire:ignore></div>
+  <div style="position:relative;">
+    <div id="{{ $mapPanelId }}" wire:ignore></div>
+    <div id="{{ $mapPanelId }}-placeholder" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:#f8fafc;border-radius:6px;border:1px solid #ced4da;color:#64748b;font-size:.9rem;text-align:center;padding:1rem;pointer-events:none;z-index:1;">
+      @if(count($ldnaPolygons) || count($ldnaRadii))
+        <span><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading map&hellip;</span>
+      @else
+        <span><i class="fa-solid fa-map me-2"></i>No map drawings saved yet. Use the toolbar above to draw your preferred areas.</span>
+      @endif
+    </div>
+  </div>
 
   {{-- ── Overlay list ── --}}
   <ul class="ldna-overlay-list" id="ldna-overlay-list">
@@ -278,6 +287,10 @@
   function ldnaInitMap() {
     if (ldnaMapInitialized) return;
     ldnaMapInitialized = true;
+
+    /* Hide the placeholder now that the real map is taking over */
+    var ph = document.getElementById('{{ $mapPanelId }}-placeholder');
+    if (ph) ph.style.display = 'none';
 
     /* Disconnect any pending ResizeObserver now that init is running */
     if (ldnaResizeObserver) { ldnaResizeObserver.disconnect(); ldnaResizeObserver = null; }
