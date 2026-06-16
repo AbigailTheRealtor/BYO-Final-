@@ -1932,7 +1932,7 @@
                                     data-question="{{ $__sq['question'] }}"
                                     data-category="{{ $__sq['category'] ?? '' }}"
                                     aria-label="{{ $__sq['question'] }}"
-                                    title="{{ $__sq['question'] }}">@if(!empty($__sq['category_icon']))<i class="fa-solid {{ $__sq['category_icon'] }} me-1 opacity-50" aria-hidden="true"></i>@endif@if(!empty($__sq['category_label']))<span style="font-size:.65rem;font-weight:600;color:#64748b;" class="me-1">{{ $__sq['category_label'] }}:</span>@endif{{ $__sqLabel }}</button>
+                                    title="{{ $__sq['question'] }}">@if(!empty($__sq['category_icon']))<i class="fa-solid {{ $__sq['category_icon'] }} me-1 opacity-50" aria-hidden="true"></i>@endif @if(!empty($__sq['category_label']))<span style="font-size:.65rem;font-weight:600;color:#64748b;" class="me-1">{{ $__sq['category_label'] }}:</span>@endif{{ $__sqLabel }}</button>
                             @endforeach
                         </div>
                         @endif
