@@ -8,7 +8,7 @@ set -e
 # Write any missing OpenAI keys to .env so every workflow restart picks them up.
 # This block is idempotent: it only appends a key if the key is not already set.
 # ---------------------------------------------------------------------------
-for VAR in OPENAI_API_KEY OPENAI_MODEL OPENAI_PROMPT_VERSION; do
+for VAR in OPENAI_API_KEY OPENAI_MODEL OPENAI_PROMPT_VERSION ASK_AI_ENABLE_OPENAI_INTENT_NORMALIZATION ASK_AI_ENABLE_DESCRIPTION_FALLBACK GOOGLE_PLACES_API_KEY; do
     VALUE="${!VAR}"
     if [ -n "$VALUE" ] && ! grep -q "^${VAR}=" .env 2>/dev/null; then
         echo "${VAR}=${VALUE}" >> .env
