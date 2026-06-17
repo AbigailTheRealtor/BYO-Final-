@@ -175,6 +175,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/hire/agent/direct/{agentId}/{role}/{propertyType}/counter', [\App\Http\Controllers\HireAgentDirectController::class, 'counter'])->name('hire.agent.direct.counter');
     Route::post('/hire/agent/direct/{agentId}/{role}/{propertyType}/counter', [\App\Http\Controllers\HireAgentDirectController::class, 'counterSubmit'])->name('hire.agent.direct.counter.submit');
 
+    // Stellar — Phase B: Authenticated buyer results page
+    Route::get('/stellar/buyer/results', [\App\Http\Controllers\Stellar\StellarBuyerResultsController::class, 'index'])->name('stellar.buyer.results');
+
     // Agent Referral Activity page
     Route::get('/agent/my-referrals', [\App\Http\Controllers\AgentReferralPageController::class, 'index'])->name('agent.my-referrals');
 

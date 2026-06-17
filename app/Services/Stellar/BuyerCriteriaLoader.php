@@ -1,0 +1,267 @@
+<?php
+
+namespace App\Services\Stellar;
+
+use App\Models\BuyerCriteriaAuction;
+use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
+
+/**
+ * Loads the authenticated buyer's most-recent BuyerCriteriaAuction record
+ * and maps its native columns + EAV meta into the flat array accepted by
+ * BuyerCriteriaPayload::__construct().
+ *
+ * Returns null when:
+ *  - No active record exists for the buyer, OR
+ *  - property_types resolves to an empty array (BuyerCriteriaPayload would throw).
+ */
+class BuyerCriteriaLoader
+{
+    /**
+     * Load and map the buyer's active criteria record.
+     *
+     * @param  int $userId  The authenticated user's ID.
+     * @return array|null   Flat array ready for BuyerCriteriaPayload, or null on missing/incomplete data.
+     */
+    public function load(int $userId): ?array
+    {
+        $record = BuyerCriteriaAuction::where('user_id', $userId)
+            ->where('is_approved', true)
+            ->where('is_sold', false)
+            ->latest()
+            ->first();
+
+        if (!$record) {
+            return null;
+        }
+
+        $infoGet = function (string $key) use ($record) {
+            $val = $record->info($key);
+            return ($val === false || $val === null) ? null : $val;
+        };
+
+        // -----------------------------------------------------------------------
+        // property_types — required non-empty array; check EAV meta first, then
+        // fall back to a default 'Residential' derived from the native column.
+        // -----------------------------------------------------------------------
+        $propertyTypes = $this->decodeJsonMeta($infoGet('property_types'));
+        if (empty($propertyTypes) && !empty($record->property_type_id)) {
+            $propertyTypes = ['Residential'];
+        }
+        if (empty($propertyTypes)) {
+            return null;
+        }
+
+        // -----------------------------------------------------------------------
+        // is_55_plus_eligible — must be explicit bool; default false.
+        // Stored as EAV meta 'is_55_plus_eligible'; also check native old_community
+        // column as a secondary signal.
+        // -----------------------------------------------------------------------
+        $is55Raw = $infoGet('is_55_plus_eligible');
+        if ($is55Raw !== null) {
+            $is55Plus = filter_var($is55Raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+        } elseif (!empty($record->old_community)) {
+            $is55Plus = (bool) filter_var($record->old_community, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        } else {
+            $is55Plus = false;
+        }
+
+        // -----------------------------------------------------------------------
+        // Location — multi-value EAV meta fields
+        // -----------------------------------------------------------------------
+        $preferredCities    = $this->decodeJsonMeta($infoGet('preferred_cities'));
+        $preferredZipCodes  = $this->decodeJsonMeta($infoGet('preferred_zip_codes'));
+        $preferredCounties  = $this->decodeJsonMeta($infoGet('preferred_counties'));
+        $radiusSearches     = $this->decodeJsonMeta($infoGet('radius_searches'));
+        $polygons           = $this->decodeJsonMeta($infoGet('polygons'));
+        $preferredSubdivisions = $this->decodeJsonMeta($infoGet('preferred_subdivisions'));
+        $preferredMlsAreas  = $this->decodeJsonMeta($infoGet('preferred_mls_areas'));
+
+        // -----------------------------------------------------------------------
+        // Price — native columns with EAV override
+        // -----------------------------------------------------------------------
+        $maxPrice   = $this->positiveIntOrNull($infoGet('max_price') ?? $record->max_price);
+        $idealPrice = $this->positiveIntOrNull($infoGet('ideal_price'));
+
+        // -----------------------------------------------------------------------
+        // Property sub-types
+        // -----------------------------------------------------------------------
+        $propertySubTypes = $this->decodeJsonMeta($infoGet('property_sub_types'));
+
+        // -----------------------------------------------------------------------
+        // Size — native columns; EAV can override
+        // -----------------------------------------------------------------------
+        $minBedrooms  = $this->positiveIntOrNull($infoGet('min_bedrooms') ?? $record->bedrooms);
+        $minBathrooms = $this->positiveIntOrNull($infoGet('min_bathrooms') ?? $record->bathrooms);
+        $minSqft      = $this->positiveIntOrNull($infoGet('min_sqft') ?? $record->sqft);
+        $maxSqft      = $this->positiveIntOrNull($infoGet('max_sqft'));
+        $minLotSqft   = $this->positiveIntOrNull($infoGet('min_lot_sqft'));
+        $maxLotSqft   = $this->positiveIntOrNull($infoGet('max_lot_sqft'));
+        $yearBuiltMin = $this->positiveIntOrNull($infoGet('year_built_min'));
+        $yearBuiltMax = $this->positiveIntOrNull($infoGet('year_built_max'));
+
+        // -----------------------------------------------------------------------
+        // Amenities — native columns / EAV
+        // -----------------------------------------------------------------------
+        $wantsPool       = $this->tristateBool($infoGet('wants_pool') ?? $record->pool);
+        $wantsGarage     = $this->tristateBool($infoGet('wants_garage') ?? $record->garage);
+        $minGarageSpaces = $this->positiveIntOrNull($infoGet('min_garage_spaces') ?? $record->garage_spaces);
+        $wantsWaterfront = $this->tristateBool($infoGet('wants_waterfront'));
+        $wantsWaterView  = $this->tristateBool($infoGet('wants_water_view') ?? $record->water_view);
+        $wantsAnyView    = $this->tristateBool($infoGet('wants_any_view'));
+
+        // -----------------------------------------------------------------------
+        // Financial / HOA — native columns / EAV
+        // -----------------------------------------------------------------------
+        $maxMonthlyHoa         = $this->positiveIntOrNull($infoGet('max_monthly_hoa') ?? $record->max_hoa_fee);
+        $hoaPreference         = $infoGet('hoa_preference') ?? ($record->hoa_fee_requirement ?: null);
+        $cddPreference         = $infoGet('cdd_preference');
+        $maxMonthlyTotalBurden = $this->positiveIntOrNull($infoGet('max_monthly_total_burden'));
+
+        // -----------------------------------------------------------------------
+        // Community / Eligibility
+        // -----------------------------------------------------------------------
+        $wantsPetFriendly    = $this->tristateBool($infoGet('wants_pet_friendly') ?? $record->pets_allowed);
+        $wantsNewConstruction = $this->tristateBool($infoGet('wants_new_construction'));
+
+        // -----------------------------------------------------------------------
+        // Lifestyle
+        // -----------------------------------------------------------------------
+        $communityFeatureKeywords = $this->decodeJsonMeta($infoGet('community_feature_keywords'));
+        $wantsEnergyEfficient     = $this->tristateBool($infoGet('wants_energy_efficient'));
+
+        return [
+            'property_types'             => $propertyTypes,
+            'is_55_plus_eligible'         => $is55Plus,
+
+            'preferred_cities'            => $preferredCities,
+            'preferred_zip_codes'         => $preferredZipCodes,
+            'preferred_counties'          => $preferredCounties,
+            'radius_searches'             => $radiusSearches,
+            'polygons'                    => $polygons,
+            'preferred_subdivisions'      => $preferredSubdivisions,
+            'preferred_mls_areas'         => $preferredMlsAreas,
+
+            'max_price'                   => $maxPrice,
+            'ideal_price'                 => $idealPrice,
+
+            'property_sub_types'          => $propertySubTypes,
+
+            'min_bedrooms'                => $minBedrooms,
+            'min_bathrooms'               => $minBathrooms,
+            'min_sqft'                    => $minSqft,
+            'max_sqft'                    => $maxSqft,
+            'min_lot_sqft'                => $minLotSqft,
+            'max_lot_sqft'                => $maxLotSqft,
+            'year_built_min'              => $yearBuiltMin,
+            'year_built_max'              => $yearBuiltMax,
+
+            'wants_pool'                  => $wantsPool,
+            'wants_garage'                => $wantsGarage,
+            'min_garage_spaces'           => $minGarageSpaces,
+            'wants_waterfront'            => $wantsWaterfront,
+            'wants_water_view'            => $wantsWaterView,
+            'wants_any_view'              => $wantsAnyView,
+
+            'max_monthly_hoa'             => $maxMonthlyHoa,
+            'hoa_preference'              => $hoaPreference,
+            'cdd_preference'              => $cddPreference,
+            'max_monthly_total_burden'    => $maxMonthlyTotalBurden,
+
+            'wants_pet_friendly'          => $wantsPetFriendly,
+            'wants_new_construction'      => $wantsNewConstruction,
+
+            'community_feature_keywords'  => $communityFeatureKeywords,
+            'wants_energy_efficient'      => $wantsEnergyEfficient,
+        ];
+    }
+
+    // =========================================================================
+    // Private helpers
+    // =========================================================================
+
+    /**
+     * Decode a meta value that may be a JSON array string, a PHP array already
+     * decoded by the model accessor, or a scalar string.
+     *
+     * Returns a plain PHP array, never null.
+     */
+    private function decodeJsonMeta(mixed $value): array
+    {
+        if ($value === null || $value === false || $value === '') {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return array_values(array_filter($value, [$this, 'isNonEmptyMetaElement']));
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                return array_values(array_filter($decoded, [$this, 'isNonEmptyMetaElement']));
+            }
+            // Non-JSON string treated as a single-element array
+            $trimmed = trim($value);
+            return $trimmed !== '' ? [$trimmed] : [];
+        }
+
+        return [];
+    }
+
+    /**
+     * Filter callback for decoded meta elements.
+     *
+     * - Nested arrays (radius_searches, polygons, etc.) are kept as-is.
+     * - Scalar strings are kept only if non-empty after trimming.
+     * - null is always rejected.
+     */
+    private function isNonEmptyMetaElement(mixed $item): bool
+    {
+        if ($item === null) {
+            return false;
+        }
+        if (is_array($item)) {
+            return true;
+        }
+        if (is_string($item)) {
+            return trim($item) !== '';
+        }
+        return true;
+    }
+
+    /**
+     * Coerce a value to a positive integer, or return null.
+     * Returns null for zero, negative, or non-numeric values.
+     */
+    private function positiveIntOrNull(mixed $value): ?int
+    {
+        if ($value === null || $value === false || $value === '') {
+            return null;
+        }
+
+        $int = (int) $value;
+        return $int > 0 ? $int : null;
+    }
+
+    /**
+     * Coerce a value to a nullable bool (tristate: true / false / null).
+     *
+     * - "yes", "1", 1, true → true
+     * - "no", "0", 0, false → false
+     * - null, "", unknown → null (no preference)
+     */
+    private function tristateBool(mixed $value): ?bool
+    {
+        if ($value === null || $value === false || $value === '') {
+            return null;
+        }
+
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        $result = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+        return $result;
+    }
+}
