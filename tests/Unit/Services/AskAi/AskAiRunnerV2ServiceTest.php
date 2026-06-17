@@ -3904,4 +3904,246 @@ class AskAiRunnerV2ServiceTest extends TestCase
 
         $runner->run('seller', 121, 'Tell me about the agent');
     }
+
+    // =========================================================================
+    // Case T — Quality rewrite: fail-after-retry contract
+    // =========================================================================
+    // If the initial adapter response is degraded, the runner fires a one-shot
+    // rewrite. If the rewrite output is STILL degraded, the runner must surface
+    // status=failed, not silently accept the low-quality answer.
+
+    public function test_case_T1_quality_guard_sets_failed_when_rewrite_answer_is_still_degraded(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        // Use property_standout — the standard happy-path type used in Case A.
+        // The quality guard is question-type agnostic; using property_standout
+        // avoids Guard B / knowledge-search short-circuits that only fire for
+        // listing_facts and would intercept before the quality guard block.
+        $degradedFinalResponse = array_merge($this->makeFinalResponse(), ['answer' => 'Yes']);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('property_standout'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        // adapter->generate() is called twice: once for the original, once for the rewrite.
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        // build() returns a degraded answer on every call (original + rewrite).
+        $mocks['finalBuilder']->method('build')->willReturn($degradedFinalResponse);
+        // isResponseDegraded() returns true for both the original and the rewrite answer.
+        $mocks['finalBuilder']->method('isResponseDegraded')->willReturn(true);
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertSame(
+            'failed',
+            $result['status'],
+            'T1: when rewrite answer is still degraded, status must be "failed".'
+        );
+        $this->assertFalse(
+            $result['success'],
+            'T1: when rewrite answer is still degraded, success must be false.'
+        );
+        $this->assertNull(
+            $result['final_response']['answer'],
+            'T1: when rewrite fails quality guard, final_response.answer must be null.'
+        );
+        $this->assertNotEmpty(
+            $result['error'] ?? '',
+            'T1: when rewrite fails quality guard, error must be set.'
+        );
+    }
+
+    public function test_case_T2_quality_rewrite_fired_trace_set_when_guard_triggers(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $cleanAnswer           = 'This property features an updated kitchen, heated pool, and a spacious two-car garage.';
+        $degradedFinalResponse = array_merge($this->makeFinalResponse(), ['answer' => 'Yes']);
+        $cleanFinalResponse    = array_merge($this->makeFinalResponse(), ['answer' => $cleanAnswer]);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('property_standout'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        // build() returns degraded on first call, clean on second (the rewrite call).
+        $mocks['finalBuilder']->method('build')
+            ->willReturnOnConsecutiveCalls($degradedFinalResponse, $cleanFinalResponse);
+        // First isResponseDegraded call (original) → true; second (rewrite) → false.
+        $mocks['finalBuilder']->method('isResponseDegraded')
+            ->willReturnOnConsecutiveCalls(true, false);
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertTrue(
+            $result['trace']['quality_rewrite_fired'] ?? false,
+            'T2: trace must have quality_rewrite_fired=true when the quality guard fires.'
+        );
+    }
+
+    public function test_case_T3_quality_rewrite_outcome_category_is_quality_rewrite_failed_on_double_degraded(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $degradedFinalResponse = array_merge($this->makeFinalResponse(), ['answer' => 'Yes']);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('property_standout'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')->willReturn($degradedFinalResponse);
+        // Both calls return degraded → fail-after-retry fires.
+        $mocks['finalBuilder']->method('isResponseDegraded')->willReturn(true);
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertSame(
+            'quality_rewrite_failed',
+            $result['outcome_category'] ?? '',
+            'T3: outcome_category must be "quality_rewrite_failed" when the rewrite answer is still degraded.'
+        );
+    }
+
+    // =========================================================================
+    // Case T4 — quality guard: adapter failure on rewrite → fail-closed (Path A)
+    //
+    // If the rewrite adapter call fails (success=false), the runner must NOT
+    // fall through and return the original degraded answer. It must set
+    // status=failed, success=false, answer=null, and include an error message
+    // that identifies the adapter call failure.
+    // =========================================================================
+
+    public function test_case_T4_quality_guard_fails_closed_when_rewrite_adapter_fails(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $degradedFinalResponse = array_merge($this->makeFinalResponse(), ['answer' => 'Yes']);
+        $adapterSuccess        = $this->makeAdapterResult(['success' => true]);
+        $adapterFailure        = ['success' => false, 'error' => 'Connection timeout', 'raw_response' => null];
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('property_standout'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        // First adapter call (original) succeeds; second (rewrite) fails.
+        $mocks['adapter']->method('generate')
+            ->willReturnOnConsecutiveCalls($adapterSuccess, $adapterFailure);
+        // build() only called for the original; rewrite adapter fails so build() is never reached.
+        $mocks['finalBuilder']->method('build')->willReturn($degradedFinalResponse);
+        // isResponseDegraded: first call on the original answer returns true (guard triggers).
+        $mocks['finalBuilder']->method('isResponseDegraded')->willReturn(true);
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertSame(
+            'failed',
+            $result['status'],
+            'T4: status must be "failed" when the rewrite adapter call fails.'
+        );
+        $this->assertFalse(
+            $result['success'],
+            'T4: success must be false when the rewrite adapter call fails.'
+        );
+        $this->assertNull(
+            $result['final_response']['answer'],
+            'T4: final_response.answer must be null when rewrite adapter fails (fail-closed).'
+        );
+        $this->assertStringContainsString(
+            'adapter call failed',
+            $result['error'] ?? '',
+            'T4: error must identify the adapter call failure.'
+        );
+        $this->assertSame(
+            'quality_rewrite_failed',
+            $result['outcome_category'] ?? '',
+            'T4: outcome_category must be "quality_rewrite_failed" on adapter failure path.'
+        );
+    }
+
+    // =========================================================================
+    // Case T5 — quality guard: rewrite build returns non-ready → fail-closed (Path B)
+    //
+    // If the rewrite adapter call succeeds but the builder returns a non-ready
+    // response (e.g. blocked or insufficient_context), the runner must NOT fall
+    // through and return the original degraded answer. It must set status=failed.
+    // =========================================================================
+
+    public function test_case_T5_quality_guard_fails_closed_when_rewrite_build_returns_non_ready(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $degradedFinalResponse = array_merge($this->makeFinalResponse(), ['answer' => 'Yes']);
+        $nonReadyResponse      = array_merge($this->makeFinalResponse(), [
+            'status'  => 'blocked',
+            'success' => false,
+            'answer'  => null,
+        ]);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('property_standout'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        // build() returns degraded first (original), then non-ready (rewrite).
+        $mocks['finalBuilder']->method('build')
+            ->willReturnOnConsecutiveCalls($degradedFinalResponse, $nonReadyResponse);
+        // isResponseDegraded: true on first call (original); not called again because
+        // rewriteAnswer === null from the non-ready response.
+        $mocks['finalBuilder']->method('isResponseDegraded')->willReturn(true);
+
+        $result = $runner->run('seller', 1, 'What makes this property stand out?');
+
+        $this->assertSame(
+            'failed',
+            $result['status'],
+            'T5: status must be "failed" when rewrite build returns a non-ready response.'
+        );
+        $this->assertFalse(
+            $result['success'],
+            'T5: success must be false when rewrite build returns non-ready.'
+        );
+        $this->assertNull(
+            $result['final_response']['answer'],
+            'T5: final_response.answer must be null on non-ready rewrite (fail-closed).'
+        );
+        $this->assertStringContainsString(
+            'non-ready or empty',
+            $result['error'] ?? '',
+            'T5: error must identify the non-ready rewrite response.'
+        );
+        $this->assertSame(
+            'quality_rewrite_failed',
+            $result['outcome_category'] ?? '',
+            'T5: outcome_category must be "quality_rewrite_failed" on non-ready path.'
+        );
+    }
+
+    // =========================================================================
+    // Case T6 — quality guard: clean rewrite accepted (Path success)
+    //
+    // When the rewrite produces a clean, non-degraded paragraph, the runner
+    // must accept it, return status=ready, and set outcome_category='quality_rewrite'.
+    // =========================================================================
+
+    public function test_case_T6_quality_guard_accepts_clean_rewrite_and_sets_outcome_quality_rewrite(): void
+    {
+        $mocks  = $this->makeMocks();
+        $runner = $this->makeRunner($mocks);
+
+        $cleanAnswer           = 'The seller is offering a $5,000 credit toward the buyer\'s closing costs, which can significantly reduce the upfront cash required at settlement.';
+        $degradedFinalResponse = array_merge($this->makeFinalResponse(), ['answer' => 'Yes']);
+        $cleanFinalResponse    = array_merge($this->makeFinalResponse(), ['answer' => $cleanAnswer]);
+
+        $mocks['classifier']->method('classify')->willReturn($this->makeClassification('property_standout'));
+        $mocks['internalRunner']->method('run')->willReturn($this->makeInternalResult());
+        $mocks['adapter']->method('generate')->willReturn($this->makeAdapterResult());
+        $mocks['finalBuilder']->method('build')
+            ->willReturnOnConsecutiveCalls($degradedFinalResponse, $cleanFinalResponse);
+        $mocks['finalBuilder']->method('isResponseDegraded')
+            ->willReturnOnConsecutiveCalls(true, false);
+
+        $result = $runner->run('seller', 1, 'How much seller credit is being offered?');
+
+        $this->assertSame('ready', $result['status'],         'T6: clean rewrite must yield status=ready.');
+        $this->assertTrue($result['success'],                 'T6: clean rewrite must yield success=true.');
+        $this->assertSame($cleanAnswer, $result['final_response']['answer'], 'T6: clean rewrite answer must be returned.');
+        $this->assertSame('quality_rewrite', $result['outcome_category'] ?? '', 'T6: outcome_category must be "quality_rewrite".');
+    }
 }

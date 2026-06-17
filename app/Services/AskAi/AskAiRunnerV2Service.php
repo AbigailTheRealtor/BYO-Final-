@@ -3811,6 +3811,86 @@ class AskAiRunnerV2Service
                 $outcomeCategory                  = 'placeholder_sanitized';
             }
 
+            // ----------------------------------------------------------------
+            // Quality guard: one-shot rewrite for degraded responses.
+            //
+            // When the final answer is still low-quality after JSON extraction
+            // (raw JSON blob, JSON key-value pattern, or fewer than 3 words /
+            // 15 chars), attempt a single rewrite call with explicit prose
+            // instructions.  Fail-after-retry: if the rewrite also produces
+            // a degraded answer, the runner sets status=failed and returns an
+            // explicit error — we never silently accept a low-quality answer.
+            //
+            // Fires only when:
+            //   1. The final status is 'ready' (an answer was actually generated).
+            //   2. The answer passes isResponseDegraded() detection.
+            //   3. The adapter is available (always true here since we already
+            //      used it to produce the original answer).
+            // ----------------------------------------------------------------
+            if (
+                ($finalResponse['status'] ?? '') === 'ready'
+                && isset($finalResponse['answer'])
+                && is_string($finalResponse['answer'])
+                && $this->finalResponseBuilder->isResponseDegraded($finalResponse['answer'])
+            ) {
+                $trace['quality_rewrite_fired'] = true;
+                $rewritePackage  = $this->buildQualityRewritePackage($question, $finalResponse['answer']);
+                $rewriteResult   = $this->adapter->generate($rewritePackage);
+
+                // ── Fail-closed contract ─────────────────────────────────────
+                // Every retry-failure path must set status=failed rather than
+                // silently returning the original degraded answer. Three failure
+                // modes are handled explicitly so the guard is fully fail-closed:
+                //
+                //   A) Adapter failure — generate() returned success=false.
+                //   B) Non-ready / empty — build() did not return a ready, non-empty
+                //      answer string (e.g. prompt was blocked, context insufficient,
+                //      or the adapter returned an empty string).
+                //   C) Still degraded — the rewrite answer is non-null but still a
+                //      raw blob, bare boolean, or very short string.
+                //
+                // Only when the rewrite answer passes all three does the runner
+                // accept it and set outcomeCategory='quality_rewrite'.
+                // ------------------------------------------------------------
+                if (!($rewriteResult['success'] ?? false)) {
+                    // Path A: adapter failure.
+                    $finalResponse['status']  = 'failed';
+                    $finalResponse['success'] = false;
+                    $finalResponse['answer']  = null;
+                    $finalResponse['error']   = 'Quality rewrite adapter call failed: '
+                        . ($rewriteResult['error'] ?? 'unknown error');
+                    $outcomeCategory = 'quality_rewrite_failed';
+                } else {
+                    $rewriteResponse = $this->finalResponseBuilder->build($rewritePackage, $rewriteResult);
+                    $rewriteAnswer   = (
+                        ($rewriteResponse['status'] ?? '') === 'ready'
+                        && isset($rewriteResponse['answer'])
+                        && is_string($rewriteResponse['answer'])
+                        && $rewriteResponse['answer'] !== ''
+                    ) ? $rewriteResponse['answer'] : null;
+
+                    if ($rewriteAnswer === null) {
+                        // Path B: build() returned non-ready or empty answer.
+                        $finalResponse['status']  = 'failed';
+                        $finalResponse['success'] = false;
+                        $finalResponse['answer']  = null;
+                        $finalResponse['error']   = 'Quality rewrite produced a non-ready or empty response.';
+                        $outcomeCategory          = 'quality_rewrite_failed';
+                    } elseif ($this->finalResponseBuilder->isResponseDegraded($rewriteAnswer)) {
+                        // Path C: rewrite answer is still degraded.
+                        $finalResponse['status']  = 'failed';
+                        $finalResponse['success'] = false;
+                        $finalResponse['answer']  = null;
+                        $finalResponse['error']   = 'Quality rewrite produced a degraded answer after one retry.';
+                        $outcomeCategory          = 'quality_rewrite_failed';
+                    } else {
+                        // Success: rewrite is clean — replace the original degraded answer.
+                        $finalResponse['answer'] = $rewriteAnswer;
+                        $outcomeCategory         = 'quality_rewrite';
+                    }
+                }
+            }
+
             // Safety net: bare boolean + quantity question mismatch.
             //
             // When the final answer is a bare "Yes" or "No" AND the question
@@ -4563,6 +4643,74 @@ class AskAiRunnerV2Service
     // -------------------------------------------------------------------------
     // Description Fallback Helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Build a minimal prompt package that asks OpenAI to rewrite a degraded answer
+     * as a natural-language paragraph.
+     *
+     * Called by the quality guard when the first adapter response was degraded (raw
+     * JSON blob, JSON key-value pattern, or fewer than 3 words / 15 chars).  This
+     * package carries only the original question and the degraded answer so the
+     * model can produce a properly composed paragraph using only information that
+     * already came from the listing context — no new facts are introduced.
+     *
+     * The adapter treats this like any other prompt_ready package; a single call is
+     * made.  The quality guard is fail-closed: if the rewrite adapter call fails,
+     * returns a non-ready response, or the answer is still degraded, the runner sets
+     * status=failed and returns an explicit error — no degraded answer is ever
+     * silently accepted or returned to the caller.
+     *
+     * @param  string $question       The original user question.
+     * @param  string $degradedAnswer The low-quality answer that needs rewriting.
+     * @return array                  A minimal prompt_ready package for the adapter.
+     */
+    private function buildQualityRewritePackage(string $question, string $degradedAnswer): array
+    {
+        return [
+            'status'        => 'prompt_ready',
+            'question'      => $question,
+            'question_type' => 'quality_rewrite',
+
+            'system_instructions' => [
+                'You are a real estate information assistant.',
+                'You have been given a user question and a previously generated answer that has a quality problem — it may be a raw JSON blob, a bare word, or an incomplete sentence.',
+                'Your task is to rewrite that answer as a single, clear, complete natural-language paragraph that directly addresses the question.',
+                'Use only the information already present in the degraded_answer field — do not invent, estimate, or add new information.',
+                'Do not reference protected class characteristics including race, color, national origin, religion, sex, familial status, or disability.',
+                'Do not generate legal, financial, investment, or professional advice of any kind.',
+                'Respond using a JSON object with exactly one key named "answer". The value must be a complete natural-language paragraph.',
+            ],
+
+            'developer_instructions' => [
+                'task'            => 'Rewrite degraded_answer as a natural-language paragraph. Use question for context only.',
+                'constraint'      => 'Do not add any information not already present in degraded_answer.',
+                'response_format' => 'JSON object {"answer": "<paragraph>"} — the paragraph must use full sentences.',
+            ],
+
+            'allowed_context' => [
+                'question'        => $question,
+                'degraded_answer' => $degradedAnswer,
+            ],
+
+            'source_attribution'       => [],
+            'required_disclosures'     => [],
+            'refusal_template'         => null,
+            'missing_required_sources' => [],
+            'context_versions'         => [],
+
+            'response_format' => [
+                'type'                            => 'structured_text',
+                'must_include_source_attribution' => false,
+                'must_include_disclosures'        => false,
+                'must_not_include'                => [
+                    'protected_class_characteristics',
+                    'invented_or_inferred_values',
+                ],
+            ],
+
+            'error' => null,
+        ];
+    }
 
     /**
      * Build a minimal, self-contained prompt package that constrains OpenAI to answer

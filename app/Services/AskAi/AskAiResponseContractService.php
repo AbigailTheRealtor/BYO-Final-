@@ -326,8 +326,9 @@ class AskAiResponseContractService
                 'listing.current_status',
                 // Tenant income
                 'listing.monthly_income',
-                // Seller credit / concessions
+                // Seller credit / concessions — offered flag + amount/details (paired for synthesis)
                 'listing.seller_credit_offered',
+                'listing.seller_credit_amount',
                 // MLS / service
                 'listing.mls_id',
                 'listing.sold',
@@ -377,6 +378,10 @@ class AskAiResponseContractService
                 'Attribute all factual data to the listing source provided by the seller, buyer, landlord, or tenant.',
                 'Do not generate marketing copy, price predictions, investment recommendations, or legal interpretations — answer only what was explicitly asked.',
                 'When flood zone, HOA, or financial field values are present, include the required disclosure.',
+                'Compose the response as a complete natural-language paragraph. Never echo raw field names, JSON keys, or bare data values — always use full sentences.',
+                'When multiple related fields are available (for example: HOA presence + fee + payment schedule; pets allowed + breed/weight restrictions + pet deposit/fee; seller credit offered + concession amount; financing type + pre-approval status; annual property taxes + CDD fee + HOA fee), synthesize all related values into a single coherent sentence rather than listing them separately.',
+                'When ownership-cost fields are present (HOA fee, CDD fee, annual property taxes), summarize all applicable costs together in one paragraph.',
+                'When pet policy fields are present, describe the complete pet policy — including allowed status, any breed or weight limits, and any associated fees — in one flowing paragraph.',
             ],
             'required_disclosures' => [
                 'Information is sourced directly from the listing data provided by the seller or landlord. Verify all details independently before making any financial or legal decision.',

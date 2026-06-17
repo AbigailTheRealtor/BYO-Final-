@@ -544,6 +544,13 @@ class AskAiContextBuilderService
                     // Edit variants). EAV key confirmed by code audit — maps to output key
                     // 'seller_credit_offered' for LISTING_KEY_KEYWORD_MAP routing.
                     'seller_credit_offered'     => $infoGet('seller_contribution_credit_offered'),
+                    // seller_contribution_amount_details: free-text companion to the Yes/No credit
+                    // field — the seller enters the credit dollar amount or description here. Paired
+                    // with seller_credit_offered to allow synthesis of a complete credit sentence
+                    // (e.g. "The seller is offering a $5,000 closing cost credit."). EAV key
+                    // confirmed in SellerAgentAuction, SellerAgentAuctionEdit, SellerOfferListing,
+                    // and SellerOfferListingEdit. Maps to output key 'seller_credit_amount'.
+                    'seller_credit_amount'      => $infoGet('seller_contribution_amount_details'),
                 ],
                 // ── Vacant Land-specific fields ─────────────────────────────────────
                 // Only populated when property_type === 'Vacant Land'. All array-valued

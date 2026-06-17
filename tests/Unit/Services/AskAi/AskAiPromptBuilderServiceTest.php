@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
  * Pure unit tests — no database, no Laravel TestCase, no DB traits.
  * AskAiPromptBuilderService is stateless and requires no mocking.
  *
- * Test coverage (cases A–O):
+ * Test coverage (cases A–Q):
  *   A. contract_ready contract produces 'prompt_ready' status
  *   B. refusal_required contract produces 'blocked' status
  *   C. insufficient_context contract produces 'insufficient_context' status
@@ -32,6 +32,9 @@ use PHPUnit\Framework\TestCase;
  *      config_key and internal model fields are stripped; legacy strings pass through;
  *      faq_answers absent from output when not in allowed_context; consumer-audit grep confirms
  *      faq_answers is only accessed through sanitizeFaqAnswers inside filterAllowedContext.
+ *   Q. synthesis_directives in developer_instructions — per-question-type prose directives present;
+ *      listing_facts gets field-group synthesis rules; unknown type falls back to _default;
+ *      property_standout and marketing_angles get narrative-focused directives.
  */
 class AskAiPromptBuilderServiceTest extends TestCase
 {
@@ -1281,5 +1284,134 @@ class AskAiPromptBuilderServiceTest extends TestCase
 
         $this->assertEmpty($rawHits,
             'filterAllowedContext must not access $context[faq_answers] raw — only via sanitizeFaqAnswers()');
+    }
+
+    // =========================================================================
+    // Case Q — synthesis_directives in developer_instructions
+    // =========================================================================
+
+    public function test_case_Q_prompt_ready_package_contains_synthesis_directives_key(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['question_type' => 'listing_facts']);
+
+        $result = $service->buildPromptPackage('What are the HOA fees?', $this->makeContext(), $contract);
+
+        $this->assertSame('prompt_ready', $result['status']);
+        $this->assertArrayHasKey('developer_instructions', $result);
+        $this->assertIsArray($result['developer_instructions']);
+        $this->assertArrayHasKey('synthesis_directives', $result['developer_instructions'],
+            'developer_instructions must include a synthesis_directives key for question_type=listing_facts.');
+    }
+
+    public function test_case_Q_listing_facts_synthesis_directives_are_non_empty(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['question_type' => 'listing_facts']);
+
+        $result = $service->buildPromptPackage('What is the square footage?', $this->makeContext(), $contract);
+
+        $directives = $result['developer_instructions']['synthesis_directives'] ?? null;
+        $this->assertIsArray($directives, 'synthesis_directives for listing_facts must be an array.');
+        $this->assertNotEmpty($directives, 'listing_facts synthesis_directives must not be empty.');
+    }
+
+    public function test_case_Q_listing_facts_directives_reference_natural_language_paragraphs(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['question_type' => 'listing_facts']);
+
+        $result   = $service->buildPromptPackage('Tell me about the HOA.', $this->makeContext(), $contract);
+
+        $directives = $result['developer_instructions']['synthesis_directives'] ?? [];
+        $combined   = implode(' ', $directives);
+
+        $this->assertMatchesRegularExpression('/paragraph|prose|natural.language|sentences/i', $combined,
+            'listing_facts synthesis_directives must reference natural-language prose composition.');
+    }
+
+    public function test_case_Q_property_standout_synthesis_directives_are_non_empty(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['question_type' => 'property_standout']);
+
+        $result = $service->buildPromptPackage('What makes this home special?', $this->makeContext(), $contract);
+
+        $directives = $result['developer_instructions']['synthesis_directives'] ?? null;
+        $this->assertIsArray($directives, 'synthesis_directives for property_standout must be an array.');
+        $this->assertNotEmpty($directives, 'property_standout synthesis_directives must not be empty.');
+    }
+
+    public function test_case_Q_marketing_angles_synthesis_directives_are_non_empty(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['question_type' => 'marketing_angles']);
+
+        $result = $service->buildPromptPackage('How should this home be marketed?', $this->makeContext(), $contract);
+
+        $directives = $result['developer_instructions']['synthesis_directives'] ?? null;
+        $this->assertIsArray($directives, 'synthesis_directives for marketing_angles must be an array.');
+        $this->assertNotEmpty($directives, 'marketing_angles synthesis_directives must not be empty.');
+    }
+
+    public function test_case_Q_unknown_question_type_falls_back_to_default_directives(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady(['question_type' => 'unknown_future_category']);
+
+        $result = $service->buildPromptPackage('Some question about the property.', $this->makeContext(), $contract);
+
+        $directives = $result['developer_instructions']['synthesis_directives'] ?? null;
+        $this->assertIsArray($directives,
+            'synthesis_directives must fall back to a _default entry for unknown question types.');
+        $this->assertNotEmpty($directives,
+            '_default synthesis_directives must not be empty.');
+    }
+
+    public function test_case_Q_all_named_question_types_have_directives(): void
+    {
+        $service = $this->makeService();
+
+        $namedTypes = [
+            'listing_facts',
+            'property_standout',
+            'marketing_angles',
+            'suited_audience',
+            'buyer_tenant_match',
+            'compatibility_signals',
+            'agent_profile',
+            'educational',
+        ];
+
+        foreach ($namedTypes as $qtype) {
+            $contract = $this->makeContractReady(['question_type' => $qtype]);
+            $result   = $service->buildPromptPackage('A question.', $this->makeContext(), $contract);
+
+            $directives = $result['developer_instructions']['synthesis_directives'] ?? null;
+            $this->assertIsArray($directives,
+                "synthesis_directives for question_type={$qtype} must be an array.");
+            $this->assertNotEmpty($directives,
+                "synthesis_directives for question_type={$qtype} must not be empty.");
+        }
+    }
+
+    public function test_case_Q_refusal_required_produces_blocked_and_no_exception(): void
+    {
+        $service  = $this->makeService();
+        $contract = $this->makeContractReady([
+            'status'           => 'refusal_required',
+            'question_type'    => 'listing_facts',
+            'refusal_template' => 'This question cannot be answered.',
+        ]);
+
+        $result = $service->buildPromptPackage(
+            'Is this a good neighborhood for families?',
+            $this->makeContext(),
+            $contract
+        );
+
+        $this->assertSame('blocked', $result['status'],
+            'refusal_required contract must produce blocked status.');
+        $this->assertIsArray($result);
     }
 }

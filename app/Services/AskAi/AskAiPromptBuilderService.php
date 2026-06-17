@@ -31,6 +31,69 @@ class AskAiPromptBuilderService
     }
 
     /**
+     * Per-question-type synthesis directives injected into developer_instructions.
+     *
+     * These guide the LLM toward prose paragraphs rather than raw field echoes or
+     * bullet lists.  The '_default' entry fires for any question type not explicitly
+     * listed.  Each entry is an array of plain-English instruction strings.
+     *
+     * Rules for adding entries:
+     *   - Every directive must be a complete, imperative sentence.
+     *   - Never reference protected-class characteristics.
+     *   - Directives supplement (not replace) the governance response_rules from the
+     *     contract; they carry no binding authority on their own.
+     */
+    private const SYNTHESIS_DIRECTIVES = [
+        '_default' => [
+            'Compose all answers as complete natural-language paragraphs written in full sentences.',
+            'When multiple related data points are available, weave them into a single coherent sentence or paragraph rather than listing field names or raw values separately.',
+        ],
+
+        'listing_facts' => [
+            'Compose all answers as complete natural-language paragraphs written in full sentences. Never echo field names, JSON keys, or raw data values.',
+            'When multiple related fields are available — for example HOA presence + fee + payment schedule, or pets allowed + breed restrictions + pet fee, or seller credit offered + concession amount, or financing type + pre-approval status — combine them into a single coherent sentence that reads naturally.',
+            'When ownership-cost fields are present (HOA fee, CDD fee, annual property taxes), summarize all applicable costs together in one paragraph so the reader understands the full picture.',
+            'When pet policy fields are present (allowed status, breed/weight limits, pet deposit, monthly pet fee), describe the complete pet policy in one flowing paragraph.',
+            'When financing or buyer-criteria fields are present (loan pre-approved, financing type, inspection/appraisal/financing contingencies), describe the buyer\'s financial situation in one coherent paragraph.',
+            'When agent profile or agent preset data is present alongside listing fields, synthesize both into a unified answer — for example, state the listing detail and then describe how the agent\'s services relate to it.',
+        ],
+
+        'property_standout' => [
+            'Compose a narrative paragraph using all available highlights, strengths, and story data.',
+            'Weave specific details from property_highlights, property_strengths, and property_story into one flowing paragraph — do not enumerate them as a bullet list.',
+        ],
+
+        'marketing_angles' => [
+            'Write a single marketing-oriented paragraph that draws on property positioning, personality tags, and location context together.',
+            'Avoid bullet lists — produce one cohesive paragraph a marketing professional would use.',
+        ],
+
+        'suited_audience' => [
+            'Describe the ideal audience in one paragraph using lifestyle and preference terms only.',
+            'Blend property features with avatar preference data when both are present.',
+        ],
+
+        'buyer_tenant_match' => [
+            'Summarize compatibility in one paragraph that cites both the overall score and the key matching signals.',
+            'Do not enumerate scores as raw numbers alone — reference them in context, e.g., "strong financial compatibility (score: 87)".',
+        ],
+
+        'compatibility_signals' => [
+            'Report the most meaningful compatibility signals in one paragraph, referencing specific scores only to provide context.',
+            'Distinguish highlights from warnings in the same paragraph if both are present.',
+        ],
+
+        'agent_profile' => [
+            'Describe the agent\'s services and credentials in one flowing paragraph.',
+            'When preset data is available, include key services and specializations in the description.',
+        ],
+
+        'educational' => [
+            'Provide a clear, instructive paragraph using plain language appropriate for a home buyer or renter new to the process.',
+        ],
+    ];
+
+    /**
      * Twelve deterministic system-instruction strings included in every non-failed
      * prompt package. These are governance directives for the LLM layer and must
      * not be generated dynamically.
@@ -47,7 +110,7 @@ class AskAiPromptBuilderService
         'If required_disclosures are provided, every disclosure must appear verbatim in your response without alteration.',
         'If source_attribution is required, it must appear clearly in your response before or after the substantive content.',
         'You must not generate or imply legal, financial, investment, or professional advice of any kind.',
-        'Do not make decisions on behalf of users. Present data and analysis only; all decisions remain with the user. Respond using a JSON object.',
+        'Do not make decisions on behalf of users. Present data and analysis only; all decisions remain with the user. Respond using a JSON object with exactly one key named "answer". The value of "answer" must be a complete, natural-language paragraph written in full sentences. Never return bare booleans ("Yes", "No"), single words, raw field values, or JSON sub-objects as the answer — always compose a coherent, readable sentence or paragraph using the data from the context.',
     ];
 
     /**
@@ -276,14 +339,19 @@ class AskAiPromptBuilderService
      *   required_disclosures  — disclosures mandated by the contract
      *   required_sources      — top-level source names required for this question type
      *   allowed_context_paths — dot-notation paths permitted for context use
+     *   synthesis_directives  — per-question-type prose composition instructions
      */
     private function buildDeveloperInstructions(array $contract): array
     {
+        $questionType = $contract['question_type'] ?? '_default';
+
         return [
             'response_rules'        => $contract['response_rules'] ?? [],
             'required_disclosures'  => $contract['required_disclosures'] ?? [],
             'required_sources'      => $contract['required_sources'] ?? [],
             'allowed_context_paths' => $contract['allowed_context'] ?? [],
+            'synthesis_directives'  => self::SYNTHESIS_DIRECTIVES[$questionType]
+                                           ?? self::SYNTHESIS_DIRECTIVES['_default'],
         ];
     }
 

@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
  * Pure unit tests — no database, no Laravel TestCase, no DB traits.
  * AskAiFinalResponseBuilderService is stateless and requires no mocking.
  *
- * Test coverage (cases A–H):
+ * Test coverage (cases A–J):
  *   A. Generated response (adapter success + prompt_ready) → status 'ready', success true, answer populated
  *   B. 'blocked' prompt package → status 'blocked', refusal_message from refusal_template, answer null
  *   C. 'insufficient_context' prompt package → status 'insufficient_context', answer carries unavailable-data message
@@ -20,6 +20,10 @@ use PHPUnit\Framework\TestCase;
  *   F. 'disclosures' key always present and populated from prompt_package['required_disclosures']
  *   G. 'source_attribution' key always present and passed through from prompt_package['source_attribution']
  *   H. Static governance grep — no OpenAI/HTTP calls and no write calls in non-comment lines of the service file
+ *   I. JSON extraction: answer key extraction, answer_text fallback, recursive nested-JSON extraction,
+ *      first-string-value fallback, plain-text pass-through, whitespace normalisation, key priority
+ *   J. isResponseDegraded() quality detection: raw JSON blob, JSON array, JSON key-value pattern inside text,
+ *      very short char count, very short word count, empty string — all degraded; normal paragraph — not degraded
  */
 class AskAiFinalResponseBuilderServiceTest extends TestCase
 {
@@ -602,6 +606,380 @@ class AskAiFinalResponseBuilderServiceTest extends TestCase
     }
 
     // =========================================================================
+    // Case I — JSON extraction from raw_response (new: OpenAI responds with JSON)
+    // =========================================================================
+
+    public function test_case_I_json_raw_response_with_answer_key_extracts_text(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->build(
+            $this->makePromptReadyPackage(),
+            [
+                'success'      => true,
+                'raw_response' => '{"answer":"The property features a heated pool, updated kitchen, and a two-car garage."}',
+                'error'        => null,
+            ]
+        );
+
+        $this->assertSame(
+            'The property features a heated pool, updated kitchen, and a two-car garage.',
+            $result['answer']
+        );
+    }
+
+    public function test_case_I_json_raw_response_with_answer_key_is_not_a_json_blob(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->build(
+            $this->makePromptReadyPackage(),
+            [
+                'success'      => true,
+                'raw_response' => '{"answer":"Yes, the seller is offering a credit of $5,000 toward closing costs."}',
+                'error'        => null,
+            ]
+        );
+
+        $this->assertStringNotContainsString('{', $result['answer']);
+        $this->assertStringNotContainsString('"answer"', $result['answer']);
+        $this->assertStringContainsString('seller is offering', $result['answer']);
+    }
+
+    public function test_case_I_json_raw_response_answer_key_whitespace_is_normalised(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->build(
+            $this->makePromptReadyPackage(),
+            [
+                'success'      => true,
+                'raw_response' => '{"answer":"  The  monthly  rent  is  $2,500.  "}',
+                'error'        => null,
+            ]
+        );
+
+        $this->assertSame('The monthly rent is $2,500.', $result['answer']);
+    }
+
+    public function test_case_I_json_raw_response_answer_text_key_used_as_fallback(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->build(
+            $this->makePromptReadyPackage(),
+            [
+                'success'      => true,
+                'raw_response' => '{"answer_text":"The roof was replaced in 2022 and is in excellent condition."}',
+                'error'        => null,
+            ]
+        );
+
+        $this->assertSame(
+            'The roof was replaced in 2022 and is in excellent condition.',
+            $result['answer']
+        );
+    }
+
+    public function test_case_I_json_raw_response_first_string_value_used_when_no_known_key(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->build(
+            $this->makePromptReadyPackage(),
+            [
+                'success'      => true,
+                'raw_response' => '{"response":"Parking is available in the attached two-car garage."}',
+                'error'        => null,
+            ]
+        );
+
+        $this->assertSame(
+            'Parking is available in the attached two-car garage.',
+            $result['answer']
+        );
+    }
+
+    public function test_case_I_answer_key_takes_priority_over_answer_text_key(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->build(
+            $this->makePromptReadyPackage(),
+            [
+                'success'      => true,
+                'raw_response' => '{"answer":"Primary answer text.","answer_text":"Secondary answer text."}',
+                'error'        => null,
+            ]
+        );
+
+        $this->assertSame('Primary answer text.', $result['answer']);
+    }
+
+    public function test_case_I_plain_text_raw_response_passes_through_unchanged(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->build(
+            $this->makePromptReadyPackage(),
+            [
+                'success'      => true,
+                'raw_response' => 'Plain text answer with no JSON encoding.',
+                'error'        => null,
+            ]
+        );
+
+        $this->assertSame('Plain text answer with no JSON encoding.', $result['answer']);
+    }
+
+    public function test_case_I_nested_json_falls_back_to_first_string_value(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->build(
+            $this->makePromptReadyPackage(),
+            [
+                'success'      => true,
+                'raw_response' => '{"text":"Pets are allowed with a $500 refundable deposit."}',
+                'error'        => null,
+            ]
+        );
+
+        $this->assertSame('Pets are allowed with a $500 refundable deposit.', $result['answer']);
+    }
+
+    public function test_case_I_deeply_nested_json_uses_recursive_extraction(): void
+    {
+        $service = $this->makeService();
+        $result  = $service->build(
+            $this->makePromptReadyPackage(),
+            [
+                'success'      => true,
+                'raw_response' => '{"data":{"answer":"Pets are welcome with a 25 lb weight limit and a $300 deposit."}}',
+                'error'        => null,
+            ]
+        );
+
+        $this->assertSame(
+            'Pets are welcome with a 25 lb weight limit and a $300 deposit.',
+            $result['answer'],
+            'Recursive extraction must surface the string from a doubly-nested JSON object.'
+        );
+    }
+
+    // =========================================================================
+    // Case J — isResponseDegraded() quality detection
+    // =========================================================================
+
+    public function test_case_J_raw_json_blob_is_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertTrue(
+            $service->isResponseDegraded('{"answer":"Yes","hoa_fee":"250"}'),
+            'A raw JSON blob starting with "{" must be considered degraded.'
+        );
+    }
+
+    public function test_case_J_json_array_blob_is_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertTrue(
+            $service->isResponseDegraded('["Yes", "250"]'),
+            'A raw JSON array starting with "[" must be considered degraded.'
+        );
+    }
+
+    public function test_case_J_json_key_value_pattern_inside_text_is_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertTrue(
+            $service->isResponseDegraded('"hoa_fee": "250 per month"'),
+            'Text containing a JSON key-value pattern (quoted key + colon) must be considered degraded.'
+        );
+    }
+
+    public function test_case_J_very_short_char_count_is_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertTrue(
+            $service->isResponseDegraded('Yes'),
+            'A bare one-word answer (< 15 chars) must be considered degraded.'
+        );
+    }
+
+    public function test_case_J_fewer_than_three_words_is_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertTrue(
+            $service->isResponseDegraded('No pets.'),
+            'A two-word answer (fewer than 3 words) must be considered degraded.'
+        );
+    }
+
+    public function test_case_J_empty_string_is_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertTrue(
+            $service->isResponseDegraded(''),
+            'An empty string must be considered degraded.'
+        );
+    }
+
+    public function test_case_J_whitespace_only_is_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertTrue(
+            $service->isResponseDegraded('   '),
+            'A whitespace-only string must be considered degraded.'
+        );
+    }
+
+    public function test_case_J_normal_paragraph_is_not_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertFalse(
+            $service->isResponseDegraded(
+                'The HOA fee is $250 per month, which includes access to the community pool and landscaping services.'
+            ),
+            'A complete natural-language sentence must NOT be considered degraded.'
+        );
+    }
+
+    public function test_case_J_multi_sentence_answer_is_not_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertFalse(
+            $service->isResponseDegraded(
+                'Pets are allowed with restrictions. Dogs up to 25 lbs are permitted with a $300 refundable deposit and a $50 monthly pet fee.'
+            ),
+            'A multi-sentence answer must NOT be considered degraded.'
+        );
+    }
+
+    public function test_case_J_answer_with_dollar_amount_is_not_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertFalse(
+            $service->isResponseDegraded('The seller is offering a $5,000 closing cost credit to buyers.'),
+            'A sentence containing a dollar amount must NOT be considered degraded.'
+        );
+    }
+
+    // =========================================================================
+    // Case K — End-to-end no raw JSON leakage regression
+    // =========================================================================
+    // Ensures that build() extracts a clean string answer regardless of how
+    // deeply the model wraps it in JSON. These are behavioral regressions for
+    // the system-wide natural-language quality requirement.
+
+    public function test_case_K_build_extracts_answer_from_flat_json_string(): void
+    {
+        $service  = $this->makeService();
+        $raw      = ['success' => true, 'raw_response' => '{"answer":"The HOA fee is $250 per month."}', 'error' => null];
+        $result   = $service->build($this->makePromptReadyPackage(), $raw);
+
+        $this->assertSame('ready', $result['status']);
+        $this->assertSame('The HOA fee is $250 per month.', $result['answer']);
+        $this->assertFalse(
+            $service->isResponseDegraded($result['answer']),
+            'Case K: extracted answer must not be degraded.'
+        );
+    }
+
+    public function test_case_K_build_extracts_answer_from_nested_json_string(): void
+    {
+        $service  = $this->makeService();
+        $inner    = json_encode(['answer' => 'The seller is offering a $5,000 closing cost credit.']);
+        $raw      = ['success' => true, 'raw_response' => json_encode(['answer' => $inner]), 'error' => null];
+        $result   = $service->build($this->makePromptReadyPackage(), $raw);
+
+        $this->assertSame('ready', $result['status']);
+        $this->assertSame(
+            'The seller is offering a $5,000 closing cost credit.',
+            $result['answer'],
+            'Case K: nested JSON double-encoding must be unwrapped to the raw sentence.'
+        );
+        $this->assertFalse(
+            $service->isResponseDegraded($result['answer']),
+            'Case K: unwrapped answer from nested JSON must not be degraded.'
+        );
+    }
+
+    public function test_case_K_build_result_not_degraded_for_pet_policy_answer(): void
+    {
+        $service  = $this->makeService();
+        $raw      = [
+            'success'      => true,
+            'raw_response' => '{"answer":"Pets are allowed with restrictions. Dogs up to 25 lbs are permitted with a $300 refundable deposit and a $50 monthly pet fee."}',
+            'error'        => null,
+        ];
+        $result   = $service->build($this->makePromptReadyPackage(), $raw);
+
+        $this->assertSame('ready', $result['status']);
+        $this->assertFalse(
+            $service->isResponseDegraded($result['answer']),
+            'Case K: a complete pet-policy paragraph must not be flagged as degraded.'
+        );
+    }
+
+    public function test_case_K_build_result_not_degraded_for_financing_answer(): void
+    {
+        $service  = $this->makeService();
+        $raw      = [
+            'success'      => true,
+            'raw_response' => '{"answer":"The buyer is pre-approved for conventional financing and is open to FHA or VA loans. An appraisal contingency and financing contingency are both included in the offer terms."}',
+            'error'        => null,
+        ];
+        $result   = $service->build($this->makePromptReadyPackage(), $raw);
+
+        $this->assertSame('ready', $result['status']);
+        $this->assertFalse(
+            $service->isResponseDegraded($result['answer']),
+            'Case K: a complete financing-criteria paragraph must not be flagged as degraded.'
+        );
+    }
+
+    public function test_case_K_build_flags_bare_boolean_as_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertTrue(
+            $service->isResponseDegraded('Yes'),
+            'Case K: a bare "Yes" answer must be flagged as degraded.'
+        );
+        $this->assertTrue(
+            $service->isResponseDegraded('No'),
+            'Case K: a bare "No" answer must be flagged as degraded.'
+        );
+    }
+
+    public function test_case_K_build_flags_raw_json_blob_as_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertTrue(
+            $service->isResponseDegraded('{"seller_credit_offered":"Yes","seller_credit_amount":"$5000"}'),
+            'Case K: a raw JSON blob must be flagged as degraded.'
+        );
+    }
+
+    public function test_case_K_build_flags_key_value_pattern_as_degraded(): void
+    {
+        $service = $this->makeService();
+        $this->assertTrue(
+            $service->isResponseDegraded("hoa_fee: 250\ncdd_fee: 1200"),
+            'Case K: a key:value dump must be flagged as degraded.'
+        );
+    }
+
+    public function test_case_K_agent_services_answer_is_not_degraded(): void
+    {
+        $service  = $this->makeService();
+        $raw      = [
+            'success'      => true,
+            'raw_response' => '{"answer":"This agent specializes in full-service residential sales, providing professional photography, MLS listing, open house coordination, and negotiation support throughout the transaction."}',
+            'error'        => null,
+        ];
+        $result   = $service->build($this->makePromptReadyPackage(), $raw);
+
+        $this->assertSame('ready', $result['status']);
+        $this->assertFalse(
+            $service->isResponseDegraded($result['answer']),
+            'Case K: an agent services prose paragraph must not be flagged as degraded.'
+        );
+    }
+
+    // =========================================================================
     // Case H — Static governance grep
     // =========================================================================
 
@@ -681,4 +1059,118 @@ class AskAiFinalResponseBuilderServiceTest extends TestCase
         $this->assertStringContainsString('MUST NEVER', $contents);
         $this->assertStringContainsString('call OpenAI', $contents);
     }
-}
+
+    // =========================================================================
+    // Case L — Behavior regression: key synthesis categories produce prose
+    //
+    // These tests verify that natural-language paragraphs representing real
+    // category outputs are NOT flagged as degraded and that paired JSON fields
+    // (seller credit + amount) are extracted correctly. Each sub-case mirrors
+    // an actual OpenAI response format for a known category path.
+    // =========================================================================
+
+    public function test_case_L1_seller_credit_and_amount_prose_is_not_degraded(): void
+    {
+        $svc    = $this->makeService();
+        $answer = 'The seller is offering a credit of $5,000 toward the buyer\'s closing costs. '
+            . 'This concession is intended to reduce the upfront cash required at settlement '
+            . 'and can be applied to lender fees, title charges, or prepaid expenses.';
+
+        $this->assertFalse(
+            $svc->isResponseDegraded($answer),
+            'L1: a seller credit+amount prose paragraph must not be flagged as degraded.'
+        );
+    }
+
+    public function test_case_L1_seller_credit_amount_extracted_from_json_envelope(): void
+    {
+        $svc    = $this->makeService();
+        $raw    = json_encode([
+            'answer' => 'The seller is offering a $5,000 credit toward the buyer\'s closing costs to help offset settlement expenses.',
+        ]);
+        $result = $svc->build(
+            $this->makePromptReadyPackage(),
+            $this->makeSuccessAdapterResult(['raw_response' => $raw])
+        );
+
+        $this->assertSame('ready', $result['status'],  'L1: seller credit JSON envelope must produce ready status.');
+        $this->assertStringContainsString('$5,000', $result['answer'] ?? '', 'L1: answer must contain the dollar amount.');
+        $this->assertFalse(
+            $svc->isResponseDegraded($result['answer']),
+            'L1: extracted seller credit answer must not be flagged as degraded.'
+        );
+    }
+
+    public function test_case_L2_financing_types_prose_is_not_degraded(): void
+    {
+        $svc    = $this->makeService();
+        $answer = 'The buyer is open to conventional financing, FHA loans, and VA-backed mortgages. '
+            . 'Cash offers are also acceptable. Seller financing is not being considered at this time.';
+
+        $this->assertFalse(
+            $svc->isResponseDegraded($answer),
+            'L2: a financing types prose paragraph must not be flagged as degraded.'
+        );
+    }
+
+    public function test_case_L3_ownership_cost_synthesis_prose_is_not_degraded(): void
+    {
+        $svc    = $this->makeService();
+        $answer = 'The estimated monthly ownership costs include an HOA fee of $320, an annual CDD '
+            . 'assessment of $1,800 (approximately $150 per month), and annual property taxes of '
+            . '$4,200 (approximately $350 per month). Combined, these recurring costs total roughly '
+            . '$820 per month on top of any mortgage payment.';
+
+        $this->assertFalse(
+            $svc->isResponseDegraded($answer),
+            'L3: an ownership-cost synthesized paragraph must not be flagged as degraded.'
+        );
+    }
+
+    public function test_case_L4_utilities_and_pets_paired_prose_is_not_degraded(): void
+    {
+        $svc    = $this->makeService();
+        $answer = 'Water, trash, and lawn care are included in the rent. Tenants are responsible '
+            . 'for electricity, internet, and renter\'s insurance. Regarding pets, small dogs and '
+            . 'cats are permitted with a $500 non-refundable pet deposit and a $50 monthly pet fee.';
+
+        $this->assertFalse(
+            $svc->isResponseDegraded($answer),
+            'L4: a utilities+pets paired-term prose paragraph must not be flagged as degraded.'
+        );
+    }
+
+    public function test_case_L5_agent_services_prose_is_not_degraded(): void
+    {
+        $svc    = $this->makeService();
+        $answer = 'This agent offers full-service representation including professional photography, '
+            . 'MLS listing, open house coordination, offer negotiation, and transaction management '
+            . 'through closing. A referral fee of 25% applies to any co-brokered transactions.';
+
+        $this->assertFalse(
+            $svc->isResponseDegraded($answer),
+            'L5: an agent services prose paragraph must not be flagged as degraded.'
+        );
+    }
+
+    public function test_case_L6_ownership_cost_json_blob_is_degraded(): void
+    {
+        $svc    = $this->makeService();
+        $answer = '{"hoa_fee": 320, "annual_cdd_fee": 1800, "annual_property_taxes": 4200}';
+
+        $this->assertTrue(
+            $svc->isResponseDegraded($answer),
+            'L6: a raw JSON ownership-cost blob must be flagged as degraded.'
+        );
+    }
+
+    public function test_case_L7_financing_key_value_dump_is_degraded(): void
+    {
+        $svc    = $this->makeService();
+        $answer = "financing_type: Conventional\nloan_pre_approved: Yes\nappraisal_contingency_buyer: Yes";
+
+        $this->assertTrue(
+            $svc->isResponseDegraded($answer),
+            'L7: a bare key-value financing dump must be flagged as degraded.'
+        );
+    }}

@@ -124,7 +124,7 @@ class AskAiFinalResponseBuilderService
             }
 
             $rawText = $adapterResult['raw_response'] ?? $adapterResult['text'] ?? $adapterResult['answer'] ?? '';
-            $answer  = $this->normaliseText($rawText);
+            $answer  = $this->extractAnswerFromResponse($rawText);
 
             return [
                 'success'           => true,
@@ -146,6 +146,150 @@ class AskAiFinalResponseBuilderService
                 'error'             => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Extract a usable answer string from the raw adapter response text.
+     *
+     * OpenAI is instructed to respond with a JSON object having a single "answer" key.
+     * This method decodes that JSON and extracts the answer text so users see natural
+     * language instead of a raw JSON blob.
+     *
+     * Resolution order:
+     *   1. Decode as JSON. If successful:
+     *      a. Return the value of the "answer" key (primary key per SYSTEM_INSTRUCTIONS).
+     *      b. Return the value of the "answer_text" key (description-fallback key).
+     *      c. Recursively search all values (including nested objects) for the first
+     *         non-empty string.  This guards against unexpected OpenAI response shapes
+     *         that wrap the answer in a sub-object (e.g. {"data":{"answer":"..."}}).
+     *   2. If not valid JSON (e.g. plain-text test stubs or legacy paths), treat the raw
+     *      string as the answer text directly.
+     *
+     * In all cases the extracted text is passed through normaliseText() for whitespace cleanup.
+     *
+     * @param  string $rawText  The raw_response/text/answer string from the adapter result.
+     * @return string
+     */
+    private function extractAnswerFromResponse(string $rawText): string
+    {
+        $decoded = json_decode($rawText, true);
+
+        if (is_array($decoded)) {
+            if (isset($decoded['answer']) && is_string($decoded['answer']) && $decoded['answer'] !== '') {
+                // If the answer value is itself a JSON-encoded string (double-encoding),
+                // recursively extract from the inner JSON before normalising.
+                $inner = json_decode($decoded['answer'], true);
+                if (is_array($inner)) {
+                    $unwrapped = $this->extractAnswerFromResponse($decoded['answer']);
+                    if ($unwrapped !== '') {
+                        return $unwrapped;
+                    }
+                }
+                return $this->normaliseText($decoded['answer']);
+            }
+
+            if (isset($decoded['answer_text']) && is_string($decoded['answer_text']) && $decoded['answer_text'] !== '') {
+                // Same double-encoding guard for answer_text.
+                $inner = json_decode($decoded['answer_text'], true);
+                if (is_array($inner)) {
+                    $unwrapped = $this->extractAnswerFromResponse($decoded['answer_text']);
+                    if ($unwrapped !== '') {
+                        return $unwrapped;
+                    }
+                }
+                return $this->normaliseText($decoded['answer_text']);
+            }
+
+            // Recursive search handles nested JSON objects (e.g. {"data":{"answer":"..."}})
+            // so structured blobs never leak through to the user as raw text.
+            $found = $this->findFirstStringValue($decoded);
+            if ($found !== null) {
+                return $this->normaliseText($found);
+            }
+        }
+
+        return $this->normaliseText($rawText);
+    }
+
+    /**
+     * Recursively search an array for the first non-empty string scalar value.
+     *
+     * Handles nested JSON objects of arbitrary depth so that unexpected OpenAI
+     * response shapes (e.g. {"data":{"answer":"..."}}) do not leak raw JSON text
+     * back to the user.  Integer and float scalars are skipped; only strings are
+     * returned so numeric-only fields (e.g. {"count":3}) cannot become the answer.
+     *
+     * @param  array $data  Decoded JSON array to search.
+     * @return string|null  First non-empty string found, or null if none exists.
+     */
+    private function findFirstStringValue(array $data): ?string
+    {
+        foreach ($data as $value) {
+            if (is_string($value) && $value !== '') {
+                return $value;
+            }
+            if (is_array($value)) {
+                $nested = $this->findFirstStringValue($value);
+                if ($nested !== null) {
+                    return $nested;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Determine whether an extracted answer is low-quality and requires a rewrite.
+     *
+     * Detection heuristics (any one match returns true):
+     *   1. Raw JSON blob — answer starts with '{' or '[' after trimming, meaning the
+     *      structured response was not parsed correctly and leaked through.
+     *   2. JSON key-value pattern — answer contains a "key": pattern (quoted word
+     *      followed by a colon), indicating a partially-decoded JSON structure.
+     *   3. Very short — answer is fewer than 15 characters or fewer than 3 words,
+     *      which typically indicates a bare boolean, single word, or field name was
+     *      returned as-is rather than composed into a sentence.
+     *
+     * This method is public so AskAiRunnerV2Service can check the response after
+     * calling build() and decide whether to invoke a one-shot quality rewrite.
+     *
+     * @param  string $answer  The extracted answer text from build().
+     * @return bool            True when the answer is considered low-quality.
+     */
+    public function isResponseDegraded(string $answer): bool
+    {
+        $trimmed = trim($answer);
+
+        if ($trimmed === '') {
+            return true;
+        }
+
+        // Heuristic 1: raw JSON blob leaked through (extraction failed silently).
+        if (str_starts_with($trimmed, '{') || str_starts_with($trimmed, '[')) {
+            return true;
+        }
+
+        // Heuristic 2a: JSON key-value pattern inside the answer text (quoted key).
+        if (preg_match('/"[^"]+"\s*:/', $trimmed)) {
+            return true;
+        }
+
+        // Heuristic 2b: bare snake_case or camelCase key-value dump (unquoted key).
+        // Matches lines that start with a lowercase identifier (optionally snake_case)
+        // immediately followed by a colon, e.g. "hoa_fee: 250". Natural sentences
+        // that start with a word before a colon are excluded because they are
+        // capitalised (sentence case) — this regex is anchored to line-start and
+        // requires a lowercase first character, which prose sentences never have.
+        if (preg_match('/^[a-z][a-z0-9_]+\s*:/m', $trimmed)) {
+            return true;
+        }
+
+        // Heuristic 3: overly short responses (bare boolean, single-word, field label).
+        if (mb_strlen($trimmed) < 15 || str_word_count($trimmed) < 3) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

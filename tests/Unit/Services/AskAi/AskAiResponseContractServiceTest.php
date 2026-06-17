@@ -1337,4 +1337,116 @@ class AskAiResponseContractServiceTest extends TestCase
             . "for listing_facts — the normalizer reads the former; the guard checks the latter."
         );
     }
+
+    // ── O5 ── seller_credit_amount path is present alongside seller_credit_offered ─────────
+
+    public function test_case_O5_seller_credit_amount_is_in_listing_facts_allowed_context(): void
+    {
+        $service = new AskAiResponseContractService();
+        $paths   = $service->getListingFactsAllowedPaths();
+
+        $this->assertContains(
+            'listing.seller_credit_amount',
+            $paths,
+            "'listing.seller_credit_amount' must be in listing_facts allowed_context "
+            . "so the paired seller-credit synthesis can reference both the offered flag and the amount."
+        );
+    }
+
+    public function test_case_O5_seller_credit_offered_and_amount_are_adjacent_in_allowed_paths(): void
+    {
+        $service = new AskAiResponseContractService();
+        $paths   = $service->getListingFactsAllowedPaths();
+
+        $offeredIdx = array_search('listing.seller_credit_offered', $paths, true);
+        $amountIdx  = array_search('listing.seller_credit_amount', $paths, true);
+
+        $this->assertNotFalse($offeredIdx, "'listing.seller_credit_offered' must be in allowed paths.");
+        $this->assertNotFalse($amountIdx,  "'listing.seller_credit_amount' must be in allowed paths.");
+        $this->assertEqualsWithDelta(
+            $offeredIdx,
+            $amountIdx,
+            2,
+            "'listing.seller_credit_offered' and 'listing.seller_credit_amount' should be adjacent "
+            . "(within 2 positions) so reviewers can verify they are a paired group."
+        );
+    }
+
+    // ── O6 ── Behavioral regression: synthesis directives for listing_facts cover key categories ─
+
+    public function test_case_O6_listing_facts_contract_has_at_least_four_synthesis_rules(): void
+    {
+        $service  = new AskAiResponseContractService();
+        $contract = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $rules = $contract['response_rules'] ?? [];
+
+        $this->assertIsArray($rules, 'listing_facts contract must have response_rules array.');
+        $this->assertGreaterThanOrEqual(
+            4,
+            count($rules),
+            "listing_facts must have at least 4 synthesis response_rules covering natural-language "
+            . "prose, paired fields, ownership costs, pet policy, and buyer criteria."
+        );
+    }
+
+    public function test_case_O6_listing_facts_synthesis_rules_cover_seller_credit_paired_synthesis(): void
+    {
+        $service  = new AskAiResponseContractService();
+        $contract = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $rulesText = implode(' ', $contract['response_rules'] ?? []);
+
+        $this->assertMatchesRegularExpression(
+            '/seller.credit|concession/i',
+            $rulesText,
+            "listing_facts response_rules must reference seller credit or concession "
+            . "to guide paired-field synthesis of seller_credit_offered + seller_credit_amount."
+        );
+    }
+
+    public function test_case_O6_listing_facts_synthesis_rules_cover_ownership_cost_summary(): void
+    {
+        $service  = new AskAiResponseContractService();
+        $contract = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $rulesText = implode(' ', $contract['response_rules'] ?? []);
+
+        $this->assertMatchesRegularExpression(
+            '/ownership.cost|HOA.fee|CDD.fee|property.tax/i',
+            $rulesText,
+            "listing_facts response_rules must reference ownership costs (HOA, CDD, taxes) "
+            . "to ensure the model summarises all cost fields together in one paragraph."
+        );
+    }
+
+    public function test_case_O6_listing_facts_synthesis_rules_cover_pet_policy(): void
+    {
+        $service  = new AskAiResponseContractService();
+        $contract = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $rulesText = implode(' ', $contract['response_rules'] ?? []);
+
+        $this->assertMatchesRegularExpression(
+            '/pet.polic|pets.allowed|pet.deposit/i',
+            $rulesText,
+            "listing_facts response_rules must reference pet policy fields "
+            . "to ensure rental utility/pet terms are synthesised into flowing prose."
+        );
+    }
+
+    public function test_case_O6_listing_facts_synthesis_rules_cover_financing_criteria(): void
+    {
+        $service  = new AskAiResponseContractService();
+        $contract = $service->buildContract('listing_facts', $this->makeContextFor('listing_facts'));
+
+        $rulesText = implode(' ', $contract['response_rules'] ?? []);
+
+        $this->assertMatchesRegularExpression(
+            '/financing|contingenc|pre.approv/i',
+            $rulesText,
+            "listing_facts response_rules must reference financing/contingency fields "
+            . "so buyer financial criteria are rendered in coherent prose."
+        );
+    }
 }
