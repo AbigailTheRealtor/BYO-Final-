@@ -47,10 +47,14 @@ class AskAiPromptBuilderService
         '_default' => [
             'Compose all answers as complete natural-language paragraphs written in full sentences.',
             'When multiple related data points are available, weave them into a single coherent sentence or paragraph rather than listing field names or raw values separately.',
+            'Always end your answer with a period, exclamation mark, or question mark. Never return a sentence fragment or a phrase that trails off without terminal punctuation.',
+            'Never echo a raw field value verbatim. If a context value is a comma-separated list (e.g. "Central Air, Mini-Split Unit(s)" or "Electric, Gas"), describe it in a complete sentence (e.g. "The property is equipped with central air conditioning and a mini-split unit system.").',
         ],
 
         'listing_facts' => [
             'Compose all answers as complete natural-language paragraphs written in full sentences. Never echo field names, JSON keys, or raw data values.',
+            'Always end your answer with a period, exclamation mark, or question mark. Sentence fragments and unpunctuated phrases are not acceptable.',
+            'Never return a raw comma-separated list as the answer. Always embed values inside a complete sentence — for example, if cooling is "Central Air, Mini-Split Unit(s)", write "This property features central air conditioning along with a mini-split unit system." not the bare list.',
             'When multiple related fields are available — for example HOA presence + fee + payment schedule, or pets allowed + breed restrictions + pet fee, or seller credit offered + concession amount, or financing type + pre-approval status — combine them into a single coherent sentence that reads naturally.',
             'When ownership-cost fields are present (HOA fee, CDD fee, annual property taxes), summarize all applicable costs together in one paragraph so the reader understands the full picture.',
             'When pet policy fields are present (allowed status, breed/weight limits, pet deposit, monthly pet fee), describe the complete pet policy in one flowing paragraph.',
@@ -61,35 +65,42 @@ class AskAiPromptBuilderService
         'property_standout' => [
             'Compose a narrative paragraph using all available highlights, strengths, and story data.',
             'Weave specific details from property_highlights, property_strengths, and property_story into one flowing paragraph — do not enumerate them as a bullet list.',
+            'Always end your answer with a period, exclamation mark, or question mark.',
         ],
 
         'marketing_angles' => [
             'Write a single marketing-oriented paragraph that draws on property positioning, personality tags, and location context together.',
             'Avoid bullet lists — produce one cohesive paragraph a marketing professional would use.',
+            'Always end your answer with a period, exclamation mark, or question mark.',
         ],
 
         'suited_audience' => [
             'Describe the ideal audience in one paragraph using lifestyle and preference terms only.',
             'Blend property features with avatar preference data when both are present.',
+            'Always end your answer with a period, exclamation mark, or question mark.',
         ],
 
         'buyer_tenant_match' => [
             'Summarize compatibility in one paragraph that cites both the overall score and the key matching signals.',
             'Do not enumerate scores as raw numbers alone — reference them in context, e.g., "strong financial compatibility (score: 87)".',
+            'Always end your answer with a period, exclamation mark, or question mark.',
         ],
 
         'compatibility_signals' => [
             'Report the most meaningful compatibility signals in one paragraph, referencing specific scores only to provide context.',
             'Distinguish highlights from warnings in the same paragraph if both are present.',
+            'Always end your answer with a period, exclamation mark, or question mark.',
         ],
 
         'agent_profile' => [
             'Describe the agent\'s services and credentials in one flowing paragraph.',
             'When preset data is available, include key services and specializations in the description.',
+            'Always end your answer with a period, exclamation mark, or question mark.',
         ],
 
         'educational' => [
             'Provide a clear, instructive paragraph using plain language appropriate for a home buyer or renter new to the process.',
+            'Always end your answer with a period, exclamation mark, or question mark.',
         ],
     ];
 
@@ -110,7 +121,7 @@ class AskAiPromptBuilderService
         'If required_disclosures are provided, every disclosure must appear verbatim in your response without alteration.',
         'If source_attribution is required, it must appear clearly in your response before or after the substantive content.',
         'You must not generate or imply legal, financial, investment, or professional advice of any kind.',
-        'Do not make decisions on behalf of users. Present data and analysis only; all decisions remain with the user. Respond using a JSON object with exactly one key named "answer". The value of "answer" must be a complete, natural-language paragraph written in full sentences. Never return bare booleans ("Yes", "No"), single words, raw field values, or JSON sub-objects as the answer — always compose a coherent, readable sentence or paragraph using the data from the context.',
+        'Do not make decisions on behalf of users. Present data and analysis only; all decisions remain with the user. Respond using a JSON object with exactly one key named "answer". The value of "answer" must be a complete, natural-language paragraph written in full sentences that ends with a period, exclamation mark, or question mark. Never return bare booleans ("Yes", "No"), single words, raw field values, comma-separated lists, or JSON sub-objects as the answer — always compose a coherent, readable sentence or paragraph using the data from the context. For example, if the context contains "cooling: Central Air, Mini-Split Unit(s)", write "The property is equipped with central air conditioning and a mini-split unit system." — never echo the raw comma-separated value.',
     ];
 
     /**

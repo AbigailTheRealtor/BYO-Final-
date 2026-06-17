@@ -3461,10 +3461,33 @@ class AskAiRunnerV2Service
                 $faqText     = is_array($faqEntry) ? ($faqEntry['answer_text'] ?? null) : null;
 
                 if ($faqText !== null && $faqText !== '') {
+                    // Attempt to synthesize the raw FAQ text into a proper sentence when
+                    // the value looks like a raw field echo (no terminal punctuation, bare
+                    // list, etc.).  A rewrite call is made only when the value is degraded;
+                    // if the rewrite adapter call also fails, fall back to the raw text so
+                    // the user still gets something rather than a generic error.
+                    $faqAnswerText = $faqText;
+                    if ($this->finalResponseBuilder->isResponseDegraded($faqText)) {
+                        $faqRewritePkg    = $this->buildQualityRewritePackage($question, $faqText);
+                        $faqRewriteResult = $this->adapter->generate($faqRewritePkg);
+                        if ($faqRewriteResult['success'] ?? false) {
+                            $faqRewritten = $this->finalResponseBuilder->build($faqRewritePkg, $faqRewriteResult);
+                            if (
+                                ($faqRewritten['status'] ?? '') === 'ready'
+                                && isset($faqRewritten['answer'])
+                                && is_string($faqRewritten['answer'])
+                                && $faqRewritten['answer'] !== ''
+                                && !$this->finalResponseBuilder->isResponseDegraded($faqRewritten['answer'])
+                            ) {
+                                $faqAnswerText = $faqRewritten['answer'];
+                            }
+                        }
+                    }
+
                     $faqFinalResponse = [
                         'success'            => true,
                         'status'             => 'ready',
-                        'answer'             => $faqText,
+                        'answer'             => $faqAnswerText,
                         'disclosures'        => $promptPackage['required_disclosures'] ?? [],
                         'source_attribution' => $promptPackage['source_attribution'] ?? [],
                         'refusal_message'    => null,
@@ -3524,10 +3547,33 @@ class AskAiRunnerV2Service
                     : null;
 
                 if ($listingFieldValue !== null && $listingFieldValue !== '') {
+                    // Attempt to synthesize the raw listing field value into a proper
+                    // sentence when the value looks like a raw field echo (no terminal
+                    // punctuation, bare comma-separated list, etc.).  A rewrite call is
+                    // made only when the value is degraded; if the rewrite also fails,
+                    // fall back to the raw string so the user still gets something.
+                    $listingAnswerText = (string) $listingFieldValue;
+                    if ($this->finalResponseBuilder->isResponseDegraded($listingAnswerText)) {
+                        $listingRewritePkg    = $this->buildQualityRewritePackage($question, $listingAnswerText);
+                        $listingRewriteResult = $this->adapter->generate($listingRewritePkg);
+                        if ($listingRewriteResult['success'] ?? false) {
+                            $listingRewritten = $this->finalResponseBuilder->build($listingRewritePkg, $listingRewriteResult);
+                            if (
+                                ($listingRewritten['status'] ?? '') === 'ready'
+                                && isset($listingRewritten['answer'])
+                                && is_string($listingRewritten['answer'])
+                                && $listingRewritten['answer'] !== ''
+                                && !$this->finalResponseBuilder->isResponseDegraded($listingRewritten['answer'])
+                            ) {
+                                $listingAnswerText = $listingRewritten['answer'];
+                            }
+                        }
+                    }
+
                     $listingFallbackResponse = [
                         'success'            => true,
                         'status'             => 'ready',
-                        'answer'             => (string) $listingFieldValue,
+                        'answer'             => $listingAnswerText,
                         'disclosures'        => $promptPackage['required_disclosures'] ?? [],
                         'source_attribution' => $promptPackage['source_attribution'] ?? [],
                         'refusal_message'    => null,
@@ -4673,18 +4719,21 @@ class AskAiRunnerV2Service
 
             'system_instructions' => [
                 'You are a real estate information assistant.',
-                'You have been given a user question and a previously generated answer that has a quality problem — it may be a raw JSON blob, a bare word, or an incomplete sentence.',
+                'You have been given a user question and a previously generated answer that has a quality problem — it may be a raw JSON blob, a bare comma-separated list, a bare word, a year stamp, or an incomplete sentence.',
                 'Your task is to rewrite that answer as a single, clear, complete natural-language paragraph that directly addresses the question.',
                 'Use only the information already present in the degraded_answer field — do not invent, estimate, or add new information.',
+                'The rewritten answer MUST end with a period, exclamation mark, or question mark. Never produce a sentence fragment or a phrase without terminal punctuation.',
+                'If the degraded_answer is a comma-separated list of values (e.g. "Central Air, Mini-Split Unit(s)"), describe those values in a complete sentence (e.g. "The property is equipped with central air conditioning and a mini-split unit system.").',
                 'Do not reference protected class characteristics including race, color, national origin, religion, sex, familial status, or disability.',
                 'Do not generate legal, financial, investment, or professional advice of any kind.',
-                'Respond using a JSON object with exactly one key named "answer". The value must be a complete natural-language paragraph.',
+                'Respond using a JSON object with exactly one key named "answer". The value must be a complete natural-language paragraph ending with terminal punctuation.',
             ],
 
             'developer_instructions' => [
                 'task'            => 'Rewrite degraded_answer as a natural-language paragraph. Use question for context only.',
                 'constraint'      => 'Do not add any information not already present in degraded_answer.',
-                'response_format' => 'JSON object {"answer": "<paragraph>"} — the paragraph must use full sentences.',
+                'punctuation'     => 'The answer value MUST end with . or ! or ? — no fragment or bare phrase is acceptable.',
+                'response_format' => 'JSON object {"answer": "<paragraph>"} — the paragraph must use full sentences ending with terminal punctuation.',
             ],
 
             'allowed_context' => [
@@ -4744,12 +4793,14 @@ class AskAiRunnerV2Service
                 'If the exact answer cannot be found in the description, your answer_text must be exactly: INFORMATION_NOT_IN_DESCRIPTION',
                 'Do not generate legal, financial, investment, or professional advice of any kind.',
                 'All responses must be factual, neutral, and free of speculation or conjecture.',
+                'Compose your answer_text as a complete natural-language sentence or paragraph that ends with a period, exclamation mark, or question mark. Never return a raw list, a bare phrase, or a value without sentence structure.',
                 'Respond using a JSON object containing only the key answer_text.',
             ],
 
             'developer_instructions' => [
                 'source_constraint' => 'Use only the listing_description text in allowed_context. No external information.',
                 'sentinel_value'    => 'If the answer is absent from the description, return {"answer_text":"INFORMATION_NOT_IN_DESCRIPTION"} exactly.',
+                'response_format'   => 'answer_text must be a complete sentence ending with terminal punctuation (. ! ?) — never a bare phrase or raw value.',
                 'response_rules'    => ['respond_with_json_object', 'key_is_answer_text'],
             ],
 

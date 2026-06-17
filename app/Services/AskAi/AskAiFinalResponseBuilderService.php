@@ -289,6 +289,19 @@ class AskAiFinalResponseBuilderService
             return true;
         }
 
+        // Heuristic 4: No sentence-closing punctuation.
+        // A well-formed synthesized answer always ends with '.', '!', or '?'.
+        // Raw field echoes ("Central Air, Mini-Split Unit(s)"), comma-separated
+        // lists ("Electric, Gas"), year stamps ("Installed 2019"), and other
+        // verbatim value regurgitations never do.  Any response that passed
+        // heuristics 1–3 but still lacks terminal punctuation is treated as a
+        // raw echo and sent through the one-shot quality rewrite.
+        // Trailing close-quote or parenthesis after the punctuation is allowed
+        // (e.g. 'The system is "central air."').
+        if (!preg_match('/[.!?]["\')»]?\s*$/', $trimmed)) {
+            return true;
+        }
+
         return false;
     }
 
