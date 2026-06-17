@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use App\Models\User;
@@ -182,5 +183,19 @@ class AppServiceProvider extends ServiceProvider
         // additional DNA generation. Dispatch is capped at FANOUT_CAP per invocation.
         PropertyDnaProfile::observe(PropertyDnaProfileCompatibilityObserver::class);
         BuyerTenantDnaProfile::observe(BuyerTenantDnaProfileCompatibilityObserver::class);
+
+        // Boot-time guard: warn immediately when the Google Maps/Places API key is absent.
+        // The key MUST be set in .env (not only as a Replit platform secret) because phpdotenv
+        // reads only .env at startup — platform secrets are not injected into the workflow process.
+        // Missing key → x-google-maps-script emits an amber warning div instead of the <script>
+        // tag, breaking address autocomplete on seller/landlord/offers pages and the drawing map
+        // on buyer/tenant pages.
+        if (empty(config('services.google.places_key'))) {
+            Log::warning(
+                '[BYO] GOOGLE_PLACES_API_KEY is not set. ' .
+                'Address autocomplete and the property-preference map will not work. ' .
+                'Add GOOGLE_PLACES_API_KEY to .env (not only as a Replit platform secret).'
+            );
+        }
     }
 }
