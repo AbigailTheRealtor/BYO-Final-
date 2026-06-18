@@ -91,7 +91,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="custom_credit_score_requirement" class="form-control has-icon"
                     data-icon="fa-solid fa-chart-line"
-                    placeholder="Enter title (e.g., example)">
+                    placeholder="Enter credit score requirement (e.g., 720+ credit score, Higher deposit accepted)">
             </div>
         </div>
     </div>
@@ -130,7 +130,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="custom_income_requirement" class="form-control has-icon"
                     data-icon="fa-solid fa-money-bill-wave"
-                    placeholder="Enter title (e.g., example)">
+                    placeholder="Enter income requirement (e.g., Verified bank statements, 6 months reserves)">
             </div>
         </div>
     </div>
@@ -161,7 +161,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="custom_employment_requirement" class="form-control has-icon"
                     data-icon="fa-solid fa-briefcase"
-                    placeholder="Enter title (e.g., example)">
+                    placeholder="Enter employment requirement (e.g., Government employee, Independent contractor)">
             </div>
         </div>
     </div>
@@ -189,7 +189,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="custom_eviction_requirement" class="form-control has-icon"
                     data-icon="fa-solid fa-gavel"
-                    placeholder="Enter title (e.g., example)">
+                    placeholder="Enter eviction requirement (e.g., No evictions within 10 years, Case-by-case review)">
             </div>
         </div>
     </div>
@@ -217,7 +217,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="custom_bankruptcy_requirement" class="form-control has-icon"
                     data-icon="fa-solid fa-scale-balanced"
-                    placeholder="Enter title (e.g., example)">
+                    placeholder="Enter bankruptcy requirement (e.g., No bankruptcy within 7 years, Discharged bankruptcy only)">
             </div>
         </div>
     </div>
