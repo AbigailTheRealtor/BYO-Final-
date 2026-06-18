@@ -823,7 +823,7 @@
         :boundaryData="null"
         :floodZoneData="null"
         :schoolDistrictData="null"
-        :propertyPin="\$_landlordPropertyPin"
+        :propertyPin="$_landlordPropertyPin"
     />
 
     {{-- ===== TWO-COLUMN LAYOUT ===== --}}
