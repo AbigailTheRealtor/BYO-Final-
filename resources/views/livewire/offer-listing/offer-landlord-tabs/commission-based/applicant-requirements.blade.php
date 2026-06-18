@@ -115,7 +115,6 @@
         </div>
         {{-- Conditional: Fixed Monthly Income amount --}}
         <div x-show="$wire.income_qualification_method === 'Fixed Monthly Income'" x-cloak class="mt-2">
-            <label class="fw-bold">Required Monthly Income (Fixed):</label>
             <div class="input-cover">
                 <span class="input-group-text-seller">$</span>
                 <input type="text" wire:model="min_monthly_income_fixed" class="form-control"
