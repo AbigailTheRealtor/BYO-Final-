@@ -665,11 +665,8 @@ class TenantOfferListing extends Component
 
     // Location suggestions
     // Location suggestions
-    public $cities = [];
-    public $newCity = '';
     public $counties = [];
     public $newCounty = '';
-    public $citySuggestions = [];
     public $countySuggestions = [];
     public $stateSuggestions = [];
     public $zipCodes = [];       // Array of all selected zip codes
@@ -677,7 +674,6 @@ class TenantOfferListing extends Component
     public $zipCodeSuggestions = [];
     public $highlightedZipCodeIndex = -1;
     // Highlight indices for keyboard navigation
-    public $highlightedCityIndex = -1;
     public $highlightedCountyIndex = -1;
     public $highlightedStateIndex = -1;
     public $highlightedAddressIndex = -1;
@@ -1776,7 +1772,6 @@ class TenantOfferListing extends Component
 
         // Cities are OPTIONAL for buyer and tenant, required for seller/landlord
         if (!in_array($this->user_type, ['buyer', 'tenant'])) {
-            $this->validate(['cities' => 'required|array|min:1']);
         }
     }
 
@@ -1787,7 +1782,6 @@ class TenantOfferListing extends Component
         
         // Cities are OPTIONAL for buyer and tenant, required for seller/landlord
         if (!in_array($this->user_type, ['buyer', 'tenant'])) {
-            $this->validate(['cities' => 'required|array|min:1']);
         }
     }
 
@@ -2598,7 +2592,6 @@ class TenantOfferListing extends Component
             'agent_bid_visibility' => $this->agent_bid_visibility,
             'meeting_Preference'  => $this->meeting_Preference,
             'number_of_unit'      => $this->number_of_unit,
-            'cities'              => json_encode($this->cities),
             'counties'            => json_encode($this->counties),
             'zipCodes'            => json_encode($this->zipCodes),
             'state'               => $this->state,
@@ -4218,7 +4211,6 @@ class TenantOfferListing extends Component
         $auction->saveMeta('number_of_unit', $this->number_of_unit);
 
         // Location Information
-        $auction->saveMeta('cities', json_encode($this->cities));
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
         $auction->saveMeta('state', $this->state);

@@ -1118,6 +1118,7 @@
                 <div class="col-md-6">
                     {!! $row('ZIP Codes', $zipCodes) !!}
                     {!! $row('Address', $address) !!}
+                    {!! $row('Unit / Apt / Suite #', $str('unit_number')) !!}
                 </div>
             </div>
         </div>

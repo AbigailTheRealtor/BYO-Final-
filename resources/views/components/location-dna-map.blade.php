@@ -20,13 +20,17 @@
   Priority chain — STRICTLY one tier renders; the first non-empty tier wins:
     1. Custom drawn polygons   → Google Maps Polygon overlays
     2. Radius circles          → Google Maps Circle overlays
-    3. City labels/chips       → GeoJSON boundary polygons (or chip fallback)
+    3. Neighborhoods           → chip display (supplemental on map tiers 1-2; own tier here)
     4. ZIP code labels/chips   → GeoJSON boundary polygons (or chip fallback)
-    5. County labels/chips     → GeoJSON boundary polygons (or chip fallback)
-    6. Text-only fallback      → when tiers 1-5 all empty
+    5. City labels/chips       → GeoJSON boundary polygons (or chip fallback)
+    6. County labels/chips     → GeoJSON boundary polygons (or chip fallback)
+    7. State text              → text-only fallback
+    8. Text-only fallback      → when tiers 1-7 all empty
 
-  Neighborhoods are supplemental text — they are NOT a tier trigger.
-  They appear alongside whichever tier renders, or in the fallback block.
+  Spec priority order: Polygon > Circle > Radius > Neighborhood > ZIP > City > County > State
+  Neighborhoods that appear alongside map tiers 1-2 remain supplemental (displayed below the map).
+  When neighborhoods are the highest available data tier (no polygons/radii), they become the
+  primary display tier with their own chip block.
 
   Phase 2 boundary adapter (Tiers 3-5):
     BoundaryLookupService fetches GeoJSON polygon coordinates from the Census TIGER/Line
@@ -74,29 +78,37 @@
   $allZips     = array_values(array_unique(array_merge($dnaZips, $legZips)));
   $allCounties = array_values(array_filter(array_unique($legCounties)));
 
-  /* ── Priority chain triggers (neighborhoods are NOT in the chain) ───────── */
+  /* ── Priority chain triggers ────────────────────────────────────────────
+   * Spec order: Polygon > Circle > Radius > Neighborhood > ZIP > City > County > State
+   * Neighborhoods are supplemental when tiers 1-2 (map) are active, but become
+   * their own primary display tier when no polygons or radii are present.          */
   $hasPolygons = count($polygons) > 0;
   $hasRadii    = count($radii) > 0;
-  $hasCities   = count($allCities) > 0;
+  $hasNeigh    = count($dnaNeigh) > 0;
   $hasZips     = count($allZips) > 0;
+  $hasCities   = count($allCities) > 0;
   $hasCounties = count($allCounties) > 0;
+  $legStates   = array_values(array_filter((array)($legacy['states'] ?? [])));
+  $hasStates   = count($legStates) > 0;
 
   /* hasMapData is true only if at least one chain tier has data */
-  $hasMapData  = $hasPolygons || $hasRadii || $hasCities || $hasZips || $hasCounties;
+  $hasMapData  = $hasPolygons || $hasRadii || $hasNeigh || $hasZips || $hasCities || $hasCounties || $hasStates;
 
   /* Determine active tier (strict: only one tier renders) */
   if ($hasPolygons)       $tier = 'polygons';
   elseif ($hasRadii)      $tier = 'radii';
-  elseif ($hasCities)     $tier = 'cities';
+  elseif ($hasNeigh)      $tier = 'neighborhoods';
   elseif ($hasZips)       $tier = 'zips';
+  elseif ($hasCities)     $tier = 'cities';
   elseif ($hasCounties)   $tier = 'counties';
+  elseif ($hasStates)     $tier = 'states';
   else                    $tier = 'fallback';
 
   /* Boundary polygon data from Phase 2 service (Tiers 3-5 only) */
   $bd = isset($boundaryData) && is_array($boundaryData) ? $boundaryData : null;
   $geoPolygons   = ($bd && !empty($bd['geojson_polygons'])) ? $bd['geojson_polygons'] : [];
   $useBoundaryMap = !empty($geoPolygons)
-                    && in_array($tier, ['cities', 'zips', 'counties'], true);
+                    && in_array($tier, ['zips', 'cities', 'counties'], true);
 
   /* ── Phase 3A: Flood zone overlay data ───────────────────────────────────── */
   $fzd          = isset($floodZoneData) && is_array($floodZoneData) ? $floodZoneData : null;
@@ -139,6 +151,15 @@
 
   $componentId = 'ldna-display-' . uniqid();
   $mapsKey     = config('services.google.places_key', '');
+
+  /* ── Property pin (Seller / Landlord offer-listing view pages) ──────────────
+   * When $propertyPin is provided (array with lat/lng/label) we render a
+   * dedicated single-pin map regardless of the DNA preference tier chain.
+   * This is NOT part of the DNA priority chain — it is an orthogonal overlay
+   * used only when the calling view has exact coordinates for the property. */
+  $propertyPin = isset($propertyPin) && is_array($propertyPin)
+                    && !empty($propertyPin['lat']) && !empty($propertyPin['lng'])
+                    ? $propertyPin : null;
 @endphp
 
 @push('styles')
@@ -190,7 +211,60 @@
 </style>
 @endpush
 
-@if(!$hasMapData)
+@if($propertyPin)
+  {{-- ─── Property Pin Map (Seller / Landlord offer-listing pages) ─────────────────
+       Renders a single Google Maps marker for the exact property location.
+       This runs independently of the DNA tier chain; only shown when $propertyPin
+       is passed by the calling view.                                              --}}
+  @if($mapsKey)
+  <div class="ldna-hero mb-3">
+    <div id="{{ $componentId }}-pin" class="ldna-hero-map"></div>
+  </div>
+  @push('scripts')
+  <script>
+    (function() {
+      var pinData = @json($propertyPin);
+      function initPropertyPinMap() {
+        var map = new google.maps.Map(document.getElementById('{{ $componentId }}-pin'), {
+          center: { lat: pinData.lat, lng: pinData.lng },
+          zoom: 15,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: true,
+        });
+        var marker = new google.maps.Marker({
+          position: { lat: pinData.lat, lng: pinData.lng },
+          map: map,
+          title: pinData.label || 'Property Location',
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: '#2563eb',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+          },
+        });
+        if (pinData.label) {
+          var iw = new google.maps.InfoWindow({ content: '<span style="font-size:.9rem;font-weight:600;">' + pinData.label + '</span>' });
+          marker.addListener('click', function() { iw.open(map, marker); });
+        }
+      }
+      if (typeof google !== 'undefined' && google.maps) {
+        initPropertyPinMap();
+      } else {
+        document.addEventListener('google-maps-loaded', initPropertyPinMap);
+      }
+    })();
+  </script>
+  @endpush
+  @else
+  <div class="mb-3 p-3 bg-light rounded text-center text-muted" style="font-size:.875rem;">
+    <i class="fa-solid fa-map-location-dot me-1"></i>Property location map unavailable — Maps API not configured
+  </div>
+  @endif
+
+@elseif(!$hasMapData)
   {{-- ─── Tier 6: Full fallback ────────────────────────────────────────────────── --}}
   <div class="ldna-fallback-box mb-3">
     <div class="fw-bold mb-2" style="color:#0369a1;">
@@ -598,11 +672,12 @@
   </script>
 
 @else
-  {{-- ─── Tiers 3-5: Chip-based boundary adapter (Phase 1 fallback) ───────────────
+  {{-- ─── Tiers 3-7: Chip-based display ─────────────────────────────────────────
        Renders when $boundaryData is absent, fallback=true, or boundary polygons are
        empty (network failure, unknown area, Census API timeout, etc.).
-       STRICT single-tier: only the winning tier's chips are shown.
-       Neighborhoods are supplemental and always shown at the bottom.                 --}}
+       Priority chain: Neighborhood > ZIP > City > County > State.
+       STRICT single-tier: only the winning tier's chips are shown as primary.
+       Lower-priority tiers are shown as secondary/supplemental context.              --}}
   <div class="ldna-hero mb-3">
     @if($flex)
       <span class="ldna-flex-badge">
@@ -620,18 +695,19 @@
         <span class="ldna-chip-map-title">Preferred Locations</span>
       </div>
 
-      {{-- ── Active tier only ── --}}
-      @if($tier === 'cities')
+      {{-- ── Tier 3: Neighborhoods as primary tier (when no polygons/radii) ── --}}
+      @if($tier === 'neighborhoods')
         <div class="mb-2">
-          <span style="font-size:.78rem;color:#64748b;font-weight:600;">CITIES</span><br>
-          @foreach($allCities as $city)
-            <span class="ldna-area-chip city">
-              <i class="fa-solid fa-city" style="font-size:.75rem;"></i> {{ $city }}
+          <span style="font-size:.78rem;color:#64748b;font-weight:600;">NEIGHBORHOODS</span><br>
+          @foreach($dnaNeigh as $n)
+            <span class="ldna-area-chip neigh">
+              <i class="fa-solid fa-map-pin" style="font-size:.75rem;"></i> {{ $n }}
             </span>
           @endforeach
         </div>
       @endif
 
+      {{-- ── Tier 4: ZIP codes ── --}}
       @if($tier === 'zips')
         <div class="mb-2">
           <span style="font-size:.78rem;color:#64748b;font-weight:600;">ZIP CODES</span><br>
@@ -643,6 +719,19 @@
         </div>
       @endif
 
+      {{-- ── Tier 5: Cities ── --}}
+      @if($tier === 'cities')
+        <div class="mb-2">
+          <span style="font-size:.78rem;color:#64748b;font-weight:600;">CITIES</span><br>
+          @foreach($allCities as $city)
+            <span class="ldna-area-chip city">
+              <i class="fa-solid fa-city" style="font-size:.75rem;"></i> {{ $city }}
+            </span>
+          @endforeach
+        </div>
+      @endif
+
+      {{-- ── Tier 6: Counties ── --}}
       @if($tier === 'counties')
         <div class="mb-2">
           <span style="font-size:.78rem;color:#64748b;font-weight:600;">COUNTIES</span><br>
@@ -654,8 +743,20 @@
         </div>
       @endif
 
-      {{-- ── Neighborhoods: supplemental, not a tier trigger ── --}}
-      @if(count($dnaNeigh))
+      {{-- ── Tier 7: States ── --}}
+      @if($tier === 'states')
+        <div class="mb-2">
+          <span style="font-size:.78rem;color:#64748b;font-weight:600;">STATES</span><br>
+          @foreach($legStates as $st)
+            <span class="ldna-area-chip county">
+              <i class="fa-solid fa-flag" style="font-size:.75rem;"></i> {{ $st }}
+            </span>
+          @endforeach
+        </div>
+      @endif
+
+      {{-- ── Supplemental: neighborhoods shown alongside lower-priority tiers ── --}}
+      @if($tier !== 'neighborhoods' && count($dnaNeigh))
         <div class="ldna-neigh-supplement">
           <span style="font-size:.78rem;color:#64748b;font-weight:600;">NEIGHBORHOODS</span><br>
           @foreach($dnaNeigh as $n)

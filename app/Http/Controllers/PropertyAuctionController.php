@@ -83,6 +83,10 @@ class PropertyAuctionController extends Controller
             $auction->save();
             $auction->saveMeta("unit_number", $request->unit_number);
             $auction->saveMeta("address", $request->address);
+            $auction->saveMeta("property_lat", $request->property_lat);
+            $auction->saveMeta("property_lng", $request->property_lng);
+            $auction->saveMeta("google_place_id", $request->google_place_id);
+            $auction->saveMeta("formatted_address", $request->formatted_address);
             $auction->saveMeta("city", $request->city);
             $auction->saveMeta("county", $request->county);
             $auction->saveMeta("state", $request->state);
@@ -737,6 +741,10 @@ class PropertyAuctionController extends Controller
             $auction->update();
             $auction->saveMeta("unit_number", $request->unit_number);
             $auction->saveMeta("address", $request->address);
+            $auction->saveMeta("property_lat", $request->property_lat);
+            $auction->saveMeta("property_lng", $request->property_lng);
+            $auction->saveMeta("google_place_id", $request->google_place_id);
+            $auction->saveMeta("formatted_address", $request->formatted_address);
             $auction->saveMeta("city", $request->city);
             $auction->saveMeta("county", $request->county);
             $auction->saveMeta("state", $request->state);

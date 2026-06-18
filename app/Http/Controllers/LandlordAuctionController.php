@@ -41,6 +41,10 @@ class LandlordAuctionController extends Controller
             $landlord_auction->save();
             $landlord_auction->saveMeta("unit_number", $request->unit_number);
             $landlord_auction->saveMeta('address', $request->address);
+            $landlord_auction->saveMeta("property_lat", $request->property_lat);
+            $landlord_auction->saveMeta("property_lng", $request->property_lng);
+            $landlord_auction->saveMeta("google_place_id", $request->google_place_id);
+            $landlord_auction->saveMeta("formatted_address", $request->formatted_address);
             $landlord_auction->saveMeta("city", $request->city);
             $landlord_auction->saveMeta("county", $request->county);
             $landlord_auction->saveMeta("state", $request->state);
@@ -609,6 +613,10 @@ class LandlordAuctionController extends Controller
             $landlord_auction->save();
             $landlord_auction->saveMeta("unit_number", $request->unit_number);
             $landlord_auction->saveMeta('address', $request->address);
+            $landlord_auction->saveMeta("property_lat", $request->property_lat);
+            $landlord_auction->saveMeta("property_lng", $request->property_lng);
+            $landlord_auction->saveMeta("google_place_id", $request->google_place_id);
+            $landlord_auction->saveMeta("formatted_address", $request->formatted_address);
             $landlord_auction->saveMeta("city", $request->city);
             $landlord_auction->saveMeta("county", $request->county);
             $landlord_auction->saveMeta("state", $request->state);

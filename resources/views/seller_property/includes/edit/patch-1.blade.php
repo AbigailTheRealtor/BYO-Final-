@@ -6,6 +6,10 @@
       <label class="fw-bold" for="address">Address:</label>
       <input type="text" name="address" value="{{$auction->get->address}}"data-type="address" placeholder="" id="address"
         class="form-control has-icon search_places" data-icon="fa-solid fa-location-dot" required>
+      <input type="hidden" name="property_lat" id="property_lat" value="{{ $auction->get->property_lat ?? '' }}">
+      <input type="hidden" name="property_lng" id="property_lng" value="{{ $auction->get->property_lng ?? '' }}">
+      <input type="hidden" name="google_place_id" id="google_place_id" value="{{ $auction->get->google_place_id ?? '' }}">
+      <input type="hidden" name="formatted_address" id="formatted_address" value="{{ $auction->get->formatted_address ?? '' }}">
     </div>
     <div class="form-group">
       <label class="fw-bold" for="unit_number">Unit Number:</label>

@@ -764,11 +764,8 @@ class SellerOfferListing extends Component
     public $cityFieldVisible = false;
     public $stateFieldVisible = false;
     public $zipCodeFieldVisible = false;
-    public $cities = [];
-    public $newCity = '';
     public $counties = [];
     public $newCounty = '';
-    public $citySuggestions = [];
     public $countySuggestions = [];
     public $stateSuggestions = [];
     
@@ -782,7 +779,6 @@ class SellerOfferListing extends Component
     public $addressPlaceIds = [];
 
     // Highlight indices for keyboard navigation
-    public $highlightedCityIndex = -1;
     public $highlightedCountyIndex = -1;
     public $highlightedStateIndex = -1;
     public $highlightedAddressIndex = -1;
@@ -1425,15 +1421,12 @@ class SellerOfferListing extends Component
             $this->cities[] = $city;
             $this->newCity = '';
         }
-
-        $this->validate(['cities' => 'required|array|min:1']);
     }
 
     public function removeCity($index)
     {
         unset($this->cities[$index]);
         $this->cities = array_values($this->cities);
-        $this->validate(['cities' => 'required|array|min:1']);
     }
 
     public function addCounty()
@@ -1965,7 +1958,6 @@ class SellerOfferListing extends Component
             'desired_agent_hire_date'         => $this->desired_agent_hire_date,
             'expiration_date'                 => $this->expiration_date,
             'auction_time'                    => $this->auction_type === 'Bidding Period' ? $this->auction_time : '',
-            'cities'                          => json_encode($this->cities),
             'counties'                        => json_encode($this->counties),
             'state'                           => $this->state,
             'zip_code'                        => $this->zip_code,
@@ -3133,7 +3125,6 @@ class SellerOfferListing extends Component
         $auction->saveMeta('auction_time', $this->auction_type === 'Bidding Period' ? $this->auction_time : '');
 
         // Location Information
-        $auction->saveMeta('cities', json_encode($this->cities));
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
         $auction->saveMeta('zip_code', $this->zip_code);

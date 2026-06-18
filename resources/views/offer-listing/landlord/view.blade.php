@@ -365,6 +365,7 @@
         /* ── Address display ── */
         $addrParts = array_filter([
             $meta['address'] ?? null,
+            !empty($meta['unit_number']) ? $meta['unit_number'] : null,
             $meta['property_city'] ?? null,
         ]);
         $addrState  = trim($meta['property_state'] ?? '');
@@ -452,22 +453,23 @@
 
     {{-- ===== Property Location Map ===== --}}
     @php
-        $_landlordLat    = isset($meta['property_lat']) && $meta['property_lat'] !== '' ? $meta['property_lat'] : null;
-        $_landlordLng    = isset($meta['property_lng']) && $meta['property_lng'] !== '' ? $meta['property_lng'] : null;
-        $_landlordMapKey = config('services.google.places_key', '');
+        $_landlordPropertyPin = null;
+        if (!empty($meta['property_lat']) && !empty($meta['property_lng'])) {
+            $_landlordPropertyPin = [
+                'lat'     => (float) $meta['property_lat'],
+                'lng'     => (float) $meta['property_lng'],
+                'label'   => $meta['formatted_address'] ?: ($meta['address'] ?? null),
+            ];
+        }
     @endphp
-    @if($_landlordLat !== null && $_landlordLng !== null && $_landlordMapKey !== '')
-        <div class="mb-4">
-            <img src="https://maps.googleapis.com/maps/api/staticmap?center={{ $_landlordLat }},{{ $_landlordLng }}&zoom=15&size=800x280&markers=color:red|{{ $_landlordLat }},{{ $_landlordLng }}&key={{ $_landlordMapKey }}"
-                 alt="Property Location"
-                 class="img-fluid rounded shadow-sm"
-                 style="width:100%;max-height:280px;object-fit:cover;">
-        </div>
-    @else
-        <div class="mb-4 p-3 bg-light rounded text-center text-muted" style="font-size:.875rem;">
-            <i class="fa-solid fa-map-location-dot me-1"></i>Location map unavailable — no coordinates on record
-        </div>
-    @endif
+    <x-location-dna-map
+        :preferences="null"
+        :legacyLocation="[]"
+        :boundaryData="null"
+        :floodZoneData="null"
+        :schoolDistrictData="null"
+        :propertyPin="$_landlordPropertyPin"
+    />
 
     {{-- ===== HERO ===== --}}
     @php
@@ -1099,6 +1101,7 @@
                 <div class="col-md-6">
                     {!! $row('Property Type', $str('property_type')) !!}
                     {!! $row('Address', $str('address')) !!}
+                    {!! $row('Unit / Apt / Suite #', $str('unit_number')) !!}
                     {!! $row('City', $str('property_city')) !!}
                     {!! $row('County', $str('property_county')) !!}
                     {!! $row('State', $str('property_state')) !!}

@@ -615,11 +615,8 @@ class TenantOfferListingEdit extends Component
 
     // Location suggestions
     // Location suggestions
-    public $cities = [];
-    public $newCity = '';
     public $counties = [];
     public $newCounty = '';
-    public $citySuggestions = [];
     public $countySuggestions = [];
     public $stateSuggestions = [];
     public $zipCodes = [];       // Array of all selected zip codes
@@ -627,7 +624,6 @@ class TenantOfferListingEdit extends Component
     public $zipCodeSuggestions = [];
     public $highlightedZipCodeIndex = -1;
     // Highlight indices for keyboard navigation
-    public $highlightedCityIndex = -1;
     public $highlightedCountyIndex = -1;
     public $highlightedStateIndex = -1;
     public $highlightedAddressIndex = -1;
@@ -1586,7 +1582,6 @@ class TenantOfferListingEdit extends Component
 
         // Cities are OPTIONAL for buyer and tenant, required for seller/landlord
         if (!in_array($this->user_type, ['buyer', 'tenant'])) {
-            $this->validate(['cities' => 'required|array|min:1']);
         }
     }
 
@@ -1599,7 +1594,6 @@ class TenantOfferListingEdit extends Component
         
         // Cities are OPTIONAL for buyer and tenant, required for seller/landlord
         if (!in_array($this->user_type, ['buyer', 'tenant'])) {
-            $this->validate(['cities' => 'required|array|min:1']);
         }
     }
 
@@ -3148,7 +3142,6 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('number_of_unit', $this->number_of_unit);
 
             // Location Information
-            $auction->saveMeta('cities', json_encode($this->cities));
             $auction->saveMeta('counties', json_encode($this->counties));
             $auction->saveMeta('state', $this->state);
             $auction->saveMeta('property_city', $this->property_city);

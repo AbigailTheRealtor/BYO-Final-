@@ -1172,12 +1172,17 @@
         autocomplete.addListener('place_changed', function(e) {
           var place = autocomplete.getPlace();
           if (place) {
-            // place variable will have all the information you are looking for.
             var lat = place.geometry['location'].lat();
             var lng = place.geometry['location'].lng();
             if (t == "counties") {
               $('#lat').val(lat);
               $('#long').val(lng);
+            }
+            if (t === "address") {
+              $('#property_lat').val(lat);
+              $('#property_lng').val(lng);
+              $('#google_place_id').val(place.place_id || '');
+              $('#formatted_address').val(place.formatted_address || '');
             }
           }
         });

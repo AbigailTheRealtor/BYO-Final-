@@ -297,6 +297,7 @@ class BuyerOfferListingEdit extends Component
     public $meeting_details_email = '';
 
     public $address = '';
+    public $unit_number = '';
     public $meeting_details_meeting_time = '';
     public $meeting_details_time_zone = '';
     public $meeting_details_meeting_date = '';
@@ -431,16 +432,12 @@ class BuyerOfferListingEdit extends Component
     public $activeTab = 0;
 
     // Location suggestions
-    public $cities = [];
-    public $newCity = '';
     public $counties = [];
     public $newCounty = '';
-    public $citySuggestions = [];
     public $countySuggestions = [];
     public $stateSuggestions = [];
 
     // Highlight indices for keyboard navigation
-    public $highlightedCityIndex = -1;
     public $highlightedCountyIndex = -1;
     public $highlightedStateIndex = -1;
     public $highlightedAddressIndex = -1;
@@ -1358,7 +1355,6 @@ class BuyerOfferListingEdit extends Component
             'desired_agent_hire_date'         => $this->desired_agent_hire_date,
             'expiration_date'                 => $this->expiration_date,
             'auction_time'                    => $this->auction_type === 'Bidding Period' ? $this->auction_time : '',
-            'cities'                          => json_encode($this->cities),
             'counties'                        => json_encode($this->counties),
             'state'                           => $this->state,
             'property_type'                   => $this->property_type,
@@ -1801,8 +1797,6 @@ class BuyerOfferListingEdit extends Component
             $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
             $this->location_dna_preferences_json = $ldnaRaw ?? '';
             $this->property_type = $auction->get->property_type ?? '';
-            $citiesRaw = $auction->get->cities ?? null;
-            $this->cities = $citiesRaw ? (is_string($citiesRaw) ? json_decode($citiesRaw, true) ?? [] : (array)$citiesRaw) : [];
 
             $countiesRaw = $auction->get->counties ?? null;
             $this->counties = $countiesRaw ? (is_string($countiesRaw) ? json_decode($countiesRaw, true) ?? [] : (array)$countiesRaw) : [];
@@ -2101,6 +2095,7 @@ class BuyerOfferListingEdit extends Component
             $this->meeting_details_phone = $auction->get->meeting_details_phone ?? '';
             $this->meeting_details_email = $auction->get->meeting_details_email ?? '';
             $this->address = $auction->get->address ?? '';
+            $this->unit_number = $auction->info('unit_number') ?? '';
             $this->meeting_details_meeting_time = $auction->get->meeting_details_meeting_time ?? '';
             $this->meeting_details_time_zone = $auction->get->meeting_details_time_zone ?? '';
             $this->meeting_details_meeting_date = $auction->get->meeting_details_meeting_date ?? '';
@@ -2296,7 +2291,6 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('auction_time', $this->auction_type === 'Bidding Period' ? $this->auction_time : '');
 
         // Location Information
-        $auction->saveMeta('cities', json_encode($this->cities));
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
 
@@ -2556,6 +2550,7 @@ class BuyerOfferListingEdit extends Component
 
         // Meeting details yes
         $auction->saveMeta('address', $this->address);
+        $auction->saveMeta('unit_number', $this->unit_number);
         $auction->saveMeta('meeting_details_meeting_time', $this->meeting_details_meeting_time);
         $auction->saveMeta('meeting_details_meeting_date', $this->meeting_details_meeting_date);
         $auction->saveMeta('meeting_details_time_zone', $this->meeting_details_time_zone);
@@ -2727,7 +2722,6 @@ class BuyerOfferListingEdit extends Component
             'listing_date' => $this->listing_date ?? null,
             'auction_type' => $this->auction_type ?? null,
             'counties' => $this->counties ?? [],
-            'cities' => $this->cities ?? [],
             'state' => $this->state ?? null,
         ]);
 

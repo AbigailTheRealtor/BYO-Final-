@@ -347,10 +347,14 @@
                 class="form-control has-icon search_places" data-icon="fa-solid fa-location-dot" required>
             </div>
             <div class="form-group">
-              <label class="fw-bold" for="unit_number">Unit Number:</label>
-              <input type="text" name="unit_number" data-type="unit_number" placeholder="" id="unit_number"
-                class="form-control has-icon search_places" data-icon="fa-solid fa-location-dot" required>
+              <label class="fw-bold" for="unit_number">Unit / Apt / Suite #: <small class="text-muted fw-normal">(Optional)</small></label>
+              <input type="text" name="unit_number" data-type="unit_number" placeholder="e.g., Apt 3B, Suite 200" id="unit_number"
+                class="form-control has-icon" data-icon="fa-solid fa-door-open">
             </div>
+            <input type="hidden" name="property_lat" id="property_lat" value="">
+            <input type="hidden" name="property_lng" id="property_lng" value="">
+            <input type="hidden" name="google_place_id" id="google_place_id" value="">
+            <input type="hidden" name="formatted_address" id="formatted_address" value="">
             
             {{-- <div class="form-group">
               <label class="fw-bold" for="address">City:</label>
@@ -9807,12 +9811,17 @@
       autocomplete.addListener('place_changed', function(e) {
         var place = autocomplete.getPlace();
         if (place) {
-          // place variable will have all the information you are looking for.
           var lat = place.geometry['location'].lat();
           var lng = place.geometry['location'].lng();
           if (t == "counties") {
             $('#lat').val(lat);
             $('#long').val(lng);
+          }
+          if (t === "address") {
+            $('#property_lat').val(lat);
+            $('#property_lng').val(lng);
+            $('#google_place_id').val(place.place_id || '');
+            $('#formatted_address').val(place.formatted_address || '');
           }
         }
       });

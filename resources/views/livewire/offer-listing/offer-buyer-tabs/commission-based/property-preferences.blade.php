@@ -117,6 +117,20 @@
 <input type="hidden" wire:model.defer="number_of_unit_type_json">
 <input type="hidden" wire:model="property_items_json">
 
+
+<div class="form-group mb-3">
+    <label class="fw-bold">Unit / Apt / Suite #: <span class="text-muted fw-normal">(Optional)</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="If the property has a unit, apartment, or suite number, enter it here (e.g., Apt 3B, Suite 200).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="text" wire:model.defer="unit_number" class="form-control has-icon"
+            data-icon="fa-solid fa-door-open"
+            placeholder="e.g., Apt 3B, Suite 200 (optional)">
+    </div>
+</div>
+
 <h3>Property Preferences</h3>
 
 <div class="alert alert-info bg-light-info border-info mb-4">
@@ -130,62 +144,6 @@
     </div>
 </div>
 
-
-<div class="form-group mb-3">
-    <label class="fw-bold">Acceptable Cities:
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the cities where the Buyer is willing to purchase a property. Selecting a city will automatically populate the associated county and state when available.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-
-
-
-    <div class="input-cover position-relative">
-        <input type="text" wire:model.live.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
-            wire:keydown.arrow-up.prevent="decrementHighlight('City')"
-            wire:keydown.arrow-down.prevent="incrementHighlight('City')"
-            class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
-            autocomplete="off" placeholder="Enter city or cities (e.g., Miami, Austin)">
-
-
-        <!-- City Suggestions Dropdown -->
-        @if (count($citySuggestions) > 0)
-            <div class="autocomplete-dropdown shadow-sm">
-                <ul class="list-group">
-                    @foreach ($citySuggestions as $index => $suggestion)
-                        <li class="list-group-item {{ $highlightedCityIndex === $index ? 'bg-light' : '' }}"
-                            @mousedown.prevent="$wire.selectCitySuggestion('{{ $suggestion }}')"
-                            wire:key="city-suggestion-{{ $index }}">
-                            <i class="fa-solid fa-city me-2 text-muted"></i>
-                            {{ $suggestion }}
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        @error('newCity')
-            <div class="error-message">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <!-- Display added cities -->
-    <div class="mt-1 cities-container">
-        @if (count($cities) > 0)
-            @foreach ($cities as $index => $city)
-                <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="city-badge-{{ $index }}">
-                    <i class="fa-solid fa-city me-2"></i>
-                    {{ $city }}
-                    <button type="button" class="byo-pill-remove ms-2"
-                        wire:click="removeCity({{ $index }})" aria-label="Remove">&times;</button>
-                </span>
-            @endforeach
-
-        @endif
-    </div>
-</div>
 
 <!-- Acceptable Counties -->
 <div class="form-group mb-3">

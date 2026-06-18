@@ -1364,6 +1364,7 @@
                 <div class="col-md-6">
                     {!! $row('Home Sale Contingency', $str('home_sale_contingency')) !!}
                     {!! $row('Property Address', $str('home_sale_contingency_address')) !!}
+                    {!! $row('Unit / Apt / Suite #', $str('unit_number')) !!}
                     {!! $row('Target Date', $fmtDate($str('home_sale_contingency_date'))) !!}
                 </div>
                 <div class="col-md-6">
