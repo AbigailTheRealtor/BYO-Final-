@@ -2,12 +2,16 @@
 
 namespace App\Jobs;
 
+use App\Models\BuyerCriteriaAuction;
 use App\Models\BuyerTenantDnaProfile;
 use App\Models\ListingCompatibilityScore;
 use App\Models\PropertyDnaProfile;
+use App\Models\PropertyLocationDna;
+use App\Models\TenantCriteriaAuction;
 use App\Services\Dna\Compatibility\CompatibilityEngine;
 use App\Services\Dna\Compatibility\CompatibilityExplanationService;
 use App\Services\Dna\Compatibility\PropertyCompatibilityNarrativeService;
+use App\Services\LocationDna\LocationMatchIntegrationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -191,9 +195,14 @@ class ComputeCompatibilityScore implements ShouldQueue
 
             // --- Grouped sub-scores ---
             // Compute per-bucket scores using the dimension-to-category grouping map.
-            // location_match_score is always explicitly null — no location dimensions
-            // exist in Phase H; PREREQUISITE: Location DNA Phase 2.
             $groupedScores = $engine->computeGroupedScores($resolvedMatchMap);
+
+            // --- Location match score ---
+            // Populated via LocationMatchIntegrationService when a PropertyLocationDna
+            // record exists for the supply listing and the demand listing has saved
+            // location_dna_preferences. Gracefully falls back to null when either side
+            // lacks data — preserving backward compatibility with pre-Phase 6 records.
+            $locationMatchScore = $this->computeLocationMatchScore();
 
             // --- Highlights and warnings ---
             $highlights = $engine->computeHighlights($resolvedMatchMap);
@@ -255,11 +264,12 @@ class ComputeCompatibilityScore implements ShouldQueue
                 'overall_score'   => $result['compatibility_coverage_metric'],
 
                 // Grouped sub-scores per property dimension bucket.
-                // location_match_score is always null — awaiting Location DNA Phase 2.
+                // location_match_score is populated when both supply-side PropertyLocationDna
+                // and demand-side location_dna_preferences are available; null otherwise.
                 'physical_match_score'  => $groupedScores['physical'],
                 'financial_match_score' => $groupedScores['financial'],
                 'terms_match_score'     => $groupedScores['terms'],
-                'location_match_score'  => null,
+                'location_match_score'  => $locationMatchScore,
 
                 // deal_breaker_triggered is a conflict-presence indicator ONLY.
                 // True means one or more deterministic field conflicts were detected.
@@ -315,6 +325,112 @@ class ComputeCompatibilityScore implements ShouldQueue
                 'created_at'  => now(),
             ]);
         });
+    }
+
+    /**
+     * Compute a 0–100 location match score for this supply/demand pair.
+     *
+     * Returns null gracefully when either side lacks the required data:
+     *   - Supply side: no PropertyLocationDna record (geocode never run).
+     *   - Demand side: no location_dna_preferences saved on the criteria auction.
+     *
+     * When both sides are present, delegates to LocationMatchIntegrationService and
+     * converts the fired overlap_signals count into a normalized 0–100 score:
+     *   0 signals → 0   (property is outside all preferred areas)
+     *   1 signal  → 40  (matched one area type — e.g. city only)
+     *   2 signals → 55
+     *   3 signals → 70
+     *   4 signals → 85
+     *   5 signals → 100 (all five area types matched)
+     *
+     * This method MUST NOT write to the database, dispatch jobs, or throw.
+     *
+     * @return float|null  Normalized 0–100 score, or null when data is absent.
+     */
+    private function computeLocationMatchScore(): ?float
+    {
+        try {
+            // --- Supply side: load PropertyLocationDna ---
+            // listing_type in property_location_dna uses the '_agent' suffix form.
+            $dnaListingType = match ($this->supplyListingType) {
+                'seller'   => 'seller_agent',
+                'landlord' => 'landlord_agent',
+                default    => null,
+            };
+
+            if ($dnaListingType === null) {
+                return null;
+            }
+
+            $propertyDna = PropertyLocationDna::where('listing_type', $dnaListingType)
+                ->where('listing_id', $this->supplyListingId)
+                ->whereNotNull('geocoded_lat')
+                ->whereNotNull('geocoded_lng')
+                ->first();
+
+            if (!$propertyDna) {
+                return null;
+            }
+
+            $propertyData = [
+                'city'         => (string) ($propertyDna->source_city ?? ''),
+                'zip'          => (string) ($propertyDna->source_zip  ?? ''),
+                'neighborhood' => '',
+                'lat'          => (float)  ($propertyDna->geocoded_lat ?? 0.0),
+                'lng'          => (float)  ($propertyDna->geocoded_lng ?? 0.0),
+            ];
+
+            // --- Demand side: load location_dna_preferences from criteria auction ---
+            $criteriaAuction = match ($this->demandListingType) {
+                'buyer'  => BuyerCriteriaAuction::find($this->demandListingId),
+                'tenant' => TenantCriteriaAuction::find($this->demandListingId),
+                default  => null,
+            };
+
+            if (!$criteriaAuction) {
+                return null;
+            }
+
+            $rawPreferences = method_exists($criteriaAuction, 'info')
+                ? $criteriaAuction->info('location_dna_preferences')
+                : null;
+
+            if (empty($rawPreferences)) {
+                return null;
+            }
+
+            $preferences = is_array($rawPreferences)
+                ? $rawPreferences
+                : (json_decode($rawPreferences, true) ?? []);
+
+            if (empty($preferences)) {
+                return null;
+            }
+
+            // --- Run location match ---
+            $integrationService = app(LocationMatchIntegrationService::class);
+            $matchResult        = $integrationService->build($preferences, $propertyData);
+            $signals            = $matchResult['match_results']['overlap_signals'] ?? [];
+
+            // Normalize signal count to 0–100.
+            // There are 5 possible signal types (city, zip, neighborhood, polygon, radius).
+            // Score = (fired signals / 5) × 100 — a true linear normalization.
+            // 0 signals → 0.0, 1 → 20.0, 2 → 40.0, 3 → 60.0, 4 → 80.0, 5 → 100.0
+            $signalCount = count($signals);
+
+            return (float) round(($signalCount / 5) * 100, 2);
+
+        } catch (\Throwable $e) {
+            Log::warning('ComputeCompatibilityScore: location_match_score computation failed — falling back to null', [
+                'supply_listing_type' => $this->supplyListingType,
+                'supply_listing_id'   => $this->supplyListingId,
+                'demand_listing_type' => $this->demandListingType,
+                'demand_listing_id'   => $this->demandListingId,
+                'error'               => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     /**

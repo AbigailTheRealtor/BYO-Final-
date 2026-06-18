@@ -1057,6 +1057,17 @@
         :propertyPin="$_landlordPropertyPin"
     />
 
+    {{-- Location DNA Panel — public read-only view; Generate/Refresh button is never shown --}}
+    @if($locationDna ?? null)
+        @include('partials.location-dna-agent-panel', [
+            'listingType'            => 'landlord_agent',
+            'listingId'              => $auction->id,
+            'locationDna'            => $locationDna,
+            'locationPois'           => $locationPois ?? collect(),
+            'canGenerateLocationDna' => false,
+        ])
+    @endif
+
     {{-- ================================================================
          DESCRIPTION
          ============================================================== --}}

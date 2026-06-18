@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Mail\SellerListingInquiryMail;
 use App\Models\OfferAuction;
+use App\Models\PropertyLocationDna;
+use App\Models\PropertyLocationPoi;
 use App\Models\SellerAgentAuction;
 use App\Models\SellerListingInquiry;
 use App\Services\AskAi\AskAiContextBuilderService;
@@ -98,13 +100,24 @@ class SellerOfferListingController extends Controller
         $agentAiAgentId = (int) ($meta['hired_agent_id'] ?? 0);
         $agentAiScope   = 'public_listing_seller';
 
+        $locationDna  = PropertyLocationDna::where('listing_type', 'seller_agent')
+            ->where('listing_id', $auction->id)
+            ->first();
+        $locationPois = $locationDna
+            ? PropertyLocationPoi::where('listing_type', 'seller_agent')
+                ->where('listing_id', $auction->id)
+                ->orderBy('poi_category')
+                ->orderBy('distance_miles')
+                ->get()
+            : collect();
+
         $page_data = [
             'title'   => $auction->address ?? ($meta['listing_title'] ?? 'Seller Offer Listing'),
             'id'      => $id,
             'auth_id' => auth()->id(),
         ];
 
-        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction', 'calcData', 'askAiChipContext', 'agentAiV2', 'agentAiAgentId', 'agentAiScope') + $page_data);
+        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction', 'calcData', 'askAiChipContext', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois') + $page_data);
     }
 
     /**

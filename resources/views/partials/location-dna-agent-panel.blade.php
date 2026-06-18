@@ -49,7 +49,11 @@ use App\Presenters\LocationDnaPresenter;
             <div class="mb-3">
                 <form method="POST" action="{{ route('agent.location-dna.generate', [$listingType, $listingId]) }}">
                     @csrf
-                    <button type="submit" class="btn btn-sm btn-primary">
+                    {{-- Inline style is intentional: Tailwind preflight sets [type='button']{background-color:transparent}
+                         with equal specificity to Bootstrap's .btn-primary, making the button appear white/invisible.
+                         The inline style wins at specificity (1,0,0) and is robust regardless of CSS load order. --}}
+                    <button type="submit" class="btn btn-sm btn-primary"
+                            style="background-color:#0d6efd;border-color:#0d6efd;color:#fff;">
                         <i class="fa-solid fa-arrow-rotate-right me-1"></i>
                         {{ $locationDna ? 'Refresh Location DNA' : 'Generate Location DNA' }}
                     </button>

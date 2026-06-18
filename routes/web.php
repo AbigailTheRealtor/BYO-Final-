@@ -1100,6 +1100,10 @@ Route::get('/offer-listing/landlord/view/{id}',
     [LandlordOfferListingController::class, 'view']
 )->name('offer.listing.landlord.view');
 
+Route::get('/offer-listing/seller/view/{id}',
+    [SellerOfferListingController::class, 'view']
+)->name('offer.listing.seller.view');
+
 // ===========================================================================
 // Regular Listing (Offer) — production routes
 // These route to the isolated OfferListing Livewire components (Layer 2 copies).
@@ -1116,12 +1120,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/offer-listing/landlord',
         \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing::class
     )->name('offer.listing.landlord');
-
-    // ── Offer Listing View routes (production) ─────────────────────────────
-    Route::get('/offer-listing/seller/view/{id}',
-        [SellerOfferListingController::class, 'view']
-    )->name('offer.listing.seller.view');
-    // ── End Offer Listing View routes ──────────────────────────────────────
 
     // ── Offer Listing Edit routes (production) ─────────────────────────────
     // IMPORTANT: specific /edit/ routes must be declared BEFORE any catch-all

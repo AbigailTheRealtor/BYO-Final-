@@ -1460,6 +1460,17 @@
         :propertyPin="$_sellerPropertyPin"
     />
 
+    {{-- Location DNA Panel — public read-only view; Generate/Refresh button is never shown --}}
+    @if($locationDna ?? null)
+        @include('partials.location-dna-agent-panel', [
+            'listingType'            => 'seller_agent',
+            'listingId'              => $auction->id,
+            'locationDna'            => $locationDna,
+            'locationPois'           => $locationPois ?? collect(),
+            'canGenerateLocationDna' => false,
+        ])
+    @endif
+
     {{-- Property Description --}}
     @if($val('additional_details'))
     <div class="card section-card" id="section-description">

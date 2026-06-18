@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\LandlordAgentAuction;
 use App\Models\OfferAuction;
+use App\Models\PropertyLocationDna;
+use App\Models\PropertyLocationPoi;
 use App\Models\SellerListingInquiry;
 use App\Services\AskAi\AskAiContextBuilderService;
 use Illuminate\Http\Request;
@@ -149,9 +151,20 @@ class LandlordOfferListingController extends Controller
             'title' => $auction->title ?? ($meta['listing_title'] ?? 'Rental Property Listing'),
         ];
 
+        $locationDna  = PropertyLocationDna::where('listing_type', 'landlord_agent')
+            ->where('listing_id', $auction->id)
+            ->first();
+        $locationPois = $locationDna
+            ? PropertyLocationPoi::where('listing_type', 'landlord_agent')
+                ->where('listing_id', $auction->id)
+                ->orderBy('poi_category')
+                ->orderBy('distance_miles')
+                ->get()
+            : collect();
+
         $offerAuction = $this->ensureLinkedOfferAuction($auction);
 
-        return view('offer-listing.landlord.view', compact('auction', 'meta', 'askAiChipContext', 'offerAuction', 'agentAiV2', 'agentAiAgentId', 'agentAiScope') + $page_data);
+        return view('offer-listing.landlord.view', compact('auction', 'meta', 'askAiChipContext', 'offerAuction', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois') + $page_data);
     }
 
     public function submitQuestion(Request $request, $auction)
