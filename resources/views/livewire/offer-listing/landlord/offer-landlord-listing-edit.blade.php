@@ -996,6 +996,17 @@ $tenantPays = [
                                         AI Knowledge Base
                                     </button>
                                 </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 10 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(10)"
+                                        id="applicant-requirements-tab" data-bs-toggle="tab"
+                                        data-bs-target="#applicant-requirements"
+                                        type="button" role="tab"
+                                        aria-controls="applicant-requirements"
+                                        aria-selected="{{ $activeTab === 10 ? 'true' : 'false' }}">
+                                        Applicant Requirements
+                                    </button>
+                                </li>
                             </ul>
 
                         <!-- Tab Content -->
@@ -1071,6 +1082,12 @@ $tenantPays = [
                                 <div class="tab-pane fade {{ $activeTab === 9 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
+                                </div>
+
+                                <!-- Applicant Requirements Tab (index 10) -->
+                                <div class="tab-pane fade {{ $activeTab === 10 ? 'show active' : '' }}"
+                                    id="applicant-requirements" role="tabpanel" aria-labelledby="applicant-requirements-tab">
+                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.applicant-requirements')
                                 </div>
                         </div>
                         <!-- Navigation Buttons -->

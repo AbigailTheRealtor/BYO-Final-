@@ -1308,18 +1308,7 @@
     </div>
 @endif
 
-{{-- Number of Occupants Allowed --}}
-<div class="form-group">
-    <label class="fw-bold">Number of Occupants Allowed:</label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the maximum number of occupants permitted to live in the property under the lease.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <input type="number" wire:model="number_of_occupants_allowed" class="form-control has-icon"
-            data-icon="fa-solid fa-users" min="1" placeholder="Enter max number of occupants (e.g., 4)">
-    </div>
-</div>
+{{-- Number of Occupants Allowed moved to Applicant Requirements tab --}}
 
 {{-- Parking Terms --}}
 <div class="form-group">
@@ -1383,19 +1372,7 @@
     </div>
 @endif
 
-{{-- Landlord Approval Conditions --}}
-<div class="form-group">
-    <label class="fw-bold">Landlord Approval Conditions:</label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="List any conditions or requirements the Tenant must meet for the Landlord to approve the lease (e.g., credit check, income verification, references).">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <textarea wire:model="landlord_approval_conditions" class="form-control has-icon landlord-compact-textarea" rows="1"
-            data-icon="fa-solid fa-clipboard-check"
-            placeholder="Enter approval conditions (e.g., Credit score 650+, Income 3x monthly rent, No prior evictions)"></textarea>
-    </div>
-</div>
+{{-- Landlord Approval Conditions moved to Applicant Requirements tab --}}
 
 {{-- Additional Landlord Lease Terms --}}
 <div class="form-group">
@@ -1593,19 +1570,7 @@
     </div>
 </div>
 
-<div class="form-group">
-    <label class="fw-bold">Minimum Income Requirement:</label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the minimum monthly income required for tenant qualification (e.g., 6000). This field is for internal agent use only.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="min_income_requirement" class="form-control"
-            placeholder="Enter minimum monthly income requirement (e.g., 6000)"
-            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-    </div>
-</div>
+{{-- Minimum Income Requirement moved to Applicant Requirements tab --}}
 
 <div class="form-group">
     <label class="fw-bold">Subletting Policy:</label>

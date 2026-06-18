@@ -338,6 +338,22 @@ class LandlordOfferListingEdit extends Component
     public $min_income_requirement = '';
     public $subletting_policy = '';
 
+    // Applicant Requirements tab EAV keys
+    public $min_credit_score = '';
+    public $income_qualification_method = 'No Requirement';
+    public $min_monthly_income_fixed = '';
+    public $custom_income_requirement = '';
+    public $employment_requirement = 'No Requirement';
+    public $custom_employment_requirement = '';
+    public $eviction_history_requirement = 'No Requirement';
+    public $custom_eviction_requirement = '';
+    public $bankruptcy_requirement = 'No Requirement';
+    public $custom_bankruptcy_requirement = '';
+    public $est_water_sewer_trash = '';
+    public $est_electric = '';
+    public $est_internet = '';
+    public $est_cable = '';
+
     // Property Showings
     public $schedule_showings = false;
     public $number_of_showings_to_schedule = 0;
@@ -2912,6 +2928,22 @@ class LandlordOfferListingEdit extends Component
             $this->min_income_requirement = $auction->get->min_income_requirement ?? '';
             $this->subletting_policy = $auction->get->subletting_policy ?? '';
 
+            // Applicant Requirements tab EAV keys
+            $this->min_credit_score = $auction->get->min_credit_score ?? '';
+            $this->income_qualification_method = $auction->get->income_qualification_method ?? 'No Requirement';
+            $this->min_monthly_income_fixed = $auction->get->min_monthly_income_fixed ?? '';
+            $this->custom_income_requirement = $auction->get->custom_income_requirement ?? '';
+            $this->employment_requirement = $auction->get->employment_requirement ?? 'No Requirement';
+            $this->custom_employment_requirement = $auction->get->custom_employment_requirement ?? '';
+            $this->eviction_history_requirement = $auction->get->eviction_history_requirement ?? 'No Requirement';
+            $this->custom_eviction_requirement = $auction->get->custom_eviction_requirement ?? '';
+            $this->bankruptcy_requirement = $auction->get->bankruptcy_requirement ?? 'No Requirement';
+            $this->custom_bankruptcy_requirement = $auction->get->custom_bankruptcy_requirement ?? '';
+            $this->est_water_sewer_trash = $auction->get->est_water_sewer_trash ?? '';
+            $this->est_electric = $auction->get->est_electric ?? '';
+            $this->est_internet = $auction->get->est_internet ?? '';
+            $this->est_cable = $auction->get->est_cable ?? '';
+
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);
             // foreach ($enableFields as $field => $value) {
@@ -3418,6 +3450,22 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('security_deposit_amount', $this->security_deposit_amount);
         $auction->saveMeta('min_income_requirement', $this->min_income_requirement);
         $auction->saveMeta('subletting_policy', $this->subletting_policy);
+
+        // Applicant Requirements tab EAV keys
+        $auction->saveMeta('min_credit_score', $this->min_credit_score);
+        $auction->saveMeta('income_qualification_method', $this->income_qualification_method);
+        $auction->saveMeta('min_monthly_income_fixed', $this->min_monthly_income_fixed);
+        $auction->saveMeta('custom_income_requirement', $this->custom_income_requirement);
+        $auction->saveMeta('employment_requirement', $this->employment_requirement);
+        $auction->saveMeta('custom_employment_requirement', $this->custom_employment_requirement);
+        $auction->saveMeta('eviction_history_requirement', $this->eviction_history_requirement);
+        $auction->saveMeta('custom_eviction_requirement', $this->custom_eviction_requirement);
+        $auction->saveMeta('bankruptcy_requirement', $this->bankruptcy_requirement);
+        $auction->saveMeta('custom_bankruptcy_requirement', $this->custom_bankruptcy_requirement);
+        $auction->saveMeta('est_water_sewer_trash', $this->est_water_sewer_trash);
+        $auction->saveMeta('est_electric', $this->est_electric);
+        $auction->saveMeta('est_internet', $this->est_internet);
+        $auction->saveMeta('est_cable', $this->est_cable);
 
         // MLS Property Detail Fields
         $auction->saveMeta('year_built', $this->year_built);

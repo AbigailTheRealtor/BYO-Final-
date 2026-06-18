@@ -598,6 +598,15 @@
                                 <i class="fa-solid fa-file-signature me-1"></i>Submit Rental Offer
                             </button>
                         </form>
+                        {{-- TODO: Check Rental Qualification — Phase 2
+                             This button will launch the tenant self-qualification flow
+                             comparing their profile against the landlord's Applicant Requirements.
+                             Do NOT enable until the qualification engine is built. --}}
+                        @if(false)
+                        <button type="button" class="btn btn-outline-primary" aria-label="Check your rental qualification for this property">
+                            <i class="fa-solid fa-clipboard-check me-1"></i>Check Rental Qualification
+                        </button>
+                        @endif
                         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
                             <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
                         </button>
@@ -830,7 +839,7 @@
         $navHasPricing = $str('desired_rental_amount') || $str('starting_rent') || $str('reserve_rent')
             || $str('lease_now_price') || $str('security_deposit_required') || $str('security_deposit_amount')
             || $str('first_month_rent_required') || $str('last_month_rent_required')
-            || $str('total_move_in_funds_required') || $str('min_income_requirement');
+            || $str('total_move_in_funds_required');
 
         /* Utilities & Fees */
         $navHasUtilities = count($arr('tenant_pays')) > 0 || count($arr('owner_pays')) > 0
@@ -866,6 +875,16 @@
             || $str('waterfront') || count($arr('water_access')) || count($arr('interior_features'))
             || count($arr('roof_type')) || count($arr('exterior_construction')) || count($arr('foundation'))
             || $str('sqft_heated_source') || $str('unit_size');
+
+        /* Applicant Requirements */
+        $hasApplicantSection =
+            $str('min_income_requirement') || $str('number_of_occupants_allowed') || $str('number_occupant') ||
+            $str('landlord_approval_conditions') || $str('min_credit_score') ||
+            ($str('income_qualification_method') && $str('income_qualification_method') !== 'No Requirement') ||
+            ($str('employment_requirement') && $str('employment_requirement') !== 'No Requirement') ||
+            ($str('eviction_history_requirement') && $str('eviction_history_requirement') !== 'No Requirement') ||
+            ($str('bankruptcy_requirement') && $str('bankruptcy_requirement') !== 'No Requirement') ||
+            $str('est_water_sewer_trash') || $str('est_electric') || $str('est_internet') || $str('est_cable');
     @endphp
 
     {{-- Smooth-scroll nav tabs (each tab is only rendered when its section has content) --}}
@@ -880,6 +899,9 @@
             @endif
             <li><a href="#section-details">Property</a></li>
             <li><a href="#section-leasing">Leasing Terms</a></li>
+            @if($hasApplicantSection)
+            <li><a href="#section-applicant-requirements">Applicant Requirements</a></li>
+            @endif
             @if($navHasPricing)
             <li><a href="#section-pricing">Pricing</a></li>
             @endif
@@ -1206,8 +1228,6 @@
                     {!! $row('Subletting Policy', $str('subletting_policy')) !!}
                     {!! $row('Smoking Policy', $str('smoking_policy')) !!}
                     {!! $row('Landlord Maintenance Responsibility', $str('ll_maintenance_responsibility')) !!}
-                    {!! $row('Number of Occupants Allowed', $str('number_of_occupants_allowed') ?: $str('number_occupant')) !!}
-                    {!! $row('Landlord Approval Conditions', $str('landlord_approval_conditions')) !!}
                     {!! $row('Additional Landlord Lease Terms', $str('additional_landlord_lease_terms')) !!}
                 </div>
             </div>
@@ -1252,6 +1272,100 @@
     </div>
 
     {{-- ================================================================
+         APPLICANT REQUIREMENTS
+         ============================================================== --}}
+    @if($hasApplicantSection)
+    <div class="card section-card" id="section-applicant-requirements">
+        <div class="card-header"><i class="fa-solid fa-user-check me-2"></i>Applicant Requirements</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    @if(!empty($str('min_income_requirement')))
+                        {!! $row('Minimum Monthly Income Requirement', '$' . number_format((float)preg_replace('/[^0-9.]/', '', $str('min_income_requirement')), 0) . '/mo') !!}
+                    @endif
+                    @if(!empty($str('number_of_occupants_allowed') ?: $str('number_occupant')))
+                        {!! $row('Max Occupants Allowed', $str('number_of_occupants_allowed') ?: $str('number_occupant')) !!}
+                    @endif
+                    @if(!empty($str('landlord_approval_conditions')))
+                        {!! $row('Approval Conditions', $str('landlord_approval_conditions')) !!}
+                    @endif
+                    @if(!empty($str('min_credit_score')))
+                        {!! $row('Minimum Credit Score', $str('min_credit_score')) !!}
+                    @endif
+                </div>
+                <div class="col-md-6">
+                    @php
+                        $incomeMethod = $str('income_qualification_method');
+                        $incomeDisplay = null;
+                        if ($incomeMethod && $incomeMethod !== 'No Requirement') {
+                            if ($incomeMethod === 'Fixed Monthly Income' && $str('min_monthly_income_fixed')) {
+                                $incomeDisplay = 'Fixed: $' . number_format((float)preg_replace('/[^0-9.]/', '', $str('min_monthly_income_fixed')), 0) . '/mo';
+                            } elseif ($incomeMethod === 'Other' && $str('custom_income_requirement')) {
+                                $incomeDisplay = $str('custom_income_requirement');
+                            } else {
+                                $incomeDisplay = $incomeMethod;
+                            }
+                        }
+                    @endphp
+                    @if($incomeDisplay)
+                        {!! $row('Income Qualification', $incomeDisplay) !!}
+                    @endif
+                    @php
+                        $empReq = $str('employment_requirement');
+                        $empDisplay = ($empReq && $empReq !== 'No Requirement')
+                            ? ($empReq === 'Other' && $str('custom_employment_requirement') ? $str('custom_employment_requirement') : $empReq)
+                            : null;
+                    @endphp
+                    @if($empDisplay)
+                        {!! $row('Employment Requirement', $empDisplay) !!}
+                    @endif
+                    @php
+                        $evicReq = $str('eviction_history_requirement');
+                        $evicDisplay = ($evicReq && $evicReq !== 'No Requirement')
+                            ? ($evicReq === 'Other' && $str('custom_eviction_requirement') ? $str('custom_eviction_requirement') : $evicReq)
+                            : null;
+                    @endphp
+                    @if($evicDisplay)
+                        {!! $row('Eviction History', $evicDisplay) !!}
+                    @endif
+                    @php
+                        $bankReq = $str('bankruptcy_requirement');
+                        $bankDisplay = ($bankReq && $bankReq !== 'No Requirement')
+                            ? ($bankReq === 'Other' && $str('custom_bankruptcy_requirement') ? $str('custom_bankruptcy_requirement') : $bankReq)
+                            : null;
+                    @endphp
+                    @if($bankDisplay)
+                        {!! $row('Bankruptcy Requirement', $bankDisplay) !!}
+                    @endif
+                </div>
+            </div>
+            {{-- Estimated Utility Costs --}}
+            @php
+                $hasUtils = $str('est_water_sewer_trash') || $str('est_electric') || $str('est_internet') || $str('est_cable');
+            @endphp
+            @if($hasUtils)
+            <hr>
+            <h6 class="fw-semibold mb-3" style="font-size:.9rem;letter-spacing:0;">Estimated Monthly Utility Costs</h6>
+            <div class="row">
+                @if(!empty($str('est_water_sewer_trash')))
+                <div class="col-md-3">{!! $row('Water / Sewer / Trash', '$' . number_format((float)preg_replace('/[^0-9.]/', '', $str('est_water_sewer_trash')), 0) . '/mo') !!}</div>
+                @endif
+                @if(!empty($str('est_electric')))
+                <div class="col-md-3">{!! $row('Electric', '$' . number_format((float)preg_replace('/[^0-9.]/', '', $str('est_electric')), 0) . '/mo') !!}</div>
+                @endif
+                @if(!empty($str('est_internet')))
+                <div class="col-md-3">{!! $row('Internet', '$' . number_format((float)preg_replace('/[^0-9.]/', '', $str('est_internet')), 0) . '/mo') !!}</div>
+                @endif
+                @if(!empty($str('est_cable')))
+                <div class="col-md-3">{!! $row('Cable', '$' . number_format((float)preg_replace('/[^0-9.]/', '', $str('est_cable')), 0) . '/mo') !!}</div>
+                @endif
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
+    {{-- ================================================================
          RENTAL PRICING & DEPOSITS
          ============================================================== --}}
     @php
@@ -1266,7 +1380,7 @@
             ['First Month Rent Required', $yesNo($str('first_month_rent_required'))],
             ['Last Month Rent Required', $yesNo($str('last_month_rent_required'))],
             ['Total Move-In Funds Required', $fmtMoney($str('total_move_in_funds_required'))],
-            ['Minimum Income Requirement', $str('min_income_requirement') ? '$' . number_format((float)preg_replace('/[^0-9.]/', '', $str('min_income_requirement')), 0) . '/mo' : null],
+            // min_income_requirement moved to Applicant Requirements section
         ], fn($f) => !empty($f[1]));
     @endphp
     @if(count($pricingFields))

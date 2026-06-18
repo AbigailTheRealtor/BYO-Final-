@@ -1034,6 +1034,17 @@
                                         Description
                                     </button>
                                 </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(4)"
+                                        id="applicant-requirements-tab" data-bs-toggle="tab"
+                                        data-bs-target="#applicant-requirements"
+                                        type="button" role="tab"
+                                        aria-controls="applicant-requirements"
+                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
+                                        Applicant Requirements
+                                    </button>
+                                </li>
                                 {{-- B7: Broker Compensation tab hidden from client listing form --}}
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
@@ -1151,6 +1162,12 @@
                                         @include('livewire.offer-listing.offer-landlord-tabs.commission-based.additional-details')
                                     @endif
 
+                                </div>
+
+                                <!-- Applicant Requirements Tab (index 4) -->
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                    id="applicant-requirements" role="tabpanel" aria-labelledby="applicant-requirements-tab">
+                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.applicant-requirements')
                                 </div>
 
                                 {{-- B7: Broker Compensation panel hidden from client listing form --}}
