@@ -106,6 +106,10 @@
                                             </svg>
                                             Upgrades
                                         </button>
+                                        <a href="{{ route('stellar.buyer.results') }}" class="btn btn-primary btn-sm">
+                                            <i class="fa-solid fa-magnifying-glass-chart me-1"></i>
+                                            View MLS Matches
+                                        </a>
                                     </div>
                                     <hr>
                                     <!-- End  -->

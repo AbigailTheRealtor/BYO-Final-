@@ -256,6 +256,9 @@
                             <a href="{{ route('buyer.listings.download', $auction->id) }}" class="btn btn-outline-secondary btn-sm px-3 mb-3 me-2"><i class="fa-solid fa-download me-1"></i>Download Listing Snapshot (PDF)</a>
                         </div>
                     @endif
+                    <div class="d-flex justify-content-start align-content-center mb-2">
+                        <a href="{{ route('stellar.buyer.results') }}" class="btn btn-primary btn-sm px-3"><i class="fa-solid fa-magnifying-glass-chart me-1"></i>View MLS Matches</a>
+                    </div>
                 </div>
                 @php
                     $_buyerAiFaq = json_decode($auction->info('listing_ai_faq') ?: '{}', true) ?? [];
