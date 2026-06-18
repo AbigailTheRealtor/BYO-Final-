@@ -60,6 +60,81 @@ class AskAiContextBuilderService
     }
 
     /**
+     * Truth Source Contract — canonical EAV or native source key for each context
+     * key, per role.
+     *
+     * This constant is the single authoritative reference that ties Ask AI's context
+     * assembly to the same data the public listing views render.  Every field
+     * declared here must be populated using the specified source key(s) in
+     * extractFactualFields().  Golden QA tests assert that DB values read through
+     * these source keys match the values returned in the assembled context.
+     *
+     * Format:
+     *   [ role => [ context_key => source_spec ] ]
+     *
+     * source_spec can be:
+     *   'meta_key'             — single EAV meta key read via info()
+     *   'native:column'        — native model column read via $listing->{column}
+     *   ['key1','key2',...]    — cascade: first non-null wins (same as code logic)
+     *
+     * Known discrepancies (documented, not silent):
+     *   landlord.utilities — public view (offer-listing/landlord/view.blade.php line 1289)
+     *     renders $str('utilities'); context reads 'property_utilities' first (always
+     *     populated for agent-auction rows) with 'utilities' fallback.  For offer listings
+     *     both keys are set to equivalent data by LandlordOfferListing.php (lines 3160 +
+     *     3301).  Declared below as ['utilities','property_utilities'] — UI-view key first —
+     *     so conflict-detection tools use 'utilities' as the reference side.
+     */
+    public const CANONICAL_SOURCE_MAP = [
+        'seller' => [
+            'description'            => 'native:description',
+            'asking_price'           => 'maximum_budget',
+            'buy_now_price'          => 'buy_now_price',
+            'square_feet'            => ['minimum_heated_square', 'heated_square_footage', 'heated_square'],
+            'year_built'             => 'year_built',
+            'utilities'              => 'utilities',
+            'seller_credit_offered'  => 'seller_contribution_credit_offered',
+            'seller_credit_amount'   => 'seller_contribution_amount_details',
+            'annual_property_taxes'  => 'annual_property_taxes',
+            'flood_zone_code'        => 'flood_zone_code',
+            'pets_allowed'           => 'pets',
+            'hoa_association'        => 'has_hoa',
+            'hoa_fee'                => 'association_fee_amount',
+            'hoa_payment_schedule'   => 'association_fee_frequency',
+        ],
+        'buyer' => [
+            'description'            => 'native:additional_details',
+            'max_price'              => 'maximum_budget',
+            'square_feet'            => ['minimum_heated_square', 'heated_square_footage', 'heated_square'],
+            'financing_type'         => 'financing_type',
+            'loan_pre_approved'      => 'pre_approved',
+        ],
+        'landlord' => [
+            'description'            => 'additional_details',
+            'rent_amount'            => ['desired_rental_amount', 'starting_rent', 'lease_now_price'],
+            'square_feet'            => ['minimum_heated_square', 'heated_square_footage', 'heated_square'],
+            'year_built'             => 'year_built',
+            // 'utilities' declared first (UI-view key) for conflict-detection reference;
+            // context builder reads 'property_utilities' first as the primary source.
+            'utilities'              => ['utilities', 'property_utilities'],
+            'lease_terms'            => 'terms_of_lease',
+            'lease_length'           => ['min_lease_period', 'minimum_lease_period', 'desired_lease_length'],
+            'pet_policy'             => ['pet_policy', 'pets'],
+            'annual_property_taxes'  => 'annual_property_taxes',
+            'flood_zone_code'        => 'flood_zone_code',
+            'has_hoa'                => 'has_hoa',
+            'association_fee_amount' => 'association_fee_amount',
+            'additional_lease_terms' => 'additional_landlord_lease_terms',
+        ],
+        'tenant' => [
+            'max_rent'               => ['budget', 'maximum_budget'],
+            'desired_lease_length'   => ['desired_lease_length', 'lease_for'],
+            'credit_score_range'     => ['credit_score_range', 'credit_score'],
+            'monthly_income'         => ['monthly_income', 'household_monthly_income'],
+        ],
+    ];
+
+    /**
      * Canonical listing type names and all accepted aliases.
      */
     private const TYPE_ALIASES = [
@@ -212,6 +287,10 @@ class AskAiContextBuilderService
                 'listing_id'            => $listingId,
                 'context_version'       => self::CONTEXT_VERSION,
                 'status'                => $status,
+                // _sources: authoritative EAV / native source key per context field.
+                // Used by golden QA tests (AskAiGoldenQaSuiteTest) to assert that
+                // context values match what the public listing UI renders.
+                '_sources'              => self::CANONICAL_SOURCE_MAP[$canonical] ?? [],
                 'listing'               => $listingFields,
                 'faq_answers'           => $faqAnswers,
                 'property_intelligence' => $propertyIntelligence,
@@ -695,6 +774,11 @@ class AskAiContextBuilderService
             // Landlord — landlord_auction_metas (EAV only via info())
             // -----------------------------------------------------------------
             'landlord' => [
+                // description: landlord listings save the free-text description under
+                // the 'additional_details' EAV meta key (not a native column).
+                // The public view (offer-listing/landlord/view.blade.php line 1033) renders
+                // $str('additional_details') — canonical source declared in CANONICAL_SOURCE_MAP.
+                'description'               => $infoGet('additional_details'),
                 // rent_amount: the form saves the asking rent under 'desired_rental_amount'.
                 // Live-DB audit (June 2026) confirmed 'maximum_budget' is empty for landlord
                 // listings — the field is a buyer/tenant budget concept, not a landlord rent.
@@ -745,9 +829,15 @@ class AskAiContextBuilderService
                 'pet_max_weight_lbs'        => $infoGet('pet_max_weight_lbs'),
                 'pet_species_allowed'       => $this->decodeJsonField($infoGet('pet_species_allowed')),
                 'parking_terms'             => $infoGet('parking_terms'),
-                // utilities: the form saves utility data under 'property_utilities' (JSON
-                // multiselect). Live-DB audit confirmed 'utilities' is always empty for
-                // landlord listings; 'property_utilities' holds the real selections.
+                // utilities: landlord offer-listing forms save data under BOTH 'utilities'
+                // (scalar free-text) and 'property_utilities' (JSON multiselect) — see
+                // LandlordOfferListing.php lines 3160 + 3301.  Agent-auction forms save
+                // only 'property_utilities'.  The public offer-listing view renders
+                // $str('utilities') (line 1289).  Context reads 'property_utilities' first
+                // so agent-auction rows (which lack 'utilities') still return a value;
+                // 'utilities' fallback covers offer-listing rows where it is always set.
+                // CANONICAL_SOURCE_MAP declares ['utilities','property_utilities'] to
+                // expose the UI-view key first for conflict-detection tools.
                 'utilities'                 => $this->decodeJsonField($infoGet('property_utilities'))
                                                   ?? $infoGet('utilities'),
                 'smoking_policy'            => $infoGet('smoking_policy'),
@@ -1028,6 +1118,65 @@ class AskAiContextBuilderService
         }
 
         return !empty($parts) ? implode(', ', $parts) : null;
+    }
+
+    /**
+     * Detect whether an Ask AI context value conflicts with the corresponding
+     * UI-visible value for the same field.
+     *
+     * Used by golden QA tests to assert that the value Ask AI surfaces to users
+     * matches what the public listing view renders.  Both sides are compared as
+     * normalised lower-case trimmed strings; null and '' are treated as equivalent.
+     *
+     * Returns an array:
+     *   'conflict'       bool    — true when the two sides disagree
+     *   'context_value'  mixed   — the value from the assembled Ask AI context
+     *   'ui_value'       mixed   — the value from the public listing view / DB query
+     *   'canonical_key'  string  — the context key being compared (e.g. 'asking_price')
+     *
+     * @param  string $canonicalKey   Context key name, for traceability.
+     * @param  mixed  $contextValue   Value from $context['listing'][$canonicalKey].
+     * @param  mixed  $uiValue        Value rendered by the public listing view.
+     * @return array
+     */
+    public static function conflictDetect(
+        string $canonicalKey,
+        mixed $contextValue,
+        mixed $uiValue
+    ): array {
+        $normalize = static function (mixed $v): string {
+            if ($v === null || $v === '') {
+                return '';
+            }
+            $str = strtolower(trim((string) $v));
+            // Treat empty JSON arrays / objects stored in EAV as absent.
+            // The context builder's decodeJsonField() returns null for '[]';
+            // the raw DB value is '[]' — both represent "no data".
+            if ($str === '[]' || $str === '{}') {
+                return '';
+            }
+            return $str;
+        };
+
+        $ctx = $normalize($contextValue);
+        $ui  = $normalize($uiValue);
+
+        // Both absent — no conflict.
+        if ($ctx === '' && $ui === '') {
+            return [
+                'conflict'      => false,
+                'context_value' => $contextValue,
+                'ui_value'      => $uiValue,
+                'canonical_key' => $canonicalKey,
+            ];
+        }
+
+        return [
+            'conflict'      => ($ctx !== $ui),
+            'context_value' => $contextValue,
+            'ui_value'      => $uiValue,
+            'canonical_key' => $canonicalKey,
+        ];
     }
 
     /**

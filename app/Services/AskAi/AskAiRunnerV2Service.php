@@ -46,6 +46,67 @@ use Illuminate\Support\Facades\Log;
 class AskAiRunnerV2Service
 {
     /**
+     * Listing field keys that require OpenAI synthesis before returning to the user.
+     *
+     * A field key appears here when its raw context value is UNSAFE to echo directly:
+     *
+     *   • JSON / comma-separated arrays — raw value like "Central Air, Mini-Split"
+     *     is data, not an answer. The caller needs a sentence like "This property
+     *     features central air conditioning and a mini-split unit."
+     *
+     *   • Paired / flag fields — "Yes" means nothing without the companion amount;
+     *     seller credit requires both seller_credit_offered and seller_credit_amount
+     *     to be woven into a coherent answer.
+     *
+     *   • List-membership checks — "Will the landlord accept a 4-month lease?" cannot
+     *     be answered by echoing "3 Months, 6 Months"; the model must check whether
+     *     the requested duration is in the list.
+     *
+     *   • Policy fields — pet_policy and rental_restrictions require explanatory prose.
+     *
+     * Enforcement: the listing.* direct-return fallback in run() checks this list AFTER
+     * the quality-rewrite attempt. If the answer is still degraded (rewrite also failed),
+     * the gate fires and returns insufficient_context instead of the raw field echo.
+     * Scalar-safe fields (asking_price, year_built, sqft, rent_amount, etc.) must NOT
+     * appear here — their values are meaningful without synthesis.
+     */
+    private const SYNTHESIS_REQUIRED_KEYS = [
+        // ── Paired / flag fields ─────────────────────────────────────────────
+        // Seller credit: Yes/No flag must be synthesized with the dollar-amount sibling.
+        'listing.seller_credit_offered',
+        'listing.seller_credit_amount',
+
+        // ── List-membership check fields ─────────────────────────────────────
+        // Lease acceptance: "will landlord accept a 4-month lease?" requires checking
+        // whether the requested duration appears in the terms_of_lease list.
+        'listing.lease_terms',
+        'listing.terms_of_lease',
+
+        // ── JSON / comma-separated array fields ──────────────────────────────
+        // All fields decoded via decodeJsonField() return comma-separated strings
+        // that are raw data arrays, not sentences.
+        'listing.interior_features',
+        'listing.appliances',
+        'listing.roof_type',
+        'listing.exterior_construction',
+        'listing.heating_and_fuel',
+        'listing.heating_fuel',
+        'listing.air_conditioning',
+        'listing.sale_provision',
+        'listing.offered_financing',
+        'listing.hoa_fee_includes',
+
+        // Utilities: always a comma-separated list of services (Electric, Gas, Water…)
+        'listing.utilities',
+
+        // ── Policy / explanatory fields ──────────────────────────────────────
+        // Raw policy values require prose explanation to be useful.
+        'listing.pet_policy',
+        'listing.rental_restrictions',
+        'listing.rental_restrictions_description',
+    ];
+
+    /**
      * Keyword → canonical faq_answers.* path map used by detectFaqFieldKey().
      *
      * Each entry maps a set of lower-case sub-string keywords to the canonical
@@ -1300,6 +1361,27 @@ class AskAiRunnerV2Service
             'what lease terms are required',
             'lease terms',
             'rental requirements',
+            // ── Lease-duration acceptance phrases (synthesis required) ────────────
+            // Routing these phrases here ensures questions like "Will landlord
+            // accept a 4 month lease?" resolve to listing.lease_terms (which reads
+            // terms_of_lease = "3 Months, 6 Months") rather than listing.lease_length
+            // (which reads min_lease_period = "30 days").  The phrases are placed
+            // in this entry (evaluated first in the map) to prevent the shorter
+            // 'lease length options' phrase in listing.lease_length from winning.
+            // 'month lease' matches "4 month lease", "6 month lease", and
+            // "month-to-month lease" (the last 'month' precedes ' lease' in all cases).
+            'month lease',
+            'lease period accepted',
+            'what lease periods are accepted',
+            'accepted lease lengths',
+            'which lease durations are accepted',
+            'which lease lengths can i choose',
+            'what lease durations are available',
+            'landlord accept a shorter lease',
+            'landlord accept a longer lease',
+            'landlord flexible on lease term',
+            'shortest lease term landlord will accept',
+            'minimum lease landlord accepts',
         ],
         'listing.lease_length' => [
             'minimum lease term',
@@ -3042,6 +3124,18 @@ class AskAiRunnerV2Service
             // ----------------------------------------------------------------
             $normalizedFieldKey = $options['normalized_field_key'] ?? null;
 
+            // Mark synthesis-required fields in the trace.  Guard B only fires when
+            // the field IS NULL; when it fires for a synthesis-required key the
+            // question is unanswerable (no data to synthesize from) and the normal
+            // 'insufficient_context' return is still correct.  When the field IS
+            // non-null, execution falls through to OpenAI — the trace flag tells
+            // golden QA tests that OpenAI synthesis was required and occurred.
+            if ($normalizedFieldKey !== null
+                && in_array($normalizedFieldKey, self::SYNTHESIS_REQUIRED_KEYS, true)
+            ) {
+                $trace['synthesis_required'] = true;
+            }
+
             if (
                 $normalizedFieldKey !== null
                 && str_starts_with($normalizedFieldKey, 'faq_answers.')
@@ -3550,8 +3644,7 @@ class AskAiRunnerV2Service
                     // Attempt to synthesize the raw listing field value into a proper
                     // sentence when the value looks like a raw field echo (no terminal
                     // punctuation, bare comma-separated list, etc.).  A rewrite call is
-                    // made only when the value is degraded; if the rewrite also fails,
-                    // fall back to the raw string so the user still gets something.
+                    // made only when the value is degraded.
                     $listingAnswerText = (string) $listingFieldValue;
                     if ($this->finalResponseBuilder->isResponseDegraded($listingAnswerText)) {
                         $listingRewritePkg    = $this->buildQualityRewritePackage($question, $listingAnswerText);
@@ -3570,72 +3663,113 @@ class AskAiRunnerV2Service
                         }
                     }
 
-                    $listingFallbackResponse = [
-                        'success'            => true,
-                        'status'             => 'ready',
-                        'answer'             => $listingAnswerText,
-                        'disclosures'        => $promptPackage['required_disclosures'] ?? [],
-                        'source_attribution' => $promptPackage['source_attribution'] ?? [],
-                        'refusal_message'    => null,
-                        'error'              => null,
-                        'source'             => ['answer_source' => 'openai', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
-                    ];
-                    $listingFallbackResponse['follow_up_questions'] = $this->followUpService->forResult(
-                        $listingFallbackResponse,
-                        $classification
-                    );
+                    // ----------------------------------------------------------------
+                    // SYNTHESIS GATE (Truth Source Contract).
+                    //
+                    // Synthesis-required fields (declared in SYNTHESIS_REQUIRED_KEYS)
+                    // must NEVER be returned as raw direct answers when the primary
+                    // adapter call fails — not even when the quality-rewrite produced
+                    // a superficially "non-degraded" string.
+                    //
+                    // Rationale: the raw value is data, not a reasoned answer.
+                    //   • JSON arrays decoded to "Central Air, Mini-Split" are lists.
+                    //   • "Yes" (seller credit offered) means nothing without the amount.
+                    //   • "6 Months, 12 Months" requires membership-check reasoning
+                    //     to answer "Will landlord accept a 4-month lease?".
+                    //   • Policy strings require explanatory prose, not verbatim echo.
+                    //
+                    // The gate fires unconditionally for synthesis-required keys,
+                    // regardless of whether isResponseDegraded() returns true or false.
+                    // A rewrite may produce terminal punctuation, but the result is
+                    // still the raw field value rewrapped — not a synthesized answer.
+                    //
+                    // When the gate fires:
+                    //   - $trace['synthesis_gate_fired']  = true
+                    //   - $trace['synthesis_gate_key']    = $normalizedFieldKey
+                    //   - Falls through to the insufficient_context response below.
+                    // ----------------------------------------------------------------
+                    $synthesisGateFired = in_array($normalizedFieldKey, self::SYNTHESIS_REQUIRED_KEYS, true);
 
-                    $trace['final_status']       = 'ready';
-                    $trace['source_attribution'] = $listingFallbackResponse['source_attribution'] ?? null;
-                    $this->emitTrace($trace);
+                    if ($synthesisGateFired) {
+                        $trace['synthesis_gate_fired'] = true;
+                        $trace['synthesis_gate_key']   = $normalizedFieldKey;
+                        // Fall through to insufficient_context response below.
+                    } else {
+                        $trace['synthesis_gate_fired'] = false;
+                        $trace['contract_form']        = 'direct_fact';
 
-                    return [
-                        'success'          => true,
-                        'status'           => 'ready',
-                        'classification'   => $classification,
-                        'context'          => $context,
-                        'contract'         => $contract,
-                        'prompt_package'   => $promptPackage,
-                        'adapter_result'   => $adapterResult,
-                        'final_response'   => $listingFallbackResponse,
-                        'error'            => null,
-                        'trace'            => $trace,
-                        'outcome_category' => 'openai_fallback',
-                    ];
-                } else {
-                    $notProvidedFallbackResponse = [
-                        'success'            => false,
-                        'status'             => 'insufficient_context',
-                        'answer'             => 'This information was not provided in the listing.',
-                        'disclosures'        => $promptPackage['required_disclosures'] ?? [],
-                        'source_attribution' => $promptPackage['source_attribution'] ?? [],
-                        'refusal_message'    => null,
-                        'error'              => null,
-                        'source'             => ['answer_source' => 'openai', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
-                    ];
-                    $notProvidedFallbackResponse['follow_up_questions'] = $this->followUpService->forResult(
-                        $notProvidedFallbackResponse,
-                        $classification
-                    );
+                        $listingFallbackResponse = [
+                            'success'            => true,
+                            'status'             => 'ready',
+                            'answer'             => $listingAnswerText,
+                            'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                            'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                            'refusal_message'    => null,
+                            'error'              => null,
+                            'source'             => ['answer_source' => 'openai', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
+                        ];
+                        $listingFallbackResponse['follow_up_questions'] = $this->followUpService->forResult(
+                            $listingFallbackResponse,
+                            $classification
+                        );
 
-                    $trace['final_status']       = 'insufficient_context';
-                    $trace['source_attribution'] = $notProvidedFallbackResponse['source_attribution'] ?? null;
-                    $this->emitTrace($trace);
+                        $trace['final_status']       = 'ready';
+                        $trace['source_attribution'] = $listingFallbackResponse['source_attribution'] ?? null;
+                        $this->emitTrace($trace);
 
-                    return [
-                        'success'          => false,
-                        'status'           => 'insufficient_context',
-                        'classification'   => $classification,
-                        'context'          => $context,
-                        'contract'         => $contract,
-                        'prompt_package'   => $promptPackage,
-                        'adapter_result'   => $adapterResult,
-                        'final_response'   => $notProvidedFallbackResponse,
-                        'error'            => null,
-                        'trace'            => $trace,
-                        'outcome_category' => 'blank_information_not_provided',
-                    ];
+                        return [
+                            'success'          => true,
+                            'status'           => 'ready',
+                            'classification'   => $classification,
+                            'context'          => $context,
+                            'contract'         => $contract,
+                            'prompt_package'   => $promptPackage,
+                            'adapter_result'   => $adapterResult,
+                            'final_response'   => $listingFallbackResponse,
+                            'error'            => null,
+                            'trace'            => $trace,
+                            'outcome_category' => 'openai_fallback',
+                        ];
+                    }
                 }
+
+                // Insufficient context: fired when the listing field is null/empty,
+                // OR when the synthesis gate blocked returning a degraded raw value.
+                $notProvidedFallbackResponse = [
+                    'success'            => false,
+                    'status'             => 'insufficient_context',
+                    'answer'             => 'This information was not provided in the listing.',
+                    'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+                    'source_attribution' => $promptPackage['source_attribution'] ?? [],
+                    'refusal_message'    => null,
+                    'error'              => null,
+                    'source'             => ['answer_source' => 'openai', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => null, 'snapshot_version' => null],
+                ];
+                $notProvidedFallbackResponse['follow_up_questions'] = $this->followUpService->forResult(
+                    $notProvidedFallbackResponse,
+                    $classification
+                );
+
+                $trace['contract_form']      = 'insufficient_context';
+                $trace['final_status']       = 'insufficient_context';
+                $trace['source_attribution'] = $notProvidedFallbackResponse['source_attribution'] ?? null;
+                $this->emitTrace($trace);
+
+                return [
+                    'success'          => false,
+                    'status'           => 'insufficient_context',
+                    'classification'   => $classification,
+                    'context'          => $context,
+                    'contract'         => $contract,
+                    'prompt_package'   => $promptPackage,
+                    'adapter_result'   => $adapterResult,
+                    'final_response'   => $notProvidedFallbackResponse,
+                    'error'            => null,
+                    'trace'            => $trace,
+                    'outcome_category' => $trace['synthesis_gate_fired'] ?? false
+                        ? 'synthesis_gate_insufficient_context'
+                        : 'blank_information_not_provided',
+                ];
             }
 
             // ----------------------------------------------------------------
@@ -4000,6 +4134,24 @@ class AskAiRunnerV2Service
 
             $trace['final_status']       = $finalResponse['status'];
             $trace['source_attribution'] = $finalResponse['source_attribution'] ?? null;
+
+            // contract_form: Truth Source Contract classification for this response.
+            // 'direct_fact'          — grounded single-field answer, no synthesis needed.
+            // 'synthesis'            — field is in SYNTHESIS_REQUIRED_KEYS; OpenAI
+            //                          was required to reason over the data.
+            // 'insufficient_context' — required data was absent or synthesis gate fired.
+            // 'refusal'              — prohibited topic.
+            $trace['contract_form'] = $this->finalResponseBuilder->contractFormOf(
+                $finalResponse,
+                $trace['synthesis_required'] ?? false
+            );
+
+            // ── Truth Source Contract: outgoing boundary enforcement ───────────
+            // Coerce non-contract statuses ('failed', 'unsupported', etc.) to
+            // 'insufficient_context' so callers only ever see the four contract forms.
+            // The pre-coercion status is preserved in _pre_coercion_status for tracing.
+            $finalResponse = $this->finalResponseBuilder->coerceToContractStatus($finalResponse);
+
             $this->emitTrace($trace);
 
             // Attach OpenAI source metadata to the final response, but only when

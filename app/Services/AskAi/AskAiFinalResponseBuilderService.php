@@ -306,6 +306,147 @@ class AskAiFinalResponseBuilderService
     }
 
     /**
+     * Classify a final response into one of four Truth Source Contract answer forms.
+     *
+     * Contract forms:
+     *   'direct_fact'          — question answered from structured listing data; answer
+     *                            is a complete sentence grounded in a single field value
+     *                            (e.g. "The asking price is $450,000.").
+     *   'synthesis'            — answer requires combining multiple fields or reasoning
+     *                            over a list (e.g. lease acceptance, credit amount + flag).
+     *                            Identified when the answer is 'ready' and $synthesisHint is true.
+     *   'insufficient_context' — required data is absent; answer is "not provided" message.
+     *   'refusal'              — question touches a prohibited topic; answer is null.
+     *
+     * @param  array $finalResponse   The response array returned by build() or the runner.
+     * @param  bool  $synthesisHint   Pass true when the normalized_field_key is in
+     *                                SYNTHESIS_REQUIRED_KEYS (available from runner trace).
+     * @return string  One of: 'direct_fact' | 'synthesis' | 'insufficient_context' | 'refusal'
+     */
+    public function contractFormOf(array $finalResponse, bool $synthesisHint = false): string
+    {
+        $status = $finalResponse['status'] ?? '';
+
+        if ($status === 'blocked') {
+            return 'refusal';
+        }
+
+        if ($status === 'insufficient_context') {
+            return 'insufficient_context';
+        }
+
+        if ($status === 'ready') {
+            return $synthesisHint ? 'synthesis' : 'direct_fact';
+        }
+
+        return 'insufficient_context';
+    }
+
+    /**
+     * Assert that a final response matches the expected contract form.
+     *
+     * Throws a \LogicException when the actual form does not match $expectedForm.
+     * Designed for use in golden QA tests — the exception message includes both
+     * the expected and actual forms plus the response status and answer preview.
+     *
+     * @param  array  $finalResponse  Response from build() or the runner.
+     * @param  string $expectedForm   One of: 'direct_fact' | 'synthesis' | 'insufficient_context' | 'refusal'
+     * @param  bool   $synthesisHint  Pass true when the key is in SYNTHESIS_REQUIRED_KEYS.
+     * @return void
+     * @throws \LogicException
+     */
+    public static function assertContractForm(
+        array $finalResponse,
+        string $expectedForm,
+        bool $synthesisHint = false
+    ): void {
+        $instance   = new self();
+        $actualForm = $instance->contractFormOf($finalResponse, $synthesisHint);
+
+        if ($actualForm !== $expectedForm) {
+            $answerPreview = isset($finalResponse['answer'])
+                ? substr((string) $finalResponse['answer'], 0, 80)
+                : '(null)';
+            throw new \LogicException(sprintf(
+                'Contract form mismatch for key. Expected "%s", got "%s". Status: %s. Answer: %s',
+                $expectedForm,
+                $actualForm,
+                $finalResponse['status'] ?? '(none)',
+                $answerPreview
+            ));
+        }
+    }
+
+    /**
+     * Enforce the Truth Source Contract at the outgoing boundary.
+     *
+     * Only three status values correspond to the four contract answer-forms that
+     * a caller may receive:
+     *
+     *   'ready'               → direct_fact | synthesis
+     *   'insufficient_context'→ insufficient_context
+     *   'blocked'             → refusal
+     *
+     * Any status outside that set ('failed', 'unsupported', unknown strings) is
+     * coerced to 'insufficient_context' so that non-contract statuses never leak
+     * to end users. The original error/status is preserved in the returned array
+     * under '_pre_coercion_status' for diagnostic purposes.
+     *
+     * @param  array $finalResponse  Response array from build() or a runner branch.
+     * @return array                 Response with status coerced to a contract value.
+     */
+    public function coerceToContractStatus(array $finalResponse): array
+    {
+        $contractStatuses = ['ready', 'insufficient_context', 'blocked'];
+        $status           = $finalResponse['status'] ?? '';
+
+        // ── Content-level enforcement ──────────────────────────────────────────
+        // A 'ready' response whose answer text fails the degradation check violates
+        // the Truth Source Contract: both 'direct_fact' and 'synthesis' contract
+        // forms require a complete, well-formed natural-language sentence. A raw
+        // field echo that slipped through (bare list, short string, no terminal
+        // punctuation) must be demoted to insufficient_context rather than surfaced
+        // as if it were a proper answer.
+        //
+        // This layer handles cases where the quality-rewrite was skipped (value
+        // already had terminal punctuation) but the value was still raw data —
+        // e.g. a policy string like "No pets allowed." that reads as answered but
+        // was never synthesised into a contextual answer for the question asked.
+        // Note: the synthesis gate in the runner's direct-return fallback already
+        // blocks the most common raw-data cases before this point; this layer is
+        // a belt-and-suspenders guard on ALL outgoing 'ready' responses.
+        if ($status === 'ready'
+            && isset($finalResponse['answer'])
+            && $this->isResponseDegraded((string) $finalResponse['answer'])
+        ) {
+            return array_merge($finalResponse, [
+                '_pre_coercion_status' => $status,
+                '_pre_coercion_reason' => 'degraded_answer_text',
+                'success'              => false,
+                'status'               => 'insufficient_context',
+                'answer'               => self::INSUFFICIENT_CONTEXT_ANSWER,
+            ]);
+        }
+
+        // ── Status-level enforcement ───────────────────────────────────────────
+        // Non-contract statuses ('failed', 'unsupported', etc.) must not reach
+        // the caller. Coerce to 'insufficient_context' and record the original.
+        if (!in_array($status, $contractStatuses, true)) {
+            return array_merge($finalResponse, [
+                '_pre_coercion_status' => $status,
+                'success'              => false,
+                'status'               => 'insufficient_context',
+                'answer'               => (isset($finalResponse['answer'])
+                                            && (string) $finalResponse['answer'] !== '')
+                                            ? $finalResponse['answer']
+                                            : self::INSUFFICIENT_CONTEXT_ANSWER,
+            ]);
+        }
+
+        return $finalResponse;
+    }
+
+    /**
      * Trim leading/trailing whitespace and collapse internal runs of whitespace
      * (spaces, tabs, non-breaking spaces) to a single space.
      * Newlines are preserved — only horizontal whitespace is collapsed within lines.
