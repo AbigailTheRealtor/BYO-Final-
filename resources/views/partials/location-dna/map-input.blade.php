@@ -71,7 +71,7 @@
   .ldna-overlay-list li { padding: .1rem 0; }
 </style>
 
-<div class="ldna-section">
+<div class="ldna-section" wire:ignore>
   <div class="ldna-section-header">
     <i class="fa-solid fa-map-location-dot" style="color:#0369a1;font-size:1.1rem;"></i>
     <h5>Location Preferences Map <span style="font-weight:400;font-size:.85rem;color:#64748b;">(optional)</span></h5>
@@ -162,7 +162,7 @@
       placeholder="Address or place name" style="max-width:280px;">
     <input type="number" id="ldna-radius-miles" class="form-control form-control-sm"
       placeholder="Miles" min="0.1" step="0.1" value="5" style="max-width:90px;">
-    <button type="button" class="btn btn-secondary btn-sm" onclick="ldnaAddRadiusSearch()">
+    <button type="button" class="btn btn-outline-primary btn-sm" onclick="ldnaAddRadiusSearch()">
       <i class="fa-solid fa-location-crosshairs"></i> Add Radius
     </button>
   </div>
@@ -426,6 +426,10 @@
     if (!ldnaMapInitialized) {
       ldnaTryInit();
     } else if (ldnaMap && container.offsetWidth > 0) {
+      /* Always re-hide the placeholder — Livewire morphdom can restore it to its
+         original server-rendered state (no display:none) on any re-render.        */
+      var _ph = document.getElementById('{{ $mapPanelId }}-placeholder');
+      if (_ph) _ph.style.display = 'none';
       google.maps.event.trigger(ldnaMap, 'resize');
       if (!ldnaState.polygons.length && !ldnaState.radius_searches.length
           && !ldnaState.cities.length && !ldnaState.zip_codes.length) {
