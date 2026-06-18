@@ -81,6 +81,10 @@ class AskAiRunnerV2Service
         // whether the requested duration appears in the terms_of_lease list.
         'listing.lease_terms',
         'listing.terms_of_lease',
+        // lease_length / desired_lease_length are decoded JSON multiselects that
+        // return comma-separated duration lists (e.g. "6 months, 12 months").
+        'listing.lease_length',
+        'listing.desired_lease_length',
 
         // ── JSON / comma-separated array fields ──────────────────────────────
         // All fields decoded via decodeJsonField() return comma-separated strings
@@ -89,21 +93,56 @@ class AskAiRunnerV2Service
         'listing.appliances',
         'listing.roof_type',
         'listing.exterior_construction',
+        'listing.foundation',
         'listing.heating_and_fuel',
         'listing.heating_fuel',
         'listing.air_conditioning',
         'listing.sale_provision',
         'listing.offered_financing',
-        'listing.hoa_fee_includes',
+        // association_fee_includes: JSON multiselect of HOA services included in the fee.
+        // Replaces the former 'listing.hoa_fee_includes' (phantom key — no extractFactualFields()
+        // output uses that name; the correct context key is 'association_fee_includes').
+        'listing.association_fee_includes',
+        // financing_type: buyer JSON multiselect ("Cash, Conventional, FHA…")
+        'listing.financing_type',
 
         // Utilities: always a comma-separated list of services (Electric, Gas, Water…)
         'listing.utilities',
+
+        // Water / Sewer / Water Access: JSON multiselects that return raw comma-separated lists.
+        'listing.water',
+        'listing.water_source',
+        'listing.sewer',
+        'listing.water_access',
+
+        // View fields: comma-separated JSON decoded lists.
+        'listing.water_view',
+        'listing.view',
+
+        // Pool type: JSON multiselect (e.g. "In Ground, Heated, Screen Enclosure").
+        'listing.pool_type',
+
+        // Building features: JSON multiselect (amenities, furnishing flags, etc.)
+        'listing.building_features',
+
+        // Pet species allowed: JSON multiselect ("Dogs, Cats").
+        'listing.pet_species_allowed',
+
+        // Tenant / landlord pay lists: JSON multiselects.
+        'listing.tenant_pays',
+        'listing.rent_includes',
+
+        // Property items: JSON multiselect of property amenities / features.
+        'listing.property_items',
 
         // ── Policy / explanatory fields ──────────────────────────────────────
         // Raw policy values require prose explanation to be useful.
         'listing.pet_policy',
         'listing.rental_restrictions',
-        'listing.rental_restrictions_description',
+        // NOTE: listing.rental_restrictions_description was removed (phantom key).
+        // extractFactualFields() never populates that key; the unit test in
+        // AskAiContextBuilderServiceTest asserts it is absent from listing context.
+        // The correct context key 'rental_restrictions' covers the restriction text.
     ];
 
     /**

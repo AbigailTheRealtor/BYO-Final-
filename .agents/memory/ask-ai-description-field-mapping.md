@@ -7,21 +7,25 @@ description: Where each listing role stores its public freetext description — 
 
 ## The rule
 
-| Role     | Source                                                         |
-|----------|----------------------------------------------------------------|
-| seller   | `seller_agent_auctions.description` (native text column)      |
-| buyer    | `buyer_agent_auctions.additional_details` (native text column) |
-| tenant   | `tenant_agent_auction_metas` where `meta_key='additional_details'` (EAV) |
-| landlord | `landlord_agent_auction_metas` where `meta_key='additional_details'` (EAV) |
+| Role     | Context builder source (primary → fallback)                                 |
+|----------|-----------------------------------------------------------------------------|
+| seller   | EAV `additional_details` (`seller_agent_auction_metas`) → native `description` column |
+| buyer    | native `buyer_agent_auctions.additional_details` column only               |
+| tenant   | EAV `additional_details` (`tenant_agent_auction_metas`) only               |
+| landlord | EAV `additional_details` (`landlord_agent_auction_metas`) only             |
 
-**Why:** Landlord and tenant have no native text columns for description.
-Both store optional freetext notes in EAV. `loadListingDescription()` in
-`AskAiRunnerV2Service` implements this mapping for the description fallback (Step 1a-desc).
+**Why:** Seller offer-listing forms (SellerOfferListing Livewire) save the property
+description via `saveMeta('additional_details', ...)` into EAV, NOT the native
+`description` column. The context builder was updated (audit fix I-1) to read
+EAV `additional_details` first, then fall back to native `description` for
+legacy agent-auction wizard rows. CANONICAL_SOURCE_MAP seller.description is
+now `['additional_details', 'native:description']`.
 
-**Note:** The Ask AI *context builder* (`AskAiContextBuilderService`) still returns
-null for landlord description — it was not updated as part of this task and remains
-a separate concern. `loadListingDescription()` is only used by the unsupported-question
-description fallback path.
+`loadListingDescription()` in `AskAiRunnerV2Service` implements this mapping
+for the description fallback (Step 1a-desc) and also reads EAV first.
+
+**Note:** The Ask AI context builder (`AskAiContextBuilderService`) reads
+`$infoGet('additional_details')` for landlord/tenant and `$infoGet('additional_details') ?: $nativeGet('description')` for seller. All four roles populate `ctx['listing']['description']`.
 
 **How to apply:** Any feature that reads the "public listing description" for
 fallback or summarization must use this mapping, not assume all four roles

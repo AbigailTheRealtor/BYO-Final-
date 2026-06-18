@@ -77,60 +77,402 @@ class AskAiContextBuilderService
      *   'native:column'        — native model column read via $listing->{column}
      *   ['key1','key2',...]    — cascade: first non-null wins (same as code logic)
      *
-     * Known discrepancies (documented, not silent):
-     *   landlord.utilities — public view (offer-listing/landlord/view.blade.php line 1289)
-     *     renders $str('utilities'); context reads 'property_utilities' first (always
-     *     populated for agent-auction rows) with 'utilities' fallback.  For offer listings
-     *     both keys are set to equivalent data by LandlordOfferListing.php (lines 3160 +
-     *     3301).  Declared below as ['utilities','property_utilities'] — UI-view key first —
-     *     so conflict-detection tools use 'utilities' as the reference side.
+     * Source alignment guarantee: every entry's first element matches the key rendered
+     * by the public listing view so conflict-detection tools read the UI-visible value.
      */
     public const CANONICAL_SOURCE_MAP = [
+        // =====================================================================
+        // SELLER
+        // Source tables: seller_agent_auctions (native) + seller_agent_auction_metas (EAV)
+        // =====================================================================
         'seller' => [
-            'description'            => 'native:description',
-            'asking_price'           => 'maximum_budget',
-            'buy_now_price'          => 'buy_now_price',
-            'square_feet'            => ['minimum_heated_square', 'heated_square_footage', 'heated_square'],
-            'year_built'             => 'year_built',
-            'utilities'              => 'utilities',
-            'seller_credit_offered'  => 'seller_contribution_credit_offered',
-            'seller_credit_amount'   => 'seller_contribution_amount_details',
-            'annual_property_taxes'  => 'annual_property_taxes',
-            'flood_zone_code'        => 'flood_zone_code',
-            'pets_allowed'           => 'pets',
-            'hoa_association'        => 'has_hoa',
-            'hoa_fee'                => 'association_fee_amount',
-            'hoa_payment_schedule'   => 'association_fee_frequency',
+            // ── Core listing fields ───────────────────────────────────────────
+            // description: offer-listing Livewire forms save via saveMeta('additional_details', ...)
+            // into seller_agent_auction_metas; the native description column is used only for
+            // agent-auction wizard rows. Context reads EAV first so the common offer-listing path
+            // populates description correctly; fallback to native covers legacy agent-auction rows.
+            'description'                    => ['additional_details', 'native:description'],
+            'address'                        => 'native:address',
+            'asking_price'                   => 'maximum_budget',
+            'buy_now_price'                  => 'buy_now_price',
+            'service_type'                   => 'service_type',
+            'sold'                           => 'native:is_sold',
+            'auction_length'                 => 'native:auction_length',
+            // ── Bedroom / Bathroom / Size ─────────────────────────────────────
+            'bedrooms'                       => ['bedrooms', 'native:bedroom_id', 'other_bedrooms'],
+            'bathrooms'                      => ['bathrooms', 'native:bathroom_id', 'other_bathrooms'],
+            'square_feet'                    => ['minimum_heated_square', 'heated_square_footage', 'heated_square'],
+            'year_built'                     => 'year_built',
+            // ── Pool / Garage / Carport ───────────────────────────────────────
+            'pool'                           => 'pool_needed',
+            'pool_type'                      => 'pool_type',
+            'garage'                         => ['garage_needed', 'other_garage', 'other_garage_needed'],
+            'garage_spaces'                  => 'garage_parking_spaces',
+            'carport'                        => ['carport_needed', 'other_carport_needed'],
+            // ── View / Lot ────────────────────────────────────────────────────
+            // water_view: 'water_view' holds specific water-body types (MLS/Livewire path);
+            // 'view_preference' holds scenic/legacy selections. Read water_view first.
+            'water_view'                     => ['water_view', 'view_preference'],
+            'lot_size'                       => ['total_acreage', 'min_acreage'],
+            'total_acreage'                  => 'total_acreage',
+            'lot_dimensions'                 => 'lot_dimensions',
+            'zoning'                         => 'zoning',
+            'waterfront'                     => 'waterfront',
+            'water_access'                   => 'water_access',
+            // ── Interior / Structural ─────────────────────────────────────────
+            'interior_features'              => 'interior_features',
+            'appliances'                     => 'appliances',
+            'roof_type'                      => 'roof_type',
+            'exterior_construction'          => 'exterior_construction',
+            'foundation'                     => 'foundation',
+            'heating_and_fuel'               => 'heating_and_fuel',
+            'heating_fuel'                   => 'heating_and_fuel',
+            'air_conditioning'               => 'air_conditioning',
+            // building_features: JSON multiselect shared between residential and commercial.
+            // 'furnished' is derived from this same key (filtered to furnished-related values).
+            'building_features'              => 'building_features',
+            'furnished'                      => 'building_features',
+            // ── Utilities ─────────────────────────────────────────────────────
+            'utilities'                      => 'utilities',
+            'water'                          => 'water',
+            'water_source'                   => 'water',
+            'sewer'                          => 'sewer',
+            // ── Transaction / Occupancy ───────────────────────────────────────
+            'sale_provision'                 => 'sale_provision',
+            'offered_financing'              => 'offered_financing',
+            'occupant_status'                => 'occupant_status',
+            'closing_date'                   => 'target_closing_date',
+            // ── HOA ───────────────────────────────────────────────────────────
+            'hoa_association'                => 'has_hoa',
+            'hoa_fee'                        => 'association_fee_amount',
+            'hoa_payment_schedule'           => 'association_fee_frequency',
+            'association_name'               => 'association_name',
+            'hoa_name'                       => 'association_name',
+            'association_fee_includes'       => 'association_fee_includes',
+            // ── CDD / Special Assessments ─────────────────────────────────────
+            'has_cdd'                        => 'has_cdd',
+            'annual_cdd_fee'                 => 'annual_cdd_fee',
+            'has_special_assessments'        => 'has_special_assessments',
+            'additional_parcels'             => 'additional_parcels',
+            'total_parcel_count'             => 'total_parcel_count',
+            'special_assessment_amount'      => 'special_assessment_amount',
+            'special_assessment_description' => 'special_assessment_description',
+            // ── Pets / Restrictions ───────────────────────────────────────────
+            'pets_allowed'                   => 'pets',
+            'number_of_pets_allowed'         => 'number_of_pets',
+            'max_pet_weight'                 => 'weight_of_pets',
+            'pet_restrictions'               => 'pet_restrictions',
+            'rental_restrictions'            => 'leasing_restrictions',
+            // ── Flood Zone ────────────────────────────────────────────────────
+            // flood_zone_code_other is the free-text fallback when user selects "Other".
+            'flood_zone_code'                => ['flood_zone_code', 'flood_zone_code_other'],
+            'flood_zone_panel'               => 'flood_zone_panel',
+            'flood_zone_date'                => 'flood_zone_date',
+            'flood_insurance_required'       => 'flood_insurance_required',
+            // ── Tax / Legal ───────────────────────────────────────────────────
+            'annual_property_taxes'          => 'annual_property_taxes',
+            'parcel_id'                      => 'parcel_id',
+            'tax_year'                       => 'tax_year',
+            'legal_description'              => 'legal_description',
+            // ── Commercial / Structural ───────────────────────────────────────
+            'building_sqft'                  => 'total_square_feet',
+            'ceiling_height'                 => 'ceiling_height',
+            'parking_spaces'                 => 'garage_parking_spaces',
+            'annual_noi'                     => 'minimum_annual_net_income',
+            'price_per_sqft'                 => 'price_per_sqft',
+            'existing_lease_type'            => 'existing_lease_type',
+            'lease_expiration'               => 'lease_expiration',
+            'lease_assignable'               => 'lease_assignable',
+            // ── Income / Multifamily ──────────────────────────────────────────
+            'property_items'                 => 'property_items',
+            'total_units'                    => 'unit_number',
+            'total_buildings'                => 'unit_buildings',
+            'unit_mix_summary'               => 'unit_type_configurations',
+            'gross_annual_income'            => 'gross_annual_income',
+            'annual_operating_expenses'      => 'annual_operating_expenses',
+            'minimum_annual_net_income'      => 'minimum_annual_net_income',
+            'minimum_cap_rate'               => 'minimum_cap_rate',
+            'annual_net_income'              => 'minimum_annual_net_income',
+            'cap_rate'                       => 'minimum_cap_rate',
+            'rent_roll_available'            => 'rent_roll_available',
+            'operating_statement_available'  => 'operating_statement_available',
+            'occupancy_requirement'          => ['assumable_occupancy_requirement', 'assumable_occupancy_other'],
+            'income_requirement'             => 'monthly_income',
+            // ── Seller credit (paired synthesis fields) ───────────────────────
+            'seller_credit_offered'          => 'seller_contribution_credit_offered',
+            'seller_credit_amount'           => 'seller_contribution_amount_details',
+            // ── Vacant Land ───────────────────────────────────────────────────
+            'current_adjacent_use'           => 'current_adjacent_use',
+            'water_available'                => 'water_available',
+            'sewer_available'                => 'sewer_available',
+            'electric_available'             => 'electric_available',
+            'gas_available'                  => 'gas_available',
+            'telecom_available'              => 'telecom_available',
+            'road_surface_type'              => 'road_surface_type',
+            'front_footage'                  => 'front_footage',
+            'number_of_wells'                => 'number_of_wells',
+            'number_of_septics'              => 'number_of_septics',
+            'fences'                         => 'fences',
+            'vegetation'                     => 'vegetation',
+            'buildable'                      => 'buildable',
+            'easements'                      => 'easements',
+            // ── Business Opportunity ──────────────────────────────────────────
+            'business_type'                  => ['business_type', 'other_business_type'],
+            'business_name'                  => 'business_name',
+            'year_established'               => 'year_established',
+            'annual_revenue'                 => 'annual_revenue',
+            'gross_profit'                   => 'gross_profit',
+            'sde_ebitda'                     => 'sde_ebitda',
+            'inventory_value'                => 'inventory_value',
+            'ffe_value'                      => 'ffe_value',
+            'reason_for_sale'                => ['reason_for_sale', 'other_reason_for_sale'],
+            'employee_count'                 => 'employee_count',
+            'financial_statements_available' => 'financial_statements_available',
+            'tax_returns_available'          => 'tax_returns_available',
+            'nda_required'                   => 'nda_required',
+            'business_location_leased'       => 'business_location_leased',
+            'business_lease_monthly_rent'    => 'business_lease_monthly_rent',
+            'business_lease_expiration'      => 'business_lease_expiration',
+            'business_lease_renewal_options' => 'business_lease_renewal_options',
+            'business_lease_assignable'      => 'business_lease_assignable',
+            'business_lease_additional_terms'=> 'business_lease_additional_terms',
+            'licenses'                       => 'licenses',
+            'sale_includes'                  => 'sale_includes',
+            'electrical_service'             => 'electrical_service',
+            'business_assets'                => 'business_assets',
+            // ── Shared Vacant Land + Business ─────────────────────────────────
+            'current_use'                    => 'current_use',
+            'road_frontage'                  => 'road_frontage',
+            // ── Synthetic / governance ────────────────────────────────────────
+            // disclosure_flags is a constant array set inline; not read from EAV.
+            'disclosure_flags'               => 'synthetic:flood_zone_flag',
         ],
+
+        // =====================================================================
+        // BUYER
+        // Source tables: buyer_agent_auctions (native) + buyer_agent_auction_metas (EAV)
+        // =====================================================================
         'buyer' => [
-            'description'            => 'native:additional_details',
-            'max_price'              => 'maximum_budget',
-            'square_feet'            => ['minimum_heated_square', 'heated_square_footage', 'heated_square'],
-            'financing_type'         => 'financing_type',
-            'loan_pre_approved'      => 'pre_approved',
+            // ── Core ─────────────────────────────────────────────────────────
+            'address'                        => 'native:address',
+            'description'                    => 'native:additional_details',
+            'max_price'                      => 'maximum_budget',
+            // ── Size / Features ───────────────────────────────────────────────
+            'bedrooms'                       => ['bedrooms', 'other_bedrooms'],
+            'bathrooms'                      => ['bathrooms', 'other_bathrooms'],
+            'square_feet'                    => ['minimum_heated_square', 'heated_square_footage', 'heated_square'],
+            'pool'                           => 'pool_needed',
+            'carport'                        => ['carport_needed', 'other_carport_needed'],
+            'garage'                         => ['garage_needed', 'other_garage', 'other_garage_needed'],
+            'garage_spaces'                  => 'garage_parking_spaces',
+            // water_view: buyer form stores under 'view_preference' (not 'water_view').
+            // Live-DB audit (June 2026) confirmed 'water_view' does not exist in
+            // buyer_agent_auction_metas — the correct key is 'view_preference'.
+            'water_view'                     => 'view_preference',
+            // ── HOA / Pets ────────────────────────────────────────────────────
+            'hoa_acceptable'                 => 'hoa_acceptance',
+            'max_hoa_fee'                    => 'hoa_max_monthly_fee',
+            'pets_allowed'                   => 'pets',
+            'pets_detail'                    => 'type_of_pets',
+            'pets_breed'                     => 'breed_of_pets',
+            'pets_weight'                    => 'weight_of_pets',
+            // ── Financing / Contingencies ─────────────────────────────────────
+            'loan_pre_approved'              => 'pre_approved',
+            // financing_type: 'financing_type' is the correct key (JSON multiselect).
+            // 'offered_financing' is a legacy fallback only; confirmed always null for buyer rows.
+            'financing_type'                 => ['financing_type', 'offered_financing'],
+            'inspection_period'              => 'inspection_period_days',
+            'closing_date'                   => 'target_closing_date',
+            'inspection_contingency_buyer'   => 'inspection_contingency_buyer',
+            'appraisal_contingency_buyer'    => 'appraisal_contingency_buyer',
+            'financing_contingency_buyer'    => 'financing_contingency_buyer',
+            // ── Search Criteria ───────────────────────────────────────────────
+            'cities'                         => 'cities',
+            'counties'                       => 'counties',
         ],
+
+        // =====================================================================
+        // LANDLORD
+        // Source tables: landlord_agent_auctions (native) + landlord_agent_auction_metas (EAV)
+        // =====================================================================
         'landlord' => [
-            'description'            => 'additional_details',
-            'rent_amount'            => ['desired_rental_amount', 'starting_rent', 'lease_now_price'],
-            'square_feet'            => ['minimum_heated_square', 'heated_square_footage', 'heated_square'],
-            'year_built'             => 'year_built',
+            // ── Core listing fields ───────────────────────────────────────────
+            'description'                    => 'additional_details',
+            'rent_amount'                    => ['desired_rental_amount', 'starting_rent', 'lease_now_price'],
+            // ── Size / Physical ───────────────────────────────────────────────
+            'bedrooms'                       => ['bedrooms', 'other_bedrooms'],
+            'bathrooms'                      => ['bathrooms', 'other_bathrooms'],
+            'square_feet'                    => ['minimum_heated_square', 'heated_square_footage', 'heated_square'],
+            'year_built'                     => 'year_built',
+            'unit_size'                      => 'unit_size',
+            'number_of_units'                => 'number_of_unit',
+            'property_zip'                   => 'property_zip',
+            // ── Amenities / Interior ──────────────────────────────────────────
+            'property_items'                 => 'property_items',
+            'condition_prop'                 => ['condition_prop', 'other_property_condition'],
+            'appliances'                     => 'appliances',
+            'interior_features'              => 'interior_features',
+            'building_features'              => 'building_features',
+            // ── View ─────────────────────────────────────────────────────────
+            // water_view and view are aliases backed by the same cascade.
+            'water_view'                     => ['water_view', 'view_preference'],
+            'view'                           => ['water_view', 'view_preference'],
+            // ── Pet Policy ───────────────────────────────────────────────────
+            // 'pets' declared first to match UI view priority ($str('pets') ?: $str('pet_policy')).
+            // Live-DB audit (June 2026) confirmed 'pet_policy' is always empty; real data is in 'pets'.
+            'pet_policy'                     => ['pets', 'pet_policy'],
+            'pet_deposit_fee_rent'           => 'pet_deposit_fee_rent',
+            'pet_max_weight_lbs'             => 'pet_max_weight_lbs',
+            'pet_species_allowed'            => 'pet_species_allowed',
+            // ── Utilities / Terms ─────────────────────────────────────────────
+            'parking_terms'                  => 'parking_terms',
             // 'utilities' declared first (UI-view key) for conflict-detection reference;
             // context builder reads 'property_utilities' first as the primary source.
-            'utilities'              => ['utilities', 'property_utilities'],
-            'lease_terms'            => 'terms_of_lease',
-            'lease_length'           => ['min_lease_period', 'minimum_lease_period', 'desired_lease_length'],
-            'pet_policy'             => ['pet_policy', 'pets'],
-            'annual_property_taxes'  => 'annual_property_taxes',
-            'flood_zone_code'        => 'flood_zone_code',
-            'has_hoa'                => 'has_hoa',
-            'association_fee_amount' => 'association_fee_amount',
-            'additional_lease_terms' => 'additional_landlord_lease_terms',
+            'utilities'                      => ['utilities', 'property_utilities'],
+            'smoking_policy'                 => 'smoking_policy',
+            'subletting_policy'              => 'subletting_policy',
+            'available_date'                 => 'available_date',
+            // ── HOA ───────────────────────────────────────────────────────────
+            'has_hoa'                        => 'has_hoa',
+            'association_name'               => 'association_name',
+            'association_fee_amount'         => 'association_fee_amount',
+            'association_fee_frequency'      => 'association_fee_frequency',
+            'association_amenities'          => 'association_amenities',
+            // ── Lease Terms ───────────────────────────────────────────────────
+            'annual_property_taxes'          => 'annual_property_taxes',
+            'leasing_restrictions'           => 'leasing_restrictions',
+            'lease_length'                   => ['min_lease_period', 'minimum_lease_period', 'desired_lease_length'],
+            'renewal_option'                 => 'renewal_option_offered',
+            'number_of_occupants'            => 'number_occupant',
+            'additional_lease_terms'         => 'additional_landlord_lease_terms',
+            'lease_terms'                    => 'terms_of_lease',
+            'security_deposit_amount'        => 'security_deposit_amount',
+            'terms_of_lease'                 => 'terms_of_lease',
+            'tenant_pays'                    => 'tenant_pays',
+            'rent_includes'                  => 'rent_includes',
+            'lease_amount_frequency'         => 'lease_amount_frequency',
+            'first_month_rent_required'      => 'first_month_rent_required',
+            'last_month_rent_required'       => 'last_month_rent_required',
+            'total_move_in_funds_required'   => 'total_move_in_funds_required',
+            // ── Structural / Water ────────────────────────────────────────────
+            'lot_dimensions'                 => 'lot_dimensions',
+            'zoning'                         => 'zoning',
+            'waterfront'                     => 'waterfront',
+            'water_access'                   => 'water_access',
+            'roof_type'                      => 'roof_type',
+            'exterior_construction'          => 'exterior_construction',
+            'foundation'                     => 'foundation',
+            'heating_fuel'                   => 'heating_fuel',
+            'air_conditioning'               => 'air_conditioning',
+            'water'                          => 'water',
+            'sewer'                          => 'sewer',
+            // ── Flood Zone ────────────────────────────────────────────────────
+            'flood_zone_code'                => ['flood_zone_code', 'flood_zone_code_other'],
+            'flood_zone_panel'               => 'flood_zone_panel',
+            'flood_zone_date'                => 'flood_zone_date',
+            'flood_insurance_required'       => 'flood_insurance_required',
+            // ── Tax / Legal / Parcel ──────────────────────────────────────────
+            'parcel_id'                      => 'parcel_id',
+            'tax_year'                       => 'tax_year',
+            'legal_description'              => 'legal_description',
+            'additional_parcels'             => 'additional_parcels',
+            'total_parcel_count'             => 'total_parcel_count',
+            'additional_parcel_ids'          => 'additional_parcel_ids',
+            // ── CDD / Special Assessments ─────────────────────────────────────
+            'has_cdd'                        => 'has_cdd',
+            'annual_cdd_fee'                 => 'annual_cdd_fee',
+            'has_special_assessments'        => 'has_special_assessments',
+            'special_assessment_amount'      => 'special_assessment_amount',
+            'special_assessment_description' => 'special_assessment_description',
+            // ── Commercial Lease Terms ────────────────────────────────────────
+            'commercial_lease_type'          => ['commercial_lease_type', 'commercial_lease_type_other'],
+            'cam_nnn_additional_rent_charges'=> 'cam_nnn_additional_rent_charges',
+            'rent_escalation_terms'          => 'rent_escalation_terms',
+            'tenant_improvement_buildout_terms' => 'tenant_improvement_buildout_terms',
+            'permitted_use_restrictions'     => 'permitted_use_restrictions',
+            'signage_rights'                 => 'signage_rights',
+            'commercial_parking_terms'       => 'commercial_parking_terms',
+            'personal_guarantee_requirement' => 'personal_guarantee_requirement',
+            'commercial_approval_conditions' => 'commercial_approval_conditions',
+            // ── Commercial Building Details ────────────────────────────────────
+            'total_buildings'                => 'total_buildings',
+            'total_units_on_property'        => 'total_units_on_property',
+            'office_retail_sqft'             => 'office_retail_sqft',
+            'flex_space_sqft'                => 'flex_space_sqft',
+            'ceiling_height'                 => 'ceiling_height',
+            'space_type'                     => 'space_type',
+            'space_classification'           => 'space_classification',
+            'space_features'                 => 'space_features',
+            'number_of_restrooms'            => 'number_of_restrooms',
+            'number_of_offices'              => 'number_of_offices',
+            'number_of_conference_rooms'     => 'number_of_conference_rooms',
+            'electrical_service'             => 'electrical_service',
+            'road_surface_type'              => 'road_surface_type',
+            'number_electric_meters'         => 'number_electric_meters',
+            'number_water_meters'            => 'number_water_meters',
+            'number_gas_meters'              => 'number_gas_meters',
+            'building_hours'                 => 'building_hours',
+            'access_24_7'                    => 'access_24_7',
+            'zoning_allows'                  => 'zoning_allows',
+            'neighboring_tenants'            => 'neighboring_tenants',
+            'shared_amenities'               => 'shared_amenities',
+            'sqft_heated_source'             => 'sqft_heated_source',
+            // ── Additional Landlord Terms ─────────────────────────────────────
+            'min_income_requirement'         => 'min_income_requirement',
+            'll_maintenance_responsibility'  => 'll_maintenance_responsibility',
+            'renewal_option_details'         => 'renewal_option_details',
+            'landlord_approval_conditions'   => 'landlord_approval_conditions',
+            'pet_deposit_amount'             => 'pet_deposit_amount',
+            'pet_monthly_fee'                => 'pet_monthly_fee',
+            'number_of_occupants_allowed'    => 'number_of_occupants_allowed',
         ],
+
+        // =====================================================================
+        // TENANT
+        // Source tables: tenant_agent_auctions (native) + tenant_agent_auction_metas (EAV)
+        // =====================================================================
         'tenant' => [
-            'max_rent'               => ['budget', 'maximum_budget'],
-            'desired_lease_length'   => ['desired_lease_length', 'lease_for'],
-            'credit_score_range'     => ['credit_score_range', 'credit_score'],
-            'monthly_income'         => ['monthly_income', 'household_monthly_income'],
+            // max_rent: 'budget' holds the actual value; 'maximum_budget' is always null
+            // for tenant listings (confirmed June 2026 live-DB audit).
+            'max_rent'                       => ['budget', 'maximum_budget'],
+            // ── Size / Features ───────────────────────────────────────────────
+            'bedrooms'                       => ['bedrooms', 'other_bedrooms'],
+            'bathrooms'                      => ['bathrooms', 'other_bathrooms'],
+            // desired_lease_length: 'desired_lease_length' is the primary JSON multiselect;
+            // 'lease_for' is a legacy fallback.
+            'desired_lease_length'           => ['desired_lease_length', 'lease_for'],
+            'property_items'                 => 'property_items',
+            'appliances'                     => 'appliances',
+            'condition_prop'                 => ['condition_prop', 'other_property_condition'],
+            // ── Pet / Parking / Utilities ─────────────────────────────────────
+            'pet_information'                => 'pet_information',
+            'parking_needed'                 => 'parking_needed',
+            'utilities'                      => 'utilities',
+            'utility_preference'             => 'utility_preference',
+            'tenant_pays'                    => 'tenant_pays',
+            // ── Status / Household ────────────────────────────────────────────
+            'current_status'                 => 'current_status',
+            'number_of_occupants'            => 'number_of_occupants',
+            'number_of_units'                => 'number_of_unit',
+            // credit_score_range: 'credit_score_range' for offer-flow; 'credit_score' for agent-auction.
+            'credit_score_range'             => ['credit_score_range', 'credit_score'],
+            // monthly_income: 'monthly_income' primary; 'household_monthly_income' is legacy form key.
+            'monthly_income'                 => ['monthly_income', 'household_monthly_income'],
+        ],
+
+        // =====================================================================
+        // AGENT PROFILE (5th role — not a listing; _sources covers listing fields only)
+        // Source: users table + agent_default_profiles.profile_data JSON
+        // Declared here for audit completeness so the full five-role contract is documented.
+        // =====================================================================
+        'agent_profile' => [
+            'agent_name'       => 'users.first_name + users.last_name',
+            'short_id'         => 'native:users.short_id',
+            'brokerage'        => ['profile_data.brokerage', 'users.brokerage_attribute'],
+            'license_no'       => 'profile_data.license_no',
+            'bio'              => 'profile_data.bio',
+            'years_experience' => 'profile_data.years_experience',
+            'services'         => 'profile_data.services',
         ],
     ];
 
@@ -436,7 +778,13 @@ class AskAiContextBuilderService
                 [
                     // ── Core listing fields ───────────────────────────────────────
                     'address'              => $nativeGet('address'),
-                    'description'          => $nativeGet('description'),
+                    // description: offer-listing Livewire forms (SellerOfferListing / SellerOfferListingEdit)
+                    // save the property description via saveMeta('additional_details', ...) into
+                    // seller_agent_auction_metas. The native description column is populated only by the
+                    // legacy agent-auction wizard path. Read EAV additional_details first so the common
+                    // offer-listing path works; fall back to native description for legacy rows.
+                    // CANONICAL_SOURCE_MAP updated to ['additional_details', 'native:description'].
+                    'description'          => $infoGet('additional_details') ?: $nativeGet('description'),
                     'asking_price'         => $infoGet('maximum_budget'),
                     // buy_now_price: seller offer listing forms save this field via
                     // saveMeta('buy_now_price', ...) into seller_agent_auction_metas.
@@ -820,26 +1168,28 @@ class AskAiContextBuilderService
                 'view'                      => $this->decodeJsonField($infoGet('water_view'))
                                                   ?: $this->decodeJsonField($infoGet('view_preference')),
                 'available_date'            => $infoGet('available_date'),
-                // pet_policy: the form writes a dedicated 'pet_policy' EAV meta key;
-                // older landlord listings stored the Yes/No flag only under 'pets'
-                // (same key seller/buyer use for pets_allowed). Fall back to 'pets'
-                // so Guard B reads the actual pet-permission value on legacy records.
-                'pet_policy'                => $infoGet('pet_policy') ?: $infoGet('pets'),
+                // pet_policy: read 'pets' first to align with the UI view priority order.
+                // The public landlord view renders $str('pets') ?: $str('pet_policy'),
+                // so 'pets' is the primary display value. Live-DB audit (June 2026) confirmed
+                // 'pet_policy' is always empty on sampled records; 'pets' holds the Yes/No flag.
+                // Fall back to 'pet_policy' for future form paths that write to that key.
+                // CANONICAL_SOURCE_MAP updated to ['pets', 'pet_policy'].
+                'pet_policy'                => $infoGet('pets') ?: $infoGet('pet_policy'),
                 'pet_deposit_fee_rent'      => $infoGet('pet_deposit_fee_rent'),
                 'pet_max_weight_lbs'        => $infoGet('pet_max_weight_lbs'),
                 'pet_species_allowed'       => $this->decodeJsonField($infoGet('pet_species_allowed')),
                 'parking_terms'             => $infoGet('parking_terms'),
-                // utilities: landlord offer-listing forms save data under BOTH 'utilities'
-                // (scalar free-text) and 'property_utilities' (JSON multiselect) — see
-                // LandlordOfferListing.php lines 3160 + 3301.  Agent-auction forms save
-                // only 'property_utilities'.  The public offer-listing view renders
-                // $str('utilities') (line 1289).  Context reads 'property_utilities' first
-                // so agent-auction rows (which lack 'utilities') still return a value;
-                // 'utilities' fallback covers offer-listing rows where it is always set.
-                // CANONICAL_SOURCE_MAP declares ['utilities','property_utilities'] to
-                // expose the UI-view key first for conflict-detection tools.
-                'utilities'                 => $this->decodeJsonField($infoGet('property_utilities'))
-                                                  ?? $infoGet('utilities'),
+                // utilities: offer-listing forms save scalar data under 'utilities' (the key
+                // rendered by the public view at offer-listing/landlord/view.blade.php line 1289)
+                // and JSON multiselect data under 'property_utilities'.  Agent-auction wizard
+                // rows save only 'property_utilities'.  Context reads 'utilities' first so it
+                // matches the UI-visible value on offer-listing rows; falls back to
+                // 'property_utilities' for agent-auction rows where 'utilities' is always empty.
+                // Note: uses ?: (not ??) because infoGet() returns '' for missing EAV rows, and
+                // '' is truthy for ?? but falsy for ?:, which is the intended "absent" behavior.
+                // CANONICAL_SOURCE_MAP mirrors this order: ['utilities','property_utilities'].
+                'utilities'                 => $infoGet('utilities')
+                                                  ?: $this->decodeJsonField($infoGet('property_utilities')),
                 'smoking_policy'            => $infoGet('smoking_policy'),
                 'subletting_policy'         => $infoGet('subletting_policy'),
                 'has_hoa'                   => $infoGet('has_hoa'),

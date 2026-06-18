@@ -498,7 +498,7 @@ class AskAiGoldenQaSuiteTest extends TestCase
         $this->assertSame('maximum_budget', $ctx['_sources']['asking_price']);
     }
 
-    public function test_seller_121_description_reads_native_column(): void
+    public function test_seller_121_description_reads_eav_additional_details(): void
     {
         $auction = SellerAgentAuction::find(121);
         if (!$auction) {
@@ -507,20 +507,31 @@ class AskAiGoldenQaSuiteTest extends TestCase
 
         $ctx = $this->contextBuilder->buildForListing('seller', 121);
 
-        // CANONICAL_SOURCE_MAP: seller.description = 'native:description'
-        $nativeDescription = \Illuminate\Support\Facades\DB::table('seller_agent_auctions')
-            ->where('id', 121)
-            ->value('description');
+        // CANONICAL_SOURCE_MAP (post I-1 fix): seller.description primary source is
+        // 'additional_details' EAV key (written by SellerOfferListing Livewire form).
+        // Conflict-detection must compare context against the EAV value, which is what
+        // the offer-listing view ($val('additional_details')) renders to the user.
+        $eavDescription = \Illuminate\Support\Facades\DB::table('seller_agent_auction_metas')
+            ->where('seller_agent_auction_id', 121)
+            ->where('meta_key', 'additional_details')
+            ->value('meta_value');
+
+        // Fallback: if no EAV additional_details exists, check native description column.
+        if ($eavDescription === null) {
+            $eavDescription = \Illuminate\Support\Facades\DB::table('seller_agent_auctions')
+                ->where('id', 121)
+                ->value('description');
+        }
 
         $result = AskAiContextBuilderService::conflictDetect(
             'description',
             $ctx['listing']['description'] ?? null,
-            $nativeDescription
+            $eavDescription
         );
 
         $this->assertFalse($result['conflict'],
             sprintf(
-                'Seller 121 description conflict: context=%s, db=%s',
+                'Seller 121 description conflict: context=%s, ui_source=%s',
                 $result['context_value'] ?? '(null)',
                 $result['ui_value']   ?? '(null)'
             )
@@ -604,30 +615,39 @@ class AskAiGoldenQaSuiteTest extends TestCase
 
         $ctx = $this->contextBuilder->buildForListing('landlord', 71);
 
-        // The context builder reads 'property_utilities' first, then 'utilities'.
-        // CANONICAL_SOURCE_MAP lists 'utilities' as the UI-view key (index 0) for
-        // conflict-detection purposes — we check both sides agree on what is visible.
-        // Meta columns are meta_key / meta_value.
-        $dbPropertyUtilities = \Illuminate\Support\Facades\DB::table('landlord_agent_auction_metas')
-            ->where('landlord_agent_auction_id', 71)
-            ->where('meta_key', 'property_utilities')
-            ->value('meta_value');
-
+        // Context reads 'utilities' first (matches the public view), then falls back to
+        // 'property_utilities' for agent-auction rows.  Meta columns are meta_key/meta_value.
         $dbUtilities = \Illuminate\Support\Facades\DB::table('landlord_agent_auction_metas')
             ->where('landlord_agent_auction_id', 71)
             ->where('meta_key', 'utilities')
             ->value('meta_value');
 
-        // At least one source must be populated for this check to be meaningful.
-        if ($dbPropertyUtilities === null && $dbUtilities === null) {
+        $dbPropertyUtilities = \Illuminate\Support\Facades\DB::table('landlord_agent_auction_metas')
+            ->where('landlord_agent_auction_id', 71)
+            ->where('meta_key', 'property_utilities')
+            ->value('meta_value');
+
+        if ($dbUtilities === null && $dbPropertyUtilities === null) {
             $this->markTestSkipped('Landlord 71 has no utilities data in DB — skipping.');
         }
 
-        // Context must contain a non-empty utilities value.
+        $ctxValue = $ctx['listing']['utilities'] ?? null;
+
+        // Context value must be non-null when DB has utilities data.
         $this->assertNotNull(
-            $ctx['listing']['utilities'] ?? null,
+            $ctxValue,
             'Landlord 71 utilities must be non-null when DB has utilities data'
         );
+
+        // When the UI-visible key ('utilities') is set in DB, context must return that
+        // exact value — not the property_utilities fallback — to stay in sync with the view.
+        if ($dbUtilities !== null && trim($dbUtilities) !== '') {
+            $this->assertSame(
+                $dbUtilities,
+                $ctxValue,
+                'Landlord 71 utilities context value must equal the UI-visible "utilities" EAV key'
+            );
+        }
     }
 
     // =========================================================================
@@ -1692,6 +1712,668 @@ class AskAiGoldenQaSuiteTest extends TestCase
         );
     }
 
+    // =========================================================================
+    // § 21 — Seller description source gap (audit finding I-1)
+    //
+    // The seller context builder reads $nativeGet('description') — the native
+    // seller_agent_auctions.description column.  Seller OFFER LISTING forms
+    // (Livewire SellerOfferListing / SellerOfferListingEdit) save the description
+    // via saveMeta('additional_details', ...) into EAV, leaving the native column
+    // null.  The public seller view renders $val('additional_details') from $meta.
+    //
+    // §21A confirms the correct path (native description column populated):
+    //   native description set + EAV additional_details absent → context returns value.
+    //
+    // §21B documents the gap (offer-listing path):
+    //   EAV additional_details set + native description null → context returns null.
+    //
+    // §21B is expected to FAIL until the production fix is applied:
+    //   'description' => $infoGet('additional_details') ?: $nativeGet('description')
+    // =========================================================================
+
+    public function test_s21a_seller_description_reads_from_native_column_when_populated(): void
+    {
+        $user    = User::factory()->create();
+        $auction = SellerAgentAuction::create([
+            'user_id'     => $user->id,
+            'title'       => '§21A native description test',
+            'address'     => '1 Native Lane',
+            'description' => 'This is a beautiful three-bedroom home near the coast.',
+        ]);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+
+        $ctx = $this->contextBuilder->buildForListing('seller', $auction->id);
+
+        $description = $ctx['listing']['description'] ?? null;
+
+        $this->assertNotNull($description,
+            '§21A: seller context[listing][description] must be non-null when native description column is set');
+        $this->assertStringContainsString('three-bedroom', $description,
+            '§21A: seller description must read from the native description column');
+    }
+
+    /**
+     * §21B documents the field source gap for seller offer-listing rows.
+     *
+     * This test FAILS on the current production code because the context builder
+     * reads only $nativeGet('description') and misses the EAV additional_details
+     * key used by the Livewire offer-listing form.
+     *
+     * After the audit fix ('description' => $infoGet('additional_details') ?: $nativeGet('description')),
+     * this test must pass.
+     *
+     * @see .local/ask-ai-field-audit-report.md Issue I-1
+     */
+    public function test_s21b_seller_description_gap_offer_listing_eav_path(): void
+    {
+        $user    = User::factory()->create();
+        $auction = SellerAgentAuction::create([
+            'user_id'     => $user->id,
+            'title'       => '§21B EAV description gap test',
+            'address'     => '1 Gap Lane',
+            'description' => null,
+        ]);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+        $auction->saveMeta('additional_details',
+            'Stunning 4-bed 3-bath home with chef kitchen and resort-style pool.'
+        );
+
+        $ctx = $this->contextBuilder->buildForListing('seller', $auction->id);
+
+        $description = $ctx['listing']['description'] ?? null;
+
+        $this->assertNotNull($description,
+            '§21B AUDIT GAP: seller offer-listing stores description in EAV additional_details, '
+            . 'but context builder reads only the native description column (null for offer-listing rows). '
+            . 'Fix: change context builder to $infoGet(\'additional_details\') ?: $nativeGet(\'description\').');
+
+        $this->assertStringContainsString('4-bed', $description,
+            '§21B: after the fix, seller description must read from EAV additional_details '
+            . 'when the native description column is null (offer-listing path)');
+    }
+
+    public function test_s21c_seller_description_canonical_source_map_entry(): void
+    {
+        $sellerSources = AskAiContextBuilderService::CANONICAL_SOURCE_MAP['seller'];
+
+        $this->assertArrayHasKey('description', $sellerSources,
+            '§21C: seller CANONICAL_SOURCE_MAP must declare description source');
+
+        // The primary source must be the EAV 'additional_details' key — the key used by the
+        // Livewire SellerOfferListing and SellerOfferListingEdit forms (saveMeta) and confirmed
+        // by the seller offer-listing view ($val('additional_details')). The native description
+        // column is a legacy fallback for agent-auction wizard rows; it must not be the primary
+        // source because offer-listing rows never populate it.
+        $descSource  = $sellerSources['description'];
+        $primarySource = is_array($descSource) ? ($descSource[0] ?? null) : $descSource;
+
+        $this->assertSame('additional_details', $primarySource,
+            '§21C: seller description primary canonical source must be "additional_details" (EAV) '
+            . 'to match what the offer-listing view and forms use. '
+            . '"native:description" must appear only as a fallback (second element) in the cascade array.');
+
+        if (is_array($descSource)) {
+            $this->assertContains('native:description', $descSource,
+                '§21C: native:description must still exist in the cascade as a fallback for legacy rows');
+        }
+    }
+
+    // =========================================================================
+    // § 22 — Landlord pet_policy cascade order (audit finding I-2)
+    //
+    // Context reads pet_policy first → falls back to pets.
+    // Public UI view renders pets first → falls back to pet_policy.
+    //
+    // For the current live-DB state (pet_policy always empty, data in pets),
+    // both paths fall back to the same value and the AI is correct.
+    //
+    // §22A: verifies that when only 'pets' is set (legacy/common case), context
+    //        still returns the value (fallback works correctly).
+    //
+    // §22B: documents the ordering asymmetry for future form paths where
+    //        pet_policy may be populated instead of pets.
+    // =========================================================================
+
+    public function test_s22a_landlord_pet_policy_fallback_reads_pets_when_pet_policy_empty(): void
+    {
+        $user    = User::factory()->create();
+        $auction = LandlordAgentAuction::create(['user_id' => $user->id]);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+        $auction->saveMeta('pets', 'Yes');
+
+        $ctx = $this->contextBuilder->buildForListing('landlord', $auction->id);
+
+        $petPolicy = $ctx['listing']['pet_policy'] ?? null;
+
+        $this->assertNotNull($petPolicy,
+            '§22A: landlord pet_policy must fall back to the pets EAV key when pet_policy is empty');
+        $this->assertSame('Yes', $petPolicy,
+            '§22A: landlord pet_policy fallback must return the pets value');
+    }
+
+    public function test_s22b_landlord_pet_policy_canonical_source_map_order_declared(): void
+    {
+        $landlordSources = AskAiContextBuilderService::CANONICAL_SOURCE_MAP['landlord'];
+
+        $this->assertArrayHasKey('pet_policy', $landlordSources,
+            '§22B: landlord CANONICAL_SOURCE_MAP must declare pet_policy source');
+
+        $petPolicySources = $landlordSources['pet_policy'];
+        $this->assertIsArray($petPolicySources,
+            '§22B: landlord pet_policy source must be an array (cascade) in CANONICAL_SOURCE_MAP');
+
+        // Both keys must be present — order must match the UI view priority:
+        // $str('pets') ?: $str('pet_policy'). 'pets' must be declared first so the
+        // context builder reads the same primary source as the public listing page.
+        $this->assertContains('pets', $petPolicySources,
+            '§22B: pets must be in the CANONICAL_SOURCE_MAP cascade');
+        $this->assertContains('pet_policy', $petPolicySources,
+            '§22B: pet_policy must be in the CANONICAL_SOURCE_MAP cascade');
+
+        // 'pets' must come FIRST — it is the primary display source in the UI view.
+        $this->assertSame('pets', $petPolicySources[0],
+            '§22B: "pets" must be the first (primary) element in the pet_policy cascade '
+            . 'to match the UI view render order ($str("pets") ?: $str("pet_policy")).');
+    }
+
+    /**
+     * §22C: Confirms the fallback-path behavior after the I-2 fix.
+     *
+     * When only pet_policy is set and pets is absent, the context builder reads
+     * pets first (null/falsy) → falls back to pet_policy → returns 'No pets allowed.'
+     *
+     * The UI view ($str('pets') ?: $str('pet_policy')) behaves identically:
+     * pets absent → falls back to pet_policy → shows 'No pets allowed.'
+     *
+     * There is NO asymmetry in this scenario — both context and UI reach the same
+     * value via their respective fallbacks. The cascade fix ensures that when BOTH
+     * keys are populated with different values, the context now correctly prioritises
+     * pets (matching the UI) rather than pet_policy.
+     */
+    public function test_s22c_landlord_pet_policy_fallback_returns_pet_policy_when_pets_absent(): void
+    {
+        $user    = User::factory()->create();
+        $auction = LandlordAgentAuction::create(['user_id' => $user->id]);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+        $auction->saveMeta('pet_policy', 'No pets allowed.');
+
+        $ctx = $this->contextBuilder->buildForListing('landlord', $auction->id);
+
+        $petPolicy = $ctx['listing']['pet_policy'] ?? null;
+
+        // Post-fix behaviour: context reads pets first (absent → null/falsy) → falls back
+        // to pet_policy → returns 'No pets allowed.' — matching what the UI also shows.
+        $this->assertSame('No pets allowed.', $petPolicy,
+            '§22C: when pets is absent and pet_policy is set, context must return the pet_policy '
+            . 'value via the cascade fallback. This aligns with the UI ($str("pets") ?: $str("pet_policy")) '
+            . 'which also falls back to pet_policy when pets is absent.');
+    }
+
+    // =========================================================================
+    // § 23 — Buyer description reads native additional_details column
+    //
+    // The buyer_agent_auctions table has a native additional_details column.
+    // Context reads $nativeGet('additional_details').
+    // The buyer view renders $val('additional_details') which may read EAV $meta.
+    // For buyer agent-auction wizard rows the native column is populated directly.
+    // =========================================================================
+
+    public function test_s23a_buyer_description_reads_native_additional_details(): void
+    {
+        $user    = User::factory()->create();
+        $auction = \App\Models\BuyerAgentAuction::create([
+            'user_id'            => $user->id,
+            'title'              => '§23A buyer description test',
+            'additional_details' => 'Looking for a 3-bedroom home in Tampa with a pool.',
+        ]);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+
+        $ctx = $this->contextBuilder->buildForListing('buyer', $auction->id);
+
+        $description = $ctx['listing']['description'] ?? null;
+
+        $this->assertNotNull($description,
+            '§23A: buyer context[listing][description] must be non-null when native additional_details is set');
+        $this->assertStringContainsString('3-bedroom', $description,
+            '§23A: buyer description must read from native additional_details column');
+    }
+
+    public function test_s23b_buyer_description_null_when_native_column_absent(): void
+    {
+        $user    = User::factory()->create();
+        $auction = \App\Models\BuyerAgentAuction::create([
+            'user_id'            => $user->id,
+            'title'              => '§23B buyer description absent test',
+            'additional_details' => null,
+        ]);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+
+        $ctx = $this->contextBuilder->buildForListing('buyer', $auction->id);
+
+        $this->assertNull($ctx['listing']['description'] ?? null,
+            '§23B: buyer description must be null when native additional_details column is null');
+    }
+
+    public function test_s23c_buyer_canonical_source_map_description_is_native(): void
+    {
+        $buyerSources = AskAiContextBuilderService::CANONICAL_SOURCE_MAP['buyer'];
+
+        $this->assertArrayHasKey('description', $buyerSources,
+            '§23C: buyer CANONICAL_SOURCE_MAP must declare description source');
+        $this->assertSame('native:additional_details', $buyerSources['description'],
+            '§23C: buyer description canonical source must be native:additional_details');
+    }
+
+    // =========================================================================
+    // § 24 — Tenant full criteria field coverage
+    //
+    // Validates that all four CANONICAL_SOURCE_MAP tenant keys are correctly
+    // wired in the context builder and return expected values from EAV.
+    // Tests each key individually with DB alignment (direct meta read vs context).
+    // =========================================================================
+
+    private function makeTenantAuction(\App\Models\User $user): \App\Models\TenantAgentAuction
+    {
+        $id = \Illuminate\Support\Facades\DB::table('tenant_agent_auctions')->insertGetId([
+            'user_id'         => $user->id,
+            'is_approved'     => true,
+            'is_draft'        => false,
+            'is_sold'         => false,
+            'auction_ended'   => false,
+            'referral_locked' => false,
+            'created_at'      => now(),
+            'updated_at'      => now(),
+        ]);
+        return \App\Models\TenantAgentAuction::findOrFail($id);
+    }
+
+    public function test_s24a_tenant_credit_score_range_from_primary_eav_key(): void
+    {
+        $user    = User::factory()->create();
+        $auction = $this->makeTenantAuction($user);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+        $auction->saveMeta('credit_score_range', '700-749');
+
+        $ctx = $this->contextBuilder->buildForListing('tenant', $auction->id);
+
+        $creditScore = $ctx['listing']['credit_score_range'] ?? null;
+        $this->assertNotNull($creditScore,
+            '§24A: tenant credit_score_range must be non-null when EAV key is set');
+        $this->assertSame('700-749', $creditScore,
+            '§24A: tenant credit_score_range must read from credit_score_range EAV key');
+
+        $dbValue = \Illuminate\Support\Facades\DB::table('tenant_agent_auction_metas')
+            ->where('tenant_agent_auction_id', $auction->id)
+            ->where('meta_key', 'credit_score_range')
+            ->value('meta_value');
+
+        $result = AskAiContextBuilderService::conflictDetect('credit_score_range', $creditScore, $dbValue);
+        $this->assertFalse($result['conflict'],
+            '§24A: tenant credit_score_range context must match direct DB read of credit_score_range EAV');
+    }
+
+    public function test_s24b_tenant_credit_score_range_falls_back_to_credit_score(): void
+    {
+        $user    = User::factory()->create();
+        $auction = $this->makeTenantAuction($user);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+        $auction->saveMeta('credit_score', '680');
+
+        $ctx = $this->contextBuilder->buildForListing('tenant', $auction->id);
+
+        $creditScore = $ctx['listing']['credit_score_range'] ?? null;
+        $this->assertNotNull($creditScore,
+            '§24B: tenant credit_score_range must fall back to credit_score EAV when primary key absent');
+        $this->assertSame('680', $creditScore,
+            '§24B: tenant credit_score_range fallback must return the credit_score value');
+    }
+
+    public function test_s24c_tenant_monthly_income_from_primary_eav_key(): void
+    {
+        $user    = User::factory()->create();
+        $auction = $this->makeTenantAuction($user);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+        $auction->saveMeta('monthly_income', '7500');
+
+        $ctx = $this->contextBuilder->buildForListing('tenant', $auction->id);
+
+        $income = $ctx['listing']['monthly_income'] ?? null;
+        $this->assertNotNull($income,
+            '§24C: tenant monthly_income must be non-null when EAV key is set');
+        $this->assertSame('7500', $income,
+            '§24C: tenant monthly_income must read from monthly_income EAV key');
+
+        $dbValue = \Illuminate\Support\Facades\DB::table('tenant_agent_auction_metas')
+            ->where('tenant_agent_auction_id', $auction->id)
+            ->where('meta_key', 'monthly_income')
+            ->value('meta_value');
+
+        $result = AskAiContextBuilderService::conflictDetect('monthly_income', $income, $dbValue);
+        $this->assertFalse($result['conflict'],
+            '§24C: tenant monthly_income context must match direct DB read of monthly_income EAV');
+    }
+
+    public function test_s24d_tenant_monthly_income_falls_back_to_household_monthly_income(): void
+    {
+        $user    = User::factory()->create();
+        $auction = $this->makeTenantAuction($user);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+        $auction->saveMeta('household_monthly_income', '6200');
+
+        $ctx = $this->contextBuilder->buildForListing('tenant', $auction->id);
+
+        $income = $ctx['listing']['monthly_income'] ?? null;
+        $this->assertNotNull($income,
+            '§24D: tenant monthly_income must fall back to household_monthly_income when primary absent');
+        $this->assertSame('6200', $income,
+            '§24D: fallback must return the household_monthly_income value');
+    }
+
+    public function test_s24e_tenant_desired_lease_length_from_json_multiselect(): void
+    {
+        $user    = User::factory()->create();
+        $auction = $this->makeTenantAuction($user);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+        $auction->saveMeta('desired_lease_length', json_encode(['6 Months', '12 Months']));
+
+        $ctx = $this->contextBuilder->buildForListing('tenant', $auction->id);
+
+        $leaseLength = $ctx['listing']['desired_lease_length'] ?? null;
+        $this->assertNotNull($leaseLength,
+            '§24E: tenant desired_lease_length must be non-null when EAV JSON array is set');
+        $this->assertStringContainsString('6 Months', $leaseLength,
+            '§24E: tenant desired_lease_length must decode the JSON array from EAV');
+        $this->assertStringContainsString('12 Months', $leaseLength,
+            '§24E: decoded lease_length must contain all selected values');
+    }
+
+    public function test_s24f_tenant_desired_lease_length_falls_back_to_lease_for(): void
+    {
+        $user    = User::factory()->create();
+        $auction = $this->makeTenantAuction($user);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+        $auction->saveMeta('lease_for', json_encode(['Annual', 'Month-to-Month']));
+
+        $ctx = $this->contextBuilder->buildForListing('tenant', $auction->id);
+
+        $leaseLength = $ctx['listing']['desired_lease_length'] ?? null;
+        $this->assertNotNull($leaseLength,
+            '§24F: tenant desired_lease_length must fall back to lease_for when desired_lease_length absent');
+        $this->assertStringContainsString('Annual', $leaseLength,
+            '§24F: lease_for fallback must decode the JSON array and return values');
+    }
+
+    public function test_s24g_tenant_context_sources_map_has_all_four_keys(): void
+    {
+        $tenantSources = AskAiContextBuilderService::CANONICAL_SOURCE_MAP['tenant'];
+
+        $requiredKeys = ['max_rent', 'desired_lease_length', 'credit_score_range', 'monthly_income'];
+        foreach ($requiredKeys as $key) {
+            $this->assertArrayHasKey($key, $tenantSources,
+                "§24G: tenant CANONICAL_SOURCE_MAP must declare '{$key}'");
+        }
+
+        $this->assertIsArray($tenantSources['max_rent'],
+            '§24G: max_rent must be an array cascade in CANONICAL_SOURCE_MAP');
+        $this->assertSame('budget', $tenantSources['max_rent'][0],
+            '§24G: max_rent primary source must be budget (highest-priority EAV key for tenant)');
+    }
+
+    // =========================================================================
+    // § 25 — CANONICAL_SOURCE_MAP cross-role completeness
+    //
+    // Asserts that all four roles are present and each has the minimum required
+    // keys for the truth-source contract to be enforceable. Also verifies that
+    // no role declares a source key using a malformed prefix or a key that
+    // conflicts with the extractFactualFields() output contract.
+    // =========================================================================
+
+    public function test_s25a_canonical_source_map_all_roles_present(): void
+    {
+        $map = AskAiContextBuilderService::CANONICAL_SOURCE_MAP;
+
+        // All five roles — four listing types plus agent_profile — must be declared.
+        // agent_profile is assembled separately by AgentProfileLoader (not a listing role)
+        // but must appear in CANONICAL_SOURCE_MAP for complete five-role source documentation.
+        foreach (['seller', 'buyer', 'landlord', 'tenant', 'agent_profile'] as $role) {
+            $this->assertArrayHasKey($role, $map,
+                "§25A: CANONICAL_SOURCE_MAP must contain role '{$role}'");
+            $this->assertIsArray($map[$role],
+                "§25A: CANONICAL_SOURCE_MAP['{$role}'] must be an array");
+            $this->assertNotEmpty($map[$role],
+                "§25A: CANONICAL_SOURCE_MAP['{$role}'] must not be empty");
+        }
+    }
+
+    public function test_s25b_canonical_source_map_seller_minimum_required_keys(): void
+    {
+        $seller = AskAiContextBuilderService::CANONICAL_SOURCE_MAP['seller'];
+
+        $required = ['description', 'asking_price', 'utilities', 'seller_credit_offered',
+                     'seller_credit_amount', 'hoa_association', 'hoa_fee', 'flood_zone_code'];
+
+        foreach ($required as $key) {
+            $this->assertArrayHasKey($key, $seller,
+                "§25B: seller CANONICAL_SOURCE_MAP missing required key '{$key}'");
+        }
+    }
+
+    public function test_s25c_canonical_source_map_landlord_minimum_required_keys(): void
+    {
+        $landlord = AskAiContextBuilderService::CANONICAL_SOURCE_MAP['landlord'];
+
+        $required = ['description', 'rent_amount', 'lease_terms', 'lease_length',
+                     'pet_policy', 'utilities', 'annual_property_taxes', 'has_hoa'];
+
+        foreach ($required as $key) {
+            $this->assertArrayHasKey($key, $landlord,
+                "§25C: landlord CANONICAL_SOURCE_MAP missing required key '{$key}'");
+        }
+    }
+
+    public function test_s25d_canonical_source_map_buyer_minimum_required_keys(): void
+    {
+        $buyer = AskAiContextBuilderService::CANONICAL_SOURCE_MAP['buyer'];
+
+        $required = ['description', 'max_price', 'financing_type', 'loan_pre_approved'];
+
+        foreach ($required as $key) {
+            $this->assertArrayHasKey($key, $buyer,
+                "§25D: buyer CANONICAL_SOURCE_MAP missing required key '{$key}'");
+        }
+    }
+
+    public function test_s25e_canonical_source_map_tenant_minimum_required_keys(): void
+    {
+        $tenant = AskAiContextBuilderService::CANONICAL_SOURCE_MAP['tenant'];
+
+        $required = ['max_rent', 'desired_lease_length', 'credit_score_range', 'monthly_income'];
+
+        foreach ($required as $key) {
+            $this->assertArrayHasKey($key, $tenant,
+                "§25E: tenant CANONICAL_SOURCE_MAP missing required key '{$key}'");
+        }
+    }
+
+    public function test_s25f_canonical_source_map_no_duplicate_keys_per_role(): void
+    {
+        $map = AskAiContextBuilderService::CANONICAL_SOURCE_MAP;
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant', 'agent_profile'] as $role) {
+            $keys = array_keys($map[$role]);
+            $unique = array_unique($keys);
+            $this->assertSame(
+                count($keys),
+                count($unique),
+                "§25F: CANONICAL_SOURCE_MAP['{$role}'] must not have duplicate keys (PHP silently uses last-write-wins)"
+            );
+        }
+    }
+
+    public function test_s25g_canonical_source_map_cascade_arrays_have_string_elements(): void
+    {
+        $map = AskAiContextBuilderService::CANONICAL_SOURCE_MAP;
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant', 'agent_profile'] as $role) {
+            foreach ($map[$role] as $key => $source) {
+                if (is_array($source)) {
+                    foreach ($source as $i => $element) {
+                        $this->assertIsString($element,
+                            "§25G: CANONICAL_SOURCE_MAP['{$role}']['{$key}'][{$i}] must be a string");
+                        $this->assertNotEmpty($element,
+                            "§25G: CANONICAL_SOURCE_MAP['{$role}']['{$key}'][{$i}] must not be empty");
+                    }
+                } else {
+                    $this->assertIsString($source,
+                        "§25G: CANONICAL_SOURCE_MAP['{$role}']['{$key}'] must be a string or array");
+                    $this->assertNotEmpty($source,
+                        "§25G: CANONICAL_SOURCE_MAP['{$role}']['{$key}'] must not be empty");
+                }
+            }
+        }
+    }
+
+    // =========================================================================
+    // § 26 — Agent Profile as the 5th role (CANONICAL_SOURCE_MAP + context output)
+    //
+    // Agent profile is assembled separately by AgentProfileLoader from the users
+    // table and agent_default_profiles.profile_data JSON.  It is not a listing
+    // role; it surfaces in the context as ctx['agent_profile'] rather than inside
+    // ctx['listing'], and its keys are NOT included in ctx['_sources'] which
+    // covers listing fields only.  CANONICAL_SOURCE_MAP['agent_profile'] exists
+    // for audit completeness to document the authoritative data sources for every
+    // field the agent profile exposes to the AI.
+    //
+    // §26A: CANONICAL_SOURCE_MAP['agent_profile'] is present and declares the
+    //        minimum required source keys for Agent Profile fields.
+    //
+    // §26B: buildForListing() returns a non-null agent_profile section when the
+    //        listing has a linked agent user (i.e. user_id is set and resolves).
+    //
+    // §26C: The agent_profile section contains the mandatory public-safe fields
+    //        that AgentProfileLoader is contractually required to populate from
+    //        the users table (agent_name and short_id).
+    //
+    // §26D: CANONICAL_SOURCE_MAP['agent_profile'] keys match the known fields
+    //        that AgentProfileLoader exposes in its content array.
+    // =========================================================================
+
+    public function test_s26a_agent_profile_canonical_source_map_entry_present(): void
+    {
+        $map = AskAiContextBuilderService::CANONICAL_SOURCE_MAP;
+
+        $this->assertArrayHasKey('agent_profile', $map,
+            '§26A: CANONICAL_SOURCE_MAP must contain an "agent_profile" entry for the 5th role');
+
+        $agentProfileSources = $map['agent_profile'];
+        $this->assertIsArray($agentProfileSources,
+            '§26A: CANONICAL_SOURCE_MAP["agent_profile"] must be an array');
+
+        // Minimum required keys — these map to fields that AgentProfileLoader guarantees
+        // to attempt to populate for every agent (even if the value is null at runtime).
+        $required = ['agent_name', 'short_id', 'brokerage', 'license_no', 'bio', 'years_experience', 'services'];
+        foreach ($required as $key) {
+            $this->assertArrayHasKey($key, $agentProfileSources,
+                "§26A: CANONICAL_SOURCE_MAP[\"agent_profile\"] must declare source for '{$key}'");
+        }
+    }
+
+    public function test_s26b_agent_profile_section_present_in_context_when_agent_exists(): void
+    {
+        $user    = User::factory()->create(['user_type' => 'agent']);
+        $auction = \App\Models\SellerAgentAuction::create([
+            'user_id' => $user->id,
+            'title'   => '§26B agent profile context test',
+            'address' => '1 Agent Profile Lane',
+        ]);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+
+        $ctx = $this->contextBuilder->buildForListing('seller', $auction->id);
+
+        // agent_profile may be null when the user has no AgentDefaultProfile presets,
+        // but the key must always be present in the returned context structure.
+        $this->assertArrayHasKey('agent_profile', $ctx,
+            '§26B: buildForListing() must include the "agent_profile" key in the context payload '
+            . '(even when its value is null — agents without presets return null from AgentProfileLoader)');
+    }
+
+    public function test_s26c_agent_profile_content_contains_agent_name_and_short_id(): void
+    {
+        $user = User::factory()->create([
+            'user_type'  => 'agent',
+            'first_name' => 'Gabrielle',
+            'last_name'  => 'Harmon',
+        ]);
+
+        // Create an AgentDefaultProfile preset so AgentProfileLoader returns non-null content.
+        \App\Models\AgentDefaultProfile::create([
+            'user_id'      => $user->id,
+            'role_type'    => 'seller',
+            'property_type'=> 'Residential',
+            'profile_data' => json_encode([
+                'bio'              => 'Expert Tampa Bay agent with 12 years experience.',
+                'years_experience' => '12',
+                'services'         => ['CMA', 'MLS Listing', 'Negotiation'],
+                'brokerage'        => 'Harmon Realty Group',
+                'license_no'       => 'BK3012345',
+            ]),
+        ]);
+
+        $auction = \App\Models\SellerAgentAuction::create([
+            'user_id' => $user->id,
+            'title'   => '§26C agent name and short_id test',
+            'address' => '1 Profile Test Road',
+        ]);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+
+        $ctx = $this->contextBuilder->buildForListing('seller', $auction->id);
+
+        $profile = $ctx['agent_profile'] ?? null;
+
+        $this->assertNotNull($profile,
+            '§26C: agent_profile context must be non-null when the agent has a preset profile');
+
+        // agent_name is assembled from users.first_name + users.last_name
+        $this->assertArrayHasKey('agent_name', $profile,
+            '§26C: agent_profile must contain "agent_name" key');
+        $this->assertStringContainsString('Gabrielle', $profile['agent_name'] ?? '',
+            '§26C: agent_profile.agent_name must include the agent\'s first name from users table');
+        $this->assertStringContainsString('Harmon', $profile['agent_name'] ?? '',
+            '§26C: agent_profile.agent_name must include the agent\'s last name from users table');
+
+        // short_id comes from users.short_id
+        $this->assertArrayHasKey('short_id', $profile,
+            '§26C: agent_profile must contain "short_id" key sourced from users.short_id');
+        $this->assertSame($user->short_id, $profile['short_id'],
+            '§26C: agent_profile.short_id must match users.short_id for the listing owner');
+    }
+
+    public function test_s26d_agent_profile_canonical_keys_match_loader_output_fields(): void
+    {
+        // CANONICAL_SOURCE_MAP['agent_profile'] documents sources for fields that
+        // AgentProfileLoader actually populates in its content array.  This test verifies
+        // that every key declared in the source map is a real field returned by the loader
+        // (not a phantom entry pointing to a non-existent output key).
+        $declaredKeys = array_keys(AskAiContextBuilderService::CANONICAL_SOURCE_MAP['agent_profile']);
+
+        // AgentProfileLoader::buildContent() returns these keys (among others).
+        // The source map must only declare keys that are present in the loader output.
+        $loaderOutputKeys = [
+            'agent_name', 'short_id', 'brokerage', 'license_no', 'bio',
+            'years_experience', 'services', 'nar_id', 'year_licensed',
+            'is_full_time', 'transactions_last_12_months', 'awards_recognition',
+            'what_sets_you_apart', 'why_hire_you', 'marketing_plan',
+            'commission_structure', 'purchase_fee_type', 'lease_fee_type',
+            'cities_served', 'primary_areas_served', 'availability_status',
+        ];
+
+        foreach ($declaredKeys as $key) {
+            $this->assertContains($key, $loaderOutputKeys,
+                "§26D: CANONICAL_SOURCE_MAP[\"agent_profile\"]['{$key}'] is declared but "
+                . 'is not a known AgentProfileLoader output field — phantom source entry');
+        }
+    }
+
     // -------------------------------------------------------------------------
     // § 20D — Content-level contract enforcement in coerceToContractStatus()
     // -------------------------------------------------------------------------
@@ -1764,5 +2446,344 @@ class AskAiGoldenQaSuiteTest extends TestCase
             $unchanged,
             'No _pre_coercion_reason must be present when both enforcement layers pass'
         );
+    }
+
+    // =========================================================================
+    // § 27 — Synthesis gate exhaustiveness + source attribution coverage
+    //
+    // These tests verify two correctness invariants that together complete the
+    // "full source contract" requirement:
+    //
+    //   §27A  Every field key listed in SYNTHESIS_REQUIRED_KEYS (private const in
+    //         AskAiRunnerV2Service) has a matching context key in CANONICAL_SOURCE_MAP
+    //         for at least one listing role, proving no phantom synthesis entries exist.
+    //
+    //   §27B  The former phantom key 'listing.hoa_fee_includes' has been removed from
+    //         SYNTHESIS_REQUIRED_KEYS and replaced by the correct context key
+    //         'listing.association_fee_includes'.
+    //
+    //   §27C  All JSON-decoded (comma-separated) fields in extractFactualFields() —
+    //         the known exhaustive set — are present in SYNTHESIS_REQUIRED_KEYS, so
+    //         raw comma-string values are never returned directly to the user.
+    //
+    //   §27D  The standalone audit report is committed at a git-tracked location
+    //         (docs/ask-ai/field-audit-report.md) so code reviewers can inspect it.
+    // =========================================================================
+
+    /**
+     * Helper: return the SYNTHESIS_REQUIRED_KEYS array via Reflection
+     * (it is a private const so it cannot be read directly in tests).
+     *
+     * @return string[]
+     */
+    private function getSynthesisRequiredKeys(): array
+    {
+        $rc = new \ReflectionClass(AskAiRunnerV2Service::class);
+        return $rc->getConstant('SYNTHESIS_REQUIRED_KEYS');
+    }
+
+    public function test_s27a_synthesis_required_keys_have_matching_canonical_source_map_entry(): void
+    {
+        $synthesisKeys = $this->getSynthesisRequiredKeys();
+        $map           = AskAiContextBuilderService::CANONICAL_SOURCE_MAP;
+        $listingRoles  = ['seller', 'buyer', 'landlord', 'tenant'];
+
+        foreach ($synthesisKeys as $fullKey) {
+            // Strip the 'listing.' prefix to get the bare context key name.
+            $contextKey = str_starts_with($fullKey, 'listing.')
+                ? substr($fullKey, strlen('listing.'))
+                : $fullKey;
+
+            $foundInAtLeastOneRole = false;
+            foreach ($listingRoles as $role) {
+                if (array_key_exists($contextKey, $map[$role] ?? [])) {
+                    $foundInAtLeastOneRole = true;
+                    break;
+                }
+            }
+
+            $this->assertTrue(
+                $foundInAtLeastOneRole,
+                "§27A: SYNTHESIS_REQUIRED_KEYS contains '{$fullKey}' but context key "
+                . "'{$contextKey}' is not declared in CANONICAL_SOURCE_MAP for any listing role — "
+                . "phantom synthesis entry. Either add it to CANONICAL_SOURCE_MAP or remove it from "
+                . "SYNTHESIS_REQUIRED_KEYS."
+            );
+        }
+    }
+
+    public function test_s27b_phantom_hoa_fee_includes_key_removed_from_synthesis_required_keys(): void
+    {
+        $synthesisKeys = $this->getSynthesisRequiredKeys();
+
+        $this->assertNotContains(
+            'listing.hoa_fee_includes',
+            $synthesisKeys,
+            '§27B: listing.hoa_fee_includes was a phantom key (no extractFactualFields() output '
+            . 'uses that name). It must be removed from SYNTHESIS_REQUIRED_KEYS. '
+            . 'The correct key is listing.association_fee_includes.'
+        );
+
+        $this->assertContains(
+            'listing.association_fee_includes',
+            $synthesisKeys,
+            '§27B: listing.association_fee_includes must be in SYNTHESIS_REQUIRED_KEYS '
+            . '(replaces the former phantom key listing.hoa_fee_includes).'
+        );
+    }
+
+    public function test_s27c_all_json_decoded_fields_are_in_synthesis_required_keys(): void
+    {
+        $synthesisKeys = $this->getSynthesisRequiredKeys();
+
+        // Exhaustive list of all fields decoded via decodeJsonField() across all four listing roles.
+        // Any field that returns a raw comma-separated string must be synthesis-required so the AI
+        // never echoes an unprocessed array value directly to the user.
+        $jsonDecodedFields = [
+            // ── Seller ────────────────────────────────────────────────────────
+            'listing.interior_features',
+            'listing.appliances',
+            'listing.roof_type',
+            'listing.exterior_construction',
+            'listing.foundation',
+            'listing.heating_and_fuel',
+            'listing.heating_fuel',
+            'listing.air_conditioning',
+            'listing.water',
+            'listing.water_source',
+            'listing.sewer',
+            'listing.water_access',
+            'listing.water_view',
+            'listing.sale_provision',
+            'listing.offered_financing',
+            'listing.pool_type',
+            'listing.association_fee_includes',
+            'listing.building_features',
+            'listing.utilities',
+            // Seller paired fields (Yes/No flag + companion amount)
+            'listing.seller_credit_offered',
+            'listing.seller_credit_amount',
+            // ── Buyer ─────────────────────────────────────────────────────────
+            'listing.financing_type',
+            // ── Landlord ──────────────────────────────────────────────────────
+            'listing.lease_terms',
+            'listing.terms_of_lease',
+            'listing.lease_length',
+            'listing.tenant_pays',
+            'listing.rent_includes',
+            'listing.pet_policy',
+            'listing.pet_species_allowed',
+            'listing.view',
+            // ── Tenant ────────────────────────────────────────────────────────
+            'listing.desired_lease_length',
+            'listing.property_items',
+        ];
+
+        foreach ($jsonDecodedFields as $key) {
+            $this->assertContains(
+                $key,
+                $synthesisKeys,
+                "§27C: JSON-decoded field '{$key}' is not in SYNTHESIS_REQUIRED_KEYS. "
+                . "Fields decoded via decodeJsonField() return raw comma-separated strings "
+                . "and must be gated through OpenAI synthesis so users never see raw arrays."
+            );
+        }
+    }
+
+    public function test_s27d_audit_report_committed_at_tracked_path(): void
+    {
+        // The audit report must live at a git-tracked path (not .local/ which is gitignored)
+        // so code reviewers can inspect the per-field source attribution for all five roles.
+        $trackedPath = base_path('docs/ask-ai/field-audit-report.md');
+
+        $this->assertFileExists(
+            $trackedPath,
+            '§27D: docs/ask-ai/field-audit-report.md must exist at a git-tracked location. '
+            . 'The .local/ directory is gitignored — the audit report must be moved to docs/ask-ai/.'
+        );
+
+        $contents = file_get_contents($trackedPath);
+
+        // Must cover all five roles.
+        foreach (['Seller', 'Buyer', 'Landlord', 'Tenant', 'Agent Profile'] as $role) {
+            $this->assertStringContainsString(
+                $role,
+                $contents,
+                "§27D: docs/ask-ai/field-audit-report.md must document the '{$role}' role."
+            );
+        }
+
+        // Must include the issue registry for the two production fixes.
+        $this->assertStringContainsString('I-1', $contents,
+            '§27D: Audit report must document Issue I-1 (seller description EAV vs native).');
+        $this->assertStringContainsString('I-2', $contents,
+            '§27D: Audit report must document Issue I-2 (landlord pet_policy cascade order).');
+    }
+
+    // =========================================================================
+    // § 28 — Bidirectional contract: CANONICAL_SOURCE_MAP ↔ extractFactualFields()
+    // =========================================================================
+
+    /**
+     * §28A — Every key returned by extractFactualFields() is declared in CANONICAL_SOURCE_MAP.
+     *
+     * Direction: extraction → map. Prevents undeclared shadow keys from accumulating over time.
+     */
+    public function test_s28a_every_extracted_key_is_map_declared(): void
+    {
+        $map = AskAiContextBuilderService::CANONICAL_SOURCE_MAP;
+
+        $cases = [];
+        if (LandlordAgentAuction::find(71)) {
+            $cases[] = ['landlord', 71];
+        }
+        if (SellerAgentAuction::find(121)) {
+            $cases[] = ['seller', 121];
+        }
+
+        if (empty($cases)) {
+            $this->markTestSkipped('§28A: No test listings (seller 121, landlord 71) present — skipping.');
+        }
+
+        // These role-universal structural fields are injected by extractListingFields()
+        // base block (lines 722-735 of AskAiContextBuilderService) and are identical
+        // across all roles. They do not require per-role source attribution in the map.
+        $baseStructuralKeys = [
+            'listing_type', 'listing_id', 'listing_title',
+            'city', 'state', 'county', 'property_type',
+            'listing_status', 'created_at', 'updated_at',
+        ];
+
+        foreach ($cases as [$role, $id]) {
+            $ctx = $this->contextBuilder->buildForListing($role, $id);
+            $listing = $ctx['listing'] ?? [];
+            $mapKeys = array_keys($map[$role] ?? []);
+
+            // Exclude base structural keys — they're documented at extractListingFields() line 697.
+            $undeclared = array_diff(
+                array_diff(array_keys($listing), $mapKeys),
+                $baseStructuralKeys
+            );
+
+            $this->assertEmpty(
+                $undeclared,
+                "§28A [{$role}]: extractFactualFields() returned keys not in CANONICAL_SOURCE_MAP "
+                . "(excluding role-universal base fields): " . implode(', ', $undeclared)
+            );
+        }
+    }
+
+    /**
+     * §28B — Every source key declared in CANONICAL_SOURCE_MAP appears as a string literal
+     * in the extractFactualFields() source (phantom-source guard).
+     *
+     * Direction: map → extraction. Catches entries whose EAV keys were renamed or never wired.
+     */
+    public function test_s28b_map_source_keys_referenced_in_extraction_source(): void
+    {
+        $map    = AskAiContextBuilderService::CANONICAL_SOURCE_MAP;
+        $source = file_get_contents(app_path('Services/AskAi/AskAiContextBuilderService.php'));
+
+        $phantoms = [];
+
+        foreach ($map as $role => $contextKeys) {
+            if ($role === 'agent_profile') {
+                // Agent profile uses a separate AgentProfileLoader — skip source check.
+                continue;
+            }
+
+            foreach ($contextKeys as $contextKey => $sourceSpec) {
+                $specs = is_array($sourceSpec) ? $sourceSpec : [$sourceSpec];
+
+                foreach ($specs as $spec) {
+                    if (str_starts_with((string) $spec, 'native:')) {
+                        // native:column → referenced as ->column or ['column'] in source.
+                        $col = substr($spec, 7);
+                        $found = str_contains($source, "->$col")
+                            || str_contains($source, "'$col'")
+                            || str_contains($source, "\"$col\"");
+                    } else {
+                        $found = str_contains($source, "'$spec'")
+                            || str_contains($source, "\"$spec\"");
+                    }
+
+                    if (!$found) {
+                        $phantoms[] = "{$role}.{$contextKey} => {$spec}";
+                    }
+                }
+            }
+        }
+
+        $this->assertEmpty(
+            $phantoms,
+            '§28B: CANONICAL_SOURCE_MAP source keys not referenced in extraction source '
+            . '(phantom entries): ' . implode('; ', $phantoms)
+        );
+    }
+
+    /**
+     * §28C — Landlord utilities empty-string cascade: when the `utilities` EAV key is
+     * empty-string (infoGet returns ''), the context must fall back to property_utilities.
+     *
+     * Verifies that ?: (not ??) is used, since infoGet() returns '' for absent EAV rows.
+     */
+    public function test_s28c_landlord_utilities_empty_string_falls_back_to_property_utilities(): void
+    {
+        $auctionId = \Illuminate\Support\Facades\DB::table('landlord_agent_auctions')->insertGetId([
+            'user_id'    => $this->makeTestUserId(),
+            'title'      => 'Test Utilities Fallback',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Set utilities to empty string (simulates absent EAV row returning '').
+        \Illuminate\Support\Facades\DB::table('landlord_agent_auction_metas')->insert([
+            'landlord_agent_auction_id' => $auctionId,
+            'meta_key'                  => 'utilities',
+            'meta_value'                => '',
+        ]);
+
+        // Set property_utilities to a JSON array — the fallback value.
+        \Illuminate\Support\Facades\DB::table('landlord_agent_auction_metas')->insert([
+            'landlord_agent_auction_id' => $auctionId,
+            'meta_key'                  => 'property_utilities',
+            'meta_value'                => json_encode(['Electric', 'Water']),
+        ]);
+
+        $ctx = $this->contextBuilder->buildForListing('landlord', $auctionId);
+        $utilities = $ctx['listing']['utilities'] ?? null;
+
+        $this->assertNotNull(
+            $utilities,
+            '§28C: When utilities EAV is empty-string, context must fall back to property_utilities'
+        );
+
+        // The fallback value should contain the decoded property_utilities data.
+        $asString = is_array($utilities) ? implode(', ', $utilities) : (string) $utilities;
+        $this->assertStringContainsString(
+            'Electric',
+            $asString,
+            '§28C: Fallback to property_utilities must decode JSON array into usable value'
+        );
+    }
+
+    // ---------------------------------------------------------------------------
+    // Helper used by §28C
+    // ---------------------------------------------------------------------------
+
+    private function makeTestUserId(): int
+    {
+        return \Illuminate\Support\Facades\DB::table('users')->insertGetId([
+            'first_name' => 'Test',
+            'last_name'  => 'User',
+            'name'       => 'Test User',
+            'short_id'   => \Illuminate\Support\Str::random(8),
+            'user_name'  => 'testuser_' . \Illuminate\Support\Str::random(6),
+            'email'      => 'test_' . \Illuminate\Support\Str::random(6) . '@example.com',
+            'password'   => bcrypt('password'),
+            'user_type'  => 'seller',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }
