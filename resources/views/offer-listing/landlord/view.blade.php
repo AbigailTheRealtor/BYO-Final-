@@ -458,7 +458,7 @@
             $_landlordPropertyPin = [
                 'lat'     => (float) $meta['property_lat'],
                 'lng'     => (float) $meta['property_lng'],
-                'label'   => $meta['formatted_address'] ?: ($meta['address'] ?? null),
+                'label'   => ($meta['formatted_address'] ?? null) ?: ($meta['address'] ?? null),
             ];
         }
     @endphp
