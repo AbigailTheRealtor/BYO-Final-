@@ -59,6 +59,7 @@ use App\Http\Controllers\SellerAgentAuctionController;
 use App\Http\Controllers\SellerOfferListingController;
 use App\Http\Controllers\BuyerOfferListingController;
 use App\Http\Controllers\LandlordOfferListingController;
+use App\Http\Controllers\RentalQualificationController;
 use App\Http\Controllers\TenantOfferListingController;
 use App\Http\Controllers\AcceptedBidSummaryController;
 use App\Http\Controllers\TenantAgentAuctionController;
@@ -363,6 +364,8 @@ Route::post('/offer-listing/seller/{auction}/showing', [SellerOfferListingContro
 Route::post('/offer-listing/buyer/{auction}/question', [BuyerOfferListingController::class, 'submitQuestion'])->name('offer.listing.buyer.question');
 Route::post('/offer-listing/landlord/{auction}/question', [LandlordOfferListingController::class, 'submitQuestion'])->name('offer.listing.landlord.question');
 Route::post('/offer-listing/landlord/{auction}/showing', [LandlordOfferListingController::class, 'submitShowing'])->name('offer.listing.landlord.showing');
+Route::get('/offer-listing/landlord/{listing}/qualification/check', [RentalQualificationController::class, 'check'])->name('offer.listing.landlord.qualification.check');
+Route::post('/offer-listing/landlord/{listing}/qualification/store', [RentalQualificationController::class, 'store'])->name('offer.listing.landlord.qualification.store');
 Route::post('/offer-listing/tenant/{auction}/question', [TenantOfferListingController::class, 'submitQuestion'])->name('offer.listing.tenant.question');
 Route::get('/search/buyer-agent-needed', [BuyerAgentAuctionController::class, 'searchListing'])->name('buyer.agent.searchListing');
 Route::get('/search/buyer-criteria-auctions', [BuyerCriteriaAuctionController::class, 'searchListing'])->name('buyer.criteria.searchListing');

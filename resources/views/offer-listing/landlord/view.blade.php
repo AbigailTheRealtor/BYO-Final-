@@ -598,15 +598,11 @@
                                 <i class="fa-solid fa-file-signature me-1"></i>Submit Rental Offer
                             </button>
                         </form>
-                        {{-- TODO: Check Rental Qualification — Phase 2
-                             This button will launch the tenant self-qualification flow
-                             comparing their profile against the landlord's Applicant Requirements.
-                             Do NOT enable until the qualification engine is built. --}}
-                        @if(false)
-                        <button type="button" class="btn btn-outline-primary" aria-label="Check your rental qualification for this property">
+                        <a href="{{ route('offer.listing.landlord.qualification.check', ['listing' => $auction->id]) }}"
+                           class="btn btn-outline-primary"
+                           aria-label="Check your rental qualification for this property">
                             <i class="fa-solid fa-clipboard-check me-1"></i>Check Rental Qualification
-                        </button>
-                        @endif
+                        </a>
                         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
                             <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
                         </button>
@@ -655,6 +651,18 @@
                         <i class="fa-solid fa-file-signature"></i>Submit Rental Offer
                     </button>
                 </form>
+            </div>
+
+            {{-- 1b. Check Rental Qualification --}}
+            <div class="lol-interaction-card">
+                <div class="lol-interaction-card-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+                <div class="lol-interaction-card-label">Check Rental Qualification</div>
+                <div class="lol-interaction-card-helper">Submit your rental qualification information for this listing.</div>
+                <a href="{{ route('offer.listing.landlord.qualification.check', ['listing' => $auction->id]) }}"
+                   class="lol-interaction-cta lol-interaction-cta-outline"
+                   aria-label="Check your rental qualification for this property">
+                    <i class="fa-solid fa-clipboard-check"></i>Check Qualification
+                </a>
             </div>
 
             {{-- 2. Schedule Showing (reuses existing lolShowingModal — no new modal created) --}}
