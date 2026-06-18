@@ -66,13 +66,39 @@ class BuyerCriteriaLoader
         }
 
         // -----------------------------------------------------------------------
-        // Location — multi-value EAV meta fields
+        // Location — read from location_dna_preferences blob (primary source)
+        // then fall back to individual meta keys for legacy records that stored
+        // radius_searches/polygons/cities/zip_codes as separate EAV keys.
         // -----------------------------------------------------------------------
-        $preferredCities    = $this->decodeJsonMeta($infoGet('preferred_cities'));
-        $preferredZipCodes  = $this->decodeJsonMeta($infoGet('preferred_zip_codes'));
+        $ldnaRaw = $infoGet('location_dna_preferences');
+        $ldna    = ($ldnaRaw && is_string($ldnaRaw)) ? (json_decode($ldnaRaw, true) ?? []) : [];
+
+        // When the LDNA blob exists and a key is present in it (even as an empty
+        // array), we must use the blob value — never fall back to legacy meta.
+        // This preserves "Clear All" semantics: a user who cleared the map and
+        // saved will have radius_searches:[] in the blob; falling back to a
+        // legacy radius_searches meta would resurrect stale geometry.
+        // Only fall back to legacy keys when the blob itself is absent.
+        $ldnaBlobPresent = !empty($ldna);
+
+        $preferredCities   = ($ldnaBlobPresent && array_key_exists('cities', $ldna))
+            ? $this->decodeJsonMeta($ldna['cities'])
+            : $this->decodeJsonMeta($infoGet('preferred_cities'));
+
+        $preferredZipCodes = ($ldnaBlobPresent && array_key_exists('zip_codes', $ldna))
+            ? $this->decodeJsonMeta($ldna['zip_codes'])
+            : $this->decodeJsonMeta($infoGet('preferred_zip_codes'));
+
+        $radiusSearches    = ($ldnaBlobPresent && array_key_exists('radius_searches', $ldna))
+            ? $this->decodeJsonMeta($ldna['radius_searches'])
+            : $this->decodeJsonMeta($infoGet('radius_searches'));
+
+        $polygons          = ($ldnaBlobPresent && array_key_exists('polygons', $ldna))
+            ? $this->decodeJsonMeta($ldna['polygons'])
+            : $this->decodeJsonMeta($infoGet('polygons'));
+
+        // Counties are not part of the LDNA blob; always read from separate meta
         $preferredCounties  = $this->decodeJsonMeta($infoGet('preferred_counties'));
-        $radiusSearches     = $this->decodeJsonMeta($infoGet('radius_searches'));
-        $polygons           = $this->decodeJsonMeta($infoGet('polygons'));
         $preferredSubdivisions = $this->decodeJsonMeta($infoGet('preferred_subdivisions'));
         $preferredMlsAreas  = $this->decodeJsonMeta($infoGet('preferred_mls_areas'));
 

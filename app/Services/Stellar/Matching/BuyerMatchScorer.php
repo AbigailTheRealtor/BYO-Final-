@@ -104,8 +104,9 @@ class BuyerMatchScorer
         if ($hasRadiusCriteria) {
             if ($lat !== null && $lng !== null) {
                 foreach ($criteria->radiusSearches as $search) {
-                    $centerLat   = (float) ($search['center']['lat']  ?? 0);
-                    $centerLng   = (float) ($search['center']['lng']  ?? 0);
+                    // Support flat {lat, lng} (canonical) and legacy {center: {lat, lng}}
+                    $centerLat   = (float) self::extractRadiusLat($search);
+                    $centerLng   = (float) self::extractRadiusLng($search);
                     $radiusMiles = (float) ($search['radius_miles']   ?? 0);
 
                     if ($radiusMiles <= 0) {
@@ -121,6 +122,28 @@ class BuyerMatchScorer
                 }
             }
             // null lat/lng → proximity stays 0; caution flag handled in ResultBuilder
+        }
+
+        // Polygon match: award 18 pts (max proximity) when the listing falls inside a
+        // drawn polygon area. This is an exact PIP test — the bounding-box pre-filter
+        // in BuyerMatchQueryBuilder widens the candidate set; the scorer narrows it here.
+        $hasPolygonCriteria = !empty($criteria->polygons);
+        if ($hasPolygonCriteria && $lat !== null && $lng !== null) {
+            foreach ($criteria->polygons as $polygon) {
+                if (!is_array($polygon) || !isset($polygon['path']) || !is_array($polygon['path'])) {
+                    continue;
+                }
+                $path = $polygon['path'];
+                if (count($path) < 3) {
+                    continue;
+                }
+                if ($this->pointInPolygon($lat, $lng, $path)) {
+                    // Being inside a drawn polygon is as strong as being at the center of a
+                    // radius search — award full 18 proximity pts and stop checking further.
+                    $proximityScore = 18.0;
+                    break;
+                }
+            }
         }
 
         // City / ZIP exact match (6 pts) or county match (3 pts)
@@ -450,6 +473,30 @@ class BuyerMatchScorer
     // Helpers
     // =========================================================================
 
+    /**
+     * Extract center latitude from a radius search entry.
+     * Supports flat {lat, lng} (canonical) and legacy {center: {lat, lng}}.
+     */
+    private static function extractRadiusLat(array $search): float
+    {
+        if (isset($search['lat'])) {
+            return (float) $search['lat'];
+        }
+        return (float) ($search['center']['lat'] ?? 0);
+    }
+
+    /**
+     * Extract center longitude from a radius search entry.
+     * Supports flat {lat, lng} (canonical) and legacy {center: {lat, lng}}.
+     */
+    private static function extractRadiusLng(array $search): float
+    {
+        if (isset($search['lng'])) {
+            return (float) $search['lng'];
+        }
+        return (float) ($search['center']['lng'] ?? 0);
+    }
+
     private function haversineDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
         $dLat = deg2rad($lat2 - $lat1);
@@ -461,6 +508,42 @@ class BuyerMatchScorer
         $c = 2 * asin(sqrt($a));
 
         return self::EARTH_RADIUS_MILES * $c;
+    }
+
+    /**
+     * Ray-casting point-in-polygon test.
+     *
+     * Counts eastward horizontal ray crossings from the test point against each
+     * polygon edge. An odd crossing count means the point is inside.
+     *
+     * @param  float  $lat  Test point latitude.
+     * @param  float  $lng  Test point longitude.
+     * @param  array  $path Array of {lat, lng} associative arrays (≥3 points).
+     * @return bool
+     */
+    private function pointInPolygon(float $lat, float $lng, array $path): bool
+    {
+        $n      = count($path);
+        $inside = false;
+        $j      = $n - 1;
+
+        for ($i = 0; $i < $n; $i++) {
+            $xi = (float) ($path[$i]['lng'] ?? 0);
+            $yi = (float) ($path[$i]['lat'] ?? 0);
+            $xj = (float) ($path[$j]['lng'] ?? 0);
+            $yj = (float) ($path[$j]['lat'] ?? 0);
+
+            $intersects = (($yi > $lat) !== ($yj > $lat))
+                && ($lng < ($xj - $xi) * ($lat - $yi) / ($yj - $yi) + $xi);
+
+            if ($intersects) {
+                $inside = !$inside;
+            }
+
+            $j = $i;
+        }
+
+        return $inside;
     }
 
     private function extractStringArray(array $data, string $key): array

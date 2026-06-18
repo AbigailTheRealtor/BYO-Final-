@@ -27,8 +27,9 @@ namespace App\Services\LocationDna;
  *   neighborhoods   — string[]: neighborhood/subdivision names
  *   polygons        — array[]: drawn polygon entries (each has a 'path' key —
  *                     array of {lat, lng} associative arrays)
- *   radius_searches — array[]: radius entries (each has 'center' {lat, lng}
- *                     and 'radius_miles' float)
+ *   radius_searches — array[]: radius entries; canonical flat format has
+ *                     'lat', 'lng', 'radius_miles'; legacy format uses
+ *                     'center' {lat, lng}, 'radius_miles' (both supported)
  *
  * Input — $propertyData (seller/landlord property location):
  *   city         — string
@@ -235,19 +236,22 @@ class LocationMatchEngine
                 continue;
             }
 
-            $center      = $search['center'] ?? null;
             $radiusMiles = $search['radius_miles'] ?? null;
 
-            if (!is_array($center) || !isset($center['lat'], $center['lng'])) {
+            // Support flat {lat, lng} (canonical) and legacy {center: {lat, lng}}
+            if (isset($search['lat'], $search['lng'])) {
+                $centerLat = (float) $search['lat'];
+                $centerLng = (float) $search['lng'];
+            } elseif (is_array($search['center'] ?? null) && isset($search['center']['lat'], $search['center']['lng'])) {
+                $centerLat = (float) $search['center']['lat'];
+                $centerLng = (float) $search['center']['lng'];
+            } else {
                 continue;
             }
 
             if (!is_numeric($radiusMiles) || (float) $radiusMiles <= 0) {
                 continue;
             }
-
-            $centerLat = (float) $center['lat'];
-            $centerLng = (float) $center['lng'];
 
             $distance = $this->haversineDistance($propLat, $propLng, $centerLat, $centerLng);
 

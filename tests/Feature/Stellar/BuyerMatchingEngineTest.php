@@ -861,4 +861,130 @@ class BuyerMatchingEngineTest extends TestCase
             'SFR and Condominium with matching sub-types must receive equal property_type scores'
         );
     }
+
+    // =========================================================================
+    // TC-26: Polygon criteria — property inside polygon is included and scored
+    // =========================================================================
+
+    /**
+     * A buyer draws a polygon around Sarasota. A listing inside the polygon bbox
+     * must pass the query builder's bounding-box pre-filter AND receive full
+     * proximity points (18 pts) from the scorer's point-in-polygon test.
+     * A listing outside the polygon bbox must be excluded by the query filter.
+     */
+    public function test_tc26_polygon_criteria_includes_listing_inside_polygon_and_excludes_outside(): void
+    {
+        $this->skipIfTableMissing();
+
+        // Triangle polygon roughly around downtown Sarasota, FL
+        $polygon = [
+            'label' => 'Sarasota Area',
+            'path'  => [
+                ['lat' => 27.34, 'lng' => -82.55],
+                ['lat' => 27.34, 'lng' => -82.50],
+                ['lat' => 27.38, 'lng' => -82.52],
+            ],
+        ];
+
+        // Inside the polygon bounding box and the polygon itself (centroid ≈ 27.353, -82.523)
+        $insideKey  = 'TC26-INSIDE-'  . uniqid();
+        // Far outside (Orlando, not in bbox at all)
+        $outsideKey = 'TC26-OUTSIDE-' . uniqid();
+
+        $this->insertListing([
+            'listing_key' => $insideKey,
+            'city'        => 'Sarasota',
+            'latitude'    => 27.353,
+            'longitude'   => -82.523,
+        ]);
+        $this->insertListing([
+            'listing_key' => $outsideKey,
+            'city'        => 'Orlando',
+            'latitude'    => 28.538,
+            'longitude'   => -81.379,
+        ]);
+
+        $results = $this->makeService()->match($this->makeCriteria([
+            'polygons' => [$polygon],
+        ]));
+
+        $keys = $results->pluck('listingKey')->all();
+
+        $this->assertContains($insideKey, $keys, 'Listing inside polygon must appear in results');
+        $this->assertNotContains($outsideKey, $keys, 'Listing outside polygon bbox must be excluded');
+
+        // Scorer must award full proximity points for inside-polygon listing
+        $insideResult = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $insideKey);
+        $this->assertNotNull($insideResult);
+        $this->assertEquals(
+            18,
+            $insideResult->categoryScores['location'],
+            'Listing inside polygon must receive 18 location proximity points'
+        );
+    }
+
+    // =========================================================================
+    // TC-27: Polygon + city criteria — polygon-only match still scores correctly
+    // =========================================================================
+
+    /**
+     * Regression guard: when both polygon and city criteria exist, a listing that
+     * matches only the polygon (not the city list) still reaches the scorer and
+     * receives PIP-based proximity points (not city/ZIP points).
+     */
+    public function test_tc27_polygon_plus_city_listing_matches_polygon_only(): void
+    {
+        $this->skipIfTableMissing();
+
+        $polygon = [
+            'label' => 'Sarasota Area',
+            'path'  => [
+                ['lat' => 27.34, 'lng' => -82.55],
+                ['lat' => 27.34, 'lng' => -82.50],
+                ['lat' => 27.38, 'lng' => -82.52],
+            ],
+        ];
+
+        // Inside polygon but NOT in preferred_cities list
+        $polygonOnlyKey = 'TC27-POLY-' . uniqid();
+        // In preferred_cities but NOT in polygon bbox
+        $cityOnlyKey    = 'TC27-CITY-' . uniqid();
+
+        $this->insertListing([
+            'listing_key' => $polygonOnlyKey,
+            'city'        => 'Sarasota',
+            'latitude'    => 27.353,
+            'longitude'   => -82.523,
+        ]);
+        $this->insertListing([
+            'listing_key' => $cityOnlyKey,
+            'city'        => 'Tampa',
+            'latitude'    => 27.947,
+            'longitude'   => -82.459,
+        ]);
+
+        $results = $this->makeService()->match($this->makeCriteria([
+            'polygons'        => [$polygon],
+            'preferred_cities' => ['Tampa'],
+        ]));
+
+        $keys = $results->pluck('listingKey')->all();
+
+        $this->assertContains($polygonOnlyKey, $keys, 'Polygon-matched listing must appear');
+        $this->assertContains($cityOnlyKey,    $keys, 'City-matched listing must appear');
+
+        $polyResult = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $polygonOnlyKey);
+        $cityResult = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $cityOnlyKey);
+
+        $this->assertNotNull($polyResult);
+        $this->assertNotNull($cityResult);
+
+        // Polygon-matched listing gets 18 pts (proximity inside polygon)
+        $this->assertEquals(18, $polyResult->categoryScores['location'],
+            'Polygon-only match must score 18 pts proximity');
+
+        // City-only match gets 6 pts (city exact match)
+        $this->assertEquals(6, $cityResult->categoryScores['location'],
+            'City-only match must score 6 pts (city exact match)');
+    }
 }

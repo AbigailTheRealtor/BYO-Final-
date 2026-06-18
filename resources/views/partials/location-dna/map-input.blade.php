@@ -16,8 +16,8 @@
     "polygons": [                                     // drawn polygon paths
       { "label": "Custom Area 1", "path": [ {lat, lng}, … ] }
     ],
-    "radius_searches": [                              // drawn circles
-      { "label": "Near Airport", "center": {lat, lng}, "radius_miles": 5 }
+    "radius_searches": [                              // drawn circles / address radius
+      { "address": "123 Main St", "lat": 27.9, "lng": -81.7, "radius_miles": 5 }
     ],
     "flexible_location": false,
     "location_notes": "Prefer quiet streets near good schools."
@@ -152,7 +152,7 @@
     @endforeach
     @foreach($ldnaRadii as $i => $r)
       <li id="ldna-radius-label-{{ $i }}"><i class="fa-solid fa-circle-dot text-secondary"></i>
-        {{ $r['label'] ?? ('Radius ' . ($i+1)) }} ({{ $r['radius_miles'] }} mi)</li>
+        {{ $r['address'] ?? $r['label'] ?? ('Radius ' . ($i+1)) }} ({{ $r['radius_miles'] }} mi)</li>
     @endforeach
   </ul>
 
@@ -222,14 +222,21 @@
           path.push({ lat: latlng.lat(), lng: latlng.lng() });
         });
         ldnaState.polygons.push({ label: item.label || ('Polygon ' + (ldnaState.polygons.length + 1)), path: path });
-      } else if (item.type === 'circle') {
+      } else if (item.type === 'circle' || item.type === 'radius_search') {
         var c = item.overlay.getCenter();
         var rm = (item.overlay.getRadius() / 1609.34).toFixed(2);
-        ldnaState.radius_searches.push({
-          label: item.label || ('Radius ' + (ldnaState.radius_searches.length + 1)),
-          center: { lat: c.lat(), lng: c.lng() },
+        var entry = {
+          lat: c.lat(),
+          lng: c.lng(),
           radius_miles: parseFloat(rm)
-        });
+        };
+        /* Preserve the geocoded address when this overlay came from ldnaAddRadiusSearch */
+        if (item.type === 'radius_search' && item.data && item.data.address) {
+          entry.address = item.data.address;
+        } else {
+          entry.label = item.label || ('Radius ' + (ldnaState.radius_searches.length + 1));
+        }
+        ldnaState.radius_searches.push(entry);
       }
     });
 
@@ -348,20 +355,60 @@
       google.maps.event.addListener(gmPoly.getPath(), 'insert_at', ldnaSerialize);
     });
 
-    /* Re-render saved radius circles */
+    /* Re-render saved radius circles.
+       Supports canonical flat {lat, lng} and legacy {center: {lat, lng}} formats. */
     ldnaState.radius_searches.forEach(function (r, i) {
-      if (!r.center) return;
+      /* Resolve center: flat format first, then legacy nested format */
+      var centerLat = (r.lat !== undefined) ? parseFloat(r.lat)
+                    : (r.center ? parseFloat(r.center.lat) : null);
+      var centerLng = (r.lng !== undefined) ? parseFloat(r.lng)
+                    : (r.center ? parseFloat(r.center.lng) : null);
+      if (centerLat === null || centerLng === null || isNaN(centerLat) || isNaN(centerLng)) return;
+
+      var displayLabel = r.address
+        ? (r.address + ' (' + r.radius_miles + ' mi)')
+        : (r.label || ('Radius ' + (i + 1)));
+
       var gmCircle = new google.maps.Circle({
-        center: r.center,
-        radius: r.radius_miles * 1609.34,
+        center: { lat: centerLat, lng: centerLng },
+        radius: (parseFloat(r.radius_miles) || 5) * 1609.34,
         fillColor: '#6b7280', fillOpacity: 0.12,
         strokeColor: '#6b7280', strokeWeight: 2,
         editable: true, map: ldnaMap,
       });
-      ldnaOverlays.push({ type: 'circle', overlay: gmCircle, label: r.label });
+      ldnaOverlays.push({ type: 'radius_search', overlay: gmCircle, label: displayLabel, data: r });
       google.maps.event.addListener(gmCircle, 'radius_changed', ldnaSerialize);
       google.maps.event.addListener(gmCircle, 'center_changed', ldnaSerialize);
     });
+
+    /* Bias viewport: if geometry was loaded, fit the first radius circle;
+       if only city/ZIP tags exist, pan toward the first one. */
+    if (ldnaOverlays.length > 0) {
+      /* Find the first circle overlay and fit to its bounds */
+      for (var oi = 0; oi < ldnaOverlays.length; oi++) {
+        if ((ldnaOverlays[oi].type === 'radius_search' || ldnaOverlays[oi].type === 'circle')
+            && ldnaOverlays[oi].overlay.getBounds) {
+          ldnaMap.fitBounds(ldnaOverlays[oi].overlay.getBounds());
+          break;
+        }
+      }
+    } else if (!ldnaState.polygons.length && !ldnaState.radius_searches.length) {
+      var biasTarget = (ldnaState.cities && ldnaState.cities[0])
+                    || (ldnaState.zip_codes && ldnaState.zip_codes[0])
+                    || null;
+      if (biasTarget) {
+        var biasGeocoder = new google.maps.Geocoder();
+        biasGeocoder.geocode(
+          { address: biasTarget + ', United States', componentRestrictions: { country: 'us' } },
+          function (results, status) {
+            if (status === 'OK' && results.length) {
+              ldnaMap.setCenter(results[0].geometry.location);
+              ldnaMap.setZoom(10);
+            }
+          }
+        );
+      }
+    }
   }
 
   /* ── Public helpers ───────────────────────────────────────────────────────── */
@@ -386,31 +433,42 @@
     var miles   = parseFloat(milesInput.value) || 5;
     if (!address) return;
 
+    /* Ensure map is initialized before trying to place a circle */
+    if (!ldnaMap) { ldnaTryInit(); setTimeout(ldnaAddRadiusSearch, 400); return; }
+
     var geocoder = new google.maps.Geocoder();
     geocoder.geocode({ address: address, componentRestrictions: { country: 'us' } }, function (results, status) {
       if (status !== 'OK' || !results.length) {
         alert('Could not find location: ' + address); return;
       }
       var loc = results[0].geometry.location;
-      var label = address + ' (' + miles + ' mi)';
+      var lat = loc.lat();
+      var lng = loc.lng();
+      var displayLabel = address + ' (' + miles + ' mi)';
       var gmCircle = new google.maps.Circle({
-        center: loc,
+        center: { lat: lat, lng: lng },
         radius: miles * 1609.34,
         fillColor: '#6b7280', fillOpacity: 0.12,
         strokeColor: '#6b7280', strokeWeight: 2,
         editable: true, map: ldnaMap,
       });
       var idx = ldnaOverlays.length;
-      ldnaOverlays.push({ type: 'circle', overlay: gmCircle, label: label });
+      /* type:'radius_search' distinguishes address-geocoded circles from drawn ones */
+      ldnaOverlays.push({
+        type: 'radius_search',
+        overlay: gmCircle,
+        label: displayLabel,
+        data: { address: address, lat: lat, lng: lng, radius_miles: miles }
+      });
       google.maps.event.addListener(gmCircle, 'radius_changed', ldnaSerialize);
       google.maps.event.addListener(gmCircle, 'center_changed', ldnaSerialize);
 
       var li = document.createElement('li');
       li.id = 'ldna-overlay-label-' + idx;
-      li.innerHTML = '<i class="fa-solid fa-circle-dot text-secondary"></i> ' + label;
+      li.innerHTML = '<i class="fa-solid fa-circle-dot text-secondary"></i> ' + displayLabel;
       document.getElementById('ldna-overlay-list').appendChild(li);
 
-      ldnaMap.panTo(loc);
+      ldnaMap.panTo({ lat: lat, lng: lng });
       ldnaMap.fitBounds(gmCircle.getBounds());
       ldnaSerialize();
       addressInput.value = '';

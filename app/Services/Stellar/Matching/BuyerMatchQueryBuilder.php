@@ -87,46 +87,53 @@ class BuyerMatchQueryBuilder
     private function applyGeographicFilter(Builder $query, BuyerCriteriaPayload $criteria): void
     {
         $hasRadius  = !empty($criteria->radiusSearches);
+        $hasPolygon = !empty($criteria->polygons);
         $hasCity    = !empty($criteria->preferredCities);
         $hasZip     = !empty($criteria->preferredZipCodes);
         $hasCounty  = !empty($criteria->preferredCounties);
 
-        if (!$hasRadius && !$hasCity && !$hasZip && !$hasCounty) {
+        if (!$hasRadius && !$hasPolygon && !$hasCity && !$hasZip && !$hasCounty) {
             return;
         }
 
-        if ($hasRadius) {
-            // Apply bounding box for each radius search (OR across multiple radii).
-            $query->where(function (Builder $outer) use ($criteria, $hasCity, $hasZip, $hasCounty) {
-                foreach ($criteria->radiusSearches as $radiusSearch) {
-                    $centerLat   = (float) ($radiusSearch['center']['lat']  ?? 0);
-                    $centerLng   = (float) ($radiusSearch['center']['lng']  ?? 0);
-                    $radiusMiles = (float) ($radiusSearch['radius_miles']   ?? 0);
+        if ($hasRadius || $hasPolygon) {
+            // Apply bounding box for each radius search and/or polygon (OR across all).
+            // These are coarse pre-filters; exact Haversine / PIP checks happen in the scorer.
+            $query->where(function (Builder $outer) use ($criteria, $hasRadius, $hasPolygon, $hasCity, $hasZip, $hasCounty) {
+                if ($hasRadius) {
+                    foreach ($criteria->radiusSearches as $radiusSearch) {
+                        // Support flat {lat, lng} (canonical) and legacy {center: {lat, lng}}
+                        $centerLat   = (float) self::extractRadiusLat($radiusSearch);
+                        $centerLng   = (float) self::extractRadiusLng($radiusSearch);
+                        $radiusMiles = (float) ($radiusSearch['radius_miles'] ?? 0);
 
-                    if ($radiusMiles <= 0) {
-                        continue;
+                        if ($radiusMiles <= 0) {
+                            continue;
+                        }
+
+                        $latDelta = $radiusMiles / self::LAT_MILES_PER_DEGREE;
+
+                        // Longitude degrees per mile shrinks as latitude increases:
+                        //   miles_per_lng_degree ≈ 69.0 × cos(lat)
+                        $lngMilesPerDegree = self::LAT_MILES_PER_DEGREE * cos(deg2rad(abs($centerLat)));
+                        $lngDelta          = ($lngMilesPerDegree > 0)
+                            ? $radiusMiles / $lngMilesPerDegree
+                            : $radiusMiles / 53.0;
+
+                        $outer->orWhere(function (Builder $q) use ($centerLat, $centerLng, $latDelta, $lngDelta) {
+                            $q->whereBetween('latitude',  [$centerLat - $latDelta, $centerLat + $latDelta])
+                              ->whereBetween('longitude', [$centerLng - $lngDelta, $centerLng + $lngDelta]);
+                        });
                     }
-
-                    $latDelta = $radiusMiles / self::LAT_MILES_PER_DEGREE;
-
-                    // Longitude degrees per mile shrinks as latitude increases:
-                    //   miles_per_lng_degree ≈ 69.0 × cos(lat)
-                    // Using the center latitude of each radius search gives a much
-                    // better bounding box than a fixed constant (53.0 was a rough
-                    // Florida-specific approximation). The bounding box is still a
-                    // coarse pre-filter; Haversine in the scorer is the exact gate.
-                    $lngMilesPerDegree = self::LAT_MILES_PER_DEGREE * cos(deg2rad(abs($centerLat)));
-                    $lngDelta          = ($lngMilesPerDegree > 0)
-                        ? $radiusMiles / $lngMilesPerDegree
-                        : $radiusMiles / 53.0; // fallback for equatorial/zero-lat edge case
-
-                    $outer->orWhere(function (Builder $q) use ($centerLat, $centerLng, $latDelta, $lngDelta) {
-                        $q->whereBetween('latitude',  [$centerLat - $latDelta, $centerLat + $latDelta])
-                          ->whereBetween('longitude', [$centerLng - $lngDelta, $centerLng + $lngDelta]);
-                    });
                 }
 
-                // City/ZIP/county fallback within the outer OR
+                if ($hasPolygon) {
+                    // Bounding box pre-filter for each drawn polygon (OR across all polygons).
+                    // Scorer performs exact point-in-polygon; bbox just limits the candidate set.
+                    $this->applyPolygonBoundingBoxes($outer, $criteria);
+                }
+
+                // City/ZIP/county are always ORed in alongside geometry
                 if ($hasCity || $hasZip) {
                     $outer->orWhere(function (Builder $q) use ($criteria, $hasCity, $hasZip) {
                         if ($hasCity) {
@@ -143,7 +150,7 @@ class BuyerMatchQueryBuilder
                 }
             });
         } else {
-            // No radius — city/ZIP/county filter
+            // No geometry — city/ZIP/county only filter
             $query->where(function (Builder $q) use ($criteria, $hasCity, $hasZip, $hasCounty) {
                 if ($hasCity) {
                     $q->whereIn('city', $criteria->preferredCities);
@@ -156,6 +163,68 @@ class BuyerMatchQueryBuilder
                 }
             });
         }
+    }
+
+    /**
+     * Add OR bounding-box clauses for each drawn polygon.
+     *
+     * The bounding box is the min/max lat/lng envelope of the polygon's path vertices.
+     * It is an intentional over-approximation — the scorer's point-in-polygon test
+     * is the exact gate; this just limits the DB candidate set.
+     */
+    private function applyPolygonBoundingBoxes(Builder $outer, BuyerCriteriaPayload $criteria): void
+    {
+        foreach ($criteria->polygons as $polygon) {
+            if (!is_array($polygon) || !isset($polygon['path']) || !is_array($polygon['path'])) {
+                continue;
+            }
+
+            $path = $polygon['path'];
+            if (count($path) < 3) {
+                continue;
+            }
+
+            $lats = array_filter(array_column($path, 'lat'), fn ($v) => is_numeric($v));
+            $lngs = array_filter(array_column($path, 'lng'), fn ($v) => is_numeric($v));
+
+            if (empty($lats) || empty($lngs)) {
+                continue;
+            }
+
+            $minLat = (float) min($lats);
+            $maxLat = (float) max($lats);
+            $minLng = (float) min($lngs);
+            $maxLng = (float) max($lngs);
+
+            $outer->orWhere(function (Builder $q) use ($minLat, $maxLat, $minLng, $maxLng) {
+                $q->whereBetween('latitude',  [$minLat, $maxLat])
+                  ->whereBetween('longitude', [$minLng, $maxLng]);
+            });
+        }
+    }
+
+    /**
+     * Extract center latitude from a radius search entry.
+     * Supports flat {lat, lng} (canonical) and legacy {center: {lat, lng}}.
+     */
+    private static function extractRadiusLat(array $search): float
+    {
+        if (isset($search['lat'])) {
+            return (float) $search['lat'];
+        }
+        return (float) ($search['center']['lat'] ?? 0);
+    }
+
+    /**
+     * Extract center longitude from a radius search entry.
+     * Supports flat {lat, lng} (canonical) and legacy {center: {lat, lng}}.
+     */
+    private static function extractRadiusLng(array $search): float
+    {
+        if (isset($search['lng'])) {
+            return (float) $search['lng'];
+        }
+        return (float) ($search['center']['lng'] ?? 0);
     }
 
     private function applyOrderAndLimit(Builder $query, BuyerCriteriaPayload $criteria, int $limit): void
