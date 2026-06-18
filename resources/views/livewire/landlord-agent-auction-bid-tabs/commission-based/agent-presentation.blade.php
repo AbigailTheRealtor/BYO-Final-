@@ -6,6 +6,144 @@
         </div>
     </div>
 </div>
+<!-- Social Proof & Track Record -->
+<div class="card mb-4 border-info">
+    <div class="card-header bg-info text-white">
+        <i class="fa-solid fa-trophy me-2"></i> Social Proof &amp; Track Record
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3 small">Highlight your achievements, rental placements, and marketing wins — then share links to your website, reviews, and social media so landlords can verify your reputation.</p>
+
+        <!-- Awards & Recognition -->
+        <div class="form-group mb-3">
+            <label class="fw-bold">Awards &amp; Recognition:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Share any awards, designations, or industry recognition you've received (e.g., Top Property Manager, Platinum Leasing Agent, Five-Star Agent).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <textarea wire:model.defer="awards_recognition" class="form-control" rows="3"
+                placeholder="e.g., Top Leasing Agent 2023, Certified Residential Leasing Professional, Five-Star Agent on Zillow..."></textarea>
+        </div>
+
+        <!-- Recent Rentals Listed/Placed -->
+        <div class="form-group mb-3">
+            <label class="fw-bold">Recent Rental Placements:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Describe 2–3 recent rental listings you've placed tenants for. Include property type, neighborhood, rent range, and how quickly you placed a qualified tenant.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <textarea wire:model.defer="sold_listed_examples" class="form-control" rows="3"
+                placeholder="e.g., Placed a qualified tenant for a 3BR/2BA in Westchase at $2,400/mo within 10 days. Leased a 2BR condo in South Tampa — multiple applicants, tenant placed within 1 week..."></textarea>
+        </div>
+
+        <!-- Marketing Wins -->
+        <div class="form-group mb-4">
+            <label class="fw-bold">Leasing Marketing Wins:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Describe marketing campaigns or tenant-screening strategies that generated strong results for your landlord clients.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <textarea wire:model.defer="marketing_success_examples" class="form-control" rows="3"
+                placeholder="e.g., Used professional photography and syndicated listing across 12 platforms — received 25 inquiries in 48 hours. Screened 15 applicants and placed a qualified tenant at above-market rent..."></textarea>
+        </div>
+
+        <hr class="my-3">
+
+        <!-- Website Link -->
+        <div class="form-group mb-3">
+            <label class="fw-bold">Agent Website:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the URL to your professional real estate website or agent profile page.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            @if(is_array($website_link))
+                @foreach($website_link as $index => $link)
+                <div class="d-flex align-items-center mb-2">
+                    <div class="input-cover flex-grow-1">
+                        <input type="url" wire:model="website_link.{{ $index }}"
+                            class="form-control has-icon" data-icon="fa-solid fa-globe"
+                            placeholder="https://yourwebsite.com">
+                    </div>
+                    @if(count($website_link) > 1)
+                    <button type="button" wire:click="removeWebsiteLink({{ $index }})"
+                        class="btn btn-outline-danger btn-sm ms-2"><i class="fa-solid fa-trash"></i></button>
+                    @endif
+                </div>
+                @endforeach
+                <button type="button" wire:click="addWebsiteLink" class="btn btn-sm btn-outline-secondary mt-1">
+                    <i class="fa-solid fa-plus me-1"></i> Add Another Website
+                </button>
+            @else
+                <div class="input-cover">
+                    <input type="url" wire:model="website_link"
+                        class="form-control has-icon" data-icon="fa-solid fa-globe"
+                        placeholder="https://yourwebsite.com">
+                </div>
+            @endif
+        </div>
+
+        <!-- Reviews Links -->
+        <div class="form-group mb-3">
+            <label class="fw-bold">Client Reviews:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Link to your reviews on Zillow, Realtor.com, Google, or another platform. This helps clients build trust in your track record.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            @foreach($reviews_links as $index => $review)
+                <div class="d-flex align-items-center mb-2">
+                    <div class="input-cover flex-grow-1">
+                        <input type="url" wire:model="reviews_links.{{ $index }}.url"
+                            class="form-control has-icon" data-icon="fa-solid fa-star"
+                            placeholder="https://www.zillow.com/profile/yourname/reviews">
+                    </div>
+                    @if(count($reviews_links) > 1)
+                    <button type="button" wire:click="removeReviewLink({{ $index }})"
+                        class="btn btn-outline-danger btn-sm ms-2"><i class="fa-solid fa-trash"></i></button>
+                    @endif
+                </div>
+            @endforeach
+            <button type="button" wire:click="addReviewLink" class="btn btn-sm btn-outline-secondary mt-1">
+                <i class="fa-solid fa-plus me-1"></i> Add Another Review Link
+            </button>
+        </div>
+
+        <!-- Social Media -->
+        <div class="form-group">
+            <label class="fw-bold">Social Media Profiles:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Add links to your professional social media profiles. These are optional but help clients verify your brand and online presence.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            @foreach($social_media as $index => $media)
+                @php $mediaArr = is_object($media) ? (array) $media : (is_array($media) ? $media : []); @endphp
+                <div class="input-group mb-2">
+                    <select wire:model="social_media.{{ $index }}.platform"
+                        wire:change="updatePlaceholder({{ $index }}, $event.target.value)"
+                        class="form-select" style="max-width:140px;">
+                        <option value="">Platform</option>
+                        <option value="Facebook">Facebook</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="LinkedIn">LinkedIn</option>
+                        <option value="TikTok">TikTok</option>
+                        <option value="X">X (Twitter)</option>
+                        <option value="YouTube">YouTube</option>
+                    </select>
+                    <input type="url" wire:model="social_media.{{ $index }}.url"
+                        class="form-control"
+                        placeholder="{{ $mediaArr['placeholder'] ?? 'https://' }}">
+                    @if(count($social_media) > 1)
+                    <button type="button" wire:click="removeSocialMedia({{ $index }})"
+                        class="btn btn-outline-danger"><i class="fa-solid fa-trash"></i></button>
+                    @endif
+                </div>
+            @endforeach
+            <button type="button" wire:click="addSocialMedia" class="btn btn-sm btn-outline-secondary mt-1">
+                <i class="fa-solid fa-plus me-1"></i> Add Social Media
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Virtual Presentation Section -->
 <div class="card mb-4 border-primary">
 

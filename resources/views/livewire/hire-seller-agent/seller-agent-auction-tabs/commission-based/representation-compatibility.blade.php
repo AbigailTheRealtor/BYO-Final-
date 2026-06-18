@@ -58,7 +58,7 @@
     <div wire:key="compat-pcm-s2" wire:ignore class="input-cover mt-2 has-select-icon">
         <select id="compat_preferred_contact_method" multiple class="form-control has-icon select2-multiple" data-icon="fa-solid fa-phone" data-placeholder="Select">
             <option value="Phone Call">Phone Call</option>
-            <option value="Text/SMS">Text / SMS</option>
+            <option value="Text Message">Text / SMS</option>
             <option value="Email">Email</option>
             <option value="Video Call">Video Call</option>
             <option value="In-Person Meeting">In-Person Meeting</option>
@@ -81,7 +81,7 @@
             <option value="">Select</option>
             <option value="Within 1 Hour">Within 1 Hour</option>
             <option value="Within a Few Hours">Within a Few Hours</option>
-            <option value="Same Day">Same Day</option>
+            <option value="Same Business Day">Same Business Day</option>
             <option value="Next Business Day">Next Business Day</option>
         </select>
     </div>

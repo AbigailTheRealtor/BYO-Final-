@@ -235,8 +235,9 @@
                             };
 
                             $tabs[] = 'Agent Presentation & Marketing Materials';
-                            $tabs[] = 'Agent Credentials & Contact Info';
+                            $tabs[] = 'Experience & Service Area';
                             $tabs[] = 'Working Style & Compatibility';
+                            $tabs[] = 'Agent Credentials & Contact Info';
                         @endphp
 
                         {{-- <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -336,15 +337,17 @@
                                 @include('livewire.buyer-agent-auction-bid-tabs.commission-based.agent-presentation')
 
                             </div>
-                            <!-- Tab 5/6: Agent Information -->
+                            <!-- Tab 5/6: Experience & Service Area -->
                             <div class="tab-pane fade {{ $activeTab === (5 + $tabOffset) ? 'show active' : '' }}">
-
-                                @include('livewire.buyer-agent-auction-bid-tabs.commission-based.agent-info')
-
+                                @include('livewire.buyer-agent-auction-bid-tabs.commission-based.agent-experience')
                             </div>
                             <!-- Tab 6/7: Working Style & Compatibility -->
                             <div class="tab-pane fade {{ $activeTab === (6 + $tabOffset) ? 'show active' : '' }}">
                                 @include('partials.agent-bid-compatibility')
+                            </div>
+                            <!-- Tab 7/8: Agent Credentials & Contact Info -->
+                            <div class="tab-pane fade {{ $activeTab === (7 + $tabOffset) ? 'show active' : '' }}">
+                                @include('livewire.buyer-agent-auction-bid-tabs.commission-based.agent-info')
                             </div>
                         @elseif($service_type === 'limited_service')
                             <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}">

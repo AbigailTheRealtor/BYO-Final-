@@ -66,8 +66,9 @@
                         $tabs[] = 'Additional Details';
                         $tabs[] = 'Services the Seller Requests from Their Agent';
                         $tabs[] = 'Agent Presentation & Marketing Materials';
-                        $tabs[] = 'Agent Credentials & Contact Info';
+                        $tabs[] = 'Experience & Service Area';
                         $tabs[] = 'Working Style & Compatibility';
+                        $tabs[] = 'Agent Credentials & Contact Info';
                     @endphp
 
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -136,13 +137,17 @@
                             @include('livewire.seller-agent-auction-bid-tabs.commission-based.agent-presentation')
                         </div>
 
-                        <!-- Tab 5/6: Agent Credentials -->
+                        <!-- Tab 5/6: Experience & Service Area -->
                         <div class="tab-pane fade {{ $activeTab === (5 + $tabOffset) ? 'show active' : '' }}">
-                            @include('livewire.seller-agent-auction-bid-tabs.commission-based.agent-info')
+                            @include('livewire.seller-agent-auction-bid-tabs.commission-based.agent-experience')
                         </div>
                         <!-- Tab 6/7: Working Style & Compatibility -->
                         <div class="tab-pane fade {{ $activeTab === (6 + $tabOffset) ? 'show active' : '' }}">
                             @include('partials.agent-bid-compatibility')
+                        </div>
+                        <!-- Tab 7/8: Agent Credentials & Contact Info -->
+                        <div class="tab-pane fade {{ $activeTab === (7 + $tabOffset) ? 'show active' : '' }}">
+                            @include('livewire.seller-agent-auction-bid-tabs.commission-based.agent-info')
                         </div>
                     </div>
 

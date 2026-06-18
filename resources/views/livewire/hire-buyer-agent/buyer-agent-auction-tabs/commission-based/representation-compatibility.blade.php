@@ -205,7 +205,7 @@
             <option value="Text Message">Text Message</option>
             <option value="Email">Email</option>
             <option value="Video Call">Video Call (Zoom / FaceTime)</option>
-            <option value="In-Person">In-Person Meetings</option>
+            <option value="In-Person Meeting">In-Person Meetings</option>
             <option value="Any Method">Any Method – I'm flexible</option>
         </select>
     </div>

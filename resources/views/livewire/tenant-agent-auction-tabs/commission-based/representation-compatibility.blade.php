@@ -227,11 +227,11 @@
         <select id="compat_contact_frequency" class="form-control has-icon"
             data-icon="fa-solid fa-calendar-check">
             <option value="">Select</option>
-            <option value="Daily">Daily</option>
-            <option value="Every few days">Every few days</option>
+            <option value="Daily Updates">Daily</option>
+            <option value="Every Few Days">Every few days</option>
             <option value="Weekly">Weekly</option>
-            <option value="Only on major updates">Only on major updates</option>
-            <option value="As needed">As needed</option>
+            <option value="At Key Milestones">Only on major updates</option>
+            <option value="As Needed">As needed</option>
         </select>
     </div>
     @error('compatibility_preferences.tenant_specific.contact_frequency')

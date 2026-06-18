@@ -172,9 +172,9 @@
             <option value="">Select</option>
             <option value="Daily Updates">Daily Updates</option>
             <option value="Every Few Days">Every Few Days</option>
-            <option value="Weekly Check-Ins">Weekly Check-Ins</option>
-            <option value="Only Major Milestones">Only Major Milestones</option>
-            <option value="Only When I Ask">Only When I Ask</option>
+            <option value="Weekly">Weekly Check-Ins</option>
+            <option value="At Key Milestones">Only Major Milestones</option>
+            <option value="As Needed">Only When I Ask</option>
         </select>
     </div>
 </div>

@@ -72,6 +72,9 @@ class BuyerAgentAuctionBid extends Component
     public $reviews_links = [];
     public $website_link;
     public $social_media = [['platform' => '', 'text' => '']];
+    public string $awards_recognition = '';
+    public string $sold_listed_examples = '';
+    public string $marketing_success_examples = '';
 
 
     // Additional Details
@@ -465,6 +468,9 @@ public $retained_deposits = '';
                 $this->presentation_link        = $b['presentation_link'] ?? null;
                 $this->business_card_link       = $b['business_card_link'] ?? null;
                 $this->business_card_stored_path = $b['business_card_stored_path'] ?? null;
+                $this->awards_recognition        = $b['awards_recognition']        ?? '';
+                $this->sold_listed_examples      = $b['sold_listed_examples']      ?? '';
+                $this->marketing_success_examples = $b['marketing_success_examples'] ?? '';
                 // Fallback: if business_card meta key holds a stored file path, populate
                 // business_card_stored_path so re-saves preserve it without re-uploading
                 if (empty($this->business_card_stored_path) && !empty($b['business_card']) && is_string($b['business_card'])) {
@@ -773,14 +779,12 @@ public $retained_deposits = '';
             $this->validateOnly('why_hire_you', ['why_hire_you' => 'required|string'], $this->messages);
             $this->validateOnly('what_sets_you_apart', ['what_sets_you_apart' => 'required|string'], $this->messages);
             $this->validateOnly('marketing_plan', ['marketing_plan' => 'required|string'], $this->messages);
-            $this->validateOnly('year_licensed', ['year_licensed' => 'required|numeric|min:1900|max:' . date('Y')], $this->messages);
-
-            if ($this->getErrorBag()->hasAny(['bio', 'why_hire_you', 'what_sets_you_apart', 'marketing_plan', 'year_licensed'])) {
+            if ($this->getErrorBag()->hasAny(['bio', 'why_hire_you', 'what_sets_you_apart', 'marketing_plan'])) {
                 return;
             }
         }
 
-        $maxTab = $this->service_type === 'full_service' ? ($this->hasReferralTab() ? 7 : 6) : 5;
+        $maxTab = $this->service_type === 'full_service' ? ($this->hasReferralTab() ? 8 : 7) : 5;
         if ($this->activeTab < $maxTab) {
             $this->activeTab = $this->activeTab + 1;
         }
@@ -822,9 +826,12 @@ public $retained_deposits = '';
             'why_hire_you'              => $this->why_hire_you,
             'what_sets_you_apart'       => $this->what_sets_you_apart,
             'marketing_plan'            => $this->marketing_plan,
-            'reviews_links'             => $this->reviews_links,
-            'website_link'              => $this->website_link,
-            'social_media'              => $this->social_media,
+            'reviews_links'              => $this->reviews_links,
+            'website_link'               => $this->website_link,
+            'social_media'               => $this->social_media,
+            'awards_recognition'         => $this->awards_recognition,
+            'sold_listed_examples'       => $this->sold_listed_examples,
+            'marketing_success_examples' => $this->marketing_success_examples,
             'additional_details'        => $this->additional_details,
             'year_licensed'             => $this->year_licensed,
             'first_name'                => $this->first_name,
@@ -907,9 +914,17 @@ public $retained_deposits = '';
         $this->why_hire_you        = $data['why_hire_you'] ?? '';
         $this->what_sets_you_apart = $data['what_sets_you_apart'] ?? '';
         $this->marketing_plan      = $data['marketing_plan'] ?? '';
-        $this->reviews_links       = $data['reviews_links'] ?? [['url' => '', 'text' => '']];
-        $this->website_link        = $data['website_link'] ?? '';
-        $this->social_media        = $data['social_media'] ?? [['platform' => '', 'url' => '']];
+        $rawRl = $data['reviews_links'] ?? [['text' => '']];
+        $this->reviews_links = array_values(array_map(function ($item) {
+            if (is_object($item)) $item = (array) $item;
+            if (!is_array($item)) return ['text' => ''];
+            return ['text' => (!empty($item['text']) ? $item['text'] : ($item['url'] ?? ''))];
+        }, $rawRl ?: [['text' => '']]));
+        $this->website_link               = $data['website_link'] ?? '';
+        $this->social_media               = $data['social_media'] ?? [['platform' => '', 'url' => '']];
+        $this->awards_recognition         = $data['awards_recognition']         ?? '';
+        $this->sold_listed_examples       = $data['sold_listed_examples']       ?? '';
+        $this->marketing_success_examples = $data['marketing_success_examples'] ?? '';
         $this->additional_details  = $data['additional_details'] ?? '';
         $this->year_licensed       = $data['year_licensed'] ?? '';
         if (!empty($data['first_name']))        $this->first_name        = $data['first_name'];
@@ -1039,6 +1054,9 @@ public $retained_deposits = '';
                 : $this->website_link;
             $bid->saveMeta('website_link', $websiteLinkValue);
             $bid->saveMeta('social_media', json_encode($this->social_media));
+            $bid->saveMeta('awards_recognition',        $this->awards_recognition);
+            $bid->saveMeta('sold_listed_examples',      $this->sold_listed_examples);
+            $bid->saveMeta('marketing_success_examples', $this->marketing_success_examples);
 
             // Save Services
             $bid->saveMeta('services', json_encode($this->services));

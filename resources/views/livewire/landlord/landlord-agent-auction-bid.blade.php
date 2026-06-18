@@ -250,8 +250,9 @@
                             };
 
                             $tabs[] = 'Agent Presentation And Marketing Materials';
-                            $tabs[] = 'Agent Credentials & Contact Info';
+                            $tabs[] = 'Experience & Service Area';
                             $tabs[] = 'Working Style & Compatibility';
+                            $tabs[] = 'Agent Credentials & Contact Info';
                         @endphp
 
 
@@ -326,15 +327,17 @@
                                 @include('livewire.landlord-agent-auction-bid-tabs.commission-based.agent-presentation')
 
                             </div>
-                            <!-- Tab 5/6: Agent Information -->
+                            <!-- Tab 5/6: Experience & Service Area -->
                             <div class="tab-pane fade {{ $activeTab === (5 + $tabOffset) ? 'show active' : '' }}">
-
-                                @include('livewire.landlord-agent-auction-bid-tabs.commission-based.agent-info')
-
+                                @include('livewire.landlord-agent-auction-bid-tabs.commission-based.agent-experience')
                             </div>
                             <!-- Tab 6/7: Working Style & Compatibility -->
                             <div class="tab-pane fade {{ $activeTab === (6 + $tabOffset) ? 'show active' : '' }}">
                                 @include('partials.agent-bid-compatibility')
+                            </div>
+                            <!-- Tab 7/8: Agent Credentials & Contact Info -->
+                            <div class="tab-pane fade {{ $activeTab === (7 + $tabOffset) ? 'show active' : '' }}">
+                                @include('livewire.landlord-agent-auction-bid-tabs.commission-based.agent-info')
                             </div>
                     </div>
 
