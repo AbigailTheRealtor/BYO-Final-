@@ -814,26 +814,6 @@
         </div>{{-- /lol-interaction-grid --}}
     </div>{{-- /lol-interaction-hub --}}
 
-    {{-- ===== Property Location Map ===== --}}
-    @php
-        $_landlordPropertyPin = null;
-        if (!empty($meta['property_lat']) && !empty($meta['property_lng'])) {
-            $_landlordPropertyPin = [
-                'lat'     => (float) $meta['property_lat'],
-                'lng'     => (float) $meta['property_lng'],
-                'label'   => ($meta['formatted_address'] ?? null) ?: ($meta['address'] ?? null),
-            ];
-        }
-    @endphp
-    <x-location-dna-map
-        :preferences="null"
-        :legacyLocation="[]"
-        :boundaryData="null"
-        :floodZoneData="null"
-        :schoolDistrictData="null"
-        :propertyPin="$_landlordPropertyPin"
-    />
-
     {{-- ===== TWO-COLUMN LAYOUT ===== --}}
     <div class="row g-4 align-items-start">
     <div class="col-lg-9 lol-main-content-wrap">
@@ -1054,6 +1034,28 @@
     })();
     </script>
     @endif
+
+    {{-- ===== Property Location Map (after Photos & Tours) ===== --}}
+    @php
+        $_landlordPropertyPin = null;
+        if (!empty($meta['property_lat']) && !empty($meta['property_lng'])) {
+            $_lolBaseAddr  = ($meta['formatted_address'] ?? null) ?: ($meta['address'] ?? null);
+            $_lolUnitPart  = !empty($meta['unit_address']) ? ', ' . $meta['unit_address'] : '';
+            $_landlordPropertyPin = [
+                'lat'   => (float) $meta['property_lat'],
+                'lng'   => (float) $meta['property_lng'],
+                'label' => $_lolBaseAddr ? ($_lolBaseAddr . $_lolUnitPart) : null,
+            ];
+        }
+    @endphp
+    <x-location-dna-map
+        :preferences="null"
+        :legacyLocation="[]"
+        :boundaryData="null"
+        :floodZoneData="null"
+        :schoolDistrictData="null"
+        :propertyPin="$_landlordPropertyPin"
+    />
 
     {{-- ================================================================
          DESCRIPTION
@@ -2655,4 +2657,12 @@
 @endif
 @endauth
 
+@push('scripts')
+<script>
+window.byoLandlordViewMapsReady = function() {
+    document.dispatchEvent(new Event('google-maps-loaded'));
+};
+</script>
+<x-google-maps-script :libraries="'places'" :callback="'byoLandlordViewMapsReady'" />
+@endpush
 @endsection

@@ -24,6 +24,21 @@
     </div>
 </div>
 
+<!-- Unit / Apt / Suite -->
+<div class="form-group mb-3">
+    <label class="fw-bold">Unit / Apt / Suite:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the unit, apartment, or suite number if applicable (e.g., Apt 4B, Suite 200).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="text" wire:model="unit_address"
+            class="form-control has-icon" data-icon="fa-solid fa-door-open"
+            placeholder="e.g., Apt 4B, Suite 200 (optional)"
+            autocomplete="off">
+    </div>
+</div>
+
 <input type="hidden" id="landlord-offer-property-lat" wire:model="property_lat">
 <input type="hidden" id="landlord-offer-property-lng" wire:model="property_lng">
 <input type="hidden" id="landlord-offer-google-place-id" wire:model="google_place_id">
@@ -91,25 +106,6 @@
     </div>
 </div>
 
-<!-- Property County -->
-<div class="form-group mb-3">
-    <label class="fw-bold">County: <span class="text-danger">*</span></label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the county where the property is located. This may be automatically populated when a city is selected.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <input type="text" wire:model="property_county" 
-            class="form-control has-icon @error('property_county') is-invalid @enderror" 
-            data-icon="fa-solid fa-map"
-            placeholder="Enter county (e.g., Miami-Dade County)" 
-            required>
-        @error('property_county')
-            <div class="error-message">{{ $message }}</div>
-        @enderror
-    </div>
-</div>
-
 <!-- Property ZIP Code -->
 <div class="form-group mb-3">
     <label class="fw-bold">ZIP Code: <span class="text-danger">*</span></label>
@@ -125,6 +121,25 @@
             required
             maxlength="10">
         @error('property_zip')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
+<!-- Property County -->
+<div class="form-group mb-3">
+    <label class="fw-bold">County: <span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the county where the property is located. This may be automatically populated when a city is selected.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="text" wire:model="property_county" 
+            class="form-control has-icon @error('property_county') is-invalid @enderror" 
+            data-icon="fa-solid fa-map"
+            placeholder="Enter county (e.g., Miami-Dade County)" 
+            required>
+        @error('property_county')
             <div class="error-message">{{ $message }}</div>
         @enderror
     </div>

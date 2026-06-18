@@ -2476,4 +2476,12 @@
 
 </script>
 @endpush
+@push('scripts')
+<script>
+window.byoTenantViewMapsReady = function() {
+    document.dispatchEvent(new Event('google-maps-loaded'));
+};
+</script>
+<x-google-maps-script :libraries="'places'" :callback="'byoTenantViewMapsReady'" />
+@endpush
 @endsection

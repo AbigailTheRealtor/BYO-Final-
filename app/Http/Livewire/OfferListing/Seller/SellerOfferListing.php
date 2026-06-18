@@ -507,8 +507,9 @@ class SellerOfferListing extends Component
     public $meeting_details_email = '';
 
     public $address = '';
+    public $unit_address = '';
     // Hotfix #2851 — coordinates wired via Google Places autocomplete callback.
-    // Populated by byoInitSellerOfferPlaces() JS → Livewire @this.set() calls.
+    // Populated by fillFromGooglePlaces() Livewire method (single atomic call).
     // Persisted to seller_agent_auction_metas EAV via saveMeta() and reloaded
     // in loadDraft().  Copied into accepted_bid_summaries at acceptance time by
     // SellerAcceptedBidSummaryService::extractPropertyLocationData().
@@ -1487,6 +1488,28 @@ class SellerOfferListing extends Component
         }
     }
     
+    public function fillFromGooglePlaces(
+        string $street,
+        string $city,
+        string $county,
+        string $state,
+        string $zip,
+        string $lat,
+        string $lng,
+        string $placeId
+    ): void {
+        $this->address         = $street;
+        $this->property_city   = $city;
+        $this->property_county = $county;
+        $this->property_state  = $state;
+        $this->property_zip    = $zip;
+        $this->property_lat    = $lat;
+        $this->property_lng    = $lng;
+        $this->google_place_id = $placeId;
+        $this->propertyCitySuggestions      = [];
+        $this->highlightedPropertyCityIndex = -1;
+    }
+
     public function updatedPropertyCity($value)
     {
         if (strlen($value) > 2) {
@@ -2237,6 +2260,7 @@ class SellerOfferListing extends Component
             'meeting_details_phone'           => $this->meeting_details_phone,
             'meeting_details_email'           => $this->meeting_details_email,
             'address'                         => $this->address,
+            'unit_address'                    => $this->unit_address,
             'property_lat'                    => $this->property_lat,
             'property_lng'                    => $this->property_lng,
             'google_place_id'                 => $this->google_place_id,
@@ -2889,6 +2913,7 @@ class SellerOfferListing extends Component
             $this->meeting_details_phone = $auction->get->meeting_details_phone;
             $this->meeting_details_email = $auction->get->meeting_details_email;
             $this->address = $auction->get->address;
+            $this->unit_address = $auction->get->unit_address ?? '';
             $this->property_lat = $auction->get->property_lat ?? '';
             $this->property_lng = $auction->get->property_lng ?? '';
             $this->google_place_id = $auction->get->google_place_id ?? '';
@@ -3479,6 +3504,7 @@ class SellerOfferListing extends Component
 
         // Meeting details yes
         $auction->saveMeta('address', $this->address);
+        $auction->saveMeta('unit_address', $this->unit_address);
         $auction->saveMeta('property_lat', $this->property_lat);
         $auction->saveMeta('property_lng', $this->property_lng);
         $auction->saveMeta('google_place_id', $this->google_place_id);
@@ -4072,6 +4098,7 @@ class SellerOfferListing extends Component
             'listing_title'  => 'required|string|max:255',
             'property_type'  => 'required|string',
             'state'          => 'nullable|string',
+            'unit_address'   => 'nullable|string|max:100',
             'first_name'     => 'required|string',
             'last_name'      => 'required|string',
             'phone_number'   => 'required|string',

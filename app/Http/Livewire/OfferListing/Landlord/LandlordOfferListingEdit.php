@@ -249,8 +249,9 @@ class LandlordOfferListingEdit extends Component
     public $meeting_details_email = '';
 
     public $address = '';
-    // Hotfix #2851 — coordinates wired via Google Places autocomplete callback.
-    // Populated by byoInitLandlordOfferPlaces() JS → Livewire @this.set() calls.
+    public $unit_address = '';
+    // Coordinates wired via Google Places autocomplete callback.
+    // Populated by fillFromGooglePlaces() Livewire method (single atomic call).
     // Persisted to landlord_agent_auction_metas EAV via saveMeta() and reloaded
     // in loadDraft().  Copied into accepted_bid_summaries at acceptance time by
     // LandlordAcceptedBidSummaryService::extractPropertyLocationData().
@@ -1219,6 +1220,27 @@ class LandlordOfferListingEdit extends Component
         }
     }
 
+    public function fillFromGooglePlaces(
+        string $street,
+        string $city,
+        string $county,
+        string $state,
+        string $zip,
+        string $lat,
+        string $lng,
+        string $placeId
+    ): void {
+        $this->address                 = $street;
+        $this->property_city           = $city;
+        $this->property_county         = $county;
+        $this->property_state          = $state;
+        $this->property_zip            = $zip;
+        $this->property_lat            = $lat;
+        $this->property_lng            = $lng;
+        $this->google_place_id         = $placeId;
+        $this->propertyCitySuggestions = [];
+    }
+
     public function selectPropertyCitySuggestion($suggestion = null)
     {
         $suggestion = $suggestion ?? $this->propertyCitySuggestions[$this->highlightedPropertyCityIndex] ?? $this->property_city;
@@ -1909,6 +1931,7 @@ class LandlordOfferListingEdit extends Component
             'meeting_details_phone'           => $this->meeting_details_phone,
             'meeting_details_email'           => $this->meeting_details_email,
             'address'                         => $this->address,
+            'unit_address'                    => $this->unit_address,
             'property_lat'                    => $this->property_lat,
             'property_lng'                    => $this->property_lng,
             'google_place_id'                 => $this->google_place_id,
@@ -2559,7 +2582,8 @@ class LandlordOfferListingEdit extends Component
             $this->meeting_details_last_name = $auction->get->meeting_details_last_name ?? null;
             $this->meeting_details_phone = $auction->get->meeting_details_phone ?? null;
             $this->meeting_details_email = $auction->get->meeting_details_email ?? null;
-            $this->address = $auction->get->address ?? null;
+            $this->address      = $auction->get->address ?? null;
+            $this->unit_address = $auction->get->unit_address ?? '';
             $this->property_lat = $auction->get->property_lat ?? '';
             $this->property_lng = $auction->get->property_lng ?? '';
             $this->google_place_id = $auction->get->google_place_id ?? '';
@@ -3286,6 +3310,7 @@ class LandlordOfferListingEdit extends Component
 
         // Meeting details yes
         $auction->saveMeta('address', $this->address);
+        $auction->saveMeta('unit_address', $this->unit_address);
         $auction->saveMeta('property_lat', $this->property_lat);
         $auction->saveMeta('property_lng', $this->property_lng);
         $auction->saveMeta('google_place_id', $this->google_place_id);
@@ -3668,6 +3693,7 @@ class LandlordOfferListingEdit extends Component
     public function update()
     {
         $this->validate([
+            'unit_address'             => 'nullable|string|max:100',
             'roof_type'                => 'nullable|array',
             'roof_type.*'              => 'string|in:Built-Up,Cement,Concrete,Membrane,Metal,Roof Over,Shake,Shingle,Slate,Tile,Other',
             'exterior_construction'    => 'nullable|array',

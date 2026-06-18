@@ -1442,10 +1442,12 @@
     @php
         $_sellerPropertyPin = null;
         if (!empty($meta['property_lat']) && !empty($meta['property_lng'])) {
+            $_solBaseAddr  = ($meta['formatted_address'] ?? null) ?: ($meta['address'] ?? null);
+            $_solUnitPart  = !empty($meta['unit_address']) ? ', ' . $meta['unit_address'] : '';
             $_sellerPropertyPin = [
-                'lat'     => (float) $meta['property_lat'],
-                'lng'     => (float) $meta['property_lng'],
-                'label'   => ($meta['formatted_address'] ?? null) ?: ($meta['address'] ?? null),
+                'lat'   => (float) $meta['property_lat'],
+                'lng'   => (float) $meta['property_lng'],
+                'label' => $_solBaseAddr ? ($_solBaseAddr . $_solUnitPart) : null,
             ];
         }
     @endphp
@@ -3281,4 +3283,12 @@
 
 })();
 </script>
+@endpush
+@push('scripts')
+<script>
+window.byoSellerViewMapsReady = function() {
+    document.dispatchEvent(new Event('google-maps-loaded'));
+};
+</script>
+<x-google-maps-script :libraries="'places'" :callback="'byoSellerViewMapsReady'" />
 @endpush

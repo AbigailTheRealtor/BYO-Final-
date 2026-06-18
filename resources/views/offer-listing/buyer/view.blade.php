@@ -2378,3 +2378,11 @@
 
 </script>
 @endpush
+@push('scripts')
+<script>
+window.byoBuyerViewMapsReady = function() {
+    document.dispatchEvent(new Event('google-maps-loaded'));
+};
+</script>
+<x-google-maps-script :libraries="'places'" :callback="'byoBuyerViewMapsReady'" />
+@endpush

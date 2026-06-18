@@ -3472,7 +3472,6 @@
         });
 
         ac.addListener('place_changed', function() {
-            window._byoPlacesFilled = true;
             var place = ac.getPlace();
             if (!place || !place.geometry || !place.geometry.location) { return; }
 
@@ -3497,14 +3496,7 @@
 
             var street = streetNum ? (streetNum + ' ' + route).trim() : route;
 
-            @this.set('address', street);
-            if (city)   { @this.set('property_city', city); }
-            if (county) { @this.set('property_county', county); }
-            if (state)  { @this.set('property_state', state); }
-            if (zip)    { @this.set('property_zip', zip); }
-            @this.set('property_lat', String(lat));
-            @this.set('property_lng', String(lng));
-            @this.set('google_place_id', placeId);
+            @this.call('fillFromGooglePlaces', street, city, county, state, zip, String(lat), String(lng), placeId);
         });
     };
 
