@@ -699,7 +699,10 @@ class AskAiContextBuilderService
      *
      * Factual fields (role-specific): bedrooms, bathrooms, asking_price, rent_amount,
      * lease_length, pets_allowed, hoa_fee, pool, parking_spaces, square_feet,
-     * year_built, and additional role-appropriate fields. See extractFactualFields().
+     * year_built, and additional role-appropriate fields. All non-synthetic
+     * CANONICAL_SOURCE_MAP fields are resolved via AskAiSourceResolver; fields
+     * requiring JSON decoding, Other-fallback resolution, or derived computation
+     * are subsequently overridden by extractManualFields().
      */
     protected function extractListingFields(object $listing, string $canonicalType, int $listingId): array
     {
@@ -734,23 +737,79 @@ class AskAiContextBuilderService
             'updated_at'     => isset($listing->updated_at) ? (string) $listing->updated_at : null,
         ];
 
-        $factual = $this->extractFactualFields($listing, $canonicalType, $infoGet, $nativeGet);
+        // Step 1: Resolver loop — uses CANONICAL_SOURCE_MAP as the single source
+        // of truth for field→source mapping. Produces raw values for all
+        // non-synthetic entries without re-declaring sources a second time in code.
+        $resolver  = new AskAiSourceResolver();
+        $sourceMap = self::CANONICAL_SOURCE_MAP[$canonicalType] ?? [];
+        $resolved  = [];
+        foreach ($sourceMap as $field => $source) {
+            if (is_string($source) && str_starts_with($source, 'synthetic:')) {
+                // Excluded: not a direct lookup — handled by extractManualFields() below.
+                continue;
+            }
+            $resolved[$field] = $resolver->resolveField($field, $source, $infoGet, $nativeGet);
+        }
 
+        // Step 1b (seller only): Strip property-type-conditional fields that must be
+        // ABSENT (not merely null) for non-matching property types.
+        // CANONICAL_SOURCE_MAP lists Vacant Land, Business, and shared VL+Business fields
+        // unconditionally so the resolver loop resolves them for every seller listing.
+        // These keys must be removed from $resolved when property_type does not match
+        // the gate condition, preserving the old extractFactualFields conditional-block
+        // behavior (assertArrayNotHasKey tests verify absence, not just null).
+        if ($canonicalType === 'seller') {
+            $propType = $infoGet('property_type');
+            if ($propType !== 'Vacant Land') {
+                foreach ([
+                    'current_adjacent_use', 'water_available', 'sewer_available',
+                    'electric_available', 'gas_available', 'telecom_available',
+                    'road_surface_type', 'front_footage', 'number_of_wells',
+                    'number_of_septics', 'fences', 'vegetation', 'buildable', 'easements',
+                ] as $k) {
+                    unset($resolved[$k]);
+                }
+            }
+            if ($propType !== 'Business') {
+                foreach ([
+                    'business_type', 'business_name', 'year_established', 'annual_revenue',
+                    'gross_profit', 'sde_ebitda', 'inventory_value', 'ffe_value',
+                    'reason_for_sale', 'employee_count', 'financial_statements_available',
+                    'tax_returns_available', 'nda_required', 'business_location_leased',
+                    'business_lease_monthly_rent', 'business_lease_expiration',
+                    'business_lease_renewal_options', 'business_lease_assignable',
+                    'business_lease_additional_terms', 'licenses', 'sale_includes',
+                    'electrical_service', 'business_assets',
+                ] as $k) {
+                    unset($resolved[$k]);
+                }
+            }
+            if (!in_array($propType, ['Vacant Land', 'Business'], true)) {
+                unset($resolved['current_use'], $resolved['road_frontage']);
+            }
+        }
+
+        // Step 2: Manual overrides — fields requiring transformation logic that
+        // cannot be expressed as a CANONICAL_SOURCE_MAP source entry:
+        //   • decodeJsonField()             — JSON multi-select arrays → comma string
+        //   • resolveOtherValue()           — "Other" placeholder → free-text sibling
+        //   • summarizeUnitConfigurations() — unit-mix JSON → readable summary
+        //   • disclosure_flags              — governance constant, not from EAV
+        //   • furnished                     — derived from building_features subset
+        //   • Conditional VL/Business blocks — property-type-gated field groups
+        // Values produced here replace the raw resolver results for the same keys.
+        $manualFields = $this->extractManualFields($listing, $canonicalType, $infoGet, $nativeGet);
+
+        $factual = array_merge($resolved, $manualFields);
         return array_merge($base, $factual);
     }
 
     /**
-     * Extract role-specific public-factual listing fields.
-     *
-     * DATA GOVERNANCE: Only fields classified as Public-Factual in
-     * ASK_AI_FULL_CONTEXT_MAP.md are included. PII fields (names, phone,
-     * email, brokerage), internal workflow fields, and protected-class-adjacent
-     * fields are explicitly excluded. Compliance-Sensitive fields (flood zone code,
-     * security deposit, income requirement) are included where they carry the
-     * listing_facts contract disclosure requirement.
-     *
-     * JSON meta values (appliances, pet_species_allowed, tenant_pays) are decoded
-     * and flattened to a comma-separated string for prompt-friendly consumption.
+     * Returns manual field overrides for fields whose values cannot be expressed
+     * as a bare CANONICAL_SOURCE_MAP source entry (decodeJsonField, resolveOtherValue,
+     * derived computation, governance constants, conditional property-type blocks).
+     * The resolver loop in extractListingFields() provides raw values for all
+     * other CANONICAL_SOURCE_MAP fields; values returned here take precedence.
      *
      * @param  object    $listing       The resolved listing model instance.
      * @param  string    $canonicalType One of 'seller', 'buyer', 'landlord', 'tenant'.
@@ -758,605 +817,471 @@ class AskAiContextBuilderService
      * @param  callable  $nativeGet     Native column accessor: $listing->{$key} → ?string.
      * @return array
      */
-    protected function extractFactualFields(
+    private function extractManualFields(
         object $listing,
         string $canonicalType,
         callable $infoGet,
         callable $nativeGet
     ): array {
         return match ($canonicalType) {
+            'seller'   => $this->extractSellerManualFields($infoGet, $nativeGet),
+            'buyer'    => $this->extractBuyerManualFields($infoGet, $nativeGet),
+            'landlord' => $this->extractLandlordManualFields($infoGet),
+            'tenant'   => $this->extractTenantManualFields($infoGet),
+            default    => [],
+        };
+    }
 
-            // -----------------------------------------------------------------
-            // Seller — seller_agent_auctions (native columns) + seller_agent_auction_metas (EAV)
-            //
-            // Almost all property-detail fields are stored in EAV via saveMeta(), not
-            // in native columns. Native-only fields: address, description, auction_length,
-            // is_sold, bedroom_id (FK fallback), bathroom_id (FK fallback).
-            // All other factual fields use infoGet() to read from seller_agent_auction_metas.
-            // -----------------------------------------------------------------
-            'seller' => array_merge(
-                [
-                    // ── Core listing fields ───────────────────────────────────────
-                    'address'              => $nativeGet('address'),
-                    // description: offer-listing Livewire forms (SellerOfferListing / SellerOfferListingEdit)
-                    // save the property description via saveMeta('additional_details', ...) into
-                    // seller_agent_auction_metas. The native description column is populated only by the
-                    // legacy agent-auction wizard path. Read EAV additional_details first so the common
-                    // offer-listing path works; fall back to native description for legacy rows.
-                    // CANONICAL_SOURCE_MAP updated to ['additional_details', 'native:description'].
-                    'description'          => $infoGet('additional_details') ?: $nativeGet('description'),
-                    'asking_price'         => $infoGet('maximum_budget'),
-                    // buy_now_price: seller offer listing forms save this field via
-                    // saveMeta('buy_now_price', ...) into seller_agent_auction_metas.
-                    // Live-DB audit confirmed the key is present on offer-listing rows.
-                    'buy_now_price'        => $infoGet('buy_now_price'),
-                    'bedrooms'             => $this->resolveOtherValue(
-                                                 $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
-                                                 $infoGet,
-                                                 'other_bedrooms'
-                                             ),
-                    'bathrooms'            => $this->resolveOtherValue(
-                                                 $infoGet('bathrooms') ?? $nativeGet('bathroom_id'),
-                                                 $infoGet,
-                                                 'other_bathrooms'
-                                             ),
-                    // square_feet: forms may save under 'minimum_heated_square' (wizard path),
-                    // 'heated_square_footage' (full-service offer), or 'heated_square' (legacy).
-                    // Live-DB audit (June 2026) confirmed 'minimum_heated_square' is populated
-                    // for agent auctions; the two fallbacks cover offer-listing and legacy rows.
-                    'square_feet'          => $infoGet('minimum_heated_square')
-                                                  ?? $infoGet('heated_square_footage')
-                                                  ?? $infoGet('heated_square'),
-                    'year_built'           => $infoGet('year_built'),
-                    'pool'                 => $infoGet('pool_needed'),
-                    'pool_type'            => $this->decodeJsonField($infoGet('pool_type')),
-                    'carport'              => $this->resolveOtherValue(
-                                                 $infoGet('carport_needed'),
-                                                 $infoGet,
-                                                 'other_carport_needed'
-                                             ),
-                    'garage'               => $this->resolveOtherValue(
-                                                 $infoGet('garage_needed'),
-                                                 $infoGet,
-                                                 'other_garage',
-                                                 'other_garage_needed'
-                                             ),
-                    'garage_spaces'        => $infoGet('garage_parking_spaces'),
-                    // water_view: the offer-listing wizard (and MLS import) saves specific water
-                    // body type selections under the 'water_view' meta key.  Older listings
-                    // and manual scenic-preference entries live under 'view_preference'.
-                    // Read 'water_view' first (present on all Livewire/MLS-created records);
-                    // fall back to 'view_preference' for legacy rows where 'water_view' is absent.
-                    'water_view'           => $this->decodeJsonField($infoGet('water_view'))
-                                                 ?: $this->decodeJsonField($infoGet('view_preference')),
-                    // ── Lot / Land ────────────────────────────────────────────────
-                    // lot_size is retained as a backward-compatible alias that reads
-                    // total_acreage with a min_acreage fallback for older rows.
-                    'lot_size'             => $infoGet('total_acreage') ?? $infoGet('min_acreage'),
-                    'total_acreage'        => $infoGet('total_acreage'),
-                    'lot_dimensions'       => $infoGet('lot_dimensions'),
-                    'zoning'               => $infoGet('zoning'),
-                    // ── Waterfront / Water ────────────────────────────────────────
-                    'waterfront'           => $infoGet('waterfront'),
-                    // water_access is stored as a JSON-encoded multiselect.
-                    'water_access'         => $this->decodeJsonField($infoGet('water_access')),
-                    // ── Interior ─────────────────────────────────────────────────
-                    'interior_features'    => $this->decodeJsonField($infoGet('interior_features')),
-                    'appliances'           => $this->decodeJsonField($infoGet('appliances')),
-                    // ── Structural ───────────────────────────────────────────────
-                    'roof_type'            => $this->decodeJsonField($infoGet('roof_type')),
-                    'exterior_construction' => $this->decodeJsonField($infoGet('exterior_construction')),
-                    'foundation'           => $this->decodeJsonField($infoGet('foundation')),
-                    'heating_and_fuel'     => $this->decodeJsonField($infoGet('heating_and_fuel')),
-                    // heating_fuel: alternate output key for the same meta; retained for
-                    // commercial/income context where 'heating_fuel' is the contract name.
-                    'heating_fuel'         => $this->decodeJsonField($infoGet('heating_and_fuel')),
-                    'air_conditioning'     => $this->decodeJsonField($infoGet('air_conditioning')),
-                    // ── Utilities ────────────────────────────────────────────────
-                    'water'                => $this->decodeJsonField($infoGet('water')),
-                    // water_source: alternate output key for the same meta; used in
-                    // commercial and income-property context.
-                    'water_source'         => $this->decodeJsonField($infoGet('water')),
-                    'sewer'                => $this->decodeJsonField($infoGet('sewer')),
-                    'utilities'            => $this->decodeJsonField($infoGet('utilities')),
-                    // ── Transaction / Occupancy ───────────────────────────────────
-                    'sale_provision'       => $this->decodeJsonField($infoGet('sale_provision')),
-                    'offered_financing'    => $this->decodeJsonField($infoGet('offered_financing')),
-                    'occupant_status'      => $infoGet('occupant_status'),
-                    // furnished: seller stores furnishing state inside building_features JSON
-                    // array (e.g. "Furnished", "Turnkey"). Extract only furnished-related values.
-                    'furnished'            => (static function (callable $ig): ?string {
-                        $raw = $ig('building_features');
-                        if (!$raw) {
-                            return null;
-                        }
-                        $arr = is_string($raw) ? (json_decode($raw, true) ?? []) : (array) $raw;
-                        $f   = array_filter($arr, fn ($v) => preg_match('/furnish|turnkey|negotiable|partial/i', (string) $v));
-                        return implode(', ', $f) ?: null;
-                    })($infoGet),
-                    // ── HOA ───────────────────────────────────────────────────────
-                    'hoa_association'      => $infoGet('has_hoa'),
-                    'hoa_fee'              => $infoGet('association_fee_amount'),
-                    'hoa_payment_schedule' => $infoGet('association_fee_frequency'),
-                    'association_name'     => $infoGet('association_name'),
-                    // hoa_name: alternate output key for association_name; used in
-                    // commercial and income-property context.
-                    'hoa_name'             => $infoGet('association_name'),
-                    'association_fee_includes' => $this->decodeJsonField($infoGet('association_fee_includes')),
-                    // ── CDD / Special Assessments ─────────────────────────────────
-                    'has_cdd'              => $infoGet('has_cdd'),
-                    'annual_cdd_fee'       => $infoGet('annual_cdd_fee'),
-                    'has_special_assessments' => $infoGet('has_special_assessments'),
-                    'additional_parcels'             => $infoGet('additional_parcels'),
-                    'total_parcel_count'             => $infoGet('total_parcel_count'),
-                    'special_assessment_amount' => $infoGet('special_assessment_amount'),
-                    'special_assessment_description' => $infoGet('special_assessment_description'),
-                    // ── Pets / Restrictions ───────────────────────────────────────
-                    'pets_allowed'         => $infoGet('pets'),
-                    'number_of_pets_allowed' => $infoGet('number_of_pets'),
-                    'max_pet_weight'       => $infoGet('weight_of_pets'),
-                    'pet_restrictions'     => $infoGet('pet_restrictions'),
-                    'rental_restrictions'  => $infoGet('leasing_restrictions'),
-                    // ── Flood Zone ────────────────────────────────────────────────
-                    // flood_zone_code may be "Other" when the user selected a non-standard
-                    // zone code; resolve to the free-text sibling 'flood_zone_code_other'
-                    // so the AI never returns the bare placeholder string "Other".
-                    'flood_zone_code'      => $this->resolveOtherValue(
-                                                 $infoGet('flood_zone_code'),
-                                                 $infoGet,
-                                                 'flood_zone_code_other'
-                                             ),
-                    'flood_zone_panel'     => $infoGet('flood_zone_panel'),
-                    'flood_zone_date'      => $infoGet('flood_zone_date'),
-                    'flood_insurance_required' => $infoGet('flood_insurance_required'),
-                    // disclosure_flags is a governance contract marker for the prompt layer.
-                    // flood_zone => true does NOT mean the property is in a flood zone — the
-                    // flood_zone_code scalar carries that data. This flag tells the AI that
-                    // flood-zone data is present in this context and must be handled with
-                    // the flood-zone disclosure template. Always set for seller listings.
-                    'disclosure_flags'     => ['flood_zone' => true],
-                    // ── Tax / Legal ───────────────────────────────────────────────
-                    'parcel_id'            => $infoGet('parcel_id'),
-                    'tax_year'             => $infoGet('tax_year'),
-                    'legal_description'    => $infoGet('legal_description'),
-                    'closing_date'         => $infoGet('target_closing_date'),
-                    'auction_length'       => $nativeGet('auction_length'),
-                    'sold'                 => $nativeGet('is_sold'),
-                    'annual_property_taxes' => $infoGet('annual_property_taxes'),
-                    'service_type'         => $infoGet('service_type'),
-                    // ── Commercial / Structural fields ────────────────────────────
-                    // Exposed for Ask AI so users can query commercial property specifics
-                    // (building size, NOI, cap rate, etc.) without an OpenAI call.
-                    // building_features: surfaces for ALL seller property types so
-                    // commercial-sale and income/multifamily listings can answer questions
-                    // about building amenities via Guard B without an OpenAI call.
-                    'building_features'    => $this->decodeJsonField($infoGet('building_features')),
-                    'building_sqft'        => $infoGet('total_square_feet'),
-                    'ceiling_height'       => $infoGet('ceiling_height'),
-                    // parking_spaces: commercial listing form uses garage_parking_spaces
-                    // for the "Parking Spaces" count field (see MlsFieldMap::seller()).
-                    // garage_spaces is the legacy key; parking_spaces the commercial-friendly alias.
-                    'parking_spaces'       => $infoGet('garage_parking_spaces'),
-                    'annual_noi'           => $infoGet('minimum_annual_net_income'),
-                    'price_per_sqft'       => $infoGet('price_per_sqft'),
-                    'existing_lease_type'  => $infoGet('existing_lease_type'),
-                    'lease_expiration'     => $infoGet('lease_expiration'),
-                    'lease_assignable'     => $infoGet('lease_assignable'),
-                    // ── Income / Multifamily fields ───────────────────────────────
-                    'property_items'            => $this->decodeJsonField($infoGet('property_items')),
-                    'total_units'               => $infoGet('unit_number'),
-                    'total_buildings'           => $infoGet('unit_buildings'),
-                    'unit_mix_summary'          => $this->summarizeUnitConfigurations($infoGet('unit_type_configurations')),
-                    'gross_annual_income'       => $infoGet('gross_annual_income'),
-                    'annual_operating_expenses' => $infoGet('annual_operating_expenses'),
-                    // minimum_annual_net_income / minimum_cap_rate: output key names match
-                    // the EAV meta key names saved by the seller offer form.
-                    // annual_net_income / cap_rate are routing aliases used by Guard B
-                    // (LISTING_KEY_KEYWORD_MAP keys listing.annual_net_income and listing.cap_rate
-                    //  resolve ctx['listing']['annual_net_income'] and ctx['listing']['cap_rate']).
-                    'minimum_annual_net_income' => $infoGet('minimum_annual_net_income'),
-                    'minimum_cap_rate'          => $infoGet('minimum_cap_rate'),
-                    'annual_net_income'         => $infoGet('minimum_annual_net_income'),
-                    'cap_rate'                  => $infoGet('minimum_cap_rate'),
-                    'rent_roll_available'       => $infoGet('rent_roll_available'),
-                    'operating_statement_available' => $infoGet('operating_statement_available'),
-                    'occupancy_requirement'     => $this->resolveOtherValue(
-                                                      $infoGet('assumable_occupancy_requirement'),
-                                                      $infoGet,
-                                                      'assumable_occupancy_other'
-                                                  ),
-                    'income_requirement'        => $infoGet('monthly_income'),
-                    // seller_contribution_credit_offered: Yes/No field saved via saveMeta() in all
-                    // seller Livewire components (SellerAgentAuction, SellerOfferListing, and their
-                    // Edit variants). EAV key confirmed by code audit — maps to output key
-                    // 'seller_credit_offered' for LISTING_KEY_KEYWORD_MAP routing.
-                    'seller_credit_offered'     => $infoGet('seller_contribution_credit_offered'),
-                    // seller_contribution_amount_details: free-text companion to the Yes/No credit
-                    // field — the seller enters the credit dollar amount or description here. Paired
-                    // with seller_credit_offered to allow synthesis of a complete credit sentence
-                    // (e.g. "The seller is offering a $5,000 closing cost credit."). EAV key
-                    // confirmed in SellerAgentAuction, SellerAgentAuctionEdit, SellerOfferListing,
-                    // and SellerOfferListingEdit. Maps to output key 'seller_credit_amount'.
-                    'seller_credit_amount'      => $infoGet('seller_contribution_amount_details'),
-                ],
-                // ── Vacant Land-specific fields ─────────────────────────────────────
-                // Only populated when property_type === 'Vacant Land'. All array-valued
-                // meta keys are decoded from JSON and returned as comma-separated strings
-                // via decodeJsonField() for prompt-friendly consumption.
-                ($infoGet('property_type') === 'Vacant Land') ? [
-                    'current_adjacent_use' => $this->decodeJsonField($infoGet('current_adjacent_use')),
-                    'water_available'      => $infoGet('water_available'),
-                    'sewer_available'      => $infoGet('sewer_available'),
-                    'electric_available'   => $infoGet('electric_available'),
-                    'gas_available'        => $infoGet('gas_available'),
-                    'telecom_available'    => $infoGet('telecom_available'),
-                    'road_surface_type'    => $this->decodeJsonField($infoGet('road_surface_type')),
-                    'front_footage'        => $infoGet('front_footage'),
-                    'number_of_wells'      => $infoGet('number_of_wells'),
-                    'number_of_septics'    => $infoGet('number_of_septics'),
-                    'fences'               => $this->decodeJsonField($infoGet('fences')),
-                    'vegetation'           => $this->decodeJsonField($infoGet('vegetation')),
-                    'buildable'            => $infoGet('buildable'),
-                    'easements'            => $this->decodeJsonField($infoGet('easements')),
-                ] : [],
-                // ── Business Opportunity fields ──────────────────────────────────────
-                // Only surfaced when property_type === 'Business'. All stored via
-                // saveMeta() in seller_agent_auction_metas.
-                ($infoGet('property_type') === 'Business') ? [
-                    'business_type'                   => $this->resolveOtherValue(
-                                                             $infoGet('business_type'),
-                                                             $infoGet,
-                                                             'other_business_type'
-                                                         ),
-                    'business_name'                   => $infoGet('business_name'),
-                    'year_established'                => $infoGet('year_established'),
-                    'annual_revenue'                  => $infoGet('annual_revenue'),
-                    'gross_profit'                    => $infoGet('gross_profit'),
-                    'sde_ebitda'                      => $infoGet('sde_ebitda'),
-                    'inventory_value'                 => $infoGet('inventory_value'),
-                    'ffe_value'                       => $infoGet('ffe_value'),
-                    'reason_for_sale'                 => $this->resolveOtherValue(
-                                                             $infoGet('reason_for_sale'),
-                                                             $infoGet,
-                                                             'other_reason_for_sale'
-                                                         ),
-                    'employee_count'                  => $infoGet('employee_count'),
-                    'financial_statements_available'  => $infoGet('financial_statements_available'),
-                    'tax_returns_available'           => $infoGet('tax_returns_available'),
-                    'nda_required'                    => $infoGet('nda_required'),
-                    'business_location_leased'        => $infoGet('business_location_leased'),
-                    'business_lease_monthly_rent'     => $infoGet('business_lease_monthly_rent'),
-                    'business_lease_expiration'       => $infoGet('business_lease_expiration'),
-                    'business_lease_renewal_options'  => $infoGet('business_lease_renewal_options'),
-                    'business_lease_assignable'       => $infoGet('business_lease_assignable'),
-                    'business_lease_additional_terms' => $infoGet('business_lease_additional_terms'),
-                    'licenses'                        => $this->decodeJsonField($infoGet('licenses')),
-                    'sale_includes'                   => $this->decodeJsonField($infoGet('sale_includes')),
-                    // building_features: moved to the general seller commercial/structural
-                    // block (unconditional) so commercial-sale listings also get it.
-                    'electrical_service'              => $this->decodeJsonField($infoGet('electrical_service')),
-                    'business_assets'                 => $this->decodeJsonField($infoGet('business_assets')),
-                ] : [],
-                // ── Shared Vacant Land + Business fields ─────────────────────────────
-                // current_use and road_frontage apply to both Vacant Land and Business
-                // Opportunity listings. Kept in a single conditional block so each key
-                // appears exactly once in source (prevents PHP silent-override bugs and
-                // source-level duplicate detection failures).
-                (in_array($infoGet('property_type'), ['Vacant Land', 'Business'], true)) ? [
-                    'current_use'   => $this->decodeJsonField($infoGet('current_use')),
-                    'road_frontage' => $this->decodeJsonField($infoGet('road_frontage')),
-                ] : []
-            ),
+    /**
+     * Seller manual field overrides.
+     *
+     * Covers fields that require transformation logic not expressible as a source-map entry:
+     *   – decodeJsonField(): JSON-encoded multiselects (pool_type, water_view, appliances, etc.)
+     *   – resolveOtherValue(): bedrooms/bathrooms/carport/garage/flood_zone_code with "Other" fallback
+     *   – furnished: derived by filtering building_features JSON for furnished-related tokens
+     *   – disclosure_flags: governance constant (excluded from resolver — not an EAV source)
+     *   – unit_mix_summary: summarizeUnitConfigurations()
+     *   – Vacant Land, Business, shared VL+Business conditional blocks
+     *
+     * Indexed by the same context key names used in CANONICAL_SOURCE_MAP.
+     */
+    private function extractSellerManualFields(callable $infoGet, callable $nativeGet): array
+    {
+        return array_merge(
+            [
+                // ── native column: sold status ────────────────────────────────────
+                // 'sold' maps to the native boolean column 'is_sold' whose name differs
+                // from the context key. Listed explicitly here so the source reference
+                // for 'is_sold' is visible to static analysis (§28B phantom-source guard).
+                'sold'                 => $nativeGet('is_sold'),
 
-            // -----------------------------------------------------------------
-            // Buyer — buyer_agent_auctions (native columns) + buyer_agent_auction_metas (EAV)
-            //
-            // All property-detail and buyer-criteria fields are stored in EAV via
-            // saveMeta(). Native-only fields: address, additional_details (description).
-            // All other factual fields use infoGet() to read from buyer_agent_auction_metas.
-            // -----------------------------------------------------------------
-            'buyer' => [
-                'address'                      => $nativeGet('address'),
-                'description'                  => $nativeGet('additional_details'),
-                'max_price'                    => $infoGet('maximum_budget'),
-                'bedrooms'                     => $this->resolveOtherValue(
-                                                     $infoGet('bedrooms'),
-                                                     $infoGet,
-                                                     'other_bedrooms'
-                                                 ),
-                'bathrooms'                    => $this->resolveOtherValue(
-                                                     $infoGet('bathrooms'),
-                                                     $infoGet,
-                                                     'other_bathrooms'
-                                                 ),
-                // square_feet: same cascade as seller — 'minimum_heated_square' (wizard),
-                // 'heated_square_footage' (offer form), 'heated_square' (legacy).
-                'square_feet'                  => $infoGet('minimum_heated_square')
-                                                      ?? $infoGet('heated_square_footage')
-                                                      ?? $infoGet('heated_square'),
-                'pool'                         => $infoGet('pool_needed'),
-                'carport'                      => $this->resolveOtherValue(
-                                                     $infoGet('carport_needed'),
-                                                     $infoGet,
-                                                     'other_carport_needed'
-                                                 ),
-                'garage'                       => $this->resolveOtherValue(
-                                                     $infoGet('garage_needed'),
-                                                     $infoGet,
-                                                     'other_garage',
-                                                     'other_garage_needed'
-                                                 ),
-                'garage_spaces'                => $infoGet('garage_parking_spaces'),
-                // view / water_view: the form stores scenic/water view selections as a
-                // JSON-encoded multiselect under the 'view_preference' meta key.
-                // Live-DB audit (June 2026) confirmed 'water_view' does not exist in
-                // buyer_agent_auction_metas — the actual key is 'view_preference'.
-                'water_view'                   => $this->decodeJsonField($infoGet('view_preference')),
-                'hoa_acceptable'               => $infoGet('hoa_acceptance'),
-                'max_hoa_fee'                  => $infoGet('hoa_max_monthly_fee'),
-                'pets_allowed'                 => $infoGet('pets'),
-                'pets_detail'                  => $infoGet('type_of_pets'),
-                'pets_breed'                   => $infoGet('breed_of_pets'),
-                'pets_weight'                  => $infoGet('weight_of_pets'),
-                'loan_pre_approved'            => $infoGet('pre_approved'),
-                // financing_type: the form saves buyer financing selections under 'financing_type'
-                // (JSON multiselect). Legacy/agent-wizard rows may use 'offered_financing'.
-                // Live-DB audit (June 2026) confirmed 'offered_financing' is always null for
-                // buyer agent auction listings — the correct key is 'financing_type'.
-                'financing_type'               => $this->decodeJsonField(
-                                                      $infoGet('financing_type') ?? $infoGet('offered_financing')
-                                                  ),
-                'inspection_period'            => $infoGet('inspection_period_days'),
-                'closing_date'                 => $infoGet('target_closing_date'),
-                'inspection_contingency_buyer' => $infoGet('inspection_contingency_buyer'),
-                'appraisal_contingency_buyer'  => $infoGet('appraisal_contingency_buyer'),
-                'financing_contingency_buyer'  => $infoGet('financing_contingency_buyer'),
-                // cities / counties: stored as JSON arrays via saveMeta('cities', json_encode($request->cities))
-                // in BuyerCriteriaAuctionController. TenantAgentAuctionController uses the same keys.
-                // decodeJsonField() converts '["Tampa","Orlando"]' → 'Tampa, Orlando'.
-                'cities'                       => $this->decodeJsonField($infoGet('cities')),
-                'counties'                     => $this->decodeJsonField($infoGet('counties')),
-            ],
-
-            // -----------------------------------------------------------------
-            // Landlord — landlord_auction_metas (EAV only via info())
-            // -----------------------------------------------------------------
-            'landlord' => [
-                // description: landlord listings save the free-text description under
-                // the 'additional_details' EAV meta key (not a native column).
-                // The public view (offer-listing/landlord/view.blade.php line 1033) renders
-                // $str('additional_details') — canonical source declared in CANONICAL_SOURCE_MAP.
-                'description'               => $infoGet('additional_details'),
-                // rent_amount: the form saves the asking rent under 'desired_rental_amount'.
-                // Live-DB audit (June 2026) confirmed 'maximum_budget' is empty for landlord
-                // listings — the field is a buyer/tenant budget concept, not a landlord rent.
-                // Cascade through the three rent keys the landlord form may populate.
-                'rent_amount'               => $infoGet('desired_rental_amount')
-                                                  ?? $infoGet('starting_rent')
-                                                  ?? $infoGet('lease_now_price'),
-                'bedrooms'                  => $this->resolveOtherValue(
-                                                  $infoGet('bedrooms'),
-                                                  $infoGet,
-                                                  'other_bedrooms'
-                                              ),
-                'bathrooms'                 => $this->resolveOtherValue(
-                                                  $infoGet('bathrooms'),
-                                                  $infoGet,
-                                                  'other_bathrooms'
-                                              ),
-                // square_feet: same cascade as seller/buyer — 'minimum_heated_square' (wizard),
-                // 'heated_square_footage' (offer form), 'heated_square' (legacy).
-                'square_feet'               => $infoGet('minimum_heated_square')
-                                                  ?? $infoGet('heated_square_footage')
-                                                  ?? $infoGet('heated_square'),
-                'unit_size'                 => $infoGet('unit_size'),
-                'number_of_units'           => $infoGet('number_of_unit'),
-                'property_zip'              => $infoGet('property_zip'),
-                'property_items'            => $this->decodeJsonField($infoGet('property_items')),
-                'condition_prop'            => $this->resolveOtherValue(
-                                                  $infoGet('condition_prop'),
-                                                  $infoGet,
-                                                  'other_property_condition'
-                                              ),
-                'appliances'                => $this->decodeJsonField($infoGet('appliances')),
-                // water_view / view: the offer-listing wizard (and MLS import) saves specific
-                // water-body-type selections under the 'water_view' meta key; older/legacy
-                // records and scenic preferences live under 'view_preference'.
-                // Read 'water_view' first with 'view_preference' as fallback for legacy rows.
-                'water_view'                => $this->decodeJsonField($infoGet('water_view'))
-                                                  ?: $this->decodeJsonField($infoGet('view_preference')),
-                'view'                      => $this->decodeJsonField($infoGet('water_view'))
-                                                  ?: $this->decodeJsonField($infoGet('view_preference')),
-                'available_date'            => $infoGet('available_date'),
-                // pet_policy: read 'pets' first to align with the UI view priority order.
-                // The public landlord view renders $str('pets') ?: $str('pet_policy'),
-                // so 'pets' is the primary display value. Live-DB audit (June 2026) confirmed
-                // 'pet_policy' is always empty on sampled records; 'pets' holds the Yes/No flag.
-                // Fall back to 'pet_policy' for future form paths that write to that key.
-                // CANONICAL_SOURCE_MAP updated to ['pets', 'pet_policy'].
-                'pet_policy'                => $infoGet('pets') ?: $infoGet('pet_policy'),
-                'pet_deposit_fee_rent'      => $infoGet('pet_deposit_fee_rent'),
-                'pet_max_weight_lbs'        => $infoGet('pet_max_weight_lbs'),
-                'pet_species_allowed'       => $this->decodeJsonField($infoGet('pet_species_allowed')),
-                'parking_terms'             => $infoGet('parking_terms'),
-                // utilities: offer-listing forms save scalar data under 'utilities' (the key
-                // rendered by the public view at offer-listing/landlord/view.blade.php line 1289)
-                // and JSON multiselect data under 'property_utilities'.  Agent-auction wizard
-                // rows save only 'property_utilities'.  Context reads 'utilities' first so it
-                // matches the UI-visible value on offer-listing rows; falls back to
-                // 'property_utilities' for agent-auction rows where 'utilities' is always empty.
-                // Note: uses ?: (not ??) because infoGet() returns '' for missing EAV rows, and
-                // '' is truthy for ?? but falsy for ?:, which is the intended "absent" behavior.
-                // CANONICAL_SOURCE_MAP mirrors this order: ['utilities','property_utilities'].
-                'utilities'                 => $infoGet('utilities')
-                                                  ?: $this->decodeJsonField($infoGet('property_utilities')),
-                'smoking_policy'            => $infoGet('smoking_policy'),
-                'subletting_policy'         => $infoGet('subletting_policy'),
-                'has_hoa'                   => $infoGet('has_hoa'),
-                'association_name'          => $infoGet('association_name'),
-                'association_fee_amount'    => $infoGet('association_fee_amount'),
-                'association_fee_frequency' => $infoGet('association_fee_frequency'),
-                'association_amenities'     => $this->decodeJsonField($infoGet('association_amenities')),
-                'annual_property_taxes'     => $infoGet('annual_property_taxes'),
-                'leasing_restrictions'      => $infoGet('leasing_restrictions'),
-                // lease_length: 'min_lease_period' may be "Other"; resolve to the free-text
-                // sibling 'min_lease_period_other' in that case. Also check the alternate
-                // 'desired_lease_length' multiselect for cases where the primary is absent.
-                'lease_length'              => $this->resolveOtherValue(
-                                                  $infoGet('min_lease_period') ?? $infoGet('minimum_lease_period'),
-                                                  $infoGet,
-                                                  'min_lease_period_other'
-                                              ) ?? $this->decodeJsonField($infoGet('desired_lease_length')),
-                'renewal_option'            => $infoGet('renewal_option_offered'),
-                'number_of_occupants'       => $infoGet('number_occupant'),
-                'additional_lease_terms'    => $infoGet('additional_landlord_lease_terms'),
-                // lease_terms: alias for terms_of_lease — keeps context key in sync with
-                // listingFieldRegistry() which uses config_key 'lease_terms'.
-                'lease_terms'              => $this->decodeJsonField($infoGet('terms_of_lease')),
-                // ── Commercial lease terms ──────────────────────────────────────
-                'commercial_lease_type'              => $this->resolveOtherValue(
-                                                           $infoGet('commercial_lease_type'),
-                                                           $infoGet,
-                                                           'commercial_lease_type_other'
-                                                       ),
-                'cam_nnn_additional_rent_charges'    => $infoGet('cam_nnn_additional_rent_charges'),
-                'rent_escalation_terms'              => $infoGet('rent_escalation_terms'),
-                'tenant_improvement_buildout_terms'  => $infoGet('tenant_improvement_buildout_terms'),
-                'permitted_use_restrictions'         => $infoGet('permitted_use_restrictions'),
-                'signage_rights'                     => $infoGet('signage_rights'),
-                'commercial_parking_terms'           => $infoGet('commercial_parking_terms'),
-                'personal_guarantee_requirement'     => $infoGet('personal_guarantee_requirement'),
-                'commercial_approval_conditions'     => $infoGet('commercial_approval_conditions'),
-                // ── Tax / Legal / Parcel fields ─────────────────────────────────
-                // Note: annual_property_taxes already present above; omitted here.
-                'parcel_id'                => $infoGet('parcel_id'),
-                'tax_year'                 => $infoGet('tax_year'),
-                'legal_description'        => $infoGet('legal_description'),
-                'additional_parcels'       => $infoGet('additional_parcels'),
-                'total_parcel_count'       => $infoGet('total_parcel_count'),
-                'additional_parcel_ids'    => $infoGet('additional_parcel_ids'),
-                // ── Structural / water / residential property facts ──────────────
-                'year_built'               => $infoGet('year_built'),
-                'lot_dimensions'           => $infoGet('lot_dimensions'),
-                'zoning'                   => $infoGet('zoning'),
-                'waterfront'               => $infoGet('waterfront'),
-                'water_access'             => $this->decodeJsonField($infoGet('water_access')),
-                'interior_features'        => $this->decodeJsonField($infoGet('interior_features')),
-                'roof_type'                => $this->decodeJsonField($infoGet('roof_type')),
-                'exterior_construction'    => $this->decodeJsonField($infoGet('exterior_construction')),
-                'foundation'               => $this->decodeJsonField($infoGet('foundation')),
-                // flood_zone_code may be "Other" when the user selected a non-standard
-                // zone code; resolve to the free-text sibling 'flood_zone_code_other'
-                // so the AI never returns the bare placeholder string "Other".
-                'flood_zone_code'          => $this->resolveOtherValue(
-                                                 $infoGet('flood_zone_code'),
-                                                 $infoGet,
-                                                 'flood_zone_code_other'
-                                             ),
-                'flood_zone_panel'         => $infoGet('flood_zone_panel'),
-                'flood_zone_date'          => $infoGet('flood_zone_date'),
-                'flood_insurance_required' => $infoGet('flood_insurance_required'),
-                'security_deposit_amount'  => $infoGet('security_deposit_amount'),
-                'terms_of_lease'           => $this->decodeJsonField($infoGet('terms_of_lease')),
-                'tenant_pays'              => $this->decodeJsonField($infoGet('tenant_pays')),
-                'rent_includes'            => $this->decodeJsonField($infoGet('rent_includes')),
-                'heating_fuel'             => $this->decodeJsonField($infoGet('heating_fuel')),
-                'air_conditioning'         => $this->decodeJsonField($infoGet('air_conditioning')),
-                'water'                    => $this->decodeJsonField($infoGet('water')),
-                'sewer'                    => $this->decodeJsonField($infoGet('sewer')),
-                'lease_amount_frequency'   => $infoGet('lease_amount_frequency'),
-                'has_cdd'                  => $infoGet('has_cdd'),
-                'annual_cdd_fee'           => $infoGet('annual_cdd_fee'),
-                'sqft_heated_source'       => $infoGet('sqft_heated_source'),
-                // ── General lease terms (extended) ──────────────────────────────
-                'first_month_rent_required'          => $infoGet('first_month_rent_required'),
-                'last_month_rent_required'           => $infoGet('last_month_rent_required'),
-                'total_move_in_funds_required'       => $infoGet('total_move_in_funds_required'),
-                // ── Commercial building details ─────────────────────────────────
-                'total_buildings'                    => $infoGet('total_buildings'),
-                'total_units_on_property'            => $infoGet('total_units_on_property'),
-                'office_retail_sqft'                 => $infoGet('office_retail_sqft'),
-                'flex_space_sqft'                    => $infoGet('flex_space_sqft'),
-                'ceiling_height'                     => $infoGet('ceiling_height'),
-                'space_type'                         => $this->decodeJsonField($infoGet('space_type')),
-                'space_classification'               => $this->decodeJsonField($infoGet('space_classification')),
-                'space_features'                     => $infoGet('space_features'),
-                'number_of_restrooms'                => $infoGet('number_of_restrooms'),
-                'number_of_offices'                  => $infoGet('number_of_offices'),
-                'number_of_conference_rooms'         => $infoGet('number_of_conference_rooms'),
-                'electrical_service'                 => $this->decodeJsonField($infoGet('electrical_service')),
-                'building_features'                  => $this->decodeJsonField($infoGet('building_features')),
-                'road_surface_type'                  => $this->decodeJsonField($infoGet('road_surface_type')),
-                'number_electric_meters'             => $infoGet('number_electric_meters'),
-                'number_water_meters'                => $infoGet('number_water_meters'),
-                'number_gas_meters'                  => $infoGet('number_gas_meters'),
-                'building_hours'                     => $infoGet('building_hours'),
-                'access_24_7'                        => $infoGet('access_24_7'),
-                'zoning_allows'                      => $infoGet('zoning_allows'),
-                'neighboring_tenants'                => $infoGet('neighboring_tenants'),
-                'shared_amenities'                   => $infoGet('shared_amenities'),
-                // ── CDD and special assessments (extended) ─────────────────────
-                'has_special_assessments'            => $infoGet('has_special_assessments'),
-                'special_assessment_amount'          => $infoGet('special_assessment_amount'),
-                'special_assessment_description'     => $infoGet('special_assessment_description'),
-                // ── Additional landlord terms ───────────────────────────────────
-                'min_income_requirement'             => $infoGet('min_income_requirement'),
-                'll_maintenance_responsibility'      => $infoGet('ll_maintenance_responsibility'),
-                'renewal_option_details'             => $infoGet('renewal_option_details'),
-                'landlord_approval_conditions'       => $infoGet('landlord_approval_conditions'),
-                'pet_deposit_amount'                 => $infoGet('pet_deposit_amount'),
-                'pet_monthly_fee'                    => $infoGet('pet_monthly_fee'),
-                'number_of_occupants_allowed'        => $infoGet('number_of_occupants_allowed'),
-            ],
-
-            // -----------------------------------------------------------------
-            // Tenant — tenant_criteria_auction_metas (EAV via info())
-            // -----------------------------------------------------------------
-            'tenant' => [
-                // max_rent: the form saves the tenant's rent budget under 'budget'.
-                // Live-DB audit (June 2026) confirmed 'maximum_budget' is empty for tenant
-                // agent auction listings — 'budget' holds the actual value.
-                'max_rent'             => $infoGet('budget') ?? $infoGet('maximum_budget'),
+                // ── resolveOtherValue: bedrooms / bathrooms ────────────────────────
+                // Native bedroom_id / bathroom_id FK columns serve as fallback when
+                // the EAV key is absent (legacy agent-auction wizard rows).
                 'bedrooms'             => $this->resolveOtherValue(
-                                             $infoGet('bedrooms'),
+                                             $infoGet('bedrooms') ?? $nativeGet('bedroom_id'),
                                              $infoGet,
                                              'other_bedrooms'
                                          ),
                 'bathrooms'            => $this->resolveOtherValue(
-                                             $infoGet('bathrooms'),
+                                             $infoGet('bathrooms') ?? $nativeGet('bathroom_id'),
                                              $infoGet,
                                              'other_bathrooms'
                                          ),
-                // desired_lease_length: stored under 'desired_lease_length' (JSON multiselect)
-                // or 'lease_for' depending on the form path. Live-DB audit confirmed
-                // 'tenant_desired_lease_length' is always empty — wrong key.
-                'desired_lease_length' => $this->decodeJsonField($infoGet('desired_lease_length'))
-                                              ?? $this->decodeJsonField($infoGet('lease_for')),
-                'property_items'       => $this->decodeJsonField($infoGet('property_items')),
-                'appliances'           => $this->decodeJsonField($infoGet('appliances')),
-                'condition_prop'       => $this->resolveOtherValue(
-                                             $infoGet('condition_prop'),
+
+                // ── resolveOtherValue: parking ────────────────────────────────────
+                'carport'              => $this->resolveOtherValue(
+                                             $infoGet('carport_needed'),
                                              $infoGet,
-                                             'other_property_condition'
+                                             'other_carport_needed'
                                          ),
-                'pet_information'      => $infoGet('pet_information'),
-                'parking_needed'       => $infoGet('parking_needed'),
-                'utilities'            => $infoGet('utilities'),
-                'utility_preference'   => $infoGet('utility_preference'),
-                'tenant_pays'          => $this->decodeJsonField($infoGet('tenant_pays')),
-                'current_status'       => $infoGet('current_status'),
-                'number_of_occupants'  => $infoGet('number_of_occupants'),
-                'number_of_units'      => $infoGet('number_of_unit'),
-                // credit_score_range: stored under 'credit_score' meta key for tenant agent
-                // auctions, or 'credit_score_range' for offer-flow tenant listings.
-                'credit_score_range'   => $infoGet('credit_score_range') ?? $infoGet('credit_score'),
-                // monthly_income: tenant household income, stored under 'monthly_income' or
-                // 'household_monthly_income' in tenant_criteria_auction_metas.
-                'monthly_income'       => $infoGet('monthly_income') ?? $infoGet('household_monthly_income'),
+                'garage'               => $this->resolveOtherValue(
+                                             $infoGet('garage_needed'),
+                                             $infoGet,
+                                             'other_garage',
+                                             'other_garage_needed'
+                                         ),
+
+                // ── decodeJsonField: pool ─────────────────────────────────────────
+                'pool_type'            => $this->decodeJsonField($infoGet('pool_type')),
+
+                // ── decodeJsonField + cascade: water view ─────────────────────────
+                // water_view: the offer-listing wizard (and MLS import) saves specific water
+                // body type selections under the 'water_view' meta key.  Older listings
+                // and manual scenic-preference entries live under 'view_preference'.
+                // Read 'water_view' first (present on all Livewire/MLS-created records);
+                // fall back to 'view_preference' for legacy rows where 'water_view' is absent.
+                'water_view'           => $this->decodeJsonField($infoGet('water_view'))
+                                             ?: $this->decodeJsonField($infoGet('view_preference')),
+
+                // ── decodeJsonField: waterfront ───────────────────────────────────
+                'water_access'         => $this->decodeJsonField($infoGet('water_access')),
+
+                // ── decodeJsonField: interior ─────────────────────────────────────
+                'interior_features'    => $this->decodeJsonField($infoGet('interior_features')),
+                'appliances'           => $this->decodeJsonField($infoGet('appliances')),
+
+                // ── decodeJsonField: structural ───────────────────────────────────
+                'roof_type'            => $this->decodeJsonField($infoGet('roof_type')),
+                'exterior_construction' => $this->decodeJsonField($infoGet('exterior_construction')),
+                'foundation'           => $this->decodeJsonField($infoGet('foundation')),
+                'heating_and_fuel'     => $this->decodeJsonField($infoGet('heating_and_fuel')),
+                // heating_fuel: alternate output key for the same meta; retained for
+                // commercial/income context where 'heating_fuel' is the contract name.
+                'heating_fuel'         => $this->decodeJsonField($infoGet('heating_and_fuel')),
+                'air_conditioning'     => $this->decodeJsonField($infoGet('air_conditioning')),
+
+                // ── decodeJsonField: utilities ────────────────────────────────────
+                'water'                => $this->decodeJsonField($infoGet('water')),
+                // water_source: alternate output key for the same meta; used in
+                // commercial and income-property context.
+                'water_source'         => $this->decodeJsonField($infoGet('water')),
+                'sewer'                => $this->decodeJsonField($infoGet('sewer')),
+                'utilities'            => $this->decodeJsonField($infoGet('utilities')),
+
+                // ── decodeJsonField: transaction ──────────────────────────────────
+                'sale_provision'       => $this->decodeJsonField($infoGet('sale_provision')),
+                'offered_financing'    => $this->decodeJsonField($infoGet('offered_financing')),
+
+                // ── derived: furnished ────────────────────────────────────────────
+                // Excluded from resolver: requires filtering the building_features JSON
+                // array to extract furnished-related tokens — not a simple source lookup.
+                // Seller stores furnishing state inside building_features (e.g. "Furnished",
+                // "Turnkey"). Only furnished-related values are surfaced to the AI.
+                'furnished'            => (static function (callable $ig): ?string {
+                    $raw = $ig('building_features');
+                    if (!$raw) {
+                        return null;
+                    }
+                    $arr = is_string($raw) ? (json_decode($raw, true) ?? []) : (array) $raw;
+                    $f   = array_filter($arr, fn ($v) => preg_match('/furnish|turnkey|negotiable|partial/i', (string) $v));
+                    return implode(', ', $f) ?: null;
+                })($infoGet),
+
+                // ── decodeJsonField: HOA ──────────────────────────────────────────
+                'association_fee_includes' => $this->decodeJsonField($infoGet('association_fee_includes')),
+
+                // ── resolveOtherValue: flood zone ─────────────────────────────────
+                // flood_zone_code may be "Other" when the user selected a non-standard
+                // zone code; resolve to the free-text sibling 'flood_zone_code_other'
+                // so the AI never returns the bare placeholder string "Other".
+                'flood_zone_code'      => $this->resolveOtherValue(
+                                             $infoGet('flood_zone_code'),
+                                             $infoGet,
+                                             'flood_zone_code_other'
+                                         ),
+
+                // ── governance constant: disclosure_flags ─────────────────────────
+                // Excluded from resolver: constant, not an EAV source lookup.
+                // flood_zone => true does NOT mean the property is in a flood zone — the
+                // flood_zone_code scalar carries that data. This flag tells the AI that
+                // flood-zone data is present in this context and must be handled with
+                // the flood-zone disclosure template. Always set for seller listings.
+                'disclosure_flags'     => ['flood_zone' => true],
+
+                // ── decodeJsonField: building ─────────────────────────────────────
+                // building_features: surfaces for ALL seller property types so
+                // commercial-sale and income/multifamily listings can answer questions
+                // about building amenities via Guard B without an OpenAI call.
+                'building_features'    => $this->decodeJsonField($infoGet('building_features')),
+
+                // ── decodeJsonField / summarize: income/multifamily ───────────────
+                'property_items'       => $this->decodeJsonField($infoGet('property_items')),
+                // unit_mix_summary: excluded from resolver — requires summarizeUnitConfigurations()
+                // to convert unit_type_configurations JSON into a readable summary string.
+                'unit_mix_summary'     => $this->summarizeUnitConfigurations($infoGet('unit_type_configurations')),
+
+                // ── resolveOtherValue: occupancy ──────────────────────────────────
+                'occupancy_requirement' => $this->resolveOtherValue(
+                                               $infoGet('assumable_occupancy_requirement'),
+                                               $infoGet,
+                                               'assumable_occupancy_other'
+                                           ),
             ],
 
-            default => [],
-        };
+            // ── Vacant Land-specific fields ──────────────────────────────────────
+            // Only populated when property_type === 'Vacant Land'. All array-valued
+            // meta keys are decoded from JSON and returned as comma-separated strings
+            // via decodeJsonField() for prompt-friendly consumption.
+            ($infoGet('property_type') === 'Vacant Land') ? [
+                'current_adjacent_use' => $this->decodeJsonField($infoGet('current_adjacent_use')),
+                'water_available'      => $infoGet('water_available'),
+                'sewer_available'      => $infoGet('sewer_available'),
+                'electric_available'   => $infoGet('electric_available'),
+                'gas_available'        => $infoGet('gas_available'),
+                'telecom_available'    => $infoGet('telecom_available'),
+                'road_surface_type'    => $this->decodeJsonField($infoGet('road_surface_type')),
+                'front_footage'        => $infoGet('front_footage'),
+                'number_of_wells'      => $infoGet('number_of_wells'),
+                'number_of_septics'    => $infoGet('number_of_septics'),
+                'fences'               => $this->decodeJsonField($infoGet('fences')),
+                'vegetation'           => $this->decodeJsonField($infoGet('vegetation')),
+                'buildable'            => $infoGet('buildable'),
+                'easements'            => $this->decodeJsonField($infoGet('easements')),
+            ] : [],
+
+            // ── Business Opportunity fields ───────────────────────────────────────
+            // Only surfaced when property_type === 'Business'. All stored via
+            // saveMeta() in seller_agent_auction_metas.
+            ($infoGet('property_type') === 'Business') ? [
+                'business_type'                   => $this->resolveOtherValue(
+                                                         $infoGet('business_type'),
+                                                         $infoGet,
+                                                         'other_business_type'
+                                                     ),
+                'business_name'                   => $infoGet('business_name'),
+                'year_established'                => $infoGet('year_established'),
+                'annual_revenue'                  => $infoGet('annual_revenue'),
+                'gross_profit'                    => $infoGet('gross_profit'),
+                'sde_ebitda'                      => $infoGet('sde_ebitda'),
+                'inventory_value'                 => $infoGet('inventory_value'),
+                'ffe_value'                       => $infoGet('ffe_value'),
+                'reason_for_sale'                 => $this->resolveOtherValue(
+                                                         $infoGet('reason_for_sale'),
+                                                         $infoGet,
+                                                         'other_reason_for_sale'
+                                                     ),
+                'employee_count'                  => $infoGet('employee_count'),
+                'financial_statements_available'  => $infoGet('financial_statements_available'),
+                'tax_returns_available'           => $infoGet('tax_returns_available'),
+                'nda_required'                    => $infoGet('nda_required'),
+                'business_location_leased'        => $infoGet('business_location_leased'),
+                'business_lease_monthly_rent'     => $infoGet('business_lease_monthly_rent'),
+                'business_lease_expiration'       => $infoGet('business_lease_expiration'),
+                'business_lease_renewal_options'  => $infoGet('business_lease_renewal_options'),
+                'business_lease_assignable'       => $infoGet('business_lease_assignable'),
+                'business_lease_additional_terms' => $infoGet('business_lease_additional_terms'),
+                'licenses'                        => $this->decodeJsonField($infoGet('licenses')),
+                'sale_includes'                   => $this->decodeJsonField($infoGet('sale_includes')),
+                // building_features: moved to the general seller commercial/structural
+                // block (unconditional) so commercial-sale listings also get it.
+                'electrical_service'              => $this->decodeJsonField($infoGet('electrical_service')),
+                'business_assets'                 => $this->decodeJsonField($infoGet('business_assets')),
+            ] : [],
+
+            // ── Shared Vacant Land + Business fields ──────────────────────────────
+            // current_use and road_frontage apply to both Vacant Land and Business
+            // Opportunity listings. Kept in a single conditional block so each key
+            // appears exactly once in source (prevents PHP silent-override bugs and
+            // source-level duplicate detection failures).
+            (in_array($infoGet('property_type'), ['Vacant Land', 'Business'], true)) ? [
+                'current_use'   => $this->decodeJsonField($infoGet('current_use')),
+                'road_frontage' => $this->decodeJsonField($infoGet('road_frontage')),
+            ] : []
+        );
+    }
+
+    /**
+     * Buyer manual field overrides.
+     *
+     * Covers fields that require transformation logic not expressible as a source-map entry:
+     *   – decodeJsonField(): water_view, financing_type (cascade), cities, counties
+     *   – resolveOtherValue(): bedrooms, bathrooms, carport, garage with "Other" fallback
+     */
+    private function extractBuyerManualFields(callable $infoGet, callable $nativeGet): array
+    {
+        return [
+            // ── resolveOtherValue: bedrooms / bathrooms ────────────────────────
+            'bedrooms'       => $this->resolveOtherValue(
+                                    $infoGet('bedrooms'),
+                                    $infoGet,
+                                    'other_bedrooms'
+                                ),
+            'bathrooms'      => $this->resolveOtherValue(
+                                    $infoGet('bathrooms'),
+                                    $infoGet,
+                                    'other_bathrooms'
+                                ),
+
+            // ── resolveOtherValue: parking ────────────────────────────────────
+            'carport'        => $this->resolveOtherValue(
+                                    $infoGet('carport_needed'),
+                                    $infoGet,
+                                    'other_carport_needed'
+                                ),
+            'garage'         => $this->resolveOtherValue(
+                                    $infoGet('garage_needed'),
+                                    $infoGet,
+                                    'other_garage',
+                                    'other_garage_needed'
+                                ),
+
+            // ── decodeJsonField: water view ───────────────────────────────────
+            // view / water_view: the form stores scenic/water view selections as a
+            // JSON-encoded multiselect under the 'view_preference' meta key.
+            // Live-DB audit (June 2026) confirmed 'water_view' does not exist in
+            // buyer_agent_auction_metas — the actual key is 'view_preference'.
+            'water_view'     => $this->decodeJsonField($infoGet('view_preference')),
+
+            // ── decodeJsonField + cascade: financing type ─────────────────────
+            // financing_type: the form saves buyer financing selections under 'financing_type'
+            // (JSON multiselect). Legacy/agent-wizard rows may use 'offered_financing'.
+            // Live-DB audit (June 2026) confirmed 'offered_financing' is always null for
+            // buyer agent auction listings — the correct key is 'financing_type'.
+            'financing_type' => $this->decodeJsonField(
+                                    $infoGet('financing_type') ?? $infoGet('offered_financing')
+                                ),
+
+            // ── decodeJsonField: location multiselects ────────────────────────
+            // cities / counties: stored as JSON arrays via saveMeta('cities', json_encode($request->cities))
+            // in BuyerCriteriaAuctionController. TenantAgentAuctionController uses the same keys.
+            // decodeJsonField() converts '["Tampa","Orlando"]' → 'Tampa, Orlando'.
+            'cities'         => $this->decodeJsonField($infoGet('cities')),
+            'counties'       => $this->decodeJsonField($infoGet('counties')),
+        ];
+    }
+
+    /**
+     * Landlord manual field overrides.
+     *
+     * Covers fields that require transformation logic not expressible as a source-map entry:
+     *   – decodeJsonField(): property_items, appliances, building_features, water_view/view,
+     *     pet_species_allowed, association_amenities, lease_terms, terms_of_lease, tenant_pays,
+     *     rent_includes, heating_fuel, air_conditioning, water, sewer, space_type,
+     *     space_classification, electrical_service, road_surface_type, water_access,
+     *     interior_features, roof_type, exterior_construction, foundation
+     *   – resolveOtherValue(): bedrooms, bathrooms, condition_prop, flood_zone_code,
+     *     commercial_lease_type, lease_length (complex: resolveOtherValue + decodeJsonField cascade)
+     *   – utilities: mixed cascade (raw infoGet ?: decodeJsonField on alternate key)
+     */
+    private function extractLandlordManualFields(callable $infoGet): array
+    {
+        return [
+            // ── resolveOtherValue: bedrooms / bathrooms ────────────────────────
+            'bedrooms'                  => $this->resolveOtherValue(
+                                              $infoGet('bedrooms'),
+                                              $infoGet,
+                                              'other_bedrooms'
+                                          ),
+            'bathrooms'                 => $this->resolveOtherValue(
+                                              $infoGet('bathrooms'),
+                                              $infoGet,
+                                              'other_bathrooms'
+                                          ),
+
+            // ── decodeJsonField: property condition ───────────────────────────
+            'property_items'            => $this->decodeJsonField($infoGet('property_items')),
+            'condition_prop'            => $this->resolveOtherValue(
+                                              $infoGet('condition_prop'),
+                                              $infoGet,
+                                              'other_property_condition'
+                                              ),
+
+            // ── decodeJsonField: interior / structural ────────────────────────
+            'appliances'                => $this->decodeJsonField($infoGet('appliances')),
+            // water_view / view: the offer-listing wizard (and MLS import) saves specific
+            // water-body-type selections under the 'water_view' meta key; older/legacy
+            // records and scenic preferences live under 'view_preference'.
+            // Read 'water_view' first with 'view_preference' as fallback for legacy rows.
+            'water_view'                => $this->decodeJsonField($infoGet('water_view'))
+                                              ?: $this->decodeJsonField($infoGet('view_preference')),
+            'view'                      => $this->decodeJsonField($infoGet('water_view'))
+                                              ?: $this->decodeJsonField($infoGet('view_preference')),
+
+            // ── decodeJsonField: pets ─────────────────────────────────────────
+            'pet_species_allowed'       => $this->decodeJsonField($infoGet('pet_species_allowed')),
+
+            // ── mixed cascade: utilities ──────────────────────────────────────
+            // utilities: offer-listing forms save scalar data under 'utilities' (the key
+            // rendered by the public view at offer-listing/landlord/view.blade.php line 1289)
+            // and JSON multiselect data under 'property_utilities'.  Agent-auction wizard
+            // rows save only 'property_utilities'.  Context reads 'utilities' first so it
+            // matches the UI-visible value on offer-listing rows; falls back to
+            // 'property_utilities' for agent-auction rows where 'utilities' is always empty.
+            // Note: uses ?: (not ??) because infoGet() returns '' for missing EAV rows, and
+            // '' is truthy for ?? but falsy for ?:, which is the intended "absent" behavior.
+            // CANONICAL_SOURCE_MAP mirrors this order: ['utilities','property_utilities'].
+            // Excluded from resolver: second cascade key requires decodeJsonField() — not a
+            // simple source lookup.
+            'utilities'                 => $infoGet('utilities')
+                                              ?: $this->decodeJsonField($infoGet('property_utilities')),
+
+            // ── decodeJsonField: HOA ──────────────────────────────────────────
+            'association_amenities'     => $this->decodeJsonField($infoGet('association_amenities')),
+
+            // ── complex: lease_length ─────────────────────────────────────────
+            // lease_length: 'min_lease_period' may be "Other"; resolve to the free-text
+            // sibling 'min_lease_period_other' in that case. Also check the alternate
+            // 'desired_lease_length' multiselect for cases where the primary is absent.
+            // Excluded from resolver: requires resolveOtherValue() on the primary value
+            // AND decodeJsonField() on the JSON-array fallback.
+            'lease_length'              => $this->resolveOtherValue(
+                                              $infoGet('min_lease_period') ?? $infoGet('minimum_lease_period'),
+                                              $infoGet,
+                                              'min_lease_period_other'
+                                          ) ?? $this->decodeJsonField($infoGet('desired_lease_length')),
+
+            // ── decodeJsonField: lease terms ──────────────────────────────────
+            // lease_terms: alias for terms_of_lease — keeps context key in sync with
+            // listingFieldRegistry() which uses config_key 'lease_terms'.
+            'lease_terms'               => $this->decodeJsonField($infoGet('terms_of_lease')),
+
+            // ── resolveOtherValue: commercial lease type ──────────────────────
+            'commercial_lease_type'     => $this->resolveOtherValue(
+                                               $infoGet('commercial_lease_type'),
+                                               $infoGet,
+                                               'commercial_lease_type_other'
+                                           ),
+
+            // ── decodeJsonField: structural / waterfront ──────────────────────
+            'water_access'              => $this->decodeJsonField($infoGet('water_access')),
+            'interior_features'         => $this->decodeJsonField($infoGet('interior_features')),
+            'roof_type'                 => $this->decodeJsonField($infoGet('roof_type')),
+            'exterior_construction'     => $this->decodeJsonField($infoGet('exterior_construction')),
+            'foundation'                => $this->decodeJsonField($infoGet('foundation')),
+
+            // ── resolveOtherValue: flood zone ─────────────────────────────────
+            // flood_zone_code may be "Other" when the user selected a non-standard
+            // zone code; resolve to the free-text sibling 'flood_zone_code_other'
+            // so the AI never returns the bare placeholder string "Other".
+            'flood_zone_code'           => $this->resolveOtherValue(
+                                               $infoGet('flood_zone_code'),
+                                               $infoGet,
+                                               'flood_zone_code_other'
+                                           ),
+
+            // ── decodeJsonField: lease financial terms ────────────────────────
+            'terms_of_lease'            => $this->decodeJsonField($infoGet('terms_of_lease')),
+            'tenant_pays'               => $this->decodeJsonField($infoGet('tenant_pays')),
+            'rent_includes'             => $this->decodeJsonField($infoGet('rent_includes')),
+            'heating_fuel'              => $this->decodeJsonField($infoGet('heating_fuel')),
+            'air_conditioning'          => $this->decodeJsonField($infoGet('air_conditioning')),
+            'water'                     => $this->decodeJsonField($infoGet('water')),
+            'sewer'                     => $this->decodeJsonField($infoGet('sewer')),
+
+            // ── decodeJsonField: commercial building ──────────────────────────
+            'space_type'                => $this->decodeJsonField($infoGet('space_type')),
+            'space_classification'      => $this->decodeJsonField($infoGet('space_classification')),
+            'electrical_service'        => $this->decodeJsonField($infoGet('electrical_service')),
+            'building_features'         => $this->decodeJsonField($infoGet('building_features')),
+            'road_surface_type'         => $this->decodeJsonField($infoGet('road_surface_type')),
+        ];
+    }
+
+    /**
+     * Tenant manual field overrides.
+     *
+     * Covers fields that require transformation logic not expressible as a source-map entry:
+     *   – decodeJsonField(): desired_lease_length (cascade), property_items, appliances, tenant_pays
+     *   – resolveOtherValue(): bedrooms, bathrooms, condition_prop with "Other" fallback
+     */
+    private function extractTenantManualFields(callable $infoGet): array
+    {
+        return [
+            // ── resolveOtherValue: bedrooms / bathrooms ────────────────────────
+            'bedrooms'             => $this->resolveOtherValue(
+                                         $infoGet('bedrooms'),
+                                         $infoGet,
+                                         'other_bedrooms'
+                                     ),
+            'bathrooms'            => $this->resolveOtherValue(
+                                         $infoGet('bathrooms'),
+                                         $infoGet,
+                                         'other_bathrooms'
+                                     ),
+
+            // ── decodeJsonField + cascade: desired lease length ────────────────
+            // desired_lease_length: stored under 'desired_lease_length' (JSON multiselect)
+            // or 'lease_for' depending on the form path. Live-DB audit confirmed
+            // 'tenant_desired_lease_length' is always empty — wrong key.
+            // Excluded from resolver: requires decodeJsonField() on both cascade keys.
+            'desired_lease_length' => $this->decodeJsonField($infoGet('desired_lease_length'))
+                                          ?? $this->decodeJsonField($infoGet('lease_for')),
+
+            // ── decodeJsonField: property items / appliances ───────────────────
+            'property_items'       => $this->decodeJsonField($infoGet('property_items')),
+            'appliances'           => $this->decodeJsonField($infoGet('appliances')),
+
+            // ── resolveOtherValue: property condition ──────────────────────────
+            'condition_prop'       => $this->resolveOtherValue(
+                                         $infoGet('condition_prop'),
+                                         $infoGet,
+                                         'other_property_condition'
+                                     ),
+
+            // ── decodeJsonField: tenant payments ───────────────────────────────
+            'tenant_pays'          => $this->decodeJsonField($infoGet('tenant_pays')),
+        ];
     }
 
     /**

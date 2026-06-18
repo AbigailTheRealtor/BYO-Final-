@@ -3058,19 +3058,21 @@ class AskAiContextBuilderServiceTest extends TestCase
 
         $source = file_get_contents($sourceFile);
 
-        // Isolate the seller match arm inside extractFactualFields().
-        // The arm uses array_merge(...) so the pattern anchors on that keyword to
-        // avoid matching the role-constant map earlier in the file.
-        // Captured text runs from the opening '(' of array_merge up to (but not
-        // including) the "// Buyer" section comment that follows the arm.
+        // Isolate extractSellerManualFields() which uses array_merge() to combine
+        // the base seller fields with property-type-conditional blocks (VL, Business,
+        // shared VL+Business). Captures text from the opening '(' of array_merge
+        // to the end of the function's closing brace so that all key definitions
+        // in the method (including conditional block keys) are scanned for duplicates.
+        // PHP silently keeps the LAST value when a key appears twice in an array
+        // literal, so a runtime check can never detect source-level duplicates.
         $matched = preg_match(
-            "/'seller'\s*=>\s*array_merge\((.*?)(?=\n\s+\/\/\s*Buyer)/s",
+            "/function extractSellerManualFields\b.*?return\s+array_merge\((.*?)\);\s*\}/s",
             $source,
             $m
         );
         $this->assertSame(1, $matched,
-            'Could not isolate seller match arm from source — check regex if the arm structure changed; '
-            . 'if the seller arm was changed from array_merge() back to a plain array, update this regex too');
+            'Could not isolate extractSellerManualFields() — check regex if the method was renamed or '
+            . 'restructured; the method must contain a single "return array_merge(...)" statement');
 
         $sellerArmText = $m[1];
 
@@ -3083,7 +3085,7 @@ class AskAiContextBuilderServiceTest extends TestCase
 
         $this->assertEmpty(
             $duplicates,
-            'Seller match arm in extractFactualFields() contains duplicate key definitions for: '
+            'extractSellerManualFields() contains duplicate key definitions for: '
             . implode(', ', $duplicates)
             . '. PHP silently discards earlier values — remove the duplicate definitions.'
         );
