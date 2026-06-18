@@ -488,15 +488,28 @@
                                     @php
                                         $businessTypeValue = @$auction->get->business_type_selected ?: @$auction->get->business_type;
                                         $otherBusinessType = @$auction->get->other_business_type;
+                                        if (is_array($businessTypeValue)) {
+                                            $businessTypeArray = $businessTypeValue;
+                                        } elseif (is_string($businessTypeValue) && $businessTypeValue !== '') {
+                                            $decoded = json_decode($businessTypeValue, true);
+                                            $businessTypeArray = is_array($decoded) ? $decoded : [$businessTypeValue];
+                                        } else {
+                                            $businessTypeArray = [];
+                                        }
+                                        $businessTypeArray = array_filter($businessTypeArray, fn($v) => $v !== null && $v !== '');
                                     @endphp
-                                    @if (!empty($businessTypeValue))
+                                    @if (!empty($businessTypeArray))
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Business Type:
-                                            @if ($businessTypeValue != 'Other')
-                                                <span class="removeBold badge bg-secondary">{{ $businessTypeValue }}</span>
-                                            @elseif (!empty($otherBusinessType))
-                                                <span class="removeBold badge bg-secondary">{{ $otherBusinessType }}</span>
-                                            @endif
+                                            @foreach ($businessTypeArray as $businessTypeItem)
+                                                @if (strtolower($businessTypeItem) === 'other')
+                                                    @if (!empty($otherBusinessType))
+                                                        <span class="removeBold badge bg-secondary">{{ $otherBusinessType }}</span>
+                                                    @endif
+                                                @else
+                                                    <span class="removeBold badge bg-secondary">{{ $businessTypeItem }}</span>
+                                                @endif
+                                            @endforeach
                                         </div>
                                     @endif
 
