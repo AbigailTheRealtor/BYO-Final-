@@ -167,6 +167,15 @@
             </div>
         </div>
     </a>
+    <a href="{{ route('stellar.buyer.results') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa-solid fa-magnifying-glass-chart" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>View MLS Matches</b></div>
+                <div class="opacity-50 text-400 small">Browse Stellar MLS listings ranked to buyer criteria.</div>
+            </div>
+        </div>
+    </a>
     @endif
 
 

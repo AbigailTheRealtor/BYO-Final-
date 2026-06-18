@@ -77,6 +77,7 @@
                                             <a href="{{ route('agent.hire-listings') }}" class="btn btn-primary btn-sm">My Hire Agent Listings</a>
                                             <a href="{{ route('myBids') }}" class="btn btn-outline-secondary btn-sm">My Bids</a>
                                             <a href="{{ route('agent.qr.settings') }}" class="btn btn-outline-secondary btn-sm">QR &amp; Hire Me</a>
+                                            <a href="{{ route('stellar.buyer.results') }}" class="btn btn-outline-primary btn-sm">View MLS Matches</a>
                                         @else
                                             @php
                                                 $primaryRole = $user->user_type;
