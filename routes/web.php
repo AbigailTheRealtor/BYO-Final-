@@ -366,6 +366,8 @@ Route::post('/offer-listing/landlord/{auction}/question', [LandlordOfferListingC
 Route::post('/offer-listing/landlord/{auction}/showing', [LandlordOfferListingController::class, 'submitShowing'])->name('offer.listing.landlord.showing');
 Route::get('/offer-listing/landlord/{listing}/qualification/check', [RentalQualificationController::class, 'check'])->name('offer.listing.landlord.qualification.check');
 Route::post('/offer-listing/landlord/{listing}/qualification/store', [RentalQualificationController::class, 'store'])->name('offer.listing.landlord.qualification.store');
+Route::get('/offer-listing/landlord/{listing}/qualification/submissions', [RentalQualificationController::class, 'submissions'])->middleware('auth')->name('offer.listing.landlord.qualification.submissions');
+Route::get('/offer-listing/landlord/{listing}/qualification/review/{check}', [RentalQualificationController::class, 'reviewSubmission'])->middleware('auth')->name('offer.listing.landlord.qualification.review');
 Route::post('/offer-listing/tenant/{auction}/question', [TenantOfferListingController::class, 'submitQuestion'])->name('offer.listing.tenant.question');
 Route::get('/search/buyer-agent-needed', [BuyerAgentAuctionController::class, 'searchListing'])->name('buyer.agent.searchListing');
 Route::get('/search/buyer-criteria-auctions', [BuyerCriteriaAuctionController::class, 'searchListing'])->name('buyer.criteria.searchListing');

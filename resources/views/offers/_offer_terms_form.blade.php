@@ -986,15 +986,90 @@
     {{-- Rental/Lease-specific fields --}}
     @if(in_array($offerType, ['rental', 'lease']))
     @if($mode !== 'counter_terms')
-    {{-- ── Section: Tenant Details ── --}}
-    <h6 class="offer-section-header">Tenant Details</h6>
+    {{-- ── Section: Applicant Information ── --}}
+    <h6 class="offer-section-header">Applicant Information</h6>
+
+    {{-- Financial details row --}}
     <div class="row g-3 mb-3">
-        <div class="col-md-3">
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Est. Monthly Net Income</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
+                <input type="text" inputmode="numeric" name="monthly_income" class="form-control" data-money-input="true"
+                    placeholder="Enter estimated monthly net income (e.g., 6,000)"
+                    value="{{ $fmtMoney(old('monthly_income', $formData->get('monthly_income'))) }}">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Credit Score Range</label>
+            <select name="credit_score_range" class="form-select">
+                <option value="">Select a range</option>
+                <option value="Below 500" {{ old('credit_score_range', $formData->get('credit_score_range')) === 'Below 500' ? 'selected' : '' }}>Below 500</option>
+                <option value="500–549" {{ old('credit_score_range', $formData->get('credit_score_range')) === '500–549' ? 'selected' : '' }}>500–549</option>
+                <option value="550–599" {{ old('credit_score_range', $formData->get('credit_score_range')) === '550–599' ? 'selected' : '' }}>550–599</option>
+                <option value="600–649" {{ old('credit_score_range', $formData->get('credit_score_range')) === '600–649' ? 'selected' : '' }}>600–649</option>
+                <option value="650–699" {{ old('credit_score_range', $formData->get('credit_score_range')) === '650–699' ? 'selected' : '' }}>650–699</option>
+                <option value="700–749" {{ old('credit_score_range', $formData->get('credit_score_range')) === '700–749' ? 'selected' : '' }}>700–749</option>
+                <option value="750–799" {{ old('credit_score_range', $formData->get('credit_score_range')) === '750–799' ? 'selected' : '' }}>750–799</option>
+                <option value="800+" {{ old('credit_score_range', $formData->get('credit_score_range')) === '800+' ? 'selected' : '' }}>800+</option>
+                <option value="Prefer not to disclose" {{ old('credit_score_range', $formData->get('credit_score_range')) === 'Prefer not to disclose' ? 'selected' : '' }}>Prefer not to disclose</option>
+            </select>
+        </div>
+        <div class="col-md-4">
             <label class="form-label fw-semibold">Number of Occupants</label>
             <input type="number" name="num_occupants" class="form-control" min="1" max="99"
-                placeholder="Enter number of occupants (e.g., 2)"
+                placeholder="e.g., 2"
                 value="{{ old('num_occupants', $formData->get('num_occupants')) }}">
         </div>
+    </div>
+
+    {{-- Employment row --}}
+    <div class="row g-3 mb-3" x-data="{ empStatus: '{{ old('employment_status', $formData->get('employment_status')) }}' }">
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Employment Status</label>
+            <select name="employment_status" class="form-select" x-model="empStatus">
+                <option value="">Select</option>
+                <option value="Employed full-time" {{ old('employment_status', $formData->get('employment_status')) === 'Employed full-time' ? 'selected' : '' }}>Employed full-time</option>
+                <option value="Employed part-time" {{ old('employment_status', $formData->get('employment_status')) === 'Employed part-time' ? 'selected' : '' }}>Employed part-time</option>
+                <option value="Self-employed" {{ old('employment_status', $formData->get('employment_status')) === 'Self-employed' ? 'selected' : '' }}>Self-employed</option>
+                <option value="Independent contractor" {{ old('employment_status', $formData->get('employment_status')) === 'Independent contractor' ? 'selected' : '' }}>Independent contractor</option>
+                <option value="Retired" {{ old('employment_status', $formData->get('employment_status')) === 'Retired' ? 'selected' : '' }}>Retired</option>
+                <option value="Student" {{ old('employment_status', $formData->get('employment_status')) === 'Student' ? 'selected' : '' }}>Student</option>
+                <option value="Not currently employed" {{ old('employment_status', $formData->get('employment_status')) === 'Not currently employed' ? 'selected' : '' }}>Not currently employed</option>
+                <option value="Other" {{ old('employment_status', $formData->get('employment_status')) === 'Other' ? 'selected' : '' }}>Other</option>
+            </select>
+            <div x-show="empStatus === 'Other'" x-cloak class="mt-2">
+                <input type="text" name="employment_status_other" class="form-control"
+                    value="{{ old('employment_status_other', $formData->get('employment_status_other')) }}"
+                    placeholder="Describe employment status (e.g., Gig worker, Seasonal)" maxlength="200">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Income Source</label>
+            <select name="income_source" class="form-select">
+                <option value="">Select</option>
+                <option value="Employed full-time" {{ old('income_source', $formData->get('income_source')) === 'Employed full-time' ? 'selected' : '' }}>Employed full-time</option>
+                <option value="Employed part-time" {{ old('income_source', $formData->get('income_source')) === 'Employed part-time' ? 'selected' : '' }}>Employed part-time</option>
+                <option value="Self-employed" {{ old('income_source', $formData->get('income_source')) === 'Self-employed' ? 'selected' : '' }}>Self-employed</option>
+                <option value="Independent contractor" {{ old('income_source', $formData->get('income_source')) === 'Independent contractor' ? 'selected' : '' }}>Independent contractor</option>
+                <option value="Retired" {{ old('income_source', $formData->get('income_source')) === 'Retired' ? 'selected' : '' }}>Retired</option>
+                <option value="Student" {{ old('income_source', $formData->get('income_source')) === 'Student' ? 'selected' : '' }}>Student</option>
+                <option value="Not currently employed" {{ old('income_source', $formData->get('income_source')) === 'Not currently employed' ? 'selected' : '' }}>Not currently employed</option>
+                <option value="Other" {{ old('income_source', $formData->get('income_source')) === 'Other' ? 'selected' : '' }}>Other</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Smoking</label>
+            <select name="smoking_preference" class="form-select">
+                <option value="">Select</option>
+                <option value="No" {{ old('smoking_preference', $formData->get('smoking_preference')) === 'No' ? 'selected' : '' }}>Non-smoker</option>
+                <option value="Yes" {{ old('smoking_preference', $formData->get('smoking_preference')) === 'Yes' ? 'selected' : '' }}>Smoker</option>
+            </select>
+        </div>
+    </div>
+
+    {{-- Pets row --}}
+    <div class="row g-3 mb-3">
         <div class="col-md-3">
             <label class="form-label fw-semibold">Pets</label>
             <select name="has_pets" class="form-select"
@@ -1006,7 +1081,7 @@
                 @endforeach
             </select>
         </div>
-        <div class="col-md-6"
+        <div class="col-md-5"
             x-data="{ show: {{ in_array(old('has_pets', $formData->get('has_pets')), ['Yes','Negotiable']) ? 'true' : 'false' }} }"
             @rental-pets-changed.window="show = ($event.detail.val === 'Yes' || $event.detail.val === 'Negotiable')">
             <label class="form-label fw-semibold" x-show="show">Pet Details</label>
@@ -1014,9 +1089,102 @@
                 placeholder="Enter pet details (e.g., One dog, House-trained, 35 lbs)"
                 x-show="show"
                 value="{{ old('pet_details', $formData->get('pet_details')) }}">
-            <span x-show="!show" class="text-muted small">—</span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Desired Move-In Date</label>
+            <input type="date" name="desired_move_in_date" class="form-control"
+                value="{{ old('desired_move_in_date', $formData->get('desired_move_in_date')) }}">
         </div>
     </div>
+
+    {{-- Criminal background + references --}}
+    <div class="row g-3 mb-3"
+        x-data="{ crimBg: '{{ old('criminal_background', $formData->get('criminal_background')) }}' }">
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Criminal Background</label>
+            <select name="criminal_background" class="form-select" x-model="crimBg">
+                <option value="">Select</option>
+                <option value="No criminal background" {{ old('criminal_background', $formData->get('criminal_background')) === 'No criminal background' ? 'selected' : '' }}>No criminal background</option>
+                <option value="Criminal background disclosed" {{ old('criminal_background', $formData->get('criminal_background')) === 'Criminal background disclosed' ? 'selected' : '' }}>Criminal background disclosed</option>
+                <option value="Prefer to discuss" {{ old('criminal_background', $formData->get('criminal_background')) === 'Prefer to discuss' ? 'selected' : '' }}>Prefer to discuss</option>
+                <option value="Other" {{ old('criminal_background', $formData->get('criminal_background')) === 'Other' ? 'selected' : '' }}>Other</option>
+            </select>
+            <div x-show="crimBg === 'Criminal background disclosed' || crimBg === 'Other'" x-cloak class="mt-2">
+                <input type="text" name="criminal_background_other" class="form-control"
+                    value="{{ old('criminal_background_other', $formData->get('criminal_background_other')) }}"
+                    placeholder="Enter background details (e.g., Non-violent misdemeanor, Record expunged)"
+                    maxlength="500">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Eviction History</label>
+            <select name="eviction_history" class="form-select">
+                <option value="">Select</option>
+                <option value="No prior evictions" {{ old('eviction_history', $formData->get('eviction_history')) === 'No prior evictions' ? 'selected' : '' }}>No prior evictions</option>
+                <option value="Eviction more than 7 years ago" {{ old('eviction_history', $formData->get('eviction_history')) === 'Eviction more than 7 years ago' ? 'selected' : '' }}>Eviction more than 7 years ago</option>
+                <option value="Eviction within last 7 years" {{ old('eviction_history', $formData->get('eviction_history')) === 'Eviction within last 7 years' ? 'selected' : '' }}>Eviction within last 7 years</option>
+                <option value="Eviction within last 3 years" {{ old('eviction_history', $formData->get('eviction_history')) === 'Eviction within last 3 years' ? 'selected' : '' }}>Eviction within last 3 years</option>
+                <option value="Prefer not to say" {{ old('eviction_history', $formData->get('eviction_history')) === 'Prefer not to say' ? 'selected' : '' }}>Prefer not to say</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Prior Landlord Reference</label>
+            <select name="landlord_reference_available" class="form-select">
+                <option value="">Select</option>
+                <option value="Yes" {{ old('landlord_reference_available', $formData->get('landlord_reference_available')) === 'Yes' ? 'selected' : '' }}>Yes — available</option>
+                <option value="No" {{ old('landlord_reference_available', $formData->get('landlord_reference_available')) === 'No' ? 'selected' : '' }}>No</option>
+                <option value="Not applicable" {{ old('landlord_reference_available', $formData->get('landlord_reference_available')) === 'Not applicable' ? 'selected' : '' }}>Not applicable</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Verification Available</label>
+            <div class="d-flex flex-column gap-1">
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-muted" style="min-width:120px;">Employment docs</small>
+                    <select name="employment_verification_available" class="form-select form-select-sm">
+                        <option value="">—</option>
+                        <option value="Yes" {{ old('employment_verification_available', $formData->get('employment_verification_available')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                        <option value="No" {{ old('employment_verification_available', $formData->get('employment_verification_available')) === 'No' ? 'selected' : '' }}>No</option>
+                    </select>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-muted" style="min-width:120px;">Income docs</small>
+                    <select name="income_verification_available" class="form-select form-select-sm">
+                        <option value="">—</option>
+                        <option value="Yes" {{ old('income_verification_available', $formData->get('income_verification_available')) === 'Yes' ? 'selected' : '' }}>Yes</option>
+                        <option value="No" {{ old('income_verification_available', $formData->get('income_verification_available')) === 'No' ? 'selected' : '' }}>No</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Bankruptcy history row --}}
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Bankruptcy History</label>
+            <select name="bankruptcy_history" class="form-select">
+                <option value="">Select</option>
+                <option value="No bankruptcy" {{ old('bankruptcy_history', $formData->get('bankruptcy_history')) === 'No bankruptcy' ? 'selected' : '' }}>No bankruptcy</option>
+                <option value="Bankruptcy discharged more than 5 years ago" {{ old('bankruptcy_history', $formData->get('bankruptcy_history')) === 'Bankruptcy discharged more than 5 years ago' ? 'selected' : '' }}>Discharged more than 5 years ago</option>
+                <option value="Bankruptcy discharged within last 5 years" {{ old('bankruptcy_history', $formData->get('bankruptcy_history')) === 'Bankruptcy discharged within last 5 years' ? 'selected' : '' }}>Discharged within last 5 years</option>
+                <option value="Active bankruptcy" {{ old('bankruptcy_history', $formData->get('bankruptcy_history')) === 'Active bankruptcy' ? 'selected' : '' }}>Active bankruptcy</option>
+                <option value="Prefer not to say" {{ old('bankruptcy_history', $formData->get('bankruptcy_history')) === 'Prefer not to say' ? 'selected' : '' }}>Prefer not to say</option>
+            </select>
+        </div>
+    </div>
+
+    {{-- Consent to screening --}}
+    <div class="mb-3">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="consent_to_screening" id="offer_consent_screening"
+                value="1" {{ old('consent_to_screening', $formData->get('consent_to_screening')) ? 'checked' : '' }}>
+            <label class="form-check-label" for="offer_consent_screening">
+                I consent to a background and credit screening as part of the rental application process.
+            </label>
+        </div>
+    </div>
+
     {{-- ── Screening Concerns ── --}}
     <div class="row g-3 mb-3"
         x-data="{ showConcerns: '{{ old('screening_concerns', $formData->get('screening_concerns')) }}' === 'Yes' }"
@@ -1047,31 +1215,6 @@
         </div>
     </div>{{-- end screening concerns row --}}
 
-    <div class="row g-3 mb-3">
-        <div class="col-md-3">
-            <label class="form-label fw-semibold">Smoking</label>
-            <select name="smoking_preference" class="form-select">
-                <option value="">Select</option>
-                <option value="No" {{ old('smoking_preference', $formData->get('smoking_preference')) === 'No' ? 'selected' : '' }}>Non-smoker</option>
-                <option value="Yes" {{ old('smoking_preference', $formData->get('smoking_preference')) === 'Yes' ? 'selected' : '' }}>Smoker</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label fw-semibold">Est. Monthly Net Income</label>
-            <div class="input-group">
-                <span class="input-group-text"><i class="fa-solid fa-dollar-sign"></i></span>
-                <input type="text" inputmode="numeric" name="monthly_income" class="form-control" data-money-input="true"
-                    placeholder="Enter estimated monthly net income (e.g., 6,000)"
-                    value="{{ $fmtMoney(old('monthly_income', $formData->get('monthly_income'))) }}">
-            </div>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label fw-semibold">Credit Score Range</label>
-            <input type="text" name="credit_score_range" class="form-control"
-                placeholder="Enter your credit score range (e.g., 720–750)"
-                value="{{ old('credit_score_range', $formData->get('credit_score_range')) }}">
-        </div>
-    </div>
     <div class="mb-3">
         <label class="form-label fw-semibold">About Yourself</label>
         <textarea name="screening_notes" class="form-control" rows="3"

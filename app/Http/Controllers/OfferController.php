@@ -487,6 +487,18 @@ class OfferController extends Controller
             'smoking_preference'                   => 'nullable|in:Yes,No',
             'monthly_income'                       => 'nullable|numeric|min:0',
             'credit_score_range'                   => 'nullable|string|max:50',
+            'employment_status'                    => 'nullable|string|max:100',
+            'employment_status_other'              => 'nullable|string|max:200',
+            'income_source'                        => 'nullable|string|max:100',
+            'criminal_background'                  => 'nullable|string|max:100',
+            'criminal_background_other'            => 'nullable|string|max:500',
+            'eviction_history'                     => 'nullable|string|max:100',
+            'bankruptcy_history'                   => 'nullable|string|max:100',
+            'landlord_reference_available'         => 'nullable|string|max:50',
+            'employment_verification_available'    => 'nullable|in:Yes,No',
+            'income_verification_available'        => 'nullable|in:Yes,No',
+            'consent_to_screening'                 => 'nullable|boolean',
+            'desired_move_in_date'                 => 'nullable|date',
             'screening_notes'                      => 'nullable|string|max:2000',
             'screening_concerns'                   => 'nullable|in:Yes,No',
             'screening_concerns_details'           => 'nullable|string|max:2000',
@@ -585,8 +597,13 @@ class OfferController extends Controller
             'home_warranty_requested', 'home_warranty_details',
             // Rental/Lease — pre-screening
             'num_occupants', 'has_pets', 'pet_details', 'smoking_preference',
-            'monthly_income', 'credit_score_range', 'screening_notes',
-            'screening_concerns', 'screening_concerns_details', 'message_to_landlord',
+            'monthly_income', 'credit_score_range',
+            'employment_status', 'employment_status_other', 'income_source',
+            'criminal_background', 'criminal_background_other',
+            'eviction_history', 'bankruptcy_history',
+            'landlord_reference_available', 'employment_verification_available',
+            'income_verification_available', 'consent_to_screening', 'desired_move_in_date',
+            'screening_notes', 'screening_concerns', 'screening_concerns_details', 'message_to_landlord',
             // Rental/Lease — offer terms
             'monthly_rent', 'lease_term_months', 'security_deposit',
             'last_month_rent_offered', 'move_in_funds', 'move_in_date',
@@ -677,8 +694,13 @@ class OfferController extends Controller
             'home_warranty_requested', 'home_warranty_details',
             // Rental/Lease — pre-screening
             'num_occupants', 'has_pets', 'pet_details', 'smoking_preference',
-            'monthly_income', 'credit_score_range', 'screening_notes',
-            'screening_concerns', 'screening_concerns_details', 'message_to_landlord',
+            'monthly_income', 'credit_score_range',
+            'employment_status', 'employment_status_other', 'income_source',
+            'criminal_background', 'criminal_background_other',
+            'eviction_history', 'bankruptcy_history',
+            'landlord_reference_available', 'employment_verification_available',
+            'income_verification_available', 'consent_to_screening', 'desired_move_in_date',
+            'screening_notes', 'screening_concerns', 'screening_concerns_details', 'message_to_landlord',
             // Rental/Lease — offer terms
             'monthly_rent', 'lease_term_months', 'security_deposit',
             'last_month_rent_offered', 'move_in_funds', 'move_in_date',
@@ -1185,13 +1207,26 @@ class OfferController extends Controller
             ];
         } elseif (in_array($offerType, ['rental', 'lease'])) {
             $typeRules = [
-                // Pre-screening
+                // Pre-screening — basic fields
                 'num_occupants'              => 'nullable|integer|min:1|max:99',
                 'has_pets'                   => 'nullable|in:Yes,No,Negotiable',
                 'pet_details'                => 'nullable|string|max:500',
                 'smoking_preference'         => 'nullable|in:Yes,No',
                 'monthly_income'             => 'nullable|numeric|min:0',
                 'credit_score_range'         => 'nullable|string|max:50',
+                // Pre-screening — expanded qualification fields
+                'employment_status'                  => 'nullable|string|max:100',
+                'employment_status_other'            => 'nullable|string|max:300',
+                'income_source'                      => 'nullable|string|max:200',
+                'eviction_history'                   => 'nullable|string|max:100',
+                'bankruptcy_history'                 => 'nullable|string|max:100',
+                'criminal_background'                => 'nullable|string|max:100',
+                'criminal_background_other'          => 'nullable|string|max:500',
+                'landlord_reference_available'       => 'nullable|string|max:100',
+                'employment_verification_available'  => 'nullable|string|max:100',
+                'income_verification_available'      => 'nullable|string|max:100',
+                'consent_to_screening'               => 'nullable|boolean',
+                'desired_move_in_date'               => 'nullable|date',
                 'screening_notes'            => 'nullable|string|max:2000',
                 'screening_concerns'         => 'nullable|in:Yes,No',
                 'screening_concerns_details' => 'nullable|string|max:2000',
@@ -1333,7 +1368,19 @@ class OfferController extends Controller
             $offer->saveMeta('pet_details',                $validated['pet_details'] ?? null);
             $offer->saveMeta('smoking_preference',         $validated['smoking_preference'] ?? null);
             $offer->saveMeta('monthly_income',             $validated['monthly_income'] ?? null);
-            $offer->saveMeta('credit_score_range',         $validated['credit_score_range'] ?? null);
+            $offer->saveMeta('credit_score_range',                    $validated['credit_score_range'] ?? null);
+            $offer->saveMeta('employment_status',                     $validated['employment_status'] ?? null);
+            $offer->saveMeta('employment_status_other',               $validated['employment_status_other'] ?? null);
+            $offer->saveMeta('income_source',                         $validated['income_source'] ?? null);
+            $offer->saveMeta('criminal_background',                   $validated['criminal_background'] ?? null);
+            $offer->saveMeta('criminal_background_other',             $validated['criminal_background_other'] ?? null);
+            $offer->saveMeta('eviction_history',                      $validated['eviction_history'] ?? null);
+            $offer->saveMeta('bankruptcy_history',                    $validated['bankruptcy_history'] ?? null);
+            $offer->saveMeta('landlord_reference_available',          $validated['landlord_reference_available'] ?? null);
+            $offer->saveMeta('employment_verification_available',     $validated['employment_verification_available'] ?? null);
+            $offer->saveMeta('income_verification_available',         $validated['income_verification_available'] ?? null);
+            $offer->saveMeta('consent_to_screening',                  isset($validated['consent_to_screening']) ? (bool) $validated['consent_to_screening'] : null);
+            $offer->saveMeta('desired_move_in_date',                  $validated['desired_move_in_date'] ?? null);
             $offer->saveMeta('screening_notes',            $validated['screening_notes'] ?? null);
             $offer->saveMeta('screening_concerns',         $validated['screening_concerns'] ?? null);
             $offer->saveMeta('screening_concerns_details', $validated['screening_concerns_details'] ?? null);
@@ -1450,6 +1497,44 @@ class OfferController extends Controller
                         $prefill['parking_terms'] = $v;
                     }
                     $counterDefaults = $metas->merge($prefill);
+                }
+            }
+
+            // Pre-fill tenant pre-screening from the most recent qualification check for this listing.
+            // Each field is only filled when that specific key is not already saved on this offer,
+            // so no existing draft data is ever overwritten.
+            if ($linkedLandlordId) {
+                $qCheck = \App\Models\RentalQualificationCheck::where('landlord_listing_id', (int) $linkedLandlordId)
+                    ->where('user_id', Auth::id())
+                    ->orderByDesc('id')
+                    ->first();
+                if ($qCheck) {
+                    $qcMap = [
+                        'credit_score_range'                  => $qCheck->estimated_credit_score,
+                        'monthly_income'                      => $qCheck->monthly_household_income,
+                        'employment_status'                   => $qCheck->employment_status,
+                        'employment_status_other'             => $qCheck->employment_status_other,
+                        'income_source'                       => $qCheck->income_source,
+                        'num_occupants'                       => $qCheck->number_of_occupants ? (string) $qCheck->number_of_occupants : null,
+                        'has_pets'                            => $qCheck->has_pets,
+                        'pet_details'                         => $qCheck->pet_details,
+                        'smoking_preference'                  => $qCheck->smoking === 'Smoker' ? 'Yes' : ($qCheck->smoking === 'Non-smoker' ? 'No' : null),
+                        'eviction_history'                    => $qCheck->eviction_history,
+                        'bankruptcy_history'                  => $qCheck->bankruptcy_history,
+                        'criminal_background'                 => $qCheck->criminal_background,
+                        'criminal_background_other'           => $qCheck->criminal_background_other,
+                        'landlord_reference_available'        => $qCheck->landlord_reference_available,
+                        'employment_verification_available'   => $qCheck->employment_verification_available,
+                        'income_verification_available'       => $qCheck->income_verification_available,
+                        'desired_move_in_date'                => $qCheck->desired_move_in_date?->format('Y-m-d'),
+                        'screening_notes'                     => $qCheck->applicant_profile,
+                    ];
+                    // Only inject fields that are not already present in the saved offer metas
+                    foreach ($qcMap as $key => $value) {
+                        if (($value !== null && $value !== '') && !$metas->has($key)) {
+                            $counterDefaults->put($key, $value);
+                        }
+                    }
                 }
             }
         }

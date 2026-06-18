@@ -1235,6 +1235,38 @@ class AskAiContextBuilderService
             'electrical_service'        => $this->decodeJsonField($infoGet('electrical_service')),
             'building_features'         => $this->decodeJsonField($infoGet('building_features')),
             'road_surface_type'         => $this->decodeJsonField($infoGet('road_surface_type')),
+
+            // ── Applicant Requirements: new fields (Step 6) ───────────────────
+            // Scalar EAV keys — resolveOtherValue resolves "Other" → custom text.
+            'credit_score_flexibility'         => $infoGet('credit_score_flexibility') ?: null,
+            'pet_policy_requirement'           => $this->resolveOtherValue(
+                                                      $infoGet('pet_policy_requirement'),
+                                                      $infoGet,
+                                                      'custom_pet_policy_requirement'
+                                                  ),
+            'pet_restrictions'                 => $infoGet('pet_restrictions') ?: null,
+            'smoking_policy_requirement'       => $this->resolveOtherValue(
+                                                      $infoGet('smoking_policy_requirement'),
+                                                      $infoGet,
+                                                      'custom_smoking_policy_requirement'
+                                                  ),
+            'criminal_background_requirement'  => $this->resolveOtherValue(
+                                                      $infoGet('criminal_background_requirement'),
+                                                      $infoGet,
+                                                      'custom_criminal_background_requirement'
+                                                  ),
+            'reference_requirement'            => $this->resolveOtherValue(
+                                                      $infoGet('reference_requirement'),
+                                                      $infoGet,
+                                                      'custom_reference_requirement'
+                                                  ),
+            'employment_verification_requirement' => $infoGet('employment_verification_requirement') ?: null,
+            'income_verification_requirement'     => $infoGet('income_verification_requirement') ?: null,
+            'preferred_move_in_timeframe'      => $this->resolveOtherValue(
+                                                      $infoGet('preferred_move_in_timeframe'),
+                                                      $infoGet,
+                                                      'custom_preferred_move_in_timeframe'
+                                                  ),
         ];
     }
 

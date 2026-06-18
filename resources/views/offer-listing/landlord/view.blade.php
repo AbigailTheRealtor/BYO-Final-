@@ -436,10 +436,14 @@
             @endif
         </div>
         @if(auth()->check() && auth()->id() == $auction->user_id)
-        <div>
+        <div class="d-flex gap-2 flex-wrap">
             <a href="{{ route('offer.listing.landlord.edit', ['auctionId' => $auction->id]) }}"
                class="btn btn-outline-primary">
                 <i class="fa-solid fa-pen-to-square me-1"></i>Edit Listing
+            </a>
+            <a href="{{ route('offer.listing.landlord.qualification.submissions', ['listing' => $auction->id]) }}"
+               class="btn btn-outline-secondary">
+                <i class="fa-solid fa-clipboard-list me-1"></i>View Submissions
             </a>
         </div>
         @endif
@@ -872,6 +876,14 @@
             ($str('employment_requirement') && $str('employment_requirement') !== 'No Requirement') ||
             ($str('eviction_history_requirement') && $str('eviction_history_requirement') !== 'No Requirement') ||
             ($str('bankruptcy_requirement') && $str('bankruptcy_requirement') !== 'No Requirement') ||
+            $str('credit_score_flexibility') ||
+            ($str('pet_policy_requirement') && $str('pet_policy_requirement') !== 'No requirement') ||
+            ($str('smoking_policy_requirement') && $str('smoking_policy_requirement') !== 'No requirement') ||
+            ($str('criminal_background_requirement') && $str('criminal_background_requirement') !== 'No requirement') ||
+            ($str('reference_requirement') && $str('reference_requirement') !== 'No requirement') ||
+            ($str('employment_verification_requirement') && $str('employment_verification_requirement') !== 'No requirement') ||
+            ($str('income_verification_requirement') && $str('income_verification_requirement') !== 'No requirement') ||
+            ($str('preferred_move_in_timeframe') && $str('preferred_move_in_timeframe') !== 'No preference') ||
             $str('est_water_sewer_trash') || $str('est_electric') || $str('est_internet') || $str('est_cable');
     @endphp
 
@@ -1324,12 +1336,15 @@
                     @if($creditDisplay)
                         {!! $row('Minimum Credit Score', $creditDisplay) !!}
                     @endif
+                    @if(!empty($str('credit_score_flexibility')))
+                        {!! $row('Credit Score Flexibility', $str('credit_score_flexibility')) !!}
+                    @endif
                 </div>
                 <div class="col-md-6">
                     @php
                         $incomeMethod = $str('income_qualification_method');
                         $incomeDisplay = null;
-                        if ($incomeMethod && $incomeMethod !== 'No Requirement') {
+                        if ($incomeMethod && strtolower($incomeMethod) !== 'no requirement') {
                             if ($incomeMethod === 'Fixed Monthly Income' && $str('min_monthly_income_fixed')) {
                                 $incomeDisplay = 'Fixed: $' . number_format((float)preg_replace('/[^0-9.]/', '', $str('min_monthly_income_fixed')), 0) . '/mo';
                             } elseif ($incomeMethod === 'Other' && $str('custom_income_requirement')) {
@@ -1344,7 +1359,7 @@
                     @endif
                     @php
                         $empReq = $str('employment_requirement');
-                        $empDisplay = ($empReq && $empReq !== 'No Requirement')
+                        $empDisplay = ($empReq && strtolower($empReq) !== 'no requirement')
                             ? ($empReq === 'Other' && $str('custom_employment_requirement') ? $str('custom_employment_requirement') : $empReq)
                             : null;
                     @endphp
@@ -1353,7 +1368,7 @@
                     @endif
                     @php
                         $evicReq = $str('eviction_history_requirement');
-                        $evicDisplay = ($evicReq && $evicReq !== 'No Requirement')
+                        $evicDisplay = ($evicReq && strtolower($evicReq) !== 'no requirement')
                             ? ($evicReq === 'Other' && $str('custom_eviction_requirement') ? $str('custom_eviction_requirement') : $evicReq)
                             : null;
                     @endphp
@@ -1362,7 +1377,7 @@
                     @endif
                     @php
                         $bankReq = $str('bankruptcy_requirement');
-                        $bankDisplay = ($bankReq && $bankReq !== 'No Requirement')
+                        $bankDisplay = ($bankReq && strtolower($bankReq) !== 'no requirement')
                             ? ($bankReq === 'Other' && $str('custom_bankruptcy_requirement') ? $str('custom_bankruptcy_requirement') : $bankReq)
                             : null;
                     @endphp
@@ -1371,6 +1386,80 @@
                     @endif
                 </div>
             </div>
+            @php
+                $petReqV    = $str('pet_policy_requirement');
+                $petDisplayV = null;
+                if ($petReqV && strtolower($petReqV) !== 'no requirement') {
+                    $petDisplayV = ($petReqV === 'Other' && $str('custom_pet_policy_requirement')) ? $str('custom_pet_policy_requirement') : $petReqV;
+                }
+                $smokeReqV    = $str('smoking_policy_requirement');
+                $smokeDisplayV = null;
+                if ($smokeReqV && strtolower($smokeReqV) !== 'no requirement') {
+                    $smokeDisplayV = ($smokeReqV === 'Other' && $str('custom_smoking_policy_requirement')) ? $str('custom_smoking_policy_requirement') : $smokeReqV;
+                }
+                $crimReqV    = $str('criminal_background_requirement');
+                $crimDisplayV = null;
+                if ($crimReqV && strtolower($crimReqV) !== 'no requirement') {
+                    $crimDisplayV = ($crimReqV === 'Other' && $str('custom_criminal_background_requirement')) ? $str('custom_criminal_background_requirement') : $crimReqV;
+                }
+                $refReqV    = $str('reference_requirement');
+                $refDisplayV = null;
+                if ($refReqV && strtolower($refReqV) !== 'no requirement') {
+                    $refDisplayV = ($refReqV === 'Other' && $str('custom_reference_requirement')) ? $str('custom_reference_requirement') : $refReqV;
+                }
+                $empVerifReqV = $str('employment_verification_requirement');
+                $incVerifReqV = $str('income_verification_requirement');
+                $moveInPrefV  = $str('preferred_move_in_timeframe');
+                $moveInDisplayV = null;
+                if ($moveInPrefV && strtolower($moveInPrefV) !== 'no preference') {
+                    $moveInDisplayV = ($moveInPrefV === 'Other' && $str('custom_preferred_move_in_timeframe')) ? $str('custom_preferred_move_in_timeframe') : $moveInPrefV;
+                }
+                $hasLifestyle = $petDisplayV || $smokeDisplayV || !empty($str('pet_restrictions'));
+                $hasBackground = $crimDisplayV || $refDisplayV
+                    || ($empVerifReqV && strtolower($empVerifReqV) !== 'no requirement')
+                    || ($incVerifReqV && strtolower($incVerifReqV) !== 'no requirement');
+                $hasMoveInPref = (bool) $moveInDisplayV;
+            @endphp
+            @if($hasLifestyle)
+            <hr>
+            <h6 class="fw-semibold mb-3" style="font-size:.9rem;letter-spacing:0;">Lifestyle requirements</h6>
+            <div class="row">
+                @if($petDisplayV)
+                <div class="col-md-6">{!! $row('Pet Policy', $petDisplayV) !!}</div>
+                @endif
+                @if(!empty($str('pet_restrictions')) && $petDisplayV)
+                <div class="col-md-6">{!! $row('Pet Restrictions', $str('pet_restrictions')) !!}</div>
+                @endif
+                @if($smokeDisplayV)
+                <div class="col-md-6">{!! $row('Smoking Policy', $smokeDisplayV) !!}</div>
+                @endif
+            </div>
+            @endif
+            @if($hasBackground)
+            <hr>
+            <h6 class="fw-semibold mb-3" style="font-size:.9rem;letter-spacing:0;">Background requirements</h6>
+            <div class="row">
+                @if($crimDisplayV)
+                <div class="col-md-6">{!! $row('Criminal Background', $crimDisplayV) !!}</div>
+                @endif
+                @if($refDisplayV)
+                <div class="col-md-6">{!! $row('Prior Landlord Reference', $refDisplayV) !!}</div>
+                @endif
+                @if($empVerifReqV && strtolower($empVerifReqV) !== 'no requirement')
+                <div class="col-md-6">{!! $row('Employment Verification', $empVerifReqV) !!}</div>
+                @endif
+                @if($incVerifReqV && strtolower($incVerifReqV) !== 'no requirement')
+                <div class="col-md-6">{!! $row('Income Verification', $incVerifReqV) !!}</div>
+                @endif
+            </div>
+            @endif
+            @if($hasMoveInPref)
+            <hr>
+            <h6 class="fw-semibold mb-3" style="font-size:.9rem;letter-spacing:0;">Move-in preference</h6>
+            <div class="row">
+                <div class="col-md-6">{!! $row('Preferred Move-In Timeframe', $moveInDisplayV) !!}</div>
+            </div>
+            @endif
             {{-- Estimated Utility Costs --}}
             @php
                 $hasUtils = $str('est_water_sewer_trash') || $str('est_electric') || $str('est_internet') || $str('est_cable');
