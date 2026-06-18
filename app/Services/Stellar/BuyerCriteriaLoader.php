@@ -6,21 +6,20 @@ use App\Models\BuyerCriteriaAuction;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 
 /**
- * Loads the authenticated buyer's most-recent BuyerCriteriaAuction record
- * and maps its native columns + EAV meta into the flat array accepted by
- * BuyerCriteriaPayload::__construct().
+ * Loads a BuyerCriteriaAuction record and maps its native columns + EAV meta
+ * into the flat array accepted by BuyerCriteriaPayload::__construct().
  *
  * Returns null when:
- *  - No active record exists for the buyer, OR
+ *  - No matching active record exists, OR
  *  - property_types resolves to an empty array (BuyerCriteriaPayload would throw).
  */
 class BuyerCriteriaLoader
 {
     /**
-     * Load and map the buyer's active criteria record.
+     * Load and map the buyer's most-recent active criteria record.
      *
      * @param  int $userId  The authenticated user's ID.
-     * @return array|null   Flat array ready for BuyerCriteriaPayload, or null on missing/incomplete data.
+     * @return array|null   Flat array ready for BuyerCriteriaPayload, or null.
      */
     public function load(int $userId): ?array
     {
@@ -34,6 +33,48 @@ class BuyerCriteriaLoader
             return null;
         }
 
+        return $this->mapRecord($record);
+    }
+
+    /**
+     * Load and map a specific BuyerCriteriaAuction record by ID.
+     *
+     * Access rule: the record's user_id must be in $allowedUserIds.
+     * For a regular user pass [$userId]; for an agent pass [$agentId, ...clientIds].
+     * Only active (is_approved = true, is_sold = false) records are returned.
+     *
+     * @param  int   $criteriaId      The ID of the BuyerCriteriaAuction record.
+     * @param  int[] $allowedUserIds  User IDs that may own this record.
+     * @return array|null             Flat array ready for BuyerCriteriaPayload, or null.
+     */
+    public function loadById(int $criteriaId, array $allowedUserIds): ?array
+    {
+        $record = BuyerCriteriaAuction::where('id', $criteriaId)
+            ->whereIn('user_id', $allowedUserIds)
+            ->where('is_approved', true)
+            ->where('is_sold', false)
+            ->first();
+
+        if (!$record) {
+            return null;
+        }
+
+        return $this->mapRecord($record);
+    }
+
+    // =========================================================================
+    // Private helpers
+    // =========================================================================
+
+    /**
+     * Map a BuyerCriteriaAuction record to the flat array accepted by
+     * BuyerCriteriaPayload::__construct().
+     *
+     * Returns null when property_types cannot be resolved (BuyerCriteriaPayload
+     * requires a non-empty array).
+     */
+    private function mapRecord(BuyerCriteriaAuction $record): ?array
+    {
         $infoGet = function (string $key) use ($record) {
             $val = $record->info($key);
             return ($val === false || $val === null) ? null : $val;
@@ -53,8 +94,6 @@ class BuyerCriteriaLoader
 
         // -----------------------------------------------------------------------
         // is_55_plus_eligible — must be explicit bool; default false.
-        // Stored as EAV meta 'is_55_plus_eligible'; also check native old_community
-        // column as a secondary signal.
         // -----------------------------------------------------------------------
         $is55Raw = $infoGet('is_55_plus_eligible');
         if ($is55Raw !== null) {
@@ -100,7 +139,7 @@ class BuyerCriteriaLoader
         // Counties are not part of the LDNA blob; always read from separate meta
         $preferredCounties  = $this->decodeJsonMeta($infoGet('preferred_counties'));
         $preferredSubdivisions = $this->decodeJsonMeta($infoGet('preferred_subdivisions'));
-        $preferredMlsAreas  = $this->decodeJsonMeta($infoGet('preferred_mls_areas'));
+        $preferredMlsAreas     = $this->decodeJsonMeta($infoGet('preferred_mls_areas'));
 
         // -----------------------------------------------------------------------
         // Price — native columns with EAV override
@@ -116,9 +155,9 @@ class BuyerCriteriaLoader
         // -----------------------------------------------------------------------
         // Size — native columns; EAV can override
         // -----------------------------------------------------------------------
-        $minBedrooms  = $this->positiveIntOrNull($infoGet('min_bedrooms') ?? $record->bedrooms);
+        $minBedrooms  = $this->positiveIntOrNull($infoGet('min_bedrooms')  ?? $record->bedrooms);
         $minBathrooms = $this->positiveIntOrNull($infoGet('min_bathrooms') ?? $record->bathrooms);
-        $minSqft      = $this->positiveIntOrNull($infoGet('min_sqft') ?? $record->sqft);
+        $minSqft      = $this->positiveIntOrNull($infoGet('min_sqft')      ?? $record->sqft);
         $maxSqft      = $this->positiveIntOrNull($infoGet('max_sqft'));
         $minLotSqft   = $this->positiveIntOrNull($infoGet('min_lot_sqft'));
         $maxLotSqft   = $this->positiveIntOrNull($infoGet('max_lot_sqft'));
@@ -128,8 +167,8 @@ class BuyerCriteriaLoader
         // -----------------------------------------------------------------------
         // Amenities — native columns / EAV
         // -----------------------------------------------------------------------
-        $wantsPool       = $this->tristateBool($infoGet('wants_pool') ?? $record->pool);
-        $wantsGarage     = $this->tristateBool($infoGet('wants_garage') ?? $record->garage);
+        $wantsPool       = $this->tristateBool($infoGet('wants_pool')       ?? $record->pool);
+        $wantsGarage     = $this->tristateBool($infoGet('wants_garage')     ?? $record->garage);
         $minGarageSpaces = $this->positiveIntOrNull($infoGet('min_garage_spaces') ?? $record->garage_spaces);
         $wantsWaterfront = $this->tristateBool($infoGet('wants_waterfront'));
         $wantsWaterView  = $this->tristateBool($infoGet('wants_water_view') ?? $record->water_view);
@@ -156,7 +195,7 @@ class BuyerCriteriaLoader
         $wantsEnergyEfficient     = $this->tristateBool($infoGet('wants_energy_efficient'));
 
         return [
-            'property_types'             => $propertyTypes,
+            'property_types'              => $propertyTypes,
             'is_55_plus_eligible'         => $is55Plus,
 
             'preferred_cities'            => $preferredCities,
@@ -201,15 +240,9 @@ class BuyerCriteriaLoader
         ];
     }
 
-    // =========================================================================
-    // Private helpers
-    // =========================================================================
-
     /**
      * Decode a meta value that may be a JSON array string, a PHP array already
      * decoded by the model accessor, or a scalar string.
-     *
-     * Returns a plain PHP array, never null.
      */
     private function decodeJsonMeta(mixed $value): array
     {
@@ -226,7 +259,6 @@ class BuyerCriteriaLoader
             if (is_array($decoded)) {
                 return array_values(array_filter($decoded, [$this, 'isNonEmptyMetaElement']));
             }
-            // Non-JSON string treated as a single-element array
             $trimmed = trim($value);
             return $trimmed !== '' ? [$trimmed] : [];
         }
@@ -234,13 +266,6 @@ class BuyerCriteriaLoader
         return [];
     }
 
-    /**
-     * Filter callback for decoded meta elements.
-     *
-     * - Nested arrays (radius_searches, polygons, etc.) are kept as-is.
-     * - Scalar strings are kept only if non-empty after trimming.
-     * - null is always rejected.
-     */
     private function isNonEmptyMetaElement(mixed $item): bool
     {
         if ($item === null) {
@@ -255,39 +280,23 @@ class BuyerCriteriaLoader
         return true;
     }
 
-    /**
-     * Coerce a value to a positive integer, or return null.
-     * Returns null for zero, negative, or non-numeric values.
-     */
     private function positiveIntOrNull(mixed $value): ?int
     {
         if ($value === null || $value === false || $value === '') {
             return null;
         }
-
         $int = (int) $value;
         return $int > 0 ? $int : null;
     }
 
-    /**
-     * Coerce a value to a nullable bool (tristate: true / false / null).
-     *
-     * - "yes", "1", 1, true → true
-     * - "no", "0", 0, false → false
-     * - null, "", unknown → null (no preference)
-     */
     private function tristateBool(mixed $value): ?bool
     {
         if ($value === null || $value === false || $value === '') {
             return null;
         }
-
         if (is_bool($value)) {
             return $value;
         }
-
-        $result = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-
-        return $result;
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
     }
 }
