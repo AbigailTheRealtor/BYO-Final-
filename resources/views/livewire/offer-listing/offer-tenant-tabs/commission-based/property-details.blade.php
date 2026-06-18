@@ -81,19 +81,6 @@
 </div> --}}
 
 
-<div class="form-group mb-3">
-    <label class="fw-bold">Unit / Apt / Suite #: <span class="text-muted fw-normal">(Optional)</span></label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="If the property has a unit, apartment, or suite number, enter it here (e.g., Apt 3B, Suite 200).">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <input type="text" wire:model.defer="unit_number" class="form-control has-icon"
-            data-icon="fa-solid fa-door-open"
-            placeholder="e.g., Apt 3B, Suite 200 (optional)">
-    </div>
-</div>
-
 <!-- Acceptable Counties -->
 <div class="form-group mb-3">
     <label class="fw-bold">Acceptable Counties: <span class="text-danger">*</span>

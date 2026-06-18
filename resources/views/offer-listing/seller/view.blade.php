@@ -836,26 +836,6 @@
         @endif
     </div>
 
-    {{-- ===== Property Location Map ===== --}}
-    @php
-        $_sellerPropertyPin = null;
-        if (!empty($meta['property_lat']) && !empty($meta['property_lng'])) {
-            $_sellerPropertyPin = [
-                'lat'     => (float) $meta['property_lat'],
-                'lng'     => (float) $meta['property_lng'],
-                'label'   => ($meta['formatted_address'] ?? null) ?: ($meta['address'] ?? null),
-            ];
-        }
-    @endphp
-    <x-location-dna-map
-        :preferences="null"
-        :legacyLocation="[]"
-        :boundaryData="null"
-        :floodZoneData="null"
-        :schoolDistrictData="null"
-        :propertyPin="$_sellerPropertyPin"
-    />
-
     {{-- =====================================================================
          INTENTIONAL FIELD EXCLUSIONS (not rendered on this view page):
          - listing_ai_faq        : AI-generated FAQ, internal content only.
@@ -1457,6 +1437,26 @@
     </script>
     @endif
     @endif
+
+    {{-- ===== Property Location Map ===== --}}
+    @php
+        $_sellerPropertyPin = null;
+        if (!empty($meta['property_lat']) && !empty($meta['property_lng'])) {
+            $_sellerPropertyPin = [
+                'lat'     => (float) $meta['property_lat'],
+                'lng'     => (float) $meta['property_lng'],
+                'label'   => ($meta['formatted_address'] ?? null) ?: ($meta['address'] ?? null),
+            ];
+        }
+    @endphp
+    <x-location-dna-map
+        :preferences="null"
+        :legacyLocation="[]"
+        :boundaryData="null"
+        :floodZoneData="null"
+        :schoolDistrictData="null"
+        :propertyPin="$_sellerPropertyPin"
+    />
 
     {{-- Property Description --}}
     @if($val('additional_details'))

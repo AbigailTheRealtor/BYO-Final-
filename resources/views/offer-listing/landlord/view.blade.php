@@ -451,26 +451,6 @@
         </a>
     </div>
 
-    {{-- ===== Property Location Map ===== --}}
-    @php
-        $_landlordPropertyPin = null;
-        if (!empty($meta['property_lat']) && !empty($meta['property_lng'])) {
-            $_landlordPropertyPin = [
-                'lat'     => (float) $meta['property_lat'],
-                'lng'     => (float) $meta['property_lng'],
-                'label'   => ($meta['formatted_address'] ?? null) ?: ($meta['address'] ?? null),
-            ];
-        }
-    @endphp
-    <x-location-dna-map
-        :preferences="null"
-        :legacyLocation="[]"
-        :boundaryData="null"
-        :floodZoneData="null"
-        :schoolDistrictData="null"
-        :propertyPin="$_landlordPropertyPin"
-    />
-
     {{-- ===== HERO ===== --}}
     @php
         // Bidding Period countdown — uses expiration_date when available; falls back to created_at + auction_time for legacy records
@@ -816,6 +796,26 @@
 
         </div>{{-- /lol-interaction-grid --}}
     </div>{{-- /lol-interaction-hub --}}
+
+    {{-- ===== Property Location Map ===== --}}
+    @php
+        $_landlordPropertyPin = null;
+        if (!empty($meta['property_lat']) && !empty($meta['property_lng'])) {
+            $_landlordPropertyPin = [
+                'lat'     => (float) $meta['property_lat'],
+                'lng'     => (float) $meta['property_lng'],
+                'label'   => ($meta['formatted_address'] ?? null) ?: ($meta['address'] ?? null),
+            ];
+        }
+    @endphp
+    <x-location-dna-map
+        :preferences="null"
+        :legacyLocation="[]"
+        :boundaryData="null"
+        :floodZoneData="null"
+        :schoolDistrictData="null"
+        :propertyPin="\$_landlordPropertyPin"
+    />
 
     {{-- ===== TWO-COLUMN LAYOUT ===== --}}
     <div class="row g-4 align-items-start">

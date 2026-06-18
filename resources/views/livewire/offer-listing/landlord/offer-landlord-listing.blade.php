@@ -3455,6 +3455,7 @@
         });
 
         ac.addListener('place_changed', function() {
+            window._byoPlacesFilled = true;
             var place = ac.getPlace();
             if (!place || !place.geometry || !place.geometry.location) { return; }
 
