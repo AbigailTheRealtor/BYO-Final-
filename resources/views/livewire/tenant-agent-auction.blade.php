@@ -1608,16 +1608,12 @@ $lease_types = [
                     : ($user_type === 'seller'
                     ? 'Sale Terms'
                     : 'Leasing Terms');
-                    $restTabs = [$firstRest, 'Services', 'Additional Details', 'Broker Compensation & Agency Agreement Terms'];
+                    $restTabs = [$firstRest, 'Additional Details'];
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
                     array_splice($restTabs, 1, 0, 'Pre-Screening');
                     }
                     if ($service_type === 'full_service') {
-                    // Insert Representation Preferences & Compatibility before Broker Compensation (Task #1169)
-                    $bcIdx = array_search('Broker Compensation & Agency Agreement Terms', $restTabs);
-                    if ($bcIdx !== false) {
-                        array_splice($restTabs, $bcIdx, 0, ['Representation Preferences & Compatibility']);
-                    }
+                    $restTabs[] = 'Representation Preferences & Compatibility';
                     }
                     if ($isAgentUser) {
                     $restTabs[] = 'Referral & Cooperation Terms';
@@ -1772,25 +1768,9 @@ $lease_types = [
                                 </div>
                                 @endif
 
-                                <!-- Services Tab - Adjust index based on user_type -->
-
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
-                                    id="services" role="tabpanel" aria-labelledby="services-tab">
-
-                                    @if ($user_type === 'tenant')
-                                    @include('livewire.tenant-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'seller')
-                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'buyer')
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'landlord')
-                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
-                                    @endif
-                                </div>
-
                                 <!-- Additional Details Tab - Adjust index based on user_type -->
 
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @if ($user_type === 'tenant')
@@ -1806,7 +1786,7 @@ $lease_types = [
 
                                 <!-- Representation Preferences & Compatibility Tab — all full_service roles (Task #1169) -->
                                 @if ($service_type === 'full_service')
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
                                     id="representation-preferences-compatibility" role="tabpanel"
                                     aria-labelledby="representation-preferences-compatibility-tab">
                                     @if ($user_type === 'tenant')
@@ -1821,25 +1801,9 @@ $lease_types = [
                                 </div>
                                 @endif
 
-                                <!-- Broker Compensation Tab - Adjust index based on user_type -->
-
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? ($service_type === 'full_service' ? 6 : 5) : 7) ? 'show active' : '' }}"
-                                    id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
-
-                                    @if ($user_type === 'tenant')
-                                    @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'seller')
-                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'buyer')
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'landlord')
-                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
-                                    @endif
-                                </div>
-
                                 <!-- Referral & Cooperation Terms Tab - Agent only -->
                                 @if ($isAgentUser)
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? ($service_type === 'full_service' ? 7 : 6) : 8) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? ($service_type === 'full_service' ? 5 : 4) : 6) ? 'show active' : '' }}"
                                     id="referral-cooperation-terms" role="tabpanel" aria-labelledby="referral-cooperation-terms-tab">
                                     <div class="p-3">
                                         <h5 class="fw-bold mb-3">Referral &amp; Cooperation Terms</h5>
@@ -1870,8 +1834,8 @@ $lease_types = [
                                         default => 'tenant-information'
                                     };
                                     $infoTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller'])
-                                        ? ($service_type === 'full_service' ? ($isAgentUser ? 8 : 7) : ($isAgentUser ? 7 : 6))
-                                        : ($isAgentUser ? 9 : 8);
+                                        ? ($service_type === 'full_service' ? ($isAgentUser ? 6 : 5) : ($isAgentUser ? 5 : 4))
+                                        : ($isAgentUser ? 7 : 6);
                                 @endphp
                                 <div class="tab-pane fade {{ $activeTab === $infoTabIndex ? 'show active' : '' }}"
                                     id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
@@ -4189,10 +4153,6 @@ $lease_types = [
                     countiesErrorSpan.textContent = '';
                 }
             }
-        }
-
-        if (currentTabContent.id === 'services') {
-            isValid = isValid && validateServicesTab(currentTabContent);
         }
 
         if (currentServiceType === 'limited_service' && currentTabContent.id === 'service-selection-and-pricing') {

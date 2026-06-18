@@ -668,7 +668,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
@@ -681,12 +681,12 @@
                                     </li>
                                 @endforeach
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
+                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
                                         id="seller-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#seller-information"
                                         type="button" role="tab"
                                         aria-controls="seller-information"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
                                         {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'Seller Information' }}
                                     </button>
                                 </li>
@@ -755,30 +755,16 @@
 
 
 
-                                <!-- Services Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
-                                    role="tabpanel" aria-labelledby="services-tab">
-                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
-                                </div>
                                 <!-- Additional Details Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.additional-details')
 
                                 </div>
 
-                                <!-- Broker Compensation Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
-                                    id="broker-compensation" role="tabpanel"
-                                    aria-labelledby="broker-compensation-tab">
-
-                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
-
-                                </div>
-
                                 <!-- Seller Info Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="seller-information" role="tabpanel" aria-labelledby="seller-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1600,11 +1586,6 @@
                     }
                 }
 
-                // ADD THIS: Validate services tab if it's the current tab
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTab(currentTabContent);
-                }
-
                 if (isValid) {
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
@@ -1916,9 +1897,7 @@
                     '#listing-details',
                     '#property-preferences',
                     '#purchasing-terms',
-                    '#services',
                     '#additional-details',
-                    '#broker-compensation',
                     '#seller-information'
                 ] : [
                     '#listing-details',

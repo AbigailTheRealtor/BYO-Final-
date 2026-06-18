@@ -104,6 +104,122 @@
     </div>
 </div>
 
+{{-- ── Availability ─────────────────────────────────────────────────────── --}}
+<hr class="my-4">
+<h5 class="fw-bold mb-3"><i class="fa-solid fa-clock me-2 text-primary"></i>Availability</h5>
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Availability Status:</label>
+            <select wire:model="availability_status" class="form-control">
+                <option value="">Select status</option>
+                <option value="Actively Taking New Clients">Actively Taking New Clients</option>
+                <option value="Limited Availability">Limited Availability</option>
+                <option value="By Referral Only">By Referral Only</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Average Response Time:</label>
+            <input type="text" wire:model="avg_response_time" class="form-control"
+                placeholder="e.g. Within 1 hour">
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Evenings Available?</label>
+            <select wire:model="evenings_available" class="form-control">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Weekends Available?</label>
+            <select wire:model="weekends_available" class="form-control">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+{{-- ── Experience & Track Record ────────────────────────────────────────── --}}
+<hr class="my-4">
+<h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-line me-2 text-primary"></i>Experience &amp; Track Record</h5>
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Years of Experience:</label>
+            <input type="text" wire:model="years_experience" class="form-control"
+                placeholder="e.g. 8">
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Full-Time Agent?</label>
+            <select wire:model="is_full_time" class="form-control">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Transactions in Last 12 Months:</label>
+            <input type="number" min="0" wire:model="transactions_last_12_months" class="form-control"
+                placeholder="e.g. 24">
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Primary Areas Served:</label>
+            <input type="text" wire:model="primary_areas_served" class="form-control"
+                placeholder="e.g. Miami-Dade, Broward County">
+        </div>
+    </div>
+</div>
+
+{{-- ── Service Areas ────────────────────────────────────────────────────── --}}
+<hr class="my-4">
+<h5 class="fw-bold mb-3"><i class="fa-solid fa-map-marker-alt me-2 text-primary"></i>Service Areas</h5>
+<p class="text-muted small mb-3">Detailed geographic areas you serve. All optional.</p>
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Cities Served:</label>
+            <textarea wire:model="cities_served" class="form-control" rows="2"
+                placeholder="e.g. Miami, Coral Gables, Hialeah"></textarea>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Counties Served:</label>
+            <textarea wire:model="counties_served" class="form-control" rows="2"
+                placeholder="e.g. Miami-Dade, Broward, Palm Beach"></textarea>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Neighborhoods Served:</label>
+            <textarea wire:model="neighborhoods_served" class="form-control" rows="2"
+                placeholder="e.g. Brickell, Wynwood, Little Havana"></textarea>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="fw-bold">Additional Geographic Notes:</label>
+            <textarea wire:model="areas_notes" class="form-control" rows="2"
+                placeholder="Any other geographic context..."></textarea>
+        </div>
+    </div>
+</div>
+
 <script>
 function formatPhoneNumber(input) {
     let value = input.value.replace(/\D/g, '');

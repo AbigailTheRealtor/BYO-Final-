@@ -997,7 +997,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Leasing Terms', 'Services', 'Additional Details'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Leasing Terms', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -1012,36 +1012,25 @@
                                 @endforeach
                                 @if ($service_type === 'full_service')
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(5)"
+                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(4)"
                                         id="representation-preferences-compatibility-tab" data-bs-toggle="tab"
                                         data-bs-target="#representation-preferences-compatibility"
                                         type="button" role="tab"
                                         aria-controls="representation-preferences-compatibility"
-                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
                                         Representation Preferences &amp; Compatibility
                                     </button>
                                 </li>
                                 @endif
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(6)"
-                                        id="broker-compensation-tab" data-bs-toggle="tab"
-                                        data-bs-target="#broker-compensation"
-                                        type="button" role="tab"
-                                        aria-controls="broker-compensation"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        Broker Compensation
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 7 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(7)"
+                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(5)"
                                         id="landlord-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#landlord-information"
                                         type="button" role="tab"
                                         aria-controls="landlord-information"
-                                        aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
                                         {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'LandLord Information' }}
                                     </button>
                                 </li>
@@ -1133,23 +1122,8 @@
                                     @endif
                                 </div>
 
-                                <!-- Services Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
-                                    role="tabpanel" aria-labelledby="services-tab">
-
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
-                                    @endif
-
-                                </div>
                                 <!-- Additional Details Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
                                     @if ($user_type === 'tenant')
                                         @include('livewire.tenant-agent-auction-tabs.commission-based.additional-details')
@@ -1164,7 +1138,7 @@
                                 </div>
 
                                 <!-- Representation Preferences & Compatibility Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="representation-preferences-compatibility" role="tabpanel"
                                     aria-labelledby="representation-preferences-compatibility-tab">
                                     @if ($user_type === 'landlord' && $service_type === 'full_service')
@@ -1172,25 +1146,8 @@
                                     @endif
                                 </div>
 
-                                <!-- Broker Compensation Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
-                                    id="broker-compensation" role="tabpanel"
-                                    aria-labelledby="broker-compensation-tab">
-
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
-                                    @endif
-
-                                </div>
-
                                 <!-- Landlord Info Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
                                     id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -2287,11 +2244,6 @@
                     }
                 }
 
-                // ADD THIS: Validate services tab if it's the current tab
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTab(currentTabContent);
-                }
-
                 // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
@@ -2659,10 +2611,8 @@
                     '#listing-details',
                     '#property-preferences',
                     '#leasing-terms',
-                    '#services',
                     '#additional-details',
                     '#representation-preferences-compatibility',
-                    '#broker-compensation',
                     '#landlord-information'
                 ] : [
                     '#listing-details',

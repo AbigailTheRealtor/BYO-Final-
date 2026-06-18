@@ -209,6 +209,18 @@ class AgentBidMapperService
             'evenings_available'                  => $profileData['evenings_available']                  ?? '',
             'weekends_available'                  => $profileData['weekends_available']                  ?? '',
 
+            // All roles: experience & track record
+            'years_experience'                    => $profileData['years_experience']                    ?? '',
+            'transactions_last_12_months'         => $profileData['transactions_last_12_months']         ?? '',
+            'is_full_time'                        => $profileData['is_full_time']                        ?? '',
+            'primary_areas_served'                => $profileData['primary_areas_served']                ?? '',
+
+            // All roles: service areas (geographic coverage)
+            'cities_served'                       => $profileData['cities_served']                       ?? '',
+            'counties_served'                     => $profileData['counties_served']                     ?? '',
+            'neighborhoods_served'                => $profileData['neighborhoods_served']                ?? '',
+            'areas_notes'                         => $profileData['areas_notes']                         ?? '',
+
             // All roles: agent-to-agent referral fee
             'referral_fee_percent'                => $profileData['referral_fee_percent']                ?? '',
 

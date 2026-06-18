@@ -790,7 +790,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -803,46 +803,30 @@
                                         </button>
                                     </li>
                                 @endforeach
-                                {{-- Tab index 5 (buyer + full_service only): Representation Preferences & Compatibility
-                                     Inserted between Additional Details (index 4) and Broker Compensation.
-                                     This shifts Broker Compensation and Buyer Information by +1 for this flow only.
-                                     All other flows (limited_service, non-buyer types) keep Broker at 5, Buyer Info at 6. --}}
+                                {{-- Representation Preferences & Compatibility: index 4 (buyer + full_service only) --}}
                                 @if ($user_type === 'buyer' && $service_type === 'full_service')
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(5)"
+                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(4)"
                                         id="representation-compatibility-tab" data-bs-toggle="tab"
                                         data-bs-target="#representation-compatibility"
                                         type="button" role="tab"
                                         aria-controls="representation-compatibility"
-                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
                                         Representation Preferences &amp; Compatibility
                                     </button>
                                 </li>
                                 @endif
-                                {{-- Broker Compensation: index 6 (buyer+full_service — compat tab occupies 5),
-                                     index 5 for all other flows. --}}
+                                {{-- Buyer Information: index 5 (buyer+full_service — compat tab at 4),
+                                     index 4 for all other flows. --}}
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ ($user_type === 'buyer' && $service_type === 'full_service') ? ($activeTab === 6 ? 'active' : '') : ($activeTab === 5 ? 'active' : '') }}"
-                                        wire:click="setActiveTab({{ ($user_type === 'buyer' && $service_type === 'full_service') ? 6 : 5 }})"
-                                        id="broker-compensation-tab" data-bs-toggle="tab"
-                                        data-bs-target="#broker-compensation"
-                                        type="button" role="tab"
-                                        aria-controls="broker-compensation"
-                                        aria-selected="{{ ($user_type === 'buyer' && $service_type === 'full_service') ? ($activeTab === 6 ? 'true' : 'false') : ($activeTab === 5 ? 'true' : 'false') }}">
-                                        Broker Compensation
-                                    </button>
-                                </li>
-                                {{-- Buyer Information: index 7 (buyer+full_service — compat tab occupies 5),
-                                     index 6 for all other flows. --}}
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ ($user_type === 'buyer' && $service_type === 'full_service') ? ($activeTab === 7 ? 'active' : '') : ($activeTab === 6 ? 'active' : '') }}"
-                                        wire:click="setActiveTab({{ ($user_type === 'buyer' && $service_type === 'full_service') ? 7 : 6 }})"
+                                    <button class="nav-link {{ ($user_type === 'buyer' && $service_type === 'full_service') ? ($activeTab === 5 ? 'active' : '') : ($activeTab === 4 ? 'active' : '') }}"
+                                        wire:click="setActiveTab({{ ($user_type === 'buyer' && $service_type === 'full_service') ? 5 : 4 }})"
                                         id="buyer-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#buyer-information"
                                         type="button" role="tab"
                                         aria-controls="buyer-information"
-                                        aria-selected="{{ ($user_type === 'buyer' && $service_type === 'full_service') ? ($activeTab === 7 ? 'true' : 'false') : ($activeTab === 6 ? 'true' : 'false') }}">
+                                        aria-selected="{{ ($user_type === 'buyer' && $service_type === 'full_service') ? ($activeTab === 5 ? 'true' : 'false') : ($activeTab === 4 ? 'true' : 'false') }}">
                                         {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'Buyer Information' }}
                                     </button>
                                 </li>
@@ -933,22 +917,8 @@
                                     @endif
                                 </div>
 
-                                <!-- Services Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
-                                    role="tabpanel" aria-labelledby="services-tab">
-
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
-                                    @endif
-                                </div>
                                 <!-- Additional Details Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @if ($user_type === 'tenant')
@@ -964,36 +934,17 @@
 
                                 <!-- Representation Preferences & Compatibility Tab (buyer full_service only) -->
                                 @if ($user_type === 'buyer' && $service_type === 'full_service')
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="representation-compatibility" role="tabpanel"
                                     aria-labelledby="representation-compatibility-tab">
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.representation-compatibility')
                                 </div>
                                 @endif
 
-                                <!-- Broker Compensation Tab -->
-                                {{-- $brokerTabIndex: 6 for buyer+full_service (compat tab at 5 shifts this +1),
-                                     5 for all other flows. --}}
-                                @php $brokerTabIndex = ($user_type === 'buyer' && $service_type === 'full_service') ? 6 : 5; @endphp
-                                <div class="tab-pane fade {{ $activeTab === $brokerTabIndex ? 'show active' : '' }}"
-                                    id="broker-compensation" role="tabpanel"
-                                    aria-labelledby="broker-compensation-tab">
-
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
-                                    @endif
-                                </div>
-
                                 <!-- Buyer Info Tab -->
-                                {{-- $buyerInfoTabIndex: 7 for buyer+full_service (compat tab at 5 shifts this +2),
-                                     6 for all other flows. --}}
-                                @php $buyerInfoTabIndex = ($user_type === 'buyer' && $service_type === 'full_service') ? 7 : 6; @endphp
+                                {{-- $buyerInfoTabIndex: 5 for buyer+full_service (compat tab at 4),
+                                     4 for all other flows. --}}
+                                @php $buyerInfoTabIndex = ($user_type === 'buyer' && $service_type === 'full_service') ? 5 : 4; @endphp
                                 <div class="tab-pane fade {{ $activeTab === $buyerInfoTabIndex ? 'show active' : '' }}"
                                     id="buyer-information" role="tabpanel" aria-labelledby="buyer-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
@@ -2274,11 +2225,6 @@
                     }
                 }
 
-                // ADD THIS: Validate services tab if it's the current tab
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTab(currentTabContent);
-                }
-
                 // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
@@ -2706,10 +2652,8 @@
                     '#listing-details',
                     '#property-preferences',
                     '#purchasing-terms',
-                    '#services',
                     '#additional-details',
                     '#representation-compatibility',
-                    '#broker-compensation',
                     '#buyer-information'
                 ] : [
                     '#listing-details',

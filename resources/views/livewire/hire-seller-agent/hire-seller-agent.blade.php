@@ -754,16 +754,15 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             @php
-                                // Sequential counter: tabs 0-4 come from the foreach loop.
-                                // Insert any new seller-only tabs here; $brokerCompIndex and
-                                // $sellerInfoIndex auto-adjust without touching other values.
-                                $nextTabIdx      = 5;
+                                // Sequential counter: tabs 0-3 come from the foreach loop.
+                                // Insert any new seller-only tabs here; $sellerInfoIndex
+                                // auto-adjusts without touching other values.
+                                $nextTabIdx      = 4;
                                 $compatIndex     = ($user_type === 'seller') ? $nextTabIdx++ : null;
-                                $brokerCompIndex = $nextTabIdx++;
                                 $sellerInfoIndex = $nextTabIdx;
                             @endphp
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'sale Terms', 'Services', 'Additional Details'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'sale Terms', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -789,17 +788,6 @@
                                         </button>
                                     </li>
                                 @endif
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === $brokerCompIndex ? 'active' : '' }}"
-                                        wire:click="setActiveTab({{ $brokerCompIndex }})"
-                                        id="broker-compensation-tab" data-bs-toggle="tab"
-                                        data-bs-target="#broker-compensation"
-                                        type="button" role="tab"
-                                        aria-controls="broker-compensation"
-                                        aria-selected="{{ $activeTab === $brokerCompIndex ? 'true' : 'false' }}">
-                                        Broker Compensation
-                                    </button>
-                                </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === $sellerInfoIndex ? 'active' : '' }}"
                                         wire:click="setActiveTab({{ $sellerInfoIndex }})"
@@ -900,24 +888,8 @@
                                     @endif
                                 </div>
 
-                                <!-- Services Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
-                                    role="tabpanel" aria-labelledby="services-tab">
-
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
-                                    @endif
-
-                                </div>
-
                                 <!-- Additional Details Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @if ($user_type === 'tenant')
@@ -939,21 +911,6 @@
                                         @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.representation-compatibility')
                                     </div>
                                 @endif
-
-                                <!-- Broker Compensation Tab -->
-                                <div class="tab-pane fade {{ $activeTab === $brokerCompIndex ? 'show active' : '' }}"
-                                    id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
-
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
-                                    @endif
-                                </div>
 
                                 <!-- Seller Info Tab -->
                                 <div class="tab-pane fade {{ $activeTab === $sellerInfoIndex ? 'show active' : '' }}" id="seller-information"
@@ -2271,11 +2228,6 @@
                     }
                 }
 
-                // ADD THIS: Validate services tab if it's the current tab
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTab(currentTabContent);
-                }
-
                 // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
@@ -2654,8 +2606,7 @@
 
             // Get all required fields using explicit ordered tab ID arrays — ensures correct
             // validation order and prevents accidental inclusion of non-wizard tab panes
-            // (modals, other components). Inserts #representation-compatibility before
-            // #broker-compensation for seller full_service flows.
+            // (modals, other components).
             function getAllRequiredFields() {
                 const requiredFields = [];
                 const serviceType = formContainer.getAttribute('data-service-type');
@@ -2666,13 +2617,11 @@
                         '#listing-details',
                         '#property-preferences',
                         '#sale-terms',
-                        '#services',
                         '#additional-details',
                     ];
                     if (userType === 'seller') {
                         tabIds.push('#representation-compatibility');
                     }
-                    tabIds.push('#broker-compensation');
                     tabIds.push('#seller-information');
                 } else {
                     tabIds = [

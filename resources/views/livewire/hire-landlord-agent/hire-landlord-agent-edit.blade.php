@@ -941,7 +941,7 @@ $tenantPays = [
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                              <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Leasing Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Leasing Terms', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
@@ -954,12 +954,12 @@ $tenantPays = [
                                     </li>
                                 @endforeach
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
+                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
                                         id="landlord-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#landlord-information"
                                         type="button" role="tab"
                                         aria-controls="landlord-information"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
                                         {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'LandLord Information' }}
                                     </button>
                                 </li>
@@ -1027,30 +1027,16 @@ $tenantPays = [
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
                                 </div>
 
-                                <!-- Services Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
-                                    role="tabpanel" aria-labelledby="services-tab">
-                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
-                                </div>
                                 <!-- Additional Details Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.additional-details')
 
                                 </div>
 
-                                <!-- Broker Compensation Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
-                                    id="broker-compensation" role="tabpanel"
-                                    aria-labelledby="broker-compensation-tab">
-
-                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
-
-                                </div>
-
                                 <!-- Landlord Info Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -2001,10 +1987,6 @@ $tenantPays = [
                     }
                 }
 
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTab(currentTabContent);
-                }
-
                 if (isValid) {
                     const nextTabEl = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
@@ -2353,10 +2335,8 @@ $tenantPays = [
                     '#listing-details',
                     '#property-preferences',
                     '#leasing-terms',
-                    '#services',
                     '#additional-details',
-                    '#broker-compensation',
-                    '#tenant-info'
+                    '#landlord-information'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',

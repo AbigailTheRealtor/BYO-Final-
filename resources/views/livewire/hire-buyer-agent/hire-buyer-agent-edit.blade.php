@@ -690,7 +690,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -704,13 +704,13 @@
                                     </li>
                                 @endforeach
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(6)"
+                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(4)"
                                         id="buyer-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#buyer-information"
                                         type="button" role="tab"
                                         aria-controls="buyer-information"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
                                         {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'Buyer Information' }}
                                     </button>
                                 </li>
@@ -781,30 +781,16 @@
 
 
 
-                                <!-- Services Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
-                                    role="tabpanel" aria-labelledby="services-tab">
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
-                                </div>
                                 <!-- Additional Details Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
 
                                 </div>
 
-                                <!-- Broker Compensation Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
-                                    id="broker-compensation" role="tabpanel"
-                                    aria-labelledby="broker-compensation-tab">
-
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
-
-                                </div>
-
                                 <!-- Buyer Info Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="buyer-information" role="tabpanel" aria-labelledby="buyer-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -905,11 +891,6 @@
                     }
                 });
 
-                // Validate services tab
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTabGlobal(currentTabContent);
-                }
-
                 if (isValid) {
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector('.nav-link');
                     if (nextTab) {
@@ -996,15 +977,6 @@
 
             if (invalidFields.length > 0) {
                 console.warn('[WIZARD] Invalid fields:', invalidFields);
-            }
-
-            // Validate services tab if on it
-            if (currentTabContent.id === 'services') {
-                const servicesValid = validateServicesTabGlobal(currentTabContent);
-                console.log('[WIZARD] validateServicesTabGlobal result:', servicesValid);
-                if (!servicesValid) {
-                    isValid = false;
-                }
             }
 
             if (!isValid) {
@@ -2266,10 +2238,8 @@
                     '#listing-details',
                     '#property-preferences',
                     '#purchasing-terms',
-                    '#services',
                     '#additional-details',
-                    '#broker-compensation',
-                    '#tenant-info'
+                    '#buyer-information'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',

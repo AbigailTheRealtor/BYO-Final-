@@ -48,6 +48,24 @@ class LandlordAgentAuctionBid extends Component
     public $year_licensed;
     public $nar_id;
 
+    // Availability
+    public $avg_response_time = '';
+    public $availability_status = '';
+    public $evenings_available = '';
+    public $weekends_available = '';
+
+    // Experience & Track Record
+    public $years_experience = '';
+    public $transactions_last_12_months = '';
+    public $is_full_time = '';
+    public $primary_areas_served = '';
+
+    // Service Areas
+    public $cities_served = '';
+    public $counties_served = '';
+    public $neighborhoods_served = '';
+    public $areas_notes = '';
+
     // Agent Overview
     public $bio;
     public $why_hire_you;
@@ -811,6 +829,21 @@ class LandlordAgentAuctionBid extends Component
                 $this->applyPresetField('brokerage', $mapped['brokerage'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('license_no', $mapped['license_no'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('nar_id', $mapped['nar_id'] ?? null, $presetFieldsApplied);
+                // Availability
+                $this->applyPresetField('avg_response_time',   $mapped['avg_response_time']   ?? null, $presetFieldsApplied);
+                $this->applyPresetField('availability_status', $mapped['availability_status'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('evenings_available',  $mapped['evenings_available']  ?? null, $presetFieldsApplied);
+                $this->applyPresetField('weekends_available',  $mapped['weekends_available']  ?? null, $presetFieldsApplied);
+                // Experience & Track Record
+                $this->applyPresetField('years_experience',           $mapped['years_experience']           ?? null, $presetFieldsApplied);
+                $this->applyPresetField('transactions_last_12_months', $mapped['transactions_last_12_months'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('is_full_time',               $mapped['is_full_time']               ?? null, $presetFieldsApplied);
+                $this->applyPresetField('primary_areas_served',       $mapped['primary_areas_served']       ?? null, $presetFieldsApplied);
+                // Service Areas
+                $this->applyPresetField('cities_served',        $mapped['cities_served']        ?? null, $presetFieldsApplied);
+                $this->applyPresetField('counties_served',      $mapped['counties_served']      ?? null, $presetFieldsApplied);
+                $this->applyPresetField('neighborhoods_served', $mapped['neighborhoods_served'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('areas_notes',          $mapped['areas_notes']          ?? null, $presetFieldsApplied);
                 $this->applyPresetField('presentation_link', $mapped['presentation_link'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('business_card_link', $mapped['business_card_link'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('business_card_stored_path', $mapped['business_card_stored_path'] ?? null, $presetFieldsApplied);
@@ -949,6 +982,18 @@ class LandlordAgentAuctionBid extends Component
                 $this->brokerage  = (isset($bidData->brokerage)   && trim($bidData->brokerage)   !== '') ? $bidData->brokerage   : ($user->brokerage   ?? '');
                 $this->license_no = (isset($bidData->license_no)  && trim($bidData->license_no)  !== '') ? $bidData->license_no  : ($user->license_no  ?? '');
                 $this->nar_id     = (isset($bidData->nar_id)      && trim($bidData->nar_id)      !== '') ? $bidData->nar_id      : ($user->nar_id      ?? '');
+                $this->avg_response_time          = $bidData->avg_response_time          ?? '';
+                $this->availability_status        = $bidData->availability_status        ?? '';
+                $this->evenings_available         = $bidData->evenings_available         ?? '';
+                $this->weekends_available         = $bidData->weekends_available         ?? '';
+                $this->years_experience           = $bidData->years_experience           ?? '';
+                $this->transactions_last_12_months = $bidData->transactions_last_12_months ?? '';
+                $this->is_full_time               = $bidData->is_full_time               ?? '';
+                $this->primary_areas_served       = $bidData->primary_areas_served       ?? '';
+                $this->cities_served              = $bidData->cities_served              ?? '';
+                $this->counties_served            = $bidData->counties_served            ?? '';
+                $this->neighborhoods_served       = $bidData->neighborhoods_served       ?? '';
+                $this->areas_notes                = $bidData->areas_notes                ?? '';
 
                 // Agent Overview
                 $this->bio                 = $bidData->bio ?? '';
@@ -1215,6 +1260,18 @@ class LandlordAgentAuctionBid extends Component
             'brokerage'                 => $this->brokerage,
             'license_no'                => $this->license_no,
             'nar_id'                    => $this->nar_id,
+            'avg_response_time'           => $this->avg_response_time,
+            'availability_status'         => $this->availability_status,
+            'evenings_available'          => $this->evenings_available,
+            'weekends_available'          => $this->weekends_available,
+            'years_experience'            => $this->years_experience,
+            'transactions_last_12_months' => $this->transactions_last_12_months,
+            'is_full_time'                => $this->is_full_time,
+            'primary_areas_served'        => $this->primary_areas_served,
+            'cities_served'               => $this->cities_served,
+            'counties_served'             => $this->counties_served,
+            'neighborhoods_served'        => $this->neighborhoods_served,
+            'areas_notes'                 => $this->areas_notes,
             'presentation_link'         => $this->presentation_link,
             'business_card_link'        => $this->business_card_link,
             'business_card_stored_path' => $this->business_card_stored_path,
@@ -1288,6 +1345,18 @@ class LandlordAgentAuctionBid extends Component
         if (!empty($data['brokerage']))         $this->brokerage         = $data['brokerage'];
         if (!empty($data['license_no']))        $this->license_no        = $data['license_no'];
         if (!empty($data['nar_id']))            $this->nar_id            = $data['nar_id'];
+        $this->avg_response_time          = $data['avg_response_time']          ?? '';
+        $this->availability_status        = $data['availability_status']        ?? '';
+        $this->evenings_available         = $data['evenings_available']         ?? '';
+        $this->weekends_available         = $data['weekends_available']         ?? '';
+        $this->years_experience           = $data['years_experience']           ?? '';
+        $this->transactions_last_12_months = $data['transactions_last_12_months'] ?? '';
+        $this->is_full_time               = $data['is_full_time']               ?? '';
+        $this->primary_areas_served       = $data['primary_areas_served']       ?? '';
+        $this->cities_served              = $data['cities_served']              ?? '';
+        $this->counties_served            = $data['counties_served']            ?? '';
+        $this->neighborhoods_served       = $data['neighborhoods_served']       ?? '';
+        $this->areas_notes                = $data['areas_notes']                ?? '';
         if (!empty($data['presentation_link']))         $this->presentation_link         = $data['presentation_link'];
         if (!empty($data['business_card_link']))         $this->business_card_link         = $data['business_card_link'];
         if (!empty($data['business_card_stored_path'])) $this->business_card_stored_path  = $data['business_card_stored_path'];
@@ -1586,6 +1655,19 @@ class LandlordAgentAuctionBid extends Component
             $bid->saveMeta('license_no', $this->license_no);
             $bid->saveMeta('year_licensed', $this->year_licensed);
             $bid->saveMeta('nar_id', $this->nar_id);
+            // Availability, Experience & Service Areas
+            $bid->saveMeta('avg_response_time',          $this->avg_response_time);
+            $bid->saveMeta('availability_status',        $this->availability_status);
+            $bid->saveMeta('evenings_available',         $this->evenings_available);
+            $bid->saveMeta('weekends_available',         $this->weekends_available);
+            $bid->saveMeta('years_experience',           $this->years_experience);
+            $bid->saveMeta('transactions_last_12_months', $this->transactions_last_12_months);
+            $bid->saveMeta('is_full_time',               $this->is_full_time);
+            $bid->saveMeta('primary_areas_served',       $this->primary_areas_served);
+            $bid->saveMeta('cities_served',              $this->cities_served);
+            $bid->saveMeta('counties_served',            $this->counties_served);
+            $bid->saveMeta('neighborhoods_served',       $this->neighborhoods_served);
+            $bid->saveMeta('areas_notes',                $this->areas_notes);
 
             $bid->saveCompatibilityPreferences($this->compatibility_agent_response);
 
