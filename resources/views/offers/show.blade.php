@@ -376,8 +376,9 @@
             </div>
             @endif
 
-            {{-- ── Location DNA Compatibility (only when buyer criteria has a DNA record) --}}
-            @if($offer->role === 'buyer' && $locationDna)
+            {{-- ── Location DNA Compatibility (buyer criteria) --}}
+            @if($offer->role === 'buyer' && $buyerCriteriaAuction)
+            @if($locationDna)
             @php
                 $dnaJson       = $locationDna->summary_json ?? [];
                 $dnaLifestyle  = $locationDna->lifestyle_json ?? [];
@@ -434,6 +435,17 @@
                     </dl>
                 </div>
             </div>
+            @else
+            <div class="card mb-4 border-success border-opacity-25">
+                <div class="card-header bg-success bg-opacity-10 d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill text-success flex-shrink-0" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/></svg>
+                    <strong class="text-success" style="font-size:0.9rem;">Location DNA Compatibility</strong>
+                </div>
+                <div class="card-body py-3">
+                    <p class="text-muted mb-0" style="font-size:0.9rem;">No Location DNA preferences were provided.</p>
+                </div>
+            </div>
+            @endif
             @endif
 
             {{-- ── Tenant Criteria Summary (only when offer is linked to a Tenant Criteria listing) --}}

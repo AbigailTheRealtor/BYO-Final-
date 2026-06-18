@@ -105,20 +105,51 @@ class OfferController extends Controller
             $offerType = $this->resolveOfferType($offer);
             $this->persistTermsMeta($request, $offer, $offerType);
         } else {
-            // No terms in this request — ensure terms were already saved.
             $offer->load('metas', 'offerAuction.metas');
             $offerType = $this->resolveOfferType($offer);
-            $hasSavedTerms = $offerType === 'sale'
-                ? $offer->getMeta('offer_price') !== null
-                : ($offer->getMeta('monthly_rent') !== null);
+        }
 
-            if (!$hasSavedTerms) {
-                $msg = 'Please save your offer terms before submitting.';
-                if (!$request->expectsJson()) {
-                    return redirect()->route('offers.show', $offer)->with('error', $msg);
-                }
-                return response()->json(['message' => $msg], 422);
+        // Enforce required offer terms on every submit path.
+        // Reload fresh metas after any persistTermsMeta() writes above.
+        $offer->load('metas');
+        $missingTerms = [];
+        if ($offerType === 'sale') {
+            if ($offer->getMeta('offer_price') === null || $offer->getMeta('offer_price') === '') {
+                $missingTerms[] = 'offer price';
             }
+            if (!$offer->getMeta('financing_type')) {
+                $missingTerms[] = 'financing type';
+            }
+            if (!$offer->getMeta('closing_date')) {
+                $missingTerms[] = 'closing date';
+            }
+            if (!$offer->getMeta('expires_at')) {
+                $missingTerms[] = 'response requested by date';
+            }
+        } else {
+            if ($offer->getMeta('monthly_rent') === null || $offer->getMeta('monthly_rent') === '') {
+                $missingTerms[] = 'monthly rent';
+            }
+            if ($offer->getMeta('security_deposit') === null || $offer->getMeta('security_deposit') === '') {
+                $missingTerms[] = 'security deposit';
+            }
+            if (!$offer->getMeta('lease_term_months')) {
+                $missingTerms[] = 'lease length';
+            }
+            if (!$offer->getMeta('move_in_date')) {
+                $missingTerms[] = 'move-in date';
+            }
+            if (!$offer->getMeta('expires_at')) {
+                $missingTerms[] = 'response requested by date';
+            }
+        }
+        if (!empty($missingTerms)) {
+            $msg = 'Please complete all required offer terms before submitting: '
+                . implode(', ', $missingTerms) . '.';
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)->with('error', $msg);
+            }
+            return response()->json(['message' => $msg], 422);
         }
 
         // Buyer/tenant offers require property info and match explanation on every submit path.

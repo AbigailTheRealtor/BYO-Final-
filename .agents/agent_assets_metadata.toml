@@ -12,3 +12,9 @@ id = "gMtsdQ6zMnsztuxltTGb0"
 uri = "file://storage/app/qa-tenant-compat.jpeg"
 type = "image"
 title = "Tenant — Compatibility Tab render (after draft save + reload)"
+
+[[outputs]]
+id = "8ZfdkS-EC_Bwvgqu2Qx9F"
+uri = "file://screenshots/offer-91-tenant-playwright-run1.jpg"
+type = "image"
+title = "Offer #91 — Tenant offer page (Playwright, first run)"

@@ -60,6 +60,11 @@
     </div>
     @endif
 
+    {{-- ── Match Explanation (buyer/tenant offers only) ─────────────────── --}}
+    @if(in_array($offer->role, ['buyer', 'tenant']) && $mode === 'draft_terms')
+    @include('offers._match_explanation_form', ['pm' => $formData, 'offer' => $offer])
+    @endif
+
     {{-- Sale-specific fields --}}
     @if($offerType === 'sale')
     @php

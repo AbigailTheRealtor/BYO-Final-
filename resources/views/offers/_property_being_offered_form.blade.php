@@ -177,10 +177,8 @@
     <p class="offer-section-header">{{ $isTenant ? 'Rental Description' : 'Property Description' }}</p>
 
     <div class="mb-3">
-        <label class="form-label fw-semibold">
-            {{ $isTenant ? 'Rental Description' : 'Property Description' }}
-        </label>
         <textarea name="prop_description" class="form-control" rows="5"
+            aria-label="{{ $isTenant ? 'Rental Description' : 'Property Description' }}"
             placeholder="{{ $isTenant ? 'Describe this rental property — amenities, condition, neighbourhood highlights...' : 'Describe this property — features, condition, recent upgrades, neighbourhood highlights...' }}">{{ old('prop_description', $pm->get('prop_description')) }}</textarea>
         <div class="form-text">
             Required before submitting. Give the {{ $isTenant ? 'tenant' : 'buyer' }} a clear picture of the property.
@@ -329,80 +327,6 @@
                 placeholder="e.g. Weekdays 9am–5pm, by appointment">
         </div>
     </div>
-
-    {{-- ── Property Description ──────────────────────────────────────────── --}}
-    <p class="offer-section-header">{{ $isTenant ? 'Rental Description' : 'Property Description' }}</p>
-    <div class="mb-3">
-        <label class="form-label fw-semibold">{{ $isTenant ? 'Rental Description' : 'Property Description' }}</label>
-        <textarea name="prop_description" id="prop_description" class="form-control" rows="5"
-            placeholder="{{ $isTenant ? 'Describe the rental property — features, neighbourhood, what makes it a great fit...' : 'Describe the property — features, neighbourhood, why it stands out...' }}">{{ old('prop_description', $pm->get('prop_description')) }}</textarea>
-        <div class="form-text">Give a detailed overview of the property to help the {{ $isTenant ? 'tenant' : 'buyer' }} understand what is being offered.</div>
-    </div>
-
-    {{-- ── Highlights ─────────────────────────────────────────────────────── --}}
-    <p class="offer-section-header">{{ $isTenant ? 'Rental Highlights' : 'Property Highlights' }}</p>
-    @php
-        $savedHighlights = json_decode($pm->get('prop_highlights', '[]'), true) ?: [];
-
-        $buyerHighlightOptions = [
-            'Move-in Ready',
-            'Recently Renovated / Updated',
-            'New Kitchen & Appliances',
-            'Open Floor Plan',
-            'Home Office / Flex Space',
-            'In-ground Pool',
-            'Garage / Covered Parking',
-            'Gated / HOA Community',
-            'Energy Efficient / Solar',
-            'Smart Home Features',
-            'Near Top-Rated Schools',
-            'Near Shopping & Dining',
-            'Near Public Transit',
-            'Quiet / Low-Traffic Street',
-        ];
-
-        $tenantHighlightOptions = [
-            'Move-in Ready',
-            'Recently Renovated',
-            'New Appliances',
-            'In-unit Laundry',
-            'Covered Parking',
-            'Gated/Secured Building',
-            'Pet Friendly',
-            'Pool Access',
-            'Fitness Center',
-            'Near Public Transit',
-            'Near Top-Rated Schools',
-            'Furnished Option',
-            'Utilities Included',
-            'Short-term Lease Available',
-        ];
-
-        $highlightOptions = $isTenant ? $tenantHighlightOptions : $buyerHighlightOptions;
-    @endphp
-    <div class="mb-3">
-        <div class="d-flex flex-wrap gap-2">
-            @foreach($highlightOptions as $hl)
-            @php $hlChecked = in_array($hl, $savedHighlights); @endphp
-            {{-- onchange on the hidden checkbox updates label classes.
-                 No onclick on label — the browser's native label→input association
-                 toggles the checkbox; then onchange fires to sync CSS. --}}
-            <label class="d-inline-flex align-items-center gap-1 px-3 py-2 rounded border
-                {{ $hlChecked ? 'bg-primary text-white border-primary' : 'bg-white text-dark border-secondary' }}"
-                style="cursor:pointer;font-size:0.875rem;user-select:none;">
-                <input type="checkbox" name="prop_highlights[]" value="{{ $hl }}"
-                    {{ $hlChecked ? 'checked' : '' }}
-                    style="display:none;"
-                    onchange="var l=this.closest('label');if(this.checked){l.classList.add('bg-primary','text-white','border-primary');l.classList.remove('bg-white','text-dark','border-secondary');}else{l.classList.remove('bg-primary','text-white','border-primary');l.classList.add('bg-white','text-dark','border-secondary');}">
-                {{ $hl }}
-            </label>
-            @endforeach
-        </div>
-        <div class="form-text mt-2">Select all that apply to this {{ $isTenant ? 'rental' : 'property' }}.</div>
-    </div>
-
-    {{-- ── Match Explanation (dedicated partial) ────────────────────────── --}}
-    @include('offers._match_explanation_form', ['pm' => $pm, 'offer' => $offer])
 
     @push('scripts')
     <script>
