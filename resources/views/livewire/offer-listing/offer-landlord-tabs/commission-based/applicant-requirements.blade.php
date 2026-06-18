@@ -65,7 +65,7 @@
     <h6 class="fw-semibold border-bottom pb-2 mb-3 mt-4">Credit &amp; Financial Requirements</h6>
 
     {{-- Minimum Credit Score --}}
-    <div class="form-group">
+    <div class="form-group" x-data>
         <label class="fw-bold">Minimum Credit Score:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the minimum credit score required for tenant qualification.">
@@ -84,6 +84,15 @@
                 <option value="700+">700+</option>
                 <option value="Other">Other</option>
             </select>
+        </div>
+        {{-- Conditional: Custom credit score requirement --}}
+        <div x-show="$wire.min_credit_score === 'Other'" x-cloak class="mt-2">
+            <label class="fw-bold">Custom Minimum Credit Score:</label>
+            <div class="input-cover">
+                <input type="text" wire:model="custom_credit_score_requirement" class="form-control has-icon"
+                    data-icon="fa-solid fa-chart-line"
+                    placeholder="Enter title (e.g., example)">
+            </div>
         </div>
     </div>
 
@@ -119,8 +128,9 @@
         <div x-show="$wire.income_qualification_method === 'Other'" x-cloak class="mt-2">
             <label class="fw-bold">Custom Income Requirement:</label>
             <div class="input-cover">
-                <input type="text" wire:model="custom_income_requirement" class="form-control"
-                    placeholder="Enter custom income requirement (e.g., Verified bank statements showing 6 months reserves)">
+                <input type="text" wire:model="custom_income_requirement" class="form-control has-icon"
+                    data-icon="fa-solid fa-money-bill-wave"
+                    placeholder="Enter title (e.g., example)">
             </div>
         </div>
     </div>
@@ -149,8 +159,9 @@
         <div x-show="$wire.employment_requirement === 'Other'" x-cloak class="mt-2">
             <label class="fw-bold">Custom Employment Requirement:</label>
             <div class="input-cover">
-                <input type="text" wire:model="custom_employment_requirement" class="form-control"
-                    placeholder="Enter custom employment requirement (e.g., Government employee or contractor)">
+                <input type="text" wire:model="custom_employment_requirement" class="form-control has-icon"
+                    data-icon="fa-solid fa-briefcase"
+                    placeholder="Enter title (e.g., example)">
             </div>
         </div>
     </div>
@@ -176,8 +187,9 @@
         <div x-show="$wire.eviction_history_requirement === 'Other'" x-cloak class="mt-2">
             <label class="fw-bold">Custom Eviction History Requirement:</label>
             <div class="input-cover">
-                <input type="text" wire:model="custom_eviction_requirement" class="form-control"
-                    placeholder="Enter custom eviction requirement (e.g., No evictions within 10 years)">
+                <input type="text" wire:model="custom_eviction_requirement" class="form-control has-icon"
+                    data-icon="fa-solid fa-gavel"
+                    placeholder="Enter title (e.g., example)">
             </div>
         </div>
     </div>
@@ -203,8 +215,9 @@
         <div x-show="$wire.bankruptcy_requirement === 'Other'" x-cloak class="mt-2">
             <label class="fw-bold">Custom Bankruptcy Requirement:</label>
             <div class="input-cover">
-                <input type="text" wire:model="custom_bankruptcy_requirement" class="form-control"
-                    placeholder="Enter custom bankruptcy requirement (e.g., No bankruptcy within 7 years)">
+                <input type="text" wire:model="custom_bankruptcy_requirement" class="form-control has-icon"
+                    data-icon="fa-solid fa-scale-balanced"
+                    placeholder="Enter title (e.g., example)">
             </div>
         </div>
     </div>

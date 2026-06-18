@@ -358,6 +358,7 @@ class LandlordOfferListing extends Component
 
     // Applicant Requirements tab EAV keys
     public $min_credit_score = '';
+    public $custom_credit_score_requirement = '';
     public $income_qualification_method = 'No Requirement';
     public $min_monthly_income_fixed = '';
     public $custom_income_requirement = '';
@@ -2851,6 +2852,7 @@ class LandlordOfferListing extends Component
 
             // Applicant Requirements tab EAV keys
             $this->min_credit_score = $auction->get->min_credit_score ?? '';
+            $this->custom_credit_score_requirement = $auction->get->custom_credit_score_requirement ?? '';
             $this->income_qualification_method = $auction->get->income_qualification_method ?? 'No Requirement';
             $this->min_monthly_income_fixed = $auction->get->min_monthly_income_fixed ?? '';
             $this->custom_income_requirement = $auction->get->custom_income_requirement ?? '';
@@ -3536,6 +3538,7 @@ class LandlordOfferListing extends Component
 
         // Applicant Requirements tab EAV keys
         $auction->saveMeta('min_credit_score', $this->min_credit_score);
+        $auction->saveMeta('custom_credit_score_requirement', $this->custom_credit_score_requirement);
         $auction->saveMeta('income_qualification_method', $this->income_qualification_method);
         $auction->saveMeta('min_monthly_income_fixed', $this->min_monthly_income_fixed);
         $auction->saveMeta('custom_income_requirement', $this->custom_income_requirement);

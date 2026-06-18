@@ -1289,8 +1289,19 @@
                     @if(!empty($str('landlord_approval_conditions')))
                         {!! $row('Approval Conditions', $str('landlord_approval_conditions')) !!}
                     @endif
-                    @if(!empty($str('min_credit_score')))
-                        {!! $row('Minimum Credit Score', $str('min_credit_score')) !!}
+                    @php
+                        $creditScore = $str('min_credit_score');
+                        $creditDisplay = null;
+                        if ($creditScore) {
+                            if ($creditScore === 'Other' && $str('custom_credit_score_requirement')) {
+                                $creditDisplay = $str('custom_credit_score_requirement');
+                            } elseif ($creditScore !== 'Other') {
+                                $creditDisplay = $creditScore;
+                            }
+                        }
+                    @endphp
+                    @if($creditDisplay)
+                        {!! $row('Minimum Credit Score', $creditDisplay) !!}
                     @endif
                 </div>
                 <div class="col-md-6">
