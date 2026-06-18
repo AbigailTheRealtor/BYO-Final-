@@ -87,7 +87,6 @@
         </div>
         {{-- Conditional: Custom credit score requirement --}}
         <div x-show="$wire.min_credit_score === 'Other'" x-cloak class="mt-2">
-            <label class="fw-bold">Custom Minimum Credit Score:</label>
             <div class="input-cover">
                 <input type="text" wire:model="custom_credit_score_requirement" class="form-control has-icon"
                     data-icon="fa-solid fa-chart-line"
@@ -126,7 +125,6 @@
         </div>
         {{-- Conditional: Custom income requirement --}}
         <div x-show="$wire.income_qualification_method === 'Other'" x-cloak class="mt-2">
-            <label class="fw-bold">Custom Income Requirement:</label>
             <div class="input-cover">
                 <input type="text" wire:model="custom_income_requirement" class="form-control has-icon"
                     data-icon="fa-solid fa-money-bill-wave"
@@ -157,7 +155,6 @@
             </select>
         </div>
         <div x-show="$wire.employment_requirement === 'Other'" x-cloak class="mt-2">
-            <label class="fw-bold">Custom Employment Requirement:</label>
             <div class="input-cover">
                 <input type="text" wire:model="custom_employment_requirement" class="form-control has-icon"
                     data-icon="fa-solid fa-briefcase"
@@ -185,7 +182,6 @@
             </select>
         </div>
         <div x-show="$wire.eviction_history_requirement === 'Other'" x-cloak class="mt-2">
-            <label class="fw-bold">Custom Eviction History Requirement:</label>
             <div class="input-cover">
                 <input type="text" wire:model="custom_eviction_requirement" class="form-control has-icon"
                     data-icon="fa-solid fa-gavel"
@@ -213,7 +209,6 @@
             </select>
         </div>
         <div x-show="$wire.bankruptcy_requirement === 'Other'" x-cloak class="mt-2">
-            <label class="fw-bold">Custom Bankruptcy Requirement:</label>
             <div class="input-cover">
                 <input type="text" wire:model="custom_bankruptcy_requirement" class="form-control has-icon"
                     data-icon="fa-solid fa-scale-balanced"
