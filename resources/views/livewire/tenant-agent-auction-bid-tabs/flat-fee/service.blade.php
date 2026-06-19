@@ -23,7 +23,7 @@
             </label>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="list_criteria_fee" id="listCriteriaFee" class="form-control has-icon"
-                    data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('list_criteria_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -37,7 +37,7 @@
             </label>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="market_groups_fee" id="marketGroupsFee" class="form-control has-icon"
-                    data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('market_groups_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -51,7 +51,7 @@
             </label>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="promote_social_fee" id="promoteSocialFee"
-                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('promote_social_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -65,7 +65,7 @@
             </label>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="launch_ads_fee" id="launchAdsFee" class="form-control has-icon"
-                    data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('launch_ads_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -78,7 +78,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="marketing_materials_fee" id="marketingMaterialsFee"
                     class="form-control has-icon" data-icon="fa-solid fa-receipt"
-                    placeholder="Marketing materials amount">
+                    placeholder="Enter marketing materials amount (e.g., 500)">
             </div>
             @error('marketing_materials_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -92,7 +92,7 @@
             </label>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="email_marketing_fee" id="emailMarketingFee"
-                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('email_marketing_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -106,7 +106,7 @@
             </label>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="neighborhood_marketing_fee" id="neighborhoodMarketingFee"
-                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('neighborhood_marketing_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -119,7 +119,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="neighborhood_materials_fee" id="neighborhoodMaterialsFee"
                     class="form-control has-icon" data-icon="fa-solid fa-receipt"
-                    placeholder="Marketing materials amount">
+                    placeholder="Enter marketing materials amount (e.g., 500)">
             </div>
             @error('neighborhood_materials_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -141,7 +141,7 @@
             </label>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="email_notifications_fee" id="emailNotificationsFee"
-                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('email_notifications_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -155,7 +155,7 @@
             </label>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="off_market_search_fee" id="offMarketSearchFee"
-                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('off_market_search_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -169,7 +169,7 @@
             </label>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="mls_filter_fee" id="mlsFilterFee" class="form-control has-icon"
-                    data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('mls_filter_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -190,11 +190,11 @@
             </label>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="number_of_showings_to_schedule" id="numberOfShowingsToSchedule"
-                    class="form-control has-icon" data-icon="fa-solid fa-hashtag" placeholder="Number of showings">
+                    class="form-control has-icon" data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings (e.g., 10)">
             </div>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="schedule_showings_fee" id="scheduleShowingsFee"
-                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('schedule_showings_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -208,11 +208,11 @@
             </label>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="number_of_showings_to_attend" id="numberOfShowingsToAttend"
-                    class="form-control has-icon" data-icon="fa-solid fa-hashtag" placeholder="Number of showings">
+                    class="form-control has-icon" data-icon="fa-solid fa-hashtag" placeholder="Enter number of showings (e.g., 10)">
             </div>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="attend_showings_fee" id="attendShowingsFee"
-                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('attend_showings_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -227,11 +227,11 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="number_of_virtual_tours" id="numberOfVirtualTours"
                     class="form-control has-icon" data-icon="fa-solid fa-hashtag"
-                    placeholder="Number of virtual tours">
+                    placeholder="Enter number of virtual tours (e.g., 2)">
             </div>
             <div class="input-cover mt-2">
                 <input type="number" wire:model="virtual_tours_fee" id="virtualToursFee"
-                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Flat fee amount">
+                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('virtual_tours_fee')
                 <span class="error mt-2">{{ $message }}</span>
@@ -254,7 +254,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="prepare_application_fee" id="prepareApplicationFee"
                        class="form-control has-icon" data-icon="fa-solid fa-file-pen"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('prepare_application_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -267,7 +267,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="collect_documents_fee" id="collectDocumentsFee"
                        class="form-control has-icon" data-icon="fa-solid fa-folder-open"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('collect_documents_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -280,7 +280,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="submit_application_fee" id="submitApplicationFee"
                        class="form-control has-icon" data-icon="fa-solid fa-paper-plane"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('submit_application_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -293,7 +293,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="review_lease_fee" id="reviewLeaseFee"
                        class="form-control has-icon" data-icon="fa-solid fa-file-contract"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('review_lease_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -306,7 +306,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="provide_lease_form_fee" id="provideLeaseFormFee"
                        class="form-control has-icon" data-icon="fa-solid fa-file-signature"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('provide_lease_form_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -319,7 +319,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="coordinate_signing_fee" id="coordinateSigningFee"
                        class="form-control has-icon" data-icon="fa-solid fa-handshake"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('coordinate_signing_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -346,7 +346,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="move_in_inspection_fee" id="moveInInspectionFee"
                        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('move_in_inspection_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -359,7 +359,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="moving_resources_fee" id="movingResourcesFee"
                        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('moving_resources_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -372,7 +372,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="short_term_housing_fee" id="shortTermHousingFee"
                        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('short_term_housing_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -394,7 +394,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="rental_rights_fee" id="rentalRightsFee"
                        class="form-control has-icon" data-icon="fa-solid fa-scale-balanced"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('rental_rights_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -407,7 +407,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="lease_advice_fee" id="leaseAdviceFee"
                        class="form-control has-icon" data-icon="fa-solid fa-file-circle-check"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('lease_advice_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -420,7 +420,7 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="neighborhood_insights_fee" id="neighborhoodInsightsFee"
                        class="form-control has-icon" data-icon="fa-solid fa-location-dot"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
             @error('neighborhood_insights_fee') <span class="error mt-2">{{ $message }}</span> @enderror
         </div>
@@ -448,14 +448,14 @@
             <div class="input-cover mt-2">
                 <input type="number" wire:model="custom_services.{{ $index }}.fee"
                        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
-                       placeholder="Flat fee amount">
+                       placeholder="Enter flat fee amount (e.g., 1500)">
             </div>
 
             <!-- Service Description -->
             <div class="input-cover mt-2">
                 <input type="text" wire:model="custom_services.{{ $index }}.description"
                        class="form-control has-icon" data-icon="fa-solid fa-pen-to-square"
-                       placeholder="Describe the service">
+                       placeholder="Enter service description (e.g., Contract review, Lease negotiation)">
             </div>
 
             <!-- Marketing Materials -->
@@ -466,12 +466,12 @@
                 <div class="input-cover mt-2">
                     <input type="number" wire:model="custom_services.{{ $index }}.marketing_fee"
                            class="form-control has-icon" data-icon="fa-solid fa-receipt"
-                           placeholder="Marketing materials amount">
+                           placeholder="Enter marketing materials amount (e.g., 500)">
                 </div>
                 <div class="input-cover mt-2">
                     <input type="text" wire:model="custom_services.{{ $index }}.marketing_description"
                            class="form-control has-icon" data-icon="fa-solid fa-list-check"
-                           placeholder="Describe marketing materials needed">
+                           placeholder="Enter marketing materials needed (e.g., Flyers, yard signs, online ads)">
                 </div>
             </div>
 

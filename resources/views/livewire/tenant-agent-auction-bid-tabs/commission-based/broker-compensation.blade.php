@@ -213,7 +213,7 @@
             @elseif ($broker_fee_timing === 'other')
                 <div class="input-group">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
-                        placeholder="Describe payment arrangement (e.g., Broker to be paid 50% of commission upon lease execution and 50% upon tenant move-in)">
+                        placeholder="Enter payment arrangement (e.g., 50% at lease execution, 50% at tenant move-in)">
                 </div>
             @endif
         </div>
@@ -245,7 +245,7 @@
             @if ($broker_fee_timing === 'other')
                 <div class="input-group">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
-                        placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
+                        placeholder="Enter payment arrangement (e.g., 25% at lease execution, 25% at move-in, 50% at first month's rent)">
                 </div>
             @endif
         </div>

@@ -43,7 +43,7 @@
             <label class="fw-bold">Phone Number:<span class="text-danger">*</span></label>
             <div class="input-cover">
                 <input wire:model="phone" type="text" id="phone_number"
-                    class="form-control has-icon" required data-icon="fa-solid fa-phone" placeholder="(555) 555-5555" oninput="formatPhoneNumber(this)">
+                    class="form-control has-icon" required data-icon="fa-solid fa-phone" placeholder="Enter phone number (e.g., (555) 555-5555)" oninput="formatPhoneNumber(this)">
             </div>
             <span class="error mt-2" id="phone_error"></span>
             @error('phone')

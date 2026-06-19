@@ -411,7 +411,7 @@
             @elseif ($broker_fee_timing === 'other')
                 <div class="input-group">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
-                        placeholder="Describe payment arrangement (e.g., Broker to be paid 50% of commission upon lease execution and 50% upon tenant move-in)">
+                        placeholder="Enter payment arrangement (e.g., 50% at lease execution, 50% at tenant move-in)">
                 </div>
             {{-- [2026-04 audit] 'split_payment dumy' dead @elseif removed: that value was never persisted to the database --}}
             @endif
@@ -449,7 +449,7 @@
             @if ($broker_fee_timing === 'Other')
                 <div class="input-group">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
-                        placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
+                        placeholder="Enter payment arrangement (e.g., 25% at lease execution, 25% at move-in, 50% at first month's rent)">
                 </div>
             {{-- [2026-04 audit] 'split_payment dumy' dead @elseif removed: that value was never persisted to the database --}}
             @endif
@@ -658,7 +658,7 @@
                 <div class="mb-3">
                     <div class="input-group">
                         <input type="text" wire:model.lazy="renewal_fee_custom" class="form-control"
-                            placeholder=" Describe commission fee (e.g., 50% of first month’s rent plus 3% of the net aggregate rent)">
+                            placeholder="Enter commission fee (e.g., 50% of first month’s rent plus 3% of net aggregate rent)">
                     </div>
                 </div>
             @endif

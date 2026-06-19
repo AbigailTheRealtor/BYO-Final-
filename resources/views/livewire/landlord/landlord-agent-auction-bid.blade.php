@@ -249,7 +249,7 @@
                                 default => 'Services',
                             };
 
-                            $tabs[] = 'Agent Presentation And Marketing Materials';
+                            $tabs[] = 'Agent Presentation & Marketing Materials';
                             $tabs[] = 'Experience & Service Area';
                             $tabs[] = 'Working Style & Compatibility';
                             $tabs[] = 'Agent Credentials & Contact Info';

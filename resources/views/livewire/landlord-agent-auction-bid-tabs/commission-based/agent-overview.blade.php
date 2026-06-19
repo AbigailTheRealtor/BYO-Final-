@@ -53,7 +53,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="why_hire_you" id="why_hire_you" class="form-control has-icon @error('why_hire_you') is-invalid @enderror" rows="4" placeholder="Explain why you're a great fit for this opportunity"
+            <textarea wire:model="why_hire_you" id="why_hire_you" class="form-control has-icon @error('why_hire_you') is-invalid @enderror" rows="4" placeholder="Enter why you should be hired (e.g., Proven track record, 10+ years experience, 5-star reviews)"
                  required></textarea>
         </div>
         @error('why_hire_you')<span class="text-danger small">{{ $message }}</span>@enderror
@@ -68,7 +68,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="what_sets_you_apart" id="what_sets_you_apart" class="form-control has-icon @error('what_sets_you_apart') is-invalid @enderror" rows="4"  placeholder="Describe what makes your approach or service different"
+            <textarea wire:model="what_sets_you_apart" id="what_sets_you_apart" class="form-control has-icon @error('what_sets_you_apart') is-invalid @enderror" rows="4"  placeholder="Enter what sets you apart (e.g., Off-market network, same-day responsiveness, multilingual)"
                  required></textarea>
         </div>
         @error('what_sets_you_apart')<span class="text-danger small">{{ $message }}</span>@enderror
@@ -83,7 +83,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="marketing_plan" id="marketing_plan" class="form-control has-icon @error('marketing_plan') is-invalid @enderror" rows="4" placeholder="Outline how you market listings or support your clients' goals"
+            <textarea wire:model="marketing_plan" id="marketing_plan" class="form-control has-icon @error('marketing_plan') is-invalid @enderror" rows="4" placeholder="Enter Marketing Strategy (e.g., Social media ads, email campaigns, open houses)"
                  required></textarea>
         </div>
         @error('marketing_plan')<span class="text-danger small">{{ $message }}</span>@enderror

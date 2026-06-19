@@ -12,7 +12,66 @@
         <i class="fa-solid fa-trophy me-2"></i> Social Proof &amp; Track Record
     </div>
     <div class="card-body">
-        <p class="text-muted mb-3 small">Highlight your achievements, past transactions, and marketing wins — then share links to your website, reviews, and social media so clients can verify your reputation.</p>
+        <p class="text-muted mb-3 small">Highlight your client testimonials, achievements, past buyer transactions, and negotiation wins — so clients can evaluate your reputation.</p>
+
+        <!-- Testimonial 1 -->
+        <div class="form-group mb-3">
+            <label class="fw-bold">Testimonial 1:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Share a short client testimonial or quote from a past buyer client. This is displayed on your bid to build trust.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <textarea wire:model.defer="review_1" class="form-control" rows="2"
+                placeholder="Enter Testimonial 1 (e.g., &quot;Our agent found us the perfect home in just 3 weeks and negotiated $10K below asking!&quot; — Jane D., Lake Mary, FL)"></textarea>
+        </div>
+
+        <!-- Testimonial 2 -->
+        <div class="form-group mb-3">
+            <label class="fw-bold">Testimonial 2:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Share a second client testimonial or quote.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <textarea wire:model.defer="review_2" class="form-control" rows="2"
+                placeholder="Enter Testimonial 2 (e.g., &quot;As first-time buyers we were nervous, but our agent guided us every step of the way. Incredible experience!&quot; — Mark T., Orlando, FL)"></textarea>
+        </div>
+
+        <!-- Testimonial 3 -->
+        <div class="form-group mb-3">
+            <label class="fw-bold">Testimonial 3:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Share a third client testimonial or quote.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <textarea wire:model.defer="review_3" class="form-control" rows="2"
+                placeholder="Enter Testimonial 3 (e.g., &quot;Found our dream home off-market and closed in under 30 days. Couldn't ask for a better agent!&quot; — Sarah M., Winter Park, FL)"></textarea>
+        </div>
+
+        <!-- Client Reviews (Links) -->
+        <div class="form-group mb-3">
+            <label class="fw-bold">Client Reviews:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Link to your reviews on Zillow, Realtor.com, Google, or another platform. This helps clients build trust in your track record.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            @foreach($reviews_links as $index => $review)
+                @php $reviewArr = is_array($review) ? $review : (is_object($review) ? (array) $review : ['text' => '']); @endphp
+                <div class="d-flex align-items-center mb-2">
+                    <div class="input-cover flex-grow-1">
+                        <input type="url" wire:model="reviews_links.{{ $index }}.text"
+                            class="form-control has-icon" data-icon="fa-solid fa-star"
+                            placeholder="Enter Review Page URL (e.g., https://www.zillow.com/profile/yourname/reviews)">
+                    </div>
+                    @if(count($reviews_links) > 1)
+                    <button type="button" wire:click="removeReviewLink({{ $index }})"
+                        class="btn btn-outline-danger btn-sm ms-2"><i class="fa-solid fa-trash"></i></button>
+                    @endif
+                </div>
+            @endforeach
+            <button type="button" wire:click="addReviewLink" class="btn btn-sm btn-outline-secondary mt-1">
+                <i class="fa-solid fa-plus me-1"></i> Add Another Review Link
+            </button>
+        </div>
 
         <!-- Awards & Recognition -->
         <div class="form-group mb-3">
@@ -22,7 +81,7 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
             <textarea wire:model.defer="awards_recognition" class="form-control" rows="3"
-                placeholder="e.g., Top 1% Nationwide Producer 2023, Platinum Award Recipient, Five-Star Agent on Zillow..."></textarea>
+                placeholder="Enter Awards & Recognition (e.g., Top 1% Nationwide Producer 2023, Platinum Award Recipient, Five-Star Agent on Zillow)"></textarea>
         </div>
 
         <!-- Recent Sales & Listings -->
@@ -33,22 +92,18 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
             <textarea wire:model.defer="sold_listed_examples" class="form-control" rows="3"
-                placeholder="e.g., Helped a first-time buyer close a 3BR in Lake Mary for $380K — under asking and with $5K in seller concessions. Found an off-market 4BR in Winter Park for relocating family..."></textarea>
+                placeholder="Enter Recent Buyer Placements (e.g., Helped a first-time buyer close a 3BR in Lake Mary for $380K, under asking with $5K in seller concessions)"></textarea>
         </div>
 
-        <!-- Marketing Wins -->
-        <div class="form-group mb-4">
-            <label class="fw-bold">Search &amp; Negotiation Wins:</label>
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Share examples of successful buyer negotiations or search strategies — e.g., securing a home below asking in a competitive market.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <textarea wire:model.defer="marketing_success_examples" class="form-control" rows="3"
-                placeholder="e.g., Negotiated $18K below list price plus closing cost coverage in a multiple-offer situation. Used off-market network to find a property before it was listed publicly..."></textarea>
-        </div>
+    </div>
+</div>
 
-        <hr class="my-3">
-
+<!-- Agent Website & Social Media -->
+<div class="card mb-4 border-secondary">
+    <div class="card-header bg-secondary text-white">
+        <i class="fa-solid fa-globe me-2"></i> Agent Website &amp; Social Media
+    </div>
+    <div class="card-body">
         <!-- Website Link -->
         <div class="form-group mb-3">
             <label class="fw-bold">Agent Website:</label>
@@ -62,7 +117,7 @@
                     <div class="input-cover flex-grow-1">
                         <input type="url" wire:model="website_link.{{ $index }}"
                             class="form-control has-icon" data-icon="fa-solid fa-globe"
-                            placeholder="https://yourwebsite.com">
+                            placeholder="Enter Website URL (e.g., https://yourwebsite.com)">
                     </div>
                     @if(count($website_link) > 1)
                     <button type="button" wire:click="removeWebsiteLink({{ $index }})"
@@ -77,38 +132,12 @@
                 <div class="input-cover">
                     <input type="url" wire:model="website_link"
                         class="form-control has-icon" data-icon="fa-solid fa-globe"
-                        placeholder="https://yourwebsite.com">
+                        placeholder="Enter Website URL (e.g., https://yourwebsite.com)">
                 </div>
             @endif
         </div>
 
-        <!-- Reviews Links -->
-        <div class="form-group mb-3">
-            <label class="fw-bold">Client Reviews:</label>
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Link to your reviews on Zillow, Realtor.com, Google, or another platform. This helps clients build trust in your track record.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            @foreach($reviews_links as $index => $review)
-                @php $reviewArr = is_array($review) ? $review : (is_object($review) ? (array) $review : ['text' => '']); @endphp
-                <div class="d-flex align-items-center mb-2">
-                    <div class="input-cover flex-grow-1">
-                        <input type="url" wire:model="reviews_links.{{ $index }}.text"
-                            class="form-control has-icon" data-icon="fa-solid fa-star"
-                            placeholder="https://www.zillow.com/profile/yourname/reviews">
-                    </div>
-                    @if(count($reviews_links) > 1)
-                    <button type="button" wire:click="removeReviewLink({{ $index }})"
-                        class="btn btn-outline-danger btn-sm ms-2"><i class="fa-solid fa-trash"></i></button>
-                    @endif
-                </div>
-            @endforeach
-            <button type="button" wire:click="addReviewLink" class="btn btn-sm btn-outline-secondary mt-1">
-                <i class="fa-solid fa-plus me-1"></i> Add Another Review Link
-            </button>
-        </div>
-
-        <!-- Social Media -->
+        <!-- Social Media Profiles -->
         <div class="form-group">
             <label class="fw-bold">Social Media Profiles:</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -131,7 +160,7 @@
                     </select>
                     <input type="url" wire:model="social_media.{{ $index }}.url"
                         class="form-control"
-                        placeholder="{{ $mediaArr['placeholder'] ?? 'https://' }}">
+                        placeholder="{{ $mediaArr['placeholder'] ?? 'Enter Social Media Profile URL (e.g., https://)' }}">
                     @if(count($social_media) > 1)
                     <button type="button" wire:click="removeSocialMedia({{ $index }})"
                         class="btn btn-outline-danger"><i class="fa-solid fa-trash"></i></button>
@@ -382,5 +411,23 @@
             wire:target="promoMaterials.*.files">
             + Add Another Marketing Material
         </button>
+    </div>
+</div>
+
+<!-- Marketing Success Stories -->
+<div class="card mb-4 border-warning">
+    <div class="card-header bg-warning text-dark">
+        <i class="fa-solid fa-chart-line me-2"></i> Marketing Success Stories
+    </div>
+    <div class="card-body">
+        <div class="form-group">
+            <label class="fw-bold">Marketing Success Stories:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Share examples of successful buyer negotiations or search strategies — e.g., securing a home below asking in a competitive market.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <textarea wire:model.defer="marketing_success_examples" class="form-control" rows="3"
+                placeholder="Enter Marketing Success Stories (e.g., Negotiated $18K below list price plus closing cost coverage in a multiple-offer situation)"></textarea>
+        </div>
     </div>
 </div>

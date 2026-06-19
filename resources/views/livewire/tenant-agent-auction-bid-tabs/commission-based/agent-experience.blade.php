@@ -36,7 +36,7 @@
     <div class="input-cover">
         <input type="text" wire:model="avg_response_time" id="avg_response_time"
             class="form-control has-icon" data-icon="fa-solid fa-clock"
-            placeholder="e.g. Within 1 hour">
+            placeholder="Enter Response Time (e.g., Within 1 hour)">
     </div>
 </div>
 
@@ -108,7 +108,7 @@
             </span>
             <div class="input-cover">
                 <input type="number" wire:model="years_experience" id="years_experience"
-                    class="form-control has-icon" placeholder="e.g., 8"
+                    class="form-control has-icon" placeholder="Enter years of experience (e.g., 8)"
                     min="0" data-icon="fa-solid fa-briefcase">
             </div>
         </div>
@@ -122,7 +122,7 @@
             </span>
             <div class="input-cover">
                 <input type="number" wire:model="transactions_last_12_months" id="transactions_last_12_months"
-                    class="form-control has-icon" placeholder="e.g., 15"
+                    class="form-control has-icon" placeholder="Enter number of completed transactions (e.g., 15)"
                     min="0" data-icon="fa-solid fa-handshake">
             </div>
         </div>
@@ -156,7 +156,7 @@
             </span>
             <div class="input-cover">
                 <input type="text" wire:model="primary_areas_served" id="primary_areas_served"
-                    class="form-control has-icon" placeholder="e.g., Downtown Miami, Coral Gables, Brickell"
+                    class="form-control has-icon" placeholder="Enter primary areas served (e.g., Downtown Miami, Coral Gables, Brickell)"
                     data-icon="fa-solid fa-map-marker-alt">
             </div>
         </div>
@@ -177,7 +177,7 @@
             </span>
             <div class="input-cover">
                 <input type="text" wire:model="cities_served" id="cities_served"
-                    class="form-control has-icon" placeholder="e.g., Miami, Fort Lauderdale, Hollywood"
+                    class="form-control has-icon" placeholder="Enter cities served (e.g., Miami, Fort Lauderdale, Hollywood)"
                     data-icon="fa-solid fa-city">
             </div>
         </div>
@@ -191,7 +191,7 @@
             </span>
             <div class="input-cover">
                 <input type="text" wire:model="counties_served" id="counties_served"
-                    class="form-control has-icon" placeholder="e.g., Miami-Dade, Broward, Palm Beach"
+                    class="form-control has-icon" placeholder="Enter counties served (e.g., Miami-Dade, Broward, Palm Beach)"
                     data-icon="fa-solid fa-map">
             </div>
         </div>
@@ -206,13 +206,13 @@
     </span>
     <div class="input-cover">
         <input type="text" wire:model="neighborhoods_served" id="neighborhoods_served"
-            class="form-control has-icon" placeholder="e.g., Wynwood, Design District, South Beach"
+            class="form-control has-icon" placeholder="Enter neighborhoods served (e.g., Wynwood, Design District, South Beach)"
             data-icon="fa-solid fa-location-dot">
     </div>
 </div>
 
 <div class="form-group">
-    <label class="fw-bold">Additional Notes on Service Areas:</label>
+    <label class="fw-bold">Service Area Notes:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Use this space to provide any additional context about your geographic coverage, travel radius, or specialty markets.">
         <i class="fa-solid fa-circle-info"></i>
@@ -220,6 +220,6 @@
     <div class="input-cover">
         <textarea wire:model="areas_notes" id="areas_notes"
             class="form-control has-icon" rows="3"
-            placeholder="Any additional details about your service area coverage or geographic specialization"></textarea>
+            placeholder="Enter service area notes (e.g., I specialize in waterfront properties across Miami-Dade and Broward counties)"></textarea>
     </div>
 </div>

@@ -77,6 +77,9 @@ class LandlordAgentAuctionBid extends Component
     public string $awards_recognition = '';
     public string $sold_listed_examples = '';
     public string $marketing_success_examples = '';
+    public string $review_1 = '';
+    public string $review_2 = '';
+    public string $review_3 = '';
 
 
 
@@ -847,6 +850,9 @@ class LandlordAgentAuctionBid extends Component
                 $this->applyPresetField('counties_served',      $mapped['counties_served']      ?? null, $presetFieldsApplied);
                 $this->applyPresetField('neighborhoods_served', $mapped['neighborhoods_served'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('areas_notes',          $mapped['areas_notes']          ?? null, $presetFieldsApplied);
+                $this->applyPresetField('review_1', $mapped['review_1'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('review_2', $mapped['review_2'] ?? null, $presetFieldsApplied);
+                $this->applyPresetField('review_3', $mapped['review_3'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('presentation_link', $mapped['presentation_link'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('business_card_link', $mapped['business_card_link'] ?? null, $presetFieldsApplied);
                 $this->applyPresetField('business_card_stored_path', $mapped['business_card_stored_path'] ?? null, $presetFieldsApplied);
@@ -996,7 +1002,7 @@ class LandlordAgentAuctionBid extends Component
                 $this->cities_served              = $bidData->cities_served              ?? '';
                 $this->counties_served            = $bidData->counties_served            ?? '';
                 $this->neighborhoods_served       = $bidData->neighborhoods_served       ?? '';
-                $this->areas_notes                = $bidData->areas_notes                ?? '';
+                $this->areas_notes                = trim((string)($bidData->areas_notes                ?? ''));
 
                 // Agent Overview
                 $this->bio                 = $bidData->bio ?? '';
@@ -1041,6 +1047,9 @@ class LandlordAgentAuctionBid extends Component
                 $this->awards_recognition         = $bidData->awards_recognition         ?? '';
                 $this->sold_listed_examples       = $bidData->sold_listed_examples       ?? '';
                 $this->marketing_success_examples = $bidData->marketing_success_examples ?? '';
+                $this->review_1                   = trim((string)($bidData->review_1                   ?? ''));
+                $this->review_2                   = trim((string)($bidData->review_2                   ?? ''));
+                $this->review_3                   = trim((string)($bidData->review_3                   ?? ''));
 
                 // Services
                 $services = $bidData->services ?? '';
@@ -1259,6 +1268,9 @@ class LandlordAgentAuctionBid extends Component
             'awards_recognition'         => $this->awards_recognition,
             'sold_listed_examples'       => $this->sold_listed_examples,
             'marketing_success_examples' => $this->marketing_success_examples,
+            'review_1'                   => $this->review_1,
+            'review_2'                   => $this->review_2,
+            'review_3'                   => $this->review_3,
             'additional_details'        => $this->additional_details,
             'year_licensed'             => $this->year_licensed,
             'first_name'                => $this->first_name,
@@ -1352,6 +1364,9 @@ class LandlordAgentAuctionBid extends Component
         $this->awards_recognition         = $data['awards_recognition']         ?? '';
         $this->sold_listed_examples       = $data['sold_listed_examples']       ?? '';
         $this->marketing_success_examples = $data['marketing_success_examples'] ?? '';
+        $this->review_1                   = trim($data['review_1']                   ?? '');
+        $this->review_2                   = trim($data['review_2']                   ?? '');
+        $this->review_3                   = trim($data['review_3']                   ?? '');
         $this->additional_details  = $data['additional_details'] ?? '';
         $this->year_licensed       = $data['year_licensed'] ?? '';
         if (!empty($data['first_name']))        $this->first_name        = $data['first_name'];
@@ -1372,7 +1387,7 @@ class LandlordAgentAuctionBid extends Component
         $this->cities_served              = $data['cities_served']              ?? '';
         $this->counties_served            = $data['counties_served']            ?? '';
         $this->neighborhoods_served       = $data['neighborhoods_served']       ?? '';
-        $this->areas_notes                = $data['areas_notes']                ?? '';
+        $this->areas_notes                = trim($data['areas_notes']                ?? '');
         if (!empty($data['presentation_link']))         $this->presentation_link         = $data['presentation_link'];
         if (!empty($data['business_card_link']))         $this->business_card_link         = $data['business_card_link'];
         if (!empty($data['business_card_stored_path'])) $this->business_card_stored_path  = $data['business_card_stored_path'];
@@ -1468,6 +1483,9 @@ class LandlordAgentAuctionBid extends Component
             $bid->saveMeta('awards_recognition',        $this->awards_recognition);
             $bid->saveMeta('sold_listed_examples',      $this->sold_listed_examples);
             $bid->saveMeta('marketing_success_examples', $this->marketing_success_examples);
+            $bid->saveMeta('review_1',                  trim($this->review_1));
+            $bid->saveMeta('review_2',                  trim($this->review_2));
+            $bid->saveMeta('review_3',                  trim($this->review_3));
 
             $bid->saveMeta('services', json_encode($this->services));
             $bid->saveMeta('other_services', json_encode($this->other_services ?? null));
@@ -1686,7 +1704,7 @@ class LandlordAgentAuctionBid extends Component
             $bid->saveMeta('cities_served',              $this->cities_served);
             $bid->saveMeta('counties_served',            $this->counties_served);
             $bid->saveMeta('neighborhoods_served',       $this->neighborhoods_served);
-            $bid->saveMeta('areas_notes',                $this->areas_notes);
+            $bid->saveMeta('areas_notes',                trim($this->areas_notes));
 
             $bid->saveCompatibilityPreferences($this->compatibility_agent_response);
 

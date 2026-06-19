@@ -180,7 +180,7 @@
                                                                             <!-- Reviews Links -->
                                                                             @php
                                                                                 $buyerReviewLinks = data_get($bid, 'get.reviews_links', []);
-                                                                                $hasAnyBuyerReviewUrl = !empty(array_filter((array) $buyerReviewLinks, fn($rl) => !empty(is_object($rl) ? $rl->url : ($rl['url'] ?? ''))));
+                                                                                $hasAnyBuyerReviewUrl = !empty(array_filter((array) $buyerReviewLinks, fn($rl) => !empty(is_object($rl) ? ($rl->url ?? $rl->text ?? '') : ($rl['url'] ?? $rl['text'] ?? ''))));
                                                                             @endphp
                                                                             @if ($hasAnyBuyerReviewUrl)
                                                                                 <div class="mb-3">
@@ -189,7 +189,7 @@
                                                                                     <div>
                                                                                         @foreach ($buyerReviewLinks as $reviewLink)
                                                                                             @php
-                                                                                                $rlUrlVal = is_object($reviewLink) ? $reviewLink->url : ($reviewLink['url'] ?? '');
+                                                                                                $rlUrlVal = is_object($reviewLink) ? ($reviewLink->url ?? $reviewLink->text ?? '') : ($reviewLink['url'] ?? $reviewLink['text'] ?? '');
                                                                                             @endphp
                                                                                             @if (!empty($rlUrlVal))
                                                                                                 @php
@@ -1343,6 +1343,25 @@
                                                                                     </div>
                                                                                 @endif
                                                                             </div>
+                                                                        @endif
+
+                                                                        <!-- Testimonials -->
+                                                                        @if (data_get($bid, 'get.review_1') || data_get($bid, 'get.review_2') || data_get($bid, 'get.review_3'))
+                                                                        <div class="mb-4">
+                                                                            <h6 class="section-header">
+                                                                                <i class="fa-solid fa-quote-left me-2"></i>Client Testimonials
+                                                                            </h6>
+                                                                            @foreach (['review_1' => 'Testimonial 1', 'review_2' => 'Testimonial 2', 'review_3' => 'Testimonial 3'] as $reviewKey => $reviewLabel)
+                                                                                @if (data_get($bid, 'get.' . $reviewKey))
+                                                                                <div class="mb-3">
+                                                                                    <div class="fw-semibold mb-1" style="color: #049399;">{{ $reviewLabel }}</div>
+                                                                                    <div class="fst-italic text-muted" style="font-size:0.93rem; border-left: 3px solid #049399; padding-left: 0.75rem;">
+                                                                                        {{ data_get($bid, 'get.' . $reviewKey) }}
+                                                                                    </div>
+                                                                                </div>
+                                                                                @endif
+                                                                            @endforeach
+                                                                        </div>
                                                                         @endif
 
                                                                         <!-- 5. Agent Information -->

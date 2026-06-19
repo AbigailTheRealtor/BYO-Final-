@@ -68,6 +68,11 @@ class AgentBidMapperService
             'services'                  => $profileData['services']       ?? [],
             'other_services'            => $profileData['other_services'] ?? [],
 
+            // ── Testimonials / client reviews (text fields) ─────────────────
+            'review_1'                  => $profileData['review_1'] ?? '',
+            'review_2'                  => $profileData['review_2'] ?? '',
+            'review_3'                  => $profileData['review_3'] ?? '',
+
             // ── Array fields ────────────────────────────────────────────────
             'reviews_links'             => $profileData['reviews_links']  ?? [],
             'website_link'              => $profileData['website_link']   ?? [],
