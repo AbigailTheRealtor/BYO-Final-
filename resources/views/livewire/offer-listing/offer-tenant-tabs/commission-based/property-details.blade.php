@@ -198,14 +198,44 @@
     document.addEventListener('DOMContentLoaded', syncLdnaBridge);
     document.addEventListener('livewire:load', syncLdnaBridge);
 
-    /* ── Pre-save hook: inject JSON directly into the Livewire payload ──────── */
+    /* ── Pre-save hook: inject map JSON into Livewire's updateQueue ────────────
+       In Livewire v2, message.sent fires BEFORE xhr.send() and receives the
+       Message object. Its updateQueue is serialised as the 'updates' array in
+       the XHR body — pushing a syncInput here is the ONLY reliable way to get
+       the current map state to the server.
+       WARNING: mutating component.data (= serverMemo.data) is UNSAFE because
+       serverMemo is HMAC-signed; tampering causes a 403 / silent rejection.    */
     document.addEventListener('livewire:load', function () {
         if (window.Livewire && typeof Livewire.hook === 'function') {
+
             Livewire.hook('message.sent', function (message, component) {
                 var src = document.getElementById('ldna-json-field');
-                if (src && src.value && 'location_dna_preferences_json' in component.data) {
-                    component.data.location_dna_preferences_json = src.value;
-                }
+                if (!src || !src.value) return;
+                var jsonValue = src.value;
+
+                /* Deduplicate: remove any prior syncInput for this property */
+                message.updateQueue = message.updateQueue.filter(function (u) {
+                    return !(u.type === 'syncInput' && u.payload &&
+                             u.payload.name === 'location_dna_preferences_json');
+                });
+
+                /* Inject the current map state as a syncInput update.
+                   Livewire applies syncInputs BEFORE calling the action method,
+                   so $location_dna_preferences_json is set before saveDraft(). */
+                message.updateQueue.push({
+                    type: 'syncInput',
+                    payload: { name: 'location_dna_preferences_json', value: jsonValue }
+                });
+            });
+
+            /* ── Post-render re-sync ──────────────────────────────────────────
+               After any Livewire morphdom update (e.g. county auto-complete),
+               ldna-livewire-bridge gets reset to the server-side value.
+               Re-dispatching keeps the wire:model.defer value current so the
+               next save action carries the right JSON as a belt-and-suspenders
+               fallback alongside the message.sent injection above.             */
+            Livewire.hook('message.processed', function (message, component) {
+                syncLdnaBridge();
             });
         }
     });
