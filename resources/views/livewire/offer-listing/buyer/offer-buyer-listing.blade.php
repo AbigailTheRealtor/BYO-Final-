@@ -2106,6 +2106,8 @@
                         if (_nId) {
                             window._manualTabSwitch(_nId);
                             sessionStorage.setItem('buyer_create_active_tab', _nId);
+                            /* Explicitly trigger map init — _manualTabSwitch does not fire shown.bs.tab */
+                            setTimeout(function() { if (typeof window.ldnaRequestInit === 'function') window.ldnaRequestInit(); }, 80);
                             var _we = document.querySelector('[wire\\:id]');
                             if (_we && window.Livewire) {
                                 var _nComp = window.Livewire.find(_we.getAttribute('wire:id'));
@@ -2165,6 +2167,8 @@
                 if (!_pId) return;
                 window._manualTabSwitch(_pId);
                 sessionStorage.setItem('buyer_create_active_tab', _pId);
+                /* Explicitly trigger map init — _manualTabSwitch does not fire shown.bs.tab */
+                setTimeout(function() { if (typeof window.ldnaRequestInit === 'function') window.ldnaRequestInit(); }, 80);
             };
 
             // Add event listeners to update save button state when fields change
@@ -2409,6 +2413,7 @@
                 var _tabTrigger = document.querySelector('#myTab .nav-link[data-bs-target="' + _savedTabId + '"]');
                 if (_tabTrigger && !_tabTrigger.classList.contains('active')) {
                     window._manualTabSwitch(_savedTabId);
+                    setTimeout(function() { if (typeof window.ldnaRequestInit === 'function') window.ldnaRequestInit(); }, 80);
                 }
             }
         });

@@ -303,6 +303,8 @@
   function ldnaInitMap() {
     if (ldnaMapInitialized) return;
     ldnaMapInitialized = true;
+    /* Signal any external heartbeat / polling that initialization succeeded */
+    window.ldnaMapReady = true;
 
     /* Hide the placeholder now that the real map is taking over */
     var ph = document.getElementById('{{ $mapPanelId }}-placeholder');
@@ -527,18 +529,25 @@
       /* Container is visible — init immediately */
       ldnaInitMap();
     } else {
-      /* Container is hidden — defer until it becomes visible via ResizeObserver */
-      if (ldnaResizeObserver) return; /* already waiting */
-      ldnaResizeObserver = new ResizeObserver(function (entries) {
-        for (var i = 0; i < entries.length; i++) {
-          var rect = entries[i].contentRect;
-          if (rect.width > 0 && rect.height > 0) {
-            ldnaInitMap();
-            break;
+      /* Container is hidden — attach ResizeObserver AND keep polling.
+         Manual tab switches (Next/Back wizard buttons) toggle Bootstrap classes
+         directly without firing shown.bs.tab, so the ResizeObserver may fire or
+         the polling will catch the transition within ~500 ms. Both paths call
+         ldnaInitMap() which is idempotent (ldnaMapInitialized guard). */
+      if (!ldnaResizeObserver) {
+        ldnaResizeObserver = new ResizeObserver(function (entries) {
+          for (var i = 0; i < entries.length; i++) {
+            var rect = entries[i].contentRect;
+            if (rect.width > 0 && rect.height > 0) {
+              ldnaInitMap();
+              break;
+            }
           }
-        }
-      });
-      ldnaResizeObserver.observe(container);
+        });
+        ldnaResizeObserver.observe(container);
+      }
+      /* Fallback poll – stops automatically once ldnaMapInitialized is true */
+      setTimeout(ldnaTryInit, 500);
     }
   }
 
