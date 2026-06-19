@@ -9,35 +9,44 @@
 
   BOUNDARY DATA SOURCES
   ─────────────────────
-  • Cities / Counties / States  →  Nominatim OpenStreetMap API (free, no key required)
-  • ZIP Codes                   →  US Census Bureau TIGERweb ZCTA2020 REST API (free, public)
-  • Neighborhoods               →  No reliable free GeoJSON source exists for US neighborhoods.
-                                   Neighborhood data is used for MATCHING/SCORING only.
-                                   No boundary polygon is rendered.
+  • Cities / Counties  →  Nominatim OpenStreetMap API (free, no key; 1 req/sec queue)
+                           City lat/lng from Places Autocomplete is cached and used as
+                           a viewbox bias so "Seminole, FL" resolves to Pinellas County,
+                           not Seminole County near Orlando.
+  • ZIP Codes          →  US Census Bureau TIGERweb ZCTA2020 REST API (primary, free)
+                           Nominatim postalcode= search (fallback)
+                           Inline warning shown if both fail.
+  • Neighborhoods      →  Removed from UI. Existing saved data is preserved in JSON
+                           for backward-compatible backend matching.
+
+  DRAW TOOLS (no DrawingManager — custom click-based)
+  ─────────────────────────────────────────────────────
+  Polygon: click map to add vertices → "Finish Polygon" button closes it.
+  Circle:  first click = center, second click = radius edge (Haversine, no geometry lib).
 
   CANONICAL JSON (stored in meta key `location_dna_preferences`):
   {
-    "cities":          ["Orlando, FL"],
-    "zip_codes":       ["32801"],
-    "neighborhoods":   ["Downtown"],
-    "counties":        ["Orange County, FL"],
-    "polygons":        [ { "label": "…", "path": [{lat,lng},…] } ],
-    "radius_searches": [ { "address":"…", "lat":0, "lng":0, "radius_miles":5 } ],
+    "cities":           ["Seminole, FL"],
+    "zip_codes":        ["33708"],
+    "neighborhoods":    [],            ← preserved for backend matching, no UI
+    "counties":         ["Pinellas County, FL"],
+    "polygons":         [ { "label": "…", "path": [{lat,lng},…] } ],
+    "radius_searches":  [ { "address":"…", "lat":0, "lng":0, "radius_miles":5 } ],
     "flexible_location": false,
-    "location_notes": ""
+    "location_notes":  ""
   }
 --}}
 
 @php
   $ldna        = $existingLocationDna ?? [];
-  $ldnaCities  = $ldna['cities']          ?? [];
-  $ldnaZips    = $ldna['zip_codes']       ?? [];
-  $ldnaNeigh   = $ldna['neighborhoods']   ?? [];
-  $ldnaCounties= $ldna['counties']        ?? [];
-  $ldnaPolygons= $ldna['polygons']        ?? [];
-  $ldnaRadii   = $ldna['radius_searches'] ?? [];
+  $ldnaCities  = $ldna['cities']           ?? [];
+  $ldnaZips    = $ldna['zip_codes']        ?? [];
+  $ldnaNeigh   = $ldna['neighborhoods']    ?? [];   /* preserved, no UI */
+  $ldnaCounties= $ldna['counties']         ?? [];
+  $ldnaPolygons= $ldna['polygons']         ?? [];
+  $ldnaRadii   = $ldna['radius_searches']  ?? [];
   $ldnaFlex    = $ldna['flexible_location'] ?? false;
-  $ldnaNotes   = $ldna['location_notes']  ?? '';
+  $ldnaNotes   = $ldna['location_notes']   ?? '';
   $ldnaJson    = count($ldna) ? json_encode($ldna) : '';
   $mapPanelId  = $mapPanelId ?? 'ldna-map-panel';
 @endphp
@@ -68,28 +77,41 @@
   #{{ $mapPanelId }} { width:100%; height:420px; border-radius:6px; border:1px solid #ced4da; }
   .ldna-map-toolbar { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:.5rem; align-items:center; }
   .ldna-map-toolbar .btn { font-size:.82rem; }
+  .ldna-drawing-hud {
+    display:none; align-items:center; gap:.5rem;
+    background:#eff6ff; border:1px solid #bfdbfe;
+    border-radius:4px; padding:.4rem .75rem; margin-bottom:.5rem;
+    font-size:.82rem;
+  }
   .ldna-radius-form { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin-top:.5rem; }
   .ldna-hint { font-size:.78rem; color:#0369a1; margin-top:.25rem; }
-  .ldna-draw-mode-indicator {
-    display:none; font-size:.8rem; color:#0369a1;
-    background:#eff6ff; border:1px solid #bfdbfe;
-    border-radius:4px; padding:.3rem .6rem;
-    align-items:center; gap:.4rem;
+  .ldna-zip-warn { display:none; font-size:.78rem; color:#dc2626; margin-top:.2rem; }
+  .ldna-overlay-item {
+    display:flex; align-items:center; gap:.4rem; margin-bottom:.3rem; font-size:.83rem;
   }
-  .ldna-draw-mode-indicator.active { display:flex; }
+  .ldna-overlay-item .ldna-del {
+    background:none; border:none; color:#dc2626; cursor:pointer; padding:0 .2rem;
+    font-size:.8rem; line-height:1; flex-shrink:0;
+  }
+  .ldna-overlay-item .ldna-del:hover { color:#991b1b; }
 </style>
 
 <div class="ldna-section" wire:ignore>
   <div class="ldna-section-header">
     <i class="fa-solid fa-map-location-dot" style="color:#0369a1;font-size:1.1rem;"></i>
-    <h5>Location Preferences Map <span style="font-weight:400;font-size:.85rem;color:#64748b;">(optional — adding any item shows its boundary on the map)</span></h5>
+    <h5>Location Preferences Map
+      <span style="font-weight:400;font-size:.85rem;color:#64748b;">
+        (optional — cities and ZIPs draw visible boundaries on the map)
+      </span>
+    </h5>
   </div>
 
-  {{-- ── Tag inputs row 1: cities, ZIPs, neighborhoods ── --}}
+  {{-- ── Tag inputs row 1: cities, ZIP codes ── --}}
   <div class="row g-3 mb-3">
-    <div class="col-md-4">
+
+    <div class="col-md-6">
       <label class="fw-bold" style="font-size:.88rem;">Preferred Cities
-        <small class="text-muted">(type & select)</small>
+        <small class="text-muted">(type &amp; select)</small>
       </label>
       <div class="ldna-tag-input-wrap" id="ldna-cities-wrap">
         @foreach($ldnaCities as $c)
@@ -98,13 +120,18 @@
           </span>
         @endforeach
         <input type="text" class="ldna-tag-input" id="ldna-cities-input"
-          placeholder="e.g. Orlando" autocomplete="off">
+          placeholder="e.g. Seminole, FL" autocomplete="off">
       </div>
-      <div class="ldna-hint"><i class="fa-solid fa-circle-info"></i> Selecting a city draws its boundary on the map.</div>
+      <div class="ldna-hint">
+        <i class="fa-solid fa-circle-info"></i>
+        Selecting a city draws its boundary on the map.
+        County bias is used so "Seminole, FL" maps to Pinellas, not Seminole County.
+      </div>
     </div>
-    <div class="col-md-4">
+
+    <div class="col-md-6">
       <label class="fw-bold" style="font-size:.88rem;">Preferred ZIP Codes
-        <small class="text-muted">(type & Enter)</small>
+        <small class="text-muted">(type &amp; Enter)</small>
       </label>
       <div class="ldna-tag-input-wrap" id="ldna-zips-wrap">
         @foreach($ldnaZips as $z)
@@ -113,32 +140,25 @@
           </span>
         @endforeach
         <input type="text" class="ldna-tag-input" id="ldna-zips-input"
-          placeholder="e.g. 32801" onkeydown="ldnaAddTag(event,'zips')">
+          placeholder="e.g. 33708" onkeydown="ldnaAddTag(event,'zips')"
+          pattern="\d{5}" maxlength="5">
       </div>
-      <div class="ldna-hint"><i class="fa-solid fa-circle-info"></i> ZIP boundaries are drawn from US Census data.</div>
-    </div>
-    <div class="col-md-4">
-      <label class="fw-bold" style="font-size:.88rem;">Preferred Neighborhoods
-        <small class="text-muted">(type & Enter)</small>
-      </label>
-      <div class="ldna-tag-input-wrap" id="ldna-neighborhoods-wrap">
-        @foreach($ldnaNeigh as $n)
-          <span class="ldna-tag" data-value="{{ $n }}">{{ $n }}
-            <span class="ldna-tag-remove" onclick="ldnaRemoveTag(this,'neighborhoods')">×</span>
-          </span>
-        @endforeach
-        <input type="text" class="ldna-tag-input" id="ldna-neighborhoods-input"
-          placeholder="e.g. Thornton Park" onkeydown="ldnaAddTag(event,'neighborhoods')">
+      <div class="ldna-hint">
+        <i class="fa-solid fa-circle-info"></i> ZIP boundaries drawn from US Census ZCTA data.
       </div>
-      <div class="ldna-hint"><i class="fa-solid fa-info-circle"></i> Used for matching/scoring. No map boundary — see note below.</div>
+      <div class="ldna-zip-warn" id="ldna-zip-warning">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span id="ldna-zip-warning-text"></span>
+      </div>
     </div>
+
   </div>
 
   {{-- ── Tag inputs row 2: counties ── --}}
   <div class="row g-3 mb-3">
-    <div class="col-md-4">
+    <div class="col-md-6">
       <label class="fw-bold" style="font-size:.88rem;">Preferred Counties
-        <small class="text-muted">(type & Enter — e.g. "Orange County, FL")</small>
+        <small class="text-muted">(type &amp; Enter — e.g. "Pinellas County, FL")</small>
       </label>
       <div class="ldna-tag-input-wrap" id="ldna-counties-wrap">
         @foreach($ldnaCounties as $co)
@@ -147,14 +167,14 @@
           </span>
         @endforeach
         <input type="text" class="ldna-tag-input" id="ldna-counties-input"
-          placeholder="Orange County, FL" onkeydown="ldnaAddTag(event,'counties')">
+          placeholder="Pinellas County, FL" onkeydown="ldnaAddTag(event,'counties')">
       </div>
     </div>
   </div>
 
-  {{-- ── Map panel ── --}}
+  {{-- ── Map toolbar ── --}}
   <label class="fw-bold" style="font-size:.88rem;">Draw Custom Areas on Map
-    <small class="text-muted">(polygon = custom shape, circle = radius around a point)</small>
+    <small class="text-muted">(polygon = custom shape, circle = two-click radius)</small>
   </label>
   <div class="ldna-map-toolbar">
     <button type="button" id="ldna-draw-btn-polygon"
@@ -171,18 +191,31 @@
       onclick="ldnaClearAllOverlays()">
       <i class="fa-solid fa-trash"></i> Clear Drawings
     </button>
-    <span id="ldna-draw-mode-indicator" class="ldna-draw-mode-indicator">
-      <i class="fa-solid fa-pen"></i>
-      <span id="ldna-draw-mode-text">Click on the map to draw. Double-click to finish.</span>
-    </span>
   </div>
 
+  {{-- ── Drawing HUD (shown while drawing mode is active) ── --}}
+  <div id="ldna-drawing-hud" class="ldna-drawing-hud">
+    <i class="fa-solid fa-pen-to-square text-primary"></i>
+    <span id="ldna-hud-status" style="flex:1;color:#1e3a5f;"></span>
+    <button type="button" id="ldna-finish-btn"
+      class="btn btn-success btn-sm" style="display:none;"
+      onclick="ldnaFinishDrawing()">
+      <i class="fa-solid fa-check"></i> Finish Polygon
+    </button>
+    <button type="button" class="btn btn-outline-secondary btn-sm"
+      onclick="ldnaCancelDrawing()">
+      Cancel
+    </button>
+  </div>
+
+  {{-- ── Map panel ── --}}
   <div style="position:relative;">
     <div id="{{ $mapPanelId }}" wire:ignore></div>
-    <div id="{{ $mapPanelId }}-placeholder" style="position:absolute;top:0;left:0;right:0;bottom:0;
-      display:flex;align-items:center;justify-content:center;background:#f8fafc;
-      border-radius:6px;border:1px solid #ced4da;color:#64748b;font-size:.9rem;
-      text-align:center;padding:1rem;pointer-events:none;z-index:1;">
+    <div id="{{ $mapPanelId }}-placeholder"
+      style="position:absolute;top:0;left:0;right:0;bottom:0;
+        display:flex;align-items:center;justify-content:center;background:#f8fafc;
+        border-radius:6px;border:1px solid #ced4da;color:#64748b;font-size:.9rem;
+        text-align:center;padding:1rem;pointer-events:none;z-index:1;">
       @if(count($ldnaPolygons) || count($ldnaRadii) || count($ldnaCities) || count($ldnaZips) || count($ldnaCounties))
         <span><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading map&hellip;</span>
       @else
@@ -191,17 +224,8 @@
     </div>
   </div>
 
-  {{-- ── Overlay list ── --}}
-  <ul class="ldna-overlay-list list-unstyled mt-1" id="ldna-overlay-list" style="font-size:.83rem;color:#374151;">
-    @foreach($ldnaPolygons as $i => $poly)
-      <li><i class="fa-solid fa-draw-polygon text-primary"></i>
-        {{ $poly['label'] ?? ('Polygon ' . ($i+1)) }}</li>
-    @endforeach
-    @foreach($ldnaRadii as $i => $r)
-      <li><i class="fa-solid fa-circle-dot text-secondary"></i>
-        {{ $r['address'] ?? $r['label'] ?? ('Radius ' . ($i+1)) }} ({{ $r['radius_miles'] }} mi)</li>
-    @endforeach
-  </ul>
+  {{-- ── Overlay list (JS populates with delete buttons on map init) ── --}}
+  <ul class="list-unstyled mt-1" id="ldna-overlay-list"></ul>
 
   {{-- ── Radius search form ── --}}
   <div class="ldna-radius-form mt-2">
@@ -213,16 +237,6 @@
       onclick="ldnaAddRadiusSearch()">
       <i class="fa-solid fa-location-crosshairs"></i> Add Radius Search
     </button>
-  </div>
-
-  {{-- ── Neighborhood note ── --}}
-  <div class="alert alert-info py-2 px-3 mt-3" style="font-size:.82rem;">
-    <strong>About Neighborhood Boundaries:</strong>
-    No free, reliable GeoJSON source exists for US neighborhood boundaries
-    (Google Maps and OpenStreetMap both have incomplete/inconsistent coverage).
-    Neighborhood names are saved and used for <strong>matching and scoring</strong>
-    against agent/listing data — they do not produce map polygons.
-    When a verified neighborhood boundary dataset becomes available, this can be upgraded.
   </div>
 
   {{-- ── Flexible + notes ── --}}
@@ -238,7 +252,8 @@
   <div class="row g-3 mt-1">
     <div class="col-12">
       <label class="fw-bold" style="font-size:.88rem;">Location Notes
-        <small class="text-muted">(optional)</small></label>
+        <small class="text-muted">(optional)</small>
+      </label>
       <textarea id="ldna-location-notes" class="form-control" rows="2"
         placeholder="E.g. Must be within 10 min of I-4. Prefer A-rated school district."
         oninput="ldnaSerialize()">{{ $ldnaNotes }}</textarea>
@@ -251,38 +266,54 @@
 
 <script>
 (function () {
-  /* ── Re-execution guard (survives Livewire morphdom) ────────────────────── */
+  /* ── Re-execution guard ──────────────────────────────────────────────────── */
   var _panelKey = 'ldnaInit_{{ $mapPanelId }}';
   if (window[_panelKey]) return;
   window[_panelKey] = true;
 
   /* ── State ───────────────────────────────────────────────────────────────── */
   var ldnaState = {
-    cities:           @json($ldnaCities),
-    zip_codes:        @json($ldnaZips),
-    neighborhoods:    @json($ldnaNeigh),
-    counties:         @json($ldnaCounties),
-    polygons:         @json($ldnaPolygons),
-    radius_searches:  @json($ldnaRadii),
+    cities:            @json($ldnaCities),
+    zip_codes:         @json($ldnaZips),
+    neighborhoods:     @json($ldnaNeigh),   /* preserved for backend matching, no UI */
+    counties:          @json($ldnaCounties),
+    polygons:          @json($ldnaPolygons),
+    radius_searches:   @json($ldnaRadii),
     flexible_location: {{ $ldnaFlex ? 'true' : 'false' }},
-    location_notes:   @json($ldnaNotes),
+    location_notes:    @json($ldnaNotes),
   };
 
-  /* ── Map state ───────────────────────────────────────────────────────────── */
-  var ldnaMap             = null;
-  var ldnaDrawingManager  = null;
-  var ldnaMapInitialized  = false;
-  var ldnaOverlays        = [];
-  var ldnaObservers       = [];
+  /* ── Map objects ─────────────────────────────────────────────────────────── */
+  var ldnaMap            = null;
+  var ldnaMapInitialized = false;
+  /* ldnaOverlays: [{type, overlay, label, data?}] — null = deleted */
+  var ldnaOverlays       = [];
+  var ldnaObservers      = [];
 
-  /* Boundary overlays: key → array of google.maps.Data.Feature */
+  /* Boundary overlays: key → [google.maps.Data.Feature] */
   var ldnaBoundaryOverlays = {};
 
-  /* Nominatim request queue (1 req/sec rate limit) */
+  /* Nominatim queue (cities + counties, 1 req/sec) */
   var ldnaBoundaryQueue   = [];
   var ldnaBoundaryRunning = false;
 
-  /* ── Serialise to hidden field ───────────────────────────────────────────── */
+  /* City lat/lng cache — populated by Places Autocomplete, used to bias Nominatim */
+  var cityLatLngCache = {};
+
+  /* ── Custom draw state (no DrawingManager) ───────────────────────────────── */
+  var ldnaDrawingMode      = null;   /* null | 'polygon' | 'circle' */
+  var ldnaPolyVertices     = [];     /* [{lat,lng}] */
+  var ldnaPolyMarkers      = [];     /* google.maps.Marker[] */
+  var ldnaPolyPreview      = null;   /* google.maps.Polyline */
+  var ldnaCircleCenter     = null;   /* {lat,lng} */
+  var ldnaCircleMarker     = null;   /* google.maps.Marker */
+  var ldnaCirclePreview    = null;   /* preview google.maps.Circle */
+  var ldnaDrawClickListener = null;
+  var ldnaDrawMouseListener = null;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SERIALIZATION
+  ═══════════════════════════════════════════════════════════════════════════ */
   window.ldnaSerialize = function () {
     var flexEl  = document.getElementById('ldna-flexible');
     var notesEl = document.getElementById('ldna-location-notes');
@@ -291,58 +322,69 @@
 
     ldnaState.polygons        = [];
     ldnaState.radius_searches = [];
+
     ldnaOverlays.forEach(function (item) {
+      if (!item) return; /* deleted */
       if (item.type === 'polygon') {
         var path = [];
-        item.overlay.getPath().forEach(function (ll) { path.push({ lat: ll.lat(), lng: ll.lng() }); });
+        item.overlay.getPath().forEach(function (ll) {
+          path.push({ lat: ll.lat(), lng: ll.lng() });
+        });
         ldnaState.polygons.push({ label: item.label, path: path });
       } else if (item.type === 'circle' || item.type === 'radius_search') {
         var c  = item.overlay.getCenter();
         var rm = parseFloat((item.overlay.getRadius() / 1609.34).toFixed(2));
         var entry = { lat: c.lat(), lng: c.lng(), radius_miles: rm };
         if (item.data && item.data.address) { entry.address = item.data.address; }
-        else { entry.label = item.label; }
+        else                                { entry.label   = item.label; }
         ldnaState.radius_searches.push(entry);
       }
     });
 
-    var jsonVal = JSON.stringify(ldnaState);
     var field = document.getElementById('ldna-json-field');
-    if (field) field.value = jsonVal;
+    if (field) field.value = JSON.stringify(ldnaState);
   };
 
-  /* ── Tag helpers ─────────────────────────────────────────────────────────── */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     TAG HELPERS
+  ═══════════════════════════════════════════════════════════════════════════ */
   function ldnaGroupKey(group) {
-    return { cities:'cities', zips:'zip_codes', neighborhoods:'neighborhoods', counties:'counties' }[group];
+    return { cities:'cities', zips:'zip_codes', counties:'counties' }[group] || null;
   }
 
   function ldnaAddTagValue(group, val) {
     if (!val) return;
     var stateKey = ldnaGroupKey(group);
     if (!stateKey) return;
-    if (ldnaState[stateKey].indexOf(val) !== -1) return;
+    if (ldnaState[stateKey].indexOf(val) !== -1) return; /* duplicate */
     ldnaState[stateKey].push(val);
 
     var wrap  = document.getElementById('ldna-' + group + '-wrap');
     var input = document.getElementById('ldna-' + group + '-input');
     if (!wrap) return;
+
     var tag = document.createElement('span');
-    tag.className  = 'ldna-tag';
+    tag.className     = 'ldna-tag';
     tag.dataset.value = val;
     var labelNode = document.createTextNode(val + ' ');
     var removeBtn = document.createElement('span');
-    removeBtn.className  = 'ldna-tag-remove';
+    removeBtn.className   = 'ldna-tag-remove';
     removeBtn.textContent = '×';
-    removeBtn.setAttribute('onclick', "ldnaRemoveTag(this,'" + group.replace(/'/g, "\\'") + "')");
+    removeBtn.setAttribute('onclick',
+      "ldnaRemoveTag(this,'" + group.replace(/'/g, "\\'") + "')");
     tag.appendChild(labelNode);
     tag.appendChild(removeBtn);
     if (input) { wrap.insertBefore(tag, input); } else { wrap.appendChild(tag); }
 
     ldnaSerialize();
 
-    /* Fetch boundary asynchronously */
-    if (group === 'cities')   { ldnaEnqueueBoundary('city__' + val,   ldnaCityBoundaryUrl(val)); }
-    if (group === 'zips')     { ldnaEnqueueBoundary('zip__' + val,    ldnaZipBoundaryUrl(val)); }
+    /* Fetch boundary */
+    if (group === 'cities') {
+      var cached = cityLatLngCache[val] || null;
+      ldnaEnqueueBoundary('city__' + val,
+        ldnaCityBoundaryUrl(val, cached ? cached.lat : null, cached ? cached.lng : null));
+    }
+    if (group === 'zips')     { ldnaFetchZipBoundary(val, 'zip__' + val); }
     if (group === 'counties') { ldnaEnqueueBoundary('county__' + val, ldnaCountyBoundaryUrl(val)); }
   }
 
@@ -365,24 +407,26 @@
     ldnaState[stateKey] = ldnaState[stateKey].filter(function (v) { return v !== val; });
     tag.remove();
 
-    /* Remove boundary overlay */
-    var bKey = group === 'cities' ? ('city__' + val)
-             : group === 'zips'  ? ('zip__'  + val)
-             : group === 'counties' ? ('county__' + val) : null;
+    var bKey = group === 'cities'   ? ('city__'   + val)
+             : group === 'zips'    ? ('zip__'    + val)
+             : group === 'counties'? ('county__' + val) : null;
     if (bKey) ldnaClearBoundaryOverlay(bKey);
 
     ldnaSerialize();
   };
 
-  /* ── Places Autocomplete for cities input ────────────────────────────────── */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     PLACES AUTOCOMPLETE — CITIES (locality only, stores lat/lng for bias)
+  ═══════════════════════════════════════════════════════════════════════════ */
   function ldnaInitCitiesAutocomplete() {
     var input = document.getElementById('ldna-cities-input');
     if (!input || input._ldnaACAttached) return;
     if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
     input._ldnaACAttached = true;
 
+    /* 'locality' excludes counties/administrative areas — fixes "Seminole, FL" bias */
     var ac = new google.maps.places.Autocomplete(input, {
-      types: ['(cities)'],
+      types: ['locality'],
       componentRestrictions: { country: 'us' },
     });
     input.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
@@ -391,22 +435,28 @@
       var place = ac.getPlace();
       if (!place || !place.geometry) return;
 
-      var cityName = place.name || '';
-      if (place.address_components) {
-        for (var i = 0; i < place.address_components.length; i++) {
-          if (place.address_components[i].types.indexOf('administrative_area_level_1') !== -1) {
-            cityName += ', ' + place.address_components[i].short_name;
-            break;
-          }
-        }
-      }
-      ldnaAddTagValue('cities', cityName || place.name);
+      /* Build "City, ST" label from address_components */
+      var cityName = '', stateName = '';
+      (place.address_components || []).forEach(function (comp) {
+        if (!cityName  && comp.types.indexOf('locality') !== -1)
+          cityName = comp.long_name;
+        if (!stateName && comp.types.indexOf('administrative_area_level_1') !== -1)
+          stateName = comp.short_name;
+      });
+      if (!cityName) cityName = place.name;
+      var label = stateName ? (cityName + ', ' + stateName) : cityName;
+
+      /* Cache lat/lng so Nominatim gets a viewbox bias for this city */
+      var loc = place.geometry.location;
+      cityLatLngCache[label] = { lat: loc.lat(), lng: loc.lng() };
+
+      ldnaAddTagValue('cities', label);
       input.value = '';
 
-      /* Center map on selected city */
+      /* Pan map to the selected city */
       if (ldnaMap && place.geometry) {
         if (place.geometry.viewport) { ldnaMap.fitBounds(place.geometry.viewport); }
-        else { ldnaMap.setCenter(place.geometry.location); ldnaMap.setZoom(11); }
+        else { ldnaMap.setCenter(loc); ldnaMap.setZoom(11); }
       }
     });
   }
@@ -421,31 +471,101 @@
     input.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
   }
 
-  /* ── Boundary URL builders ───────────────────────────────────────────────── */
-  function ldnaCityBoundaryUrl(cityLabel) {
-    /* "Orlando, FL"  →  Nominatim search for city boundary */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BOUNDARY URL BUILDERS
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* City: Nominatim with optional viewbox bias (lat/lng from Places Autocomplete) */
+  function ldnaCityBoundaryUrl(cityLabel, lat, lng) {
     var q = encodeURIComponent(cityLabel + ', USA');
-    return 'https://nominatim.openstreetmap.org/search?q=' + q +
-           '&format=geojson&polygon_geojson=1&featuretype=city&countrycodes=us&limit=1';
+    var url = 'https://nominatim.openstreetmap.org/search?q=' + q +
+              '&format=geojson&polygon_geojson=1&featuretype=city&countrycodes=us&limit=3';
+    if (lat !== null && lat !== undefined && lng !== null && lng !== undefined) {
+      /* ±0.3° viewbox around the known lat/lng biases Nominatim to the right municipality */
+      var m = 0.3;
+      url += '&viewbox=' + (lng - m) + ',' + (lat + m) + ',' + (lng + m) + ',' + (lat - m);
+      url += '&bounded=0'; /* prefer viewbox but don't exclude outside */
+    }
+    return url;
   }
 
-  function ldnaZipBoundaryUrl(zip) {
-    /* US Census Bureau TIGERweb ZCTA2020 REST API — free, complete US coverage */
-    return 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ZCTA2020' +
-           '/MapServer/0/query?where=GEOID20%3D%27' + encodeURIComponent(zip) +
-           '%27&outFields=GEOID20&returnGeometry=true&geometryPrecision=4&outSR=4326&f=geojson';
-  }
-
+  /* County: Nominatim (no geometry restriction — county boundaries auto-found) */
   function ldnaCountyBoundaryUrl(countyLabel) {
-    /* "Orange County, FL"  →  Nominatim */
     var q = encodeURIComponent(countyLabel + ', USA');
     return 'https://nominatim.openstreetmap.org/search?q=' + q +
            '&format=geojson&polygon_geojson=1&countrycodes=us&limit=1';
   }
 
-  /* ── Boundary fetch queue (respect Nominatim 1 req/sec) ─────────────────── */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     ZIP BOUNDARY — Census TIGER primary, Nominatim fallback, inline warning
+  ═══════════════════════════════════════════════════════════════════════════ */
+  function ldnaFetchZipBoundary(zip, key) {
+    if (!zip) return;
+    /* Primary: US Census Bureau TIGERweb ZCTA2020 — no rate limit, complete US coverage */
+    var where = "GEOID20='" + zip + "'";
+    var tigerUrl =
+      'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ZCTA2020' +
+      '/MapServer/0/query' +
+      '?f=geojson' +
+      '&where=' + encodeURIComponent(where) +
+      '&outFields=GEOID20' +
+      '&returnGeometry=true' +
+      '&geometryPrecision=3' +
+      '&outSR=4326';
+
+    fetch(tigerUrl, { headers: { 'Accept': 'application/json' } })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        var feats = data && data.features;
+        if (feats && feats.length > 0) {
+          ldnaRenderBoundaryFeature(key, feats[0]);
+        } else {
+          /* No data from TIGER → try Nominatim postalcode */
+          ldnaFetchZipViaNominatim(zip, key);
+        }
+      })
+      .catch(function () {
+        /* Network or CORS error → try Nominatim postalcode */
+        ldnaFetchZipViaNominatim(zip, key);
+      });
+  }
+
+  function ldnaFetchZipViaNominatim(zip, key) {
+    var url = 'https://nominatim.openstreetmap.org/search' +
+              '?postalcode=' + encodeURIComponent(zip) +
+              '&country=US&format=geojson&polygon_geojson=1&limit=1';
+    fetch(url, { headers: { 'Accept': 'application/json', 'Accept-Language': 'en-US,en' } })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var feats = data && data.features;
+        if (feats && feats.length > 0) {
+          ldnaRenderBoundaryFeature(key, feats[0]);
+        } else {
+          ldnaShowZipWarning(zip, 'Boundary data not found for ZIP ' + zip + '. The ZIP will still be used for matching.');
+        }
+      })
+      .catch(function () {
+        ldnaShowZipWarning(zip, 'Could not load boundary for ZIP ' + zip + '. Check your connection and try again.');
+      });
+  }
+
+  function ldnaShowZipWarning(zip, msg) {
+    var el  = document.getElementById('ldna-zip-warning');
+    var txt = document.getElementById('ldna-zip-warning-text');
+    if (el && txt) {
+      txt.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(function () { el.style.display = 'none'; }, 10000);
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     NOMINATIM QUEUE (cities + counties — 1 req/sec rate limit)
+  ═══════════════════════════════════════════════════════════════════════════ */
   function ldnaEnqueueBoundary(key, url) {
-    /* Remove any existing pending request for the same key */
     ldnaBoundaryQueue = ldnaBoundaryQueue.filter(function (t) { return t.key !== key; });
     ldnaBoundaryQueue.push({ key: key, url: url });
     ldnaBoundaryProcess();
@@ -459,23 +579,25 @@
     fetch(task.url, {
       headers: { 'Accept': 'application/json', 'Accept-Language': 'en-US,en' }
     })
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-      if (!ldnaMap) return;
-      /* Nominatim returns FeatureCollection; Census TIGER returns FeatureCollection too */
-      var features = (data.features && data.features.length) ? data.features : null;
-      if (features && features.length > 0) {
-        ldnaRenderBoundaryFeature(task.key, features[0]);
-      }
-    })
-    .catch(function (e) { console.warn('[ldna boundary] fetch error for', task.key, e); })
-    .finally(function () {
-      ldnaBoundaryRunning = false;
-      /* 1100ms gap between requests — Nominatim requires ≤1 req/sec */
-      setTimeout(ldnaBoundaryProcess, 1100);
-    });
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!ldnaMap) return;
+        var feats = data && data.features;
+        if (feats && feats.length > 0) {
+          /* If viewbox was used, Nominatim may return several results — pick the one
+             whose name most closely matches (first result after geometry preference) */
+          var picked = feats[0];
+          ldnaRenderBoundaryFeature(task.key, picked);
+        }
+      })
+      .catch(function (e) { /* silently skip */ })
+      .finally(function () {
+        ldnaBoundaryRunning = false;
+        setTimeout(ldnaBoundaryProcess, 1100); /* respect 1 req/sec */
+      });
   }
 
+  /* ── Render a GeoJSON Feature as a styled boundary overlay ─────────────── */
   function ldnaRenderBoundaryFeature(key, feature) {
     if (!ldnaMap) return;
     ldnaClearBoundaryOverlay(key);
@@ -486,162 +608,345 @@
     });
     ldnaBoundaryOverlays[key] = added;
 
-    /* Fit map to the new boundary */
-    var bounds = new google.maps.LatLngBounds();
-    var geo = feature.geometry;
-    var coordSets = [];
-    if (geo.type === 'Polygon') { coordSets = [geo.coordinates[0]]; }
+    /* Fit map to show this boundary */
+    var bounds  = new google.maps.LatLngBounds();
+    var geo     = feature.geometry;
+    var rings   = [];
+    if (geo.type === 'Polygon')      { rings = [geo.coordinates[0]]; }
     else if (geo.type === 'MultiPolygon') {
-      geo.coordinates.forEach(function (poly) { coordSets.push(poly[0]); });
+      geo.coordinates.forEach(function (poly) { rings.push(poly[0]); });
     } else if (geo.type === 'Point') {
       bounds.extend({ lat: geo.coordinates[1], lng: geo.coordinates[0] });
     }
-    coordSets.forEach(function (ring) {
+    rings.forEach(function (ring) {
       ring.forEach(function (c) { bounds.extend({ lat: c[1], lng: c[0] }); });
     });
-    if (!bounds.isEmpty()) ldnaMap.fitBounds(bounds);
 
-    /* If multiple boundaries already shown, zoom out to show all */
+    /* If multiple boundaries visible, zoom to show all */
     var allKeys = Object.keys(ldnaBoundaryOverlays);
     if (allKeys.length > 1) {
       var allBounds = new google.maps.LatLngBounds();
       allKeys.forEach(function (k) {
-        var feats = ldnaBoundaryOverlays[k];
-        if (feats) feats.forEach(function (f) {
-          f.getGeometry() && f.getGeometry().forEachLatLng(function (ll) { allBounds.extend(ll); });
+        var fs = ldnaBoundaryOverlays[k];
+        if (fs) fs.forEach(function (f) {
+          var g = f.getGeometry();
+          if (g) g.forEachLatLng(function (ll) { allBounds.extend(ll); });
         });
       });
-      if (!allBounds.isEmpty()) ldnaMap.fitBounds(allBounds);
+      if (!allBounds.isEmpty()) { ldnaMap.fitBounds(allBounds); return; }
     }
-
-    /* Continue processing queue */
-    if (!ldnaBoundaryRunning) setTimeout(ldnaBoundaryProcess, 100);
+    if (!bounds.isEmpty()) ldnaMap.fitBounds(bounds);
   }
 
   function ldnaClearBoundaryOverlay(key) {
     if (!ldnaBoundaryOverlays[key] || !ldnaMap) return;
-    ldnaBoundaryOverlays[key].forEach(function (feature) {
-      try { ldnaMap.data.remove(feature); } catch (e) {}
+    ldnaBoundaryOverlays[key].forEach(function (f) {
+      try { ldnaMap.data.remove(f); } catch (e) {}
     });
     delete ldnaBoundaryOverlays[key];
   }
 
-  /* ── DrawingManager helpers ──────────────────────────────────────────────── */
-  function ldnaOverlayComplete(e) {
-    var idx   = ldnaOverlays.length;
-    var label = (e.type === 'polygon') ? ('Polygon ' + (idx + 1)) : ('Radius ' + (idx + 1));
-    ldnaOverlays.push({ type: e.type, overlay: e.overlay, label: label });
-
-    if (e.type === 'polygon') {
-      google.maps.event.addListener(e.overlay.getPath(), 'set_at',    ldnaSerialize);
-      google.maps.event.addListener(e.overlay.getPath(), 'insert_at', ldnaSerialize);
-    }
-    if (e.type === 'circle') {
-      google.maps.event.addListener(e.overlay, 'radius_changed', ldnaSerialize);
-      google.maps.event.addListener(e.overlay, 'center_changed', ldnaSerialize);
-    }
-
-    var li   = document.createElement('li');
-    var icon = e.type === 'polygon' ? 'fa-draw-polygon text-primary' : 'fa-circle-dot text-secondary';
-    li.innerHTML = '<i class="fa-solid ' + icon + '"></i> ' + label;
+  /* ═══════════════════════════════════════════════════════════════════════════
+     OVERLAY LIST — items with delete buttons (JS-only, no Blade foreach)
+  ═══════════════════════════════════════════════════════════════════════════ */
+  function ldnaAddOverlayListItem(idx, label, iconClass) {
     var ol = document.getElementById('ldna-overlay-list');
-    if (ol) ol.appendChild(li);
-
-    if (ldnaDrawingManager) ldnaDrawingManager.setDrawingMode(null);
-    ldnaUpdateDrawButtons(null);
-    ldnaSerialize();
+    if (!ol) return;
+    var li = document.createElement('li');
+    li.id        = 'ldna-item-' + idx;
+    li.className = 'ldna-overlay-item';
+    li.innerHTML =
+      '<i class="fa-solid ' + iconClass + '"></i>' +
+      '<span class="flex-fill">' + label + '</span>' +
+      '<button type="button" class="ldna-del" title="Remove" ' +
+      'onclick="ldnaRemoveOverlay(' + idx + ')">' +
+      '<i class="fa-solid fa-times-circle"></i></button>';
+    ol.appendChild(li);
   }
 
-  function ldnaCreateDrawingManager() {
-    if (typeof google === 'undefined' || !google.maps ||
-        !google.maps.drawing || typeof google.maps.drawing.DrawingManager !== 'function') {
-      console.warn('[ldna] DrawingManager constructor not available yet');
-      return null;
-    }
-    try {
-      var dm = new google.maps.drawing.DrawingManager({
-        drawingMode:    null,
-        drawingControl: false,
-        polygonOptions:  {
-          fillColor: '#0369a1', fillOpacity: 0.15,
-          strokeColor: '#0369a1', strokeWeight: 2, editable: true,
-        },
-        circleOptions: {
-          fillColor: '#6b7280', fillOpacity: 0.12,
-          strokeColor: '#6b7280', strokeWeight: 2, editable: true,
-        },
-      });
-      dm.setMap(ldnaMap);
-      google.maps.event.addListener(dm, 'overlaycomplete', ldnaOverlayComplete);
-      return dm;
-    } catch (err) {
-      console.error('[ldna] DrawingManager creation error:', err);
-      return null;
-    }
+  window.ldnaRemoveOverlay = function (idx) {
+    var item = ldnaOverlays[idx];
+    if (!item) return;
+    try { item.overlay.setMap(null); } catch (e) {}
+    ldnaOverlays[idx] = null; /* null-out, preserve indices */
+    var li = document.getElementById('ldna-item-' + idx);
+    if (li) li.remove();
+    ldnaSerialize();
+  };
+
+  window.ldnaClearAllOverlays = function () {
+    ldnaOverlays.forEach(function (item) {
+      if (!item) return;
+      try { item.overlay.setMap(null); } catch (e) {}
+    });
+    ldnaOverlays = [];
+    var ol = document.getElementById('ldna-overlay-list');
+    if (ol) ol.innerHTML = '';
+    ldnaStopDrawing();        /* cancel any in-progress drawing */
+    ldnaUpdateDrawButtons(null);
+    ldnaSerialize();
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     CUSTOM DRAWING — no DrawingManager (no race condition)
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Haversine distance in meters (no geometry library needed) */
+  function ldnaDistanceMeters(p1, p2) {
+    var R = 6371000;
+    var dLat = (p2.lat - p1.lat) * Math.PI / 180;
+    var dLng = (p2.lng - p1.lng) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function ldnaShowDrawingHUD(status, showFinish) {
+    var hud       = document.getElementById('ldna-drawing-hud');
+    var hudStatus = document.getElementById('ldna-hud-status');
+    var finishBtn = document.getElementById('ldna-finish-btn');
+    if (hud)       hud.style.display       = 'flex';
+    if (hudStatus) hudStatus.textContent   = status || '';
+    if (finishBtn) finishBtn.style.display = showFinish ? '' : 'none';
+  }
+
+  function ldnaHideDrawingHUD() {
+    var hud = document.getElementById('ldna-drawing-hud');
+    if (hud) hud.style.display = 'none';
   }
 
   function ldnaUpdateDrawButtons(activeMode) {
-    var indicator = document.getElementById('ldna-draw-mode-indicator');
-    var modeText  = document.getElementById('ldna-draw-mode-text');
     document.querySelectorAll('.ldna-draw-btn').forEach(function (btn) {
       btn.classList.remove('btn-primary', 'btn-secondary', 'active');
-      if (btn.id === 'ldna-draw-btn-polygon') btn.classList.add('btn-outline-primary');
-      if (btn.id === 'ldna-draw-btn-circle')  btn.classList.add('btn-outline-secondary');
+      if (btn.id === 'ldna-draw-btn-polygon') {
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-outline-primary');
+      }
+      if (btn.id === 'ldna-draw-btn-circle') {
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-outline-secondary');
+      }
     });
-    if (activeMode && indicator && modeText) {
-      indicator.classList.add('active');
-      modeText.textContent = activeMode === 'polygon'
-        ? 'Polygon mode: click to add vertices. Double-click to close.'
-        : 'Circle mode: click and drag on the map.';
+    if (activeMode) {
       var activeBtn = document.getElementById('ldna-draw-btn-' + activeMode);
       if (activeBtn) {
-        activeBtn.classList.remove(activeMode === 'polygon' ? 'btn-outline-primary' : 'btn-outline-secondary');
-        activeBtn.classList.add(activeMode === 'polygon' ? 'btn-primary' : 'btn-secondary', 'active');
+        if (activeMode === 'polygon') {
+          activeBtn.classList.remove('btn-outline-primary');
+          activeBtn.classList.add('btn-primary', 'active');
+        } else {
+          activeBtn.classList.remove('btn-outline-secondary');
+          activeBtn.classList.add('btn-secondary', 'active');
+        }
       }
-    } else if (indicator) {
-      indicator.classList.remove('active');
     }
   }
 
-  /* ── Public: set draw mode ───────────────────────────────────────────────── */
+  function ldnaUpdatePolyPreview() {
+    if (ldnaPolyPreview) { ldnaPolyPreview.setMap(null); ldnaPolyPreview = null; }
+    if (ldnaPolyVertices.length < 2) return;
+    /* Connect all vertices + close back to start for preview */
+    var path = ldnaPolyVertices.concat(
+      ldnaPolyVertices.length >= 3 ? [ldnaPolyVertices[0]] : []
+    );
+    ldnaPolyPreview = new google.maps.Polyline({
+      path: path,
+      strokeColor: '#0369a1', strokeWeight: 2, strokeOpacity: 0.5,
+      map: ldnaMap,
+    });
+  }
+
+  function ldnaStartDrawPolygon() {
+    ldnaStopDrawing();
+    ldnaDrawingMode  = 'polygon';
+    ldnaPolyVertices = [];
+    ldnaPolyMarkers  = [];
+    ldnaPolyPreview  = null;
+    ldnaUpdateDrawButtons('polygon');
+    ldnaShowDrawingHUD(
+      'Click on the map to add vertices. Need at least 3. Then click [Finish Polygon].',
+      true
+    );
+
+    ldnaDrawClickListener = ldnaMap.addListener('click', function (e) {
+      if (ldnaDrawingMode !== 'polygon') return;
+      var lat = e.latLng.lat();
+      var lng = e.latLng.lng();
+      ldnaPolyVertices.push({ lat: lat, lng: lng });
+
+      var marker = new google.maps.Marker({
+        position: { lat: lat, lng: lng },
+        map: ldnaMap,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 6, fillColor: '#0369a1', fillOpacity: 1,
+          strokeColor: '#ffffff', strokeWeight: 2,
+        },
+        title: 'Vertex ' + ldnaPolyVertices.length,
+        zIndex: 10,
+      });
+      ldnaPolyMarkers.push(marker);
+      ldnaUpdatePolyPreview();
+
+      var hudStatus = document.getElementById('ldna-hud-status');
+      if (hudStatus) {
+        var n = ldnaPolyVertices.length;
+        hudStatus.textContent = n + ' vert' + (n === 1 ? 'ex' : 'ices') + '. ' +
+          (n >= 3 ? 'Click [Finish Polygon] or continue adding.' : 'Need at least 3.');
+      }
+    });
+  }
+
+  function ldnaStartDrawCircle() {
+    ldnaStopDrawing();
+    ldnaDrawingMode   = 'circle';
+    ldnaCircleCenter  = null;
+    ldnaCircleMarker  = null;
+    ldnaCirclePreview = null;
+    ldnaUpdateDrawButtons('circle');
+    ldnaShowDrawingHUD('Click on the map to set the circle center.', false);
+
+    ldnaDrawClickListener = ldnaMap.addListener('click', function (e) {
+      if (ldnaDrawingMode !== 'circle') return;
+
+      if (!ldnaCircleCenter) {
+        /* First click — set center */
+        ldnaCircleCenter = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+        ldnaCircleMarker = new google.maps.Marker({
+          position: ldnaCircleCenter,
+          map: ldnaMap,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8, fillColor: '#6b7280', fillOpacity: 1,
+            strokeColor: '#fff', strokeWeight: 2,
+          },
+          title: 'Circle center',
+          zIndex: 10,
+        });
+        var hudStatus = document.getElementById('ldna-hud-status');
+        if (hudStatus) hudStatus.textContent = 'Center set. Now click on the map to set the radius edge.';
+      } else {
+        /* Second click — compute radius and create circle */
+        var radiusM = ldnaDistanceMeters(
+          ldnaCircleCenter,
+          { lat: e.latLng.lat(), lng: e.latLng.lng() }
+        );
+        if (radiusM < 50) radiusM = 50; /* minimum 50m */
+        var center = ldnaCircleCenter; /* capture before stop() clears it */
+
+        ldnaStopDrawing();
+
+        var mi = parseFloat((radiusM / 1609.34).toFixed(1));
+        var gmCircle = new google.maps.Circle({
+          center: center, radius: radiusM,
+          fillColor: '#6b7280', fillOpacity: 0.12,
+          strokeColor: '#6b7280', strokeWeight: 2, editable: true,
+          map: ldnaMap,
+        });
+        var idx   = ldnaOverlays.length;
+        var label = 'Circle ' + (ldnaOverlays.filter(Boolean).length + 1) + ' (' + mi + ' mi)';
+        ldnaOverlays.push({ type: 'circle', overlay: gmCircle, label: label });
+        google.maps.event.addListener(gmCircle, 'radius_changed', ldnaSerialize);
+        google.maps.event.addListener(gmCircle, 'center_changed', ldnaSerialize);
+        ldnaAddOverlayListItem(idx, label, 'fa-circle-dot text-secondary');
+        ldnaUpdateDrawButtons(null);
+        ldnaSerialize();
+      }
+    });
+
+    /* Mouse-move preview after center is set */
+    ldnaDrawMouseListener = ldnaMap.addListener('mousemove', function (e) {
+      if (ldnaDrawingMode !== 'circle' || !ldnaCircleCenter) return;
+      if (ldnaCirclePreview) { ldnaCirclePreview.setMap(null); ldnaCirclePreview = null; }
+      var r = ldnaDistanceMeters(
+        ldnaCircleCenter,
+        { lat: e.latLng.lat(), lng: e.latLng.lng() }
+      );
+      if (r < 50) return;
+      ldnaCirclePreview = new google.maps.Circle({
+        center: ldnaCircleCenter, radius: r,
+        fillColor: '#6b7280', fillOpacity: 0.06,
+        strokeColor: '#6b7280', strokeWeight: 1, strokeOpacity: 0.35,
+        clickable: false, map: ldnaMap,
+      });
+    });
+  }
+
+  /* Cancel any in-progress drawing and clean up temp objects */
+  function ldnaStopDrawing() {
+    ldnaDrawingMode = null;
+    /* Polygon temp */
+    ldnaPolyMarkers.forEach(function (m) { try { m.setMap(null); } catch (e) {} });
+    ldnaPolyMarkers  = [];
+    ldnaPolyVertices = [];
+    if (ldnaPolyPreview) { try { ldnaPolyPreview.setMap(null); } catch (e) {} }
+    ldnaPolyPreview = null;
+    /* Circle temp */
+    if (ldnaCircleMarker)  { try { ldnaCircleMarker.setMap(null);  } catch (e) {} }
+    if (ldnaCirclePreview) { try { ldnaCirclePreview.setMap(null); } catch (e) {} }
+    ldnaCircleCenter  = null;
+    ldnaCircleMarker  = null;
+    ldnaCirclePreview = null;
+    /* Map listeners */
+    if (ldnaDrawClickListener) {
+      google.maps.event.removeListener(ldnaDrawClickListener);
+      ldnaDrawClickListener = null;
+    }
+    if (ldnaDrawMouseListener) {
+      google.maps.event.removeListener(ldnaDrawMouseListener);
+      ldnaDrawMouseListener = null;
+    }
+    ldnaHideDrawingHUD();
+  }
+
+  /* Public: called by toolbar buttons */
   window.ldnaSetDrawMode = function (mode) {
     if (!ldnaMap) {
-      /* Map not yet initialized — queue retry */
       ldnaRequestInit();
       setTimeout(function () { window.ldnaSetDrawMode(mode); }, 600);
       return;
     }
-    /* Lazily create DrawingManager if missing (handles race where ldnaInitMap
-       ran before drawing library was ready) */
-    if (!ldnaDrawingManager) {
-      ldnaDrawingManager = ldnaCreateDrawingManager();
-      if (!ldnaDrawingManager) {
-        /* Drawing library still not ready — retry */
-        setTimeout(function () { window.ldnaSetDrawMode(mode); }, 600);
-        return;
-      }
-    }
-    var overlayType = mode === 'polygon'
-      ? google.maps.drawing.OverlayType.POLYGON
-      : google.maps.drawing.OverlayType.CIRCLE;
-    try {
-      ldnaDrawingManager.setDrawingMode(overlayType);
-      ldnaUpdateDrawButtons(mode);
-    } catch (err) {
-      console.error('[ldna] setDrawingMode error:', err);
-    }
+    if (mode === 'polygon') { ldnaStartDrawPolygon(); }
+    else if (mode === 'circle') { ldnaStartDrawCircle(); }
+    else { ldnaStopDrawing(); ldnaUpdateDrawButtons(null); }
   };
 
-  window.ldnaClearAllOverlays = function () {
-    ldnaOverlays.forEach(function (item) { try { item.overlay.setMap(null); } catch (e) {} });
-    ldnaOverlays = [];
-    var ol = document.getElementById('ldna-overlay-list');
-    if (ol) ol.innerHTML = '';
-    if (ldnaDrawingManager) ldnaDrawingManager.setDrawingMode(null);
+  /* Public: called by "Finish Polygon" button in HUD */
+  window.ldnaFinishDrawing = function () {
+    if (ldnaDrawingMode !== 'polygon') return;
+    if (ldnaPolyVertices.length < 3) {
+      var hudStatus = document.getElementById('ldna-hud-status');
+      if (hudStatus) hudStatus.textContent = 'Need at least 3 vertices to close the polygon.';
+      return;
+    }
+    var vertices = ldnaPolyVertices.slice(); /* copy before stop() clears it */
+    ldnaStopDrawing();
+
+    var gmPoly = new google.maps.Polygon({
+      paths: vertices,
+      fillColor: '#0369a1', fillOpacity: 0.15,
+      strokeColor: '#0369a1', strokeWeight: 2, editable: true,
+      map: ldnaMap,
+    });
+    var idx   = ldnaOverlays.length;
+    var label = 'Polygon ' + (ldnaOverlays.filter(Boolean).length + 1);
+    ldnaOverlays.push({ type: 'polygon', overlay: gmPoly, label: label });
+    google.maps.event.addListener(gmPoly.getPath(), 'set_at',    ldnaSerialize);
+    google.maps.event.addListener(gmPoly.getPath(), 'insert_at', ldnaSerialize);
+    ldnaAddOverlayListItem(idx, label, 'fa-draw-polygon text-primary');
     ldnaUpdateDrawButtons(null);
     ldnaSerialize();
   };
 
+  /* Public: called by "Cancel" button in HUD */
+  window.ldnaCancelDrawing = function () {
+    ldnaStopDrawing();
+    ldnaUpdateDrawButtons(null);
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     RADIUS SEARCH (address-based, geocoded)
+  ═══════════════════════════════════════════════════════════════════════════ */
   window.ldnaAddRadiusSearch = function () {
     var addrEl  = document.getElementById('ldna-radius-address');
     var milesEl = document.getElementById('ldna-radius-miles');
@@ -653,30 +958,30 @@
     if (!ldnaMap) { ldnaRequestInit(); setTimeout(window.ldnaAddRadiusSearch, 600); return; }
 
     var geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address: address, componentRestrictions: { country: 'us' } },
+    geocoder.geocode(
+      { address: address, componentRestrictions: { country: 'us' } },
       function (results, status) {
         if (status !== 'OK' || !results.length) {
           alert('Could not find location: ' + address); return;
         }
         var loc = results[0].geometry.location;
-        var lat = loc.lat(); var lng = loc.lng();
-        var label = address + ' (' + miles + ' mi)';
+        var lat = loc.lat(), lng = loc.lng();
+        var label   = address + ' (' + miles + ' mi)';
         var gmCircle = new google.maps.Circle({
-          center: { lat: lat, lng: lng }, radius: miles * 1609.34,
+          center: { lat: lat, lng: lng },
+          radius: miles * 1609.34,
           fillColor: '#6b7280', fillOpacity: 0.12,
-          strokeColor: '#6b7280', strokeWeight: 2, editable: true, map: ldnaMap,
+          strokeColor: '#6b7280', strokeWeight: 2, editable: true,
+          map: ldnaMap,
         });
         var idx = ldnaOverlays.length;
-        ldnaOverlays.push({ type: 'radius_search', overlay: gmCircle, label: label,
-          data: { address: address, lat: lat, lng: lng, radius_miles: miles } });
+        ldnaOverlays.push({
+          type: 'radius_search', overlay: gmCircle, label: label,
+          data: { address: address, lat: lat, lng: lng, radius_miles: miles },
+        });
         google.maps.event.addListener(gmCircle, 'radius_changed', ldnaSerialize);
         google.maps.event.addListener(gmCircle, 'center_changed', ldnaSerialize);
-
-        var li = document.createElement('li');
-        li.innerHTML = '<i class="fa-solid fa-circle-dot text-secondary"></i> ' + label;
-        var ol = document.getElementById('ldna-overlay-list');
-        if (ol) ol.appendChild(li);
-
+        ldnaAddOverlayListItem(idx, label, 'fa-circle-dot text-secondary');
         ldnaMap.panTo({ lat: lat, lng: lng });
         ldnaMap.fitBounds(gmCircle.getBounds());
         ldnaSerialize();
@@ -685,7 +990,9 @@
     );
   };
 
-  /* ── Map initialisation ──────────────────────────────────────────────────── */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     MAP INITIALISATION
+  ═══════════════════════════════════════════════════════════════════════════ */
   function ldnaIsContainerVisible() {
     var el = document.getElementById('{{ $mapPanelId }}');
     if (!el) return false;
@@ -697,121 +1004,116 @@
     if (ldnaMapInitialized) return;
     ldnaMapInitialized = true;
 
-    /* Disconnect observers — no longer needed */
     ldnaObservers.forEach(function (o) { try { o.disconnect(); } catch (e) {} });
     ldnaObservers = [];
 
     var ph = document.getElementById('{{ $mapPanelId }}-placeholder');
     if (ph) ph.style.display = 'none';
 
-    var defaultCenter = { lat: 27.9944024, lng: -81.7602544 };
     ldnaMap = new google.maps.Map(document.getElementById('{{ $mapPanelId }}'), {
-      zoom: 8, center: defaultCenter, mapTypeId: 'roadmap',
+      zoom: 8,
+      center: { lat: 27.9944024, lng: -81.7602544 }, /* Florida center */
+      mapTypeId: 'roadmap',
     });
 
-    /* Style the data layer (boundary overlays) */
+    /* Style boundary data layer */
     ldnaMap.data.setStyle(function (feature) {
-      var key = feature.getProperty('_ldnaKey') || '';
+      var key   = feature.getProperty('_ldnaKey') || '';
       var isZip = key.indexOf('zip__') === 0;
       return {
         fillColor:    isZip ? '#7c3aed' : '#0369a1',
-        fillOpacity:  0.1,
+        fillOpacity:  0.10,
         strokeColor:  isZip ? '#7c3aed' : '#0369a1',
         strokeWeight: 2,
         strokeOpacity: 0.8,
       };
     });
 
-    /* Create DrawingManager — wrapped in guard + try-catch */
-    ldnaDrawingManager = ldnaCreateDrawingManager();
-    /* If drawing library not ready, ldnaSetDrawMode will lazily create it on first click */
-
-    /* Trigger resize after short delay to handle late layout settle */
+    /* Trigger resize after tab animation settles */
     setTimeout(function () {
       if (ldnaMap) google.maps.event.trigger(ldnaMap, 'resize');
-    }, 250);
+    }, 300);
 
-    /* Re-render saved polygons */
-    ldnaState.polygons.forEach(function (poly) {
+    /* ── Re-render saved polygons (with delete buttons) ── */
+    ldnaState.polygons.forEach(function (poly, i) {
       if (!poly.path || !poly.path.length) return;
       var gmPoly = new google.maps.Polygon({
         paths: poly.path,
         fillColor: '#0369a1', fillOpacity: 0.15,
-        strokeColor: '#0369a1', strokeWeight: 2, editable: true, map: ldnaMap,
+        strokeColor: '#0369a1', strokeWeight: 2, editable: true,
+        map: ldnaMap,
       });
-      ldnaOverlays.push({ type: 'polygon', overlay: gmPoly, label: poly.label || 'Polygon' });
+      var idx   = ldnaOverlays.length;
+      var label = poly.label || ('Polygon ' + (i + 1));
+      ldnaOverlays.push({ type: 'polygon', overlay: gmPoly, label: label });
       google.maps.event.addListener(gmPoly.getPath(), 'set_at',    ldnaSerialize);
       google.maps.event.addListener(gmPoly.getPath(), 'insert_at', ldnaSerialize);
+      ldnaAddOverlayListItem(idx, label, 'fa-draw-polygon text-primary');
     });
 
-    /* Re-render saved radius circles */
-    ldnaState.radius_searches.forEach(function (r) {
-      var lat = r.lat !== undefined ? parseFloat(r.lat) : (r.center ? parseFloat(r.center.lat) : null);
-      var lng = r.lng !== undefined ? parseFloat(r.lng) : (r.center ? parseFloat(r.center.lng) : null);
+    /* ── Re-render saved radius searches + drawn circles (with delete buttons) ── */
+    ldnaState.radius_searches.forEach(function (r, i) {
+      var lat = r.lat  !== undefined ? parseFloat(r.lat)
+              : (r.center ? parseFloat(r.center.lat) : null);
+      var lng = r.lng  !== undefined ? parseFloat(r.lng)
+              : (r.center ? parseFloat(r.center.lng) : null);
       if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) return;
-      var label = r.address ? (r.address + ' (' + r.radius_miles + ' mi)') : (r.label || 'Radius');
+      var label   = r.address
+                  ? (r.address + ' (' + r.radius_miles + ' mi)')
+                  : (r.label || ('Circle ' + (i + 1)));
       var gmCircle = new google.maps.Circle({
-        center: { lat: lat, lng: lng }, radius: (parseFloat(r.radius_miles) || 5) * 1609.34,
+        center: { lat: lat, lng: lng },
+        radius: (parseFloat(r.radius_miles) || 5) * 1609.34,
         fillColor: '#6b7280', fillOpacity: 0.12,
-        strokeColor: '#6b7280', strokeWeight: 2, editable: true, map: ldnaMap,
+        strokeColor: '#6b7280', strokeWeight: 2, editable: true,
+        map: ldnaMap,
       });
+      var idx = ldnaOverlays.length;
       ldnaOverlays.push({ type: 'radius_search', overlay: gmCircle, label: label, data: r });
       google.maps.event.addListener(gmCircle, 'radius_changed', ldnaSerialize);
       google.maps.event.addListener(gmCircle, 'center_changed', ldnaSerialize);
+      ldnaAddOverlayListItem(idx, label, 'fa-circle-dot text-secondary');
     });
 
-    /* Wire up autocompletes */
+    /* ── Wire autocompletes ── */
     ldnaInitCitiesAutocomplete();
     ldnaInitRadiusAutocomplete();
 
-    /* Fetch boundaries for existing tags (edit mode reload) */
+    /* ── Fetch boundaries for existing tags (edit-mode reload) ── */
     ldnaState.cities.forEach(function (c) {
-      ldnaEnqueueBoundary('city__' + c, ldnaCityBoundaryUrl(c));
+      ldnaEnqueueBoundary('city__' + c, ldnaCityBoundaryUrl(c, null, null));
     });
     ldnaState.zip_codes.forEach(function (z) {
-      ldnaEnqueueBoundary('zip__' + z, ldnaZipBoundaryUrl(z));
+      ldnaFetchZipBoundary(z, 'zip__' + z);
     });
     ldnaState.counties.forEach(function (co) {
       ldnaEnqueueBoundary('county__' + co, ldnaCountyBoundaryUrl(co));
     });
     ldnaBoundaryProcess();
 
-    /* Set initial map center — bias to saved radius circles, else first city/zip */
-    if (ldnaOverlays.length > 0) {
-      for (var oi = 0; oi < ldnaOverlays.length; oi++) {
-        var ov = ldnaOverlays[oi];
-        if ((ov.type === 'radius_search' || ov.type === 'circle') && ov.overlay.getBounds) {
-          ldnaMap.fitBounds(ov.overlay.getBounds()); break;
-        }
+    /* ── Set initial map center ── */
+    /* Prefer saved radius circles so map is already zoomed to relevant area */
+    for (var oi = 0; oi < ldnaOverlays.length; oi++) {
+      var ov = ldnaOverlays[oi];
+      if (ov && (ov.type === 'radius_search' || ov.type === 'circle') && ov.overlay.getBounds) {
+        ldnaMap.fitBounds(ov.overlay.getBounds());
+        break;
       }
-    }
-    /* If no boundaries or overlays exist yet, use first city/zip for centering */
-    if (!ldnaState.cities.length && !ldnaState.zip_codes.length &&
-        !ldnaState.counties.length && !ldnaOverlays.length) {
-      /* Default: Florida center (already set above) */
     }
   }
 
-  /* ── Init request / visibility check ────────────────────────────────────── */
+  /* ── Visibility-aware init (for tabs/hidden panels) ──────────────────────── */
   function ldnaTryInit() {
     if (ldnaMapInitialized) return;
+    /* Only need google.maps.Map — no DrawingManager dependency */
     if (typeof google === 'undefined' || !google.maps ||
-        !google.maps.drawing || typeof google.maps.drawing.DrawingManager !== 'function') {
-      /* Drawing library not yet ready — wait and retry
-         Note: we also accept the case where drawing exists but DrawingManager
-         is missing (race condition in Maps API loading). ldnaSetDrawMode will
-         lazily re-create it when the user first clicks a draw button. */
-      if (typeof google !== 'undefined' && google.maps &&
-          typeof google.maps.Map === 'function') {
-        /* Main API ready but drawing not yet — init map now, skip DrawingManager guard */
-        if (ldnaIsContainerVisible()) { ldnaInitMap(); return; }
-      }
+        typeof google.maps.Map !== 'function') {
       setTimeout(ldnaTryInit, 200);
       return;
     }
     if (ldnaIsContainerVisible()) { ldnaInitMap(); return; }
 
-    /* Container hidden — set up observers to trigger init when it becomes visible */
+    /* Container hidden — observe for visibility change */
     var container = document.getElementById('{{ $mapPanelId }}');
     if (!container) { setTimeout(ldnaTryInit, 200); return; }
 
@@ -847,20 +1149,17 @@
       if (ph) ph.style.display = 'none';
       if (ldnaMap) {
         google.maps.event.trigger(ldnaMap, 'resize');
-        /* Resume boundary queue in case it stalled */
         setTimeout(ldnaBoundaryProcess, 100);
       }
     }
   };
 
-  /* ── Catch any shown.bs.tab event (broad net) ────────────────────────────── */
+  /* ── Bootstrap tab shown event (broad net) ───────────────────────────────── */
   document.addEventListener('shown.bs.tab', function () {
     if (typeof window.ldnaRequestInit === 'function') window.ldnaRequestInit();
   });
 
-  /* ── Expose public function for host-blade county bridges ────────────────── */
-  /* Call window.ldnaShowCountyBoundary('Orange County, FL') from the host blade
-     to render a county boundary from the main county selection field. */
+  /* ── Public bridge: host blade can drive county boundaries ───────────────── */
   window.ldnaShowCountyBoundary = function (countyLabel) {
     if (!countyLabel) return;
     ldnaEnqueueBoundary('county__' + countyLabel, ldnaCountyBoundaryUrl(countyLabel));
@@ -870,19 +1169,19 @@
     ldnaClearBoundaryOverlay('county__' + countyLabel);
   };
 
-  /* ── Start polling ───────────────────────────────────────────────────────── */
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ldnaTryInit);
-  } else {
-    ldnaTryInit();
-  }
-
-  /* ── Click-on-wrap focuses input ─────────────────────────────────────────── */
+  /* ── Click on wrap focuses the tag input ─────────────────────────────────── */
   document.querySelectorAll('.ldna-tag-input-wrap').forEach(function (w) {
     w.addEventListener('click', function () {
       var inp = w.querySelector('.ldna-tag-input');
       if (inp) inp.focus();
     });
   });
+
+  /* ── Boot ────────────────────────────────────────────────────────────────── */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ldnaTryInit);
+  } else {
+    ldnaTryInit();
+  }
 })();
 </script>

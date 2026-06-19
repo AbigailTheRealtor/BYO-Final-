@@ -1,40 +1,50 @@
 ---
 name: ldna boundary API sources
-description: Which free APIs to use for each location type when rendering GeoJSON boundaries on the Location DNA map.
+description: Which APIs to use for each location type when rendering GeoJSON boundaries on the Location DNA map, and how they queue.
 ---
 
-## City and County Boundaries → Nominatim OpenStreetMap
-URL pattern:
-```
-https://nominatim.openstreetmap.org/search?q={ENCODED_NAME}%2C+USA&format=geojson&polygon_geojson=1&featuretype=city&countrycodes=us&limit=1
-```
-- Free, no API key required
-- Rate limit: **1 request per second per IP** — must use a request queue with ≥1,100ms delay between calls
-- For counties: omit `featuretype=city`; Nominatim finds county polygons naturally
-- Map styling: blue (#0369a1), fill opacity 0.1
+## City and County Boundaries → Nominatim (queued)
+Called via `ldnaEnqueueBoundary(key, url)` → `ldnaBoundaryProcess()` with 1,100ms between requests.
 
-## ZIP Code Boundaries → US Census Bureau TIGERweb ZCTA2020
-URL pattern:
+URL for city (with lat/lng viewbox bias):
 ```
-https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ZCTA2020/MapServer/0/query?where=GEOID20%3D%27{ZIP}%27&outFields=GEOID20&returnGeometry=true&geometryPrecision=4&outSR=4326&f=geojson
+https://nominatim.openstreetmap.org/search?q={CITY}%2C+USA
+  &format=geojson&polygon_geojson=1&featuretype=city&countrycodes=us&limit=3
+  &viewbox={lng-0.3},{lat+0.3},{lng+0.3},{lat-0.3}&bounded=0
 ```
-- Free, no API key, public US government API
-- Complete US coverage (unlike Nominatim which is patchy for US ZIPs)
-- Returns ZCTA (ZIP Code Tabulation Area) — approximate ZIP boundary
-- Map styling: purple (#7c3aed), fill opacity 0.1
+The viewbox bias is CRITICAL for cities like "Seminole, FL" — without it Nominatim may return Seminole County (near Orlando) instead of the city in Pinellas County. The lat/lng comes from Google Places Autocomplete and is cached in `cityLatLngCache[label]`.
+
+URL for county:
+```
+https://nominatim.openstreetmap.org/search?q={COUNTY}%2C+USA
+  &format=geojson&polygon_geojson=1&countrycodes=us&limit=1
+```
+
+## ZIP Code Boundaries → Census TIGER primary, Nominatim fallback
+**Primary**: Census TIGERweb ZCTA2020 — no rate limit, complete US coverage
+```
+https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ZCTA2020/MapServer/0/query
+  ?f=geojson&where=GEOID20%3D'{ZIP}'&outFields=GEOID20&returnGeometry=true&geometryPrecision=3&outSR=4326
+```
+**Fallback**: Nominatim postalcode (US coverage is incomplete):
+```
+https://nominatim.openstreetmap.org/search?postalcode={ZIP}&country=US&format=geojson&polygon_geojson=1&limit=1
+```
+Both failures → `ldnaShowZipWarning()` shows inline red message (auto-hides in 10s).
+
+ZIP fetches bypass the Nominatim rate-limit queue (`ldnaFetchZipBoundary` is a direct fetch).
 
 ## Neighborhoods → No Free GeoJSON Source
-No reliable free GeoJSON source exists for US neighborhood boundaries.
-- Google Maps JS API does not expose neighborhood polygons
-- OpenStreetMap coverage is incomplete/inconsistent for US neighborhoods
-- **Decision**: Neighborhoods are matching/scoring data only — no boundary is rendered. Show an info note explaining this in the UI.
+No reliable free GeoJSON source exists for US neighborhood boundaries. Neighborhoods were **removed from the UI entirely**. Existing saved data round-trips in JSON for backend matching.
 
-## State Boundaries
-Not implemented — lower priority, no UI hook. Nominatim can fetch state polygons if needed in future.
+## Map Styling
+- Cities / Counties: blue (#0369a1), fillOpacity 0.10
+- ZIP codes: purple (#7c3aed), fillOpacity 0.10
+- All boundary features stored in `ldnaBoundaryOverlays[key]` as `[google.maps.Data.Feature]`
+- "Clear Drawings" clears `ldnaOverlays` ONLY — boundaries are NOT cleared by it
 
-## Implementation Notes
-- All boundary overlays stored in `ldnaBoundaryOverlays` object (key → `[google.maps.Data.Feature]`)
-- Nominatim requests queued in `ldnaBoundaryQueue` with 1,100ms between calls
-- Census TIGER requests bypass Nominatim queue (no rate limit) but share same render path
-- On multi-boundary: after each render, fit map to union of all boundary bounds
-- `window.ldnaShowCountyBoundary(name)` / `ldnaHideCountyBoundary(name)` are public functions host blades can call to bridge the main form's county selection to the map
+## City lat/lng Cache
+`cityLatLngCache[label]` is populated by Places Autocomplete `place_changed` listener (stores `{lat, lng}` from `place.geometry.location`). Used to build the viewbox bias URL. Only populated via autocomplete — manually-typed cities have no cache entry and get an unbiased Nominatim search.
+
+## Places Autocomplete for Cities
+Use `types: ['locality']` (NOT `['(cities)']`). `'(cities)'` can return counties/administrative areas, causing Seminole County to appear for "Seminole". `'locality'` is strictly city/town level.
