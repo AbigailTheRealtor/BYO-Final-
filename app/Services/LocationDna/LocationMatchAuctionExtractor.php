@@ -38,8 +38,10 @@ use Illuminate\Support\Facades\Log;
  * present the service returns human-readable insight strings.
  *
  * Data sources (Buyer / Tenant agent auctions only):
- *   preferences  — client_areas_of_interest (JSON string[] → cities)
- *                  zipCodes                 (JSON string[] → zip_codes)
+ *   preferences  — location_dna_preferences (canonical JSON → cities, zip_codes,
+ *                                           neighborhoods, polygons, radius_searches)
+ *                  client_areas_of_interest (legacy JSON string[] → cities, merged)
+ *                  zipCodes                 (legacy JSON string[] → zip_codes, merged)
  *   propertyData — property_city            (string)
  *                  zip_code / property_zip  (string, first non-empty wins)
  *
@@ -95,22 +97,43 @@ class LocationMatchAuctionExtractor
      */
     private function buildPreferences(mixed $auction): array
     {
-        $rawCities = $this->metaValue($auction, 'client_areas_of_interest');
-        $rawZips   = $this->metaValue($auction, 'zipCodes');
+        /* ── Canonical source: location_dna_preferences JSON ── */
+        $dnaRaw = $this->metaValue($auction, 'location_dna_preferences');
+        $dna    = [];
+        if (!empty($dnaRaw)) {
+            $decoded = is_array($dnaRaw) ? $dnaRaw : json_decode($dnaRaw, true);
+            if (is_array($decoded)) {
+                $dna = $decoded;
+            }
+        }
 
-        $cities = $this->decodeStringArray($rawCities);
-        $zips   = $this->decodeStringArray($rawZips);
+        $dnaCities      = $this->decodeStringArray($dna['cities']          ?? []);
+        $dnaZips        = $this->decodeStringArray($dna['zip_codes']        ?? []);
+        $dnaNeighborhoods = $this->decodeStringArray($dna['neighborhoods']  ?? []);
+        $dnaPolygons    = is_array($dna['polygons']        ?? null) ? ($dna['polygons']        ?? []) : [];
+        $dnaRadii       = is_array($dna['radius_searches'] ?? null) ? ($dna['radius_searches'] ?? []) : [];
 
-        if (empty($cities) && empty($zips)) {
+        /* ── Legacy sources: client_areas_of_interest + zipCodes ── */
+        $legacyCities = $this->decodeStringArray($this->metaValue($auction, 'client_areas_of_interest'));
+        $legacyZips   = $this->decodeStringArray($this->metaValue($auction, 'zipCodes'));
+
+        /* Merge both sources (canonical wins; legacy fills in when canonical is empty) */
+        $cities        = array_values(array_unique(array_merge($dnaCities, $legacyCities)));
+        $zips          = array_values(array_unique(array_merge($dnaZips, $legacyZips)));
+        $neighborhoods = $dnaNeighborhoods;
+        $polygons      = $dnaPolygons;
+        $radii         = $dnaRadii;
+
+        if (empty($cities) && empty($zips) && empty($neighborhoods) && empty($polygons) && empty($radii)) {
             return [];
         }
 
         return [
             'cities'          => $cities,
             'zip_codes'       => $zips,
-            'neighborhoods'   => [],
-            'polygons'        => [],
-            'radius_searches' => [],
+            'neighborhoods'   => $neighborhoods,
+            'polygons'        => $polygons,
+            'radius_searches' => $radii,
         ];
     }
 

@@ -191,6 +191,15 @@
 
 <script>
 (function () {
+  /* ── Re-execution guard ──────────────────────────────────────────────────── */
+  /* Livewire v2 morphdom re-executes script tags when their Blade-rendered
+     content changes (e.g. after a save that updates existingLocationDna).
+     We store a panel-scoped flag on window so subsequent runs are no-ops;
+     the original closure (with ldnaMap, ldnaDrawingManager etc.) lives on.  */
+  var _panelKey = 'ldnaInit_{{ $mapPanelId }}';
+  if (window[_panelKey]) return;
+  window[_panelKey] = true;
+
   /* ── State ────────────────────────────────────────────────────────────────── */
   var ldnaState = {
     cities:          @json($ldnaCities),

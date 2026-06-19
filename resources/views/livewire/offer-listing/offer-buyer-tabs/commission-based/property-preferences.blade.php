@@ -229,21 +229,46 @@
 <input type="hidden" id="ldna-livewire-bridge" wire:model.defer="location_dna_preferences_json">
 <script>
 (function () {
+    /* Guard: prevent re-wrapping ldnaSerialize on Livewire morphdom re-renders */
+    if (window._ldnaBuyerBridgeReady) return;
+    window._ldnaBuyerBridgeReady = true;
+
     function syncLdnaBridge() {
         var src = document.getElementById('ldna-json-field');
+        if (!src || !src.value) return;
+        var val = src.value;
+        /* Keep wire:model.defer path for broad compatibility */
         var dst = document.getElementById('ldna-livewire-bridge');
-        if (src && dst) {
-            dst.value = src.value;
+        if (dst) {
+            dst.value = val;
             dst.dispatchEvent(new Event('input', { bubbles: true }));
         }
     }
+
+    /* Wrap ldnaSerialize so every map interaction pushes value to Livewire */
     var _origSerialize = window.ldnaSerialize;
     window.ldnaSerialize = function () {
         if (typeof _origSerialize === 'function') _origSerialize();
         syncLdnaBridge();
     };
+
+    /* Initial sync on page load */
     document.addEventListener('DOMContentLoaded', syncLdnaBridge);
     document.addEventListener('livewire:load', syncLdnaBridge);
+
+    /* ── Pre-save hook: inject JSON directly into the Livewire payload ──────── */
+    /* wire:model.defer on hidden inputs can miss morphdom cycles. Belt-and-     */
+    /* suspenders: mutate component.data right before the request is sent.       */
+    document.addEventListener('livewire:load', function () {
+        if (window.Livewire && typeof Livewire.hook === 'function') {
+            Livewire.hook('message.sent', function (message, component) {
+                var src = document.getElementById('ldna-json-field');
+                if (src && src.value && 'location_dna_preferences_json' in component.data) {
+                    component.data.location_dna_preferences_json = src.value;
+                }
+            });
+        }
+    });
 })();
 </script>
 
