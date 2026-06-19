@@ -5876,10 +5876,15 @@ $lease_types = [
         }
     };
     (function () {
+        /* _tenantPropertyTabId is the actual tab-pane ID for the map tab.
+           For tenants it is '#property-details'; for other user types routed
+           through this blade it may be '#property-preferences'. Rendered by PHP. */
+        var _tenantPropertyTabId = '#{{ $propertyId }}';
         if (!document._tenantMapTabListenerAdded) {
             document._tenantMapTabListenerAdded = true;
             document.addEventListener('shown.bs.tab', function (e) {
-                if (e.target && e.target.getAttribute('data-bs-target') === '#property-preferences') {
+                var _tgt = e.target && e.target.getAttribute('data-bs-target');
+                if (_tgt === _tenantPropertyTabId || _tgt === '#property-preferences' || _tgt === '#property-details') {
                     if (typeof window.ldnaRequestInit === 'function') {
                         window.ldnaRequestInit();
                     }

@@ -7,16 +7,17 @@
   Props (optional, passed via @include):
     $existingLocationDna  – decoded array from the `location_dna_preferences` meta key
                            (used on edit to re-hydrate map state)
+    $mapPanelId           – unique DOM id for the map div (default: ldna-map-panel)
 
   Canonical JSON shape stored in meta key `location_dna_preferences`:
   {
-    "cities":          ["Orlando", "Tampa"],          // free-tag city labels
-    "zip_codes":       ["32801", "33602"],             // free-tag ZIP labels
-    "neighborhoods":   ["Downtown", "Ybor City"],     // free-tag neighbourhood labels
-    "polygons": [                                     // drawn polygon paths
+    "cities":          ["Orlando, FL", "Tampa, FL"],   // Places-autocomplete city labels
+    "zip_codes":       ["32801", "33602"],              // free-tag ZIP labels
+    "neighborhoods":   ["Downtown", "Ybor City"],      // free-tag neighbourhood labels
+    "polygons": [                                      // drawn polygon paths
       { "label": "Custom Area 1", "path": [ {lat, lng}, … ] }
     ],
-    "radius_searches": [                              // drawn circles / address radius
+    "radius_searches": [                               // drawn circles / address radius
       { "address": "123 Main St", "lat": 27.9, "lng": -81.7, "radius_miles": 5 }
     ],
     "flexible_location": false,
@@ -69,6 +70,7 @@
   .ldna-radius-form input { max-width: 200px; }
   .ldna-overlay-list { font-size: .83rem; color: #374151; margin-top: .35rem; }
   .ldna-overlay-list li { padding: .1rem 0; }
+  .ldna-city-hint { font-size: .78rem; color: #0369a1; margin-top: .2rem; }
 </style>
 
 <div class="ldna-section" wire:ignore>
@@ -80,7 +82,9 @@
   {{-- ── Tag inputs ── --}}
   <div class="row g-3 mb-3">
     <div class="col-md-4">
-      <label class="fw-bold" style="font-size:.88rem;">Preferred Cities <small class="text-muted">(type &amp; press Enter)</small></label>
+      <label class="fw-bold" style="font-size:.88rem;">Preferred Cities
+        <small class="text-muted">(type &amp; select from dropdown)</small>
+      </label>
       <div class="ldna-tag-input-wrap" id="ldna-cities-wrap">
         @foreach($ldnaCities as $c)
           <span class="ldna-tag" data-value="{{ $c }}">{{ $c }}
@@ -88,8 +92,9 @@
           </span>
         @endforeach
         <input type="text" class="ldna-tag-input" id="ldna-cities-input" placeholder="e.g. Orlando"
-          onkeydown="ldnaAddTag(event,'cities')">
+          autocomplete="off">
       </div>
+      <div class="ldna-city-hint"><i class="fa-solid fa-circle-info"></i> Selecting a city from the dropdown will center the map on that city.</div>
     </div>
     <div class="col-md-4">
       <label class="fw-bold" style="font-size:.88rem;">Preferred ZIP Codes <small class="text-muted">(type &amp; press Enter)</small></label>
@@ -159,7 +164,7 @@
   {{-- ── Radius search form ── --}}
   <div class="ldna-radius-form mt-2">
     <input type="text" id="ldna-radius-address" class="form-control form-control-sm"
-      placeholder="Address or place name" style="max-width:280px;">
+      placeholder="Address or place name" style="max-width:280px;" autocomplete="off">
     <input type="number" id="ldna-radius-miles" class="form-control form-control-sm"
       placeholder="Miles" min="0.1" step="0.1" value="5" style="max-width:90px;">
     <button type="button" class="btn btn-outline-primary btn-sm" onclick="ldnaAddRadiusSearch()">
@@ -192,10 +197,8 @@
 <script>
 (function () {
   /* ── Re-execution guard ──────────────────────────────────────────────────── */
-  /* Livewire v2 morphdom re-executes script tags when their Blade-rendered
-     content changes (e.g. after a save that updates existingLocationDna).
-     We store a panel-scoped flag on window so subsequent runs are no-ops;
-     the original closure (with ldnaMap, ldnaDrawingManager etc.) lives on.  */
+  /* Livewire v2 morphdom re-executes script tags on re-render.
+     We store a panel-scoped flag on window so subsequent runs are no-ops. */
   var _panelKey = 'ldnaInit_{{ $mapPanelId }}';
   if (window[_panelKey]) return;
   window[_panelKey] = true;
@@ -212,19 +215,20 @@
   };
 
   var ldnaMap, ldnaDrawingManager;
-  var ldnaOverlays = [];   /* {type:'polygon'|'circle', overlay: GoogleOverlay, data: {}} */
-  var ldnaMapInitialized = false;   /* double-init guard */
-  var ldnaResizeObserver = null;    /* deferred init observer */
+  var ldnaOverlays = [];
+  var ldnaMapInitialized = false;
+  var ldnaObservers = [];  /* ResizeObserver + MutationObserver references */
 
   /* ── Serialise state to hidden field ─────────────────────────────────────── */
   window.ldnaSerialize = function () {
-    ldnaState.flexible_location = document.getElementById('ldna-flexible').checked;
-    ldnaState.location_notes    = document.getElementById('ldna-location-notes').value.trim();
+    var flexEl = document.getElementById('ldna-flexible');
+    var notesEl = document.getElementById('ldna-location-notes');
+    if (flexEl) ldnaState.flexible_location = flexEl.checked;
+    if (notesEl) ldnaState.location_notes = notesEl.value.trim();
 
-    /* re-read polygon paths from live overlays */
     ldnaState.polygons        = [];
     ldnaState.radius_searches = [];
-    ldnaOverlays.forEach(function (item, i) {
+    ldnaOverlays.forEach(function (item) {
       if (item.type === 'polygon') {
         var path = [];
         item.overlay.getPath().forEach(function (latlng) {
@@ -234,12 +238,7 @@
       } else if (item.type === 'circle' || item.type === 'radius_search') {
         var c = item.overlay.getCenter();
         var rm = (item.overlay.getRadius() / 1609.34).toFixed(2);
-        var entry = {
-          lat: c.lat(),
-          lng: c.lng(),
-          radius_miles: parseFloat(rm)
-        };
-        /* Preserve the geocoded address when this overlay came from ldnaAddRadiusSearch */
+        var entry = { lat: c.lat(), lng: c.lng(), radius_miles: parseFloat(rm) };
         if (item.type === 'radius_search' && item.data && item.data.address) {
           entry.address = item.data.address;
         } else {
@@ -249,15 +248,37 @@
       }
     });
 
-    document.getElementById('ldna-json-field').value = JSON.stringify(ldnaState);
+    var jsonVal = JSON.stringify(ldnaState);
+    var field = document.getElementById('ldna-json-field');
+    if (field) field.value = jsonVal;
   };
 
   /* ── Tag helpers ──────────────────────────────────────────────────────────── */
-  /* group values: 'cities' | 'zips' | 'neighborhoods'
-     DOM IDs:  ldna-{group}-input  /  ldna-{group}-wrap
-     State keys: 'cities' | 'zip_codes' | 'neighborhoods'                    */
   function ldnaGroupKey(group) {
     return { 'cities': 'cities', 'zips': 'zip_codes', 'neighborhoods': 'neighborhoods' }[group];
+  }
+
+  function ldnaAddTagValue(group, val) {
+    if (!val) return;
+    var stateKey = ldnaGroupKey(group);
+    if (!stateKey) return;
+    if (ldnaState[stateKey].indexOf(val) !== -1) return; /* duplicate */
+    ldnaState[stateKey].push(val);
+    var wrap  = document.getElementById('ldna-' + group + '-wrap');
+    var input = document.getElementById('ldna-' + group + '-input');
+    if (!wrap) return;
+    var tag = document.createElement('span');
+    tag.className = 'ldna-tag';
+    tag.dataset.value = val;
+    var labelNode = document.createTextNode(val + ' ');
+    var removeBtn = document.createElement('span');
+    removeBtn.className = 'ldna-tag-remove';
+    removeBtn.textContent = '×';
+    removeBtn.setAttribute('onclick', 'ldnaRemoveTag(this,\'' + group.replace(/'/g, "\\'") + '\')');
+    tag.appendChild(labelNode);
+    tag.appendChild(removeBtn);
+    if (input) { wrap.insertBefore(tag, input); } else { wrap.appendChild(tag); }
+    ldnaSerialize();
   }
 
   window.ldnaAddTag = function (event, group) {
@@ -267,26 +288,26 @@
     if (!input) return;
     var val = input.value.trim();
     if (!val) return;
-    var stateKey = ldnaGroupKey(group);
-    if (!stateKey) return;
-    if (ldnaState[stateKey].indexOf(val) === -1) {
-      ldnaState[stateKey].push(val);
-      var wrap = document.getElementById('ldna-' + group + '-wrap');
-      var tag  = document.createElement('span');
-      tag.className = 'ldna-tag';
-      tag.dataset.value = val;
-      /* Build tag safely without innerHTML XSS */
-      var labelNode = document.createTextNode(val + ' ');
-      var removeBtn = document.createElement('span');
-      removeBtn.className = 'ldna-tag-remove';
-      removeBtn.textContent = '×';
-      removeBtn.setAttribute('onclick', 'ldnaRemoveTag(this,\'' + group.replace(/'/g, "\\'") + '\')');
-      tag.appendChild(labelNode);
-      tag.appendChild(removeBtn);
-      wrap.insertBefore(tag, input);
-    }
     input.value = '';
-    ldnaSerialize();
+    ldnaAddTagValue(group, val);
+
+    /* For ZIP codes: geocode and pan the map to show that area */
+    if (group === 'zips' && ldnaMap && typeof google !== 'undefined' && google.maps && google.maps.Geocoder) {
+      var geocoder = new google.maps.Geocoder();
+      geocoder.geocode(
+        { address: val + ', USA', componentRestrictions: { country: 'us' } },
+        function (results, status) {
+          if (status === 'OK' && results.length && ldnaMap) {
+            if (results[0].geometry && results[0].geometry.viewport) {
+              ldnaMap.fitBounds(results[0].geometry.viewport);
+            } else if (results[0].geometry && results[0].geometry.location) {
+              ldnaMap.setCenter(results[0].geometry.location);
+              ldnaMap.setZoom(13);
+            }
+          }
+        }
+      );
+    }
   };
 
   window.ldnaRemoveTag = function (btn, group) {
@@ -299,21 +320,78 @@
     ldnaSerialize();
   };
 
+  /* ── Google Places Autocomplete for cities ────────────────────────────────── */
+  function ldnaInitCitiesAutocomplete() {
+    var input = document.getElementById('ldna-cities-input');
+    if (!input || input._ldnaACAttached) return;
+    if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
+    input._ldnaACAttached = true;
+
+    var ac = new google.maps.places.Autocomplete(input, {
+      types: ['(cities)'],
+      componentRestrictions: { country: 'us' }
+    });
+    /* Prevent the Enter key from submitting the form */
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') e.preventDefault();
+    });
+
+    ac.addListener('place_changed', function () {
+      var place = ac.getPlace();
+      if (!place || !place.geometry) return;
+
+      /* Build a readable city label: "City, ST" */
+      var cityName = place.name || '';
+      if (place.address_components) {
+        var stateComp = null;
+        for (var i = 0; i < place.address_components.length; i++) {
+          var types = place.address_components[i].types;
+          if (types.indexOf('administrative_area_level_1') !== -1) {
+            stateComp = place.address_components[i];
+            break;
+          }
+        }
+        if (stateComp) cityName = cityName + ', ' + stateComp.short_name;
+      }
+
+      ldnaAddTagValue('cities', cityName || place.name);
+      input.value = '';
+
+      /* Pan the map to the selected city */
+      if (ldnaMap && place.geometry) {
+        if (place.geometry.viewport) {
+          ldnaMap.fitBounds(place.geometry.viewport);
+        } else {
+          ldnaMap.setCenter(place.geometry.location);
+          ldnaMap.setZoom(11);
+        }
+      }
+    });
+  }
+
   /* ── Map initialisation ───────────────────────────────────────────────────── */
+  function ldnaIsContainerVisible() {
+    var container = document.getElementById('{{ $mapPanelId }}');
+    if (!container) return false;
+    /* getBoundingClientRect returns all-zeros for display:none ancestors */
+    var rect = container.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
   function ldnaInitMap() {
     if (ldnaMapInitialized) return;
     ldnaMapInitialized = true;
-    /* Signal any external heartbeat / polling that initialization succeeded */
     window.ldnaMapReady = true;
 
-    /* Hide the placeholder now that the real map is taking over */
+    /* Disconnect all pending observers */
+    ldnaObservers.forEach(function (obs) { try { obs.disconnect(); } catch (e) {} });
+    ldnaObservers = [];
+
+    /* Hide placeholder */
     var ph = document.getElementById('{{ $mapPanelId }}-placeholder');
     if (ph) ph.style.display = 'none';
 
-    /* Disconnect any pending ResizeObserver now that init is running */
-    if (ldnaResizeObserver) { ldnaResizeObserver.disconnect(); ldnaResizeObserver = null; }
-
-    var defaultCenter = { lat: 27.9944024, lng: -81.7602544 }; /* Florida centroid */
+    var defaultCenter = { lat: 27.9944024, lng: -81.7602544 };
     ldnaMap = new google.maps.Map(document.getElementById('{{ $mapPanelId }}'), {
       zoom: 8,
       center: defaultCenter,
@@ -347,13 +425,14 @@
       li.id = 'ldna-overlay-label-' + idx;
       var icon = e.type === 'polygon' ? 'fa-draw-polygon text-primary' : 'fa-circle-dot text-secondary';
       li.innerHTML = '<i class="fa-solid ' + icon + '"></i> ' + label;
-      document.getElementById('ldna-overlay-list').appendChild(li);
+      var overlayList = document.getElementById('ldna-overlay-list');
+      if (overlayList) overlayList.appendChild(li);
 
       ldnaSerialize();
     });
 
     /* Re-render saved polygons */
-    ldnaState.polygons.forEach(function (poly, i) {
+    ldnaState.polygons.forEach(function (poly) {
       if (!poly.path || !poly.path.length) return;
       var gmPoly = new google.maps.Polygon({
         paths: poly.path,
@@ -366,10 +445,8 @@
       google.maps.event.addListener(gmPoly.getPath(), 'insert_at', ldnaSerialize);
     });
 
-    /* Re-render saved radius circles.
-       Supports canonical flat {lat, lng} and legacy {center: {lat, lng}} formats. */
-    ldnaState.radius_searches.forEach(function (r, i) {
-      /* Resolve center: flat format first, then legacy nested format */
+    /* Re-render saved radius circles */
+    ldnaState.radius_searches.forEach(function (r) {
       var centerLat = (r.lat !== undefined) ? parseFloat(r.lat)
                     : (r.center ? parseFloat(r.center.lat) : null);
       var centerLng = (r.lng !== undefined) ? parseFloat(r.lng)
@@ -378,7 +455,7 @@
 
       var displayLabel = r.address
         ? (r.address + ' (' + r.radius_miles + ' mi)')
-        : (r.label || ('Radius ' + (i + 1)));
+        : (r.label || ('Radius ' + (ldnaOverlays.length + 1)));
 
       var gmCircle = new google.maps.Circle({
         center: { lat: centerLat, lng: centerLng },
@@ -392,18 +469,16 @@
       google.maps.event.addListener(gmCircle, 'center_changed', ldnaSerialize);
     });
 
-    /* Bias viewport: if geometry was loaded, fit the first radius circle;
-       if only city/ZIP tags exist, pan toward the first one. */
+    /* Bias viewport */
     if (ldnaOverlays.length > 0) {
-      /* Find the first circle overlay and fit to its bounds */
       for (var oi = 0; oi < ldnaOverlays.length; oi++) {
-        if ((ldnaOverlays[oi].type === 'radius_search' || ldnaOverlays[oi].type === 'circle')
-            && ldnaOverlays[oi].overlay.getBounds) {
-          ldnaMap.fitBounds(ldnaOverlays[oi].overlay.getBounds());
+        var ov = ldnaOverlays[oi];
+        if ((ov.type === 'radius_search' || ov.type === 'circle') && ov.overlay.getBounds) {
+          ldnaMap.fitBounds(ov.overlay.getBounds());
           break;
         }
       }
-    } else if (!ldnaState.polygons.length && !ldnaState.radius_searches.length) {
+    } else {
       var biasTarget = (ldnaState.cities && ldnaState.cities[0])
                     || (ldnaState.zip_codes && ldnaState.zip_codes[0])
                     || null;
@@ -412,40 +487,76 @@
         biasGeocoder.geocode(
           { address: biasTarget + ', United States', componentRestrictions: { country: 'us' } },
           function (results, status) {
-            if (status === 'OK' && results.length) {
-              ldnaMap.setCenter(results[0].geometry.location);
-              ldnaMap.setZoom(10);
+            if (status === 'OK' && results.length && ldnaMap) {
+              if (results[0].geometry.viewport) {
+                ldnaMap.fitBounds(results[0].geometry.viewport);
+              } else {
+                ldnaMap.setCenter(results[0].geometry.location);
+                ldnaMap.setZoom(10);
+              }
             }
           }
         );
       }
     }
+
+    /* Wire up Places Autocomplete for cities now that Maps API is confirmed ready */
+    ldnaInitCitiesAutocomplete();
+
+    /* Wire up Places Autocomplete for the radius-search address input */
+    ldnaInitRadiusAutocomplete();
+  }
+
+  /* ── Places Autocomplete for the radius address input ─────────────────────── */
+  function ldnaInitRadiusAutocomplete() {
+    var input = document.getElementById('ldna-radius-address');
+    if (!input || input._ldnaACAttached) return;
+    if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
+    input._ldnaACAttached = true;
+    new google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: 'us' }
+    });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') e.preventDefault();
+    });
   }
 
   /* ── Public helpers ───────────────────────────────────────────────────────── */
   window.ldnaSetDrawMode = function (mode) {
-    if (!ldnaDrawingManager) return;
-    ldnaDrawingManager.setDrawingMode(mode === 'polygon'
-      ? google.maps.drawing.OverlayType.POLYGON
-      : google.maps.drawing.OverlayType.CIRCLE);
+    if (!ldnaDrawingManager) {
+      /* Map not initialised yet — try to init then retry */
+      ldnaRequestInit();
+      setTimeout(function () { window.ldnaSetDrawMode(mode); }, 500);
+      return;
+    }
+    ldnaDrawingManager.setDrawingMode(
+      mode === 'polygon'
+        ? google.maps.drawing.OverlayType.POLYGON
+        : google.maps.drawing.OverlayType.CIRCLE
+    );
   };
 
   window.ldnaClearAllOverlays = function () {
     ldnaOverlays.forEach(function (item) { item.overlay.setMap(null); });
     ldnaOverlays = [];
-    document.getElementById('ldna-overlay-list').innerHTML = '';
+    var ol = document.getElementById('ldna-overlay-list');
+    if (ol) ol.innerHTML = '';
     ldnaSerialize();
   };
 
   window.ldnaAddRadiusSearch = function () {
     var addressInput = document.getElementById('ldna-radius-address');
     var milesInput   = document.getElementById('ldna-radius-miles');
+    if (!addressInput || !milesInput) return;
     var address = addressInput.value.trim();
     var miles   = parseFloat(milesInput.value) || 5;
     if (!address) return;
 
-    /* Ensure map is initialized before trying to place a circle */
-    if (!ldnaMap) { ldnaTryInit(); setTimeout(ldnaAddRadiusSearch, 400); return; }
+    if (!ldnaMap) {
+      ldnaRequestInit();
+      setTimeout(function () { window.ldnaAddRadiusSearch(); }, 500);
+      return;
+    }
 
     var geocoder = new google.maps.Geocoder();
     geocoder.geocode({ address: address, componentRestrictions: { country: 'us' } }, function (results, status) {
@@ -464,7 +575,6 @@
         editable: true, map: ldnaMap,
       });
       var idx = ldnaOverlays.length;
-      /* type:'radius_search' distinguishes address-geocoded circles from drawn ones */
       ldnaOverlays.push({
         type: 'radius_search',
         overlay: gmCircle,
@@ -477,7 +587,8 @@
       var li = document.createElement('li');
       li.id = 'ldna-overlay-label-' + idx;
       li.innerHTML = '<i class="fa-solid fa-circle-dot text-secondary"></i> ' + displayLabel;
-      document.getElementById('ldna-overlay-list').appendChild(li);
+      var overlayList = document.getElementById('ldna-overlay-list');
+      if (overlayList) overlayList.appendChild(li);
 
       ldnaMap.panTo({ lat: lat, lng: lng });
       ldnaMap.fitBounds(gmCircle.getBounds());
@@ -486,89 +597,90 @@
     });
   };
 
-  /* ── Safe public wrapper — called by listing blade callback + tab-show ─────── */
-  /* All external callers use this wrapper; never expose ldnaTryInit directly.   */
-  window.ldnaRequestInit = function () {
-    if (typeof google === 'undefined' || !google.maps || !google.maps.drawing) return;
-    var container = document.getElementById('{{ $mapPanelId }}');
-    if (!container) return;
-    if (!ldnaMapInitialized) {
-      ldnaTryInit();
-    } else if (ldnaMap && container.offsetWidth > 0) {
-      /* Always re-hide the placeholder — Livewire morphdom can restore it to its
-         original server-rendered state (no display:none) on any re-render.        */
-      var _ph = document.getElementById('{{ $mapPanelId }}-placeholder');
-      if (_ph) _ph.style.display = 'none';
-      google.maps.event.trigger(ldnaMap, 'resize');
-      if (!ldnaState.polygons.length && !ldnaState.radius_searches.length
-          && !ldnaState.cities.length && !ldnaState.zip_codes.length) {
-        ldnaMap.setCenter({ lat: 27.9944024, lng: -81.7602544 });
-      }
-    }
-  };
-
-  /* ── Wire up Google Maps once the API is loaded ───────────────────────────── */
-  /* The host form already loads the Maps JS API.
-     We poll until google.maps.drawing is available, then check visibility.
-     If the container is hidden (inside an inactive wizard tab / Bootstrap tab-pane),
-     we defer init until the element gains a non-zero size via ResizeObserver.
-     NOTE: buyer_criteria/add and tenant_criteria/add also use &callback=initialize
-     for address autocomplete — ldnaTryInit() runs independently of that callback. */
+  /* ── Core initialisation trigger ─────────────────────────────────────────── */
+  /* ldnaRequestInit is the primary public entry point — called from:
+     (1) the Maps API callback (byoInitBuyerOfferPlaces / byoInitTenantOfferPlaces),
+     (2) the shown.bs.tab event listener in the host blade,
+     (3) the Next/Back wizard button handlers.
+     It is idempotent: safe to call multiple times.                              */
   function ldnaTryInit() {
     if (ldnaMapInitialized) return;
     if (typeof google === 'undefined' || !google.maps || !google.maps.drawing) {
-      /* Maps API not ready yet — keep polling */
+      /* Maps API not ready — keep polling at 200 ms intervals */
       setTimeout(ldnaTryInit, 200);
       return;
     }
 
-    var container = document.getElementById('{{ $mapPanelId }}');
-    if (!container) return;
-
-    if (container.offsetWidth > 0 && container.offsetHeight > 0) {
-      /* Container is visible — init immediately */
+    if (ldnaIsContainerVisible()) {
       ldnaInitMap();
-    } else {
-      /* Container is hidden — attach ResizeObserver AND keep polling.
-         Manual tab switches (Next/Back wizard buttons) toggle Bootstrap classes
-         directly without firing shown.bs.tab, so the ResizeObserver may fire or
-         the polling will catch the transition within ~500 ms. Both paths call
-         ldnaInitMap() which is idempotent (ldnaMapInitialized guard). */
-      if (!ldnaResizeObserver) {
-        ldnaResizeObserver = new ResizeObserver(function (entries) {
-          for (var i = 0; i < entries.length; i++) {
-            var rect = entries[i].contentRect;
-            if (rect.width > 0 && rect.height > 0) {
-              ldnaInitMap();
-              break;
-            }
-          }
-        });
-        ldnaResizeObserver.observe(container);
-      }
-      /* Fallback poll – stops automatically once ldnaMapInitialized is true */
-      setTimeout(ldnaTryInit, 500);
+      return;
     }
+
+    /* Container is hidden (inside inactive tab-pane).
+       Strategy 1 — MutationObserver: watch the closest .tab-pane ancestor for
+       class changes (Bootstrap adds/removes .show/.active).
+       Strategy 2 — ResizeObserver: fired when the element gains layout dimensions.
+       Strategy 3 — Polling fallback: catches manual tab switches that toggle
+       CSS classes without firing any observer reliably.                         */
+    var container = document.getElementById('{{ $mapPanelId }}');
+    if (!container) { setTimeout(ldnaTryInit, 200); return; }
+
+    /* MutationObserver on the closest tab-pane ancestor */
+    var tabPane = container.closest('.tab-pane') || container.parentElement;
+    if (tabPane && !tabPane._ldnaMutObserver) {
+      var mutObs = new MutationObserver(function () {
+        if (ldnaMapInitialized) { mutObs.disconnect(); return; }
+        if (ldnaIsContainerVisible()) { ldnaInitMap(); mutObs.disconnect(); }
+      });
+      mutObs.observe(tabPane, { attributes: true, attributeFilter: ['class', 'style'] });
+      tabPane._ldnaMutObserver = true;
+      ldnaObservers.push(mutObs);
+    }
+
+    /* ResizeObserver on the map container itself */
+    if (!container._ldnaResizeObserver) {
+      var resizeObs = new ResizeObserver(function () {
+        if (ldnaMapInitialized) { resizeObs.disconnect(); return; }
+        if (ldnaIsContainerVisible()) { ldnaInitMap(); resizeObs.disconnect(); }
+      });
+      resizeObs.observe(container);
+      container._ldnaResizeObserver = true;
+      ldnaObservers.push(resizeObs);
+    }
+
+    /* Fallback poll — stops once initialized */
+    setTimeout(ldnaTryInit, 300);
   }
 
-  /* ── Post-init resize trigger for Bootstrap tab transitions ──────────────── */
-  /* If Maps was initialized while a CSS transition was still running, the SDK
-     may have measured a stale size. Re-trigger resize + re-center on tab show.
-     Only fall back to Florida centroid when no saved Location DNA data exists. */
-  document.addEventListener('shown.bs.tab', function () {
-    if (typeof window.ldnaRequestInit === 'function') {
-      window.ldnaRequestInit();
+  window.ldnaRequestInit = function () {
+    if (typeof google === 'undefined' || !google.maps || !google.maps.drawing) {
+      /* Maps API not ready yet — start polling */
+      setTimeout(ldnaTryInit, 100);
+      return;
     }
+    if (!ldnaMapInitialized) {
+      ldnaTryInit();
+    } else {
+      /* Already initialized — re-trigger resize & ensure placeholder is hidden */
+      var ph = document.getElementById('{{ $mapPanelId }}-placeholder');
+      if (ph) ph.style.display = 'none';
+      if (ldnaMap) google.maps.event.trigger(ldnaMap, 'resize');
+    }
+  };
+
+  /* ── shown.bs.tab hook (for Bootstrap Tab click events) ─────────────────── */
+  document.addEventListener('shown.bs.tab', function () {
+    if (typeof window.ldnaRequestInit === 'function') window.ldnaRequestInit();
   });
 
-  /* Run after DOM is ready */
+  /* ── Auto-start polling on DOMContentLoaded ───────────────────────────────── */
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', ldnaTryInit);
   } else {
     ldnaTryInit();
   }
 
-  /* Ensure wrap clicks focus the input */
+  /* ── Wrap-click focuses the text input ────────────────────────────────────── */
   document.querySelectorAll('.ldna-tag-input-wrap').forEach(function (wrap) {
     wrap.addEventListener('click', function () {
       var inp = wrap.querySelector('.ldna-tag-input');

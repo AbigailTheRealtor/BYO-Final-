@@ -4966,10 +4966,12 @@
         }
     }
     (function () {
+        var _tenantEditPropertyTabId = '#{{ $propertyId }}';
         if (!document._tenantEditMapTabListenerAdded) {
             document._tenantEditMapTabListenerAdded = true;
             document.addEventListener('shown.bs.tab', function (e) {
-                if (e.target && e.target.getAttribute('data-bs-target') === '#property-preferences') {
+                var _tgt = e.target && e.target.getAttribute('data-bs-target');
+                if (_tgt === _tenantEditPropertyTabId || _tgt === '#property-preferences' || _tgt === '#property-details') {
                     if (typeof window.ldnaRequestInit === 'function') {
                         window.ldnaRequestInit();
                     }
