@@ -2171,7 +2171,9 @@
             checkFormValidity();
 
             // Update on any input change
-            document.querySelectorAll('input, select, textarea').forEach(field => {
+            document.querySelectorAll(
+                'input:not([id^="ldna-"]), select:not([id^="ldna-"]), textarea:not([id^="ldna-"])'
+            ).forEach(field => {
                 field.addEventListener('change', checkFormValidity);
                 field.addEventListener('keyup', checkFormValidity);
             });
@@ -2309,7 +2311,9 @@
             checkFormValidity();
 
             // Update on any input change
-            document.querySelectorAll('input, select, textarea').forEach(field => {
+            document.querySelectorAll(
+                'input:not([id^="ldna-"]), select:not([id^="ldna-"]), textarea:not([id^="ldna-"])'
+            ).forEach(field => {
                 field.addEventListener('change', checkFormValidity);
                 field.addEventListener('keyup', checkFormValidity);
             });
