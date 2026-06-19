@@ -1153,35 +1153,18 @@
     </div>
 </div>
 
-{{-- Security Deposit Required --}}
+{{-- Security Deposit Amount --}}
 <div class="form-group">
-    <label class="fw-bold">Security Deposit Required:</label>
+    <label class="fw-bold">Security Deposit Amount:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the amount of the security deposit the Landlord requires from the Tenant.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="security_deposit_required" class="form-control"
+        <input type="text" wire:model="security_deposit_amount" class="form-control"
             placeholder="Enter security deposit amount (e.g., 2500)"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-    </div>
-</div>
-
-{{-- First Month Rent Required --}}
-<div class="form-group">
-    <label class="fw-bold">First Month Rent Required:</label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Indicate whether the first month's rent must be paid upfront at lease signing.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <select wire:model="first_month_rent_required" class="form-control has-icon"
-            data-icon="fa-solid fa-money-bill">
-            <option value="">Select</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-        </select>
     </div>
 </div>
 
@@ -1231,98 +1214,68 @@
     </div>
 </div>
 
-{{-- Pet Deposit / Fee / Rent (shown when Pets = Yes) --}}
-@if ($pets === 'Yes')
-    <div class="form-group">
-        <label class="fw-bold">Pet Deposit / Pet Fee / Pet Rent:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the pet deposit, one-time fee, or additional monthly pet rent amount the Landlord requires.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="text" wire:model="pet_deposit_fee_rent" class="form-control has-icon"
-                data-icon="fa-solid fa-paw"
-                placeholder="Enter pet deposit/fee/rent (e.g., $300 deposit, $50/month)">
-        </div>
-    </div>
-@endif
-
-{{-- Phase B L-03: Pet sub-fields (shown when Pets = Yes, same guard as pet_deposit_fee_rent) --}}
-@if ($pets === 'Yes')
-    <div class="form-group">
-        <label class="fw-bold">Maximum Pet Weight (lbs):</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the maximum allowable pet weight in pounds (e.g., 25).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="number" wire:model="pet_max_weight_lbs" class="form-control has-icon"
-                data-icon="fa-solid fa-weight-scale" min="0"
-                placeholder="Enter max weight in lbs (e.g., 25)">
-        </div>
-    </div>
-
-    <div class="form-group" wire:ignore wire:key="landlord-pet-species-group">
-        <label class="fw-bold">Pet Species Allowed:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the species of pets permitted on the property.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover has-select-icon" wire:ignore>
-            <select id="pet_species_allowed" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-paw" data-placeholder="Select" multiple>
-                <option value="Dog" {{ in_array('Dog', $this->pet_species_allowed ?? []) ? 'selected' : '' }}>Dog</option>
-                <option value="Cat" {{ in_array('Cat', $this->pet_species_allowed ?? []) ? 'selected' : '' }}>Cat</option>
-                <option value="Bird" {{ in_array('Bird', $this->pet_species_allowed ?? []) ? 'selected' : '' }}>Bird</option>
-                <option value="Small caged animal" {{ in_array('Small caged animal', $this->pet_species_allowed ?? []) ? 'selected' : '' }}>Small Caged Animal</option>
-            </select>
-        </div>
-    </div>
-
-    <div class="form-group">
-        <label class="fw-bold">Pet Deposit Amount:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the one-time pet deposit amount required (e.g., 300).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <span class="input-group-text-seller">$</span>
-            <input type="text" wire:model="pet_deposit_amount" class="form-control"
-                placeholder="Enter pet deposit amount (e.g., 300)"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-        </div>
-    </div>
-
-    <div class="form-group">
-        <label class="fw-bold">Pet Monthly Fee:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the monthly recurring pet fee amount (e.g., 50).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <span class="input-group-text-seller">$</span>
-            <input type="text" wire:model="pet_monthly_fee" class="form-control"
-                placeholder="Enter monthly pet fee (e.g., 50)"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-        </div>
-    </div>
-@endif
-
-{{-- Number of Occupants Allowed moved to Applicant Requirements tab --}}
-
-{{-- Parking Terms --}}
+{{-- Pet Deposit Amount (financial pet field, always visible) --}}
 <div class="form-group">
-    <label class="fw-bold">Parking Terms:</label>
+    <label class="fw-bold">Pet Deposit Amount:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Describe the parking arrangement included with the lease (e.g., 1 assigned space, street parking only, garage included).">
+        title="Enter the one-time pet deposit amount required (e.g., 300). Leave blank if no pet deposit is required.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="parking_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
-            data-icon="fa-solid fa-car"
-            placeholder="Enter parking terms (e.g., 1 assigned covered space included, 2 guest spaces available)"></textarea>
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="pet_deposit_amount" class="form-control"
+            placeholder="Enter pet deposit amount (e.g., 300)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
 </div>
+
+{{-- Pet Monthly Fee (financial pet field, always visible) --}}
+<div class="form-group">
+    <label class="fw-bold">Pet Monthly Fee:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the monthly recurring pet fee amount (e.g., 50). Leave blank if no monthly pet fee is required.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="pet_monthly_fee" class="form-control"
+            placeholder="Enter monthly pet fee (e.g., 50)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+
+{{-- Pet Rent (financial pet field, always visible) --}}
+<div class="form-group">
+    <label class="fw-bold">Pet Rent:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the additional monthly pet rent amount (e.g., 75). Leave blank if not applicable.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="pet_rent" class="form-control"
+            placeholder="Enter pet rent (e.g., 75)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+
+{{-- Pet Fee (financial pet field, always visible) --}}
+<div class="form-group">
+    <label class="fw-bold">Pet Fee:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the one-time non-refundable pet fee (e.g., 150). Leave blank if not applicable.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="pet_fee" class="form-control"
+            placeholder="Enter pet fee (e.g., 150)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+
+{{-- Number of Occupants Allowed moved to Applicant Requirements tab --}}
+{{-- Parking Terms moved to Property Details tab (after Garage/Carport fields) --}}
 
 {{-- Maintenance Responsibility --}}
 <div class="form-group">

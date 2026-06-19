@@ -305,8 +305,6 @@ class LandlordOfferListingEdit extends Component
 
     // Landlord Lease Terms Questions
     public $lease_available_date = '';
-    public $security_deposit_required = '';
-    public $first_month_rent_required = '';
     public $last_month_rent_required = '';
     public $total_move_in_funds_required = '';
     public $pet_policy = '';
@@ -317,6 +315,8 @@ class LandlordOfferListingEdit extends Component
     public $pet_species_allowed = [];
     public $pet_deposit_amount = '';
     public $pet_monthly_fee = '';
+    public $pet_rent = '';
+    public $pet_fee = '';
     public $number_of_occupants_allowed = '';
     public $parking_terms = '';
     public $ll_maintenance_responsibility = '';
@@ -352,7 +352,7 @@ class LandlordOfferListingEdit extends Component
     public $bankruptcy_requirement = 'No Requirement';
     public $custom_bankruptcy_requirement = '';
     public $credit_score_flexibility = '';
-    public $pet_policy_requirement = '';
+    public $pet_policy_requirement = [];
     public $custom_pet_policy_requirement = '';
     public $pet_restrictions = '';
     public $smoking_policy_requirement = '';
@@ -2049,8 +2049,7 @@ class LandlordOfferListingEdit extends Component
             'open_house_count'                => $this->open_house_count,
             'virtual_showings_count'          => $this->virtual_showings_count,
             'lease_available_date'            => $this->lease_available_date,
-            'security_deposit_required'       => $this->stripCommas($this->security_deposit_required),
-            'first_month_rent_required'       => $this->first_month_rent_required,
+            'security_deposit_amount'         => $this->stripCommas($this->security_deposit_amount),
             'last_month_rent_required'        => $this->last_month_rent_required,
             'total_move_in_funds_required'    => $this->stripCommas($this->total_move_in_funds_required),
             'pet_policy'                      => $this->pet_policy,
@@ -2191,6 +2190,10 @@ class LandlordOfferListingEdit extends Component
             $this->listingId = $auction->id;
             $this->saveAllMetadata($auction);
 
+            if ($this->address) {
+                \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+            }
+
             $this->isDraft        = true;
             $this->isListingDraft = true;
 
@@ -2234,6 +2237,10 @@ class LandlordOfferListingEdit extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            if ($this->address) {
+                \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+            }
 
             $auction->saveMeta('draft_version',      $previousVersion + 1);
             $auction->saveMeta('parent_draft_id',    $parentDraftId);
@@ -2931,8 +2938,6 @@ class LandlordOfferListingEdit extends Component
 
             // Landlord Lease Terms Questions
             $this->lease_available_date = $auction->get->lease_available_date ?? '';
-            $this->security_deposit_required = $auction->get->security_deposit_required ?? '';
-            $this->first_month_rent_required = $auction->get->first_month_rent_required ?? '';
             $this->last_month_rent_required = $auction->get->last_month_rent_required ?? '';
             $this->total_move_in_funds_required = $auction->get->total_move_in_funds_required ?? '';
             $this->pet_policy = $auction->get->pet_policy ?? '';
@@ -2944,6 +2949,8 @@ class LandlordOfferListingEdit extends Component
             $this->pet_species_allowed = is_array($rawPetSpecies) ? $rawPetSpecies : (json_decode($rawPetSpecies, true) ?? []);
             $this->pet_deposit_amount = $auction->get->pet_deposit_amount ?? '';
             $this->pet_monthly_fee = $auction->get->pet_monthly_fee ?? '';
+            $this->pet_rent = $auction->get->pet_rent ?? '';
+            $this->pet_fee = $auction->get->pet_fee ?? '';
             $this->number_of_occupants_allowed = $auction->get->number_of_occupants_allowed ?? '';
             $this->parking_terms = $auction->get->parking_terms ?? '';
             $this->ll_maintenance_responsibility = $auction->get->ll_maintenance_responsibility ?? '';
@@ -2980,7 +2987,8 @@ class LandlordOfferListingEdit extends Component
             $this->bankruptcy_requirement = $auction->get->bankruptcy_requirement ?? 'No Requirement';
             $this->custom_bankruptcy_requirement = $auction->get->custom_bankruptcy_requirement ?? '';
             $this->credit_score_flexibility = $auction->get->credit_score_flexibility ?? '';
-            $this->pet_policy_requirement = $auction->get->pet_policy_requirement ?? '';
+            $rawPetPolicyReq = $auction->get->pet_policy_requirement ?? '[]';
+            $this->pet_policy_requirement = is_array($rawPetPolicyReq) ? $rawPetPolicyReq : (json_decode($rawPetPolicyReq, true) ?? []);
             $this->custom_pet_policy_requirement = $auction->get->custom_pet_policy_requirement ?? '';
             $this->pet_restrictions = $auction->get->pet_restrictions ?? '';
             $this->smoking_policy_requirement = $auction->get->smoking_policy_requirement ?? '';
@@ -3471,8 +3479,6 @@ class LandlordOfferListingEdit extends Component
 
         // Landlord Lease Terms Questions
         $auction->saveMeta('lease_available_date', $this->lease_available_date);
-        $auction->saveMeta('security_deposit_required', $this->stripCommas($this->security_deposit_required));
-        $auction->saveMeta('first_month_rent_required', $this->first_month_rent_required);
         $auction->saveMeta('last_month_rent_required', $this->last_month_rent_required);
         $auction->saveMeta('total_move_in_funds_required', $this->stripCommas($this->total_move_in_funds_required));
         $auction->saveMeta('pet_policy', $this->pet_policy);
@@ -3483,6 +3489,8 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('pet_species_allowed', json_encode($this->ensureArray($this->pet_species_allowed)));
         $auction->saveMeta('pet_deposit_amount', $this->pet_deposit_amount);
         $auction->saveMeta('pet_monthly_fee', $this->pet_monthly_fee);
+        $auction->saveMeta('pet_rent', $this->pet_rent);
+        $auction->saveMeta('pet_fee', $this->pet_fee);
         $auction->saveMeta('number_of_occupants_allowed', $this->number_of_occupants_allowed);
         $auction->saveMeta('parking_terms', $this->parking_terms);
         $auction->saveMeta('ll_maintenance_responsibility', $this->ll_maintenance_responsibility);
@@ -3519,7 +3527,7 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('bankruptcy_requirement', $this->bankruptcy_requirement);
         $auction->saveMeta('custom_bankruptcy_requirement', $this->custom_bankruptcy_requirement);
         $auction->saveMeta('credit_score_flexibility', $this->credit_score_flexibility);
-        $auction->saveMeta('pet_policy_requirement', $this->pet_policy_requirement);
+        $auction->saveMeta('pet_policy_requirement', json_encode($this->ensureArray($this->pet_policy_requirement)));
         $auction->saveMeta('custom_pet_policy_requirement', $this->custom_pet_policy_requirement);
         $auction->saveMeta('pet_restrictions', $this->pet_restrictions);
         $auction->saveMeta('smoking_policy_requirement', $this->smoking_policy_requirement);
@@ -3761,6 +3769,10 @@ class LandlordOfferListingEdit extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            if ($this->address) {
+                \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+            }
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', $this->listingId);
 

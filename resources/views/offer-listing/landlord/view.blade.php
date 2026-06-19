@@ -829,8 +829,8 @@
 
         /* Pricing */
         $navHasPricing = $str('desired_rental_amount') || $str('starting_rent') || $str('reserve_rent')
-            || $str('lease_now_price') || $str('security_deposit_required') || $str('security_deposit_amount')
-            || $str('first_month_rent_required') || $str('last_month_rent_required')
+            || $str('lease_now_price') || $str('security_deposit_amount')
+            || $str('last_month_rent_required')
             || $str('total_move_in_funds_required');
 
         /* Utilities & Fees */
@@ -877,7 +877,11 @@
             ($str('eviction_history_requirement') && $str('eviction_history_requirement') !== 'No Requirement') ||
             ($str('bankruptcy_requirement') && $str('bankruptcy_requirement') !== 'No Requirement') ||
             $str('credit_score_flexibility') ||
-            ($str('pet_policy_requirement') && $str('pet_policy_requirement') !== 'No requirement') ||
+            (function() use ($str) {
+                $pprRaw = $str('pet_policy_requirement');
+                $pprArr = is_array(json_decode($pprRaw, true)) ? json_decode($pprRaw, true) : ($pprRaw ? [$pprRaw] : []);
+                return count(array_filter($pprArr, fn($v) => !empty($v) && strtolower($v) !== 'no requirement')) > 0;
+            })() ||
             ($str('smoking_policy_requirement') && $str('smoking_policy_requirement') !== 'No requirement') ||
             ($str('criminal_background_requirement') && $str('criminal_background_requirement') !== 'No requirement') ||
             ($str('reference_requirement') && $str('reference_requirement') !== 'No requirement') ||
@@ -1387,11 +1391,13 @@
                 </div>
             </div>
             @php
-                $petReqV    = $str('pet_policy_requirement');
-                $petDisplayV = null;
-                if ($petReqV && strtolower($petReqV) !== 'no requirement') {
-                    $petDisplayV = ($petReqV === 'Other' && $str('custom_pet_policy_requirement')) ? $str('custom_pet_policy_requirement') : $petReqV;
-                }
+                $petReqRaw = $str('pet_policy_requirement');
+                // pet_policy_requirement is stored as JSON array; support both new (JSON) and legacy (string) formats.
+                $petPolicyArr = is_array(json_decode($petReqRaw, true))
+                    ? json_decode($petReqRaw, true)
+                    : ($petReqRaw ? [$petReqRaw] : []);
+                $petPolicyArr = array_filter($petPolicyArr, fn($v) => !empty($v) && strtolower($v) !== 'no requirement');
+                $petDisplayV = count($petPolicyArr) > 0 ? implode(', ', $petPolicyArr) : null;
                 $smokeReqV    = $str('smoking_policy_requirement');
                 $smokeDisplayV = null;
                 if ($smokeReqV && strtolower($smokeReqV) !== 'no requirement') {
@@ -1496,9 +1502,7 @@
             ['Starting Rent', $fmtMoney($str('starting_rent'))],
             ['Reserve Rent', $fmtMoney($str('reserve_rent'))],
             ['Lease Now Price', $fmtMoney($str('lease_now_price'))],
-            ['Security Deposit Required', $yesNo($str('security_deposit_required'))],
-            ['Security Deposit Amount', $fmtMoney($str('security_deposit_amount'))],
-            ['First Month Rent Required', $yesNo($str('first_month_rent_required'))],
+            ['Security Deposit Amount', $fmtMoney($str('security_deposit_amount') ?: $str('security_deposit_required'))],
             ['Last Month Rent Required', $yesNo($str('last_month_rent_required'))],
             ['Total Move-In Funds Required', $fmtMoney($str('total_move_in_funds_required'))],
             // min_income_requirement moved to Applicant Requirements section
@@ -1644,6 +1648,8 @@
             ['Pet Deposit / Fee on Rent', $str('pet_deposit_fee_rent')],
             ['Pet Deposit Amount', $fmtMoney($str('pet_deposit_amount'))],
             ['Pet Monthly Fee', $fmtMoney($str('pet_monthly_fee'))],
+            ['Pet Rent', $fmtMoney($str('pet_rent'))],
+            ['Pet Fee', $fmtMoney($str('pet_fee'))],
         ], fn($f) => !empty($f[1]));
         $petSpecies = $arr('pet_species_allowed');
         $hasPets = count($petFields) || count($petSpecies);

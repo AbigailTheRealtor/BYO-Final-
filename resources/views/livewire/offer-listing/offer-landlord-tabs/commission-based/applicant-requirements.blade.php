@@ -161,34 +161,31 @@
     <h6 class="fw-semibold border-bottom pb-2 mb-3 mt-4">Lifestyle requirements</h6>
 
     {{-- Pet Policy --}}
-    <div class="form-group" x-data>
+    <div class="form-group">
         <label class="fw-bold">Pet policy:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Specify whether pets are allowed and any restrictions that apply.">
+            title="Select all pet types permitted on the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover">
-            <select wire:model="pet_policy_requirement" class="form-control has-icon" data-icon="fa-solid fa-paw">
-                <option value="">Select</option>
-                <option value="No requirement">No requirement</option>
-                <option value="No pets">No pets</option>
-                <option value="Cats allowed">Cats allowed</option>
-                <option value="Dogs allowed">Dogs allowed</option>
-                <option value="Small pets allowed">Small pets allowed</option>
-                <option value="Pets allowed">Pets allowed</option>
-                <option value="Other">Other</option>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="pet_policy_requirement" class="form-control has-icon select2-multiple"
+                data-icon="fa-solid fa-paw" data-placeholder="Select all that apply" multiple>
+                <option value="Dogs allowed" {{ is_array($pet_policy_requirement) && in_array('Dogs allowed', $pet_policy_requirement) ? 'selected' : '' }}>Dogs allowed</option>
+                <option value="Cats allowed" {{ is_array($pet_policy_requirement) && in_array('Cats allowed', $pet_policy_requirement) ? 'selected' : '' }}>Cats allowed</option>
+                <option value="Small pets allowed" {{ is_array($pet_policy_requirement) && in_array('Small pets allowed', $pet_policy_requirement) ? 'selected' : '' }}>Small pets allowed</option>
+                <option value="Large pets allowed" {{ is_array($pet_policy_requirement) && in_array('Large pets allowed', $pet_policy_requirement) ? 'selected' : '' }}>Large pets allowed</option>
+                <option value="Exotic pets allowed" {{ is_array($pet_policy_requirement) && in_array('Exotic pets allowed', $pet_policy_requirement) ? 'selected' : '' }}>Exotic pets allowed</option>
+                <option value="No pets" {{ is_array($pet_policy_requirement) && in_array('No pets', $pet_policy_requirement) ? 'selected' : '' }}>No pets</option>
+                <option value="Case-by-case review" {{ is_array($pet_policy_requirement) && in_array('Case-by-case review', $pet_policy_requirement) ? 'selected' : '' }}>Case-by-case review</option>
             </select>
         </div>
-        <div x-show="$wire.pet_policy_requirement === 'Other'" x-cloak class="mt-2">
-            <div class="input-cover">
-                <input type="text" wire:model="custom_pet_policy_requirement" class="form-control has-icon"
-                    data-icon="fa-solid fa-paw"
-                    placeholder="Enter pet policy (e.g., One small dog under 25 lbs, Non-shedding breeds only)">
-            </div>
-        </div>
-        {{-- Pet restrictions — shown when any permitting option is selected --}}
-        <div x-show="['Cats allowed','Dogs allowed','Small pets allowed','Pets allowed','Other'].includes($wire.pet_policy_requirement)" x-cloak class="mt-2">
-            <label class="fw-semibold small text-muted">Pet restrictions:</label>
+    </div>
+    {{-- Pet restrictions — shown when any "allowed" option is selected. --}}
+    {{-- Visibility is server-rendered (style attr) and also toggled by JS for instant feedback. --}}
+    <div class="mt-2" id="pet-restrictions-wrapper"
+        style="{{ is_array($pet_policy_requirement) && count(array_filter($pet_policy_requirement, fn($v) => str_contains(strtolower($v), 'allowed'))) > 0 ? '' : 'display:none;' }}">
+        <div class="form-group">
+            <label class="fw-semibold small text-muted">Pet restrictions <span class="fw-normal">(optional):</span></label>
             <div class="input-cover">
                 <input type="text" wire:model="pet_restrictions" class="form-control has-icon"
                     data-icon="fa-solid fa-circle-exclamation"
@@ -265,9 +262,10 @@
                 <option value="">Select</option>
                 <option value="No requirement">No requirement</option>
                 <option value="No prior evictions">No prior evictions</option>
-                <option value="No evictions within 3 years">No evictions within 3 years</option>
-                <option value="No evictions within 5 years">No evictions within 5 years</option>
-                <option value="No evictions within 7 years">No evictions within 7 years</option>
+                <option value="Evictions older than 7 years accepted">Evictions older than 7 years accepted</option>
+                <option value="Evictions older than 5 years accepted">Evictions older than 5 years accepted</option>
+                <option value="Evictions older than 3 years accepted">Evictions older than 3 years accepted</option>
+                <option value="Case-by-case review">Case-by-case review</option>
                 <option value="Other">Other</option>
             </select>
         </div>
@@ -291,10 +289,11 @@
             <select wire:model="bankruptcy_requirement" class="form-control has-icon" data-icon="fa-solid fa-scale-balanced">
                 <option value="">Select</option>
                 <option value="No requirement">No requirement</option>
-                <option value="No active bankruptcy">No active bankruptcy</option>
-                <option value="Discharged bankruptcy allowed">Discharged bankruptcy allowed</option>
-                <option value="No bankruptcy within 2 years">No bankruptcy within 2 years</option>
-                <option value="No bankruptcy within 5 years">No bankruptcy within 5 years</option>
+                <option value="No bankruptcy">No bankruptcy</option>
+                <option value="Bankruptcy discharged more than 7 years ago accepted">Bankruptcy discharged more than 7 years ago accepted</option>
+                <option value="Bankruptcy discharged more than 5 years ago accepted">Bankruptcy discharged more than 5 years ago accepted</option>
+                <option value="Bankruptcy discharged more than 2 years ago accepted">Bankruptcy discharged more than 2 years ago accepted</option>
+                <option value="Case-by-case review">Case-by-case review</option>
                 <option value="Other">Other</option>
             </select>
         </div>

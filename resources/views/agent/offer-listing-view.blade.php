@@ -498,12 +498,15 @@
     @php $ofv::row('Occupant Types', $fmt($d['occupant_types'])); @endphp
     @php $ofv::row('Occupant Types (Tenant)', $fmt($d['occupant_types_tenant'])); @endphp
     @php $ofv::row('Lease Available Date', $fmtDate($d['lease_available_date'])); @endphp
-    @php $ofv::row('Security Deposit Required', $fmt($d['security_deposit_required'])); @endphp
-    @php $ofv::badge('First Month Rent Required', $fmtBool($d['first_month_rent_required'])); @endphp
+    @php $ofv::row('Security Deposit Amount', $fmt($d['security_deposit_amount'] ?: $d['security_deposit_required'])); @endphp
     @php $ofv::badge('Last Month Rent Required', $fmtBool($d['last_month_rent_required'])); @endphp
     @php $ofv::row('Total Move-In Funds Required', $d['total_move_in_funds_required'] ? '$' . number_format((float)str_replace(',', '', $d['total_move_in_funds_required'])) : null); @endphp
     @php $ofv::row('Pet Policy', $fmt($d['pet_policy'])); @endphp
     @php $ofv::row('Pet Deposit / Fee', $fmt($d['pet_deposit_fee_rent'])); @endphp
+    @php $ofv::row('Pet Deposit Amount', $fmtMoney($getMeta('pet_deposit_amount'))); @endphp
+    @php $ofv::row('Pet Monthly Fee', $fmtMoney($getMeta('pet_monthly_fee'))); @endphp
+    @php $ofv::row('Pet Rent', $fmtMoney($getMeta('pet_rent'))); @endphp
+    @php $ofv::row('Pet Fee', $fmtMoney($getMeta('pet_fee'))); @endphp
     @php $ofv::row('Pet Information', $fmt($d['pet_information'])); @endphp
     @php $ofv::badge('Guests Allowed', $fmtBool($d['guests_allowed'])); @endphp
     @php $ofv::row('Max Occupants Allowed', $fmt($d['number_of_occupants_allowed'])); @endphp

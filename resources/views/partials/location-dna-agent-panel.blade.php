@@ -55,7 +55,7 @@ use App\Presenters\LocationDnaPresenter;
                     <button type="submit" class="btn btn-sm btn-primary"
                             style="background-color:#0d6efd;border-color:#0d6efd;color:#fff;">
                         <i class="fa-solid fa-arrow-rotate-right me-1"></i>
-                        {{ $locationDna ? 'Refresh Location DNA' : 'Generate Location DNA' }}
+                        {{ $locationDna ? 'Regenerate Location DNA' : 'Regenerate Location DNA' }}
                     </button>
                 </form>
             </div>

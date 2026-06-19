@@ -1045,60 +1045,70 @@
                                         Applicant Requirements
                                     </button>
                                 </li>
-                                {{-- B7: Broker Compensation tab hidden from client listing form --}}
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
                                         wire:click="setActiveTab(5)"
-                                        id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
-                                        data-bs-target="#tax-legal-hoa-disclosures"
+                                        id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
+                                        data-bs-target="#broker-compensation-agency-agreement-terms"
                                         type="button" role="tab"
-                                        aria-controls="tax-legal-hoa-disclosures"
+                                        aria-controls="broker-compensation-agency-agreement-terms"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        Tax, Legal &amp; HOA
+                                        Broker Compensation &amp; Agency Agreement Terms
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
                                         wire:click="setActiveTab(6)"
-                                        id="documents-disclosures-tab" data-bs-toggle="tab"
-                                        data-bs-target="#documents-disclosures"
+                                        id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
+                                        data-bs-target="#tax-legal-hoa-disclosures"
                                         type="button" role="tab"
-                                        aria-controls="documents-disclosures"
+                                        aria-controls="tax-legal-hoa-disclosures"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        Documents &amp; Disclosures
+                                        Tax, Legal &amp; HOA
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 7 ? 'active' : '' }}"
                                         wire:click="setActiveTab(7)"
-                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
-                                        data-bs-target="#photos-tours-documents"
+                                        id="documents-disclosures-tab" data-bs-toggle="tab"
+                                        data-bs-target="#documents-disclosures"
                                         type="button" role="tab"
-                                        aria-controls="photos-tours-documents"
+                                        aria-controls="documents-disclosures"
                                         aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
-                                        Photos &amp; Tours
+                                        Documents &amp; Disclosures
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 8 ? 'active' : '' }}"
                                         wire:click="setActiveTab(8)"
-                                        id="ai-questions-tab" data-bs-toggle="tab"
-                                        data-bs-target="#ai-questions"
+                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
+                                        data-bs-target="#photos-tours-documents"
                                         type="button" role="tab"
-                                        aria-controls="ai-questions"
+                                        aria-controls="photos-tours-documents"
                                         aria-selected="{{ $activeTab === 8 ? 'true' : 'false' }}">
-                                        AI Knowledge Base
+                                        Photos &amp; Tours
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 9 ? 'active' : '' }}"
                                         wire:click="setActiveTab(9)"
+                                        id="ai-questions-tab" data-bs-toggle="tab"
+                                        data-bs-target="#ai-questions"
+                                        type="button" role="tab"
+                                        aria-controls="ai-questions"
+                                        aria-selected="{{ $activeTab === 9 ? 'true' : 'false' }}">
+                                        AI Knowledge Base
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 10 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(10)"
                                         id="landlord-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#landlord-information"
                                         type="button" role="tab"
                                         aria-controls="landlord-information"
-                                        aria-selected="{{ $activeTab === 9 ? 'true' : 'false' }}">
-                                        Agent Credentials & Contact Info
+                                        aria-selected="{{ $activeTab === 10 ? 'true' : 'false' }}">
+                                        Agent Credentials &amp; Contact Info
                                     </button>
                                 </li>
                             </ul>
@@ -1170,34 +1180,39 @@
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.applicant-requirements')
                                 </div>
 
-                                {{-- B7: Broker Compensation panel hidden from client listing form --}}
-
-                                <!-- Tax, Legal, HOA & Disclosures Tab (full_service: index 5) -->
+                                <!-- Broker Compensation & Agency Agreement Terms Tab (index 5) -->
                                 <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                    id="broker-compensation-agency-agreement-terms" role="tabpanel"
+                                    aria-labelledby="broker-compensation-agency-agreement-terms-tab">
+                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
+                                </div>
+
+                                <!-- Tax, Legal, HOA & Disclosures Tab (index 6) -->
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
                                     id="tax-legal-hoa-disclosures" role="tabpanel" aria-labelledby="tax-legal-hoa-disclosures-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.tax-legal-hoa-disclosures')
                                 </div>
 
-                                <!-- Documents & Disclosures Tab (full_service: index 6) -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                <!-- Documents & Disclosures Tab (index 7) -->
+                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}"
                                     id="documents-disclosures" role="tabpanel" aria-labelledby="documents-disclosures-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.documents-disclosures')
                                 </div>
 
-                                <!-- Photos, Tours & Documents Tab (full_service: index 7) -->
-                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}"
+                                <!-- Photos, Tours & Documents Tab (index 8) -->
+                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}"
                                     id="photos-tours-documents" role="tabpanel" aria-labelledby="photos-tours-documents-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.photos-tours-documents')
                                 </div>
 
-                                <!-- AI Knowledge Base Tab (full_service: index 8) -->
-                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}" id="ai-questions"
+                                <!-- AI Knowledge Base Tab (index 9) -->
+                                <div class="tab-pane fade {{ $activeTab === 9 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
 
-                                <!-- Landlord Info Tab (full_service: index 9) -->
-                                <div class="tab-pane fade {{ $activeTab === 9 ? 'show active' : '' }}"
+                                <!-- Landlord Info Tab (index 10) -->
+                                <div class="tab-pane fade {{ $activeTab === 10 ? 'show active' : '' }}"
                                     id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1318,6 +1333,7 @@
                     'property_items': data.property_items || [],
                     'tenant_require': data.tenant_require || [],
                     'pet_species_allowed': data.pet_species_allowed || [],
+                    'pet_policy_requirement': data.pet_policy_requirement || [],
                 };
                 // MLS Property Detail — hydrate by element ID
                 var mlsIdFields = {
@@ -2886,6 +2902,7 @@
                     '#property-details',
                     '#leasing-terms',
                     '#additional-details',
+                    '#applicant-requirements',
                     '#broker-compensation-agency-agreement-terms',
                     '#tax-legal-hoa-disclosures',
                     '#documents-disclosures',
@@ -3445,6 +3462,51 @@
                 Livewire.hook('message.processed', function () {
                     initSelect2Fields();
                 });
+            }
+        });
+    </script>
+    <script>
+        // pet_policy_requirement — multi-select bridge (Applicant Requirements tab).
+        // select2-stable.js may call initUninitialized() via shown.bs.tab and initialize
+        // Select2 WITHOUT attaching our handler. So we ALWAYS re-attach the handler
+        // (namespaced .ppr prevents duplicates) regardless of init state.
+        function initPetPolicyRequirementSelect2() {
+            if (!$('#pet_policy_requirement').length) return;
+            // Initialize Select2 only if not already done by another code path.
+            if (!$('#pet_policy_requirement').hasClass('select2-hidden-accessible')) {
+                $('#pet_policy_requirement').select2({
+                    placeholder: "Select all that apply",
+                    allowClear: true,
+                    closeOnSelect: false,
+                    width: '100%',
+                });
+                // Restore server-saved values into the freshly-initialized widget.
+                var _pprSaved = @json($this->pet_policy_requirement ?? []);
+                if (!Array.isArray(_pprSaved)) _pprSaved = [];
+                if (_pprSaved.length) { $('#pet_policy_requirement').val(_pprSaved).trigger('change'); }
+            }
+            // Always re-attach using a namespace so duplicates are replaced, not stacked.
+            $('#pet_policy_requirement')
+                .off('select2:select.ppr select2:unselect.ppr')
+                .on('select2:select.ppr select2:unselect.ppr', function () {
+                    var selectedValues = $(this).val() || [];
+                    var hasAllowed = selectedValues.some(function(v) { return v.toLowerCase().includes('allowed'); });
+                    $('#pet-restrictions-wrapper').css('display', hasAllowed ? 'block' : 'none');
+                    @this.set('pet_policy_requirement', selectedValues, true);
+                });
+            // Sync wrapper visibility to whatever is currently selected.
+            var _currentVals = $('#pet_policy_requirement').val() || [];
+            var _hasAllowed = _currentVals.some(function(v) { return v.toLowerCase().includes('allowed'); });
+            if (_hasAllowed) { $('#pet-restrictions-wrapper').css('display', 'block'); }
+        }
+        $(document).ready(function () { initPetPolicyRequirementSelect2(); });
+        // Re-run after Bootstrap makes the tab visible (shown.bs.tab fires before Livewire round-trip).
+        $(document).on('shown.bs.tab', '#applicant-requirements-tab', function () {
+            setTimeout(function () { initPetPolicyRequirementSelect2(); }, 150);
+        });
+        document.addEventListener('livewire:load', function () {
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                Livewire.hook('message.processed', function () { initPetPolicyRequirementSelect2(); });
             }
         });
     </script>

@@ -643,6 +643,20 @@
 
 @endif
 
+{{-- Parking Terms — placed after Garage/Carport and Garage/Parking Features --}}
+<div class="form-group">
+    <label class="fw-bold">Parking Terms:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Describe the parking arrangement included with the lease (e.g., 1 assigned space, street parking only, garage included).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <textarea wire:model="parking_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
+            data-icon="fa-solid fa-car"
+            placeholder="Enter parking terms (e.g., 1 assigned covered space included, 2 guest spaces available)"></textarea>
+    </div>
+</div>
+
 <!-- Waterfront -->
 <div class="form-group">
     <label class="fw-bold">Waterfront:</label>

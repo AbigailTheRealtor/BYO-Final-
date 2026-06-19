@@ -797,7 +797,7 @@ class MlsListingImportService
         // Boundary protection: stops at the next known label (colon-delimited) or
         // at a bare section header (e.g. "Rooms", "Exterior Information") caught
         // by the $sectionHeaderStop alternation in the boundary closure.
-        if ($v = $extract(['/Appliances?(?:\s+Included)?[\s:]+([^\|\n]{1,300})/i'], true)) {
+        if ($v = $extract(['/Appliances?(?:\s+Included)?[\s:]+([^\|\n]{1,2000})/i'], true)) {
             $data['appliances'] = $v;
         }
 
@@ -906,11 +906,11 @@ class MlsListingImportService
         // Maps directly to canonical key 'description' → Livewire 'additional_details'.
         // Boundary closure via $labelStop terminates capture at the next MLS label.
         if ($v = $extract([
-            '/Public\s+Remarks?\s*\(English\s+Only\)[\s:]+(.{10,2000})/si',
-            '/(?:Public\s+)?Remarks?[\s:]+(.{10,1000})/si',
-            '/Property\s+Description[\s:]+(.{10,1000})/si',
-            '/\bAbout[\s:]+(.{10,1000})/si',
-            '/\bDescription[\s:]+(.{10,1000})/si',
+            '/Public\s+Remarks?\s*\(English\s+Only\)[\s:]+(.{10,})/si',
+            '/(?:Public\s+)?Remarks?[\s:]+(.{10,})/si',
+            '/Property\s+Description[\s:]+(.{10,})/si',
+            '/\bAbout[\s:]+(.{10,})/si',
+            '/\bDescription[\s:]+(.{10,})/si',
         ], true)) {
             $v = trim($v);
 

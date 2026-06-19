@@ -1,3 +1,25 @@
+{{--
+ | Photos & Tours — Upload Handler Documentation
+ |
+ | Accepted formats : jpg, jpeg, png, webp
+ | Max file size    : 10 MB per file (enforced by Livewire validation rule `max:10240`)
+ |                    PHP must also allow: upload_max_filesize ≥ 10M, post_max_size ≥ 10M
+ | Max photo count  : 50 photos per listing (enforced in PHP component)
+ | Multiple upload  : Yes — `multiple` attribute on file input
+ |
+ | Validation rules (Livewire, in component):
+ |   newPropertyPhotos.*  →  nullable|file|mimes:jpg,jpeg,png,webp|max:10240
+ |
+ | Error messages:
+ |   Wrong format  →  "The photo must be a file of type: jpg, jpeg, png, webp."
+ |   Too large     →  "The photo may not be greater than 10240 kilobytes."
+ |
+ | Livewire temporary uploads: files are chunked and stored in
+ |   storage/app/livewire-tmp/  until the form is saved.
+ |
+ | Note: The `accept` attribute on the input is a UI hint only; backend
+ |       validation (mimes rule) is the authoritative format guard.
+--}}
 <h3 class="fw-bold mb-3">Photos &amp; Tours</h3>
 
 <div class="alert alert-info bg-light-info border-info mb-4">
