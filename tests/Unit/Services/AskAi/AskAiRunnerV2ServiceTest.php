@@ -74,11 +74,15 @@ class AskAiRunnerV2ServiceTest extends TestCase
         $followUpMock = $this->createMock(AskAiFollowUpQuestionService::class);
         $followUpMock->method('forResult')->willReturn([]);
 
+        $finalBuilderMock = $this->createMock(AskAiFinalResponseBuilderService::class);
+        $finalBuilderMock->method('coerceToContractStatus')->willReturnArgument(0);
+        $finalBuilderMock->method('contractFormOf')->willReturn('direct_fact');
+
         return [
             'classifier'     => $this->createMock(AskAiQuestionClassifierService::class),
             'internalRunner' => $this->createMock(AskAiInternalRunnerService::class),
             'adapter'        => $this->createMock(AskAiOpenAiAdapterService::class),
-            'finalBuilder'   => $this->createMock(AskAiFinalResponseBuilderService::class),
+            'finalBuilder'   => $finalBuilderMock,
             'followUpService'=> $followUpMock,
         ];
     }
@@ -2525,9 +2529,7 @@ class AskAiRunnerV2ServiceTest extends TestCase
 
     public function test_case_P8_runner_file_passes_listing_type_to_normalize(): void
     {
-        $content = file_get_contents(
-            app_path('Services/AskAi/AskAiRunnerV2Service.php')
-        );
+        $content = file_get_contents($this->serviceFilePath());
         $this->assertStringContainsString(
             'normalize($question, $knownFieldKeys, $listingType)',
             $content,

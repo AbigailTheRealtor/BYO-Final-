@@ -79,6 +79,9 @@ class AskAiRunnerV2DescriptionFallbackTraceTest extends TestCase
             'refusal_message'    => null,
             'error'              => null,
         ]);
+        // Pass-through: coercion behavior is tested in builder unit tests;
+        // here we only verify runner routing, so preserve whatever build() returned.
+        $finalBuilder->method('coerceToContractStatus')->willReturnArgument(0);
 
         $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
         $followUp->method('forResult')->willReturn([]);
@@ -351,6 +354,7 @@ class AskAiRunnerV2DescriptionFallbackTraceTest extends TestCase
             'refusal_message'    => null,
             'error'              => null,
         ]);
+        $finalBuilder->method('coerceToContractStatus')->willReturnArgument(0);
 
         $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
         $followUp->method('forResult')->willReturn([]);

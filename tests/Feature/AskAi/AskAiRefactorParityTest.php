@@ -347,20 +347,21 @@ class AskAiRefactorParityTest extends TestCase
     {
         $result = $this->invokeLandlordManual();
 
-        $this->assertCount(31, $result,
+        $this->assertCount(39, $result,
             '§30C: Landlord override count changed — '
-            . 'update only if intentional. All 31 keys require JSON decode '
-            . 'or field-alias transformation.');
+            . 'update only if intentional. All 39 keys require JSON decode, '
+            . 'resolveOtherValue(), or field-alias transformation.');
     }
 
     public function test_s30c_tenant_manual_override_count_is_pinned(): void
     {
         $result = $this->invokeTenantManual();
 
-        $this->assertCount(7, $result,
+        $this->assertCount(12, $result,
             '§30C: Tenant override count changed — '
             . 'update only if intentional (bedrooms/bathrooms/desired_lease_length/'
-            . 'property_items/appliances/condition_prop/tenant_pays)');
+            . 'property_items/appliances/condition_prop/tenant_pays/'
+            . 'water_view/pool_type/cities/counties/zip_codes)');
     }
 
     // =========================================================================
@@ -384,9 +385,9 @@ class AskAiRefactorParityTest extends TestCase
         $this->assertArrayHasKey('listing', $ctx, '§30D: buildForListing must return listing sub-array');
 
         $count = count($ctx['listing']);
-        $this->assertSame(102, $count,
-            "§30D: Seller 121 listing key count must be 102 "
-            . "(10 base + 92 non-conditional map keys); got {$count}. "
+        $this->assertSame(105, $count,
+            "§30D: Seller 121 listing key count must be 105 "
+            . "(10 base + 95 non-conditional map keys); got {$count}. "
             . 'A change here indicates a field was added/removed from the map '
             . 'or a conditional group boundary shifted.');
     }
@@ -545,8 +546,8 @@ class AskAiRefactorParityTest extends TestCase
         $ctx   = $this->contextBuilder->buildForListing('landlord', 71);
         $count = count($ctx['listing']);
 
-        $this->assertSame(119, $count,
-            "§30E: Landlord 71 listing key count must be 119 (10 base + 109 map); got {$count}");
+        $this->assertSame(147, $count,
+            "§30E: Landlord 71 listing key count must be 147 (10 base + 137 map); got {$count}");
     }
 
     /**
@@ -632,8 +633,8 @@ class AskAiRefactorParityTest extends TestCase
         $ctx   = $this->contextBuilder->buildForListing('buyer', 5);
         $count = count($ctx['listing']);
 
-        $this->assertSame(36, $count,
-            "§30F: Buyer 5 listing key count must be 36 (10 base + 26 map); got {$count}");
+        $this->assertSame(53, $count,
+            "§30F: Buyer 5 listing key count must be 53 (10 base + 43 map); got {$count}");
     }
 
     /**
@@ -673,8 +674,8 @@ class AskAiRefactorParityTest extends TestCase
         $ctx   = $this->contextBuilder->buildForListing('tenant', 133);
         $count = count($ctx['listing']);
 
-        $this->assertSame(27, $count,
-            "§30G: Tenant 133 listing key count must be 27 (10 base + 17 map); got {$count}");
+        $this->assertSame(74, $count,
+            "§30G: Tenant 133 listing key count must be 74 (10 base + 64 map); got {$count}");
     }
 
     /**

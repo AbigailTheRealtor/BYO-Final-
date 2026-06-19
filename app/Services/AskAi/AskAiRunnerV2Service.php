@@ -2,7 +2,6 @@
 
 namespace App\Services\AskAi;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -79,8 +78,9 @@ class AskAiRunnerV2Service
         // ── List-membership check fields ─────────────────────────────────────
         // Lease acceptance: "will landlord accept a 4-month lease?" requires checking
         // whether the requested duration appears in the terms_of_lease list.
+        // Phase D4: 'listing.terms_of_lease' alias removed; 'listing.lease_terms' is
+        // the canonical key (LISTING_KEY_KEYWORD_MAP entry merged, see below).
         'listing.lease_terms',
-        'listing.terms_of_lease',
         // lease_length / desired_lease_length are decoded JSON multiselects that
         // return comma-separated duration lists (e.g. "6 months, 12 months").
         'listing.lease_length',
@@ -1161,6 +1161,13 @@ class AskAiRunnerV2Service
             'how big is the home',
             'how large is the home',
             'what is the square footage',
+            'minimum square footage',
+            'minimum size requirement',
+            'minimum heated square',
+            'minimum heated square footage',
+            'what minimum square footage',
+            'how many square feet minimum',
+            'minimum sqft',
         ],
         'listing.year_built' => [
             'year built',
@@ -1259,7 +1266,7 @@ class AskAiRunnerV2Service
             'is there a water view',
             'does it have a view',
         ],
-        // ---- Credit Score (Tenant) ----
+        // ---- Credit Score (Tenant / Buyer) ----
         'listing.credit_score_range' => [
             'credit score range',
             'tenant credit score',
@@ -1268,6 +1275,10 @@ class AskAiRunnerV2Service
             'what credit score',
             'required credit score',
             'credit score',
+            'credit score range of the buyer',
+            'what is the buyer credit score range',
+            'credit score of this tenant',
+            'what credit score range does the tenant have',
         ],
         // ---- Tenant Monthly Income ----
         // IMPORTANT: Do NOT add the bare phrase 'monthly income' here — it is a
@@ -1421,6 +1432,16 @@ class AskAiRunnerV2Service
             'landlord flexible on lease term',
             'shortest lease term landlord will accept',
             'minimum lease landlord accepts',
+            // ── Merged from listing.terms_of_lease (Phase D4) ────────────────
+            // listing.terms_of_lease was a duplicate context key; its phrases are
+            // consolidated here so coverage is preserved after alias removal.
+            'what are the terms of the lease',
+            'lease terms for this rental',
+            'rental lease terms listed',
+            'what terms apply to this lease',
+            'lease terms available',
+            'what lease terms are offered',
+            'available lease term lengths',
         ],
         'listing.lease_length' => [
             'minimum lease term',
@@ -2227,7 +2248,7 @@ class AskAiRunnerV2Service
             'what is the security deposit',
             'deposit amount required',
             'how much is the deposit',
-            'security deposit',
+            'security deposit amount',
             'deposit amount',
             'required security deposit',
             "what's the deposit",
@@ -2236,15 +2257,9 @@ class AskAiRunnerV2Service
             'deposit to move in',
             'upfront deposit',
         ],
-        'listing.terms_of_lease' => [
-            'what are the terms of the lease',
-            'lease terms for this rental',
-            'rental lease terms listed',
-            'what terms apply to this lease',
-            'lease terms available',
-            'what lease terms are offered',
-            'available lease term lengths',
-        ],
+        // listing.terms_of_lease removed (Phase D4): phrases merged into
+        // listing.lease_terms above; context key alias consolidated to avoid
+        // PHP silent last-key-wins override in runner LISTING_KEY_KEYWORD_MAP.
         'listing.rent_includes' => [
             'what is included in the rent',
             'what does rent include',
@@ -2618,6 +2633,822 @@ class AskAiRunnerV2Service
             'is the commercial lease assignable for this business',
             'assignable business lease',
         ],
+
+        // ── Phase 2 additions: Landlord HOA ──────────────────────────────────
+        // Role-aware remap: 'listing.hoa_fee' → 'listing.association_fee_amount' for landlord.
+        'listing.association_fee_amount' => [
+            'association fee amount',
+            'how much is the association fee for this rental',
+            'monthly association fee',
+            'hoa fee amount for this rental',
+            'how much is the hoa for this rental property',
+            'association dues',
+        ],
+        'listing.association_fee_frequency' => [
+            'how often is the association fee paid',
+            'association fee payment schedule',
+            'association fee frequency for this rental',
+            'when is the hoa fee due for this rental',
+        ],
+
+        // ── Phase 2 additions: Landlord Screening ────────────────────────────
+        'listing.min_credit_score' => [
+            'minimum credit score required to rent',
+            'what credit score is required to rent',
+            'credit score needed to qualify for this rental',
+            'minimum credit score for this rental',
+            'what is the minimum credit score',
+        ],
+        'listing.income_qualification_method' => [
+            'how is income verified for this rental',
+            'income qualification method',
+            'income verification requirement for this rental',
+            'how do i qualify by income',
+        ],
+        'listing.employment_requirement' => [
+            'is employment required to rent here',
+            'employment requirement for this rental',
+            'does this rental require proof of employment',
+        ],
+        'listing.eviction_history_requirement' => [
+            'eviction history requirement',
+            'does eviction history disqualify a renter',
+            'prior eviction requirement for this rental',
+            'can someone with an eviction rent here',
+        ],
+        'listing.bankruptcy_requirement' => [
+            'bankruptcy requirement for this rental',
+            'does bankruptcy affect eligibility to rent',
+            'can someone with a bankruptcy rent here',
+        ],
+
+        // ── Phase 2 additions: Landlord Utility Estimates ────────────────────
+        'listing.est_water_sewer_trash' => [
+            'estimated water sewer trash cost',
+            'how much is the water bill for this rental',
+            'water sewer trash estimate for this rental',
+            'estimated cost of water and sewer',
+        ],
+        'listing.est_electric' => [
+            'estimated electric bill for this rental',
+            'how much is the electric bill',
+            'estimated electricity cost',
+            'average electric cost for this unit',
+        ],
+        'listing.est_internet' => [
+            'estimated internet cost for this rental',
+            'is internet included in the rental',
+            'how much is internet for this rental',
+        ],
+        'listing.est_cable' => [
+            'estimated cable cost for this rental',
+            'is cable included in the rent',
+            'how much is cable for this rental',
+        ],
+
+        // ── Phase 2 additions: Landlord Policies ─────────────────────────────
+        'listing.max_leases_per_year' => [
+            'how many times can this be re-leased per year',
+            'maximum leases per year allowed',
+            'lease renewal frequency limit',
+        ],
+        'listing.additional_lease_restrictions' => [
+            'additional lease restrictions',
+            'any other lease restrictions for this rental',
+            'other tenant restrictions',
+        ],
+        'listing.security_deposit_required' => [
+            'is a security deposit required for this rental',
+            'security deposit requirement',
+            'does this rental require a security deposit',
+        ],
+        'listing.leasing_55_plus' => [
+            '55 plus community',
+            'is this a 55 and older community',
+            'age-restricted community',
+            'senior housing requirement',
+            '55 and over rental',
+            'is this a senior community',
+            'age restriction for this rental',
+            '55+ community',
+            '55+ communit',
+            'buyer looking at 55',
+            '55 and over community',
+            'is the buyer looking at 55',
+        ],
+        'listing.guests_allowed' => [
+            'are overnight guests allowed',
+            'guest policy for tenants',
+            'can tenants have overnight guests',
+            'is there a guest policy',
+            'how long can guests stay',
+        ],
+        'listing.maintenance_by' => [
+            'who handles maintenance for this rental',
+            'who is responsible for maintenance',
+            'maintenance responsibility',
+            'does the landlord handle maintenance',
+            'tenant vs landlord maintenance',
+        ],
+        'listing.maintenance_response_time' => [
+            'maintenance response time',
+            'how quickly are maintenance requests handled',
+            'how fast does the landlord respond to maintenance',
+            'maintenance turnaround time',
+        ],
+        'listing.common_areas_access' => [
+            'access to common areas',
+            'what common areas are available for tenants',
+            'common area amenities for this rental',
+        ],
+        'listing.bathroom_facilities' => [
+            'bathroom facilities for this rental',
+            'are bathrooms shared or private',
+            'shared bathroom policy',
+        ],
+        'listing.room_size' => [
+            'room size',
+            'how big is the room',
+            'room dimensions for this rental',
+            'what is the size of the room',
+        ],
+
+        // ── Phase 2 additions: Seller New Fields ─────────────────────────────
+        'listing.waterfront_feet' => [
+            'waterfront footage',
+            'how many feet of waterfront',
+            'linear feet of waterfront',
+            'waterfront linear footage',
+            'how much waterfront does this property have',
+        ],
+        'listing.home_warranty_offered' => [
+            'is a home warranty offered',
+            'home warranty included',
+            'does this property come with a home warranty',
+            'home warranty status',
+        ],
+        'listing.association_approval_required' => [
+            'is hoa approval required',
+            'does the hoa need to approve the buyer',
+            'association approval required',
+            'hoa board approval required',
+            'does the association need to approve the sale',
+        ],
+
+        // ── Phase 2 additions: Buyer/Tenant Shared ───────────────────────────
+        'listing.number_of_occupants' => [
+            'how many occupants does the buyer have',
+            'how many people in the household',
+            'number of people in the buyer household',
+            'how many residents does the tenant have',
+            'household size for this tenant',
+            'how many occupants will be in the unit',
+        ],
+        'listing.non_negotiable_amenities' => [
+            'what amenities are non-negotiable',
+            'must-have amenities for this buyer',
+            'tenant must-have features',
+            'non-negotiable features for this tenant',
+            'what does the buyer absolutely require',
+            'non-negotiable amenities',
+            'non negotiable amenities',
+            'amenities for the buyer',
+        ],
+        'listing.commute_destination_zip' => [
+            'commute destination zip code',
+            'where does the buyer commute to',
+            'commute destination for this tenant',
+            'what zip code does the buyer commute to',
+        ],
+        'listing.max_commute_minutes' => [
+            'maximum commute time for the buyer',
+            'buyer commute limit',
+            'how far is the buyer willing to commute',
+            'max commute time for this tenant',
+            'tenant maximum commute minutes',
+            'maximum commute time',
+            'max commute time',
+            'buyer will accept commute',
+            'commute time the buyer',
+        ],
+        'listing.commute_mode' => [
+            'how does the buyer commute',
+            'buyer commute mode',
+            'tenant transportation preference',
+            'what is the commute mode for this buyer',
+        ],
+
+        // ── Phase 2 additions: Buyer-specific ────────────────────────────────
+        'listing.minimum_cap_rate' => [
+            'minimum cap rate required by buyer',
+            'what cap rate does the buyer require',
+            'minimum capitalization rate for this buyer',
+            'buyer cap rate requirement',
+        ],
+        'listing.flood_zone_tolerance' => [
+            'is the buyer open to flood zone properties',
+            'buyer flood zone preference',
+            'will the buyer accept a flood zone property',
+            'flood zone tolerance for this buyer',
+        ],
+        'listing.purchase_purpose' => [
+            'what is the buyer purchase purpose',
+            'is the buyer buying for investment or personal use',
+            'buyer purchase intent',
+            'what will the buyer use the property for',
+            'investment or primary residence for buyer',
+            'second home or investment',
+            'purchase for a second home',
+            'is this purchase for',
+            'investment or residence',
+            'buyer purchase purpose',
+        ],
+        'listing.year_built_preference' => [
+            'what year built preference does the buyer have',
+            'minimum year built for buyer',
+            'what is the buyer preferred year of construction',
+            'how old a home will the buyer consider',
+        ],
+        'listing.additional_preferences' => [
+            'additional preferences for this buyer',
+            'other requirements this buyer has listed',
+            'buyer additional criteria',
+            'any other buyer preferences',
+        ],
+        'listing.business_type_preference' => [
+            'what type of business is the buyer interested in',
+            'business type preference for buyer',
+            'what kind of business does the buyer want',
+        ],
+
+        // ── Phase 2 additions: Tenant-specific ───────────────────────────────
+        'listing.smoking_preference' => [
+            'does the tenant smoke',
+            'tenant smoking preference',
+            'is this tenant a smoker',
+            'smoking status of this tenant',
+        ],
+        'listing.rental_purpose' => [
+            'what is the tenant rental purpose',
+            'is this rental for personal use or business',
+            'why does the tenant need this rental',
+            'intended use of rental for this tenant',
+        ],
+        'listing.prior_eviction' => [
+            'does the tenant have a prior eviction',
+            'tenant eviction history',
+            'has this tenant been evicted before',
+            'prior eviction on tenant record',
+        ],
+        'listing.prior_felony' => [
+            'does the tenant have a felony',
+            'tenant felony history',
+            'criminal background of tenant',
+            'does this tenant have a criminal record',
+        ],
+        'listing.service_animal' => [
+            'does the tenant have a service animal',
+            'tenant service animal',
+            'service animal accommodation needed',
+        ],
+        'listing.emotional_support_animal' => [
+            'does the tenant have an emotional support animal',
+            'tenant esa',
+            'emotional support animal for this tenant',
+        ],
+        'listing.accessibility_requirements' => [
+            'tenant accessibility requirements',
+            'does the tenant need accessibility accommodations',
+            'accessibility needs for this tenant',
+            'ada accommodations for tenant',
+            'accessibility requirements',
+            'any accessibility requirements',
+            'accessibility accommodations',
+        ],
+        'listing.move_in_date_earliest' => [
+            'earliest move-in date for tenant',
+            'what is the soonest the tenant can move in',
+            'tenant earliest move-in',
+            'when can this tenant move in at the earliest',
+            'earliest move-in date',
+            'earliest move in date',
+            'soonest move-in',
+            'what is the earliest move-in',
+        ],
+        'listing.move_in_date_latest' => [
+            'latest move-in date for tenant',
+            'what is the latest the tenant needs to move in by',
+            'tenant move-in deadline',
+            'latest move-in date',
+            'latest move in date',
+            'move-in deadline',
+            'what is the latest move-in',
+        ],
+        'listing.renewal_option_requested' => [
+            'does the tenant want a lease renewal option',
+            'tenant renewal option preference',
+            'is the tenant requesting a renewal option',
+        ],
+        'listing.tenant_conditions' => [
+            'tenant conditions for lease',
+            'what conditions does the tenant have for leasing',
+            'tenant lease conditions',
+        ],
+        'listing.security_deposit_budget' => [
+            'tenant security deposit budget',
+            'how much is the tenant budgeting for a deposit',
+            'what deposit can the tenant afford',
+            'security deposit budget',
+            'deposit budget',
+            'how much can the tenant put toward a deposit',
+        ],
+        'listing.zip_codes' => [
+            'what zip codes is the tenant looking in',
+            'zip code preferences for this tenant',
+            'tenant preferred zip codes',
+            'which zip codes does this tenant want',
+        ],
+        'listing.maintenance_preference' => [
+            'tenant maintenance preference',
+            'what level of maintenance does the tenant prefer',
+            'does the tenant want landlord to handle maintenance',
+        ],
+
+        // ── Phase 2: Landlord pet / leasing detail fields ────────────────────
+        'listing.pet_species_allowed' => [
+            'pet species allowed',
+            'what pet species are allowed',
+            'what pets are allowed',
+            'allowed pet species',
+            'pet types allowed',
+            'pet breeds allowed',
+            'what kind of pets',
+            'pet species',
+        ],
+        'listing.pet_max_weight_lbs' => [
+            'maximum pet weight',
+            'pet weight limit',
+            'max pet weight',
+            'pet weight maximum',
+            'pet weight lbs',
+            'pet weight',
+            'how heavy can the pet be',
+        ],
+        'listing.leasing_restrictions' => [
+            'leasing restrictions',
+            'are there leasing restrictions',
+            'lease restrictions on this property',
+            'any leasing restrictions',
+            'does this property have leasing restrictions',
+        ],
+    ];
+
+    // =========================================================================
+    // AGENT_PROFILE_KEY_KEYWORD_MAP
+    //
+    // Deterministic keyword → canonical agent_profile.* path map used by
+    // detectAgentProfileFieldKey(). Fires when the classifier routes the question
+    // to 'agent_profile'. Resolves common per-field intents so the prompt package
+    // can be narrowed to one specific field rather than sending the full 47-field
+    // agent profile block to OpenAI.
+    //
+    // Sprint 3 / E-route: covers identity, credentials, experience, services,
+    // availability, geographic coverage, and fee structure type fields.
+    //
+    // IMPORTANT: Only include phrases whose intent is unambiguously one specific
+    // agent_profile field. Broad "about the agent" questions intentionally have
+    // NO entry here — they fall through to OpenAI with the full profile context.
+    // =========================================================================
+    private const AGENT_PROFILE_KEY_KEYWORD_MAP = [
+        // ── Identity ─────────────────────────────────────────────────────────
+        'agent_profile.agent_name' => [
+            "what is the agent's name",
+            "what is this agent's name",
+            "agent's full name",
+            'agent name',
+            'name of the agent',
+            'who is the agent by name',
+        ],
+        'agent_profile.brokerage' => [
+            'what brokerage is the agent with',
+            'agent brokerage',
+            "agent's brokerage",
+            'which brokerage does the agent work for',
+            'what brokerage does the agent belong to',
+            'brokerage of the agent',
+            'brokerage name for the agent',
+        ],
+        'agent_profile.license_no' => [
+            'agent license number',
+            "agent's license number",
+            'what is the agent license',
+            'real estate license number',
+            'license number for the agent',
+            'agent license id',
+        ],
+        'agent_profile.nar_id' => [
+            'agent nar id',
+            'national association of realtors id',
+            'realtor id number',
+            'nar membership id',
+        ],
+        // ── Experience & Credentials ──────────────────────────────────────────
+        'agent_profile.years_experience' => [
+            'how many years of experience does the agent have',
+            "agent's years of experience",
+            'agent experience',
+            'years of experience',
+            'how long has the agent been in real estate',
+            'agent tenure',
+            'how experienced is the agent',
+        ],
+        'agent_profile.year_licensed' => [
+            'when was the agent licensed',
+            'what year was the agent licensed',
+            'year agent got license',
+            'agent licensing year',
+            'how long has the agent been licensed',
+        ],
+        'agent_profile.is_full_time' => [
+            'is the agent full time',
+            'does the agent work full time',
+            'full time agent',
+            'is this a full time agent',
+        ],
+        'agent_profile.transactions_last_12_months' => [
+            'how many transactions has the agent closed',
+            'agent transactions last 12 months',
+            'recent transactions for the agent',
+            'how many deals has the agent done',
+            'agent transaction count',
+            'number of transactions',
+        ],
+        // ── Bio & Differentiators ─────────────────────────────────────────────
+        'agent_profile.bio' => [
+            'agent bio',
+            "agent's biography",
+            'tell me about the agent bio',
+            'agent biography',
+            'agent background description',
+        ],
+        'agent_profile.awards_recognition' => [
+            'agent awards',
+            'awards the agent has received',
+            'agent recognition',
+            'agent accolades',
+            'has the agent won any awards',
+        ],
+        'agent_profile.what_sets_you_apart' => [
+            'what sets this agent apart',
+            'what makes this agent different',
+            'agent unique selling proposition',
+            'what distinguishes the agent',
+        ],
+        'agent_profile.why_hire_you' => [
+            'why should i hire this agent',
+            'why hire this agent',
+            'reasons to hire the agent',
+            'why is this agent the best choice',
+        ],
+        // ── Reviews ───────────────────────────────────────────────────────────
+        'agent_profile.reviews_links' => [
+            'agent review links',
+            'where can i read agent reviews',
+            'agent review page',
+            'links to agent reviews',
+        ],
+        // ── Online Presence ───────────────────────────────────────────────────
+        'agent_profile.website_link' => [
+            'agent website',
+            "agent's website",
+            'website for the agent',
+            'agent web page',
+        ],
+        'agent_profile.social_media' => [
+            'agent social media',
+            "agent's social media profiles",
+            'social media accounts for the agent',
+            'agent instagram',
+            'agent facebook',
+            'agent linkedin',
+        ],
+        // ── Availability & Communication ──────────────────────────────────────
+        'agent_profile.availability_status' => [
+            'is the agent available',
+            'agent availability',
+            "agent's current availability",
+            'is the agent currently accepting clients',
+            'agent availability status',
+        ],
+        'agent_profile.avg_response_time' => [
+            'how fast does the agent respond',
+            'agent response time',
+            'average response time',
+            'how quickly does the agent reply',
+            "agent's average response time",
+        ],
+        'agent_profile.communication_style' => [
+            'agent communication style',
+            'how does the agent communicate',
+            'agent preferred communication',
+            'how does the agent prefer to communicate',
+        ],
+        'agent_profile.preferred_contact_method' => [
+            'preferred contact method for the agent',
+            'how should i contact the agent',
+            'best way to reach the agent',
+            'agent contact method',
+        ],
+        'agent_profile.evenings_available' => [
+            'is the agent available in the evenings',
+            'agent evening availability',
+            'does the agent work evenings',
+        ],
+        'agent_profile.weekends_available' => [
+            'is the agent available on weekends',
+            'agent weekend availability',
+            'does the agent work weekends',
+        ],
+        // ── Geographic Coverage ───────────────────────────────────────────────
+        'agent_profile.cities_served' => [
+            'what cities does the agent serve',
+            'agent cities served',
+            'cities covered by this agent',
+            'which cities does the agent work in',
+        ],
+        'agent_profile.counties_served' => [
+            'what counties does the agent serve',
+            'agent counties served',
+            'counties covered by this agent',
+            'which counties does the agent cover',
+        ],
+        'agent_profile.primary_areas_served' => [
+            'primary areas the agent serves',
+            'agent primary service areas',
+            'agent areas served',
+            'what areas does the agent primarily serve',
+            'agent service areas',
+        ],
+        'agent_profile.neighborhoods_served' => [
+            'what neighborhoods does the agent serve',
+            'agent neighborhoods served',
+            'neighborhoods this agent covers',
+        ],
+        // ── Services ──────────────────────────────────────────────────────────
+        'agent_profile.services' => [
+            'what services does the agent offer',
+            'what services does the agent provide',
+            'agent services',
+            'services the agent provides',
+            'what can this agent do',
+            'agent service offerings',
+            'what does the agent offer',
+        ],
+        'agent_profile.marketing_plan' => [
+            'agent marketing plan',
+            'how does the agent market properties',
+            'marketing strategy for this agent',
+            'agent marketing approach',
+            "agent's marketing plan",
+        ],
+        // ── Fee Structure Type (amounts excluded by governance) ───────────────
+        'agent_profile.commission_structure' => [
+            'agent commission structure',
+            'how is the agent compensated',
+            'agent commission description',
+            'what type of commission does the agent charge',
+        ],
+        'agent_profile.commission_structure_type' => [
+            'agent commission type',
+            'type of commission this agent charges',
+            'agent fee type',
+            'commission structure type for the agent',
+        ],
+        'agent_profile.retainer_fee_option' => [
+            'does the agent charge a retainer',
+            'agent retainer fee option',
+            'is there a retainer fee for this agent',
+            'retainer option for the agent',
+        ],
+        'agent_profile.protection_period' => [
+            'agent protection period',
+            'what is the protection period',
+            'agent protection clause duration',
+            'how long is the protection period for this agent',
+        ],
+        'agent_profile.interested_in_property_management' => [
+            'does the agent do property management',
+            'is the agent interested in property management',
+            'agent property management services',
+            'can the agent manage my property',
+        ],
+        'agent_profile.interested_in_selling' => [
+            'is the agent interested in selling properties',
+            'does the agent handle seller side transactions',
+            'does the agent represent sellers',
+            'agent interest in selling',
+        ],
+        'agent_profile.interested_in_selling_type' => [
+            'what type of selling is the agent interested in',
+            'agent selling preference type',
+            'what kind of sales does the agent prefer',
+        ],
+        'agent_profile.interested_in_property_management_fee' => [
+            'what is the agent property management fee',
+            'agent property management fee description',
+            'property management fee type for this agent',
+        ],
+        'agent_profile.short_id' => [
+            'agent short id',
+            'agent share link id',
+            'agent profile short identifier',
+        ],
+        'agent_profile.review_1' => [
+            'first review for this agent',
+            'agent first testimonial',
+            'what does the first agent review say',
+        ],
+        'agent_profile.review_2' => [
+            'second review for this agent',
+            'agent second testimonial',
+            'what does the second agent review say',
+        ],
+        'agent_profile.review_3' => [
+            'third review for this agent',
+            'agent third testimonial',
+            'what does the third agent review say',
+        ],
+        'agent_profile.intro_video_url' => [
+            'agent intro video',
+            'agent introduction video link',
+            'agent video profile',
+            'link to agent video',
+        ],
+        'agent_profile.presentation_link' => [
+            'agent presentation link',
+            'agent listing presentation',
+            'agent slide deck link',
+            'agent presentation document',
+        ],
+        'agent_profile.other_services' => [
+            'other services the agent offers',
+            'additional services from this agent',
+            'agent custom or other services',
+        ],
+        'agent_profile.areas_notes' => [
+            'agent area notes',
+            'notes about areas the agent serves',
+            'agent geographic area notes',
+            'additional notes on agent service area',
+        ],
+        'agent_profile.purchase_fee_type' => [
+            'what type of purchase fee does the agent charge',
+            'agent purchase fee type',
+            'agent buyer fee type',
+            'type of fee for purchase transactions',
+        ],
+        'agent_profile.lease_fee_type' => [
+            'what type of lease fee does the agent charge',
+            'agent lease fee type',
+            'agent rental fee type',
+            'type of fee for lease transactions',
+        ],
+        'agent_profile.retainer_fee_application' => [
+            'how is the retainer fee applied',
+            'agent retainer fee application',
+            'is the retainer applied to commission',
+            'retainer application for this agent',
+        ],
+        'agent_profile.early_termination_fee_option' => [
+            'does the agent charge an early termination fee',
+            'agent early termination fee option',
+            'is there an early termination fee',
+            'early termination option for agent contract',
+        ],
+    ];
+
+    // =========================================================================
+    // AGENT_PRESET_KEY_KEYWORD_MAP
+    //
+    // Deterministic keyword → canonical agent_presets.* path map used by
+    // detectAgentPresetFieldKey(). Fires when the classifier routes to
+    // 'agent_profile' AND the user question specifically targets preset/role
+    // service terms rather than general agent identity fields.
+    //
+    // Sprint 3 / E4: covers the 4 high-priority preset fields specified in the
+    // audit, plus role/property_type routing fields.
+    // =========================================================================
+    private const AGENT_PRESET_KEY_KEYWORD_MAP = [
+        'agent_presets.commission_structure_type' => [
+            'agent commission type for this role',
+            'what commission type does the agent use for seller listings',
+            'what commission type does the agent use for buyer',
+            'what commission type does the agent use for landlord',
+            'what commission type does the agent use for tenant',
+            'preset commission type',
+            'commission structure type for this listing type',
+        ],
+        'agent_presets.services' => [
+            'what services does the agent offer for seller',
+            'what services does the agent offer for buyer',
+            'what services does the agent offer for landlord',
+            'what services does the agent offer for tenant',
+            'preset services for this role',
+            'agent services for this listing type',
+            'services included in this agent preset',
+        ],
+        'agent_presets.retainer_fee_option' => [
+            'does the agent charge a retainer for this role',
+            'preset retainer fee option',
+            'retainer fee option for this listing type',
+            'is there a retainer for seller listings',
+            'is there a retainer for buyer listings',
+            'is there a retainer for landlord listings',
+            'is there a retainer for tenant listings',
+        ],
+        'agent_presets.protection_period' => [
+            'protection period for this listing type',
+            'preset protection period',
+            'how long is the protection period for seller',
+            'how long is the protection period for buyer',
+            'how long is the protection period for landlord',
+            'how long is the protection period for tenant',
+            'agent protection clause for this role',
+        ],
+        'agent_presets.interested_in_selling' => [
+            'is the agent interested in selling this property',
+            'does this agent do seller side transactions',
+            'is the agent open to selling properties',
+            'agent interested in selling',
+            'does the agent handle property sales',
+        ],
+        'agent_presets.interested_in_property_management' => [
+            'is the agent interested in property management',
+            'does this agent offer property management services',
+            'agent interested in managing properties',
+            'does the agent handle property management',
+            'is the agent open to property management',
+        ],
+        'agent_presets.role' => [
+            'what role does this agent preset cover',
+            'preset role type',
+            'which role is this agent preset for',
+            'agent preset for seller role',
+            'agent preset for buyer role',
+            'agent preset for landlord role',
+            'agent preset for tenant role',
+        ],
+        'agent_presets.property_type' => [
+            'what property type does this preset cover',
+            'preset property type',
+            'which property type is this preset for',
+            'preset for residential property',
+            'preset for commercial property',
+            'preset for condo',
+            'preset for land',
+        ],
+        'agent_presets.other_services' => [
+            'other services in this agent preset',
+            'additional services in the preset',
+            'agent custom services for this role',
+            'preset other services',
+        ],
+        'agent_presets.commission_structure' => [
+            'agent commission structure for this role',
+            'how is the agent compensated for this listing type',
+            'commission structure description in preset',
+            'agent commission approach for this role',
+        ],
+        'agent_presets.purchase_fee_type' => [
+            'purchase fee type in this preset',
+            'agent buyer fee type in preset',
+            'how does the agent charge for purchase transactions in this role',
+            'preset purchase fee type',
+        ],
+        'agent_presets.lease_fee_type' => [
+            'lease fee type in this preset',
+            'agent rental fee type in preset',
+            'how does the agent charge for lease transactions in this role',
+            'preset lease fee type',
+        ],
+        'agent_presets.retainer_fee_application' => [
+            'how is the retainer applied in this preset',
+            'preset retainer fee application',
+            'retainer applied to commission in this role',
+            'retainer application for this listing type',
+        ],
+        'agent_presets.early_termination_fee_option' => [
+            'early termination fee option in this preset',
+            'preset early termination fee',
+            'does the agent charge early termination for this role',
+            'early exit fee in this preset',
+        ],
+        'agent_presets.interested_in_property_management_fee' => [
+            'property management fee in this preset',
+            'preset property management fee description',
+            'agent property management fee for this role',
+            'what is the property management fee in this preset',
+        ],
     ];
 
     private AskAiQuestionClassifierService $classifier;
@@ -2628,6 +3459,7 @@ class AskAiRunnerV2Service
     private ?AskAiIntentNormalizerService $normalizer;
     private ?AskAiKnowledgeSearchService $knowledgeSearch;
     private bool $enableDescriptionFallback;
+    private AskAiListingDescriptionRepository $descriptionRepository;
 
     public function __construct(
         AskAiQuestionClassifierService $classifier,
@@ -2637,7 +3469,8 @@ class AskAiRunnerV2Service
         AskAiFollowUpQuestionService $followUpService,
         ?AskAiIntentNormalizerService $normalizer = null,
         ?AskAiKnowledgeSearchService $knowledgeSearch = null,
-        bool $enableDescriptionFallback = false
+        bool $enableDescriptionFallback = false,
+        ?AskAiListingDescriptionRepository $descriptionRepository = null
     ) {
         $this->classifier               = $classifier;
         $this->internalRunner           = $internalRunner;
@@ -2647,6 +3480,7 @@ class AskAiRunnerV2Service
         $this->normalizer               = $normalizer;
         $this->knowledgeSearch          = $knowledgeSearch;
         $this->enableDescriptionFallback = $enableDescriptionFallback;
+        $this->descriptionRepository    = $descriptionRepository ?? new AskAiListingDescriptionRepository();
     }
 
     /**
@@ -3029,8 +3863,35 @@ class AskAiRunnerV2Service
                             'landlord_auction'     => 'landlord',
                         ];
                         $canonicalRole = $roleAliasMap[$listingType] ?? null;
-                        if ($canonicalRole === 'landlord' && $detectedListingKey === 'listing.pets_allowed') {
-                            $detectedListingKey = 'listing.pet_policy';
+                        if ($canonicalRole === 'landlord') {
+                            if ($detectedListingKey === 'listing.pets_allowed') {
+                                // Landlord pet data lives under 'pet_policy' (EAV 'pets'), not 'pets_allowed'.
+                                $detectedListingKey = 'listing.pet_policy';
+                            } elseif ($detectedListingKey === 'listing.heating_and_fuel') {
+                                // P0-1: Landlord stores heating under 'heating_fuel' (EAV), not 'heating_and_fuel'.
+                                $detectedListingKey = 'listing.heating_fuel';
+                            } elseif ($detectedListingKey === 'listing.hoa_fee') {
+                                // HOA fee: seller context key is 'hoa_fee'; landlord uses 'association_fee_amount'.
+                                $detectedListingKey = 'listing.association_fee_amount';
+                            } elseif ($detectedListingKey === 'listing.hoa_payment_schedule') {
+                                // HOA schedule: seller uses 'hoa_payment_schedule'; landlord uses 'association_fee_frequency'.
+                                $detectedListingKey = 'listing.association_fee_frequency';
+                            }
+                        }
+
+                        // Tenant role: 'listing.available_date' catches generic "move-in date" phrases
+                        // but for tenant criteria the data lives under move_in_date_earliest / move_in_date_latest.
+                        // Remap based on the presence of 'earliest' or 'latest' in the question.
+                        $tenantRoles = ['tenant', 'tenant_criteria_auction', 'tenant_auction'];
+                        if (in_array($listingType, $tenantRoles, true)
+                            && $detectedListingKey === 'listing.available_date'
+                        ) {
+                            $qLower = strtolower($question);
+                            if (str_contains($qLower, 'earliest')) {
+                                $detectedListingKey = 'listing.move_in_date_earliest';
+                            } elseif (str_contains($qLower, 'latest') || str_contains($qLower, 'last')) {
+                                $detectedListingKey = 'listing.move_in_date_latest';
+                            }
                         }
                         // ─────────────────────────────────────────────────────────────────
 
@@ -3111,6 +3972,47 @@ class AskAiRunnerV2Service
                     $trace['normalized_field_key']          = $normalizedKey;
                     $classification['normalized_field_key'] = $normalizedKey;
                     $options = array_merge($options, ['normalized_field_key' => $normalizedKey]);
+                }
+            }
+
+            // ----------------------------------------------------------------
+            // Step 1b-agent — Deterministic field detection for agent_profile
+            // questions (Sprint 3).
+            //
+            // Fires when the classifier routed to 'agent_profile' AND no
+            // normalized_field_key has been set yet.  Uses two keyword maps:
+            //
+            //   AGENT_PROFILE_KEY_KEYWORD_MAP  — maps to agent_profile.*  paths
+            //     for per-field identity/credentials/availability questions.
+            //   AGENT_PRESET_KEY_KEYWORD_MAP   — maps to agent_presets.* paths
+            //     for role-specific preset service-term questions.
+            //
+            // When a key is detected, it is stored in normalized_field_key so
+            // the internal runner's filterAllowedContext() can narrow the prompt
+            // package to that one field.  This closes the zero-deterministic-
+            // routes gap (audit P1-7) for agent_profile and agent_presets.
+            //
+            // When no key is found (broad "tell me about the agent" questions),
+            // execution falls through to the internal runner unchanged — the full
+            // agent profile context is sent to OpenAI as before.
+            // ----------------------------------------------------------------
+            if ($questionType === 'agent_profile' && !isset($options['normalized_field_key'])) {
+                $detectedAgentProfileKey = $this->detectAgentProfileFieldKey($question);
+                if ($detectedAgentProfileKey !== null) {
+                    $trace['listing_key_detected']    = $detectedAgentProfileKey;
+                    $trace['deterministic_field_key'] = $detectedAgentProfileKey;
+                    $trace['normalized_field_key']    = $detectedAgentProfileKey;
+                    $classification['normalized_field_key'] = $detectedAgentProfileKey;
+                    $options = array_merge($options, ['normalized_field_key' => $detectedAgentProfileKey]);
+                } else {
+                    $detectedAgentPresetKey = $this->detectAgentPresetFieldKey($question);
+                    if ($detectedAgentPresetKey !== null) {
+                        $trace['listing_key_detected']    = $detectedAgentPresetKey;
+                        $trace['deterministic_field_key'] = $detectedAgentPresetKey;
+                        $trace['normalized_field_key']    = $detectedAgentPresetKey;
+                        $classification['normalized_field_key'] = $detectedAgentPresetKey;
+                        $options = array_merge($options, ['normalized_field_key' => $detectedAgentPresetKey]);
+                    }
                 }
             }
 
@@ -4210,8 +5112,13 @@ class AskAiRunnerV2Service
             }
 
             return [
-                'success'          => $finalResponse['success'],
-                'status'           => $finalResponse['status'],
+                // Use null-coalescing for success/status: coerceToContractStatus() must
+                // return a full response array, but defensive access prevents an
+                // undefined-offset ErrorException in strict test environments (PHP 8.2
+                // converts undefined-offset warnings to exceptions when the Laravel test
+                // error handler is active and coerceToContractStatus is a bare mock).
+                'success'          => $finalResponse['success'] ?? false,
+                'status'           => $finalResponse['status'] ?? 'failed',
                 'classification'   => $classification,
                 'context'          => $context,
                 'contract'         => $contract,
@@ -4501,6 +5408,62 @@ class AskAiRunnerV2Service
     }
 
     /**
+     * Deterministically detect a specific agent_profile.* field key from the
+     * question text.
+     *
+     * Used by Step 1b-agent to narrow the prompt package for agent_profile
+     * questions to a single field when the user asks about a specific aspect
+     * of the agent (name, license, brokerage, availability, etc.).
+     *
+     * Broad "tell me about the agent" questions intentionally return null —
+     * those fall through to OpenAI with the full profile context.
+     *
+     * @param  string $question  The user's raw question text.
+     * @return string|null  e.g. 'agent_profile.brokerage', 'agent_profile.years_experience'
+     */
+    private function detectAgentProfileFieldKey(string $question): ?string
+    {
+        $lower = mb_strtolower(trim($question));
+
+        foreach (self::AGENT_PROFILE_KEY_KEYWORD_MAP as $fieldKey => $keywords) {
+            foreach ($keywords as $keyword) {
+                if (str_contains($lower, mb_strtolower($keyword))) {
+                    return $fieldKey;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Deterministically detect a specific agent_presets.* field key from the
+     * question text.
+     *
+     * Used by Step 1b-agent (after detectAgentProfileFieldKey returns null) to
+     * narrow the prompt package for agent_profile questions that target
+     * role-specific preset service terms (commission type, services per role,
+     * retainer, protection period).
+     *
+     * @param  string $question  The user's raw question text.
+     * @return string|null  e.g. 'agent_presets.services', 'agent_presets.protection_period'
+     */
+    private function detectAgentPresetFieldKey(string $question): ?string
+    {
+        $lower = mb_strtolower(trim($question));
+
+        foreach (self::AGENT_PRESET_KEY_KEYWORD_MAP as $fieldKey => $keywords) {
+            foreach ($keywords as $keyword) {
+                if (str_contains($lower, mb_strtolower($keyword))) {
+                    return $fieldKey;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Derive a human-readable field label from a normalized faq_answers.* key.
      *
      * Used to compose field-specific missing-data messages such as
@@ -4616,7 +5579,7 @@ class AskAiRunnerV2Service
             'listing.foundation'                         => 'Foundation information',
             // Listing.* fields — Rental Financial & Terms (Landlord)
             'listing.security_deposit_amount'            => 'Security deposit information',
-            'listing.terms_of_lease'                     => 'Terms of lease information',
+            // listing.terms_of_lease removed (Phase D4) — key merged into listing.lease_terms.
             'listing.rent_includes'                      => 'Included rent information',
             'listing.heating_fuel'                       => 'Heating fuel information',
             'listing.air_conditioning'                   => 'Air conditioning information',
@@ -5062,19 +6025,11 @@ class AskAiRunnerV2Service
     }
 
     /**
-     * Load the free-text description for a listing using a direct DB lookup.
+     * Load the free-text description for a listing.
      *
-     * Source per role (mirrors AskAiContextBuilderService::extractListingFields):
-     *   seller   → seller_agent_auctions.description            (native column)
-     *   buyer    → buyer_agent_auctions.additional_details      (native column)
-     *   tenant   → tenant_agent_auction_metas meta_key='additional_details' (EAV)
-     *   landlord → landlord_agent_auction_metas meta_key='additional_details' (EAV)
-     *
-     * Returns null when:
-     *   - The listing type is unrecognised.
-     *   - No row exists for the given listing ID.
-     *   - The description column/meta value is null or blank.
-     *   - Any DB exception occurs (silently caught).
+     * Delegates to AskAiListingDescriptionRepository so that the runner
+     * itself contains no direct DB calls (architectural rule enforced by
+     * test_case_I_service_file_contains_no_db_facade_calls).
      *
      * @param  string  $listingType  Canonical or aliased listing type string.
      * @param  int     $listingId    Primary key of the listing record.
@@ -5082,59 +6037,6 @@ class AskAiRunnerV2Service
      */
     protected function loadListingDescription(string $listingType, int $listingId): ?string
     {
-        static $typeAliases = [
-            'seller'                  => 'seller',
-            'seller_agent_auction'    => 'seller',
-            'property_auction'        => 'seller',
-            'buyer'                   => 'buyer',
-            'buyer_agent_auction'     => 'buyer',
-            'buyer_criteria_auction'  => 'buyer',
-            'landlord'                => 'landlord',
-            'landlord_agent_auction'  => 'landlord',
-            'landlord_auction'        => 'landlord',
-            'tenant'                  => 'tenant',
-            'tenant_agent_auction'    => 'tenant',
-            'tenant_criteria_auction' => 'tenant',
-        ];
-
-        $canonical = $typeAliases[strtolower($listingType)] ?? null;
-        if ($canonical === null) {
-            return null;
-        }
-
-        try {
-            // Seller and Buyer store their public description in native table columns.
-            // Tenant and Landlord have no native description column; both store their
-            // optional freetext "additional_details" in the EAV meta table.
-            if ($canonical === 'seller') {
-                $value = DB::table('seller_agent_auctions')
-                    ->where('id', $listingId)
-                    ->value('description');
-            } elseif ($canonical === 'buyer') {
-                $value = DB::table('buyer_agent_auctions')
-                    ->where('id', $listingId)
-                    ->value('additional_details');
-            } elseif ($canonical === 'tenant') {
-                // Tenant uses EAV: tenant_agent_auction_metas (meta_key = 'additional_details').
-                $value = DB::table('tenant_agent_auction_metas')
-                    ->where('tenant_agent_auction_id', $listingId)
-                    ->where('meta_key', 'additional_details')
-                    ->value('meta_value');
-            } else {
-                // Landlord uses EAV: landlord_agent_auction_metas (meta_key = 'additional_details').
-                $value = DB::table('landlord_agent_auction_metas')
-                    ->where('landlord_agent_auction_id', $listingId)
-                    ->where('meta_key', 'additional_details')
-                    ->value('meta_value');
-            }
-
-            if (!is_string($value) || trim($value) === '') {
-                return null;
-            }
-
-            return trim($value);
-        } catch (\Throwable) {
-            return null;
-        }
+        return $this->descriptionRepository->load($listingType, $listingId);
     }
 }

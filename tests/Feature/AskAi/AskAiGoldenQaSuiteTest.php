@@ -664,7 +664,13 @@ class AskAiGoldenQaSuiteTest extends TestCase
         $this->assertContains('listing.seller_credit_offered', $constant);
         $this->assertContains('listing.seller_credit_amount',  $constant);
         $this->assertContains('listing.lease_terms',           $constant);
-        $this->assertContains('listing.terms_of_lease',        $constant);
+        // Phase D4: listing.terms_of_lease removed as a duplicate of listing.lease_terms.
+        // Both used the same EAV source ('terms_of_lease' meta key); the alias was consolidated
+        // into listing.lease_terms (CANONICAL_SOURCE_MAP and LISTING_KEY_KEYWORD_MAP updated).
+        // listing.terms_of_lease no longer appears in context, so it does not need to be
+        // synthesis-required. Verify the canonical key instead.
+        $this->assertNotContains('listing.terms_of_lease', $constant,
+            'Phase D4: listing.terms_of_lease is removed — listing.lease_terms is the canonical key.');
     }
 
     // =========================================================================
@@ -1133,29 +1139,36 @@ class AskAiGoldenQaSuiteTest extends TestCase
         return trim($rawValue);
     }
 
-    /** @return array<string, array{string, int, string, string, string, string, bool}> */
+    /**
+     * @return array<string, array{string, int, string, string, string, string, string}>
+     * Format: [role, listingId, contextField, table, fk, metaKey, otherMetaKey]
+     * otherMetaKey: companion EAV key cascaded by the Other-loss fix (empty string = no companion).
+     */
     public static function sellerAlignmentProvider(): array
     {
-        // [role, listingId, contextField, table, fk, metaKey]
+        // [role, listingId, contextField, table, fk, metaKey, otherMetaKey]
+        // Phase C (Other-loss fix): multi-select fields now cascade other_* companion EAV keys into
+        // context. The harness DB side must also read the companion to keep context == UI parity.
         return [
-            'seller_121_asking_price'   => ['seller', 121, 'asking_price',        'seller_agent_auction_metas', 'seller_agent_auction_id', 'maximum_budget'],
-            'seller_121_utilities'      => ['seller', 121, 'utilities',            'seller_agent_auction_metas', 'seller_agent_auction_id', 'utilities'],
-            'seller_121_roof_type'      => ['seller', 121, 'roof_type',            'seller_agent_auction_metas', 'seller_agent_auction_id', 'roof_type'],
-            'seller_121_ac'             => ['seller', 121, 'air_conditioning',     'seller_agent_auction_metas', 'seller_agent_auction_id', 'air_conditioning'],
-            'seller_121_appliances'     => ['seller', 121, 'appliances',           'seller_agent_auction_metas', 'seller_agent_auction_id', 'appliances'],
-            'seller_121_credit_offered' => ['seller', 121, 'seller_credit_offered','seller_agent_auction_metas', 'seller_agent_auction_id', 'seller_contribution_credit_offered'],
-            'seller_121_credit_amount'  => ['seller', 121, 'seller_credit_amount', 'seller_agent_auction_metas', 'seller_agent_auction_id', 'seller_contribution_amount_details'],
+            'seller_121_asking_price'   => ['seller', 121, 'asking_price',        'seller_agent_auction_metas', 'seller_agent_auction_id', 'maximum_budget',                       ''],
+            'seller_121_utilities'      => ['seller', 121, 'utilities',            'seller_agent_auction_metas', 'seller_agent_auction_id', 'utilities',                            'other_utilities'],
+            'seller_121_roof_type'      => ['seller', 121, 'roof_type',            'seller_agent_auction_metas', 'seller_agent_auction_id', 'roof_type',                            'other_roof_type'],
+            'seller_121_ac'             => ['seller', 121, 'air_conditioning',     'seller_agent_auction_metas', 'seller_agent_auction_id', 'air_conditioning',                    'other_air_conditioning'],
+            'seller_121_appliances'     => ['seller', 121, 'appliances',           'seller_agent_auction_metas', 'seller_agent_auction_id', 'appliances',                          'other_appliances'],
+            'seller_121_credit_offered' => ['seller', 121, 'seller_credit_offered','seller_agent_auction_metas', 'seller_agent_auction_id', 'seller_contribution_credit_offered',  ''],
+            'seller_121_credit_amount'  => ['seller', 121, 'seller_credit_amount', 'seller_agent_auction_metas', 'seller_agent_auction_id', 'seller_contribution_amount_details',  ''],
         ];
     }
 
     /**
      * @dataProvider sellerAlignmentProvider
-     * @param string $role        Listing role (seller/landlord/buyer/tenant).
-     * @param int    $listingId   Real listing ID with live DB data.
+     * @param string $role         Listing role (seller/landlord/buyer/tenant).
+     * @param int    $listingId    Real listing ID with live DB data.
      * @param string $contextField Key in ctx['listing'] to read.
-     * @param string $table       Meta table name.
-     * @param string $fk          Foreign-key column name.
-     * @param string $metaKey     EAV meta_key value.
+     * @param string $table        Meta table name.
+     * @param string $fk           Foreign-key column name.
+     * @param string $metaKey      EAV meta_key value.
+     * @param string $otherMetaKey Companion other_* EAV key (empty = no companion cascade).
      */
     public function test_harness_seller_field_alignment(
         string $role,
@@ -1163,7 +1176,8 @@ class AskAiGoldenQaSuiteTest extends TestCase
         string $contextField,
         string $table,
         string $fk,
-        string $metaKey
+        string $metaKey,
+        string $otherMetaKey = ''
     ): void {
         $ctx          = $this->contextBuilder->buildForListing($role, $listingId);
         $contextValue = (string) ($ctx['listing'][$contextField] ?? '');
@@ -1173,6 +1187,18 @@ class AskAiGoldenQaSuiteTest extends TestCase
             ->where('meta_key', $metaKey)
             ->value('meta_value') ?? '';
         $normalizedUiValue = $this->normalizeEavForComparison($rawUiValue);
+
+        // Phase C (Other-loss fix): when a companion other_* key is declared, append its
+        // raw value to the DB side so context and DB both reflect the full user input.
+        if ($otherMetaKey !== '') {
+            $otherRaw = \Illuminate\Support\Facades\DB::table($table)
+                ->where($fk, $listingId)
+                ->where('meta_key', $otherMetaKey)
+                ->value('meta_value') ?? '';
+            if ($otherRaw !== '') {
+                $normalizedUiValue = implode(', ', array_filter([$normalizedUiValue, trim($otherRaw)]));
+            }
+        }
 
         // conflictDetect normalises both sides (trim + strtolower), so JSON-decoded
         // context values and normalized DB values can be compared directly.
@@ -2566,8 +2592,9 @@ class AskAiGoldenQaSuiteTest extends TestCase
             // ── Buyer ─────────────────────────────────────────────────────────
             'listing.financing_type',
             // ── Landlord ──────────────────────────────────────────────────────
+            // Phase D4: listing.terms_of_lease alias removed; merged into listing.lease_terms.
+            // listing.terms_of_lease removed from here — check listing.lease_terms instead.
             'listing.lease_terms',
-            'listing.terms_of_lease',
             'listing.lease_length',
             'listing.tenant_pays',
             'listing.rent_includes',

@@ -362,6 +362,35 @@ class AskAiResponseContractService
                 'listing.inventory_value',
                 'listing.licenses',
                 'listing.business_lease_assignable',
+                // ── Phase 2: Seller Tax / Legal / Parcel ─────────────────────
+                'listing.parcel_id',
+                'listing.legal_description',
+                'listing.home_warranty_offered',
+                'listing.association_approval_required',
+                'listing.has_special_assessments',
+                'listing.tax_year',
+                // ── Phase 2: Buyer criteria ───────────────────────────────────
+                'listing.commute_destination_zip',
+                'listing.max_commute_minutes',
+                'listing.commute_mode',
+                'listing.flood_zone_tolerance',
+                'listing.purchase_purpose',
+                'listing.leasing_55_plus',
+                'listing.non_negotiable_amenities',
+                // ── Phase 2: Tenant criteria ──────────────────────────────────
+                'listing.security_deposit_budget',
+                'listing.move_in_date_earliest',
+                'listing.move_in_date_latest',
+                'listing.commercial_lease_type',
+                'listing.smoking_preference',
+                'listing.renewal_option_requested',
+                'listing.accessibility_requirements',
+                // ── Phase 2: Landlord commercial space ────────────────────────
+                'listing.space_type',
+                'listing.space_classification',
+                'listing.number_of_offices',
+                'listing.rent_escalation_terms',
+                'listing.tenant_improvement_buildout_terms',
                 // FAQ answers — seller/landlord-provided answers to common questions
                 'faq_answers',
                 // Agent profile & presets — supplemental context for compound questions

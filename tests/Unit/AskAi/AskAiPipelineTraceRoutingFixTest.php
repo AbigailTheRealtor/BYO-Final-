@@ -169,6 +169,21 @@ class AskAiPipelineTraceRoutingFixTest extends TestCase
             'refusal_message'    => null,
             'error'              => null,
         ]);
+        // coerceToContractStatus must return a full response array.
+        // Without willReturn, PHPUnit returns [] (the array zero-value), and
+        // accessing $finalResponse['success'] on [] triggers an undefined-offset
+        // ErrorException in PHP 8.2 (Laravel test env converts warnings to exceptions),
+        // which sends the runner into the catch block — returning question_type=null.
+        $finalBuilder->method('coerceToContractStatus')->willReturn([
+            'success'            => false,
+            'status'             => 'unsupported',
+            'answer'             => null,
+            'disclosures'        => [],
+            'source_attribution' => [],
+            'refusal_message'    => null,
+            'error'              => null,
+            'source'             => ['answer_source' => 'openai'],
+        ]);
 
         $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
         $followUp->method('forResult')->willReturn([]);

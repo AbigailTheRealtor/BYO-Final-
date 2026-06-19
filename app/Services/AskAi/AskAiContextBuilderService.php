@@ -119,6 +119,10 @@ class AskAiContextBuilderService
             'zoning'                         => 'zoning',
             'waterfront'                     => 'waterfront',
             'water_access'                   => 'water_access',
+            'waterfront_feet'                => 'waterfront_feet',
+            // ── Home Warranty / HOA Approval ──────────────────────────────────
+            'home_warranty_offered'          => 'home_warranty_offered',
+            'association_approval_required'  => 'association_approval_required',
             // ── Interior / Structural ─────────────────────────────────────────
             'interior_features'              => 'interior_features',
             'appliances'                     => 'appliances',
@@ -289,6 +293,25 @@ class AskAiContextBuilderService
             // ── Search Criteria ───────────────────────────────────────────────
             'cities'                         => 'cities',
             'counties'                       => 'counties',
+            // ── Buyer Criteria Expansion ──────────────────────────────────────
+            'year_built_preference'          => 'year_built',
+            'minimum_cap_rate'               => 'minimum_cap_rate',
+            'number_of_units'                => 'number_of_unit',
+            'commute_destination_zip'        => 'commute_destination_zip',
+            'max_commute_minutes'            => 'max_commute_minutes',
+            'commute_mode'                   => 'commute_mode',
+            'flood_zone_tolerance'           => 'flood_zone_tolerance',
+            'purchase_purpose'               => 'purchase_purpose',
+            'monthly_income'                 => 'monthly_income',
+            'number_of_occupants'            => 'number_occupant',
+            // credit_score_range: EAV key is misspelled ('credit_scroe_rating') — matches form save key.
+            'credit_score_range'             => 'credit_scroe_rating',
+            'leasing_55_plus'                => 'leasing_55_plus',
+            'non_negotiable_amenities'       => 'non_negotiable_amenities',
+            'min_acreage'                    => 'min_acreage',
+            'total_acreage'                  => 'total_acreage',
+            'additional_preferences'         => 'preferance_details',
+            'business_type_preference'       => 'business_type_selected',
         ],
 
         // =====================================================================
@@ -298,6 +321,7 @@ class AskAiContextBuilderService
         'landlord' => [
             // ── Core listing fields ───────────────────────────────────────────
             'description'                    => 'additional_details',
+            'address'                        => 'native:address',
             'rent_amount'                    => ['desired_rental_amount', 'starting_rent', 'lease_now_price'],
             // ── Size / Physical ───────────────────────────────────────────────
             'bedrooms'                       => ['bedrooms', 'other_bedrooms'],
@@ -347,7 +371,9 @@ class AskAiContextBuilderService
             'additional_lease_terms'         => 'additional_landlord_lease_terms',
             'lease_terms'                    => 'terms_of_lease',
             'security_deposit_amount'        => 'security_deposit_amount',
-            'terms_of_lease'                 => 'terms_of_lease',
+            // Phase D4: 'terms_of_lease' duplicate removed — 'lease_terms' is the canonical
+            // context key; both resolve to the same EAV source ('terms_of_lease' meta key).
+            // Duplicate removed to prevent PHP silent-override (last-key-wins behaviour).
             'tenant_pays'                    => 'tenant_pays',
             'rent_includes'                  => 'rent_includes',
             'lease_amount_frequency'         => 'lease_amount_frequency',
@@ -425,6 +451,42 @@ class AskAiContextBuilderService
             'pet_deposit_amount'             => 'pet_deposit_amount',
             'pet_monthly_fee'                => 'pet_monthly_fee',
             'number_of_occupants_allowed'    => 'number_of_occupants_allowed',
+            // ── Applicant Screening ───────────────────────────────────────────
+            'min_credit_score'               => 'min_credit_score',
+            'income_qualification_method'    => 'income_qualification_method',
+            'employment_requirement'         => 'employment_requirement',
+            'eviction_history_requirement'   => 'eviction_history_requirement',
+            'bankruptcy_requirement'         => 'bankruptcy_requirement',
+            // ── Estimated Utility Costs ───────────────────────────────────────
+            'est_water_sewer_trash'          => 'est_water_sewer_trash',
+            'est_electric'                   => 'est_electric',
+            'est_internet'                   => 'est_internet',
+            'est_cable'                      => 'est_cable',
+            // ── Lease Restrictions / Policies ─────────────────────────────────
+            'max_leases_per_year'            => 'max_leases_per_year',
+            'additional_lease_restrictions'  => 'additional_lease_restrictions',
+            'security_deposit_required'      => 'security_deposit_required',
+            'leasing_55_plus'                => 'leasing_55_plus',
+            // ── Lifestyle / Occupancy Rules ───────────────────────────────────
+            'guests_allowed'                 => 'guests_allowed',
+            'maintenance_by'                 => 'maintenance_by',
+            'maintenance_response_time'      => 'maintenance_response_time',
+            'common_areas_access'            => 'common_areas_access',
+            'bathroom_facilities'            => 'bathroom_facilities',
+            'room_size'                      => 'room_size',
+            // ── Applicant Requirements (manual extractor — resolveOtherValue needed) ──
+            // These fields require resolveOtherValue() to handle "Other" → custom text,
+            // so they cannot be expressed as bare CANONICAL_SOURCE_MAP entries alone.
+            // Declared here so extractFactualFields() does not fail §28A / §30B parity.
+            'credit_score_flexibility'            => 'credit_score_flexibility',
+            'pet_policy_requirement'              => ['pet_policy_requirement', 'custom_pet_policy_requirement'],
+            'pet_restrictions'                    => 'pet_restrictions',
+            'smoking_policy_requirement'          => ['smoking_policy_requirement', 'custom_smoking_policy_requirement'],
+            'criminal_background_requirement'     => ['criminal_background_requirement', 'custom_criminal_background_requirement'],
+            'reference_requirement'               => ['reference_requirement', 'custom_reference_requirement'],
+            'employment_verification_requirement' => 'employment_verification_requirement',
+            'income_verification_requirement'     => 'income_verification_requirement',
+            'preferred_move_in_timeframe'         => ['preferred_move_in_timeframe', 'custom_preferred_move_in_timeframe'],
         ],
 
         // =====================================================================
@@ -458,21 +520,132 @@ class AskAiContextBuilderService
             'credit_score_range'             => ['credit_score_range', 'credit_score'],
             // monthly_income: 'monthly_income' primary; 'household_monthly_income' is legacy form key.
             'monthly_income'                 => ['monthly_income', 'household_monthly_income'],
+            // ── Core ─────────────────────────────────────────────────────────
+            'address'                        => 'native:address',
+            'description'                    => 'additional_details',
+            // ── Size / Features ───────────────────────────────────────────────
+            'square_feet'                    => 'minimum_heated_square',
+            'pool'                           => 'pool_needed',
+            'pool_type'                      => 'pool_type',
+            'garage'                         => ['garage_needed', 'other_garage_needed'],
+            'garage_spaces'                  => 'garage_parking_spaces',
+            'carport'                        => ['carport_needed', 'other_carport_needed'],
+            // water_view: tenant form saves scenic/water view under 'view_preference'.
+            'water_view'                     => 'view_preference',
+            'non_negotiable_amenities'       => 'non_negotiable_amenities',
+            'leasing_55_plus'                => 'leasing_55_plus',
+            'total_acreage'                  => 'total_acreage',
+            'min_acreage'                    => 'min_acreage',
+            // ── Move-in / Security ────────────────────────────────────────────
+            'security_deposit_budget'        => 'security_deposit_budget',
+            'move_in_funds_available'        => 'move_in_funds_available',
+            'first_month_rent_available'     => 'first_month_rent_available',
+            'last_month_rent_available'      => 'last_month_rent_available',
+            'move_in_date_earliest'          => 'move_in_date_earliest',
+            'move_in_date_latest'            => 'move_in_date_latest',
+            // ── Renewal / Conditions ──────────────────────────────────────────
+            'renewal_option_requested'       => 'renewal_option_requested',
+            'renewal_option_details'         => 'renewal_option_details',
+            'tenant_conditions'              => 'tenant_conditions',
+            'additional_tenant_lease_terms'  => 'additional_tenant_lease_terms',
+            // ── Commercial Tenant ─────────────────────────────────────────────
+            // Aliased to 'commercial_lease_type' (not '_preference') so Guard B
+            // and LISTING_KEY_KEYWORD_MAP use the same key as the landlord role.
+            'commercial_lease_type'          => 'commercial_lease_type_preference',
+            'cam_nnn_preference'             => 'cam_nnn_preference',
+            'rent_escalation_preference'     => 'rent_escalation_preference',
+            'buildout_tenant_improvement_request' => 'buildout_tenant_improvement_request',
+            'intended_business_use'          => 'intended_business_use',
+            'signage_request'                => 'signage_request',
+            'commercial_parking_access_needs' => 'commercial_parking_access_needs',
+            'personal_guarantee_preference'  => 'personal_guarantee_preference',
+            'commercial_approval_conditions' => 'commercial_approval_conditions',
+            // ── Screening / Background ────────────────────────────────────────
+            'prior_eviction'                 => 'prior_eviction',
+            'prior_felony'                   => 'prior_felony',
+            'smoking_preference'             => 'smoking_preference',
+            'service_animal'                 => 'service_animal',
+            'emotional_support_animal'       => 'emotional_support_animal',
+            'accessibility_requirements'     => 'accessibility_requirements',
+            'rental_purpose'                 => 'rental_purpose',
+            // ── Commute / Lifestyle ───────────────────────────────────────────
+            'commute_destination_zip'        => 'commute_destination_zip',
+            'max_commute_minutes'            => 'max_commute_minutes',
+            'commute_mode'                   => 'commute_mode',
+            'maintenance_preference'         => 'maintenance_preference',
+            'guests_allowed'                 => 'guests_allowed',
+            // ── Location ──────────────────────────────────────────────────────
+            'cities'                         => 'cities',
+            'counties'                       => 'counties',
+            'zip_codes'                      => 'zipCodes',
         ],
 
         // =====================================================================
         // AGENT PROFILE (5th role — not a listing; _sources covers listing fields only)
         // Source: users table + agent_default_profiles.profile_data JSON
-        // Declared here for audit completeness so the full five-role contract is documented.
+        // All 47 public-safe fields from AgentProfileLoader::buildContent() are
+        // documented here per Sprint 3 / B5 audit requirement.
+        // Fields filtered by PRIVATE_KEYS (email, phone, compensation amounts) are
+        // NOT listed — they never appear in context per governance Section 7.1.
         // =====================================================================
         'agent_profile' => [
-            'agent_name'       => 'users.first_name + users.last_name',
-            'short_id'         => 'native:users.short_id',
-            'brokerage'        => ['profile_data.brokerage', 'users.brokerage_attribute'],
-            'license_no'       => 'profile_data.license_no',
-            'bio'              => 'profile_data.bio',
-            'years_experience' => 'profile_data.years_experience',
-            'services'         => 'profile_data.services',
+            // Identity (from users table + profile_data)
+            'agent_name'                            => 'users.first_name + users.last_name',
+            'short_id'                              => 'native:users.short_id',
+            'brokerage'                             => ['profile_data.brokerage', 'users.brokerage_attribute'],
+            'license_no'                            => 'profile_data.license_no',
+            'nar_id'                                => 'profile_data.nar_id',
+            // Experience & Credentials
+            'year_licensed'                         => 'profile_data.year_licensed',
+            'years_experience'                      => 'profile_data.years_experience',
+            'is_full_time'                          => 'profile_data.is_full_time',
+            'transactions_last_12_months'           => 'profile_data.transactions_last_12_months',
+            // Bio & Differentiators
+            'bio'                                   => 'profile_data.bio',
+            'awards_recognition'                    => 'profile_data.awards_recognition',
+            'what_sets_you_apart'                   => 'profile_data.what_sets_you_apart',
+            'why_hire_you'                          => 'profile_data.why_hire_you',
+            // Reviews
+            'review_1'                              => 'profile_data.review_1',
+            'review_2'                              => 'profile_data.review_2',
+            'review_3'                              => 'profile_data.review_3',
+            'reviews_links'                         => 'profile_data.reviews_links',
+            // Online Presence
+            'website_link'                          => 'profile_data.website_link',
+            'intro_video_url'                       => 'profile_data.intro_video_url',
+            'presentation_link'                     => 'profile_data.presentation_link',
+            'social_media'                          => 'profile_data.social_media',
+            // Availability & Communication
+            'availability_status'                   => 'profile_data.availability_status',
+            'avg_response_time'                     => 'profile_data.avg_response_time',
+            'communication_style'                   => 'profile_data.communication_style',
+            'preferred_contact_method'              => 'profile_data.preferred_contact_method',
+            'evenings_available'                    => 'profile_data.evenings_available',
+            'weekends_available'                    => 'profile_data.weekends_available',
+            // Geographic Coverage
+            'cities_served'                         => 'profile_data.cities_served',
+            'counties_served'                       => 'profile_data.counties_served',
+            'neighborhoods_served'                  => 'profile_data.neighborhoods_served',
+            'primary_areas_served'                  => 'profile_data.primary_areas_served',
+            'areas_notes'                           => 'profile_data.areas_notes',
+            // Services
+            'services'                              => 'profile_data.services',
+            'other_services'                        => 'profile_data.other_services',
+            'marketing_plan'                        => 'profile_data.marketing_plan',
+            // Fee Structure (type labels only — amounts excluded by PRIVATE_KEYS)
+            'commission_structure'                  => 'profile_data.commission_structure',
+            'commission_structure_type'             => 'profile_data.commission_structure_type',
+            'purchase_fee_type'                     => 'profile_data.purchase_fee_type',
+            'lease_fee_type'                        => 'profile_data.lease_fee_type',
+            'retainer_fee_option'                   => 'profile_data.retainer_fee_option',
+            'retainer_fee_application'              => 'profile_data.retainer_fee_application',
+            'protection_period'                     => 'profile_data.protection_period',
+            'early_termination_fee_option'          => 'profile_data.early_termination_fee_option',
+            // Referral & Property Management Interest
+            'interested_in_selling'                 => 'profile_data.interested_in_selling',
+            'interested_in_selling_type'            => 'profile_data.interested_in_selling_type',
+            'interested_in_property_management'     => 'profile_data.interested_in_property_management',
+            'interested_in_property_management_fee' => 'profile_data.interested_in_property_management_fee',
         ],
     ];
 
@@ -897,27 +1070,67 @@ class AskAiContextBuilderService
                 // ── decodeJsonField: waterfront ───────────────────────────────────
                 'water_access'         => $this->decodeJsonField($infoGet('water_access')),
 
-                // ── decodeJsonField: interior ─────────────────────────────────────
-                'interior_features'    => $this->decodeJsonField($infoGet('interior_features')),
-                'appliances'           => $this->decodeJsonField($infoGet('appliances')),
+                // ── decodeJsonField + other_* cascade: interior ──────────────────
+                // Other-loss fix (Phase C): when a multi-select field includes "Other",
+                // decodeJsonField() strips the literal token and reads only the checked
+                // items. The companion other_* EAV key holds any free-text the user typed.
+                // Appending it here ensures custom descriptions are preserved in context.
+                'interior_features'    => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('interior_features')),
+                                              $infoGet('other_interior_features'),
+                                          ])) ?: null,
+                'appliances'           => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('appliances')),
+                                              $infoGet('other_appliances'),
+                                          ])) ?: null,
 
-                // ── decodeJsonField: structural ───────────────────────────────────
-                'roof_type'            => $this->decodeJsonField($infoGet('roof_type')),
-                'exterior_construction' => $this->decodeJsonField($infoGet('exterior_construction')),
-                'foundation'           => $this->decodeJsonField($infoGet('foundation')),
-                'heating_and_fuel'     => $this->decodeJsonField($infoGet('heating_and_fuel')),
+                // ── decodeJsonField + other_* cascade: structural ─────────────────
+                'roof_type'            => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('roof_type')),
+                                              $infoGet('other_roof_type'),
+                                          ])) ?: null,
+                'exterior_construction' => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('exterior_construction')),
+                                              $infoGet('other_exterior_construction'),
+                                          ])) ?: null,
+                'foundation'           => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('foundation')),
+                                              $infoGet('other_foundation'),
+                                          ])) ?: null,
+                'heating_and_fuel'     => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('heating_and_fuel')),
+                                              $infoGet('other_heating_and_fuel'),
+                                          ])) ?: null,
                 // heating_fuel: alternate output key for the same meta; retained for
                 // commercial/income context where 'heating_fuel' is the contract name.
-                'heating_fuel'         => $this->decodeJsonField($infoGet('heating_and_fuel')),
-                'air_conditioning'     => $this->decodeJsonField($infoGet('air_conditioning')),
+                'heating_fuel'         => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('heating_and_fuel')),
+                                              $infoGet('other_heating_and_fuel'),
+                                          ])) ?: null,
+                'air_conditioning'     => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('air_conditioning')),
+                                              $infoGet('other_air_conditioning'),
+                                          ])) ?: null,
 
-                // ── decodeJsonField: utilities ────────────────────────────────────
-                'water'                => $this->decodeJsonField($infoGet('water')),
+                // ── decodeJsonField + other_* cascade: utilities ──────────────────
+                'water'                => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('water')),
+                                              $infoGet('other_water'),
+                                          ])) ?: null,
                 // water_source: alternate output key for the same meta; used in
                 // commercial and income-property context.
-                'water_source'         => $this->decodeJsonField($infoGet('water')),
-                'sewer'                => $this->decodeJsonField($infoGet('sewer')),
-                'utilities'            => $this->decodeJsonField($infoGet('utilities')),
+                'water_source'         => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('water')),
+                                              $infoGet('other_water'),
+                                          ])) ?: null,
+                'sewer'                => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('sewer')),
+                                              $infoGet('other_sewer'),
+                                          ])) ?: null,
+                'utilities'            => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('utilities')),
+                                              $infoGet('other_utilities'),
+                                          ])) ?: null,
 
                 // ── decodeJsonField: transaction ──────────────────────────────────
                 'sale_provision'       => $this->decodeJsonField($infoGet('sale_provision')),
@@ -959,11 +1172,14 @@ class AskAiContextBuilderService
                 // the flood-zone disclosure template. Always set for seller listings.
                 'disclosure_flags'     => ['flood_zone' => true],
 
-                // ── decodeJsonField: building ─────────────────────────────────────
+                // ── decodeJsonField + other_* cascade: building ──────────────────
                 // building_features: surfaces for ALL seller property types so
                 // commercial-sale and income/multifamily listings can answer questions
                 // about building amenities via Guard B without an OpenAI call.
-                'building_features'    => $this->decodeJsonField($infoGet('building_features')),
+                'building_features'    => implode(', ', array_filter([
+                                              $this->decodeJsonField($infoGet('building_features')),
+                                              $infoGet('other_building_features'),
+                                          ])) ?: null,
 
                 // ── decodeJsonField / summarize: income/multifamily ───────────────
                 'property_items'       => $this->decodeJsonField($infoGet('property_items')),
@@ -984,7 +1200,10 @@ class AskAiContextBuilderService
             // meta keys are decoded from JSON and returned as comma-separated strings
             // via decodeJsonField() for prompt-friendly consumption.
             ($infoGet('property_type') === 'Vacant Land') ? [
-                'current_adjacent_use' => $this->decodeJsonField($infoGet('current_adjacent_use')),
+                'current_adjacent_use' => implode(', ', array_filter([
+                                             $this->decodeJsonField($infoGet('current_adjacent_use')),
+                                             $infoGet('other_current_adjacent_use'),
+                                         ])) ?: null,
                 'water_available'      => $infoGet('water_available'),
                 'sewer_available'      => $infoGet('sewer_available'),
                 'electric_available'   => $infoGet('electric_available'),
@@ -994,8 +1213,14 @@ class AskAiContextBuilderService
                 'front_footage'        => $infoGet('front_footage'),
                 'number_of_wells'      => $infoGet('number_of_wells'),
                 'number_of_septics'    => $infoGet('number_of_septics'),
-                'fences'               => $this->decodeJsonField($infoGet('fences')),
-                'vegetation'           => $this->decodeJsonField($infoGet('vegetation')),
+                'fences'               => implode(', ', array_filter([
+                                             $this->decodeJsonField($infoGet('fences')),
+                                             $infoGet('other_fences'),
+                                         ])) ?: null,
+                'vegetation'           => implode(', ', array_filter([
+                                             $this->decodeJsonField($infoGet('vegetation')),
+                                             $infoGet('other_vegetation'),
+                                         ])) ?: null,
                 'buildable'            => $infoGet('buildable'),
                 'easements'            => $this->decodeJsonField($infoGet('easements')),
             ] : [],
@@ -1032,7 +1257,10 @@ class AskAiContextBuilderService
                 'business_lease_assignable'       => $infoGet('business_lease_assignable'),
                 'business_lease_additional_terms' => $infoGet('business_lease_additional_terms'),
                 'licenses'                        => $this->decodeJsonField($infoGet('licenses')),
-                'sale_includes'                   => $this->decodeJsonField($infoGet('sale_includes')),
+                'sale_includes'                   => implode(', ', array_filter([
+                                                      $this->decodeJsonField($infoGet('sale_includes')),
+                                                      $infoGet('other_sale_includes'),
+                                                  ])) ?: null,
                 // building_features: moved to the general seller commercial/structural
                 // block (unconditional) so commercial-sale listings also get it.
                 'electrical_service'              => $this->decodeJsonField($infoGet('electrical_service')),
@@ -1045,7 +1273,10 @@ class AskAiContextBuilderService
             // appears exactly once in source (prevents PHP silent-override bugs and
             // source-level duplicate detection failures).
             (in_array($infoGet('property_type'), ['Vacant Land', 'Business'], true)) ? [
-                'current_use'   => $this->decodeJsonField($infoGet('current_use')),
+                'current_use'   => implode(', ', array_filter([
+                                      $this->decodeJsonField($infoGet('current_use')),
+                                      $infoGet('other_current_use'),
+                                  ])) ?: null,
                 'road_frontage' => $this->decodeJsonField($infoGet('road_frontage')),
             ] : []
         );
@@ -1203,12 +1434,26 @@ class AskAiContextBuilderService
                                                'commercial_lease_type_other'
                                            ),
 
-            // ── decodeJsonField: structural / waterfront ──────────────────────
+            // ── decodeJsonField + other_* cascade: structural / waterfront ───────
+            // Other-loss fix (Phase C): same cascade pattern as seller — companion
+            // other_* EAV keys carry free-text when "Other" was selected in the form.
             'water_access'              => $this->decodeJsonField($infoGet('water_access')),
-            'interior_features'         => $this->decodeJsonField($infoGet('interior_features')),
-            'roof_type'                 => $this->decodeJsonField($infoGet('roof_type')),
-            'exterior_construction'     => $this->decodeJsonField($infoGet('exterior_construction')),
-            'foundation'                => $this->decodeJsonField($infoGet('foundation')),
+            'interior_features'         => implode(', ', array_filter([
+                                               $this->decodeJsonField($infoGet('interior_features')),
+                                               $infoGet('other_interior_features'),
+                                           ])) ?: null,
+            'roof_type'                 => implode(', ', array_filter([
+                                               $this->decodeJsonField($infoGet('roof_type')),
+                                               $infoGet('other_roof_type'),
+                                           ])) ?: null,
+            'exterior_construction'     => implode(', ', array_filter([
+                                               $this->decodeJsonField($infoGet('exterior_construction')),
+                                               $infoGet('other_exterior_construction'),
+                                           ])) ?: null,
+            'foundation'                => implode(', ', array_filter([
+                                               $this->decodeJsonField($infoGet('foundation')),
+                                               $infoGet('other_foundation'),
+                                           ])) ?: null,
 
             // ── resolveOtherValue: flood zone ─────────────────────────────────
             // flood_zone_code may be "Other" when the user selected a non-standard
@@ -1220,20 +1465,37 @@ class AskAiContextBuilderService
                                                'flood_zone_code_other'
                                            ),
 
-            // ── decodeJsonField: lease financial terms ────────────────────────
-            'terms_of_lease'            => $this->decodeJsonField($infoGet('terms_of_lease')),
+            // ── decodeJsonField + other_* cascade: lease financial terms ──────
+            // Phase D4: 'terms_of_lease' duplicate removed — context key is 'lease_terms'
+            // (set above via extractLandlordManualFields). CANONICAL_SOURCE_MAP line 374
+            // entry was also removed; only 'lease_terms' → 'terms_of_lease' remains.
             'tenant_pays'               => $this->decodeJsonField($infoGet('tenant_pays')),
             'rent_includes'             => $this->decodeJsonField($infoGet('rent_includes')),
-            'heating_fuel'              => $this->decodeJsonField($infoGet('heating_fuel')),
-            'air_conditioning'          => $this->decodeJsonField($infoGet('air_conditioning')),
-            'water'                     => $this->decodeJsonField($infoGet('water')),
-            'sewer'                     => $this->decodeJsonField($infoGet('sewer')),
+            'heating_fuel'              => implode(', ', array_filter([
+                                               $this->decodeJsonField($infoGet('heating_fuel')),
+                                               $infoGet('other_heating_fuel'),
+                                           ])) ?: null,
+            'air_conditioning'          => implode(', ', array_filter([
+                                               $this->decodeJsonField($infoGet('air_conditioning')),
+                                               $infoGet('other_air_conditioning'),
+                                           ])) ?: null,
+            'water'                     => implode(', ', array_filter([
+                                               $this->decodeJsonField($infoGet('water')),
+                                               $infoGet('other_water'),
+                                           ])) ?: null,
+            'sewer'                     => implode(', ', array_filter([
+                                               $this->decodeJsonField($infoGet('sewer')),
+                                               $infoGet('other_sewer'),
+                                           ])) ?: null,
 
-            // ── decodeJsonField: commercial building ──────────────────────────
+            // ── decodeJsonField + other_* cascade: commercial building ────────
             'space_type'                => $this->decodeJsonField($infoGet('space_type')),
             'space_classification'      => $this->decodeJsonField($infoGet('space_classification')),
             'electrical_service'        => $this->decodeJsonField($infoGet('electrical_service')),
-            'building_features'         => $this->decodeJsonField($infoGet('building_features')),
+            'building_features'         => implode(', ', array_filter([
+                                               $this->decodeJsonField($infoGet('building_features')),
+                                               $infoGet('other_building_features'),
+                                           ])) ?: null,
             'road_surface_type'         => $this->decodeJsonField($infoGet('road_surface_type')),
 
             // ── Applicant Requirements: new fields (Step 6) ───────────────────
@@ -1313,6 +1575,16 @@ class AskAiContextBuilderService
 
             // ── decodeJsonField: tenant payments ───────────────────────────────
             'tenant_pays'          => $this->decodeJsonField($infoGet('tenant_pays')),
+
+            // ── decodeJsonField: Phase 2 new fields ───────────────────────────
+            // water_view: saved as JSON multiselect under 'view_preference' for tenant.
+            'water_view'           => $this->decodeJsonField($infoGet('view_preference')),
+            // pool_type: JSON multiselect of pool type preferences.
+            'pool_type'            => $this->decodeJsonField($infoGet('pool_type')),
+            // cities / counties / zip_codes: JSON arrays of preferred locations.
+            'cities'               => $this->decodeJsonField($infoGet('cities')),
+            'counties'             => $this->decodeJsonField($infoGet('counties')),
+            'zip_codes'            => $this->decodeJsonField($infoGet('zipCodes')),
         ];
     }
 

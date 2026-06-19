@@ -150,7 +150,7 @@ class AgentProfileLoader
         return [
             'agent_name'                   => trim(($firstName ?? '') . ' ' . ($lastName ?? '')) ?: null,
             'short_id'                     => $user->short_id ?? null,
-            'brokerage'                    => $get('brokerage') ?? ($user->getBrokerageAttribute(null) ?? null),
+            'brokerage'                    => $get('brokerage'),
             'license_no'                   => $get('license_no'),
             'nar_id'                       => $get('nar_id'),
             'year_licensed'                => $get('year_licensed'),

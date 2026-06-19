@@ -91,6 +91,8 @@ class AskAiRunnerV2DescriptionFallbackUnsupportedTest extends TestCase
             'refusal_message'    => null,
             'error'              => null,
         ]);
+        // Pass-through: coercion is tested in builder tests; runner tests verify routing only.
+        $finalBuilder->method('coerceToContractStatus')->willReturnArgument(0);
 
         $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
         $followUp->method('forResult')->willReturn([]);
@@ -382,39 +384,41 @@ class AskAiRunnerV2DescriptionFallbackUnsupportedTest extends TestCase
     }
 
     // =========================================================================
-    // G. Off-topic question — Stage 2 blocks before description fallback → unsupported
+    // G. Off-topic question — Step 1a-desc is fail-open; adapter miss → insufficient_context
     // =========================================================================
 
     /**
-     * "What is the weather today?" passes Stage 1 (not a greeting/ack) but
-     * contains no property/RE signal word, so Stage 2 (isListingRelatedQuestion)
-     * returns false and the Step 1a-desc description fallback is NOT entered.
+     * "What is the weather today?" passes Stage 1 (not a greeting/ack) and is
+     * NOT blocked by a keyword allowlist.  The Step 1a-desc gate is intentionally
+     * fail-open: a Stage 2 keyword allowlist was removed because it blocked valid
+     * listing questions phrased without recognised RE signal words.
      *
-     * The result is status='unsupported' — the correct outcome for a genuinely
-     * unrelated question — rather than consuming an adapter call.
+     * Since the description is non-empty the fallback IS attempted.  The adapter
+     * (stub) returns a miss (no answer in description), so the result is
+     * status='insufficient_context' — the correct outcome for a question whose
+     * answer is genuinely absent from the listing.
      *
-     * Valid listing questions phrased in unusual ways (e.g. "Is it move-in
-     * ready?", "How's the condition?", "Are there repair needs?") are covered
-     * by the broad signal list in isListingRelatedQuestion() — "move",
-     * "condition", and "repair" are all included signals.
+     * Greetings / acks (e.g. "hello", "ok", "thanks") remain blocked by Stage 1
+     * via isObviouslyNonListingQuestion() and are covered by other tests.
      */
     public function test_off_topic_question_blocked_by_stage2_returns_unsupported(): void
     {
         $runner = $this->makeStubRunner(
             'Beautiful 3-bedroom home with ocean views.',
-            $this->adapterMiss()   // adapter must NOT be called for description fallback
+            $this->adapterMiss()
         );
 
         $result = $runner->run('seller', 121, 'What is the weather today?');
 
-        // Stage 2 blocks weather questions — the description fallback is never attempted.
-        $this->assertArrayNotHasKey(
+        // Step 1a-desc is fail-open: the fallback IS attempted for non-greeting questions.
+        $this->assertArrayHasKey(
             'description_fallback_unsupported_attempted',
             $result['trace'],
-            'G: Stage 2 must block weather question — description fallback must NOT be attempted'
+            'G: fail-open gate — description fallback attempted even for weather questions'
         );
-        $this->assertSame('unsupported', $result['status'],
-            'G: weather question blocked by Stage 2 → status must be unsupported');
+        // Adapter returns a miss → insufficient_context (no answer in description).
+        $this->assertSame('insufficient_context', $result['status'],
+            'G: adapter miss → status must be insufficient_context');
     }
 
     // =========================================================================

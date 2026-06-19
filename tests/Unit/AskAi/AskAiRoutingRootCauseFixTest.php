@@ -180,6 +180,8 @@ class AskAiRoutingRootCauseFixTest extends TestCase
                 : null,
             'error'              => null,
         ]);
+        // Pass-through: runner tests verify routing behavior only; coercion is tested in builder tests.
+        $finalBuilder->method('coerceToContractStatus')->willReturnArgument(0);
 
         $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
         $followUp->method('forResult')->willReturn([]);
@@ -653,6 +655,7 @@ class AskAiRoutingRootCauseFixTest extends TestCase
             'refusal_message'    => null,
             'error'              => null,
         ]);
+        $finalBuilder->method('coerceToContractStatus')->willReturnArgument(0);
 
         $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
         $followUp->method('forResult')->willReturn([]);
@@ -1372,6 +1375,7 @@ class AskAiRoutingRootCauseFixTest extends TestCase
             'refusal_message'    => null,
             'error'              => null,
         ]);
+        $finalBuilder->method('coerceToContractStatus')->willReturnArgument(0);
 
         $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
         $followUp->method('forResult')->willReturn([]);
@@ -1469,6 +1473,7 @@ class AskAiRoutingRootCauseFixTest extends TestCase
             'refusal_message'    => null,
             'error'              => null,
         ]);
+        $finalBuilder->method('coerceToContractStatus')->willReturnArgument(0);
 
         $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
         $followUp->method('forResult')->willReturn([]);
@@ -1582,6 +1587,7 @@ class AskAiRoutingRootCauseFixTest extends TestCase
                 'snapshot_version' => 3,
             ],
         ]);
+        $finalBuilder->method('coerceToContractStatus')->willReturnArgument(0);
 
         $followUp = $this->createMock(AskAiFollowUpQuestionService::class);
         $followUp->method('forResult')->willReturn([]);
