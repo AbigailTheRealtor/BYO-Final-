@@ -128,7 +128,9 @@ class TenantCriteriaLoaderTest extends TestCase
         $listing->saveMeta('desired_lease_length', json_encode(['12 months', '6 months']));
         $listing->saveMeta('credit_score_range', '700-749');
         $listing->saveMeta('monthly_income', '6000');
-        $listing->saveMeta('pet_information', 'One small dog');
+        $listing->saveMeta('pets', 'Yes');
+        $listing->saveMeta('type_of_pets', 'Dog');
+        $listing->saveMeta('number_of_pets', '1');
 
         $result = ($this->loader)($this->makeScopeContext($listing->id));
 

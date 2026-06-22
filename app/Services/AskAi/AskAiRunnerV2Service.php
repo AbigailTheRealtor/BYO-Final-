@@ -2795,11 +2795,9 @@ class AskAiRunnerV2Service
             'does the association need to approve the sale',
         ],
 
-        // ── Phase 2 additions: Buyer/Tenant Shared ───────────────────────────
+        // ── Phase 2 additions: Tenant-specific (occupants) ──────────────────
+        // Buyer phrases removed — number_of_occupants does not exist in the buyer form.
         'listing.number_of_occupants' => [
-            'how many occupants does the buyer have',
-            'how many people in the household',
-            'number of people in the buyer household',
             'how many residents does the tenant have',
             'household size for this tenant',
             'how many occupants will be in the unit',
@@ -2863,12 +2861,9 @@ class AskAiRunnerV2Service
             'investment or residence',
             'buyer purchase purpose',
         ],
-        'listing.year_built_preference' => [
-            'what year built preference does the buyer have',
-            'minimum year built for buyer',
-            'what is the buyer preferred year of construction',
-            'how old a home will the buyer consider',
-        ],
+        // listing.year_built_preference intentionally omitted — this field does not
+        // exist in the buyer form; removed to prevent phantom routing. Tenant has no
+        // equivalent year_built_preference field either.
         'listing.additional_preferences' => [
             'additional preferences for this buyer',
             'other requirements this buyer has listed',

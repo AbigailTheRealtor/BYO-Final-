@@ -294,7 +294,9 @@ class AskAiContextBuilderService
             'cities'                         => 'cities',
             'counties'                       => 'counties',
             // ── Buyer Criteria Expansion ──────────────────────────────────────
-            'year_built_preference'          => 'year_built',
+            // year_built_preference, monthly_income, number_of_occupants intentionally
+            // omitted — these fields do not exist in the buyer form. Tenant equivalents
+            // are present in the tenant CANONICAL_SOURCE_MAP and are unchanged.
             'minimum_cap_rate'               => 'minimum_cap_rate',
             'number_of_units'                => 'number_of_unit',
             'commute_destination_zip'        => 'commute_destination_zip',
@@ -302,8 +304,6 @@ class AskAiContextBuilderService
             'commute_mode'                   => 'commute_mode',
             'flood_zone_tolerance'           => 'flood_zone_tolerance',
             'purchase_purpose'               => 'purchase_purpose',
-            'monthly_income'                 => 'monthly_income',
-            'number_of_occupants'            => 'number_occupant',
             // credit_score_range: EAV key is misspelled ('credit_scroe_rating') — matches form save key.
             'credit_score_range'             => 'credit_scroe_rating',
             'leasing_55_plus'                => 'leasing_55_plus',
@@ -507,7 +507,10 @@ class AskAiContextBuilderService
             'appliances'                     => 'appliances',
             'condition_prop'                 => ['condition_prop', 'other_property_condition'],
             // ── Pet / Parking / Utilities ─────────────────────────────────────
-            'pet_information'                => 'pet_information',
+            // pet_information: intentionally omitted from source map — built as a
+            // composite in extractTenantManualFields() from the existing EAV keys
+            // pets, number_of_pets, type_of_pets, breed_of_pets, weight_of_pets.
+            // The nonexistent 'pet_information' composite key is never read from EAV.
             'parking_needed'                 => 'parking_needed',
             'utilities'                      => 'utilities',
             'utility_preference'             => 'utility_preference',
@@ -1585,6 +1588,28 @@ class AskAiContextBuilderService
             'cities'               => $this->decodeJsonField($infoGet('cities')),
             'counties'             => $this->decodeJsonField($infoGet('counties')),
             'zip_codes'            => $this->decodeJsonField($infoGet('zipCodes')),
+
+            // ── composite: pet information ────────────────────────────────────
+            // pet_information: built from the existing EAV keys pets, number_of_pets,
+            // type_of_pets, breed_of_pets, and weight_of_pets. The nonexistent
+            // 'pet_information' single-key EAV field is never read.
+            // Returns null when all constituent keys are absent.
+            'pet_information'      => (static function (callable $ig): ?string {
+                $pets   = $ig('pets');
+                $count  = $ig('number_of_pets');
+                $type   = $ig('type_of_pets');
+                $breed  = $ig('breed_of_pets');
+                $weight = $ig('weight_of_pets');
+
+                $parts = [];
+                if ($pets   !== null) { $parts[] = $pets; }
+                if ($count  !== null) { $parts[] = 'Number: ' . $count; }
+                if ($type   !== null) { $parts[] = 'Type: ' . $type; }
+                if ($breed  !== null) { $parts[] = 'Breed: ' . $breed; }
+                if ($weight !== null) { $parts[] = 'Weight: ' . $weight; }
+
+                return !empty($parts) ? implode('; ', $parts) : null;
+            })($infoGet),
         ];
     }
 
