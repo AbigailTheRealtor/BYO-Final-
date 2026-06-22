@@ -1520,7 +1520,7 @@
                                             ? 'Sale Terms'
                                             : 'Leasing Terms');
                                 if ($user_type === 'tenant') {
-                                    $restTabs = [$firstRest, 'Pre-Screening', 'Description', 'Broker Compensation & Agency Agreement Terms'];
+                                    $restTabs = ['Description', $firstRest, 'Pre-Screening', 'Broker Compensation & Agency Agreement Terms'];
                                 } else {
                                     $restTabs = [$firstRest, 'Description', 'Broker Compensation & Agency Agreement Terms'];
                                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
@@ -1635,7 +1635,7 @@
                                 <!-- Leasing Terms Tab -->
 
                                 @if (in_array($user_type, ['landlord', 'tenant']))
-                                    <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                                    <div class="tab-pane fade {{ $activeTab === ($user_type === 'tenant' ? 3 : 2) ? 'show active' : '' }}"
                                         id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
                                 @endif
                                 @if ($user_type === 'seller')

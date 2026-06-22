@@ -906,7 +906,7 @@ $tenantPays = [
                         @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                              <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Details', 'Leasing Terms'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
@@ -920,14 +920,25 @@ $tenantPays = [
                                     </li>
                                 @endforeach
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 3 ? 'active' : '' }}"
+                                    <button class="nav-link {{ $activeTab === 2 ? 'active' : '' }}"
                                         id="additional-details-tab" data-bs-toggle="tab"
                                         data-bs-target="#additional-details"
                                         type="button" role="tab"
-                                        wire:click="setActiveTab(3)"
+                                        wire:click="setActiveTab(2)"
                                         aria-controls="additional-details"
-                                        aria-selected="{{ $activeTab === 3 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 2 ? 'true' : 'false' }}">
                                         Description
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 3 ? 'active' : '' }}"
+                                        id="leasing-terms-tab" data-bs-toggle="tab"
+                                        data-bs-target="#leasing-terms"
+                                        type="button" role="tab"
+                                        wire:click="setActiveTab(3)"
+                                        aria-controls="leasing-terms"
+                                        aria-selected="{{ $activeTab === 3 ? 'true' : 'false' }}">
+                                        Leasing Terms
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -1025,19 +1036,19 @@ $tenantPays = [
 
                                 </div>
 
-                                <!-- Leasing Terms Tab (index 2) -->
+                                <!-- Additional Details Tab (index 2) -->
                                 <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                                    id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
-
-                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.lease-terms')
-                                </div>
-
-                                <!-- Additional Details Tab (index 3) -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.additional-details')
 
+                                </div>
+
+                                <!-- Leasing Terms Tab (index 3) -->
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
+                                    id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
+
+                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.lease-terms')
                                 </div>
 
                                 <!-- Applicant Requirements Tab (index 4) -->

@@ -1010,7 +1010,7 @@
                         @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Details', 'Leasing Terms'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -1024,14 +1024,25 @@
                                     </li>
                                 @endforeach
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 3 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(3)"
+                                    <button class="nav-link {{ $activeTab === 2 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(2)"
                                         id="additional-details-tab" data-bs-toggle="tab"
                                         data-bs-target="#additional-details"
                                         type="button" role="tab"
                                         aria-controls="additional-details"
-                                        aria-selected="{{ $activeTab === 3 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 2 ? 'true' : 'false' }}">
                                         Description
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 3 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(3)"
+                                        id="leasing-terms-tab" data-bs-toggle="tab"
+                                        data-bs-target="#leasing-terms"
+                                        type="button" role="tab"
+                                        aria-controls="leasing-terms"
+                                        aria-selected="{{ $activeTab === 3 ? 'true' : 'false' }}">
+                                        Leasing Terms
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -1144,23 +1155,8 @@
                                     @endif
                                 </div>
 
-                                <!-- Leasing Terms Tab -->
+                                <!-- Additional Details Tab (index 2) -->
                                 <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                                    id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
-
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.offer-listing.offer-tenant-tabs.commission-based.leasing-terms')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.purchasing-terms')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.purchasing-terms')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.lease-terms')
-                                    @endif
-                                </div>
-
-                                <!-- Additional Details Tab (full_service: index 3) -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
                                     @if ($user_type === 'tenant')
                                         @include('livewire.offer-listing.offer-tenant-tabs.commission-based.additional-details')
@@ -1172,6 +1168,21 @@
                                         @include('livewire.offer-listing.offer-landlord-tabs.commission-based.additional-details')
                                     @endif
 
+                                </div>
+
+                                <!-- Leasing Terms Tab (index 3) -->
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
+                                    id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
+
+                                    @if ($user_type === 'tenant')
+                                        @include('livewire.offer-listing.offer-tenant-tabs.commission-based.leasing-terms')
+                                    @elseif($user_type === 'seller')
+                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.purchasing-terms')
+                                    @elseif($user_type === 'buyer')
+                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.purchasing-terms')
+                                    @elseif($user_type === 'landlord')
+                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.lease-terms')
+                                    @endif
                                 </div>
 
                                 <!-- Applicant Requirements Tab (index 4) -->

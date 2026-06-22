@@ -676,8 +676,8 @@
                         @php
                                 $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent';
                                 $hasFinancialTab = in_array($property_type ?? '', ['Income', 'Commercial', 'Business']);
-                                $saleTermsIdx        = $hasFinancialTab ? 3 : 2;
-                                $additionalDetailsIdx = $hasFinancialTab ? 4 : 3;
+                                $additionalDetailsIdx = $hasFinancialTab ? 3 : 2;
+                                $saleTermsIdx        = $hasFinancialTab ? 4 : 3;
                                 $brokerCompIdx       = $hasFinancialTab ? 5 : 4;
                                 $taxLegalIdx         = $hasFinancialTab ? 6 : 5;
                                 $docsIdx             = $hasFinancialTab ? 7 : 6;
@@ -723,17 +723,6 @@
                                 </li>
                                 @endif
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === $saleTermsIdx ? 'active' : '' }}"
-                                        id="sale-terms-tab" data-bs-toggle="tab"
-                                        data-bs-target="#sale-terms"
-                                        type="button" role="tab"
-                                        wire:click="setActiveTab({{ $saleTermsIdx }})"
-                                        aria-controls="sale-terms"
-                                        aria-selected="{{ $activeTab === $saleTermsIdx ? 'true' : 'false' }}">
-                                        Sale Terms
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === $additionalDetailsIdx ? 'active' : '' }}"
                                         id="additional-details-tab" data-bs-toggle="tab"
                                         data-bs-target="#additional-details"
@@ -742,6 +731,17 @@
                                         aria-controls="additional-details"
                                         aria-selected="{{ $activeTab === $additionalDetailsIdx ? 'true' : 'false' }}">
                                         Description
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === $saleTermsIdx ? 'active' : '' }}"
+                                        id="sale-terms-tab" data-bs-toggle="tab"
+                                        data-bs-target="#sale-terms"
+                                        type="button" role="tab"
+                                        wire:click="setActiveTab({{ $saleTermsIdx }})"
+                                        aria-controls="sale-terms"
+                                        aria-selected="{{ $activeTab === $saleTermsIdx ? 'true' : 'false' }}">
+                                        Sale Terms
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -836,19 +836,19 @@
                                 </div>
                                 @endif
 
-                                <!-- Sale Terms Tab -->
-                                <div class="tab-pane fade {{ $activeTab === $saleTermsIdx ? 'show active' : '' }}"
-                                    id="sale-terms" role="tabpanel" aria-labelledby="sale-terms-tab">
-
-                                    @include('livewire.offer-listing.offer-seller-tabs.commission-based.seller-terms')
-                                </div>
-
                                 <!-- Additional Details Tab -->
                                 <div class="tab-pane fade {{ $activeTab === $additionalDetailsIdx ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @include('livewire.offer-listing.offer-seller-tabs.commission-based.additional-details')
 
+                                </div>
+
+                                <!-- Sale Terms Tab -->
+                                <div class="tab-pane fade {{ $activeTab === $saleTermsIdx ? 'show active' : '' }}"
+                                    id="sale-terms" role="tabpanel" aria-labelledby="sale-terms-tab">
+
+                                    @include('livewire.offer-listing.offer-seller-tabs.commission-based.seller-terms')
                                 </div>
 
                                 <!-- Broker Compensation & Agency Agreement Terms Tab -->

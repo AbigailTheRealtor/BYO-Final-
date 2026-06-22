@@ -3,8 +3,8 @@
                                 <div class="alert alert-info bg-light-info border-info mb-4">
                                     <div class="d-flex align-items-center">
                                         <div>
-                                            <strong>📋 Provide a description of the property to help interested parties understand its key features, recent improvements, and standout highlights.
-                                            </strong>
+                                            <strong>📋 Provide a description of the property to help interested parties understand its key features, recent improvements, and standout highlights.</strong>
+                                            <div class="mt-1 text-muted" style="font-weight:normal;">The more details you provide, the better Ask AI can answer visitor questions and the better your listing can be matched with the right buyer.</div>
                                         </div>
                                     </div>
                                 </div>
@@ -16,7 +16,7 @@
                                             @if ($property_type === 'Residential')
                                                 <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
                                                     x-on:input="document.getElementById('seller-desc-counter').textContent = $el.value.length + ' characters'"
-                                                    placeholder="Enter a description of this residential property, including key features, recent renovations, amenities, and standout highlights (e.g., Newly renovated kitchen, Hardwood floors, Large backyard)."></textarea>
+                                                    placeholder="e.g. Beautifully updated 3-bed home with open floor plan, updated kitchen, and large backyard. Close to top-rated schools and minutes from I-75. Seller open to quick close."></textarea>
                                             @elseif ($property_type === 'Commercial')
                                                 <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
                                                     x-on:input="document.getElementById('seller-desc-counter').textContent = $el.value.length + ' characters'"

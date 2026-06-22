@@ -758,8 +758,8 @@
                                 $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent';
                                 $hasFinancialTab = $user_type === 'seller' && in_array($property_type, ['Income', 'Commercial', 'Business']);
                                 if ($user_type === 'seller') {
-                                    $saleTermsIdx        = $hasFinancialTab ? 3 : 2;
-                                    $additionalDetailsIdx = $hasFinancialTab ? 4 : 3;
+                                    $additionalDetailsIdx = $hasFinancialTab ? 3 : 2;
+                                    $saleTermsIdx        = $hasFinancialTab ? 4 : 3;
                                     $brokerCompIdx       = $hasFinancialTab ? 5 : 4;
                                     $taxLegalIdx         = $hasFinancialTab ? 6 : 5;
                                     $docsIdx             = $hasFinancialTab ? 7 : 6;
@@ -768,8 +768,8 @@
                                     $aiIdx               = $hasFinancialTab ? 9 : 8;
                                 } else {
                                     // Non-seller flows (no Services tab)
-                                    $saleTermsIdx        = 2;
-                                    $additionalDetailsIdx = 3;
+                                    $additionalDetailsIdx = 2;
+                                    $saleTermsIdx        = 3;
                                     $brokerCompIdx       = 4;
                                     $taxLegalIdx         = 5;
                                     $docsIdx             = 6;
@@ -811,19 +811,6 @@
                                     </li>
                                     @endif
 
-                                    {{-- Sale Terms --}}
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === $saleTermsIdx ? 'active' : '' }}"
-                                            wire:click="setActiveTab({{ $saleTermsIdx }})"
-                                            id="sale-terms-tab" data-bs-toggle="tab"
-                                            data-bs-target="#sale-terms"
-                                            type="button" role="tab"
-                                            aria-controls="sale-terms"
-                                            aria-selected="{{ $activeTab === $saleTermsIdx ? 'true' : 'false' }}">
-                                            Sale Terms
-                                        </button>
-                                    </li>
-
                                     {{-- Description --}}
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $additionalDetailsIdx ? 'active' : '' }}"
@@ -834,6 +821,19 @@
                                             aria-controls="additional-details"
                                             aria-selected="{{ $activeTab === $additionalDetailsIdx ? 'true' : 'false' }}">
                                             Description
+                                        </button>
+                                    </li>
+
+                                    {{-- Sale Terms --}}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === $saleTermsIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $saleTermsIdx }})"
+                                            id="sale-terms-tab" data-bs-toggle="tab"
+                                            data-bs-target="#sale-terms"
+                                            type="button" role="tab"
+                                            aria-controls="sale-terms"
+                                            aria-selected="{{ $activeTab === $saleTermsIdx ? 'true' : 'false' }}">
+                                            Sale Terms
                                         </button>
                                     </li>
 
@@ -904,26 +904,7 @@
                                         </button>
                                     </li>
                                 @else
-                                    {{-- Non-seller: Sale Terms=2, Services=3, Description=4, Broker Comp=5, Photos=6, Info=7, AI=8 --}}
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === 2 ? 'active' : '' }}"
-                                            wire:click="setActiveTab(2)"
-                                            id="sale-terms-tab" data-bs-toggle="tab"
-                                            data-bs-target="#sale-terms"
-                                            type="button" role="tab"
-                                            aria-controls="sale-terms"
-                                            aria-selected="{{ $activeTab === 2 ? 'true' : 'false' }}">
-                                            @if ($user_type === 'tenant')
-                                                Leasing Terms
-                                            @elseif ($user_type === 'buyer')
-                                                Purchasing Terms
-                                            @elseif ($user_type === 'landlord')
-                                                Lease Terms
-                                            @else
-                                                Sale Terms
-                                            @endif
-                                        </button>
-                                    </li>
+                                    {{-- Non-seller: Description=2, Sale Terms=3, Photos=7, Info=9, AI=8 --}}
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $additionalDetailsIdx ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $additionalDetailsIdx }})"
@@ -933,6 +914,25 @@
                                             aria-controls="additional-details"
                                             aria-selected="{{ $activeTab === $additionalDetailsIdx ? 'true' : 'false' }}">
                                             Description
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === $saleTermsIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $saleTermsIdx }})"
+                                            id="sale-terms-tab" data-bs-toggle="tab"
+                                            data-bs-target="#sale-terms"
+                                            type="button" role="tab"
+                                            aria-controls="sale-terms"
+                                            aria-selected="{{ $activeTab === $saleTermsIdx ? 'true' : 'false' }}">
+                                            @if ($user_type === 'tenant')
+                                                Leasing Terms
+                                            @elseif ($user_type === 'buyer')
+                                                Purchasing Terms
+                                            @elseif ($user_type === 'landlord')
+                                                Lease Terms
+                                            @else
+                                                Sale Terms
+                                            @endif
                                         </button>
                                     </li>
                                     {{-- B7: Broker Compensation tab hidden from client listing form --}}
@@ -1015,21 +1015,6 @@
                                 @endif
                                 @endif
 
-                                <!-- Sale Terms Tab -->
-                                <div class="tab-pane fade {{ $activeTab === $saleTermsIdx ? 'show active' : '' }}" id="sale-terms"
-                                    role="tabpanel" aria-labelledby="sale-terms-tab">
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.offer-listing.offer-tenant-tabs.commission-based.leasing-terms')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.seller-terms')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.purchasing-terms')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.lease-terms')
-                                    @endif
-                                </div>
-
-
                                 <!-- Additional Details Tab -->
                                 <div class="tab-pane fade {{ $activeTab === $additionalDetailsIdx ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
@@ -1042,6 +1027,20 @@
                                         @include('livewire.offer-listing.offer-buyer-tabs.commission-based.additional-details')
                                     @elseif($user_type === 'landlord')
                                         @include('livewire.offer-listing.offer-landlord-tabs.commission-based.additional-details')
+                                    @endif
+                                </div>
+
+                                <!-- Sale Terms Tab -->
+                                <div class="tab-pane fade {{ $activeTab === $saleTermsIdx ? 'show active' : '' }}" id="sale-terms"
+                                    role="tabpanel" aria-labelledby="sale-terms-tab">
+                                    @if ($user_type === 'tenant')
+                                        @include('livewire.offer-listing.offer-tenant-tabs.commission-based.leasing-terms')
+                                    @elseif($user_type === 'seller')
+                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.seller-terms')
+                                    @elseif($user_type === 'buyer')
+                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.purchasing-terms')
+                                    @elseif($user_type === 'landlord')
+                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.lease-terms')
                                     @endif
                                 </div>
 

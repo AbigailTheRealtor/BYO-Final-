@@ -690,7 +690,7 @@
                         @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Broker Compensation & Agency Agreement Terms', 'Description'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Description', 'Purchasing Terms', 'Broker Compensation & Agency Agreement Terms'] as $index => $tab)
                                     @php $tabId = preg_replace('/-+/', '-', rtrim(str_replace(['&', ' '], ['', '-'], strtolower($tab)), '-')); @endphp
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
@@ -744,26 +744,26 @@
 
                                 </div>
 
-                                <!-- Leasing Terms Tab -->
+                                <!-- Description Tab (index 2) -->
                                 <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                                    id="description" role="tabpanel" aria-labelledby="description-tab">
+
+                                    @include('livewire.offer-listing.offer-buyer-tabs.commission-based.additional-details')
+
+                                </div>
+
+                                <!-- Leasing Terms Tab -->
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
                                     id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab">
 
                                     @include('livewire.offer-listing.offer-buyer-tabs.commission-based.purchasing-terms')
                                 </div>
 
-                                <!-- Broker Compensation & Agency Agreement Terms Tab (index 3) -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
+                                <!-- Broker Compensation & Agency Agreement Terms Tab (index 4) -->
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="broker-compensation-agency-agreement-terms" role="tabpanel"
                                     aria-labelledby="broker-compensation-&-agency-agreement-terms-tab">
                                     @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
-                                </div>
-
-                                <!-- Description Tab (index 4) -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
-                                    id="description" role="tabpanel" aria-labelledby="description-tab">
-
-                                    @include('livewire.offer-listing.offer-buyer-tabs.commission-based.additional-details')
-
                                 </div>
 
                                 <!-- AI Knowledge Base Tab (index 5) -->

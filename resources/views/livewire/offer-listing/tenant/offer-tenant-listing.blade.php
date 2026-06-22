@@ -1582,7 +1582,7 @@ $lease_types = [
                     ? 'Sale Terms'
                     : 'Leasing Terms');
                     if ($user_type === 'tenant') {
-                    $restTabs = [$firstRest, 'Pre-Screening', 'Description']; // B7: Broker Compensation removed from client listing form
+                    $restTabs = ['Description', $firstRest, 'Pre-Screening']; // B7: Broker Compensation removed from client listing form
                     } else {
                     $restTabs = [$firstRest, 'Description']; // B7: Broker Compensation removed from client listing form
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
@@ -1673,10 +1673,26 @@ $lease_types = [
                             @endswitch
                         </div>
 
+                        <!-- Additional Details Tab (index 2 for tenant) -->
+
+                        <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                            id="description" role="tabpanel" aria-labelledby="description-tab">
+
+                            @if ($user_type === 'tenant')
+                            @include('livewire.offer-listing.offer-tenant-tabs.commission-based.additional-details')
+                            @elseif($user_type === 'seller')
+                            @include('livewire.offer-listing.offer-seller-tabs.commission-based.additional-details')
+                            @elseif($user_type === 'buyer')
+                            @include('livewire.offer-listing.offer-buyer-tabs.commission-based.additional-details')
+                            @elseif($user_type === 'landlord')
+                            @include('livewire.offer-listing.offer-landlord-tabs.commission-based.additional-details')
+                            @endif
+                        </div>
+
                         <!-- Leasing Terms Tab -->
 
                         @if (in_array($user_type, ['landlord', 'tenant']))
-                        <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                        <div class="tab-pane fade {{ $activeTab === ($user_type === 'tenant' ? 3 : 2) ? 'show active' : '' }}"
                             id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
                             @endif
                             @if ($user_type === 'seller')
@@ -1700,7 +1716,7 @@ $lease_types = [
 
                                 <!-- Conditional Pre-Screening Tab -->
                                 @if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller')
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="pre-screening"
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}" id="pre-screening"
                                     role="tabpanel" aria-labelledby="pre-screening-tab">
                                     @if ($user_type === 'tenant')
                                     @include('livewire.offer-listing.offer-tenant-tabs.commission-based.pre-screening')
@@ -1709,22 +1725,6 @@ $lease_types = [
                                     @endif
                                 </div>
                                 @endif
-
-                                <!-- Additional Details Tab - Adjust index based on user_type -->
-
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
-                                    id="description" role="tabpanel" aria-labelledby="description-tab">
-
-                                    @if ($user_type === 'tenant')
-                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'seller')
-                                    @include('livewire.offer-listing.offer-seller-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'buyer')
-                                    @include('livewire.offer-listing.offer-buyer-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'landlord')
-                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.additional-details')
-                                    @endif
-                                </div>
 
                                 {{-- B7: Broker Compensation panel hidden from client listing form --}}
 

@@ -767,10 +767,9 @@
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @php
-                                    $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Purchasing Terms'];
+                                    $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Description', 'Purchasing Terms'];
                                     // B7: Broker Compensation tab removed from client listing form
-                                    $fullServiceTabs[] = 'Description';
-                                    $additionalDetailsIndex = count($fullServiceTabs) - 1;
+                                    $additionalDetailsIndex = 2;
                                     $aiQuestionsIndex      = count($fullServiceTabs);
                                     $agentCredentialsIndex = count($fullServiceTabs) + 1;
                                 @endphp
@@ -843,7 +842,7 @@
                                 </div>
 
                                 <!-- Leasing Terms Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
                                     id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab">
 
                                     @if ($user_type === 'tenant')
