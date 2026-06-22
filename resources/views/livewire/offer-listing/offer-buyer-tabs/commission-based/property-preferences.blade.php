@@ -1389,38 +1389,43 @@
     </div>
 </div>
 
-{{-- Commute Fields --}}
-<div class="form-group mt-3">
-    <label class="fw-bold">Commute Preferences:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Optionally specify the Buyer's commute destination and maximum acceptable commute time.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="row g-2">
+{{-- Commute Preferences Sub-Section --}}
+<div class="card border-0 bg-light rounded-3 p-3 mt-4 mb-2">
+    <div class="d-flex align-items-center mb-1">
+        <i class="fa-solid fa-route text-primary me-2 fs-5"></i>
+        <h5 class="fw-bold text-primary mb-0">Commute Preferences</h5>
+    </div>
+    <p class="text-muted small mb-3">Tell us your commute so we can score properties by how well they fit your daily routine.</p>
+    <div class="row g-3">
         <div class="col-md-4">
+            <label class="fw-bold form-label mb-1">Work or School ZIP Code</label>
             <div class="input-cover">
                 <input type="text" wire:model.defer="commute_destination_zip"
                     class="form-control has-icon" data-icon="fa-solid fa-map-pin"
-                    placeholder="Enter commute destination ZIP (e.g., 33602)">
+                    placeholder="e.g. 33602">
             </div>
         </div>
         <div class="col-md-4">
+            <label class="fw-bold form-label mb-1">Max Commute Time (minutes)</label>
             <div class="input-cover">
                 <input type="number" wire:model.defer="max_commute_minutes"
                     class="form-control has-icon" data-icon="fa-solid fa-clock"
-                    placeholder="Enter max commute time in minutes (e.g., 30)" min="0">
+                    placeholder="e.g. 30" min="0">
+            </div>
+            <div class="form-text text-muted mt-1">
+                <i class="fa-solid fa-circle-info me-1"></i>15 = short &nbsp;&middot;&nbsp; 30 = typical &nbsp;&middot;&nbsp; 60 = flexible
             </div>
         </div>
         <div class="col-md-4">
+            <label class="fw-bold form-label mb-1">How Will You Commute?</label>
             <div class="input-cover">
                 <select wire:model="commute_mode" class="form-control has-icon" data-icon="fa-solid fa-route">
-                    <option value="">Commute mode</option>
+                    <option value="">Select a mode</option>
                     <option value="Drive">Drive</option>
-                    <option value="Transit">Transit</option>
+                    <option value="Transit">Transit (Bus / Rail)</option>
                     <option value="Walk">Walk</option>
                     <option value="Bike">Bike</option>
-                    <option value="Remote - no commute">Remote - no commute</option>
+                    <option value="Remote - no commute">Remote — no commute</option>
                 </select>
             </div>
         </div>
