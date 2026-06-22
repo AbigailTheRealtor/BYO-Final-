@@ -28,6 +28,48 @@
     $is_other_tenant_pay_visible = is_array($tenant_pays ?? null) && in_array('Other', $tenant_pays ?? []);
     $is_rent_include_visible = is_array($this->rent_includes ?? null) && in_array('Other', $this->rent_includes ?? []);
     $is_update_lease_term_option_visible = is_array($desired_lease_length ?? null) && in_array('Other', $desired_lease_length ?? []);
+
+    $tenantPaysIconMap = [
+        'Association Fees'        => 'fa-solid fa-building-columns',
+        'Capital Expenses'        => 'fa-solid fa-money-bill-trend-up',
+        'Common Area Maintenance' => 'fa-solid fa-broom',
+        'Condominium Fees'        => 'fa-solid fa-building',
+        'Electricity'             => 'fa-solid fa-bolt',
+        'Gas'                     => 'fa-solid fa-fire-flame-curved',
+        'Liability Insurance'     => 'fa-solid fa-scale-balanced',
+        'Parking Fee'             => 'fa-solid fa-square-parking',
+        'Pro-Rated'               => 'fa-solid fa-calculator',
+        'Property Insurance'      => 'fa-solid fa-shield-halved',
+        'Property Taxes'          => 'fa-solid fa-landmark',
+        'Reserves'                => 'fa-solid fa-piggy-bank',
+        'Sewer'                   => 'fa-solid fa-water-ladder',
+        'Trash Collection'        => 'fa-solid fa-trash-can',
+        'Water'                   => 'fa-solid fa-droplet',
+        'None '                   => 'fa-solid fa-ban',
+        'Other'                   => 'fa-solid fa-ellipsis',
+    ];
+    $rentIncludesIconMap = [
+        'Cable TV'         => 'fa-solid fa-tv',
+        'Electricity'      => 'fa-solid fa-bolt',
+        'Gas'              => 'fa-solid fa-fire-flame-curved',
+        'Grounds Care'     => 'fa-solid fa-leaf',
+        'Insurance'        => 'fa-solid fa-shield-halved',
+        'Internet'         => 'fa-solid fa-wifi',
+        'Laundry'          => 'fa-solid fa-shirt',
+        'Management'       => 'fa-solid fa-user-tie',
+        'Pest Control'     => 'fa-solid fa-bug',
+        'Pool Maintenance' => 'fa-solid fa-person-swimming',
+        'Recreational'     => 'fa-solid fa-dumbbell',
+        'Repairs'          => 'fa-solid fa-wrench',
+        'Security'         => 'fa-solid fa-shield',
+        'Sewer'            => 'fa-solid fa-water-ladder',
+        'Taxes'            => 'fa-solid fa-file-invoice-dollar',
+        'Telephone'        => 'fa-solid fa-phone',
+        'Trash Collection' => 'fa-solid fa-trash-can',
+        'Water'            => 'fa-solid fa-droplet',
+        'None'             => 'fa-solid fa-ban',
+        'Other'            => 'fa-solid fa-ellipsis',
+    ];
 @endphp
 <!-- Section Heading -->
 <h3>Leasing Terms</h3>
@@ -875,41 +917,49 @@
     @endif
 @endif --}}
 @if ($property_type === 'Commercial Property')
-    <div class="form-group" wire:ignore wire:key="landlord-tenant-pays-group">
+    <div class="form-group" wire:key="landlord-tenant-pays-checklist">
         <label class="fw-bold">Tenant Pays:</label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select any expenses or responsibilities the Tenant is required to pay under the lease terms.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover has-select-icon" wire:ignore>
-            <select id="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-user" data-placeholder="Select" multiple>
-                @foreach ($tenantPays as $row_pt)
-                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->tenant_pays ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
+        <div x-data="{
+            selected: $wire.entangle('tenant_pays').defer,
+            toggle(val) {
+                let arr = Array.isArray(this.selected) ? [...this.selected] : [];
+                let idx = arr.indexOf(val);
+                if (idx === -1) {
+                    arr.push(val);
+                } else {
+                    arr.splice(idx, 1);
+                    if (val === 'Other') { $wire.set('other_tenant_pays', '', false); }
+                }
+                this.selected = arr;
+            },
+            isSelected(val) { return Array.isArray(this.selected) && this.selected.indexOf(val) !== -1; }
+        }">
+            <div class="utility-checklist-grid mt-2">
+                @foreach ($tenantPays as $option)
+                    @php $optName = $option['name']; @endphp
+                    <div class="utility-checklist-card"
+                        :class="{ 'utility-selected': isSelected('{{ addslashes($optName) }}') }"
+                        @click="toggle('{{ addslashes($optName) }}')">
+                        <span class="utility-checklist-icon">
+                            <i class="{{ $tenantPaysIconMap[$optName] ?? 'fa-solid fa-circle-dot' }}"></i>
+                        </span>
+                        <span class="utility-checklist-label">{{ $optName }}</span>
+                    </div>
                 @endforeach
-            </select>
+            </div>
+            <div class="form-group mt-2" id="other_tenant_pays_wrapper" x-show="isSelected('Other')" style="display: none;">
+                <div class="input-cover">
+                    <input type="text" wire:model="other_tenant_pays" class="form-control has-icon"
+                        data-icon="fa-solid fa-ellipsis"
+                        placeholder="Enter what tenant pays (e.g., Gas, Electric, Internet)">
+                </div>
+            </div>
         </div>
     </div>
-
-    {{-- <div class="form-group tenant_pays_other d-none"> --}}
-    <div class="form-group mt-2 tenant_pays_other_wrapper" id="other_tenant_pays_wrapper"
-        style="display: {{ $is_other_tenant_pay_visible ? 'block' : 'none' }}">
-        <div class="input-cover">
-            <input type="text" wire:model="other_tenant_pays" class="form-control has-icon"
-                data-icon="fa-solid fa-user"
-                placeholder="Enter what tenant pays (e.g., Gas, Electric, Internet)">
-        </div>
-    </div>
-
-    {{-- <div class="form-group mt-2 tenant_pays_other_wrapper"
-                style="display: {{ $is_other_tenant_pay_visible ? 'block' : 'none' }}">
-<label class="fw-bold">Please specify other expense paid by Tenant:</label>
-<div class="input-cover">
-    <input type="text" wire:model="tenant_pays_other" class="form-control has-icon"
-        data-icon="fa-solid fa-pencil" placeholder="Enter other expense paid by Tenant (e.g., HVAC maintenance)">
-</div>
-</div> --}}
 
     <div class="form-group" wire:ignore wire:key="landlord-owner-pays-group">
         <label class="fw-bold">Owner Pays:</label>
@@ -1542,31 +1592,47 @@
 </div>
 
 @if ($property_type === 'Residential Property')
-    <div class="form-group" wire:ignore wire:key="landlord-rent-includes-group">
+    <div class="form-group" wire:key="landlord-rent-includes-checklist">
         <label class="fw-bold">Rent Includes:</label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select any utilities or services included in the rent.">
             <i class="fa-solid fa-circle-info"></i>
-
         </span>
-        <div class="input-cover has-select-icon" wire:ignore>
-            <select id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
-                data-icon="fa-solid fa-receipt" data-placeholder="Select">
-                @foreach ($rent_includes as $row_pt)
-                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->rent_includes ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
+        <div x-data="{
+            selected: $wire.entangle('rent_includes').defer,
+            toggle(val) {
+                let arr = Array.isArray(this.selected) ? [...this.selected] : [];
+                let idx = arr.indexOf(val);
+                if (idx === -1) {
+                    arr.push(val);
+                } else {
+                    arr.splice(idx, 1);
+                    if (val === 'Other') { $wire.set('other_rent_include', '', false); }
+                }
+                this.selected = arr;
+            },
+            isSelected(val) { return Array.isArray(this.selected) && this.selected.indexOf(val) !== -1; }
+        }">
+            <div class="utility-checklist-grid mt-2">
+                @foreach ($rent_includes as $option)
+                    @php $optName = $option['name']; @endphp
+                    <div class="utility-checklist-card"
+                        :class="{ 'utility-selected': isSelected('{{ addslashes($optName) }}') }"
+                        @click="toggle('{{ addslashes($optName) }}')">
+                        <span class="utility-checklist-icon">
+                            <i class="{{ $rentIncludesIconMap[$optName] ?? 'fa-solid fa-circle-dot' }}"></i>
+                        </span>
+                        <span class="utility-checklist-label">{{ $optName }}</span>
+                    </div>
                 @endforeach
-            </select>
-        </div>
-    </div>
-
-    <div class="form-group mt-2 other_rent_include other_rent_input_wrapper" id="other_rent_includes_wrapper"
-        style="display: {{ $is_rent_include_visible ? 'block' : 'none' }}">
-        {{-- <label class="fw-bold">Please specify other included items:</label> --}}
-        <div class="input-cover">
-            <input type="text" wire:model="other_rent_include" class="form-control has-icon"
-                data-icon="fa-solid fa-receipt"
-                placeholder="Enter what rent includes (e.g., Water, Trash, Cable)">
+            </div>
+            <div class="form-group mt-2" id="other_rent_includes_wrapper" x-show="isSelected('Other')" style="display: none;">
+                <div class="input-cover">
+                    <input type="text" wire:model="other_rent_include" class="form-control has-icon"
+                        data-icon="fa-solid fa-receipt"
+                        placeholder="Enter what rent includes (e.g., Water, Trash, Cable)">
+                </div>
+            </div>
         </div>
     </div>
 @endif

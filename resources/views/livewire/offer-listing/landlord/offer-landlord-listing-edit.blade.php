@@ -222,6 +222,56 @@
             color: #0d6efd !important;
         }
 
+        /* Utility checklist cards for tenant_pays and rent_includes */
+        .utility-checklist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 8px;
+        }
+        .utility-checklist-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 8px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+            background: #fff;
+            min-height: 72px;
+            user-select: none;
+        }
+        .utility-checklist-card:hover {
+            border-color: #adb5bd;
+            background: #f8f9fa;
+        }
+        .utility-checklist-card.utility-selected {
+            border-color: #0d6efd;
+            background: #e8f0fe;
+            box-shadow: 0 0 0 1px #0d6efd;
+        }
+        .utility-checklist-icon {
+            font-size: 1.25rem;
+            margin-bottom: 5px;
+            color: #6c757d;
+            transition: color 0.15s ease;
+        }
+        .utility-checklist-card.utility-selected .utility-checklist-icon {
+            color: #0d6efd;
+        }
+        .utility-checklist-label {
+            font-size: 0.72rem;
+            font-weight: 500;
+            line-height: 1.2;
+            color: #495057;
+        }
+        .utility-checklist-card.utility-selected .utility-checklist-label {
+            color: #0d6efd;
+            font-weight: 600;
+        }
+
         @media (max-width: 768px) {
             .status-text {
                 font-size: 0.9rem;
@@ -736,7 +786,7 @@ $leasing_space = [
                                         ['name' => 'Trash Collection'],
                                         ['name' => 'Water'],
                                         ['name' => 'None'],
-                                        // ['name' => 'Other'],
+                                        ['name' => 'Other'],
                                     ];
 
 
@@ -1852,24 +1902,6 @@ $tenantPays = [
             attachDesiredRentalAmountDropdownListener();
 
 
-            if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
-                $('#rent_includes').select2({
-                    placeholder: "Select rent",
-                    allowClear: true,
-                    closeOnSelect: false,
-                    width: '100%',
-                });
-                $('#rent_includes').on('change', function(e) {
-                    let selectedValues = $(this).val() || [];
-                    @this.set('rent_includes', selectedValues, true);
-                    var $riW = $('#other_rent_includes_wrapper');
-                    if ($riW.length) $riW.css('display', selectedValues.includes('Other') ? 'block' : 'none');
-                });
-                var _riSaved = @json($this->rent_includes ?? []);
-                if (!Array.isArray(_riSaved)) _riSaved = [];
-                if (_riSaved.length) { $('#rent_includes').val(_riSaved).trigger('change'); }
-            }
-
             if ($('#pet_species_allowed').length && !$('#pet_species_allowed').hasClass('select2-hidden-accessible')) {
                 $('#pet_species_allowed').select2({
                     placeholder: "Select",
@@ -1931,25 +1963,6 @@ $tenantPays = [
                 var _tolSaved = @json($this->terms_of_lease ?? []);
                 if (!Array.isArray(_tolSaved)) _tolSaved = [];
                 if (_tolSaved.length) { $('#terms_of_lease').val(_tolSaved).trigger('change'); }
-            }
-
-            if ($('#tenant_pays').length && !$('#tenant_pays').hasClass('select2-hidden-accessible')) {
-                $('#tenant_pays').select2({
-                    placeholder: "Select tenant pays",
-                    allowClear: true,
-                    closeOnSelect: false,
-                    width: '100%',
-                });
-                $('#tenant_pays').on('change', function(e) {
-                    let selectedValues = $(this).val() || [];
-                    @this.set('tenant_pays', selectedValues, true);
-                    @this.call('updateTenantPays', selectedValues);
-                    var $w = $('#other_tenant_pays_wrapper');
-                    if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
-                });
-                var _tpSaved = @json($this->tenant_pays ?? []);
-                if (!Array.isArray(_tpSaved)) _tpSaved = [];
-                if (_tpSaved.length) { $('#tenant_pays').val(_tpSaved).trigger('change'); }
             }
 
             if ($('#owner_pays').length && !$('#owner_pays').hasClass('select2-hidden-accessible')) {
@@ -2878,8 +2891,6 @@ $tenantPays = [
                 { selectId: 'electrical_service',                    companionId: 'other_electrical_service_wrapper',            block: true },
                 { selectId: 'building_features',                     companionId: 'other_building_features_wrapper',             block: true },
                 { selectId: 'garage_parking_spaces_option_landlord', companionId: 'other_garage_parking_spaces_option_landlord', block: true },
-                { selectId: 'rent_includes',                         companionId: 'other_rent_includes_wrapper',                 block: true },
-                { selectId: 'tenant_pays',                           companionId: 'other_tenant_pays_wrapper',                   block: true },
                 { selectId: 'owner_pays',                            companionId: 'other_owner_pays_wrapper',                    block: true },
                 { selectId: 'association_fee_includes',              companionId: 'hoa-fee-includes-other-section',              block: true },
                 { selectId: 'association_amenities',                 companionId: 'hoa-amenities-other-section',                 block: true },

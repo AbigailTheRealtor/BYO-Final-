@@ -256,6 +256,56 @@
 
         .pac-container { z-index: 99999 !important; }
 
+        /* Utility checklist cards for tenant_pays and rent_includes */
+        .utility-checklist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 8px;
+        }
+        .utility-checklist-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 8px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+            background: #fff;
+            min-height: 72px;
+            user-select: none;
+        }
+        .utility-checklist-card:hover {
+            border-color: #adb5bd;
+            background: #f8f9fa;
+        }
+        .utility-checklist-card.utility-selected {
+            border-color: #0d6efd;
+            background: #e8f0fe;
+            box-shadow: 0 0 0 1px #0d6efd;
+        }
+        .utility-checklist-icon {
+            font-size: 1.25rem;
+            margin-bottom: 5px;
+            color: #6c757d;
+            transition: color 0.15s ease;
+        }
+        .utility-checklist-card.utility-selected .utility-checklist-icon {
+            color: #0d6efd;
+        }
+        .utility-checklist-label {
+            font-size: 0.72rem;
+            font-weight: 500;
+            line-height: 1.2;
+            color: #495057;
+        }
+        .utility-checklist-card.utility-selected .utility-checklist-label {
+            color: #0d6efd;
+            font-weight: 600;
+        }
+
     </style>
 @endpush
 
@@ -762,7 +812,7 @@
         ['name' => 'Trash Collection'],
         ['name' => 'Water'],
         ['name' => 'None'],
-        // ['name' => 'Other'],
+        ['name' => 'Other'],
     ];
 
     $termLease = [
@@ -1330,10 +1380,8 @@
                 var select2Fields = {
                     'appliances': data.appliances || [],
                     'offered_financing': data.offered_financing || [],
-                    'tenant_pays': data.tenant_pays || [],
                     'owner_pays': data.owner_pays || [],
                     'terms_of_lease': data.terms_of_lease || [],
-                    'rent_includes': data.rent_includes || [],
                     'desired_lease_length': data.desired_lease_length || [],
                     'view_preference': data.view_preference || [],
                     'non_negotiable_amenities': data.non_negotiable_amenities || [],
@@ -1434,10 +1482,8 @@
                 var regularFields = {
                     'appliances': '#appliances',
                     'offered_financing': '#offered_financing',
-                    'tenant_pays': '#tenant_pays',
                     'owner_pays': '#owner_pays',
                     'terms_of_lease': '#terms_of_lease',
-                    'rent_includes': '#rent_includes',
                     'view_preference': '#view_preference',
                     'non_negotiable_amenities': '#non_negotiable_amenities',
                 };
@@ -2133,31 +2179,6 @@
             initAppliancesSelect2();
 
             function initLeaseMetaSelect2() {
-                if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
-                    $('#rent_includes').select2({
-                        placeholder: "Select",
-                        allowClear: true,
-                        width: '100%',
-                        closeOnSelect: false,
-                    });
-                    var _preRI = @json($this->rent_includes ?? []);
-                    if (_preRI.length > 0) {
-                        $('#rent_includes').val(_preRI).trigger('change');
-                    }
-                    $('#rent_includes').on('change', function(e) {
-                        let selectedValues = $(this).val() || [];
-                        @this.set('rent_includes', selectedValues, true);
-                        @this.call('updateRentIncludes', selectedValues);
-                        var $w = $('#other_rent_includes_wrapper');
-                        if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
-                    });
-                }
-                if ($('#rent_includes').length) {
-                    var _riVals = $('#rent_includes').val() || [];
-                    var $riW = $('#other_rent_includes_wrapper');
-                    if ($riW.length) $riW.css('display', _riVals.includes('Other') ? 'block' : 'none');
-                }
-
                 if ($('#terms_of_lease').length && !$('#terms_of_lease').hasClass('select2-hidden-accessible')) {
                     $('#terms_of_lease').select2({
                         placeholder: "Select",
@@ -2192,31 +2213,6 @@
                             _tolContainer.classList.add('d-none');
                         }
                     }
-                }
-
-                if ($('#tenant_pays').length && !$('#tenant_pays').hasClass('select2-hidden-accessible')) {
-                    $('#tenant_pays').select2({
-                        placeholder: "Select",
-                        allowClear: true,
-                        width: '100%',
-                        closeOnSelect: false,
-                    });
-                    var _preTP = @json($this->tenant_pays ?? []);
-                    if (_preTP.length > 0) {
-                        $('#tenant_pays').val(_preTP).trigger('change');
-                    }
-                    $('#tenant_pays').on('change', function(e) {
-                        let selectedValues = $(this).val() || [];
-                        @this.set('tenant_pays', selectedValues, true);
-                        @this.call('updateTenantPays', selectedValues);
-                        var $w = $('#other_tenant_pays_wrapper');
-                        if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
-                    });
-                }
-                if ($('#tenant_pays').length) {
-                    var _tpVals = $('#tenant_pays').val() || [];
-                    var $tpW = $('#other_tenant_pays_wrapper');
-                    if ($tpW.length) $tpW.css('display', _tpVals.includes('Other') ? 'block' : 'none');
                 }
 
                 if ($('#owner_pays').length && !$('#owner_pays').hasClass('select2-hidden-accessible')) {
@@ -2370,9 +2366,7 @@
             window.syncLandlordSelect2BeforeSave = function() {
                 var selects2Map = {
                     'appliances': '#appliances',
-                    'rent_includes': '#rent_includes',
                     'terms_of_lease': '#terms_of_lease',
-                    'tenant_pays': '#tenant_pays',
                     'owner_pays': '#owner_pays',
                     'non_negotiable_amenities': '#non_negotiable_amenities',
                     'property_items': '#property_items',
