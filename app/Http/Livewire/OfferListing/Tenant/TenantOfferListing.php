@@ -22,6 +22,7 @@ use App\Models\UsCounty;
 use App\Models\UsCity;
 use App\Support\TenantServicesCatalog;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
+use App\Services\WizardEventService;
 
 class TenantOfferListing extends Component
 {
@@ -2459,6 +2460,15 @@ class TenantOfferListing extends Component
     public function setActiveTab($index)
     {
         $this->activeTab = $index;
+        app(WizardEventService::class)->record(
+            (string) $this->user_type,
+            $this->listingId ? (int) $this->listingId : null,
+            auth()->id() ? (int) auth()->id() : null,
+            'tab_visited',
+            'tab_' . $index,
+            'create',
+            session()->getId()
+        );
     }
     public function updatedOtherServicesEnabled($enabled): void
     {
@@ -3092,6 +3102,15 @@ class TenantOfferListing extends Component
                 $auction->save();
                 $this->listingId = $auction->id;
                 $this->saveAllMetadata($auction);
+                app(WizardEventService::class)->record(
+                    (string) $this->user_type,
+                    $this->listingId ? (int) $this->listingId : null,
+                    auth()->id() ? (int) auth()->id() : null,
+                    'save_draft',
+                    'tab_' . $this->activeTab,
+                    'create',
+                    session()->getId()
+                );
                 session()->flash('success', 'Draft updated successfully.');
                 return redirect()->route('offer.listing.tenant.edit', ['auctionId' => $this->listingId, 'user_type' => $this->user_type]);
             }
@@ -3145,6 +3164,15 @@ class TenantOfferListing extends Component
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently($this->user_type, $this->listingId);
 
+            app(WizardEventService::class)->record(
+                (string) $this->user_type,
+                $this->listingId ? (int) $this->listingId : null,
+                auth()->id() ? (int) auth()->id() : null,
+                'save_draft',
+                'tab_' . $this->activeTab,
+                'create',
+                session()->getId()
+            );
             session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
             return redirect()->route('offer.listing.tenant.edit', ['auctionId' => $this->listingId, 'user_type' => $this->user_type]);
         } catch (\Exception $e) {
@@ -4950,6 +4978,15 @@ class TenantOfferListing extends Component
                 'is_approved' => $auction->is_approved ?? 'N/A',
             ]);
 
+            app(WizardEventService::class)->record(
+                (string) $this->user_type,
+                $this->listingId ? (int) $this->listingId : null,
+                auth()->id() ? (int) auth()->id() : null,
+                'submit',
+                'tab_' . $this->activeTab,
+                'create',
+                session()->getId()
+            );
             session()->flash('success', 'Listing submitted successfully!');
 
             // Redirect to the correct detail page based on user_type

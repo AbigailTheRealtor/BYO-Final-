@@ -18,7 +18,7 @@ use App\Models\UsState;
 use App\Models\UsCounty;
 use App\Models\UsCity;
 use App\Support\TenantServicesCatalog;
-
+use App\Services\WizardEventService;
 
 class TenantOfferListingEdit extends Component
 {
@@ -2209,6 +2209,15 @@ class TenantOfferListingEdit extends Component
     public function setActiveTab($index)
     {
         $this->activeTab = $index;
+        app(WizardEventService::class)->record(
+            (string) $this->user_type,
+            $this->listingId ? (int) $this->listingId : null,
+            auth()->id() ? (int) auth()->id() : null,
+            'tab_visited',
+            'tab_' . $index,
+            'edit',
+            session()->getId()
+        );
     }
 
 
@@ -3797,6 +3806,15 @@ class TenantOfferListingEdit extends Component
 
             if (!$this->_isDraftSave) {
                 // Final submit — flash success and redirect to listing view.
+                app(WizardEventService::class)->record(
+                    (string) $this->user_type,
+                    $this->auctionId ? (int) $this->auctionId : null,
+                    auth()->id() ? (int) auth()->id() : null,
+                    'submit',
+                    'tab_' . $this->activeTab,
+                    'edit',
+                    session()->getId()
+                );
                 session()->flash('success', 'Listing updated successfully!');
 
                 $url = route('offer.listing.tenant.view', ['id' => $this->auctionId]);
@@ -3806,6 +3824,15 @@ class TenantOfferListingEdit extends Component
                 return redirect()->to($url);
             } else {
                 // Draft save — stay on the edit page and emit a toast event.
+                app(WizardEventService::class)->record(
+                    (string) $this->user_type,
+                    $this->auctionId ? (int) $this->auctionId : null,
+                    auth()->id() ? (int) auth()->id() : null,
+                    'save_draft',
+                    'tab_' . $this->activeTab,
+                    'edit',
+                    session()->getId()
+                );
                 $this->dispatchBrowserEvent('draft-saved', ['message' => 'Draft saved successfully!']);
             }
         } catch (\Exception $e) {

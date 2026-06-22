@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
+use App\Services\WizardEventService;
 
 class SellerOfferListing extends Component
 {
@@ -1879,6 +1880,15 @@ class SellerOfferListing extends Component
     public function setActiveTab($index)
     {
         $this->activeTab = $index;
+        app(WizardEventService::class)->record(
+            (string) $this->user_type,
+            $this->listingId ? (int) $this->listingId : null,
+            auth()->id() ? (int) auth()->id() : null,
+            'tab_visited',
+            'tab_' . $index,
+            'create',
+            session()->getId()
+        );
     }
 
     public function updatedVideoLink($value)
@@ -2459,6 +2469,15 @@ class SellerOfferListing extends Component
                 $auction->save();
                 $this->listingId = $auction->id;
                 $this->saveAllMetadata($auction);
+                app(WizardEventService::class)->record(
+                    (string) $this->user_type,
+                    $this->listingId ? (int) $this->listingId : null,
+                    auth()->id() ? (int) auth()->id() : null,
+                    'save_draft',
+                    'tab_' . $this->activeTab,
+                    'create',
+                    session()->getId()
+                );
                 session()->flash('success', 'Draft updated successfully.');
                 return redirect()->route('offer.listing.seller.edit', ['auctionId' => $this->listingId]);
             }
@@ -2502,6 +2521,15 @@ class SellerOfferListing extends Component
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('seller', $this->listingId);
 
+            app(WizardEventService::class)->record(
+                (string) $this->user_type,
+                $this->listingId ? (int) $this->listingId : null,
+                auth()->id() ? (int) auth()->id() : null,
+                'save_draft',
+                'tab_' . $this->activeTab,
+                'create',
+                session()->getId()
+            );
             session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
             return redirect()->route('offer.listing.seller.edit', ['auctionId' => $this->listingId]);
         } catch (\Exception $e) {
@@ -4372,6 +4400,15 @@ class SellerOfferListing extends Component
                 'is_sold' => $auction->is_sold ?? 'N/A',
             ]);
 
+            app(WizardEventService::class)->record(
+                (string) $this->user_type,
+                $this->listingId ? (int) $this->listingId : null,
+                auth()->id() ? (int) auth()->id() : null,
+                'submit',
+                'tab_' . $this->activeTab,
+                'create',
+                session()->getId()
+            );
             session()->flash('success', 'Listing submitted successfully.');
 
             $url = route('offer.listing.seller.view', ['id' => $auction->id]);

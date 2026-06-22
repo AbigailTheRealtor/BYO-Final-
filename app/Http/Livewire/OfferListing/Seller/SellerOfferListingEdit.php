@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Services\WizardEventService;
 
 class SellerOfferListingEdit extends Component
 {
@@ -1565,6 +1566,15 @@ class SellerOfferListingEdit extends Component
     public function setActiveTab($index)
     {
         $this->activeTab = $index;
+        app(WizardEventService::class)->record(
+            (string) $this->user_type,
+            $this->listingId ? (int) $this->listingId : null,
+            auth()->id() ? (int) auth()->id() : null,
+            'tab_visited',
+            'tab_' . $index,
+            'edit',
+            session()->getId()
+        );
     }
 
    
@@ -2167,6 +2177,15 @@ class SellerOfferListingEdit extends Component
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('seller', $this->listingId);
 
+            app(WizardEventService::class)->record(
+                (string) $this->user_type,
+                $this->listingId ? (int) $this->listingId : null,
+                auth()->id() ? (int) auth()->id() : null,
+                'save_draft',
+                'tab_' . $this->activeTab,
+                'edit',
+                session()->getId()
+            );
             session()->flash('success', 'Draft saved successfully.');
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving draft: ' . $e->getMessage());
@@ -2232,6 +2251,15 @@ class SellerOfferListingEdit extends Component
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('seller', $this->listingId);
 
+            app(WizardEventService::class)->record(
+                (string) $this->user_type,
+                $this->listingId ? (int) $this->listingId : null,
+                auth()->id() ? (int) auth()->id() : null,
+                'save_draft',
+                'tab_' . $this->activeTab,
+                'edit',
+                session()->getId()
+            );
             session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
             return redirect()->route('offer.listing.seller.edit', ['auctionId' => $this->listingId]);
         } catch (\Exception $e) {
@@ -3976,6 +4004,15 @@ class SellerOfferListingEdit extends Component
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('seller', $this->listingId);
 
+            app(WizardEventService::class)->record(
+                (string) $this->user_type,
+                $this->listingId ? (int) $this->listingId : null,
+                auth()->id() ? (int) auth()->id() : null,
+                'submit',
+                'tab_' . $this->activeTab,
+                'edit',
+                session()->getId()
+            );
             if ($wasDraft) {
                 session()->flash('success', 'Listing submitted successfully.');
                 return redirect()->route('offer.listing.seller.view', ['id' => $auction->id]);

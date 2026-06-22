@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
+use App\Services\WizardEventService;
 
 class LandlordOfferListing extends Component
 {
@@ -1676,6 +1677,15 @@ class LandlordOfferListing extends Component
     public function setActiveTab($index)
     {
         $this->activeTab = $index;
+        app(WizardEventService::class)->record(
+            (string) $this->user_type,
+            $this->listingId ? (int) $this->listingId : null,
+            auth()->id() ? (int) auth()->id() : null,
+            'tab_visited',
+            'tab_' . $index,
+            'create',
+            session()->getId()
+        );
     }
 
     public function render()
@@ -2301,6 +2311,15 @@ class LandlordOfferListing extends Component
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', $this->listingId);
 
+            app(WizardEventService::class)->record(
+                (string) $this->user_type,
+                $this->listingId ? (int) $this->listingId : null,
+                auth()->id() ? (int) auth()->id() : null,
+                'save_draft',
+                'tab_' . $this->activeTab,
+                'create',
+                session()->getId()
+            );
             session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
             return redirect()->route('offer.listing.landlord.edit', ['auctionId' => $this->listingId]);
         } catch (\Exception $e) {
@@ -4100,6 +4119,15 @@ class LandlordOfferListing extends Component
                 'is_sold' => $auction->is_sold,
             ]);
 
+            app(WizardEventService::class)->record(
+                (string) $this->user_type,
+                $this->listingId ? (int) $this->listingId : null,
+                auth()->id() ? (int) auth()->id() : null,
+                'submit',
+                'tab_' . $this->activeTab,
+                'create',
+                session()->getId()
+            );
             session()->flash('success', 'Listing submitted successfully!');
 
             $url = route('offer.listing.landlord.view', ['id' => $auction->id]);
