@@ -10,12 +10,16 @@ use Illuminate\Console\Command;
 /**
  * ldna:audit-listing — dev-only diagnostic dump
  *
- * Reads the stored PropertyLocationDna record, all PropertyLocationPoi rows,
- * and the latest PropertyLocationDnaAudit entry for a given listing and
- * prints them as structured JSON to stdout.
+ * Reads the stored PropertyLocationDna record, all PropertyLocationPoi rows
+ * (all candidates, all ranks, grouped by category), and the latest
+ * PropertyLocationDnaAudit entry for a given listing and prints them as
+ * structured JSON to stdout.
  *
  * This command is read-only and never triggers the pipeline or any API call.
  * It is intended for internal auditing and is not accessible via any route.
+ *
+ * v2 update (task #3110): POI rows are now grouped by poi_category and ordered
+ * by rank within each group, so all stored candidates per category are visible.
  *
  * Usage:
  *   php artisan ldna:audit-listing {listingId}
@@ -35,7 +39,7 @@ class LdnaAuditListing extends Command
         {listingId              : The listing primary key to audit}
         {--listing-type=        : Optional listing_type filter (e.g. seller_agent, landlord_agent, seller, landlord). Omit to return all types for this ID.}';
 
-    protected $description = '[DEV-ONLY] Dump raw Location DNA payload (DNA record, POIs, latest audit entry) for one listing as JSON';
+    protected $description = '[DEV-ONLY] Dump raw Location DNA payload (DNA record, all POI candidates by rank, latest audit entry) for one listing as JSON';
 
     public function handle(): int
     {
@@ -60,13 +64,32 @@ class LdnaAuditListing extends Command
         foreach ($dnaRecords as $dnaRecord) {
             $type = $dnaRecord->listing_type;
 
-            // --- POI rows ---
+            // --- POI rows: all candidates ordered by category then rank ---
             $pois = PropertyLocationPoi::where('listing_type', $type)
                 ->where('listing_id', $listingId)
                 ->orderBy('poi_category')
-                ->orderBy('distance_miles')
-                ->get()
-                ->toArray();
+                ->orderBy('rank')
+                ->get();
+
+            // Group by category so all ranked candidates are visible per category
+            $poisByCategoryRaw = [];
+            foreach ($pois as $poi) {
+                $cat = $poi->poi_category;
+                if (! isset($poisByCategoryRaw[$cat])) {
+                    $poisByCategoryRaw[$cat] = [];
+                }
+                $poisByCategoryRaw[$cat][] = $poi->toArray();
+            }
+
+            // Build summary per category (count, statuses)
+            $categoryStats = [];
+            foreach ($poisByCategoryRaw as $cat => $catPois) {
+                $categoryStats[$cat] = [
+                    'candidate_count' => count($catPois),
+                    'statuses'        => array_count_values(array_column($catPois, 'status')),
+                    'has_rank_1'      => count(array_filter($catPois, fn($p) => ($p['rank'] ?? null) == 1)) > 0,
+                ];
+            }
 
             // --- Latest audit entry (one row) ---
             $latestAudit = PropertyLocationDnaAudit::where('listing_type', $type)
@@ -76,15 +99,18 @@ class LdnaAuditListing extends Command
 
             $payload[] = [
                 'meta' => [
-                    'command'      => 'ldna:audit-listing',
-                    'listing_type' => $type,
-                    'listing_id'   => $listingId,
-                    'generated_at' => now()->toIso8601String(),
+                    'command'               => 'ldna:audit-listing',
+                    'listing_type'          => $type,
+                    'listing_id'            => $listingId,
+                    'generated_at'          => now()->toIso8601String(),
+                    'total_poi_rows'        => $pois->count(),
+                    'total_poi_categories'  => count($poisByCategoryRaw),
                 ],
-                'property_location_dna' => $dnaRecord->toArray(),
-                'property_location_pois' => [
-                    'count' => count($pois),
-                    'rows'  => $pois,
+                'property_location_dna'             => $dnaRecord->toArray(),
+                'property_location_pois_by_category' => [
+                    'category_count'  => count($poisByCategoryRaw),
+                    'category_stats'  => $categoryStats,
+                    'categories'      => $poisByCategoryRaw,
                 ],
                 'latest_property_location_dna_audit' => $latestAudit?->toArray(),
             ];

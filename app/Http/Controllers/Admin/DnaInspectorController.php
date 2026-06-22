@@ -424,7 +424,7 @@ class DnaInspectorController extends Controller
             ? PropertyLocationPoi::where('listing_type', $listingType)
                 ->where('listing_id', $listingId)
                 ->orderBy('poi_category')
-                ->orderBy('distance_miles')
+                ->orderBy('rank')
                 ->get()
             : collect();
 

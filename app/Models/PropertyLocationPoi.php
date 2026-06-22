@@ -12,6 +12,7 @@ class PropertyLocationPoi extends Model
         'listing_type',
         'listing_id',
         'poi_category',
+        'rank',
         'poi_subtype',
         'poi_name',
         'poi_address',
@@ -20,6 +21,9 @@ class PropertyLocationPoi extends Model
         'source_lat',
         'source_lng',
         'distance_miles',
+        'rating',
+        'user_ratings_total',
+        'types_json',
         'travel_time_minutes',
         'data_source',
         'status',
@@ -28,6 +32,10 @@ class PropertyLocationPoi extends Model
     ];
 
     protected $casts = [
-        'calculated_at' => 'datetime',
+        'calculated_at'      => 'datetime',
+        'types_json'         => 'array',
+        'rating'             => 'float',
+        'user_ratings_total' => 'integer',
+        'rank'               => 'integer',
     ];
 }

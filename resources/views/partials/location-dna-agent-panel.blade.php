@@ -55,7 +55,7 @@ use App\Presenters\LocationDnaPresenter;
                     <button type="submit" class="btn btn-sm btn-primary"
                             style="background-color:#0d6efd;border-color:#0d6efd;color:#fff;">
                         <i class="fa-solid fa-arrow-rotate-right me-1"></i>
-                        {{ $locationDna ? 'Regenerate Location DNA' : 'Regenerate Location DNA' }}
+                        {{ $locationDna ? 'Refresh Location DNA' : 'Generate Location DNA' }}
                     </button>
                 </form>
             </div>
@@ -68,10 +68,14 @@ use App\Presenters\LocationDnaPresenter;
 
         @if($locationDna)
         @php
-            $narrative   = LocationDnaPresenter::locationNarrative($locationDna);
-            $labels      = LocationDnaPresenter::lifestyleLabels($locationDna);
-            $scores      = LocationDnaPresenter::lifestyleScores($locationDna);
-            $poisGrouped = LocationDnaPresenter::poisByCategory($locationPois);
+            $narrative      = LocationDnaPresenter::locationNarrative($locationDna);
+            $labels         = LocationDnaPresenter::lifestyleLabels($locationDna);
+            $scores         = LocationDnaPresenter::lifestyleScores($locationDna);
+            $poisGrouped    = LocationDnaPresenter::poisByCategory($locationPois);
+
+            // Separate top_rated_dining from the regular POI grid
+            $topRatedDining = $poisGrouped['top_rated_dining'] ?? collect();
+            $regularPois    = array_filter($poisGrouped, fn($k) => $k !== 'top_rated_dining', ARRAY_FILTER_USE_KEY);
         @endphp
 
         {{-- Summary Narrative --}}
@@ -129,18 +133,53 @@ use App\Presenters\LocationDnaPresenter;
         <div class="text-muted small mb-3">No lifestyle scores recorded.</div>
         @endif
 
-        {{-- POIs grouped by category (top 3 per category) --}}
-        @if(!empty($poisGrouped))
+        {{-- Top Rated Dining block (shown before general POI grid) --}}
+        @if($topRatedDining->isNotEmpty() && $topRatedDining->where('status', 'found')->count() > 0)
+        <div class="mb-3">
+            <strong>Top Rated Dining <span class="text-muted small">(highest-rated restaurants · min. 10 reviews)</span>:</strong>
+            <div class="mt-2">
+                <div class="border rounded p-2" style="font-size:.82rem; max-width:560px;">
+                    @foreach($topRatedDining->where('status', 'found') as $diningPoi)
+                    <div class="d-flex justify-content-between align-items-baseline py-1 @if(!$loop->first) border-top @endif" style="font-size:.82rem; gap:.5rem;">
+                        <span class="text-truncate" title="{{ $diningPoi->poi_name }}" style="flex:1 1 0; min-width:0;">
+                            {{ $diningPoi->poi_name }}
+                        </span>
+                        <span class="text-nowrap" style="color:#b8860b; white-space:nowrap;">
+                            @if($diningPoi->rating !== null)
+                                &#9733; {{ number_format((float)$diningPoi->rating, 1) }}
+                                @if($diningPoi->user_ratings_total !== null)
+                                    <span class="text-muted">({{ number_format($diningPoi->user_ratings_total) }})</span>
+                                @endif
+                            @endif
+                        </span>
+                        <span class="text-muted text-nowrap small">
+                            @if($diningPoi->distance_miles !== null)
+                                {{ number_format((float)$diningPoi->distance_miles, 2) }} mi
+                            @else
+                                —
+                            @endif
+                        </span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
+
+        {{-- POIs grouped by category (top 3 per category, excluding top_rated_dining) --}}
+        @if(!empty($regularPois))
         <div class="mb-0">
             <strong>Nearby Points of Interest <span class="text-muted small">(top 3 per category)</span>:</strong>
             <div class="row g-2 mt-1">
-                @foreach($poisGrouped as $category => $categoryPois)
+                @foreach($regularPois as $category => $categoryPois)
+                @php $foundPois = $categoryPois->where('status', 'found'); @endphp
+                @if($foundPois->isNotEmpty())
                 <div class="col-md-6 col-lg-4">
                     <div class="border rounded p-2" style="font-size:.82rem;">
                         <div class="font-weight-bold text-capitalize mb-1" style="font-size:.8rem; color:#555;">
                             {{ str_replace('_', ' ', $category) }}
                         </div>
-                        @foreach($categoryPois as $poi)
+                        @foreach($foundPois as $poi)
                         <div class="d-flex justify-content-between align-items-baseline py-1 border-top" style="font-size:.8rem;">
                             <span class="text-truncate mr-2" title="{{ $poi->poi_name }}">{{ $poi->poi_name }}</span>
                             <span class="text-muted text-nowrap small">
@@ -154,6 +193,7 @@ use App\Presenters\LocationDnaPresenter;
                         @endforeach
                     </div>
                 </div>
+                @endif
                 @endforeach
             </div>
         </div>

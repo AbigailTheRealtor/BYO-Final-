@@ -54,10 +54,14 @@ use App\Presenters\LocationDnaPresenter;
         </div>
 
         @php
-            $narrative = LocationDnaPresenter::locationNarrative($dna);
-            $labels    = LocationDnaPresenter::lifestyleLabels($dna);
-            $scores    = LocationDnaPresenter::lifestyleScores($dna);
+            $narrative   = LocationDnaPresenter::locationNarrative($dna);
+            $labels      = LocationDnaPresenter::lifestyleLabels($dna);
+            $scores      = LocationDnaPresenter::lifestyleScores($dna);
             $poisGrouped = LocationDnaPresenter::poisByCategory($pois);
+
+            // Separate top_rated_dining from the regular POI grid
+            $topRatedDining = $poisGrouped['top_rated_dining'] ?? collect();
+            $regularPois    = array_filter($poisGrouped, fn($k) => $k !== 'top_rated_dining', ARRAY_FILTER_USE_KEY);
         @endphp
 
         {{-- Summary Narrative --}}
@@ -117,23 +121,96 @@ use App\Presenters\LocationDnaPresenter;
         <div class="text-muted small mb-3">No lifestyle scores recorded.</div>
         @endif
 
-        {{-- POIs grouped by category --}}
-        @if(!empty($poisGrouped))
+        {{-- Top Rated Dining block (admin inspector) --}}
+        @if($topRatedDining->isNotEmpty())
+        <div class="mb-3">
+            <strong>Top Rated Dining <span class="text-muted small">(derived from restaurant candidates · min. 10 reviews)</span>:</strong>
+            <table class="table table-sm table-bordered mt-2 mb-0" style="font-size:.82rem;">
+                <thead class="thead-light">
+                    <tr>
+                        <th style="width:30px;">#</th>
+                        <th>Name</th>
+                        <th style="width:90px;">Rating</th>
+                        <th style="width:90px;">Reviews</th>
+                        <th style="width:90px;">Distance</th>
+                        <th style="width:70px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($topRatedDining as $poi)
+                    <tr>
+                        <td class="text-center text-muted">{{ $poi->rank ?? '—' }}</td>
+                        <td>
+                            {{ $poi->poi_name ?? '—' }}
+                            @if($poi->poi_address)
+                                <div class="text-muted" style="font-size:.78rem;">{{ $poi->poi_address }}</div>
+                            @endif
+                        </td>
+                        <td>
+                            @if($poi->rating !== null)
+                                <span style="color:#b8860b;">&#9733;</span> {{ number_format((float)$poi->rating, 1) }}
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($poi->user_ratings_total !== null)
+                                {{ number_format($poi->user_ratings_total) }}
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($poi->distance_miles !== null)
+                                {{ number_format((float)$poi->distance_miles, 2) }} mi
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($poi->status === 'found')
+                                <span class="badge badge-success">found</span>
+                            @elseif($poi->status === 'not_found')
+                                <span class="badge badge-secondary">not found</span>
+                            @else
+                                <span class="badge badge-danger">{{ $poi->status }}</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+
+        {{-- POIs grouped by category (all candidates with rank, excluding top_rated_dining) --}}
+        @if(!empty($regularPois))
         <div class="mb-0">
-            <strong>Nearby Points of Interest <span class="text-muted small">(top 3 per category)</span>:</strong>
+            <strong>Nearby Points of Interest <span class="text-muted small">(all candidates, ranked nearest first)</span>:</strong>
             <div class="row g-2 mt-1">
-                @foreach($poisGrouped as $category => $categoryPois)
+                @foreach($regularPois as $category => $categoryPois)
                 <div class="col-md-6 col-lg-4">
                     <div class="border rounded p-2" style="font-size:.82rem;">
                         <div class="font-weight-bold text-capitalize mb-1" style="font-size:.8rem; color:#555;">
                             {{ str_replace('_', ' ', $category) }}
+                            <span class="text-muted font-weight-normal">({{ $categoryPois->count() }})</span>
                         </div>
                         @foreach($categoryPois as $poi)
                         <div class="d-flex justify-content-between align-items-baseline py-1 border-top" style="font-size:.8rem;">
-                            <span class="text-truncate mr-2" title="{{ $poi->poi_name }}">{{ $poi->poi_name }}</span>
+                            <span class="text-truncate mr-2" title="{{ $poi->poi_name }}">
+                                @if(($poi->rank ?? 1) === 1)
+                                    <strong>{{ $poi->poi_name ?? '—' }}</strong>
+                                @else
+                                    <span class="text-muted">#{{ $poi->rank ?? '?' }}</span> {{ $poi->poi_name ?? '—' }}
+                                @endif
+                            </span>
                             <span class="text-muted text-nowrap small">
-                                @if($poi->distance_miles !== null)
+                                @if($poi->status === 'found' && $poi->distance_miles !== null)
                                     {{ number_format((float)$poi->distance_miles, 2) }} mi
+                                @elseif($poi->status === 'not_found')
+                                    <span class="text-muted">not found</span>
+                                @elseif($poi->status === 'error')
+                                    <span class="text-danger">error</span>
                                 @else
                                     —
                                 @endif

@@ -9,14 +9,21 @@ use GuzzleHttp\Client;
 use Throwable;
 
 /**
- * LocationDnaPoiDistanceService — Phase C POI Distance Engine
+ * LocationDnaPoiDistanceService — Phase C POI Distance Engine (v2)
  *
  * GOVERNANCE BLOCK:
  * ==================================================================================
  * This service is the POI proximity layer for the Location DNA pipeline. It reads
  * geocoded coordinates from Phase B (PropertyLocationDna) and queries the Google
- * Places Nearby Search API to find the nearest result per POI category, persisting
- * one row per category to property_location_pois.
+ * Places Nearby Search API to find multiple candidates per POI category, persisting
+ * up to 10 ranked rows per category to property_location_pois.
+ *
+ * v2 additions (task #3110):
+ *   - Stores up to 10 raw candidates per category (rank 1 = nearest/primary).
+ *   - Each row persists rank, rating, user_ratings_total, and types_json.
+ *   - Category exclusion filters eliminate confirmed bad matches (P0 audit fixes).
+ *   - Top Rated Dining derived category: restaurant candidates sorted by rating
+ *     (minimum 10 reviews), stored as rank 1/2/3 under 'top_rated_dining'.
  *
  * This service MUST NEVER:
  *   - Call the geocoding API or modify Phase B records.
@@ -34,6 +41,28 @@ class LocationDnaPoiDistanceService
     private const EARTH_RADIUS_MILES = 3958.8;
 
     /**
+     * Maximum number of raw API results to collect per category.
+     * Google Nearby Search returns up to 20 results per page; we cap at 10 for storage.
+     */
+    private const MAX_CANDIDATES_PER_CATEGORY = 10;
+
+    /**
+     * How many raw results to examine when applying exclusion filters.
+     * We look at more than MAX_CANDIDATES to ensure we find enough valid ones.
+     */
+    private const MAX_RESULTS_TO_EXAMINE = 20;
+
+    /**
+     * Minimum number of user reviews required to qualify for Top Rated Dining.
+     */
+    private const TOP_RATED_DINING_MIN_REVIEWS = 10;
+
+    /**
+     * Maximum number of Top Rated Dining candidates to store.
+     */
+    private const TOP_RATED_DINING_MAX_CANDIDATES = 3;
+
+    /**
      * All supported POI categories.
      *
      * Each entry maps a canonical category key to the parameters used for a
@@ -43,22 +72,17 @@ class LocationDnaPoiDistanceService
      *   The `type` parameter is passed directly to the Google Places API.
      *   These are first-class types in Google's taxonomy and return the most
      *   accurate, consistently-ranked results.
-     *   Categories: grocery_store, school, hospital, park, pharmacy, gas_station,
-     *                restaurant, gym, fitness_center, transit_station, coffee_shop,
-     *                shopping_center.
      *
      * KEYWORD-BASED ('query_strategy' => 'keyword')
      *   No exact Google Place type exists for these categories. A `keyword`
      *   parameter is sent instead (with an optional `type` hint where it helps
      *   narrow results). Result quality depends on how operators have labelled
      *   their listings and may vary by region.
-     *   Categories: beach, beach_access, boat_ramp, marina, waterfront_park,
-     *                dog_park, golf_course.
      *
-     * FUTURE PHASE (travel_time_minutes)
-     *   The `travel_time_minutes` column is reserved. Drive-time calculation for
-     *   any category can be added as a separate method without restructuring these
-     *   definitions or the core POI fetch loop.
+     * v2 change: fitness_center now uses keyword strategy ('fitness center' keyword
+     *   combined with google_type='gym') to differentiate it from 'gym', which was
+     *   previously a structural duplicate returning identical results. Audit finding:
+     *   Section 8, gym/fitness_center structural duplicate, 🟠 Medium risk.
      *
      * Required keys per entry:
      *   'label'          — human-readable name stored as poi_subtype
@@ -68,18 +92,20 @@ class LocationDnaPoiDistanceService
      */
     public const CATEGORIES = [
         // ── Native Google Place type support ─────────────────────────────────
-        'grocery_store'   => ['google_type' => 'grocery_or_supermarket', 'keyword' => null, 'label' => 'Grocery Store',   'query_strategy' => 'native_type'],
-        'school'          => ['google_type' => 'school',                  'keyword' => null, 'label' => 'School',          'query_strategy' => 'native_type'],
-        'hospital'        => ['google_type' => 'hospital',                'keyword' => null, 'label' => 'Hospital',        'query_strategy' => 'native_type'],
-        'park'            => ['google_type' => 'park',                    'keyword' => null, 'label' => 'Park',            'query_strategy' => 'native_type'],
-        'pharmacy'        => ['google_type' => 'pharmacy',                'keyword' => null, 'label' => 'Pharmacy',        'query_strategy' => 'native_type'],
-        'gas_station'     => ['google_type' => 'gas_station',             'keyword' => null, 'label' => 'Gas Station',     'query_strategy' => 'native_type'],
-        'restaurant'      => ['google_type' => 'restaurant',              'keyword' => null, 'label' => 'Restaurant',      'query_strategy' => 'native_type'],
-        'gym'             => ['google_type' => 'gym',                     'keyword' => null, 'label' => 'Gym',             'query_strategy' => 'native_type'],
-        'fitness_center'  => ['google_type' => 'gym',                     'keyword' => null, 'label' => 'Fitness Center',  'query_strategy' => 'native_type'],
-        'transit_station' => ['google_type' => 'transit_station',         'keyword' => null, 'label' => 'Transit Station', 'query_strategy' => 'native_type'],
-        'coffee_shop'     => ['google_type' => 'cafe',                    'keyword' => null, 'label' => 'Coffee Shop',     'query_strategy' => 'native_type'],
-        'shopping_center' => ['google_type' => 'shopping_mall',           'keyword' => null, 'label' => 'Shopping Center', 'query_strategy' => 'native_type'],
+        'grocery_store'   => ['google_type' => 'grocery_or_supermarket', 'keyword' => null,              'label' => 'Grocery Store',   'query_strategy' => 'native_type'],
+        'school'          => ['google_type' => 'school',                  'keyword' => null,              'label' => 'School',          'query_strategy' => 'native_type'],
+        'hospital'        => ['google_type' => 'hospital',                'keyword' => null,              'label' => 'Hospital',        'query_strategy' => 'native_type'],
+        'park'            => ['google_type' => 'park',                    'keyword' => null,              'label' => 'Park',            'query_strategy' => 'native_type'],
+        'pharmacy'        => ['google_type' => 'pharmacy',                'keyword' => null,              'label' => 'Pharmacy',        'query_strategy' => 'native_type'],
+        'gas_station'     => ['google_type' => 'gas_station',             'keyword' => null,              'label' => 'Gas Station',     'query_strategy' => 'native_type'],
+        'restaurant'      => ['google_type' => 'restaurant',              'keyword' => null,              'label' => 'Restaurant',      'query_strategy' => 'native_type'],
+        'gym'             => ['google_type' => 'gym',                     'keyword' => null,              'label' => 'Gym',             'query_strategy' => 'native_type'],
+        // v2: fitness_center uses keyword 'fitness center' to differentiate from gym.
+        // Audit finding: Section 8 — gym/fitness_center structural duplicate.
+        'fitness_center'  => ['google_type' => 'gym',                     'keyword' => 'fitness center', 'label' => 'Fitness Center',  'query_strategy' => 'keyword'],
+        'transit_station' => ['google_type' => 'transit_station',         'keyword' => null,              'label' => 'Transit Station', 'query_strategy' => 'native_type'],
+        'coffee_shop'     => ['google_type' => 'cafe',                    'keyword' => null,              'label' => 'Coffee Shop',     'query_strategy' => 'native_type'],
+        'shopping_center' => ['google_type' => 'shopping_mall',           'keyword' => null,              'label' => 'Shopping Center', 'query_strategy' => 'native_type'],
 
         // ── Keyword-based searches (no native Google Place type available) ───
         // Result quality depends on operator-provided labels and may vary by region.
@@ -92,6 +118,47 @@ class LocationDnaPoiDistanceService
         'golf_course'     => ['google_type' => null,   'keyword' => 'golf course',   'label' => 'Golf Course',     'query_strategy' => 'keyword'],
     ];
 
+    /**
+     * Post-fetch exclusion rules applied per category.
+     *
+     * Each rule is evaluated against a raw Google Places result object. Results
+     * failing the rule are skipped; the pipeline walks down the ranked list to
+     * find the next valid candidate.
+     *
+     * Rules use the stored `types_json` array and place `name` — no name-matching
+     * heuristics are used for grocery/pharmacy; name-matching is only used where
+     * the type taxonomy is insufficient (golf_course, pharmacy animal-hospital check).
+     *
+     * Sources: Audit report Section 8 and Section 10, P0 findings:
+     *   - grocery_store: gas station returned as grocery (🔴 P0)
+     *   - pharmacy: animal hospital returned as pharmacy (🔴 P0)
+     *   - golf_course: adventure/mini golf returned as golf course (🔴 P0)
+     */
+    private const CATEGORY_EXCLUSION_RULES = [
+        'grocery_store' => [
+            // Exclude if result has gas_station type AND lacks any grocery type.
+            // Audit: "if gas_station is in the result's types array AND no
+            // grocery_or_supermarket type is present, discard result."
+            'exclude_if_types_include_and_lacks' => [
+                'has'  => ['gas_station'],
+                'lacks' => ['grocery_or_supermarket', 'supermarket'],
+            ],
+        ],
+        'pharmacy' => [
+            // Exclude if result has veterinary_care type (animal pharmacies).
+            // Also exclude by name for "animal hospital" since Google may not
+            // always tag in-house dispensaries with veterinary_care.
+            // Audit: "animal hospital in types or name matches /animal hospital/i"
+            'exclude_if_types_include' => ['veterinary_care'],
+            'exclude_if_name_matches'  => '/animal\s+hospital/i',
+        ],
+        'golf_course' => [
+            // Exclude adventure/mini/miniature golf and putt-putt by name.
+            // Audit: "adventure golf, mini golf, miniature golf, putt-putt"
+            'exclude_if_name_matches' => '/adventure\s+golf|mini.?golf|miniature\s+golf|putt.?putt/i',
+        ],
+    ];
+
     public function __construct(
         private readonly ?ClientInterface $httpClient = null,
         private readonly ?LocationDnaAuditService $auditService = null,
@@ -101,8 +168,12 @@ class LocationDnaPoiDistanceService
      * Calculate and persist POI distances for a listing.
      *
      * Reads geocoded coordinates from the Phase B PropertyLocationDna record and
-     * queries the Google Places Nearby Search API for the nearest result per
-     * category. One row per category is persisted to property_location_pois.
+     * queries the Google Places Nearby Search API for up to 10 candidates per
+     * category. All candidates are persisted to property_location_pois with rank,
+     * rating, user_ratings_total, and types_json.
+     *
+     * A derived 'top_rated_dining' category is built from restaurant candidates
+     * sorted by rating (minimum 10 reviews).
      *
      * Cache behaviour:
      *   - If existing rows match the current geocoded_lat/lng, no API call is made
@@ -112,22 +183,6 @@ class LocationDnaPoiDistanceService
      *
      * A single failed category does not abort the run. Each row independently
      * stores its status ('found' | 'not_found' | 'error') and error message.
-     *
-     * Output contract (8-key shape — identical across all paths):
-     * [
-     *     'success'      => bool,
-     *     'status'       => string,      // 'completed' | 'cached' | 'skipped' | 'failed'
-     *     'listing_type' => string,
-     *     'listing_id'   => int,
-     *     'results'      => array,       // per-category result rows; empty on skipped/failed
-     *     'error'        => string|null,
-     *     'source_lat'   => float|null,
-     *     'source_lng'   => float|null,
-     * ]
-     *
-     * Future extension point: add calculateCommuteDistance(string $listingType, int $listingId,
-     * float $destLat, float $destLng) as an additional public method to support custom
-     * commute destinations without restructuring the core POI flow.
      *
      * @param  string $listingType  The listing model type (e.g. 'seller_agent_auction').
      * @param  int    $listingId    The primary key of the listing record.
@@ -176,7 +231,8 @@ class LocationDnaPoiDistanceService
             $sourceLat = (float) $dnaRecord->geocoded_lat;
             $sourceLng = (float) $dnaRecord->geocoded_lng;
 
-            // (d) Cache check: existing rows with matching source coordinates
+            // (d) Cache check: existing rows with matching source coordinates.
+            // Only check rank=1 rows to avoid partial-data false positives.
             $existingRows = PropertyLocationPoi::where('listing_type', $listingType)
                 ->where('listing_id', $listingId)
                 ->get();
@@ -202,7 +258,7 @@ class LocationDnaPoiDistanceService
                     return $output;
                 }
 
-                // Coordinates changed — clear all existing rows
+                // Coordinates changed — clear all existing rows for this listing
                 PropertyLocationPoi::where('listing_type', $listingType)
                     ->where('listing_id', $listingId)
                     ->delete();
@@ -225,9 +281,12 @@ class LocationDnaPoiDistanceService
             $client  = $this->httpClient ?? new Client();
             $results = [];
 
+            // Capture restaurant raw candidates for Top Rated Dining derivation.
+            $restaurantRawCandidates = [];
+
             // (f) Query Google Places for each category independently
             foreach (self::CATEGORIES as $category => $meta) {
-                $row = $this->fetchAndPersistCategory(
+                [$categoryRows, $rawCandidates] = $this->fetchAndPersistCategoryMulti(
                     client:      $client,
                     apiKey:      $apiKey,
                     listingType: $listingType,
@@ -238,6 +297,25 @@ class LocationDnaPoiDistanceService
                     sourceLng:   $sourceLng,
                 );
 
+                foreach ($categoryRows as $row) {
+                    $results[] = $row;
+                }
+
+                if ($category === 'restaurant') {
+                    $restaurantRawCandidates = $rawCandidates;
+                }
+            }
+
+            // (g) Derive and persist Top Rated Dining from restaurant candidates
+            $topRatedRows = $this->deriveAndPersistTopRatedDining(
+                listingType:         $listingType,
+                listingId:           $listingId,
+                sourceLat:           $sourceLat,
+                sourceLng:           $sourceLng,
+                restaurantCandidates: $restaurantRawCandidates,
+            );
+
+            foreach ($topRatedRows as $row) {
                 $results[] = $row;
             }
 
@@ -293,12 +371,111 @@ class LocationDnaPoiDistanceService
     }
 
     /**
-     * Fetch the nearest Google Places result for one category and persist the row.
+     * Fetch raw candidates from the Google Places Nearby Search API.
      *
-     * Returns the persisted/updated model data as an array. Never throws —
-     * any exception is caught and stored as status='error' on the row.
+     * Returns the raw results array from the API response, or an empty array on
+     * error. Never throws.
+     *
+     * Exceptions propagate to the caller; fetchAndPersistCategoryMulti handles them
+     * by writing an 'error' row so the run can continue with other categories.
+     *
+     * @return array  Raw Google Places results array (up to 20 entries).
      */
-    private function fetchAndPersistCategory(
+    private function fetchRawCandidates(
+        ClientInterface $client,
+        string          $apiKey,
+        array           $meta,
+        float           $sourceLat,
+        float           $sourceLng,
+    ): array {
+        $queryParams = [
+            'location' => "{$sourceLat},{$sourceLng}",
+            'rankby'   => 'distance',
+            'key'      => $apiKey,
+        ];
+
+        if (! empty($meta['google_type'])) {
+            $queryParams['type'] = $meta['google_type'];
+        }
+
+        if (! empty($meta['keyword'])) {
+            $queryParams['keyword'] = $meta['keyword'];
+        }
+
+        $response = $client->request('GET', self::NEARBY_API_URL, [
+            'query' => $queryParams,
+        ]);
+
+        $body = json_decode((string) $response->getBody(), true);
+
+        return $body['results'] ?? [];
+    }
+
+    /**
+     * Determine whether a Google Places result passes the exclusion filter
+     * for the given category.
+     *
+     * @param  string $category  Canonical category key from CATEGORIES.
+     * @param  array  $place     A single Google Places result object.
+     * @return bool              true = keep, false = skip.
+     */
+    private function passesExclusionFilter(string $category, array $place): bool
+    {
+        $rules = self::CATEGORY_EXCLUSION_RULES[$category] ?? null;
+        if ($rules === null) {
+            return true;
+        }
+
+        $types = $place['types'] ?? [];
+        $name  = $place['name'] ?? '';
+
+        // Rule: exclude_if_types_include — discard if ANY of these types are present
+        if (! empty($rules['exclude_if_types_include'])) {
+            foreach ($rules['exclude_if_types_include'] as $badType) {
+                if (in_array($badType, $types, true)) {
+                    return false;
+                }
+            }
+        }
+
+        // Rule: exclude_if_types_include_and_lacks — discard if has ALL of 'has' types
+        //       AND lacks ALL of 'lacks' types
+        if (! empty($rules['exclude_if_types_include_and_lacks'])) {
+            $hasCheck   = $rules['exclude_if_types_include_and_lacks']['has']   ?? [];
+            $lacksCheck = $rules['exclude_if_types_include_and_lacks']['lacks'] ?? [];
+
+            $hasAllBadTypes   = ! empty($hasCheck) && count(array_intersect($hasCheck, $types)) > 0;
+            $lacksAllGoodTypes = ! empty($lacksCheck) && count(array_intersect($lacksCheck, $types)) === 0;
+
+            if ($hasAllBadTypes && $lacksAllGoodTypes) {
+                return false;
+            }
+        }
+
+        // Rule: exclude_if_name_matches — discard if name matches the regex
+        if (! empty($rules['exclude_if_name_matches'])) {
+            if (preg_match($rules['exclude_if_name_matches'], $name)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Fetch raw candidates for a category, apply exclusion filters, and persist
+     * up to MAX_CANDIDATES_PER_CATEGORY ranked rows.
+     *
+     * Returns a two-element tuple:
+     *   [0] array  — persisted row arrays for this category
+     *   [1] array  — all raw Google Places results (unfiltered), for downstream use
+     *
+     * Atomicity: existing rows for (listing_type, listing_id, poi_category) are
+     * deleted before new rows are inserted (per task migration safety spec).
+     *
+     * Never throws — errors are stored as status='error' on rank-1 row.
+     */
+    private function fetchAndPersistCategoryMulti(
         ClientInterface $client,
         string          $apiKey,
         string          $listingType,
@@ -309,117 +486,272 @@ class LocationDnaPoiDistanceService
         float           $sourceLng,
     ): array {
         try {
-            $queryParams = [
-                'location' => "{$sourceLat},{$sourceLng}",
-                'rankby'   => 'distance',
-                'key'      => $apiKey,
-            ];
+            // Delete existing rows for this category (atomic replacement)
+            PropertyLocationPoi::where('listing_type', $listingType)
+                ->where('listing_id', $listingId)
+                ->where('poi_category', $category)
+                ->delete();
 
-            if (! empty($meta['google_type'])) {
-                $queryParams['type'] = $meta['google_type'];
-            }
+            $rawCandidates = $this->fetchRawCandidates($client, $apiKey, $meta, $sourceLat, $sourceLng);
 
-            if (! empty($meta['keyword'])) {
-                $queryParams['keyword'] = $meta['keyword'];
-            }
-
-            $response = $client->request('GET', self::NEARBY_API_URL, [
-                'query' => $queryParams,
-            ]);
-
-            $body = json_decode((string) $response->getBody(), true);
-
-            if (empty($body['results'])) {
-                return $this->persistPoiRow(
-                    listingType:  $listingType,
-                    listingId:    $listingId,
-                    category:     $category,
-                    meta:         $meta,
-                    sourceLat:    $sourceLat,
-                    sourceLng:    $sourceLng,
-                    status:       'not_found',
-                    error:        'Google Places returned zero results for this category',
+            if (empty($rawCandidates)) {
+                $row = $this->createPoiRow(
+                    listingType: $listingType,
+                    listingId:   $listingId,
+                    category:    $category,
+                    meta:        $meta,
+                    sourceLat:   $sourceLat,
+                    sourceLng:   $sourceLng,
+                    rank:        1,
+                    status:      'not_found',
+                    error:       'Google Places returned zero results for this category',
                 );
+                return [[$row->toArray()], []];
             }
 
-            $place        = $body['results'][0];
-            $poiLat       = (float) $place['geometry']['location']['lat'];
-            $poiLng       = (float) $place['geometry']['location']['lng'];
-            $distanceMiles = $this->haversineDistanceMiles($sourceLat, $sourceLng, $poiLat, $poiLng);
+            // Apply exclusion filters and persist valid candidates
+            $rank          = 0;
+            $persistedRows = [];
+            $examined      = 0;
 
-            return $this->persistPoiRow(
-                listingType:   $listingType,
-                listingId:     $listingId,
-                category:      $category,
-                meta:          $meta,
-                sourceLat:     $sourceLat,
-                sourceLng:     $sourceLng,
-                status:        'found',
-                error:         null,
-                poiName:       $place['name'] ?? null,
-                poiAddress:    $place['vicinity'] ?? null,
-                poiLat:        $poiLat,
-                poiLng:        $poiLng,
-                distanceMiles: $distanceMiles,
-            );
+            foreach ($rawCandidates as $place) {
+                if ($examined >= self::MAX_RESULTS_TO_EXAMINE) {
+                    break;
+                }
+                $examined++;
+
+                if (! $this->passesExclusionFilter($category, $place)) {
+                    continue;
+                }
+
+                $rank++;
+                if ($rank > self::MAX_CANDIDATES_PER_CATEGORY) {
+                    break;
+                }
+
+                $poiLat        = (float) ($place['geometry']['location']['lat'] ?? 0);
+                $poiLng        = (float) ($place['geometry']['location']['lng'] ?? 0);
+                $distanceMiles = $this->haversineDistanceMiles($sourceLat, $sourceLng, $poiLat, $poiLng);
+
+                $row = $this->createPoiRow(
+                    listingType:   $listingType,
+                    listingId:     $listingId,
+                    category:      $category,
+                    meta:          $meta,
+                    sourceLat:     $sourceLat,
+                    sourceLng:     $sourceLng,
+                    rank:          $rank,
+                    status:        'found',
+                    error:         null,
+                    poiName:       $place['name'] ?? null,
+                    poiAddress:    $place['vicinity'] ?? null,
+                    poiLat:        $poiLat,
+                    poiLng:        $poiLng,
+                    distanceMiles: $distanceMiles,
+                    rating:        isset($place['rating']) ? (float) $place['rating'] : null,
+                    userRatingsTotal: isset($place['user_ratings_total']) ? (int) $place['user_ratings_total'] : null,
+                    typesJson:     $place['types'] ?? null,
+                );
+
+                $persistedRows[] = $row->toArray();
+            }
+
+            // All results were filtered out by exclusion rules
+            if (empty($persistedRows)) {
+                $row = $this->createPoiRow(
+                    listingType: $listingType,
+                    listingId:   $listingId,
+                    category:    $category,
+                    meta:        $meta,
+                    sourceLat:   $sourceLat,
+                    sourceLng:   $sourceLng,
+                    rank:        1,
+                    status:      'not_found',
+                    error:       'All candidates were excluded by category quality filters',
+                );
+                return [[$row->toArray()], $rawCandidates];
+            }
+
+            return [$persistedRows, $rawCandidates];
 
         } catch (Throwable $e) {
-            return $this->persistPoiRow(
-                listingType: $listingType,
-                listingId:   $listingId,
-                category:    $category,
-                meta:        $meta,
-                sourceLat:   $sourceLat,
-                sourceLng:   $sourceLng,
-                status:      'error',
-                error:       $e->getMessage(),
-            );
+            try {
+                PropertyLocationPoi::where('listing_type', $listingType)
+                    ->where('listing_id', $listingId)
+                    ->where('poi_category', $category)
+                    ->delete();
+
+                $row = $this->createPoiRow(
+                    listingType: $listingType,
+                    listingId:   $listingId,
+                    category:    $category,
+                    meta:        $meta,
+                    sourceLat:   $sourceLat,
+                    sourceLng:   $sourceLng,
+                    rank:        1,
+                    status:      'error',
+                    error:       $e->getMessage(),
+                );
+                return [[$row->toArray()], []];
+            } catch (Throwable) {
+                return [[], []];
+            }
         }
     }
 
     /**
-     * Upsert a single POI row (by listing_type + listing_id + poi_category).
+     * Derive and persist the 'top_rated_dining' category from raw restaurant candidates.
+     *
+     * Filters restaurant candidates to those with >= TOP_RATED_DINING_MIN_REVIEWS reviews,
+     * sorts by rating descending, and persists up to TOP_RATED_DINING_MAX_CANDIDATES rows
+     * ranked 1/2/3 under the 'top_rated_dining' category key.
+     *
+     * This is a derived category — no additional API call is made.
+     *
+     * @param  array  $restaurantCandidates  Raw Google Places results from the restaurant query.
+     * @return array  Array of persisted row arrays.
      */
-    private function persistPoiRow(
+    private function deriveAndPersistTopRatedDining(
+        string $listingType,
+        int    $listingId,
+        float  $sourceLat,
+        float  $sourceLng,
+        array  $restaurantCandidates,
+    ): array {
+        // Atomic replacement: delete existing top_rated_dining rows
+        PropertyLocationPoi::where('listing_type', $listingType)
+            ->where('listing_id', $listingId)
+            ->where('poi_category', 'top_rated_dining')
+            ->delete();
+
+        $topRatedMeta = [
+            'label'          => 'Top Rated Dining',
+            'query_strategy' => 'derived',
+            'google_type'    => null,
+            'keyword'        => null,
+        ];
+
+        if (empty($restaurantCandidates)) {
+            $row = $this->createPoiRow(
+                listingType: $listingType,
+                listingId:   $listingId,
+                category:    'top_rated_dining',
+                meta:        $topRatedMeta,
+                sourceLat:   $sourceLat,
+                sourceLng:   $sourceLng,
+                rank:        1,
+                status:      'not_found',
+                error:       'No restaurant candidates available to derive Top Rated Dining',
+            );
+            return [[$row->toArray()]];
+        }
+
+        // Filter: minimum review threshold
+        $qualified = array_filter(
+            $restaurantCandidates,
+            fn($place) => ($place['user_ratings_total'] ?? 0) >= self::TOP_RATED_DINING_MIN_REVIEWS,
+        );
+
+        if (empty($qualified)) {
+            $row = $this->createPoiRow(
+                listingType: $listingType,
+                listingId:   $listingId,
+                category:    'top_rated_dining',
+                meta:        $topRatedMeta,
+                sourceLat:   $sourceLat,
+                sourceLng:   $sourceLng,
+                rank:        1,
+                status:      'not_found',
+                error:       'No qualifying restaurants found (minimum ' . self::TOP_RATED_DINING_MIN_REVIEWS . ' reviews required)',
+            );
+            return [[$row->toArray()]];
+        }
+
+        // Sort by rating descending (highest rating first)
+        usort($qualified, fn($a, $b) => ($b['rating'] ?? 0.0) <=> ($a['rating'] ?? 0.0));
+
+        $top  = array_slice(array_values($qualified), 0, self::TOP_RATED_DINING_MAX_CANDIDATES);
+        $rows = [];
+
+        foreach ($top as $index => $place) {
+            $rank          = $index + 1;
+            $poiLat        = (float) ($place['geometry']['location']['lat'] ?? 0);
+            $poiLng        = (float) ($place['geometry']['location']['lng'] ?? 0);
+            $distanceMiles = $this->haversineDistanceMiles($sourceLat, $sourceLng, $poiLat, $poiLng);
+
+            $row = $this->createPoiRow(
+                listingType:      $listingType,
+                listingId:        $listingId,
+                category:         'top_rated_dining',
+                meta:             $topRatedMeta,
+                sourceLat:        $sourceLat,
+                sourceLng:        $sourceLng,
+                rank:             $rank,
+                status:           'found',
+                error:            null,
+                poiName:          $place['name'] ?? null,
+                poiAddress:       $place['vicinity'] ?? null,
+                poiLat:           $poiLat,
+                poiLng:           $poiLng,
+                distanceMiles:    $distanceMiles,
+                rating:           isset($place['rating']) ? (float) $place['rating'] : null,
+                userRatingsTotal: isset($place['user_ratings_total']) ? (int) $place['user_ratings_total'] : null,
+                typesJson:        $place['types'] ?? null,
+            );
+
+            $rows[] = $row->toArray();
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Create and persist a single POI row.
+     *
+     * Uses create() (not updateOrCreate) since the calling context guarantees existing
+     * rows for this (listing_type, listing_id, poi_category) have already been deleted.
+     */
+    private function createPoiRow(
         string  $listingType,
         int     $listingId,
         string  $category,
         array   $meta,
         float   $sourceLat,
         float   $sourceLng,
+        int     $rank,
         string  $status,
         ?string $error,
-        ?string $poiName       = null,
-        ?string $poiAddress    = null,
-        ?float  $poiLat        = null,
-        ?float  $poiLng        = null,
-        ?float  $distanceMiles = null,
-    ): array {
-        $attributes = [
-            'listing_type' => $listingType,
-            'listing_id'   => $listingId,
-            'poi_category' => $category,
-        ];
-
-        $values = [
-            'poi_subtype'    => $meta['label'],
-            'poi_name'       => $poiName,
-            'poi_address'    => $poiAddress,
-            'poi_lat'        => $poiLat,
-            'poi_lng'        => $poiLng,
-            'source_lat'     => $sourceLat,
-            'source_lng'     => $sourceLng,
-            'distance_miles' => $distanceMiles,
+        ?string $poiName          = null,
+        ?string $poiAddress       = null,
+        ?float  $poiLat           = null,
+        ?float  $poiLng           = null,
+        ?float  $distanceMiles    = null,
+        ?float  $rating           = null,
+        ?int    $userRatingsTotal = null,
+        ?array  $typesJson        = null,
+    ): PropertyLocationPoi {
+        return PropertyLocationPoi::create([
+            'listing_type'        => $listingType,
+            'listing_id'          => $listingId,
+            'poi_category'        => $category,
+            'rank'                => $rank,
+            'poi_subtype'         => $meta['label'],
+            'poi_name'            => $poiName,
+            'poi_address'         => $poiAddress,
+            'poi_lat'             => $poiLat,
+            'poi_lng'             => $poiLng,
+            'source_lat'          => $sourceLat,
+            'source_lng'          => $sourceLng,
+            'distance_miles'      => $distanceMiles,
+            'rating'              => $rating,
+            'user_ratings_total'  => $userRatingsTotal,
+            'types_json'          => $typesJson,
             'travel_time_minutes' => null,
-            'data_source'    => 'google_places',
-            'status'         => $status,
-            'error'          => $error,
-            'calculated_at'  => now(),
-        ];
-
-        $row = PropertyLocationPoi::updateOrCreate($attributes, $values);
-
-        return $row->toArray();
+            'data_source'         => 'google_places',
+            'status'              => $status,
+            'error'               => $error,
+            'calculated_at'       => now(),
+        ]);
     }
 
     /**

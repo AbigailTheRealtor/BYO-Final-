@@ -42,7 +42,7 @@ class DnaProfileController extends Controller
             ? PropertyLocationPoi::where('listing_type', 'seller')
                 ->where('listing_id', $listingId)
                 ->orderBy('poi_category')
-                ->orderBy('distance_miles')
+                ->orderBy('rank')
                 ->get()
             : collect();
 

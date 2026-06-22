@@ -16,6 +16,14 @@ use Throwable;
  * a structured Location DNA summary, persisting it to property_location_dna.summary_json
  * and generated_at.
  *
+ * v2 changes (task #3110):
+ *   - Only rank=1 POI rows are used for nearest_by_category and thematic blocks
+ *     (lifestyle scoring must continue to use the nearest/primary result).
+ *   - POI rows are ordered by poi_category, rank to ensure rank-1 is selected first.
+ *   - top_rated_dining is included in the daily_convenience thematic block as
+ *     nearest_top_rated_dining_miles.
+ *   - category_counts now reflects distinct categories (not total rows).
+ *
  * This service MUST NEVER:
  *   - Make any external API calls of any kind.
  *   - Connect to the AI marketing report or Property DNA persistence pipelines.
@@ -30,6 +38,13 @@ class LocationDnaSummaryService
     /**
      * Maps each thematic block key to a [poi_category => output_field_name] dictionary.
      * Output field names follow the approved Phase D contract.
+     *
+     * All thematic block values are sourced from rank=1 POI rows only, ensuring
+     * lifestyle scoring continues to use the nearest/primary result per category.
+     *
+     * v2 addition: top_rated_dining added to daily_convenience as
+     * nearest_top_rated_dining_miles. The lifestyle score service does not read this
+     * key, so scoring is unaffected.
      */
     private const THEMATIC_BLOCKS = [
         'coastal' => [
@@ -39,10 +54,11 @@ class LocationDnaSummaryService
             'marina'       => 'nearest_marina_miles',
         ],
         'daily_convenience' => [
-            'grocery_store' => 'nearest_grocery_miles',
-            'pharmacy'      => 'nearest_pharmacy_miles',
-            'coffee_shop'   => 'nearest_coffee_miles',
-            'restaurant'    => 'nearest_restaurant_miles',
+            'grocery_store'    => 'nearest_grocery_miles',
+            'pharmacy'         => 'nearest_pharmacy_miles',
+            'coffee_shop'      => 'nearest_coffee_miles',
+            'restaurant'       => 'nearest_restaurant_miles',
+            'top_rated_dining' => 'nearest_top_rated_dining_miles',
         ],
         'outdoor_recreation' => [
             'park'            => 'nearest_park_miles',
@@ -63,24 +79,13 @@ class LocationDnaSummaryService
     /**
      * Compile and persist a Location DNA summary for the given listing.
      *
-     * Returns the approved Phase D six-key output contract in all cases:
-     * [
-     *     'success'      => bool,         // true only when status === 'completed'
-     *     'status'       => string,       // 'completed' | 'skipped' | 'failed'
-     *     'listing_type' => string,       // echoed from $listingType
-     *     'listing_id'   => int,          // echoed from $listingId
-     *     'summary'      => array|null,   // populated on success, null otherwise
-     *     'error'        => string|null,  // skip/failure reason, null on success
-     * ]
+     * Returns the approved Phase D six-key output contract in all cases.
      *
-     * Guard conditions (return 'skipped'):
-     *   (a) No PropertyLocationDna record exists for the listing.
-     *   (b) PropertyLocationDna.geocode_status is not 'geocoded'.
-     *   (c) No PropertyLocationPoi rows exist for the listing.
+     * v2: Only rank=1 rows are used for nearest_by_category and thematic blocks.
+     * All POI rows (all ranks) are loaded but filtered to rank=1 for aggregation.
+     * category_counts reflects distinct categories, not individual rows.
      *
-     * On any unexpected Throwable, returns 'failed' without re-throwing.
-     *
-     * @param  string $listingType  The listing model type (e.g. 'seller_agent_auction').
+     * @param  string $listingType  The listing model type.
      * @param  int    $listingId    The primary key of the listing record.
      * @return array                Approved Phase D six-key output contract.
      */
@@ -114,11 +119,14 @@ class LocationDnaSummaryService
             }
 
             // (c) Guard: POI rows must exist
-            $poiRows = PropertyLocationPoi::where('listing_type', $listingType)
+            // Load all rows ordered by poi_category, rank so rank=1 is always first per category.
+            $allPoiRows = PropertyLocationPoi::where('listing_type', $listingType)
                 ->where('listing_id', $listingId)
+                ->orderBy('poi_category')
+                ->orderBy('rank')
                 ->get();
 
-            if ($poiRows->isEmpty()) {
+            if ($allPoiRows->isEmpty()) {
                 $output = $this->skippedOutput(
                     $listingType,
                     $listingId,
@@ -128,23 +136,28 @@ class LocationDnaSummaryService
                 return $output;
             }
 
-            // Build nearest_by_category — keyed by poi_category
+            // Rank-1 rows: used for nearest_by_category and thematic blocks.
+            // For backward compatibility, also include rows with rank=null (pre-v2 data).
+            $rank1Rows = $allPoiRows->filter(fn($row) => ($row->rank ?? 1) <= 1);
+
+            // Build nearest_by_category — keyed by poi_category, rank-1 only
             $nearestByCategory = [];
-            foreach ($poiRows as $row) {
+            foreach ($rank1Rows as $row) {
                 $nearestByCategory[$row->poi_category] = [
-                    'label'         => $row->poi_subtype,
-                    'name'          => $row->poi_name,
+                    'label'          => $row->poi_subtype,
+                    'name'           => $row->poi_name,
                     'distance_miles' => $row->distance_miles !== null ? (float) $row->distance_miles : null,
-                    'status'        => $row->status,
-                    'data_source'   => $row->data_source,
+                    'status'         => $row->status,
+                    'data_source'    => $row->data_source,
                 ];
             }
 
-            // Build category_counts
-            $totalCount    = $poiRows->count();
-            $foundCount    = $poiRows->where('status', 'found')->count();
-            $notFoundCount = $poiRows->where('status', 'not_found')->count();
-            $errorCount    = $poiRows->where('status', 'error')->count();
+            // Build category_counts using distinct categories, rank=1 rows
+            $distinctCategories = $rank1Rows->pluck('poi_category')->unique();
+            $totalCount    = $distinctCategories->count();
+            $foundCount    = $rank1Rows->where('status', 'found')->unique('poi_category')->count();
+            $notFoundCount = $rank1Rows->where('status', 'not_found')->unique('poi_category')->count();
+            $errorCount    = $rank1Rows->where('status', 'error')->unique('poi_category')->count();
 
             $categoryCounts = [
                 'total_categories' => $totalCount,
@@ -155,18 +168,18 @@ class LocationDnaSummaryService
 
             // Build geocode block from DNA record
             $geocode = [
-                'lat'        => $dnaRecord->geocoded_lat !== null ? (float) $dnaRecord->geocoded_lat : null,
-                'lng'        => $dnaRecord->geocoded_lng !== null ? (float) $dnaRecord->geocoded_lng : null,
-                'source'     => $dnaRecord->geocode_source,
+                'lat'         => $dnaRecord->geocoded_lat !== null ? (float) $dnaRecord->geocoded_lat : null,
+                'lng'         => $dnaRecord->geocoded_lng !== null ? (float) $dnaRecord->geocoded_lng : null,
+                'source'      => $dnaRecord->geocode_source,
                 'geocoded_at' => $dnaRecord->geocoded_at?->toIso8601String(),
             ];
 
-            // Build thematic sub-blocks — each entry uses the approved Phase D output key names
+            // Build thematic sub-blocks using rank-1 rows only
             $thematicBlocks = [];
             foreach (self::THEMATIC_BLOCKS as $blockKey => $categoryMap) {
                 $block = [];
                 foreach ($categoryMap as $catKey => $outputKey) {
-                    $row = $poiRows->firstWhere('poi_category', $catKey);
+                    $row = $rank1Rows->firstWhere('poi_category', $catKey);
                     $block[$outputKey] = ($row !== null && $row->status === 'found' && $row->distance_miles !== null)
                         ? (float) $row->distance_miles
                         : null;
@@ -174,16 +187,16 @@ class LocationDnaSummaryService
                 $thematicBlocks[$blockKey] = $block;
             }
 
-            // Build missing_categories and error_categories
-            $missingCategories = $poiRows->where('status', 'not_found')->pluck('poi_category')->values()->all();
-            $errorCategories   = $poiRows->where('status', 'error')->pluck('poi_category')->values()->all();
+            // Build missing_categories and error_categories from rank-1 rows
+            $missingCategories = $rank1Rows->where('status', 'not_found')->pluck('poi_category')->values()->all();
+            $errorCategories   = $rank1Rows->where('status', 'error')->pluck('poi_category')->values()->all();
 
             // Assemble full summary array
             $summary = array_merge(
                 [
-                    'geocode'            => $geocode,
+                    'geocode'             => $geocode,
                     'nearest_by_category' => $nearestByCategory,
-                    'category_counts'    => $categoryCounts,
+                    'category_counts'     => $categoryCounts,
                 ],
                 $thematicBlocks,
                 [
@@ -193,8 +206,8 @@ class LocationDnaSummaryService
             );
 
             // Persist to DNA record
-            $dnaRecord->summary_json  = $summary;
-            $dnaRecord->generated_at  = now();
+            $dnaRecord->summary_json = $summary;
+            $dnaRecord->generated_at = now();
             $dnaRecord->save();
 
             $output = $this->completedOutput($listingType, $listingId, $summary);

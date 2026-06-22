@@ -263,12 +263,12 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
 
         $this->assertGreaterThanOrEqual(1, $notFound);
 
-        // Total rows === total categories
+        // Total rows >= total categories (top_rated_dining derived row adds at least one extra)
         $totalRows = PropertyLocationPoi::where('listing_type', self::LISTING_TYPE)
             ->where('listing_id', self::LISTING_ID)
             ->count();
 
-        $this->assertSame($categoryCount, $totalRows);
+        $this->assertGreaterThanOrEqual($categoryCount, $totalRows);
     }
 
     // =========================================================================
@@ -307,7 +307,7 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
             ->where('listing_id', self::LISTING_ID)
             ->count();
 
-        $this->assertSame($categoryCount, $totalRows);
+        $this->assertGreaterThanOrEqual($categoryCount, $totalRows);
     }
 
     // =========================================================================
@@ -334,7 +334,8 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
         $this->assertNull($result['error']);
         $this->assertEqualsWithDelta(self::SOURCE_LAT, $result['source_lat'], 0.0001);
         $this->assertEqualsWithDelta(self::SOURCE_LNG, $result['source_lng'], 0.0001);
-        $this->assertCount($categoryCount, $result['results']);
+        // results includes all persisted rows (multi-candidate + derived top_rated_dining)
+        $this->assertGreaterThanOrEqual($categoryCount, count($result['results']));
     }
 
     // =========================================================================
@@ -367,7 +368,8 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
             ->where('listing_id', self::LISTING_ID)
             ->count();
 
-        $this->assertSame($categoryCount, $totalRows);
+        // >= categoryCount: derived top_rated_dining row(s) are stored in addition to CATEGORIES rows
+        $this->assertGreaterThanOrEqual($categoryCount, $totalRows);
     }
 
     // =========================================================================
@@ -460,7 +462,8 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
             ->where('listing_id', self::LISTING_ID)
             ->get();
 
-        $this->assertCount($categoryCount, $newRows);
+        // >= categoryCount: derived top_rated_dining row(s) are stored in addition to CATEGORIES rows
+        $this->assertGreaterThanOrEqual($categoryCount, $newRows->count());
 
         foreach ($newRows as $row) {
             $this->assertEqualsWithDelta(self::SOURCE_LAT, (float) $row->source_lat, 0.0001);

@@ -107,7 +107,7 @@ class SellerOfferListingController extends Controller
             ? PropertyLocationPoi::where('listing_type', 'seller_agent')
                 ->where('listing_id', $auction->id)
                 ->orderBy('poi_category')
-                ->orderBy('distance_miles')
+                ->orderBy('rank')
                 ->get()
             : collect();
 

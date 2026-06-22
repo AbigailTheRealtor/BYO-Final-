@@ -1615,7 +1615,7 @@ class LandlordOfferListingEdit extends Component
             ? PropertyLocationDna::where('listing_type', 'landlord_agent')->where('listing_id', $this->listingId)->first()
             : null;
         $locationPois = $canViewLocationDnaPanel
-            ? PropertyLocationPoi::where('listing_type', 'landlord_agent')->where('listing_id', $this->listingId)->orderBy('poi_category')->orderBy('distance_miles')->get()
+            ? PropertyLocationPoi::where('listing_type', 'landlord_agent')->where('listing_id', $this->listingId)->orderBy('poi_category')->orderBy('rank')->get()
             : collect();
         $canGenerateLocationDna = false;
         if ($canViewLocationDnaPanel) {
