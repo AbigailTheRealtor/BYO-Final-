@@ -22,6 +22,176 @@
     <h5 class="mb-4"><i class="fa-solid fa-user-check me-2"></i>Applicant Requirements</h5>
     <p class="text-muted mb-4">Set the qualification criteria for prospective tenants. All fields are optional — only fill in requirements you wish to enforce.</p>
 
+    {{-- ===== SECTION: CORE SCREENING CRITERIA (promoted) ===== --}}
+    <div class="card border-0 shadow-sm mb-4" style="border-left: 4px solid #049399 !important;">
+        <div class="card-header d-flex align-items-center gap-2 py-3" style="background: linear-gradient(90deg,#e6f7f8 0%,#f8fdfd 100%); border-bottom: 1px solid #b2e4e8;">
+            <span class="badge rounded-pill text-white fw-semibold px-3 py-2" style="background-color:#049399; font-size:0.8rem;">
+                <i class="fa-solid fa-shield-check me-1"></i>Core Screening Criteria
+            </span>
+            <span class="text-muted small">The five fields renters ask about most — complete these first for best results.</span>
+        </div>
+        <div class="card-body pt-4 pb-2">
+
+            {{-- Minimum Credit Score --}}
+            <div class="form-group" x-data>
+                <label class="fw-bold">Minimum credit score:</label>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Select the minimum credit score band required for tenant qualification.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+                <small class="d-block text-muted mb-1">Applicants below this score will be declined or require additional review.</small>
+                <div class="input-cover">
+                    <select wire:model="min_credit_score" class="form-control has-icon" data-icon="fa-solid fa-chart-line">
+                        <option value="">Select</option>
+                        <option value="No requirement">No requirement</option>
+                        <option value="Below 500">Below 500</option>
+                        <option value="500–549">500–549</option>
+                        <option value="550–599">550–599</option>
+                        <option value="600–649">600–649</option>
+                        <option value="650–699">650–699</option>
+                        <option value="700–749">700–749</option>
+                        <option value="750–799">750–799</option>
+                        <option value="800+">800+</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                {{-- Conditional: custom credit score requirement --}}
+                <div x-show="$wire.min_credit_score === 'Other'" x-cloak class="mt-2">
+                    <div class="input-cover">
+                        <input type="text" wire:model="custom_credit_score_requirement" class="form-control has-icon"
+                            data-icon="fa-solid fa-chart-line"
+                            placeholder="Enter credit score requirement (e.g., 720+ required, Higher deposit accepted in lieu)">
+                    </div>
+                </div>
+            </div>
+
+            {{-- Income Qualification Method --}}
+            <div class="form-group" x-data>
+                <label class="fw-bold">Income qualification method:</label>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Select how you will verify that the tenant's income is sufficient to cover rent.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+                <small class="d-block text-muted mb-1">Establishes the income-to-rent ratio or fixed income threshold applicants must meet.</small>
+                <div class="input-cover">
+                    <select wire:model="income_qualification_method" class="form-control has-icon" data-icon="fa-solid fa-money-bill-wave">
+                        <option value="">Select</option>
+                        <option value="No requirement">No requirement</option>
+                        <option value="2x Rent">2x Rent</option>
+                        <option value="2.5x Rent">2.5x Rent</option>
+                        <option value="3x Rent">3x Rent</option>
+                        <option value="Fixed Monthly Income">Fixed Monthly Income</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                {{-- Conditional: fixed monthly income amount --}}
+                <div x-show="$wire.income_qualification_method === 'Fixed Monthly Income'" x-cloak class="mt-2">
+                    <div class="input-cover">
+                        <span class="input-group-text-seller">$</span>
+                        <input type="text" wire:model="min_monthly_income_fixed" class="form-control"
+                            placeholder="Enter required monthly income (e.g., 5000)"
+                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    </div>
+                </div>
+                {{-- Conditional: custom income requirement --}}
+                <div x-show="$wire.income_qualification_method === 'Other'" x-cloak class="mt-2">
+                    <div class="input-cover">
+                        <input type="text" wire:model="custom_income_requirement" class="form-control has-icon"
+                            data-icon="fa-solid fa-money-bill-wave"
+                            placeholder="Enter income requirement (e.g., Verified bank statements, 6 months reserves)">
+                    </div>
+                </div>
+            </div>
+
+            {{-- Employment Requirement --}}
+            <div class="form-group" x-data>
+                <label class="fw-bold">Employment requirement:</label>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Select the employment status requirement for tenant qualification.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+                <small class="d-block text-muted mb-1">Specifies the work status or income source applicants must have to qualify.</small>
+                <div class="input-cover">
+                    <select wire:model="employment_requirement" class="form-control has-icon" data-icon="fa-solid fa-briefcase">
+                        <option value="">Select</option>
+                        <option value="No requirement">No requirement</option>
+                        <option value="Employed">Employed</option>
+                        <option value="Self-employed allowed">Self-employed allowed</option>
+                        <option value="Retired allowed">Retired allowed</option>
+                        <option value="Student allowed">Student allowed</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div x-show="$wire.employment_requirement === 'Other'" x-cloak class="mt-2">
+                    <div class="input-cover">
+                        <input type="text" wire:model="custom_employment_requirement" class="form-control has-icon"
+                            data-icon="fa-solid fa-briefcase"
+                            placeholder="Enter employment requirement (e.g., Government employee, Independent contractor accepted)">
+                    </div>
+                </div>
+            </div>
+
+            {{-- Eviction History Requirement --}}
+            <div class="form-group" x-data>
+                <label class="fw-bold">Eviction history requirement:</label>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Select the eviction history requirement for tenant qualification.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+                <small class="d-block text-muted mb-1">Applicants with prior evictions within the disqualifying window will not be considered.</small>
+                <div class="input-cover">
+                    <select wire:model="eviction_history_requirement" class="form-control has-icon" data-icon="fa-solid fa-gavel">
+                        <option value="">Select</option>
+                        <option value="No requirement">No requirement</option>
+                        <option value="No prior evictions">No prior evictions</option>
+                        <option value="Evictions older than 7 years accepted">Evictions older than 7 years accepted</option>
+                        <option value="Evictions older than 5 years accepted">Evictions older than 5 years accepted</option>
+                        <option value="Evictions older than 3 years accepted">Evictions older than 3 years accepted</option>
+                        <option value="Case-by-case review">Case-by-case review</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div x-show="$wire.eviction_history_requirement === 'Other'" x-cloak class="mt-2">
+                    <div class="input-cover">
+                        <input type="text" wire:model="custom_eviction_requirement" class="form-control has-icon"
+                            data-icon="fa-solid fa-gavel"
+                            placeholder="Enter eviction requirement (e.g., No evictions within 10 years, Case-by-case review)">
+                    </div>
+                </div>
+            </div>
+
+            {{-- Bankruptcy Requirement --}}
+            <div class="form-group" x-data>
+                <label class="fw-bold">Bankruptcy requirement:</label>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Select the bankruptcy history requirement for tenant qualification.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+                <small class="d-block text-muted mb-1">Applicants with recent bankruptcies may be disqualified based on this setting.</small>
+                <div class="input-cover">
+                    <select wire:model="bankruptcy_requirement" class="form-control has-icon" data-icon="fa-solid fa-scale-balanced">
+                        <option value="">Select</option>
+                        <option value="No requirement">No requirement</option>
+                        <option value="No bankruptcy">No bankruptcy</option>
+                        <option value="Bankruptcy discharged more than 7 years ago accepted">Bankruptcy discharged more than 7 years ago accepted</option>
+                        <option value="Bankruptcy discharged more than 5 years ago accepted">Bankruptcy discharged more than 5 years ago accepted</option>
+                        <option value="Bankruptcy discharged more than 2 years ago accepted">Bankruptcy discharged more than 2 years ago accepted</option>
+                        <option value="Case-by-case review">Case-by-case review</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div x-show="$wire.bankruptcy_requirement === 'Other'" x-cloak class="mt-2">
+                    <div class="input-cover">
+                        <input type="text" wire:model="custom_bankruptcy_requirement" class="form-control has-icon"
+                            data-icon="fa-solid fa-scale-balanced"
+                            placeholder="Enter bankruptcy requirement (e.g., No bankruptcy within 7 years, Discharged bankruptcy only)">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     {{-- ===== SECTION: TENANCY CONDITIONS ===== --}}
     <h6 class="fw-semibold border-bottom pb-2 mb-3">Tenancy conditions</h6>
 
@@ -70,38 +240,6 @@
     {{-- ===== SECTION: CREDIT & FINANCIAL REQUIREMENTS ===== --}}
     <h6 class="fw-semibold border-bottom pb-2 mb-3 mt-4">Credit &amp; financial requirements</h6>
 
-    {{-- Minimum Credit Score --}}
-    <div class="form-group" x-data>
-        <label class="fw-bold">Minimum credit score:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the minimum credit score band required for tenant qualification.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <select wire:model="min_credit_score" class="form-control has-icon" data-icon="fa-solid fa-chart-line">
-                <option value="">Select</option>
-                <option value="No requirement">No requirement</option>
-                <option value="Below 500">Below 500</option>
-                <option value="500–549">500–549</option>
-                <option value="550–599">550–599</option>
-                <option value="600–649">600–649</option>
-                <option value="650–699">650–699</option>
-                <option value="700–749">700–749</option>
-                <option value="750–799">750–799</option>
-                <option value="800+">800+</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        {{-- Conditional: custom credit score requirement --}}
-        <div x-show="$wire.min_credit_score === 'Other'" x-cloak class="mt-2">
-            <div class="input-cover">
-                <input type="text" wire:model="custom_credit_score_requirement" class="form-control has-icon"
-                    data-icon="fa-solid fa-chart-line"
-                    placeholder="Enter credit score requirement (e.g., 720+ required, Higher deposit accepted in lieu)">
-            </div>
-        </div>
-    </div>
-
     {{-- Credit Score Flexibility --}}
     <div class="form-group">
         <label class="fw-bold">Credit score flexibility:</label>
@@ -117,43 +255,6 @@
                 <option value="Case-by-case review">Case-by-case review</option>
                 <option value="Compensating factors considered">Compensating factors considered</option>
             </select>
-        </div>
-    </div>
-
-    {{-- Income Qualification Method --}}
-    <div class="form-group" x-data>
-        <label class="fw-bold">Income qualification method:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how you will verify that the tenant's income is sufficient to cover rent.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <select wire:model="income_qualification_method" class="form-control has-icon" data-icon="fa-solid fa-money-bill-wave">
-                <option value="">Select</option>
-                <option value="No requirement">No requirement</option>
-                <option value="2x Rent">2x Rent</option>
-                <option value="2.5x Rent">2.5x Rent</option>
-                <option value="3x Rent">3x Rent</option>
-                <option value="Fixed Monthly Income">Fixed Monthly Income</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        {{-- Conditional: fixed monthly income amount --}}
-        <div x-show="$wire.income_qualification_method === 'Fixed Monthly Income'" x-cloak class="mt-2">
-            <div class="input-cover">
-                <span class="input-group-text-seller">$</span>
-                <input type="text" wire:model="min_monthly_income_fixed" class="form-control"
-                    placeholder="Enter required monthly income (e.g., 5000)"
-                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-            </div>
-        </div>
-        {{-- Conditional: custom income requirement --}}
-        <div x-show="$wire.income_qualification_method === 'Other'" x-cloak class="mt-2">
-            <div class="input-cover">
-                <input type="text" wire:model="custom_income_requirement" class="form-control has-icon"
-                    data-icon="fa-solid fa-money-bill-wave"
-                    placeholder="Enter income requirement (e.g., Verified bank statements, 6 months reserves)">
-            </div>
         </div>
     </div>
 
@@ -222,89 +323,6 @@
 
     {{-- ===== SECTION: BACKGROUND REQUIREMENTS ===== --}}
     <h6 class="fw-semibold border-bottom pb-2 mb-3 mt-4">Background requirements</h6>
-
-    {{-- Employment Requirement --}}
-    <div class="form-group" x-data>
-        <label class="fw-bold">Employment requirement:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the employment status requirement for tenant qualification.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <select wire:model="employment_requirement" class="form-control has-icon" data-icon="fa-solid fa-briefcase">
-                <option value="">Select</option>
-                <option value="No requirement">No requirement</option>
-                <option value="Employed">Employed</option>
-                <option value="Self-employed allowed">Self-employed allowed</option>
-                <option value="Retired allowed">Retired allowed</option>
-                <option value="Student allowed">Student allowed</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        <div x-show="$wire.employment_requirement === 'Other'" x-cloak class="mt-2">
-            <div class="input-cover">
-                <input type="text" wire:model="custom_employment_requirement" class="form-control has-icon"
-                    data-icon="fa-solid fa-briefcase"
-                    placeholder="Enter employment requirement (e.g., Government employee, Independent contractor accepted)">
-            </div>
-        </div>
-    </div>
-
-    {{-- Eviction History Requirement --}}
-    <div class="form-group" x-data>
-        <label class="fw-bold">Eviction history requirement:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the eviction history requirement for tenant qualification.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <select wire:model="eviction_history_requirement" class="form-control has-icon" data-icon="fa-solid fa-gavel">
-                <option value="">Select</option>
-                <option value="No requirement">No requirement</option>
-                <option value="No prior evictions">No prior evictions</option>
-                <option value="Evictions older than 7 years accepted">Evictions older than 7 years accepted</option>
-                <option value="Evictions older than 5 years accepted">Evictions older than 5 years accepted</option>
-                <option value="Evictions older than 3 years accepted">Evictions older than 3 years accepted</option>
-                <option value="Case-by-case review">Case-by-case review</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        <div x-show="$wire.eviction_history_requirement === 'Other'" x-cloak class="mt-2">
-            <div class="input-cover">
-                <input type="text" wire:model="custom_eviction_requirement" class="form-control has-icon"
-                    data-icon="fa-solid fa-gavel"
-                    placeholder="Enter eviction requirement (e.g., No evictions within 10 years, Case-by-case review)">
-            </div>
-        </div>
-    </div>
-
-    {{-- Bankruptcy Requirement --}}
-    <div class="form-group" x-data>
-        <label class="fw-bold">Bankruptcy requirement:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the bankruptcy history requirement for tenant qualification.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <select wire:model="bankruptcy_requirement" class="form-control has-icon" data-icon="fa-solid fa-scale-balanced">
-                <option value="">Select</option>
-                <option value="No requirement">No requirement</option>
-                <option value="No bankruptcy">No bankruptcy</option>
-                <option value="Bankruptcy discharged more than 7 years ago accepted">Bankruptcy discharged more than 7 years ago accepted</option>
-                <option value="Bankruptcy discharged more than 5 years ago accepted">Bankruptcy discharged more than 5 years ago accepted</option>
-                <option value="Bankruptcy discharged more than 2 years ago accepted">Bankruptcy discharged more than 2 years ago accepted</option>
-                <option value="Case-by-case review">Case-by-case review</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        <div x-show="$wire.bankruptcy_requirement === 'Other'" x-cloak class="mt-2">
-            <div class="input-cover">
-                <input type="text" wire:model="custom_bankruptcy_requirement" class="form-control has-icon"
-                    data-icon="fa-solid fa-scale-balanced"
-                    placeholder="Enter bankruptcy requirement (e.g., No bankruptcy within 7 years, Discharged bankruptcy only)">
-            </div>
-        </div>
-    </div>
 
     {{-- Criminal Background Requirement --}}
     <div class="form-group" x-data>
