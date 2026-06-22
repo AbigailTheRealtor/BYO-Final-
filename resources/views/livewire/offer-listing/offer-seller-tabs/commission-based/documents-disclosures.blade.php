@@ -181,7 +181,7 @@
                         {{-- File upload / existing file --}}
                         <div>
                             <div x-show="!row.file_path">
-                                <label class="small text-muted mb-1">Upload Document</label>
+                                <label class="small text-muted mb-1">Upload Document <span class="text-muted fw-normal">(PDF, DOC, DOCX, JPG, PNG &bull; Max 50 MB)</span></label>
                                 <input
                                     type="file"
                                     class="form-control form-control-sm"

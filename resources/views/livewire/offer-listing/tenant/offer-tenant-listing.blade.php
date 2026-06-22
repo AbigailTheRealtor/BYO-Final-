@@ -1582,9 +1582,9 @@ $lease_types = [
                     ? 'Sale Terms'
                     : 'Leasing Terms');
                     if ($user_type === 'tenant') {
-                    $restTabs = ['Description', $firstRest, 'Pre-Screening']; // B7: Broker Compensation removed from client listing form
+                    $restTabs = [$firstRest, 'Pre-Screening', 'Broker Compensation & Agency Agreement Terms', 'Description'];
                     } else {
-                    $restTabs = [$firstRest, 'Description']; // B7: Broker Compensation removed from client listing form
+                    $restTabs = [$firstRest, 'Broker Compensation & Agency Agreement Terms', 'Description'];
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
                     array_splice($restTabs, 1, 0, 'Pre-Screening');
                     }
@@ -1726,7 +1726,38 @@ $lease_types = [
                                 </div>
                                 @endif
 
-                                {{-- B7: Broker Compensation panel hidden from client listing form --}}
+                                <!-- Additional Details Tab - Adjust index based on user_type -->
+
+                                @php $descriptionTabIndex = $user_type === 'tenant' ? 5 : 4; @endphp
+                                <div class="tab-pane fade {{ $activeTab === $descriptionTabIndex ? 'show active' : '' }}"
+                                    id="description" role="tabpanel" aria-labelledby="description-tab">
+
+                                    @if ($user_type === 'tenant')
+                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.additional-details')
+                                    @elseif($user_type === 'seller')
+                                    @include('livewire.offer-listing.offer-seller-tabs.commission-based.additional-details')
+                                    @elseif($user_type === 'buyer')
+                                    @include('livewire.offer-listing.offer-buyer-tabs.commission-based.additional-details')
+                                    @elseif($user_type === 'landlord')
+                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.additional-details')
+                                    @endif
+                                </div>
+
+                                <!-- Broker Compensation & Agency Agreement Terms Tab -->
+                                @php $brokerCompTabIndex = $user_type === 'tenant' ? 4 : 3; @endphp
+                                <div class="tab-pane fade {{ $activeTab === $brokerCompTabIndex ? 'show active' : '' }}"
+                                    id="broker-compensation-agency-agreement-terms" role="tabpanel"
+                                    aria-labelledby="broker-compensation-agency-agreement-terms-tab">
+                                    @if ($user_type === 'tenant')
+                                        @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
+                                    @elseif ($user_type === 'buyer')
+                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
+                                    @elseif ($user_type === 'seller')
+                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.broker-compensation')
+                                    @elseif ($user_type === 'landlord')
+                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
+                                    @endif
+                                </div>
 
                                 <!-- Referral & Cooperation Terms Tab - Agent only, not shown for tenant offer listings -->
                                 @if ($isAgentUser && $user_type !== 'tenant')

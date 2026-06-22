@@ -2283,7 +2283,14 @@ class LandlordOfferListing extends Component
             $this->saveAllMetadata($auction);
 
             if ($this->address) {
-                \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+                try {
+                    \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+                } catch (\Throwable $dnaEx) {
+                    \Log::warning('[LANDLORD DRAFT] ComputeLocationDna dispatch skipped', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $dnaEx->getMessage(),
+                    ]);
+                }
             }
 
             $auction->saveMeta('draft_version',      $previousVersion + 1);
@@ -3808,7 +3815,10 @@ class LandlordOfferListing extends Component
     public function updatedNewPropertyPhotos()
     {
         try {
-            $this->validate(['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240']);
+            $this->validate(
+            ['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:51200'],
+            ['newPropertyPhotos.*.max' => 'Each photo may not be greater than 50 MB.']
+        );
             $incoming = is_array($this->newPropertyPhotos) ? count($this->newPropertyPhotos) : 0;
             if (count($this->propertyPhotos) + $incoming > 50) {
                 $this->addError('newPropertyPhotos', 'You may upload up to 50 property photos. You currently have ' . count($this->propertyPhotos) . ' photo(s) uploaded. Please select fewer files.');
@@ -3820,6 +3830,15 @@ class LandlordOfferListing extends Component
                 $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
                 $auction->saveMeta('property_photos', $this->propertyPhotos);
             }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->newPropertyPhotos = [];
+            $bag = new \Illuminate\Support\MessageBag;
+            foreach ($e->errors() as $field => $msgs) {
+                foreach ($msgs as $msg) {
+                    $bag->add($field, preg_replace('/\d+ kilobytes/', '50 MB', $msg));
+                }
+            }
+            $this->setErrorBag($bag);
         } catch (\Throwable $e) {
             $this->newPropertyPhotos = [];
             $this->addError('newPropertyPhotos', 'Photo upload failed. Please try again.');
@@ -3828,47 +3847,74 @@ class LandlordOfferListing extends Component
 
     public function updatedListingDocuments()
     {
-        $this->validate(['listingDocuments' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240']);
+        $this->validate(
+            ['listingDocuments' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:51200'],
+            ['listingDocuments.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedLandlordDisclosureFile()
     {
-        $this->validate(['landlord_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['landlord_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['landlord_disclosure_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedSurveyFile()
     {
-        $this->validate(['survey_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['survey_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['survey_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedInspectionReportFile()
     {
-        $this->validate(['inspection_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['inspection_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['inspection_report_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedHoaCondoDocsFile()
     {
-        $this->validate(['hoa_condo_docs_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['hoa_condo_docs_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['hoa_condo_docs_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedFloodDisclosureFile()
     {
-        $this->validate(['flood_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['flood_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['flood_disclosure_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedLeadBasedPaintFile()
     {
-        $this->validate(['lead_based_paint_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['lead_based_paint_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['lead_based_paint_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedEnvironmentalReportFile()
     {
-        $this->validate(['environmental_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['environmental_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['environmental_report_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedLandlordDocFileUpload()
     {
-        $this->validate(['landlordDocFileUpload' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['landlordDocFileUpload' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['landlordDocFileUpload.max' => 'The file may not be greater than 50 MB.']
+        );
 
         if ($this->landlordDocFileIndex === null || !$this->landlordDocFileUpload) {
             return;
@@ -4033,7 +4079,14 @@ class LandlordOfferListing extends Component
             $this->saveAllMetadata($auction);
 
             if ($this->address) {
-                \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+                try {
+                    \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+                } catch (\Throwable $dnaEx) {
+                    \Log::warning('[LANDLORD STORE] ComputeLocationDna dispatch skipped', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $dnaEx->getMessage(),
+                    ]);
+                }
             }
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', $this->listingId);

@@ -2153,6 +2153,25 @@ class LandlordOfferListingEdit extends Component
         return $data;
     }
 
+    /**
+     * Returns true when ANY location-relevant field (address, city, state, zip,
+     * county) differs from the stored meta on $existingAuction, or when there
+     * is no existing record and at least one field is non-empty.
+     * Call this BEFORE saveAllMetadata() so it reads the old stored values.
+     */
+    protected function shouldDispatchLocationDna(?object $existingAuction): bool
+    {
+        $fields = ['address', 'property_city', 'property_state', 'property_zip', 'property_county'];
+        foreach ($fields as $field) {
+            $current = trim((string) ($this->{$field} ?? ''));
+            $stored  = $existingAuction ? trim((string) ($existingAuction->info($field) ?? '')) : '';
+            if ($current !== $stored) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected function buildDraftPayloadHash(): string
     {
         $data = $this->buildDraftPayload();
@@ -2183,6 +2202,7 @@ class LandlordOfferListingEdit extends Component
                 return $this->saveDraft();
             }
 
+            $dnaShouldFire = $this->shouldDispatchLocationDna($auction);
             $auction->is_draft = 1;
             $auction->save();
             $auction->saveMeta('title', $this->listing_title);
@@ -2190,8 +2210,15 @@ class LandlordOfferListingEdit extends Component
             $this->listingId = $auction->id;
             $this->saveAllMetadata($auction);
 
-            if ($this->address) {
-                \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+            if ($dnaShouldFire) {
+                try {
+                    \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+                } catch (\Throwable $dnaEx) {
+                    \Log::warning('[LANDLORD DRAFT-EDIT] ComputeLocationDna dispatch skipped', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $dnaEx->getMessage(),
+                    ]);
+                }
             }
 
             $this->isDraft        = true;
@@ -2228,6 +2255,7 @@ class LandlordOfferListingEdit extends Component
                 $parentDraftId   = $previousDraft->id;
             }
 
+            $dnaShouldFire = $this->shouldDispatchLocationDna($previousDraft);
             $auction = new HirelandLordAgentAuction();
             $auction->user_id  = Auth::id();
             $auction->is_draft = true;
@@ -2238,8 +2266,15 @@ class LandlordOfferListingEdit extends Component
 
             $this->saveAllMetadata($auction);
 
-            if ($this->address) {
-                \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+            if ($dnaShouldFire) {
+                try {
+                    \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+                } catch (\Throwable $dnaEx) {
+                    \Log::warning('[LANDLORD DRAFT] ComputeLocationDna dispatch skipped', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $dnaEx->getMessage(),
+                    ]);
+                }
             }
 
             $auction->saveMeta('draft_version',      $previousVersion + 1);
@@ -3761,6 +3796,7 @@ class LandlordOfferListingEdit extends Component
             $auction = $this->auctionId
                 ? HirelandLordAgentAuction::find($this->auctionId)
                 : new HirelandLordAgentAuction();
+            $dnaShouldFire = $this->shouldDispatchLocationDna($this->auctionId ? $auction : null);
             $auction->is_draft = 0;
             $auction->save();
 
@@ -3770,8 +3806,15 @@ class LandlordOfferListingEdit extends Component
 
             $this->saveAllMetadata($auction);
 
-            if ($this->address) {
-                \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+            if ($dnaShouldFire) {
+                try {
+                    \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+                } catch (\Throwable $dnaEx) {
+                    \Log::warning('[LANDLORD EDIT] ComputeLocationDna dispatch skipped', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $dnaEx->getMessage(),
+                    ]);
+                }
             }
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', $this->listingId);
@@ -3811,7 +3854,10 @@ class LandlordOfferListingEdit extends Component
 
     public function updatedLandlordDocFileUpload()
     {
-        $this->validate(['landlordDocFileUpload' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['landlordDocFileUpload' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['landlordDocFileUpload.max' => 'The file may not be greater than 50 MB.']
+        );
 
         if ($this->landlordDocFileIndex === null || !$this->landlordDocFileUpload) {
             return;
@@ -3879,7 +3925,10 @@ class LandlordOfferListingEdit extends Component
     public function updatedNewPropertyPhotos()
     {
         try {
-            $this->validate(['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240']);
+            $this->validate(
+            ['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:51200'],
+            ['newPropertyPhotos.*.max' => 'Each photo may not be greater than 50 MB.']
+        );
             $incoming = is_array($this->newPropertyPhotos) ? count($this->newPropertyPhotos) : 0;
             if (count($this->propertyPhotos) + $incoming > 50) {
                 $this->addError('newPropertyPhotos', 'You may upload up to 50 property photos. You currently have ' . count($this->propertyPhotos) . ' photo(s) uploaded. Please select fewer files.');
@@ -3892,6 +3941,15 @@ class LandlordOfferListingEdit extends Component
                 $auction = HirelandLordAgentAuction::findOrFail($_photoId);
                 $auction->saveMeta('property_photos', $this->propertyPhotos);
             }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->newPropertyPhotos = [];
+            $bag = new \Illuminate\Support\MessageBag;
+            foreach ($e->errors() as $field => $msgs) {
+                foreach ($msgs as $msg) {
+                    $bag->add($field, preg_replace('/\d+ kilobytes/', '50 MB', $msg));
+                }
+            }
+            $this->setErrorBag($bag);
         } catch (\Throwable $e) {
             $this->newPropertyPhotos = [];
             $this->addError('newPropertyPhotos', 'Photo upload failed. Please try again.');

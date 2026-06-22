@@ -3094,9 +3094,12 @@
                 var reqFields = getAllRequiredFields();
                 reqFields.forEach(function(field) {
                     if (!isElementVisible(field)) return;
-                    // Select2-initialised multi-selects: checked via Livewire property below
+                    // Select2-initialised multi-selects: checked via Livewire property below.
+                    // Also skip by class name in case Select2 has not yet re-initialised after a Livewire render.
                     if (field.tagName === 'SELECT' && field.multiple &&
-                        field.classList.contains('select2-hidden-accessible')) return;
+                        (field.classList.contains('select2-hidden-accessible') ||
+                         field.classList.contains('lease_term_options') ||
+                         field.closest('[wire\\:ignore]'))) return;
                     var isEmpty = (
                         field.type === 'file'     ? !field.files || field.files.length === 0 :
                         field.type === 'checkbox' ? !field.checked :

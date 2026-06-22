@@ -2094,6 +2094,25 @@ class SellerOfferListingEdit extends Component
         return $data;
     }
 
+    /**
+     * Returns true when ANY location-relevant field (address, city, state, zip,
+     * county) differs from the stored meta on $existingAuction, or when there
+     * is no existing record and at least one field is non-empty.
+     * Call this BEFORE saveAllMetadata() so it reads the old stored values.
+     */
+    protected function shouldDispatchLocationDna(?object $existingAuction): bool
+    {
+        $fields = ['address', 'property_city', 'property_state', 'property_zip', 'property_county'];
+        foreach ($fields as $field) {
+            $current = trim((string) ($this->{$field} ?? ''));
+            $stored  = $existingAuction ? trim((string) ($existingAuction->info($field) ?? '')) : '';
+            if ($current !== $stored) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected function buildDraftPayloadHash(): string
     {
         $data = $this->buildDraftPayload();
@@ -2124,12 +2143,24 @@ class SellerOfferListingEdit extends Component
                 return $this->saveDraft();
             }
 
+            $dnaShouldFire = $this->shouldDispatchLocationDna($auction);
             $auction->title    = $this->listing_title;
             $auction->is_draft = 1;
             $auction->save();
 
             $this->listingId = $auction->id;
             $this->saveAllMetadata($auction);
+
+            if ($dnaShouldFire) {
+                try {
+                    \App\Jobs\ComputeLocationDna::dispatch('seller_agent', $this->listingId);
+                } catch (\Throwable $dnaEx) {
+                    \Log::warning('[SELLER DRAFT-EDIT] ComputeLocationDna dispatch skipped', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $dnaEx->getMessage(),
+                    ]);
+                }
+            }
 
             $this->isDraft        = true;
             $this->isListingDraft = true;
@@ -2171,6 +2202,7 @@ class SellerOfferListingEdit extends Component
                 $parentDraftId   = $previousDraft->id;
             }
 
+            $dnaShouldFire = $this->shouldDispatchLocationDna($previousDraft);
             $auction = new SellerAgentAuctionModel();
             $auction->user_id  = Auth::id();
             $auction->title    = $this->listing_title;
@@ -2182,6 +2214,17 @@ class SellerOfferListingEdit extends Component
             $this->auctionId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            if ($dnaShouldFire) {
+                try {
+                    \App\Jobs\ComputeLocationDna::dispatch('seller_agent', $this->listingId);
+                } catch (\Throwable $dnaEx) {
+                    \Log::warning('[SELLER DRAFT] ComputeLocationDna dispatch skipped', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $dnaEx->getMessage(),
+                    ]);
+                }
+            }
 
             $auction->saveMeta('draft_version',      $previousVersion + 1);
             $auction->saveMeta('parent_draft_id',    $parentDraftId);
@@ -2957,7 +3000,10 @@ class SellerOfferListingEdit extends Component
     public function updatedNewPropertyPhotos()
     {
         try {
-            $this->validate(['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240']);
+            $this->validate(
+            ['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:51200'],
+            ['newPropertyPhotos.*.max' => 'Each photo may not be greater than 50 MB.']
+        );
             $incoming = is_array($this->newPropertyPhotos) ? count($this->newPropertyPhotos) : 0;
             if (count($this->propertyPhotos) + $incoming > 50) {
                 $this->addError('newPropertyPhotos', 'You may upload up to 50 property photos. You currently have ' . count($this->propertyPhotos) . ' photo(s) uploaded. Please select fewer files.');
@@ -2969,6 +3015,15 @@ class SellerOfferListingEdit extends Component
                 $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
                 $auction->saveMeta('property_photos', $this->propertyPhotos);
             }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->newPropertyPhotos = [];
+            $bag = new \Illuminate\Support\MessageBag;
+            foreach ($e->errors() as $field => $msgs) {
+                foreach ($msgs as $msg) {
+                    $bag->add($field, preg_replace('/\d+ kilobytes/', '50 MB', $msg));
+                }
+            }
+            $this->setErrorBag($bag);
         } catch (\Throwable $e) {
             $this->newPropertyPhotos = [];
             $this->addError('newPropertyPhotos', 'Photo upload failed. Please try again.');
@@ -2977,7 +3032,10 @@ class SellerOfferListingEdit extends Component
 
     public function updatedListingDocuments()
     {
-        $this->validate(['listingDocuments' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240']);
+        $this->validate(
+            ['listingDocuments' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:51200'],
+            ['listingDocuments.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function deletePropertyPhoto($index)
@@ -3058,42 +3116,66 @@ class SellerOfferListingEdit extends Component
 
     public function updatedSellerDisclosureFile()
     {
-        $this->validate(['seller_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['seller_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['seller_disclosure_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedSurveyFile()
     {
-        $this->validate(['survey_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['survey_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['survey_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedInspectionReportFile()
     {
-        $this->validate(['inspection_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['inspection_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['inspection_report_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedHoaCondoDocsFile()
     {
-        $this->validate(['hoa_condo_docs_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['hoa_condo_docs_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['hoa_condo_docs_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedFloodDisclosureFile()
     {
-        $this->validate(['flood_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['flood_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['flood_disclosure_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedLeadBasedPaintFile()
     {
-        $this->validate(['lead_based_paint_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['lead_based_paint_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['lead_based_paint_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedEnvironmentalReportFile()
     {
-        $this->validate(['environmental_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['environmental_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['environmental_report_file.max' => 'The file may not be greater than 50 MB.']
+        );
     }
 
     public function updatedDocFileUpload()
     {
-        $this->validate(['docFileUpload' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+        $this->validate(
+            ['docFileUpload' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:51200'],
+            ['docFileUpload.max' => 'The file may not be greater than 50 MB.']
+        );
 
         if ($this->docFileUploadIndex === null || !$this->docFileUpload) {
             return;
@@ -3878,7 +3960,19 @@ class SellerOfferListingEdit extends Component
 
             $this->listingId = $auction->id;
 
+            $dnaShouldFire = $this->shouldDispatchLocationDna($auction);
             $this->saveAllMetadata($auction);
+
+            if ($dnaShouldFire) {
+                try {
+                    \App\Jobs\ComputeLocationDna::dispatch('seller_agent', $this->listingId);
+                } catch (\Throwable $dnaEx) {
+                    \Log::warning('[SELLER EDIT] ComputeLocationDna dispatch skipped', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $dnaEx->getMessage(),
+                    ]);
+                }
+            }
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('seller', $this->listingId);
 

@@ -767,9 +767,10 @@
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @php
-                                    $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Description', 'Purchasing Terms'];
-                                    // B7: Broker Compensation tab removed from client listing form
-                                    $additionalDetailsIndex = 2;
+                                    $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Broker Compensation & Agency Agreement Terms'];
+                                    $brokerCompIndex        = count($fullServiceTabs) - 1;
+                                    $fullServiceTabs[]      = 'Description';
+                                    $additionalDetailsIndex = count($fullServiceTabs) - 1;
                                     $aiQuestionsIndex      = count($fullServiceTabs);
                                     $agentCredentialsIndex = count($fullServiceTabs) + 1;
                                 @endphp
@@ -856,7 +857,20 @@
                                     @endif
                                 </div>
 
-                                {{-- B7: Broker Compensation tab hidden from client listing form --}}
+                                <!-- Broker Compensation & Agency Agreement Terms Tab -->
+                                <div class="tab-pane fade {{ $activeTab === $brokerCompIndex ? 'show active' : '' }}"
+                                    id="broker-compensation-agency-agreement-terms" role="tabpanel"
+                                    aria-labelledby="broker-compensation-agency-agreement-terms-tab">
+                                    @if ($user_type === 'buyer')
+                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
+                                    @elseif ($user_type === 'tenant')
+                                        @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
+                                    @elseif ($user_type === 'seller')
+                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.broker-compensation')
+                                    @elseif ($user_type === 'landlord')
+                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
+                                    @endif
+                                </div>
 
                                 <!-- Description Tab -->
                                 <div class="tab-pane fade {{ $activeTab === $additionalDetailsIndex ? 'show active' : '' }}"

@@ -46,7 +46,7 @@
                 <i class="fa-solid fa-plus me-1"></i> Add Photos
             </span>
             <div class="mt-2" style="font-size:.78rem;color:#999;">
-                You can select multiple photos at once &bull; JPG, JPEG, PNG, WEBP accepted
+                You can select multiple photos at once &bull; JPG, JPEG, PNG, WEBP accepted &bull; Max 50 MB per photo
             </div>
         </label>
     @else
