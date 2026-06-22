@@ -132,91 +132,112 @@
 </div>
 <div class="wizard-step" data-step="18" data-old="21">
     @php
-        $rent_includes = [
-            ['name' => 'Cable TV', 'target' => ''],
-            ['name' => 'Electricity', 'target' => ''],
-            ['name' => 'Gas', 'target' => ''],
-            ['name' => 'Grounds Care', 'target' => ''],
-            ['name' => 'Insurance', 'target' => ''],
-            ['name' => 'Internet', 'target' => ''],
-            ['name' => 'Laundry', 'target' => ''],
-            ['name' => 'Management', 'target' => ''],
-            ['name' => 'Pest Control', 'target' => ''],
-            ['name' => 'Pool Maintenance', 'target' => ''],
-            ['name' => 'Recreational', 'target' => ''],
-            ['name' => 'Repairs', 'target' => ''],
-            ['name' => 'Security', 'target' => ''],
-            ['name' => 'Sewer', 'target' => ''],
-            ['name' => 'Taxes', 'target' => ''],
-            ['name' => 'Telephone', 'target' => ''],
-            ['name' => 'Trash Collection', 'target' => ''],
-            ['name' => 'Water', 'target' => ''],
-            ['name' => 'None', 'target' => ''],
-            ['name' => 'Other', 'target' => '.rent_include'],
+        $rentIncludesItems = [
+            ['name' => 'Cable TV',         'icon' => 'fa-solid fa-tv'],
+            ['name' => 'Electricity',       'icon' => 'fa-solid fa-bolt'],
+            ['name' => 'Gas',               'icon' => 'fa-solid fa-fire-flame-curved'],
+            ['name' => 'Grounds Care',      'icon' => 'fa-solid fa-leaf'],
+            ['name' => 'Insurance',         'icon' => 'fa-solid fa-shield-halved'],
+            ['name' => 'Internet',          'icon' => 'fa-solid fa-wifi'],
+            ['name' => 'Laundry',           'icon' => 'fa-solid fa-shirt'],
+            ['name' => 'Management',        'icon' => 'fa-solid fa-user-tie'],
+            ['name' => 'Pest Control',      'icon' => 'fa-solid fa-bug'],
+            ['name' => 'Pool Maintenance',  'icon' => 'fa-solid fa-person-swimming'],
+            ['name' => 'Recreational',      'icon' => 'fa-solid fa-dumbbell'],
+            ['name' => 'Repairs',           'icon' => 'fa-solid fa-wrench'],
+            ['name' => 'Security',          'icon' => 'fa-solid fa-shield'],
+            ['name' => 'Sewer',             'icon' => 'fa-solid fa-water-ladder'],
+            ['name' => 'Taxes',             'icon' => 'fa-solid fa-file-invoice-dollar'],
+            ['name' => 'Telephone',         'icon' => 'fa-solid fa-phone'],
+            ['name' => 'Trash Collection',  'icon' => 'fa-solid fa-trash-can'],
+            ['name' => 'Water',             'icon' => 'fa-solid fa-droplet'],
+            ['name' => 'None',              'icon' => 'fa-solid fa-ban'],
+            ['name' => 'Other',             'icon' => 'fa-solid fa-ellipsis'],
         ];
+        $savedRentIncludes = isset($auction->get->rent_include) ? $auction->get->rent_include : [];
     @endphp
     <div class="form-group">
-        <label class="fw-bold">Rent Includes: </label>
-        <select class="grid-picker" name="rent_include[]" id="rent_include"
-            style="justify-content: flex-start;" multiple required>
-            <option value="">Select</option>
-            @foreach ($rent_includes as $item)
-                <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                    class="card flex-row" style="width:calc(33.33% - 10px);"
-                    data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->rent_include) && in_array($item['name'], $auction->get->rent_include) ? 'selected' : '' }} >
-                    {{ $item['name'] }}
-                </option>
+        <label class="fw-bold">Rent Includes:</label>
+        <div class="utility-checklist-grid mt-2" id="rent-includes-checklist">
+            @foreach ($rentIncludesItems as $item)
+                @php $isChecked = in_array($item['name'], $savedRentIncludes); @endphp
+                <label class="utility-checklist-card{{ $isChecked ? ' utility-selected' : '' }}">
+                    <input type="checkbox" name="rent_include[]" value="{{ $item['name'] }}"
+                        {{ $isChecked ? 'checked' : '' }}
+                        onchange="this.closest('.utility-checklist-card').classList.toggle('utility-selected', this.checked); toggleOtherRentInclude();">
+                    <span class="utility-checklist-icon"><i class="{{ $item['icon'] }}"></i></span>
+                    <span class="utility-checklist-label">{{ $item['name'] }}</span>
+                </label>
             @endforeach
-        </select>
+        </div>
     </div>
-    <div class="form-group rent_include d-none">
-        <label class="fw-bold">Rent Includes: </label>
-        <input type="text" class="form-control has-icon" name="other_rent_include" value="{{isset($auction->get->other_rent_include) ? $auction->get->other_rent_include : ''}}"
-            data-icon="fa-regular fa-circle-check" id="rent_include" required />
+    <div class="form-group" id="other_rent_include_wrapper" style="{{ in_array('Other', $savedRentIncludes) ? '' : 'display:none;' }}">
+        <label class="fw-bold">Please specify:</label>
+        <input type="text" class="form-control has-icon" name="other_rent_include"
+            value="{{ isset($auction->get->other_rent_include) ? $auction->get->other_rent_include : '' }}"
+            data-icon="fa-solid fa-ellipsis"
+            placeholder="Enter what rent includes (e.g., Water, Trash, Cable)" />
     </div>
+    <script>
+        function toggleOtherRentInclude() {
+            var checked = document.querySelectorAll('#rent-includes-checklist input[value="Other"]:checked').length > 0;
+            document.getElementById('other_rent_include_wrapper').style.display = checked ? '' : 'none';
+        }
+    </script>
 </div>
 <div class="wizard-step" data-step="19" data-old="22">
     @php
-        $tenantPays = [
-            ['name' => 'Association Fees', 'target' => ''],
-            ['name' => 'Capital Expenses', 'target' => ''],
-            ['name' => 'Common Area Maintenance', 'target' => ''],
-            ['name' => 'Condominium Fees', 'target' => ''],
-            ['name' => 'Electricity', 'target' => ''],
-            ['name' => 'Gas', 'target' => ''],
-            ['name' => 'Liability Insurance', 'target' => ''],
-            ['name' => 'Parking Fee', 'target' => ''],
-            ['name' => 'Pro-Rated', 'target' => ''],
-            ['name' => 'Property Insurance', 'target' => ''],
-            ['name' => 'Property Taxes', 'target' => ''],
-            ['name' => 'Reserves', 'target' => ''],
-            ['name' => 'Sewer', 'target' => ''],
-            ['name' => 'Trash Collection', 'target' => ''],
-            ['name' => 'Water', 'target' => ''],
-            ['name' => 'None ', 'target' => ''],
-            ['name' => 'Other', 'target' => '.otherTenantPays'],
+        $tenantPaysItems = [
+            ['name' => 'Association Fees',       'icon' => 'fa-solid fa-building-columns'],
+            ['name' => 'Capital Expenses',        'icon' => 'fa-solid fa-money-bill-trend-up'],
+            ['name' => 'Common Area Maintenance', 'icon' => 'fa-solid fa-broom'],
+            ['name' => 'Condominium Fees',        'icon' => 'fa-solid fa-building'],
+            ['name' => 'Electricity',             'icon' => 'fa-solid fa-bolt'],
+            ['name' => 'Gas',                     'icon' => 'fa-solid fa-fire-flame-curved'],
+            ['name' => 'Liability Insurance',     'icon' => 'fa-solid fa-scale-balanced'],
+            ['name' => 'Parking Fee',             'icon' => 'fa-solid fa-square-parking'],
+            ['name' => 'Pro-Rated',               'icon' => 'fa-solid fa-calculator'],
+            ['name' => 'Property Insurance',      'icon' => 'fa-solid fa-shield-halved'],
+            ['name' => 'Property Taxes',          'icon' => 'fa-solid fa-landmark'],
+            ['name' => 'Reserves',                'icon' => 'fa-solid fa-piggy-bank'],
+            ['name' => 'Sewer',                   'icon' => 'fa-solid fa-water-ladder'],
+            ['name' => 'Trash Collection',        'icon' => 'fa-solid fa-trash-can'],
+            ['name' => 'Water',                   'icon' => 'fa-solid fa-droplet'],
+            ['name' => 'None ',                   'icon' => 'fa-solid fa-ban'],
+            ['name' => 'Other',                   'icon' => 'fa-solid fa-ellipsis'],
         ];
+        $savedTenantPays = isset($auction->get->tenantPays)
+            ? (json_decode($auction->get->tenantPays, true) ?? [])
+            : [];
     @endphp
     <div class="form-group">
         <label class="fw-bold">Tenant Pays:</label>
-        <select class="grid-picker" name="tenantPays[]" id="rent_include"
-            style="justify-content: flex-start;" multiple required>
-            <option value="">Select</option>
-            @foreach ($tenantPays as $item)
-                <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                    class="card flex-row" style="width:calc(33.33% - 10px);"
-                    data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->tenantPays) && in_array($item['name'], json_decode($auction->get->tenantPays, true) ?? []) ? 'selected' : '' }} >
-                    {{ $item['name'] }}
-                </option>
+        <div class="utility-checklist-grid mt-2" id="tenant-pays-checklist">
+            @foreach ($tenantPaysItems as $item)
+                @php $isChecked = in_array($item['name'], $savedTenantPays); @endphp
+                <label class="utility-checklist-card{{ $isChecked ? ' utility-selected' : '' }}">
+                    <input type="checkbox" name="tenantPays[]" value="{{ $item['name'] }}"
+                        {{ $isChecked ? 'checked' : '' }}
+                        onchange="this.closest('.utility-checklist-card').classList.toggle('utility-selected', this.checked); toggleOtherTenantPays();">
+                    <span class="utility-checklist-icon"><i class="{{ $item['icon'] }}"></i></span>
+                    <span class="utility-checklist-label">{{ $item['name'] }}</span>
+                </label>
             @endforeach
-        </select>
+        </div>
     </div>
-    <div class="form-group otherTenantPays d-none">
-        <label class="fw-bold">Tenant Pays: </label>
-        <input type="text" class="form-control has-icon" placeholder="" value="{{isset($auction->get->otherTenantPays) ? $auction->get->otherTenantPays : ''}}"
-            name="otherTenantPays" data-icon="fa-regular fa-circle-check" id="rent_include"
-            required />
+    <div class="form-group" id="other_tenant_pays_wrapper" style="{{ in_array('Other', $savedTenantPays) ? '' : 'display:none;' }}">
+        <label class="fw-bold">Please specify:</label>
+        <input type="text" class="form-control has-icon" name="otherTenantPays"
+            value="{{ isset($auction->get->otherTenantPays) ? $auction->get->otherTenantPays : '' }}"
+            data-icon="fa-solid fa-ellipsis"
+            placeholder="Enter what tenant pays" />
     </div>
+    <script>
+        function toggleOtherTenantPays() {
+            var checked = document.querySelectorAll('#tenant-pays-checklist input[value="Other"]:checked').length > 0;
+            document.getElementById('other_tenant_pays_wrapper').style.display = checked ? '' : 'none';
+        }
+    </script>
     @php
         $ownerPays = [
             ['name' => 'Cable TV', 'target' => ''],
