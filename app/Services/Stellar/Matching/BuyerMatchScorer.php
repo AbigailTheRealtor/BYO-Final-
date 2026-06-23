@@ -497,9 +497,9 @@ class BuyerMatchScorer
     private function scoreLeaseTermPreference(array $rawJson, BuyerCriteriaPayload $criteria): float
     {
         // No preference expressed — dimension is inactive.
-        // Returning 0 (not a neutral value) preserves pre-existing buyer scoring
-        // behaviour: buyers who never set preferredLeaseTerms score exactly the
-        // same as before this dimension was introduced.
+        // Returning 0 preserves pre-existing buyer/residential scoring: callers
+        // that never set preferredLeaseTerms score exactly the same as before
+        // this dimension was introduced. (#3177 intentional design decision.)
         if (empty($criteria->preferredLeaseTerms)) {
             return 0.0;
         }
