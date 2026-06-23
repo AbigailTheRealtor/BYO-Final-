@@ -171,12 +171,27 @@ class LocationDnaRankingProfileService
             // ── School ────────────────────────────────────────────────────────
             // Distance matters most for schools. Rating signal is weaker because
             // many schools lack Google reviews.
+            // Accredited institutions (school, university, secondary_school) are
+            // preferred so they reliably outrank enrichment studios and coaching
+            // businesses that slip past the name-based exclusion filter.
             'school' => [
-                'preferred_types'       => ['school', 'point_of_interest'],
-                'penalized_types'       => ['locality', 'political'],
+                'preferred_types'       => [
+                    'school',
+                    'university',
+                    'secondary_school',
+                    'primary_school',
+                    'point_of_interest',
+                ],
+                'penalized_types'       => [
+                    'locality',
+                    'political',
+                    'gym',
+                    'beauty_salon',
+                    'spa',
+                ],
                 'review_weight'         => 0.15,
-                'relevance_weight'      => 0.25,
-                'match_weight'          => 0.20,
+                'relevance_weight'      => 0.20,
+                'match_weight'          => 0.25,
                 'distance_weight'       => 0.40,
                 'min_confidence_reviews' => 10,
                 'relevance_signals'     => [
@@ -186,13 +201,25 @@ class LocationDnaRankingProfileService
             ],
 
             // ── Hospital ──────────────────────────────────────────────────────
+            // Legitimate acute-care facilities (hospital, emergency_room,
+            // medical_center, urgent_care, doctor) are strongly preferred.
+            // Boosted match_weight ensures a real hospital reliably outranks
+            // any specialist-only or aesthetic-medicine practice that slips
+            // past the exclusion filter.
             'hospital' => [
-                'preferred_types'       => ['hospital', 'health'],
-                'penalized_types'       => ['veterinary_care', 'pharmacy'],
+                'preferred_types'       => [
+                    'hospital',
+                    'emergency_room',
+                    'medical_center',
+                    'urgent_care',
+                    'doctor',
+                    'health',
+                ],
+                'penalized_types'       => ['veterinary_care', 'pharmacy', 'beauty_salon', 'spa'],
                 'review_weight'         => 0.20,
-                'relevance_weight'      => 0.30,
-                'match_weight'          => 0.25,
-                'distance_weight'       => 0.25,
+                'relevance_weight'      => 0.25,
+                'match_weight'          => 0.35,
+                'distance_weight'       => 0.20,
                 'min_confidence_reviews' => 50,
                 'relevance_signals'     => [
                     'high_review_threshold' => 100,

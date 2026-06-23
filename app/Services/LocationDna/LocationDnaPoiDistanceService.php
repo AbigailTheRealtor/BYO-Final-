@@ -129,21 +129,20 @@ class LocationDnaPoiDistanceService
     ];
 
     /**
-     * Post-fetch exclusion rules applied per category.
-     *
-     * Each rule is evaluated against a raw Google Places result object. Results
-     * failing the rule are skipped; the pipeline walks down the ranked list to
-     * find the next valid candidate.
-     *
-     * Rules use the stored `types_json` array and place `name` — no name-matching
-     * heuristics are used for grocery/pharmacy; name-matching is only used where
-     * the type taxonomy is insufficient (golf_course, pharmacy animal-hospital check).
-     *
-     * Sources: Audit report Section 8 and Section 10, P0 findings:
-     *   - grocery_store: gas station returned as grocery (🔴 P0)
-     *   - pharmacy: animal hospital returned as pharmacy (🔴 P0)
-     *   - golf_course: adventure/mini golf returned as golf course (🔴 P0)
+     * Maximum distance in miles for a beach/beach_access result to be considered
+     * a meaningful nearby beach. Results beyond this threshold are suppressed even
+     * if they pass all other exclusion filters, since a beach 20+ miles away
+     * carries no lifestyle signal for the listed property.
      */
+    private const BEACH_MAX_MEANINGFUL_DISTANCE_MILES = 20.0;
+
+    /**
+     * Within this distance (miles), two transit stops with the same name are
+     * considered duplicates and the second is suppressed.
+     * Approximately 100 metres in miles.
+     */
+    private const TRANSIT_DEDUP_DISTANCE_MILES = 0.0621;
+
     private const CATEGORY_EXCLUSION_RULES = [
         'grocery_store' => [
             // ── Grocery Store exclusion — two-part prioritized rule ─────────
@@ -171,17 +170,78 @@ class LocationDnaPoiDistanceService
             'exclude_if_name_matches_when_types_empty' => '/\b(bp|shell|chevron|racetrac|wawa|circle\s*k|7-?eleven|sunoco|murphy\s+usa|cumberland\s+farms)\b/i',
         ],
         'pharmacy' => [
-            // Exclude if result has veterinary_care type (animal pharmacies).
-            // Also exclude by name for "animal hospital" since Google may not
-            // always tag in-house dispensaries with veterinary_care.
-            // Audit: "animal hospital in types or name matches /animal hospital/i"
+            // Exclude if result has veterinary_care type (animal pharmacies /
+            // in-house dispensaries at vet clinics).
             'exclude_if_types_include' => ['veterinary_care'],
-            'exclude_if_name_matches'  => '/animal\s+hospital/i',
+
+            // Name-pattern guard for veterinary/animal-care providers that Google
+            // may tag as 'pharmacy' without the veterinary_care type.
+            // Covers: animal hospital chains (Banfield, VCA, BluePearl),
+            // generic animal hospital / pet ER naming, and pet medication providers.
+            'exclude_if_name_matches' => '/\b(animal\s+hospital|pet\s+er|emergency\s+animal|banfield|vca\b|bluepearl|blue\s+pearl|pet\s+medication|veterinary|vet\s+clinic|animal\s+care\s+center|animal\s+medical|pet\s+pharmacy)\b/i',
+        ],
+        'hospital' => [
+            // Exclude cosmetic clinics, aesthetic practices, and wellness spas that
+            // Google occasionally surfaces under the 'hospital' type search.
+            // These are not acute-care or primary-care medical facilities.
+            // Covered: MedSpa / Med Spa, IV Therapy / IV Drip / IV Lounge,
+            //   Aesthetics / Aesthetic Center, Botox providers (standalone),
+            //   Ketamine clinics, Infusion Lounge, Wellness Spa, CryoTherapy,
+            //   HydraFacial / Hydra Facial studios.
+            'exclude_if_name_matches' => '/\b(med\s*spa|iv\s+therapy|iv\s+drip|iv\s+lounge|infusion\s+lounge|ketamine|cryotherapy|cryo\s+therapy|hydrafacial|hydra\s+facial|aesthetics?\s+center|aesthetic\s+clinic|botox\s+clinic|wellness\s+spa|beauty\s+lounge|laser\s+clinic|laser\s+aesthetics)\b/i',
+        ],
+        'school' => [
+            // Exclude non-accredited enrichment and wellness businesses that Google
+            // may surface under the 'school' type:
+            //   - Life coaches / coaching studios
+            //   - Yoga studios / yoga schools
+            //   - Music teachers / music instruction (non-school building)
+            //   - Swim schools / swim academies (for-profit instruction, not school)
+            //   - Tutoring centers (standalone enrichment, not an accredited school)
+            //   - Enrichment / learning studios without accredited K-12 status
+            //   - Dance studios
+            //   - Martial arts / karate / taekwondo dojos
+            //   - Art / painting studios marketed as "art school"
+            // Deliberately does NOT block: "School of Music" or "School of Dance"
+            // in a university context — those contain 'university' in types and
+            // would not be caught by name alone; type-preference in the ranking
+            // profile handles accredited institutions.
+            'exclude_if_name_matches' => '/\b(life\s+coach|coaching\s+studio|yoga\s+studio|yoga\s+school|music\s+(teacher|instructor|lesson|tutor)|swim\s+(school|academy|lesson)|tutoring\s+(center|centre)|learning\s+(center|centre|studio)|enrichment\s+(center|centre|studio)|dance\s+studio|martial\s+arts|karate|taekwondo|jiu.?jitsu|art\s+studio|painting\s+studio|guitar\s+lesson|piano\s+lesson|drum\s+lesson)\b/i',
+        ],
+        'beach' => [
+            // Exclude lodging, hotel chains, and hospitality venues that Google
+            // surfaces in beach keyword searches (hotels with "Beach" in their name,
+            // resorts, vacation rentals, theme parks, water parks).
+            'exclude_if_types_include' => ['lodging'],
+
+            // Name-pattern guard for hospitality and entertainment venues.
+            // Covers: Hotel, Motel, Resort, Inn, Suites, Vacation Rental,
+            //   Theme Park, Water Park, Aquatic Park, Splash Pad / Splash Zone,
+            //   Club Med, Sandals, Marriott, Hilton, Hyatt, etc.
+            'exclude_if_name_matches' => '/\b(hotel|motel|resort|inn\b|suites?\b|vacation\s+rental|theme\s+park|water\s+park|aquatic\s+park|splash\s+(pad|zone|park)|club\s+med|sandals\b|marriott|hilton|hyatt|sheraton|westin|doubletree|holiday\s+inn|hampton\s+inn|courtyard|airbnb)\b/i',
+        ],
+        'beach_access' => [
+            // Same exclusion set as 'beach' — access points should never be
+            // lodging properties or entertainment parks.
+            'exclude_if_types_include' => ['lodging'],
+            'exclude_if_name_matches'  => '/\b(hotel|motel|resort|inn\b|suites?\b|vacation\s+rental|theme\s+park|water\s+park|aquatic\s+park|splash\s+(pad|zone|park)|club\s+med|sandals\b|marriott|hilton|hyatt|sheraton|westin|doubletree|holiday\s+inn|hampton\s+inn|courtyard|airbnb)\b/i',
         ],
         'golf_course' => [
-            // Exclude adventure/mini/miniature golf and putt-putt by name.
-            // Audit: "adventure golf, mini golf, miniature golf, putt-putt"
-            'exclude_if_name_matches' => '/adventure\s+golf|mini.?golf|miniature\s+golf|putt.?putt/i',
+            // Exclude entertainment and miniature golf venues.
+            // Audit findings + #3176 hardening:
+            //   adventure golf, mini golf, miniature golf, putt-putt (existing),
+            //   Topgolf, Drive Shack, Puttshack, PopStroke, entertainment + golf.
+            'exclude_if_name_matches' => '/adventure\s+golf|mini.?golf|miniature\s+golf|putt.?putt|topgolf|drive\s+shack|puttshack|popstroke|entertainment.*golf|golf.*entertainment/i',
+        ],
+        'transit_station' => [
+            // Exclude retail stores that Google occasionally tags as transit stops.
+            // These types are never genuine transit stations.
+            'exclude_if_types_include' => [
+                'grocery_or_supermarket',
+                'pharmacy',
+                'convenience_store',
+                'clothing_store',
+            ],
         ],
     ];
 
@@ -547,11 +607,17 @@ class LocationDnaPoiDistanceService
                 return [[$row->toArray()], []];
             }
 
+            // Transit deduplication: collapse stops at the same location or with
+            // the same name within 100 m before applying other filters.
+            $candidatesToExamine = ($category === 'transit_station')
+                ? $this->deduplicateTransitCandidates($rawCandidates, $sourceLat, $sourceLng)
+                : $rawCandidates;
+
             // Apply exclusion filters to collect valid candidates
             $validCandidates = [];
             $examined        = 0;
 
-            foreach ($rawCandidates as $place) {
+            foreach ($candidatesToExamine as $place) {
                 if ($examined >= self::MAX_RESULTS_TO_EXAMINE) {
                     break;
                 }
@@ -584,11 +650,52 @@ class LocationDnaPoiDistanceService
                 return [[$row->toArray()], $rawCandidates];
             }
 
+            // Beach / beach_access distance suppression: if the nearest valid result
+            // is beyond the meaningful-beach threshold, suppress the entire category.
+            // This prevents inland locations (Orlando, Ocala) from receiving a beach
+            // result where the nearest "beach" is a far-away coastal town.
+            if ($category === 'beach' || $category === 'beach_access') {
+                $nearestBeachMiles = null;
+                foreach ($validCandidates as $place) {
+                    $pLat = (float) ($place['geometry']['location']['lat'] ?? 0);
+                    $pLng = (float) ($place['geometry']['location']['lng'] ?? 0);
+                    $d = $this->haversineDistanceMiles($sourceLat, $sourceLng, $pLat, $pLng);
+                    if ($nearestBeachMiles === null || $d < $nearestBeachMiles) {
+                        $nearestBeachMiles = $d;
+                    }
+                }
+
+                if ($nearestBeachMiles !== null && $nearestBeachMiles > self::BEACH_MAX_MEANINGFUL_DISTANCE_MILES) {
+                    $row = $this->createPoiRow(
+                        listingType: $listingType,
+                        listingId:   $listingId,
+                        category:    $category,
+                        meta:        $meta,
+                        sourceLat:   $sourceLat,
+                        sourceLng:   $sourceLng,
+                        rank:        1,
+                        status:      'not_found',
+                        error:       'No meaningful beach found within ' . self::BEACH_MAX_MEANINGFUL_DISTANCE_MILES . ' miles (nearest was ' . round($nearestBeachMiles, 1) . ' miles)',
+                    );
+                    return [[$row->toArray()], $rawCandidates];
+                }
+            }
+
             // Pass valid candidates through the ranking engine.
             // rankCandidates() returns them sorted by ranking_score descending
             // so rank 1 = highest consumer-relevance score, not nearest distance.
             $engine = $this->rankingEngine ?? new LocationDnaRankingEngine();
             $rankedCandidates = $engine->rankCandidates($category, $validCandidates, $sourceLat, $sourceLng);
+
+            // Hospital allowlist enforcement: any candidate that carries a legitimate
+            // acute-care type (hospital, emergency_room, medical_center, urgent_care,
+            // doctor) must appear before specialist-only or aesthetic candidates, even
+            // if the ranking engine scored the specialist higher (e.g. a specialist
+            // 0.06 mi away with 4.9★ outscoring a real hospital 1.3 mi away).
+            // The ranking-engine order is preserved within each group.
+            if ($category === 'hospital') {
+                $rankedCandidates = $this->prioritizeLegitimateHospitalCandidates($rankedCandidates);
+            }
 
             // Persist in ranking order
             $persistedRows = [];
@@ -831,6 +938,112 @@ class LocationDnaPoiDistanceService
             'error'                    => $error,
             'calculated_at'            => now(),
         ]);
+    }
+
+    /**
+     * Deduplicate transit candidates before exclusion filtering.
+     *
+     * Two stops are considered duplicates when:
+     *   (a) They share an identical name AND their coordinates are within
+     *       TRANSIT_DEDUP_DISTANCE_MILES (~100 m) of each other, OR
+     *   (b) Their coordinates are within a coordinate epsilon of 0.00001 degrees
+     *       (effectively the same physical point).
+     *
+     * The first occurrence (nearest, since results are ordered by distance) is kept;
+     * subsequent duplicates are discarded. The result order is preserved.
+     *
+     * @param  array  $candidates  Raw Google Places result objects, ordered by distance.
+     * @param  float  $sourceLat   Source property latitude (unused but kept for symmetry).
+     * @param  float  $sourceLng   Source property longitude (unused but kept for symmetry).
+     * @return array               Deduplicated candidate list, order preserved.
+     */
+    private function deduplicateTransitCandidates(array $candidates, float $sourceLat, float $sourceLng): array
+    {
+        $seen   = [];
+        $result = [];
+
+        foreach ($candidates as $place) {
+            $name = trim((string) ($place['name'] ?? ''));
+            $pLat = (float) ($place['geometry']['location']['lat'] ?? 0);
+            $pLng = (float) ($place['geometry']['location']['lng'] ?? 0);
+
+            $isDuplicate = false;
+
+            foreach ($seen as $seenEntry) {
+                // Coordinate epsilon check (same physical point)
+                if (
+                    abs($pLat - $seenEntry['lat']) < 0.00001 &&
+                    abs($pLng - $seenEntry['lng']) < 0.00001
+                ) {
+                    $isDuplicate = true;
+                    break;
+                }
+
+                // Same name + within 100 m
+                if (
+                    $name !== '' &&
+                    $name === $seenEntry['name'] &&
+                    $this->haversineDistanceMiles($pLat, $pLng, $seenEntry['lat'], $seenEntry['lng'])
+                        <= self::TRANSIT_DEDUP_DISTANCE_MILES
+                ) {
+                    $isDuplicate = true;
+                    break;
+                }
+            }
+
+            if (! $isDuplicate) {
+                $seen[]   = ['name' => $name, 'lat' => $pLat, 'lng' => $pLng];
+                $result[] = $place;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Explicit allowlist enforcement for the hospital category.
+     *
+     * After the ranking engine scores and orders candidates, this method
+     * re-partitions them so that any candidate carrying at least one legitimate
+     * acute-care facility type appears BEFORE any specialist-only candidate.
+     * Within each partition the ranking-engine order is preserved.
+     *
+     * Legitimate types: hospital, emergency_room, medical_center, urgent_care,
+     * doctor, health.  A "specialist-only" candidate is any result that has
+     * none of these types (e.g. ophthalmology, ENT, or aesthetics clinic).
+     *
+     * This guard is needed because a specialist clinic sitting 0.06 mi away
+     * with 4.9★ / 719 reviews can outscore a real hospital 1.3 mi away under
+     * the standard proximity + rating formula, even after name-pattern exclusion
+     * has removed the most obvious offenders.
+     *
+     * @param  array $rankedCandidates  Candidates sorted by ranking_score descending.
+     * @return array                    Same candidates — legitimate types first.
+     */
+    private function prioritizeLegitimateHospitalCandidates(array $rankedCandidates): array
+    {
+        $legitimateTypes = [
+            'hospital',
+            'emergency_room',
+            'medical_center',
+            'urgent_care',
+            'doctor',
+            'health',
+        ];
+
+        $legitimate    = [];
+        $specialistOnly = [];
+
+        foreach ($rankedCandidates as $candidate) {
+            $types = $candidate['types'] ?? [];
+            if (count(array_intersect($legitimateTypes, $types)) > 0) {
+                $legitimate[] = $candidate;
+            } else {
+                $specialistOnly[] = $candidate;
+            }
+        }
+
+        return array_merge($legitimate, $specialistOnly);
     }
 
     /**
