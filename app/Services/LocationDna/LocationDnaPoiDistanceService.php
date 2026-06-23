@@ -58,6 +58,15 @@ class LocationDnaPoiDistanceService
     private const TOP_RATED_DINING_MIN_REVIEWS = 10;
 
     /**
+     * Minimum review count used as the confidence denominator in the Top Rated Dining
+     * quality-score formula: score = rating × min(reviews / TOP_RATED_DINING_MIN_CONFIDENCE_REVIEWS, 1.0).
+     * A place must have at least this many reviews for its rating to count at full weight.
+     * Places with fewer reviews are down-weighted proportionally, preventing low-sample
+     * 5-star outliers from outranking high-confidence 4.8-star restaurants.
+     */
+    private const TOP_RATED_DINING_MIN_CONFIDENCE_REVIEWS = 50;
+
+    /**
      * Maximum number of Top Rated Dining candidates to store.
      */
     private const TOP_RATED_DINING_MAX_CANDIDATES = 3;
@@ -136,13 +145,29 @@ class LocationDnaPoiDistanceService
      */
     private const CATEGORY_EXCLUSION_RULES = [
         'grocery_store' => [
-            // Exclude if result has gas_station type AND lacks any grocery type.
-            // Audit: "if gas_station is in the result's types array AND no
-            // grocery_or_supermarket type is present, discard result."
-            'exclude_if_types_include_and_lacks' => [
-                'has'  => ['gas_station'],
-                'lacks' => ['grocery_or_supermarket', 'supermarket'],
-            ],
+            // ── Grocery Store exclusion — two-part prioritized rule ─────────
+            //
+            // PRIMARY RULE (types-based, authoritative):
+            //   Exclude any candidate whose types_json contains 'gas_station',
+            //   regardless of whether it also has 'grocery_or_supermarket'.
+            //   Rationale: Google dual-types convenience stores (e.g. BP, Shell,
+            //   Wawa, RaceTrac) as both gas_station AND grocery_or_supermarket.
+            //   The old `exclude_if_types_include_and_lacks` rule allowed these
+            //   dual-typed entries to pass because they do have the grocery type.
+            //   Types are the authoritative signal — a gas station is never a
+            //   true grocery store regardless of secondary type tags.
+            'exclude_if_types_include' => ['gas_station'],
+
+            // FALLBACK RULE (name-pattern, safety net — types-absent only):
+            //   When types_json is missing or empty (sparse API response), apply a
+            //   brand-name guard against known gas-station / convenience-store chains.
+            //   This rule uses `exclude_if_name_matches_when_types_empty`, which is
+            //   only evaluated when the `types` array returned by Google is absent or
+            //   empty. It MUST NOT override authoritative type data: if Google returned
+            //   any types at all, the PRIMARY rule above is the sole arbiter.
+            //   Pattern covers: BP, Shell, Chevron, RaceTrac, Wawa, Circle K,
+            //   7-Eleven, Sunoco, Murphy USA, Cumberland Farms.
+            'exclude_if_name_matches_when_types_empty' => '/\b(bp|shell|chevron|racetrac|wawa|circle\s*k|7-?eleven|sunoco|murphy\s+usa|cumberland\s+farms)\b/i',
         ],
         'pharmacy' => [
             // Exclude if result has veterinary_care type (animal pharmacies).
@@ -452,9 +477,20 @@ class LocationDnaPoiDistanceService
             }
         }
 
-        // Rule: exclude_if_name_matches — discard if name matches the regex
+        // Rule: exclude_if_name_matches — discard if name matches the regex (unconditional)
         if (! empty($rules['exclude_if_name_matches'])) {
             if (preg_match($rules['exclude_if_name_matches'], $name)) {
+                return false;
+            }
+        }
+
+        // Rule: exclude_if_name_matches_when_types_empty — name-pattern fallback that fires
+        //       ONLY when Google returned no types (sparse/incomplete API response).
+        //       When types are present, the type-based rules above are authoritative and
+        //       this fallback is skipped entirely, preventing false positives on stores that
+        //       legitimately share a brand name with a gas-station chain (e.g. "BP's Market").
+        if (! empty($rules['exclude_if_name_matches_when_types_empty']) && empty($types)) {
+            if (preg_match($rules['exclude_if_name_matches_when_types_empty'], $name)) {
                 return false;
             }
         }
@@ -667,8 +703,22 @@ class LocationDnaPoiDistanceService
             return [[$row->toArray()]];
         }
 
-        // Sort by rating descending (highest rating first)
-        usort($qualified, fn($a, $b) => ($b['rating'] ?? 0.0) <=> ($a['rating'] ?? 0.0));
+        // Sort by quality score descending instead of raw rating.
+        //
+        // Formula: score = rating × min(reviews / TOP_RATED_DINING_MIN_CONFIDENCE_REVIEWS, 1.0)
+        //
+        // Rationale: raw-rating sort allows low-sample 5-star outliers (e.g. 5.0★/19 reviews)
+        // to outrank high-confidence restaurants (e.g. 4.8★/300 reviews). The confidence
+        // multiplier — capped at 1.0 once reviews reach MIN_CONFIDENCE_REVIEWS — down-weights
+        // thinly-reviewed places without penalising established restaurants that exceed the
+        // threshold. Example:
+        //   5.0★ / 19 reviews  → score = 5.0 × min(0.38, 1.0) = 1.90
+        //   4.8★ / 300 reviews → score = 4.8 × min(6.00, 1.0) = 4.80  ← ranks higher
+        usort($qualified, function ($a, $b) {
+            $scoreA = ($a['rating'] ?? 0.0) * min(($a['user_ratings_total'] ?? 0) / self::TOP_RATED_DINING_MIN_CONFIDENCE_REVIEWS, 1.0);
+            $scoreB = ($b['rating'] ?? 0.0) * min(($b['user_ratings_total'] ?? 0) / self::TOP_RATED_DINING_MIN_CONFIDENCE_REVIEWS, 1.0);
+            return $scoreB <=> $scoreA;
+        });
 
         $top  = array_slice(array_values($qualified), 0, self::TOP_RATED_DINING_MAX_CANDIDATES);
         $rows = [];

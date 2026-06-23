@@ -124,7 +124,7 @@ use App\Presenters\LocationDnaPresenter;
         {{-- Top Rated Dining block (admin inspector) --}}
         @if($topRatedDining->isNotEmpty())
         <div class="mb-3">
-            <strong>Top Rated Dining <span class="text-muted small">(derived from restaurant candidates · min. 10 reviews)</span>:</strong>
+            <strong>Top Rated Dining <span class="text-muted small">(derived from restaurant candidates · min. 10 reviews · ranked by quality score: rating × min(reviews/50, 1.0))</span>:</strong>
             <table class="table table-sm table-bordered mt-2 mb-0" style="font-size:.82rem;">
                 <thead class="thead-light">
                     <tr>
@@ -196,25 +196,48 @@ use App\Presenters\LocationDnaPresenter;
                             <span class="text-muted font-weight-normal">({{ $categoryPois->count() }})</span>
                         </div>
                         @foreach($categoryPois as $poi)
-                        <div class="d-flex justify-content-between align-items-baseline py-1 border-top" style="font-size:.8rem;">
-                            <span class="text-truncate mr-2" title="{{ $poi->poi_name }}">
-                                @if(($poi->rank ?? 1) === 1)
-                                    <strong>{{ $poi->poi_name ?? '—' }}</strong>
+                        <div class="py-1 border-top" style="font-size:.79rem;">
+                            {{-- Row 1: rank + name + distance --}}
+                            <div class="d-flex justify-content-between align-items-baseline">
+                                <span class="text-truncate mr-2" title="{{ $poi->poi_name }}">
+                                    <span class="text-muted">#{{ $poi->rank ?? '?' }}</span>
+                                    @if(($poi->rank ?? 0) === 1)
+                                        <strong>{{ $poi->poi_name ?? '—' }}</strong>
+                                    @else
+                                        {{ $poi->poi_name ?? '—' }}
+                                    @endif
+                                </span>
+                                <span class="text-muted text-nowrap small">
+                                    @if($poi->status === 'found' && $poi->distance_miles !== null)
+                                        {{ number_format((float)$poi->distance_miles, 2) }} mi
+                                    @elseif($poi->status === 'not_found')
+                                        <span class="text-muted">not found</span>
+                                    @elseif($poi->status === 'error')
+                                        <span class="text-danger">error</span>
+                                    @else
+                                        —
+                                    @endif
+                                </span>
+                            </div>
+                            {{-- Row 2: rating + review count (only for found POIs) --}}
+                            @if($poi->status === 'found')
+                            <div class="d-flex align-items-center gap-2 mt-1" style="color:#666;">
+                                @if($poi->rating !== null)
+                                    <span><span style="color:#b8860b;">&#9733;</span> {{ number_format((float)$poi->rating, 1) }}</span>
                                 @else
-                                    <span class="text-muted">#{{ $poi->rank ?? '?' }}</span> {{ $poi->poi_name ?? '—' }}
+                                    <span class="text-muted">no rating</span>
                                 @endif
-                            </span>
-                            <span class="text-muted text-nowrap small">
-                                @if($poi->status === 'found' && $poi->distance_miles !== null)
-                                    {{ number_format((float)$poi->distance_miles, 2) }} mi
-                                @elseif($poi->status === 'not_found')
-                                    <span class="text-muted">not found</span>
-                                @elseif($poi->status === 'error')
-                                    <span class="text-danger">error</span>
-                                @else
-                                    —
+                                @if($poi->user_ratings_total !== null)
+                                    <span class="text-muted">({{ number_format($poi->user_ratings_total) }} reviews)</span>
                                 @endif
-                            </span>
+                            </div>
+                            {{-- Row 3: types_json collapsed inline --}}
+                            @if(!empty($poi->types_json))
+                            <div class="mt-1" style="line-height:1.3;">
+                                <code style="font-size:.72rem; color:#555; word-break:break-all; white-space:normal;">{{ implode(', ', (array)$poi->types_json) }}</code>
+                            </div>
+                            @endif
+                            @endif
                         </div>
                         @endforeach
                     </div>
