@@ -2,6 +2,7 @@
 
 namespace App\Services\Bridge;
 
+use App\Jobs\ComputeLocationDna;
 use App\Models\BridgeCriteriaFetchCache;
 use App\Models\BridgeProperty;
 use App\Services\Bridge\OData\BuyerCriteriaODataFilterBuilder;
@@ -38,6 +39,9 @@ class LazyBridgeImportService
      *
      * Pagination stops when BRIDGE_LAZY_MAX_PAGES pages or BRIDGE_LAZY_MAX_RECORDS
      * records have been processed, whichever comes first.
+     *
+     * ComputeLocationDna is dispatched only for new records or records whose
+     * unparsed_address or postal_code changed since the last import.
      *
      * @throws \InvalidArgumentException  For unsupported role values.
      */
@@ -97,18 +101,22 @@ class LazyBridgeImportService
                         break 2;
                     }
 
-                    $normalised = $this->normalizer->normalize($record);
-                    if ($normalised === null) {
+                    $upsertResult = $this->normalizer->upsert($record);
+                    if ($upsertResult === null) {
                         continue;
                     }
 
-                    $listingKey = $normalised['listing_key'];
-                    $upsertData = array_diff_key($normalised, ['listing_key' => true]);
-
-                    BridgeProperty::updateOrCreate(
-                        ['listing_key' => $listingKey],
-                        $upsertData,
-                    );
+                    // Dispatch DNA only for new records or address/coordinate changes.
+                    if ($upsertResult->shouldDispatchDna()) {
+                        ComputeLocationDna::dispatch('bridge', $upsertResult->model->id);
+                        Log::info('LazyBridgeImportService: dispatched ComputeLocationDna', [
+                            'bridge_property_id' => $upsertResult->model->id,
+                            'listing_key'        => $upsertResult->model->listing_key,
+                            'reason'             => $upsertResult->isNew ? 'new_record' : 'address_changed',
+                            'hash'               => $hash,
+                            'role'               => $role,
+                        ]);
+                    }
 
                     $totalImported++;
                 }

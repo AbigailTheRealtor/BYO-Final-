@@ -45,6 +45,9 @@ class BridgeProperty extends Model
         'view_yn',
         'water_view_yn',
         'cdd_yn',
+
+        // Permanent-retention flag (Task 3 — selective DNA dispatch)
+        'is_permanent',
     ];
 
     protected $casts = [
@@ -68,5 +71,69 @@ class BridgeProperty extends Model
         'view_yn'                => 'boolean',
         'water_view_yn'          => 'boolean',
         'cdd_yn'                 => 'boolean',
+
+        // Task 3
+        'is_permanent'           => 'boolean',
     ];
+
+    /**
+     * @var bool $is_permanent
+     *
+     * Permanent-retention flag. When true, this record MUST NOT be deleted by
+     * any bulk-cleanup or eviction job. The flag is set programmatically only
+     * (e.g. by an admin command); there is no user-facing UI for it.
+     *
+     * Enforcement:
+     *   - The model-level `deleting` event (see boot()) throws
+     *     \RuntimeException when any code path attempts to delete a permanent
+     *     record. This catches both individual deletes and soft-deletes that
+     *     go through Eloquent.
+     *   - Raw DB::table('bridge_properties')->delete() bypasses this guard.
+     *     Any future migration or cleanup script that issues raw SQL MUST
+     *     include  WHERE is_permanent = false  in its WHERE clause.
+     *   - BridgeProperty::nonPermanent() scope provides a safe starting point
+     *     for all cleanup queries.
+     *
+     * All rows existing at migration time default to false, so no pre-existing
+     * row is protected until explicitly flagged.
+     */
+
+    /**
+     * Local scope that excludes permanently-retained records.
+     *
+     * All bulk-delete and eviction queries MUST start with this scope:
+     *
+     *   BridgeProperty::nonPermanent()->where(...)->delete();
+     *
+     * This makes the is_permanent exclusion contract visible and auditable
+     * at every call site, rather than relying on documentation alone.
+     */
+    public function scopeNonPermanent(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('is_permanent', false);
+    }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        // Hard-enforce the permanent-retention contract at the model level.
+        // Any attempt to delete a record with is_permanent = true will throw
+        // immediately, regardless of which code path initiated the delete.
+        //
+        // NOTE: This guard fires for Eloquent-level deletes only.
+        // Raw DB::table() queries bypass it — see the $is_permanent docblock
+        // above for the raw-SQL obligation.
+        static::deleting(function (self $record): bool {
+            if ($record->is_permanent) {
+                throw new \RuntimeException(
+                    "BridgeProperty #{$record->id} (listing_key={$record->listing_key}) "
+                    . 'is permanently retained and cannot be deleted. '
+                    . 'Set is_permanent = false before attempting removal.'
+                );
+            }
+
+            return true;
+        });
+    }
 }

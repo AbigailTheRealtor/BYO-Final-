@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Jobs\ComputeLocationDna;
 use App\Models\BridgeProperty;
 use App\Services\Bridge\BridgeApiService;
 use App\Services\Bridge\BridgePropertyNormalizer;
@@ -149,20 +150,21 @@ class ImportBridgeProperties extends Command
 
     private function upsertRecord(BridgePropertyNormalizer $normalizer, array $record): bool
     {
-        $normalised = $normalizer->normalize($record);
+        $result = $normalizer->upsert($record);
 
-        if ($normalised === null) {
+        if ($result === null) {
             $this->line('  Skipped record: missing ListingKey.');
             return false;
         }
 
-        $listingKey = $normalised['listing_key'];
-        $upsertData = array_diff_key($normalised, ['listing_key' => true]);
-
-        BridgeProperty::updateOrCreate(
-            ['listing_key' => $listingKey],
-            $upsertData,
-        );
+        if ($result->shouldDispatchDna()) {
+            ComputeLocationDna::dispatch('bridge', $result->model->id);
+            Log::info('ImportBridgeProperties: dispatched ComputeLocationDna', [
+                'bridge_property_id' => $result->model->id,
+                'listing_key'        => $result->model->listing_key,
+                'reason'             => $result->isNew ? 'new_record' : 'address_changed',
+            ]);
+        }
 
         return true;
     }
