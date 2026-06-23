@@ -987,4 +987,387 @@ class BuyerMatchingEngineTest extends TestCase
         $this->assertEquals(6, $cityResult->categoryScores['location'],
             'City-only match must score 6 pts (city exact match)');
     }
+
+    // =========================================================================
+    // TC-28: Residential listings → non_residential category score = 0
+    // (Regression guard: existing Residential scoring path unchanged)
+    // =========================================================================
+
+    public function test_tc28_residential_listings_have_zero_non_residential_score(): void
+    {
+        $this->skipIfTableMissing();
+
+        $key = 'TC28-RES-' . uniqid();
+        $this->insertListing([
+            'listing_key'   => $key,
+            'property_type' => 'Residential',
+        ]);
+
+        $results = $this->makeService()->match($this->makeCriteria(['property_types' => ['Residential']]));
+
+        $match = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $key);
+        $this->assertNotNull($match);
+        $this->assertEquals(0, $match->categoryScores['non_residential'],
+            'Residential listing must score 0 in non_residential category');
+    }
+
+    // =========================================================================
+    // TC-29: Income Property — building area alignment using buyer sqft criteria
+    //
+    // Scorer awards 10 pts when BuildingAreaTotal is within buyer's sqft range,
+    // 5 pts when size data is absent (reduced neutral), and 10 pts (full neutral)
+    // when the buyer has expressed no sqft preference at all.
+    // =========================================================================
+
+    public function test_tc29_income_property_building_area_alignment(): void
+    {
+        $this->skipIfTableMissing();
+
+        $inRangeKey  = 'TC29-INCOME-INRANGE-'  . uniqid();
+        $noDataKey   = 'TC29-INCOME-NODATA-'   . uniqid();
+        $noPrefKey   = 'TC29-INCOME-NOPREF-'   . uniqid();
+
+        // Listing with BuildingAreaTotal inside buyer's sqft range → 10 pts
+        $this->insertListing([
+            'listing_key'   => $inRangeKey,
+            'property_type' => 'Income',
+            'raw_json'      => json_encode([
+                'IDXParticipationYN' => true,
+                'BuildingAreaTotal'  => 2000,
+            ]),
+        ]);
+
+        // Listing with no building area data → 5 pts (reduced neutral).
+        // Explicitly null living_area to override the 1800 default set by insertListing().
+        $this->insertListing([
+            'listing_key'   => $noDataKey,
+            'property_type' => 'Income',
+            'living_area'   => null,
+            'raw_json'      => json_encode([
+                'IDXParticipationYN' => true,
+                // no BuildingAreaTotal
+            ]),
+        ]);
+
+        // Listing used with no-preference criteria → 10 pts (full neutral)
+        $this->insertListing([
+            'listing_key'   => $noPrefKey,
+            'property_type' => 'Income',
+            'raw_json'      => json_encode([
+                'IDXParticipationYN' => true,
+                'BuildingAreaTotal'  => 500, // far outside any range
+            ]),
+        ]);
+
+        // With size preference
+        $results = $this->makeService()->match($this->makeCriteria([
+            'property_types' => ['Income'],
+            'min_sqft'       => 1500,
+            'max_sqft'       => 2500,
+        ]));
+
+        $inRange = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $inRangeKey);
+        $noData  = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $noDataKey);
+
+        $this->assertNotNull($inRange);
+        $this->assertNotNull($noData);
+        $this->assertEquals(10, $inRange->categoryScores['non_residential'],
+            'Income listing with BuildingAreaTotal in buyer sqft range must score 10 pts');
+        $this->assertEquals(5, $noData->categoryScores['non_residential'],
+            'Income listing with no size data must score 5 pts (reduced neutral)');
+
+        // Without size preference
+        $noPrefResults = $this->makeService()->match($this->makeCriteria([
+            'property_types' => ['Income'],
+        ]));
+        $noPref = $noPrefResults->first(fn(BuyerMatchResult $r) => $r->listingKey === $noPrefKey);
+        $this->assertNotNull($noPref);
+        $this->assertEquals(10, $noPref->categoryScores['non_residential'],
+            'Income listing with no buyer sqft preference must score 10 pts (full neutral)');
+    }
+
+    // =========================================================================
+    // TC-30: Commercial Sale — building area and lot size using buyer criteria
+    //
+    // Both size dimensions use existing BuyerCriteriaPayload fields (minSqft/
+    // maxSqft and minLotSqft/maxLotSqft). Both in-range → 10 pts total.
+    // No preference on either dimension → 10 pts neutral (5+5).
+    // =========================================================================
+
+    public function test_tc30_commercial_sale_size_alignment_using_buyer_criteria(): void
+    {
+        $this->skipIfTableMissing();
+
+        $highKey = 'TC30-COMSALE-HIGH-' . uniqid();
+        $lowKey  = 'TC30-COMSALE-LOW-'  . uniqid();
+
+        // High: BuildingAreaTotal and lot_size_sqft both inside buyer's ranges → 10 pts
+        $this->insertListing([
+            'listing_key'   => $highKey,
+            'property_type' => 'Commercial Sale',
+            'lot_size_sqft' => 15000,
+            'raw_json'      => json_encode([
+                'IDXParticipationYN' => true,
+                'BuildingAreaTotal'  => 5000,
+            ]),
+        ]);
+
+        // Low: no building area, no lot data → 3 pts (reduced neutral for size) + 0 pts (lot absent).
+        // Explicitly null living_area to override the 1800 default set by insertListing().
+        $this->insertListing([
+            'listing_key'   => $lowKey,
+            'property_type' => 'Commercial Sale',
+            'living_area'   => null,
+            'raw_json'      => json_encode([
+                'IDXParticipationYN' => true,
+                // no BuildingAreaTotal, no lot_size_sqft
+            ]),
+        ]);
+
+        $results = $this->makeService()->match($this->makeCriteria([
+            'property_types' => ['Commercial Sale'],
+            'min_sqft'       => 4000,
+            'max_sqft'       => 6000,
+            'min_lot_sqft'   => 12000,
+            'max_lot_sqft'   => 20000,
+        ]));
+
+        $high = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $highKey);
+        $low  = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $lowKey);
+
+        $this->assertNotNull($high);
+        $this->assertNotNull($low);
+
+        $this->assertGreaterThan(
+            $low->categoryScores['non_residential'],
+            $high->categoryScores['non_residential'],
+            'Commercial Sale with building area and lot in buyer range must outscore listing with no size data'
+        );
+
+        $this->assertEquals(10, $high->categoryScores['non_residential'],
+            'BuildingAreaTotal in range + lot_size_sqft in range should earn 10 pts (5+5)');
+        $this->assertEquals(3, $low->categoryScores['non_residential'],
+            'Commercial Sale with no area/lot data: reduced neutral(3) + absent lot(0) = 3 pts');
+    }
+
+    // =========================================================================
+    // TC-31: Commercial Lease scores 0 in Buyer matching
+    //
+    // Commercial Lease belongs to Tenant matching. BuyerMatchScorer must not
+    // award non_residential points for Commercial Lease listings.
+    // =========================================================================
+
+    public function test_tc31_commercial_lease_scores_zero_in_buyer_matching(): void
+    {
+        $this->skipIfTableMissing();
+
+        $key = 'TC31-COMLEASE-' . uniqid();
+        $this->insertListing([
+            'listing_key'   => $key,
+            'property_type' => 'Commercial Lease',
+            'raw_json'      => json_encode([
+                'IDXParticipationYN' => true,
+                'LeaseType'          => 'Net',
+                'BuildingAreaTotal'  => 3000,
+            ]),
+        ]);
+
+        $results = $this->makeService()->match($this->makeCriteria([
+            'property_types' => ['Commercial Lease'],
+            'min_sqft'       => 2000,
+            'max_sqft'       => 4000,
+        ]));
+
+        $match = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $key);
+        $this->assertNotNull($match);
+        $this->assertEquals(0, $match->categoryScores['non_residential'],
+            'Commercial Lease must score 0 non_residential pts in Buyer matching (belongs to Tenant matching)');
+    }
+
+    // =========================================================================
+    // TC-32: Business Opportunity — non_residential score is always 0
+    //
+    // No buyer-specific preference fields apply to Business Opportunity listings.
+    // Generic categories (location, price, property_type) rank them instead.
+    // =========================================================================
+
+    public function test_tc32_business_opportunity_scores_zero_non_residential(): void
+    {
+        $this->skipIfTableMissing();
+
+        $key = 'TC32-BIZ-' . uniqid();
+        $this->insertListing([
+            'listing_key'       => $key,
+            'property_type'     => 'Business Opportunity',
+            'property_sub_type' => 'Restaurant',
+            'list_price'        => 300000,
+            'raw_json'          => json_encode([
+                'IDXParticipationYN' => true,
+                'BusinessType'       => 'Restaurant',
+            ]),
+        ]);
+
+        $results = $this->makeService()->match($this->makeCriteria([
+            'property_types' => ['Business Opportunity'],
+        ]));
+
+        $match = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $key);
+        $this->assertNotNull($match);
+        $this->assertEquals(0, $match->categoryScores['non_residential'],
+            'Business Opportunity must score 0 non_residential pts — no buyer-specific preference fields');
+    }
+
+    // =========================================================================
+    // TC-33: Vacant Land — lot size alignment using buyer lot-size criteria
+    //
+    // Lot in buyer's range → 10 pts. Lot far outside range → 0 pts.
+    // No lot preference expressed → 10 pts (full neutral).
+    // =========================================================================
+
+    public function test_tc33_vacant_land_lot_size_alignment(): void
+    {
+        $this->skipIfTableMissing();
+
+        $inRangeKey  = 'TC33-LAND-INRANGE-'  . uniqid();
+        $outRangeKey = 'TC33-LAND-OUTRANGE-' . uniqid();
+        $noPrefKey   = 'TC33-LAND-NOPREF-'   . uniqid();
+
+        // In-range lot → 10 pts
+        $this->insertListing([
+            'listing_key'   => $inRangeKey,
+            'property_type' => 'Vacant Land',
+            'lot_size_sqft' => 87120, // 2 acres — inside [50000, 120000]
+            'raw_json'      => json_encode(['IDXParticipationYN' => true]),
+        ]);
+
+        // Out-of-range lot (far outside — deviation >> 20%) → 0 pts
+        $this->insertListing([
+            'listing_key'   => $outRangeKey,
+            'property_type' => 'Vacant Land',
+            'lot_size_sqft' => 5000, // well below minimum 50000
+            'raw_json'      => json_encode(['IDXParticipationYN' => true]),
+        ]);
+
+        // No lot preference → 10 pts (full neutral)
+        $this->insertListing([
+            'listing_key'   => $noPrefKey,
+            'property_type' => 'Vacant Land',
+            'lot_size_sqft' => 5000, // same tiny lot
+            'raw_json'      => json_encode(['IDXParticipationYN' => true]),
+        ]);
+
+        // With lot preference
+        $results = $this->makeService()->match($this->makeCriteria([
+            'property_types' => ['Vacant Land'],
+            'min_lot_sqft'   => 50000,
+            'max_lot_sqft'   => 120000,
+        ]));
+
+        $inRange  = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $inRangeKey);
+        $outRange = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $outRangeKey);
+
+        $this->assertNotNull($inRange);
+        $this->assertNotNull($outRange);
+        $this->assertEquals(10, $inRange->categoryScores['non_residential'],
+            'Vacant Land with lot_size_sqft inside buyer range must score 10 pts');
+        $this->assertEquals(0, $outRange->categoryScores['non_residential'],
+            'Vacant Land with lot_size_sqft far outside buyer range must score 0 pts');
+
+        // Without lot preference
+        $noPrefResults = $this->makeService()->match($this->makeCriteria([
+            'property_types' => ['Vacant Land'],
+        ]));
+        $noPref = $noPrefResults->first(fn(BuyerMatchResult $r) => $r->listingKey === $noPrefKey);
+        $this->assertNotNull($noPref);
+        $this->assertEquals(10, $noPref->categoryScores['non_residential'],
+            'Vacant Land with no buyer lot preference must score 10 pts (full neutral)');
+    }
+
+    // =========================================================================
+    // TC-34: Non-residential score does not push total above 100
+    // =========================================================================
+
+    public function test_tc34_non_residential_bonus_does_not_push_total_above_100(): void
+    {
+        $this->skipIfTableMissing();
+
+        $key = 'TC34-INCOME-CAP-' . uniqid();
+        $this->insertListing([
+            'listing_key'   => $key,
+            'property_type' => 'Income',
+            'list_price'    => 500000,
+            'city'          => 'Orlando',
+            'postal_code'   => '32801',
+            'latitude'      => 28.35,
+            'longitude'     => -81.24,
+            'year_built'    => 2018,
+            'lot_size_sqft' => 10000,
+            'raw_json'      => json_encode([
+                'IDXParticipationYN' => true,
+            ]),
+        ]);
+
+        $results = $this->makeService()->match($this->makeCriteria([
+            'property_types'   => ['Income'],
+            'ideal_price'      => 500000,
+            'preferred_cities' => ['Orlando'],
+            'radius_searches'  => [['center' => ['lat' => 28.35, 'lng' => -81.24], 'radius_miles' => 50]],
+        ]));
+
+        $match = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $key);
+        $this->assertNotNull($match);
+        $this->assertLessThanOrEqual(100, $match->totalScore,
+            'Non-residential bonus must not push total_score above 100');
+        $this->assertGreaterThanOrEqual(0, $match->totalScore);
+    }
+
+    // =========================================================================
+    // TC-35: Income Property — out-of-range building area scores 0;
+    //        close-to-range (≤20% deviation) scores 5 (partial)
+    // =========================================================================
+
+    public function test_tc35_income_property_building_area_out_of_range_scores_zero(): void
+    {
+        $this->skipIfTableMissing();
+
+        $farKey   = 'TC35-FAR-'   . uniqid();
+        $closeKey = 'TC35-CLOSE-' . uniqid();
+
+        // Far outside range (deviation >> 20%) → 0 pts
+        $this->insertListing([
+            'listing_key'   => $farKey,
+            'property_type' => 'Income',
+            'raw_json'      => json_encode([
+                'IDXParticipationYN' => true,
+                'BuildingAreaTotal'  => 500, // min=2000, deviation=75%
+            ]),
+        ]);
+
+        // Just outside range but ≤20% deviation → 5 pts (partial)
+        $this->insertListing([
+            'listing_key'   => $closeKey,
+            'property_type' => 'Income',
+            'raw_json'      => json_encode([
+                'IDXParticipationYN' => true,
+                'BuildingAreaTotal'  => 1700, // min=2000, deviation=15%
+            ]),
+        ]);
+
+        $results = $this->makeService()->match($this->makeCriteria([
+            'property_types' => ['Income'],
+            'min_sqft'       => 2000,
+            'max_sqft'       => 3000,
+        ]));
+
+        $far   = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $farKey);
+        $close = $results->first(fn(BuyerMatchResult $r) => $r->listingKey === $closeKey);
+
+        $this->assertNotNull($far);
+        $this->assertNotNull($close);
+
+        $this->assertEquals(0, $far->categoryScores['non_residential'],
+            'Income listing far outside buyer sqft range (75% deviation) must score 0 pts');
+        $this->assertEquals(5, $close->categoryScores['non_residential'],
+            'Income listing close to buyer sqft range (15% deviation) must score 5 pts (partial)');
+    }
 }

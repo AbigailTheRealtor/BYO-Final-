@@ -47,13 +47,14 @@ class BuyerMatchScorer
             $rawJson = [];
         }
 
-        $locationScore     = $this->scoreLocation($listing, $criteria);
-        $priceScore        = $this->scorePrice($listing, $criteria);
-        $sizeScore         = $this->scoreSize($listing, $criteria);
-        $propertyTypeScore = $this->scorePropertyType($listing, $criteria);
-        $amenityScore      = $this->scoreAmenities($listing, $criteria);
-        $financialScore    = $this->scoreFinancial($listing, $criteria);
-        $lifestyleScore    = $this->scoreLifestyle($listing, $criteria, $rawJson);
+        $locationScore        = $this->scoreLocation($listing, $criteria);
+        $priceScore           = $this->scorePrice($listing, $criteria);
+        $sizeScore            = $this->scoreSize($listing, $criteria);
+        $propertyTypeScore    = $this->scorePropertyType($listing, $criteria);
+        $amenityScore         = $this->scoreAmenities($listing, $criteria);
+        $financialScore       = $this->scoreFinancial($listing, $criteria);
+        $lifestyleScore       = $this->scoreLifestyle($listing, $criteria, $rawJson);
+        $nonResidentialScore  = $this->scoreNonResidential($listing, $criteria, $rawJson);
 
         $total = (int) round(
             $locationScore['score'] +
@@ -62,19 +63,21 @@ class BuyerMatchScorer
             $propertyTypeScore['score'] +
             $amenityScore['score'] +
             $financialScore['score'] +
-            $lifestyleScore['score']
+            $lifestyleScore['score'] +
+            $nonResidentialScore['score']
         );
 
         $total = max(0, min(100, $total));
 
         $categoryScores = [
-            'location'      => (int) round($locationScore['score']),
-            'price'         => (int) round($priceScore['score']),
-            'size'          => (int) round($sizeScore['score']),
-            'property_type' => (int) round($propertyTypeScore['score']),
-            'amenities'     => (int) round($amenityScore['score']),
-            'financial'     => (int) round($financialScore['score']),
-            'lifestyle'     => (int) round($lifestyleScore['score']),
+            'location'        => (int) round($locationScore['score']),
+            'price'           => (int) round($priceScore['score']),
+            'size'            => (int) round($sizeScore['score']),
+            'property_type'   => (int) round($propertyTypeScore['score']),
+            'amenities'       => (int) round($amenityScore['score']),
+            'financial'       => (int) round($financialScore['score']),
+            'lifestyle'       => (int) round($lifestyleScore['score']),
+            'non_residential' => (int) round($nonResidentialScore['score']),
         ];
 
         return new BuyerMatchResult(
@@ -554,6 +557,200 @@ class BuyerMatchScorer
         }
 
         return 0.0;
+    }
+
+    // =========================================================================
+    // Category 8: Non-Residential Alignment (0–10 pts, additive)
+    //
+    // Dispatches to a type-specific scorer for each non-residential property
+    // type. Scores are purely additive — missing data never produces a penalty.
+    // Residential listings (and unrecognised types) return 0.
+    //
+    // Commercial Lease is intentionally absent: that property type is matched
+    // by Tenant matching, not Buyer matching, and must not be scored here.
+    // =========================================================================
+
+    private function scoreNonResidential(
+        BridgeProperty $listing,
+        BuyerCriteriaPayload $criteria,
+        array $rawJson
+    ): array {
+        return match ($listing->property_type) {
+            'Income'               => $this->scoreIncomeProperty($listing, $criteria, $rawJson),
+            'Commercial Sale'      => $this->scoreCommercialSale($listing, $criteria, $rawJson),
+            'Business Opportunity' => $this->scoreBusinessOpportunity($listing, $criteria, $rawJson),
+            'Vacant Land'          => $this->scoreVacantLand($listing, $criteria, $rawJson),
+            default                => ['score' => 0.0],
+        };
+    }
+
+    // -------------------------------------------------------------------------
+    // Income Property — building area alignment using existing buyer criteria.
+    //
+    // UNIT-COUNT AUDIT (confirmed against codebase):
+    //   buyer_criteria_auctions has a `units_needed` nullable column, but
+    //   BuyerOfferListingCriteriaLoader never reads it — the field is never
+    //   populated in BuyerCriteriaPayload. BuyerCriteriaPayload has no
+    //   minUnits / maxUnits / unitsNeeded properties of any kind.
+    //   Unit-count scoring is therefore intentionally skipped per task
+    //   instructions ("if no buyer unit-count field exists, document and skip").
+    //   When `units_needed` is wired into the loader and payload, align
+    //   NumberOfUnitsTotal (raw_json) against that range here instead.
+    //
+    // Current approach: align BuildingAreaTotal (raw_json, falls back to the
+    // native living_area column) against buyer's existing minSqft / maxSqft.
+    // No preference expressed → full neutral points (10). Data absent → 5.
+    // -------------------------------------------------------------------------
+
+    private function scoreIncomeProperty(
+        BridgeProperty $listing,
+        BuyerCriteriaPayload $criteria,
+        array $rawJson
+    ): array {
+        $hasSizePref = ($criteria->minSqft !== null || $criteria->maxSqft !== null);
+        if (!$hasSizePref) {
+            return ['score' => 10.0]; // no preference → full neutral points
+        }
+
+        $buildingArea = isset($rawJson['BuildingAreaTotal']) && $rawJson['BuildingAreaTotal'] !== null
+            ? (float) $rawJson['BuildingAreaTotal']
+            : ($listing->living_area !== null ? (float) $listing->living_area : null);
+
+        if ($buildingArea === null) {
+            return ['score' => 5.0]; // size data absent → reduced neutral
+        }
+
+        $min = $criteria->minSqft !== null ? (float) $criteria->minSqft : 0.0;
+        $max = $criteria->maxSqft !== null ? (float) $criteria->maxSqft : PHP_FLOAT_MAX;
+        if ($buildingArea >= $min && $buildingArea <= $max) {
+            return ['score' => 10.0];
+        }
+
+        $deviationRatio = 0.0;
+        if ($min > 0.0 && $buildingArea < $min) {
+            $deviationRatio = ($min - $buildingArea) / $min;
+        } elseif ($max < PHP_FLOAT_MAX && $buildingArea > $max) {
+            $deviationRatio = ($buildingArea - $max) / $max;
+        }
+        return $deviationRatio <= 0.20
+            ? ['score' => 5.0]  // close to range → partial
+            : ['score' => 0.0];
+    }
+
+    // -------------------------------------------------------------------------
+    // Commercial Sale — building size and lot size using existing buyer criteria.
+    //
+    // BuildingAreaTotal (raw_json) is preferred over living_area for commercial
+    // listings. Both size dimensions use existing BuyerCriteriaPayload fields.
+    // -------------------------------------------------------------------------
+
+    private function scoreCommercialSale(
+        BridgeProperty $listing,
+        BuyerCriteriaPayload $criteria,
+        array $rawJson
+    ): array {
+        $score = 0.0;
+
+        // Building size alignment (up to 5 pts)
+        $buildingArea = isset($rawJson['BuildingAreaTotal']) && $rawJson['BuildingAreaTotal'] !== null
+            ? (float) $rawJson['BuildingAreaTotal']
+            : ($listing->living_area !== null ? (float) $listing->living_area : null);
+
+        $hasSizePref = ($criteria->minSqft !== null || $criteria->maxSqft !== null);
+        if (!$hasSizePref) {
+            $score += 5.0; // no preference → neutral
+        } elseif ($buildingArea !== null) {
+            $min = $criteria->minSqft !== null ? (float) $criteria->minSqft : 0.0;
+            $max = $criteria->maxSqft !== null ? (float) $criteria->maxSqft : PHP_FLOAT_MAX;
+            if ($buildingArea >= $min && $buildingArea <= $max) {
+                $score += 5.0;
+            } else {
+                $deviationRatio = 0.0;
+                if ($min > 0.0 && $buildingArea < $min) {
+                    $deviationRatio = ($min - $buildingArea) / $min;
+                } elseif ($max < PHP_FLOAT_MAX && $buildingArea > $max) {
+                    $deviationRatio = ($buildingArea - $max) / $max;
+                }
+                if ($deviationRatio <= 0.20) {
+                    $score += 3.0;
+                }
+            }
+        } else {
+            $score += 3.0; // size data absent → reduced neutral
+        }
+
+        // Lot size alignment (up to 5 pts)
+        $lotSqft    = $listing->lot_size_sqft !== null ? (float) $listing->lot_size_sqft : null;
+        $hasLotPref = ($criteria->minLotSqft !== null || $criteria->maxLotSqft !== null);
+        if (!$hasLotPref) {
+            $score += 5.0; // no preference → neutral
+        } elseif ($lotSqft !== null) {
+            $lotMin = $criteria->minLotSqft !== null ? (float) $criteria->minLotSqft : 0.0;
+            $lotMax = $criteria->maxLotSqft !== null ? (float) $criteria->maxLotSqft : PHP_FLOAT_MAX;
+            if ($lotSqft >= $lotMin && $lotSqft <= $lotMax) {
+                $score += 5.0;
+            }
+            // Outside range → 0 pts, no penalty
+        }
+        // Lot data absent → 0 pts, no penalty
+
+        return ['score' => min(10.0, $score)];
+    }
+
+    // -------------------------------------------------------------------------
+    // Business Opportunity — no buyer-specific preference fields applicable.
+    //
+    // Generic scoring categories (location, price, property_type) already rank
+    // Business Opportunity listings using existing criteria. No additional
+    // non-residential signals are added here pending dedicated buyer fields.
+    // -------------------------------------------------------------------------
+
+    private function scoreBusinessOpportunity(
+        BridgeProperty $listing,
+        BuyerCriteriaPayload $criteria,
+        array $rawJson
+    ): array {
+        return ['score' => 0.0];
+    }
+
+    // -------------------------------------------------------------------------
+    // Vacant Land — lot size alignment using existing buyer criteria.
+    //
+    // Acreage / lot size is the primary dimension for land buyers. Uses the
+    // existing minLotSqft / maxLotSqft fields from BuyerCriteriaPayload.
+    // When no preference is expressed, award full neutral points.
+    // -------------------------------------------------------------------------
+
+    private function scoreVacantLand(
+        BridgeProperty $listing,
+        BuyerCriteriaPayload $criteria,
+        array $rawJson
+    ): array {
+        $hasLotPref = ($criteria->minLotSqft !== null || $criteria->maxLotSqft !== null);
+        if (!$hasLotPref) {
+            return ['score' => 10.0]; // no preference → full neutral points
+        }
+
+        $lotSqft = $listing->lot_size_sqft !== null ? (float) $listing->lot_size_sqft : null;
+        if ($lotSqft === null) {
+            return ['score' => 5.0]; // lot size absent → reduced neutral
+        }
+
+        $min = $criteria->minLotSqft !== null ? (float) $criteria->minLotSqft : 0.0;
+        $max = $criteria->maxLotSqft !== null ? (float) $criteria->maxLotSqft : PHP_FLOAT_MAX;
+        if ($lotSqft >= $min && $lotSqft <= $max) {
+            return ['score' => 10.0];
+        }
+
+        $deviationRatio = 0.0;
+        if ($min > 0.0 && $lotSqft < $min) {
+            $deviationRatio = ($min - $lotSqft) / $min;
+        } elseif ($max < PHP_FLOAT_MAX && $lotSqft > $max) {
+            $deviationRatio = ($lotSqft - $max) / $max;
+        }
+        return $deviationRatio <= 0.20
+            ? ['score' => 5.0]  // close to range → partial
+            : ['score' => 0.0];
     }
 
     // =========================================================================
