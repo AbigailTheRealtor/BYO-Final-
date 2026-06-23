@@ -44,11 +44,13 @@ class StellarBuyerResultsController extends Controller
         }
 
         // -----------------------------------------------------------------------
-        // Empty state: no active residential inventory imported
+        // Empty state: no active inventory imported at all.
+        // Intentionally NOT scoped to a single PropertyType — the guard's purpose
+        // is to detect "the import pipeline has never run", not to enforce a type.
+        // Non-residential buyers would otherwise always hit this state even when
+        // Income / Commercial Sale / Business Opportunity / Vacant Land records exist.
         // -----------------------------------------------------------------------
-        if (!BridgeProperty::where('standard_status', 'Active')
-                ->where('property_type', 'Residential')
-                ->exists()) {
+        if (!BridgeProperty::where('standard_status', 'Active')->exists()) {
             return $this->emptyView('no_inventory');
         }
 

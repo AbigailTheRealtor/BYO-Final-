@@ -62,17 +62,21 @@ class BridgePropertySeeder extends Seeder
             );
         }
 
-        $total              = DB::table('bridge_properties')->count();
-        $activeResidential  = DB::table('bridge_properties')
-            ->where('standard_status', 'Active')
-            ->where('property_type', 'Residential')
-            ->count();
-        $activeCommercial   = DB::table('bridge_properties')
-            ->where('standard_status', 'Active')
-            ->where('property_type', 'Commercial Lease')
-            ->count();
+        $total                   = DB::table('bridge_properties')->count();
+        $activeResidential       = DB::table('bridge_properties')->where('standard_status', 'Active')->where('property_type', 'Residential')->count();
+        $activeIncome            = DB::table('bridge_properties')->where('standard_status', 'Active')->where('property_type', 'Income')->count();
+        $activeCommercialSale    = DB::table('bridge_properties')->where('standard_status', 'Active')->where('property_type', 'Commercial Sale')->count();
+        $activeCommercialLease   = DB::table('bridge_properties')->where('standard_status', 'Active')->where('property_type', 'Commercial Lease')->count();
+        $activeBusinessOpp       = DB::table('bridge_properties')->where('standard_status', 'Active')->where('property_type', 'Business Opportunity')->count();
+        $activeVacantLand        = DB::table('bridge_properties')->where('standard_status', 'Active')->where('property_type', 'Vacant Land')->count();
 
-        $this->command->info("Done. bridge_properties total rows: {$total} ({$activeResidential} Active/Residential, {$activeCommercial} Active/Commercial Lease).");
+        $this->command->info("Done. bridge_properties total rows: {$total}.");
+        $this->command->info("  Active/Residential: {$activeResidential}");
+        $this->command->info("  Active/Income: {$activeIncome}");
+        $this->command->info("  Active/Commercial Sale: {$activeCommercialSale}");
+        $this->command->info("  Active/Commercial Lease: {$activeCommercialLease}");
+        $this->command->info("  Active/Business Opportunity: {$activeBusinessOpp}");
+        $this->command->info("  Active/Vacant Land: {$activeVacantLand}");
     }
 
     // -------------------------------------------------------------------------
@@ -793,6 +797,200 @@ class BridgePropertySeeder extends Seeder
                     'ListingKey'  => 'SEED-COM-FLL-001',
                     'LeaseTerm'   => '48 Months',
                     'seeded'      => true,
+                ]),
+                'created_at'              => $now,
+                'updated_at'              => $now,
+            ],
+
+            // ─────────────────────────────────────────────────────────────────
+            // ACTIVE / INCOME — buyer matching (multi-family / investment)
+            // ─────────────────────────────────────────────────────────────────
+
+            // Tampa — 4-unit apartment building
+            [
+                'listing_key'             => 'SEED-INC-TPA-001',
+                'listing_id'              => 'INC-TPA-001',
+                'standard_status'         => 'Active',
+                'property_type'           => 'Income',
+                'property_sub_type'       => 'Multi Family',
+                'mls_status'              => 'Active',
+                'list_price'              => 685000.00,
+                'unparsed_address'        => '3310 N Armenia Ave, Tampa, FL 33607',
+                'city'                    => 'Tampa',
+                'state_or_province'       => 'FL',
+                'postal_code'             => '33607',
+                'county_or_parish'        => 'Hillsborough',
+                'bedrooms_total'          => 8,
+                'bathrooms_total_integer' => 4,
+                'living_area'             => 3600,
+                'lot_size_sqft'           => 9200,
+                'year_built'              => 1971,
+                'latitude'                => 27.9773,
+                'longitude'               => -82.4814,
+                'pool_private_yn'         => false,
+                'garage_yn'               => false,
+                'waterfront_yn'           => false,
+                'water_view_yn'           => false,
+                'view_yn'                 => false,
+                'senior_community_yn'     => false,
+                'association_yn'          => false,
+                'new_construction_yn'     => false,
+                'association_fee'         => null,
+                'tax_annual_amount'       => 6800.00,
+                'pets_allowed'            => 'Yes',
+                'cdd_yn'                  => false,
+                'modification_timestamp'  => $now,
+                'imported_at'             => $now,
+                'raw_json'                => json_encode([
+                    'ListingKey'         => 'SEED-INC-TPA-001',
+                    'GrossScheduledIncome' => 54000,
+                    'NetOperatingIncome'   => 38000,
+                    'CapRate'              => 5.55,
+                    'seeded'             => true,
+                ]),
+                'created_at'              => $now,
+                'updated_at'              => $now,
+            ],
+
+            // ─────────────────────────────────────────────────────────────────
+            // ACTIVE / COMMERCIAL SALE — buyer matching (commercial purchase)
+            // ─────────────────────────────────────────────────────────────────
+
+            // Tampa — retail/office strip
+            [
+                'listing_key'             => 'SEED-CMS-TPA-001',
+                'listing_id'              => 'CMS-TPA-001',
+                'standard_status'         => 'Active',
+                'property_type'           => 'Commercial Sale',
+                'property_sub_type'       => 'Retail',
+                'mls_status'              => 'Active',
+                'list_price'              => 1250000.00,
+                'unparsed_address'        => '4800 W Kennedy Blvd, Tampa, FL 33609',
+                'city'                    => 'Tampa',
+                'state_or_province'       => 'FL',
+                'postal_code'             => '33609',
+                'county_or_parish'        => 'Hillsborough',
+                'bedrooms_total'          => null,
+                'bathrooms_total_integer' => 2,
+                'living_area'             => 4800,
+                'lot_size_sqft'           => 12000,
+                'year_built'              => 2001,
+                'latitude'                => 27.9482,
+                'longitude'               => -82.5095,
+                'pool_private_yn'         => false,
+                'garage_yn'               => true,
+                'waterfront_yn'           => false,
+                'water_view_yn'           => false,
+                'view_yn'                 => false,
+                'senior_community_yn'     => false,
+                'association_yn'          => false,
+                'new_construction_yn'     => false,
+                'association_fee'         => null,
+                'tax_annual_amount'       => 18500.00,
+                'pets_allowed'            => null,
+                'cdd_yn'                  => false,
+                'modification_timestamp'  => $now,
+                'imported_at'             => $now,
+                'raw_json'                => json_encode([
+                    'ListingKey' => 'SEED-CMS-TPA-001',
+                    'Zoning'     => 'CG',
+                    'seeded'     => true,
+                ]),
+                'created_at'              => $now,
+                'updated_at'              => $now,
+            ],
+
+            // ─────────────────────────────────────────────────────────────────
+            // ACTIVE / BUSINESS OPPORTUNITY — buyer matching
+            // ─────────────────────────────────────────────────────────────────
+
+            // Tampa — established restaurant for sale
+            [
+                'listing_key'             => 'SEED-BIZ-TPA-001',
+                'listing_id'              => 'BIZ-TPA-001',
+                'standard_status'         => 'Active',
+                'property_type'           => 'Business Opportunity',
+                'property_sub_type'       => 'Restaurant/Bar',
+                'mls_status'              => 'Active',
+                'list_price'              => 320000.00,
+                'unparsed_address'        => '1515 E 7th Ave, Tampa, FL 33605',
+                'city'                    => 'Tampa',
+                'state_or_province'       => 'FL',
+                'postal_code'             => '33605',
+                'county_or_parish'        => 'Hillsborough',
+                'bedrooms_total'          => null,
+                'bathrooms_total_integer' => null,
+                'living_area'             => 2200,
+                'lot_size_sqft'           => null,
+                'year_built'              => 2008,
+                'latitude'                => 27.9552,
+                'longitude'               => -82.4386,
+                'pool_private_yn'         => false,
+                'garage_yn'               => false,
+                'waterfront_yn'           => false,
+                'water_view_yn'           => false,
+                'view_yn'                 => false,
+                'senior_community_yn'     => false,
+                'association_yn'          => false,
+                'new_construction_yn'     => false,
+                'association_fee'         => null,
+                'tax_annual_amount'       => null,
+                'pets_allowed'            => null,
+                'cdd_yn'                  => false,
+                'modification_timestamp'  => $now,
+                'imported_at'             => $now,
+                'raw_json'                => json_encode([
+                    'ListingKey'         => 'SEED-BIZ-TPA-001',
+                    'GrossScheduledIncome' => 480000,
+                    'seeded'             => true,
+                ]),
+                'created_at'              => $now,
+                'updated_at'              => $now,
+            ],
+
+            // ─────────────────────────────────────────────────────────────────
+            // ACTIVE / VACANT LAND — buyer matching
+            // ─────────────────────────────────────────────────────────────────
+
+            // Tampa — buildable lot near Westchase
+            [
+                'listing_key'             => 'SEED-LND-TPA-001',
+                'listing_id'              => 'LND-TPA-001',
+                'standard_status'         => 'Active',
+                'property_type'           => 'Vacant Land',
+                'property_sub_type'       => 'Residential',
+                'mls_status'              => 'Active',
+                'list_price'              => 185000.00,
+                'unparsed_address'        => 'Vacant Lot on Sheldon Rd, Tampa, FL 33626',
+                'city'                    => 'Tampa',
+                'state_or_province'       => 'FL',
+                'postal_code'             => '33626',
+                'county_or_parish'        => 'Hillsborough',
+                'bedrooms_total'          => null,
+                'bathrooms_total_integer' => null,
+                'living_area'             => null,
+                'lot_size_sqft'           => 9600,
+                'year_built'              => null,
+                'latitude'                => 28.0516,
+                'longitude'               => -82.6241,
+                'pool_private_yn'         => false,
+                'garage_yn'               => false,
+                'waterfront_yn'           => false,
+                'water_view_yn'           => false,
+                'view_yn'                 => false,
+                'senior_community_yn'     => false,
+                'association_yn'          => false,
+                'new_construction_yn'     => false,
+                'association_fee'         => null,
+                'tax_annual_amount'       => 1200.00,
+                'pets_allowed'            => null,
+                'cdd_yn'                  => false,
+                'modification_timestamp'  => $now,
+                'imported_at'             => $now,
+                'raw_json'                => json_encode([
+                    'ListingKey' => 'SEED-LND-TPA-001',
+                    'Zoning'     => 'RSC-6',
+                    'seeded'     => true,
                 ]),
                 'created_at'              => $now,
                 'updated_at'              => $now,
