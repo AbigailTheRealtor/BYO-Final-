@@ -25,12 +25,13 @@ use Illuminate\Support\Facades\Schema;
  * DO NOT add this class to DatabaseSeeder::run() — it must never run
  * automatically during deploy or a full db:seed call.
  *
- * ─── Verified criteria + expected matches (tested 2026-06-22) ───────────────
+ * ─── Verified criteria + expected matches (tested 2026-06-23) ───────────────
  *
  * IDs are auto-incremented and printed on each run (idempotent rerun cleans up
  * old records and creates fresh ones). Use the URLs printed to the console.
  *
- * Dev user: buyer@exp.com (id=137)
+ * Dev user: tenant@exp.com (id=139) — canonical account for consumer criteria/results testing.
+ * buyer@exp.com is legacy; do not use it for new test workflows.
  *
  * Buyer Criteria (criteria_type=buyer):
  *   EAV: property_types=["Residential"], preferred_cities=["Clearwater","Saint Petersburg"],
@@ -70,10 +71,12 @@ class CriteriaMatchTestSeeder extends Seeder
         $this->command->info('CriteriaMatchTestSeeder: inserting dev criteria records (dev/staging only)…');
 
         // -----------------------------------------------------------------------
-        // Resolve dev user — prefer buyer@exp.com, fall back to first non-deleted
+        // Resolve dev user — prefer tenant@exp.com (canonical test account for
+        // consumer criteria/results workflows), fall back to first non-deleted.
+        // buyer@exp.com is legacy and must not be used for new testing.
         // -----------------------------------------------------------------------
         $devUser = DB::table('users')
-            ->where('email', 'buyer@exp.com')
+            ->where('email', 'tenant@exp.com')
             ->where('is_deleted', false)
             ->first();
 
