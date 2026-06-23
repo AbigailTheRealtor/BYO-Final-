@@ -5,9 +5,11 @@ namespace Tests\Unit\Services\LocationDna;
 use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
 use App\Services\LocationDna\LocationDnaPoiDistanceService;
+use App\Services\LocationDna\LocationDnaPoiTileCache;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 /**
@@ -18,6 +20,12 @@ use Tests\TestCase;
  *
  * Output contract (Phase C approved — 8 keys):
  *   success, status, listing_type, listing_id, results, error, source_lat, source_lng
+ *
+ * v3 additions (task #3200):
+ *   - Category grouping: park/waterfront_park, gym/fitness_center, beach/beach_access
+ *     share one API call each → 16 fresh calls per full tile miss (down from 19).
+ *   - Tile cache: opt-in via config; disabled when tile_precision is absent/empty.
+ *   - Stats persisted to location_dna_poi_run_stats after each completed run.
  *
  * Test coverage:
  *   (1)  Missing Phase B record                → success false, status 'skipped', error set
@@ -37,6 +45,11 @@ use Tests\TestCase;
  *   (15) No marketing/PropertyDna imports      → service file does not import banned pipeline classes
  *   (16) No routes/controllers/Blade/Livewire  → no such files created under the governed paths
  *   (17) Phase B service unmodified            → LocationDnaGeocodeService.php unchanged hash/content check
+ *   (v3-G1) Category grouping reduces API calls → 16 calls instead of 19 on full tile miss
+ *   (v3-G2) Secondary categories produce DB rows → waterfront_park, fitness_center, beach_access rows exist
+ *   (v3-G3) Tile cache hit path               → cache stores candidates, second listing skips API call
+ *   (v3-G4) Tile cache miss path              → when disabled, every listing fetches fresh
+ *   (v3-G5) Stats persisted                   → location_dna_poi_run_stats row written after completed run
  */
 class LocationDnaPoiDistanceServiceTest extends TestCase
 {
@@ -58,16 +71,30 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
     {
         parent::setUp();
         $this->mockClient = $this->createMock(ClientInterface::class);
-        config(['services.google.places_key' => 'test-poi-api-key']);
+        config([
+            'services.google.places_key'            => 'test-poi-api-key',
+            'location_dna.poi.tile_precision'        => null,
+            'cache.default'                          => 'array',
+        ]);
+        Cache::flush();
     }
 
     // =========================================================================
     // Helpers
     // =========================================================================
 
-    private function makeService(): LocationDnaPoiDistanceService
+    private function makeService(?LocationDnaPoiTileCache $tileCache = null): LocationDnaPoiDistanceService
     {
-        return new LocationDnaPoiDistanceService($this->mockClient);
+        return new LocationDnaPoiDistanceService($this->mockClient, null, null, $tileCache);
+    }
+
+    /**
+     * Expected number of API calls per full tile-miss run after category grouping.
+     * = total CATEGORIES (19) − secondary categories in CATEGORY_GROUPS (3)
+     */
+    private function expectedApiCallCount(): int
+    {
+        return count(LocationDnaPoiDistanceService::CATEGORIES) - count(LocationDnaPoiDistanceService::CATEGORY_GROUPS);
     }
 
     /** Create a fully-geocoded Phase B record for the default listing. */
@@ -238,15 +265,15 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
     {
         $this->createGeocodedDnaRecord();
 
-        $categoryCount = count(LocationDnaPoiDistanceService::CATEGORIES);
+        $expectedCallCount = $this->expectedApiCallCount();
 
         // Return zero results for the first call, success for all others
         $this->mockClient
-            ->expects($this->exactly($categoryCount))
+            ->expects($this->exactly($expectedCallCount))
             ->method('request')
             ->willReturnOnConsecutiveCalls(
                 $this->makeZeroResultsResponse(),
-                ...array_fill(0, $categoryCount - 1, $this->makePlacesResponse()),
+                ...array_fill(0, $expectedCallCount - 1, $this->makePlacesResponse()),
             );
 
         $result = $this->makeService()->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
@@ -264,6 +291,7 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(1, $notFound);
 
         // Total rows >= total categories (top_rated_dining derived row adds at least one extra)
+        $categoryCount = count(LocationDnaPoiDistanceService::CATEGORIES);
         $totalRows = PropertyLocationPoi::where('listing_type', self::LISTING_TYPE)
             ->where('listing_id', self::LISTING_ID)
             ->count();
@@ -280,14 +308,14 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
     {
         $this->createGeocodedDnaRecord();
 
-        $categoryCount = count(LocationDnaPoiDistanceService::CATEGORIES);
+        $expectedCallCount = $this->expectedApiCallCount();
 
         $this->mockClient
-            ->expects($this->exactly($categoryCount))
+            ->expects($this->exactly($expectedCallCount))
             ->method('request')
             ->willReturnOnConsecutiveCalls(
                 $this->throwException(new \RuntimeException('API timeout')),
-                ...array_fill(0, $categoryCount - 1, $this->makePlacesResponse()),
+                ...array_fill(0, $expectedCallCount - 1, $this->makePlacesResponse()),
             );
 
         $result = $this->makeService()->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
@@ -303,6 +331,7 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
 
         $this->assertGreaterThanOrEqual(1, $errorRows);
 
+        $categoryCount = count(LocationDnaPoiDistanceService::CATEGORIES);
         $totalRows = PropertyLocationPoi::where('listing_type', self::LISTING_TYPE)
             ->where('listing_id', self::LISTING_ID)
             ->count();
@@ -319,10 +348,10 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
     {
         $this->createGeocodedDnaRecord();
 
-        $categoryCount = count(LocationDnaPoiDistanceService::CATEGORIES);
+        $expectedCallCount = $this->expectedApiCallCount();
 
         $this->mockClient
-            ->expects($this->exactly($categoryCount))
+            ->expects($this->exactly($expectedCallCount))
             ->method('request')
             ->willReturn($this->makePlacesResponse(27.9600, -82.4600, 'Nearby Place'));
 
@@ -335,6 +364,7 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
         $this->assertEqualsWithDelta(self::SOURCE_LAT, $result['source_lat'], 0.0001);
         $this->assertEqualsWithDelta(self::SOURCE_LNG, $result['source_lng'], 0.0001);
         // results includes all persisted rows (multi-candidate + derived top_rated_dining)
+        $categoryCount = count(LocationDnaPoiDistanceService::CATEGORIES);
         $this->assertGreaterThanOrEqual($categoryCount, count($result['results']));
     }
 
@@ -348,7 +378,6 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
         $this->createGeocodedDnaRecord();
 
         $expectedCategories = array_keys(LocationDnaPoiDistanceService::CATEGORIES);
-        $categoryCount      = count($expectedCategories);
 
         $this->mockClient
             ->method('request')
@@ -364,6 +393,7 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
             ]);
         }
 
+        $categoryCount = count($expectedCategories);
         $totalRows = PropertyLocationPoi::where('listing_type', self::LISTING_TYPE)
             ->where('listing_id', self::LISTING_ID)
             ->count();
@@ -437,10 +467,10 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
             'calculated_at'  => now()->subDay(),
         ]);
 
-        $categoryCount = count(LocationDnaPoiDistanceService::CATEGORIES);
+        $expectedCallCount = $this->expectedApiCallCount();
 
         $this->mockClient
-            ->expects($this->exactly($categoryCount))
+            ->expects($this->exactly($expectedCallCount))
             ->method('request')
             ->willReturn($this->makePlacesResponse(27.9600, -82.4600));
 
@@ -462,7 +492,7 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
             ->where('listing_id', self::LISTING_ID)
             ->get();
 
-        // >= categoryCount: derived top_rated_dining row(s) are stored in addition to CATEGORIES rows
+        $categoryCount = count(LocationDnaPoiDistanceService::CATEGORIES);
         $this->assertGreaterThanOrEqual($categoryCount, $newRows->count());
 
         foreach ($newRows as $row) {
@@ -614,36 +644,37 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
     {
         $this->createGeocodedDnaRecord();
 
-        $keywordCategories = array_filter(
-            LocationDnaPoiDistanceService::CATEGORIES,
-            fn ($meta) => $meta['query_strategy'] === 'keyword',
-        );
-
-        $this->assertNotEmpty($keywordCategories, 'At least one keyword-strategy category must exist');
-
-        $capturedParams = [];
+        $allCapturedKeywords = [];
 
         $this->mockClient
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url, array $options) use (&$capturedParams) {
-                $capturedParams[] = $options['query'] ?? [];
+            ->willReturnCallback(function (string $method, string $url, array $options) use (&$allCapturedKeywords) {
+                if (isset($options['query']['keyword'])) {
+                    $allCapturedKeywords[] = $options['query']['keyword'];
+                }
                 return $this->makePlacesResponse();
             });
 
         $this->makeService()->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
 
-        $categoryKeys = array_keys(LocationDnaPoiDistanceService::CATEGORIES);
+        // Secondary categories (waterfront_park, fitness_center, beach_access) do not make
+        // their own API calls — they reuse the primary's raw candidates. Only verify
+        // standalone keyword categories and primary keyword categories.
+        $secondaries = array_values(LocationDnaPoiDistanceService::CATEGORY_GROUPS);
 
-        foreach ($keywordCategories as $category => $meta) {
-            $position = array_search($category, $categoryKeys, true);
-            $this->assertNotFalse($position,
-                "Could not find position of keyword category '{$category}'");
-
-            $params = $capturedParams[$position] ?? [];
-            $this->assertArrayHasKey('keyword', $params,
-                "Keyword category '{$category}' must pass 'keyword' param to Google Places API");
-            $this->assertSame($meta['keyword'], $params['keyword'],
-                "Keyword category '{$category}' must pass the correct keyword value");
+        foreach (LocationDnaPoiDistanceService::CATEGORIES as $category => $meta) {
+            if ($meta['query_strategy'] !== 'keyword') {
+                continue;
+            }
+            if (in_array($category, $secondaries, true)) {
+                // Secondary category: no own API call expected
+                continue;
+            }
+            $this->assertContains(
+                $meta['keyword'],
+                $allCapturedKeywords,
+                "Keyword '{$meta['keyword']}' for category '{$category}' was not passed to any API call",
+            );
         }
     }
 
@@ -652,34 +683,34 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
     {
         $this->createGeocodedDnaRecord();
 
-        $nativeCategories = array_filter(
-            LocationDnaPoiDistanceService::CATEGORIES,
-            fn ($meta) => $meta['query_strategy'] === 'native_type',
-        );
-
-        $this->assertNotEmpty($nativeCategories, 'At least one native-type category must exist');
-
-        $capturedParams = [];
+        $allCapturedParams = [];
 
         $this->mockClient
             ->method('request')
-            ->willReturnCallback(function (string $method, string $url, array $options) use (&$capturedParams) {
-                $capturedParams[] = $options['query'] ?? [];
+            ->willReturnCallback(function (string $method, string $url, array $options) use (&$allCapturedParams) {
+                $allCapturedParams[] = $options['query'] ?? [];
                 return $this->makePlacesResponse();
             });
 
         $this->makeService()->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
 
-        $categoryKeys = array_keys(LocationDnaPoiDistanceService::CATEGORIES);
+        // Collect all google_type values that were passed with no keyword
+        $typesWithoutKeyword = array_map(
+            fn($p) => $p['type'] ?? null,
+            array_filter($allCapturedParams, fn($p) => ! isset($p['keyword'])),
+        );
+
+        $nativeCategories = array_filter(
+            LocationDnaPoiDistanceService::CATEGORIES,
+            fn($meta) => $meta['query_strategy'] === 'native_type',
+        );
 
         foreach ($nativeCategories as $category => $meta) {
-            $position = array_search($category, $categoryKeys, true);
-            $params   = $capturedParams[$position] ?? [];
-
-            $this->assertArrayHasKey('type', $params,
-                "Native-type category '{$category}' must pass 'type' param to Google Places API");
-            $this->assertArrayNotHasKey('keyword', $params,
-                "Native-type category '{$category}' must NOT pass a 'keyword' param");
+            $this->assertContains(
+                $meta['google_type'],
+                $typesWithoutKeyword,
+                "Native-type category '{$category}' (google_type={$meta['google_type']}) must send 'type' param without 'keyword'",
+            );
         }
     }
 
@@ -882,5 +913,230 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
         $this->assertSame('completed', $result['status']);
         $this->assertNull($result['error']);
         $this->assertNotEmpty($result['results']);
+    }
+
+    // =========================================================================
+    // (v3-G1) Category grouping — 16 API calls instead of 19
+    // =========================================================================
+
+    /** @test */
+    public function category_grouping_reduces_api_calls_to_16_on_full_tile_miss(): void
+    {
+        $this->createGeocodedDnaRecord();
+
+        $capturedCallCount = 0;
+        $this->mockClient
+            ->method('request')
+            ->willReturnCallback(function () use (&$capturedCallCount) {
+                $capturedCallCount++;
+                return $this->makePlacesResponse();
+            });
+
+        $this->makeService()->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $totalCategories      = count(LocationDnaPoiDistanceService::CATEGORIES);
+        $secondaryCategories  = count(LocationDnaPoiDistanceService::CATEGORY_GROUPS);
+        $expectedCalls        = $totalCategories - $secondaryCategories;
+
+        $this->assertSame(
+            $expectedCalls,
+            $capturedCallCount,
+            "Expected {$expectedCalls} API calls (19 categories − 3 secondaries), got {$capturedCallCount}",
+        );
+    }
+
+    /** @test */
+    public function category_groups_constant_has_exactly_three_entries(): void
+    {
+        $this->assertCount(3, LocationDnaPoiDistanceService::CATEGORY_GROUPS,
+            'CATEGORY_GROUPS must declare exactly three primary→secondary pairs');
+
+        $expectedPairs = [
+            'park'  => 'waterfront_park',
+            'gym'   => 'fitness_center',
+            'beach' => 'beach_access',
+        ];
+
+        $this->assertSame($expectedPairs, LocationDnaPoiDistanceService::CATEGORY_GROUPS);
+    }
+
+    // =========================================================================
+    // (v3-G2) Secondary categories still produce DB rows (via preloaded candidates)
+    // =========================================================================
+
+    /** @test */
+    public function secondary_grouped_categories_produce_db_rows_without_own_api_call(): void
+    {
+        $this->createGeocodedDnaRecord();
+
+        $this->mockClient
+            ->method('request')
+            ->willReturn($this->makePlacesResponse());
+
+        $this->makeService()->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $secondaryCategories = array_values(LocationDnaPoiDistanceService::CATEGORY_GROUPS);
+
+        foreach ($secondaryCategories as $category) {
+            $rowExists = PropertyLocationPoi::where('listing_type', self::LISTING_TYPE)
+                ->where('listing_id', self::LISTING_ID)
+                ->where('poi_category', $category)
+                ->exists();
+
+            $this->assertTrue($rowExists,
+                "Secondary grouped category '{$category}' must still produce a DB row");
+        }
+    }
+
+    // =========================================================================
+    // (v3-G3) Tile cache hit path — second call skips API
+    // =========================================================================
+
+    /** @test */
+    public function tile_cache_hit_skips_api_call_for_same_tile(): void
+    {
+        config(['location_dna.poi.tile_precision' => '0.005']);
+
+        // Create two listings at positions that fall in the same 0.005° tile.
+        // Both lat/lng pairs map to the same tile floor: lat→27.95, lng→-82.46.
+        // floor(27.9506/0.005)*0.005 = 27.950, floor(27.9507/0.005)*0.005 = 27.950
+        // floor(-82.4572/0.005)*0.005 = -82.460, floor(-82.4573/0.005)*0.005 = -82.460
+        $this->createGeocodedDnaRecord(
+            listingType: self::LISTING_TYPE,
+            listingId:   100,
+            lat:         27.9506,
+            lng:         -82.4572,
+        );
+        $this->createGeocodedDnaRecord(
+            listingType: self::LISTING_TYPE,
+            listingId:   101,
+            lat:         27.9507,
+            lng:         -82.4573,
+        );
+
+        $tileCache = new LocationDnaPoiTileCache();
+        $this->assertTrue($tileCache->isEnabled(), 'Tile cache must be enabled for this test');
+
+        $firstCallCount  = 0;
+        $secondCallCount = 0;
+
+        // First listing — populates tile cache
+        $this->mockClient
+            ->method('request')
+            ->willReturnCallback(function () use (&$firstCallCount) {
+                $firstCallCount++;
+                return $this->makePlacesResponse();
+            });
+
+        $service1 = new LocationDnaPoiDistanceService($this->mockClient, null, null, $tileCache);
+        $result1  = $service1->calculateForListing(self::LISTING_TYPE, 100);
+        $this->assertTrue($result1['success']);
+
+        // Second listing at same tile — must not trigger new API calls beyond what the
+        // grouping savings already cover. Since both listings are in the same tile,
+        // the second listing should have cache hits.
+        $mockClient2 = $this->createMock(ClientInterface::class);
+        $mockClient2->method('request')
+            ->willReturnCallback(function () use (&$secondCallCount) {
+                $secondCallCount++;
+                return $this->makePlacesResponse();
+            });
+
+        $service2 = new LocationDnaPoiDistanceService($mockClient2, null, null, $tileCache);
+        $result2  = $service2->calculateForListing(self::LISTING_TYPE, 101);
+        $this->assertTrue($result2['success']);
+
+        // First run must have made API calls (cache was cold)
+        $this->assertGreaterThan(0, $firstCallCount, 'First listing must make API calls to populate tile cache');
+        // Second run at same tile must make FEWER calls (cache hits occurred)
+        $this->assertLessThan($firstCallCount, $secondCallCount,
+            'Second listing at same tile must make fewer API calls due to tile cache hits');
+    }
+
+    // =========================================================================
+    // (v3-G4) Tile cache disabled by default — full fresh fetch
+    // =========================================================================
+
+    /** @test */
+    public function tile_cache_is_disabled_when_tile_precision_is_not_set(): void
+    {
+        config(['location_dna.poi.tile_precision' => null]);
+        $tileCache = new LocationDnaPoiTileCache();
+
+        $this->assertFalse($tileCache->isEnabled(),
+            'Tile cache must be disabled when tile_precision config is null/empty');
+    }
+
+    /** @test */
+    public function tile_cache_is_disabled_when_tile_precision_is_empty_string(): void
+    {
+        config(['location_dna.poi.tile_precision' => '']);
+        $tileCache = new LocationDnaPoiTileCache();
+
+        $this->assertFalse($tileCache->isEnabled(),
+            'Tile cache must be disabled when tile_precision config is empty string');
+    }
+
+    // =========================================================================
+    // (v3-G5) Stats persisted to location_dna_poi_run_stats after completed run
+    // =========================================================================
+
+    /** @test */
+    public function stats_are_persisted_to_run_stats_table_after_completed_run(): void
+    {
+        $this->createGeocodedDnaRecord();
+
+        $this->mockClient
+            ->method('request')
+            ->willReturn($this->makePlacesResponse());
+
+        $service = $this->makeService();
+        $result  = $service->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $this->assertTrue($result['success']);
+
+        $this->assertDatabaseHas('location_dna_poi_run_stats', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+        ]);
+
+        // Verify grouped count matches CATEGORY_GROUPS size
+        $row = \Illuminate\Support\Facades\DB::table('location_dna_poi_run_stats')
+            ->where('listing_type', self::LISTING_TYPE)
+            ->where('listing_id', self::LISTING_ID)
+            ->first();
+
+        $this->assertNotNull($row);
+        $this->assertSame(
+            count(LocationDnaPoiDistanceService::CATEGORY_GROUPS),
+            (int) $row->categories_grouped,
+            'categories_grouped must equal number of secondary CATEGORY_GROUPS entries',
+        );
+    }
+
+    /** @test */
+    public function get_last_run_stats_returns_stats_shape_after_completed_run(): void
+    {
+        $this->createGeocodedDnaRecord();
+
+        $this->mockClient
+            ->method('request')
+            ->willReturn($this->makePlacesResponse());
+
+        $service = $this->makeService();
+        $service->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $stats = $service->getLastRunStats();
+
+        $this->assertArrayHasKey('categories_fetched_fresh', $stats);
+        $this->assertArrayHasKey('categories_from_tile_cache', $stats);
+        $this->assertArrayHasKey('categories_grouped', $stats);
+        $this->assertArrayHasKey('precision_used', $stats);
+
+        $this->assertSame(
+            count(LocationDnaPoiDistanceService::CATEGORY_GROUPS),
+            $stats['categories_grouped'],
+        );
+        $this->assertNull($stats['precision_used'], 'precision_used must be null when tile cache is disabled');
     }
 }

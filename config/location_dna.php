@@ -129,6 +129,35 @@ return [
         'cache_ttl'             => (int) env('LOCATION_DNA_POI_CACHE_TTL', 86400),
         'max_radius_miles'      => (int) env('LOCATION_DNA_POI_MAX_RADIUS_MILES', 25),
         'category_result_limit' => (int) env('LOCATION_DNA_POI_CATEGORY_RESULT_LIMIT', 5),
+
+        /*
+        |----------------------------------------------------------------------
+        | POI Spatial Tile Cache
+        |----------------------------------------------------------------------
+        |
+        | tile_precision
+        |   Decimal-degree precision used to snap (lat, lng) to a tile grid
+        |   before building the cache key. When absent or empty, tile caching
+        |   is disabled entirely — every listing fetches fresh from Google.
+        |   Set this explicitly to enable tile caching.
+        |
+        |   Candidate values (benchmarked by ldna:benchmark-tile-precision):
+        |     0.001   ≈ 100 m  — finest grain, highest accuracy
+        |     0.0025  ≈ 250 m
+        |     0.005   ≈ 500 m  — recommended production default (see docs/ldna-tile-precision-benchmark.md)
+        |     0.01    ≈ 1 km   — coarsest grain, highest hit rate
+        |
+        |   Example .env: LOCATION_DNA_POI_TILE_PRECISION=0.005
+        |
+        | tile_cache_ttl
+        |   How long (in seconds) raw POI candidates are cached per tile.
+        |   Default: 604800 (7 days). Tile data is stable enough for a week
+        |   since new businesses and closures typically propagate to Google
+        |   on a weeks-long lag.
+        |
+        */
+        'tile_precision'  => env('LOCATION_DNA_POI_TILE_PRECISION', null),
+        'tile_cache_ttl'  => (int) env('LOCATION_DNA_POI_TILE_CACHE_TTL', 604800),
     ],
 
 ];

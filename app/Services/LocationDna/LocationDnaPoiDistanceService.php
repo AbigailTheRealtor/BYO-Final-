@@ -7,6 +7,7 @@ use App\Models\PropertyLocationPoi;
 use App\Services\LocationDna\LocationDnaRankingEngine;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
@@ -25,6 +26,15 @@ use Throwable;
  *   - Category exclusion filters eliminate confirmed bad matches (P0 audit fixes).
  *   - Top Rated Dining derived category: restaurant candidates sorted by rating
  *     (minimum 10 reviews), stored as rank 1/2/3 under 'top_rated_dining'.
+ *
+ * v3 additions (task #3200 — cost optimisation):
+ *   - Spatial tile cache (LocationDnaPoiTileCache): reuses raw candidates across
+ *     nearby listings that fall in the same geographic tile. Opt-in via
+ *     LOCATION_DNA_POI_TILE_PRECISION env var; disabled when absent/empty.
+ *   - Category grouping: three category pairs share one API call instead of two,
+ *     reducing fresh-call volume from 19 to 16 per tile miss.
+ *     Pairs: park/waterfront_park, gym/fitness_center, beach/beach_access.
+ *   - Per-run stats persisted to location_dna_poi_run_stats for cost reporting.
  *
  * This service MUST NEVER:
  *   - Call the geocoding API or modify Phase B records.
@@ -126,6 +136,28 @@ class LocationDnaPoiDistanceService
         'waterfront_park' => ['google_type' => 'park', 'keyword' => 'waterfront',    'label' => 'Waterfront Park', 'query_strategy' => 'keyword'],
         'dog_park'        => ['google_type' => null,   'keyword' => 'dog park',      'label' => 'Dog Park',        'query_strategy' => 'keyword'],
         'golf_course'     => ['google_type' => null,   'keyword' => 'golf course',   'label' => 'Golf Course',     'query_strategy' => 'keyword'],
+    ];
+
+    /**
+     * Category pairs that share a single Google Places API call (v3 cost optimisation).
+     *
+     * Key   = primary category  (makes the API call, params defined in CATEGORIES[primary])
+     * Value = secondary category (reuses primary's raw candidates; own exclusion filters applied)
+     *
+     * Rationale per pair:
+     *   park / waterfront_park   — both query google_type=park; waterfront_park uses the same
+     *                              pool of park results filtered by its own exclusion rules.
+     *   gym / fitness_center     — both query google_type=gym; fitness_center differentiates
+     *                              via label/rank, not via a separate API result set.
+     *   beach / beach_access     — both keyword-search "beach" territory; raw results are shared
+     *                              and each category's exclusion rules are applied independently.
+     *
+     * This reduces fresh calls per listing on a full tile miss from 19 → 16.
+     */
+    public const CATEGORY_GROUPS = [
+        'park'  => 'waterfront_park',
+        'gym'   => 'fitness_center',
+        'beach' => 'beach_access',
     ];
 
     /**
@@ -245,10 +277,22 @@ class LocationDnaPoiDistanceService
         ],
     ];
 
+    // =========================================================================
+    // Per-run stat counters (reset before each calculateForListing() call)
+    // =========================================================================
+
+    private int $tileCacheHits     = 0;
+    private int $tileCacheMisses   = 0;
+    private int $categoriesGrouped = 0;
+
+    /** Last-run stats, set at the end of calculateForListing() for introspection. */
+    private array $lastRunStats = [];
+
     public function __construct(
         private readonly ?ClientInterface $httpClient = null,
         private readonly ?LocationDnaAuditService $auditService = null,
         private readonly ?LocationDnaRankingEngine $rankingEngine = null,
+        private readonly ?LocationDnaPoiTileCache $tileCache = null,
     ) {}
 
     /**
@@ -268,6 +312,16 @@ class LocationDnaPoiDistanceService
      *   - If coordinates changed, all existing rows are deleted and all categories
      *     are recalculated.
      *
+     * Tile cache (v3):
+     *   - When LOCATION_DNA_POI_TILE_PRECISION is set, raw candidates for each
+     *     (tile, google_type, keyword) tuple are cached in Laravel Cache.
+     *   - Nearby listings that fall in the same tile reuse raw candidates
+     *     without a fresh Google Places call.
+     *
+     * Category grouping (v3):
+     *   - CATEGORY_GROUPS pairs share one API call. The primary category fetches;
+     *     the secondary reuses the raw candidates with its own exclusion filters.
+     *
      * A single failed category does not abort the run. Each row independently
      * stores its status ('found' | 'not_found' | 'error') and error message.
      *
@@ -277,6 +331,11 @@ class LocationDnaPoiDistanceService
      */
     public function calculateForListing(string $listingType, int $listingId): array
     {
+        // Reset per-run counters
+        $this->tileCacheHits     = 0;
+        $this->tileCacheMisses   = 0;
+        $this->categoriesGrouped = 0;
+
         try {
             // (a) Validate: Phase B record must exist
             $dnaRecord = PropertyLocationDna::where('listing_type', $listingType)
@@ -290,6 +349,7 @@ class LocationDnaPoiDistanceService
                     'No PropertyLocationDna record found for this listing',
                 );
                 $this->audit($listingType, $listingId, $output);
+                $this->setLastRunStats($listingType, $listingId, null);
                 return $output;
             }
 
@@ -301,6 +361,7 @@ class LocationDnaPoiDistanceService
                     "PropertyLocationDna geocode_status is '{$dnaRecord->geocode_status}', expected 'geocoded'",
                 );
                 $this->audit($listingType, $listingId, $output);
+                $this->setLastRunStats($listingType, $listingId, null);
                 return $output;
             }
 
@@ -312,6 +373,7 @@ class LocationDnaPoiDistanceService
                     'PropertyLocationDna record is missing geocoded coordinates',
                 );
                 $this->audit($listingType, $listingId, $output);
+                $this->setLastRunStats($listingType, $listingId, null);
                 return $output;
             }
 
@@ -342,6 +404,7 @@ class LocationDnaPoiDistanceService
                         'cached',
                     );
                     $this->audit($listingType, $listingId, $output);
+                    $this->setLastRunStats($listingType, $listingId, null);
                     return $output;
                 }
 
@@ -362,6 +425,7 @@ class LocationDnaPoiDistanceService
                     'missing_google_api_key',
                 );
                 $this->audit($listingType, $listingId, $output);
+                $this->setLastRunStats($listingType, $listingId, null);
                 return $output;
             }
 
@@ -371,17 +435,32 @@ class LocationDnaPoiDistanceService
             // Capture restaurant raw candidates for Top Rated Dining derivation.
             $restaurantRawCandidates = [];
 
-            // (f) Query Google Places for each category independently
+            // Preloaded raw candidates for secondary categories in CATEGORY_GROUPS.
+            // Populated when the primary category is processed.
+            $groupedRawCandidates = [];
+
+            // (f) Query Google Places for each category
+            // Primary categories in CATEGORY_GROUPS fetch once and supply their raw
+            // candidates to the corresponding secondary category.
             foreach (self::CATEGORIES as $category => $meta) {
+                // Determine if this category has preloaded candidates from a group primary
+                $preloaded = $groupedRawCandidates[$category] ?? null;
+
+                if ($preloaded !== null) {
+                    // Secondary category: track as grouped (no API call)
+                    $this->categoriesGrouped++;
+                }
+
                 [$categoryRows, $rawCandidates] = $this->fetchAndPersistCategoryMulti(
-                    client:      $client,
-                    apiKey:      $apiKey,
-                    listingType: $listingType,
-                    listingId:   $listingId,
-                    category:    $category,
-                    meta:        $meta,
-                    sourceLat:   $sourceLat,
-                    sourceLng:   $sourceLng,
+                    client:                $client,
+                    apiKey:                $apiKey,
+                    listingType:           $listingType,
+                    listingId:             $listingId,
+                    category:              $category,
+                    meta:                  $meta,
+                    sourceLat:             $sourceLat,
+                    sourceLng:             $sourceLng,
+                    preloadedRawCandidates: $preloaded,
                 );
 
                 foreach ($categoryRows as $row) {
@@ -390,6 +469,13 @@ class LocationDnaPoiDistanceService
 
                 if ($category === 'restaurant') {
                     $restaurantRawCandidates = $rawCandidates;
+                }
+
+                // If this category is a primary in CATEGORY_GROUPS, store its raw
+                // candidates so the secondary can reuse them without an API call.
+                if (isset(self::CATEGORY_GROUPS[$category])) {
+                    $secondaryCategory = self::CATEGORY_GROUPS[$category];
+                    $groupedRawCandidates[$secondaryCategory] = $rawCandidates;
                 }
             }
 
@@ -415,6 +501,8 @@ class LocationDnaPoiDistanceService
                 'completed',
             );
             $this->audit($listingType, $listingId, $output);
+            $this->setLastRunStats($listingType, $listingId, $sourceLat);
+            $this->persistRunStats($listingType, $listingId);
             return $output;
 
         } catch (Throwable $e) {
@@ -426,8 +514,22 @@ class LocationDnaPoiDistanceService
                 $e->getMessage(),
             );
             $this->audit($listingType, $listingId, $output);
+            $this->setLastRunStats($listingType, $listingId, null);
             return $output;
         }
+    }
+
+    /**
+     * Return stats from the most recent calculateForListing() call.
+     *
+     * Keys: categories_fetched_fresh, categories_from_tile_cache, categories_grouped,
+     *       precision_used.
+     *
+     * @return array
+     */
+    public function getLastRunStats(): array
+    {
+        return $this->lastRunStats;
     }
 
     // =========================================================================
@@ -458,10 +560,55 @@ class LocationDnaPoiDistanceService
     }
 
     /**
+     * Set lastRunStats from the current counter state.
+     *
+     * @param  float|null $sourceLat  Listing latitude — used only to confirm a real run happened.
+     */
+    private function setLastRunStats(string $listingType, int $listingId, ?float $sourceLat): void
+    {
+        $tileCache     = $this->tileCache ?? new LocationDnaPoiTileCache();
+        $precisionUsed = $tileCache->isEnabled() ? $tileCache->getPrecision() : null;
+
+        $this->lastRunStats = [
+            'listing_type'             => $listingType,
+            'listing_id'               => $listingId,
+            'categories_fetched_fresh' => $this->tileCacheMisses,
+            'categories_from_tile_cache' => $this->tileCacheHits,
+            'categories_grouped'       => $this->categoriesGrouped,
+            'precision_used'           => $precisionUsed,
+        ];
+    }
+
+    /**
+     * Persist per-run stats to location_dna_poi_run_stats.
+     * Wrapped in try/catch so a write failure never blocks a DNA run.
+     */
+    private function persistRunStats(string $listingType, int $listingId): void
+    {
+        try {
+            $tileCache     = $this->tileCache ?? new LocationDnaPoiTileCache();
+            $precisionUsed = $tileCache->isEnabled() ? $tileCache->getPrecision() : null;
+
+            DB::table('location_dna_poi_run_stats')->insert([
+                'listing_type'               => $listingType,
+                'listing_id'                 => $listingId,
+                'categories_fetched_fresh'   => $this->tileCacheMisses,
+                'categories_from_tile_cache' => $this->tileCacheHits,
+                'categories_grouped'         => $this->categoriesGrouped,
+                'precision_used'             => $precisionUsed,
+                'run_at'                     => now()->toDateTimeString(),
+            ]);
+        } catch (Throwable) {
+            // Stats write failure must never block a DNA run.
+        }
+    }
+
+    /**
      * Fetch raw candidates from the Google Places Nearby Search API.
      *
-     * Returns the raw results array from the API response, or an empty array on
-     * error. Never throws.
+     * Checks the spatial tile cache before making an HTTP call.
+     * On a tile cache hit, returns cached candidates and increments $tileCacheHits.
+     * On a tile cache miss, calls the API, caches the result, and increments $tileCacheMisses.
      *
      * Exceptions propagate to the caller; fetchAndPersistCategoryMulti handles them
      * by writing an 'error' row so the run can continue with other categories.
@@ -475,6 +622,21 @@ class LocationDnaPoiDistanceService
         float           $sourceLat,
         float           $sourceLng,
     ): array {
+        // Resolve tile cache (use injected or create on demand)
+        $tileCache = $this->tileCache ?? new LocationDnaPoiTileCache();
+
+        // ── Tile cache check ──────────────────────────────────────────────────
+        if ($tileCache->isEnabled()) {
+            $tileKey = $tileCache->buildKey($meta, $sourceLat, $sourceLng);
+            $cached  = $tileCache->get($tileKey);
+
+            if ($cached !== null) {
+                $this->tileCacheHits++;
+                return $cached;
+            }
+        }
+
+        // ── Google Places Nearby Search call ──────────────────────────────────
         $queryParams = [
             'location' => "{$sourceLat},{$sourceLng}",
             'rankby'   => 'distance',
@@ -495,7 +657,16 @@ class LocationDnaPoiDistanceService
 
         $body = json_decode((string) $response->getBody(), true);
 
-        return $body['results'] ?? [];
+        $results = $body['results'] ?? [];
+
+        // ── Store in tile cache ───────────────────────────────────────────────
+        if ($tileCache->isEnabled()) {
+            $tileCache->put($tileKey, $results);
+        }
+
+        $this->tileCacheMisses++;
+
+        return $results;
     }
 
     /**
@@ -564,6 +735,10 @@ class LocationDnaPoiDistanceService
      * Fetch raw candidates for a category, apply exclusion filters, and persist
      * up to MAX_CANDIDATES_PER_CATEGORY ranked rows.
      *
+     * When $preloadedRawCandidates is supplied, the API call is skipped entirely
+     * and the preloaded data is used instead. This is used by secondary categories
+     * in CATEGORY_GROUPS (e.g. waterfront_park reuses park's raw candidates).
+     *
      * Returns a two-element tuple:
      *   [0] array  — persisted row arrays for this category
      *   [1] array  — all raw Google Places results (unfiltered), for downstream use
@@ -582,6 +757,7 @@ class LocationDnaPoiDistanceService
         array           $meta,
         float           $sourceLat,
         float           $sourceLng,
+        ?array          $preloadedRawCandidates = null,
     ): array {
         try {
             // Delete existing rows for this category (atomic replacement)
@@ -590,7 +766,10 @@ class LocationDnaPoiDistanceService
                 ->where('poi_category', $category)
                 ->delete();
 
-            $rawCandidates = $this->fetchRawCandidates($client, $apiKey, $meta, $sourceLat, $sourceLng);
+            // Use preloaded candidates (grouped) or fetch fresh from API/tile cache
+            $rawCandidates = ($preloadedRawCandidates !== null)
+                ? $preloadedRawCandidates
+                : $this->fetchRawCandidates($client, $apiKey, $meta, $sourceLat, $sourceLng);
 
             if (empty($rawCandidates)) {
                 $row = $this->createPoiRow(
