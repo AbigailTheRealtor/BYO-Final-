@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
  * DO NOT add this class to DatabaseSeeder::run() — it must never run
  * automatically during deploy or a full db:seed call.
  *
- * Matching notes for #3067 browser testing:
+ * Matching notes for browser testing:
  *   - All Active + Residential records will pass the import_unavailable and
  *     no_inventory guards in StellarBuyerResultsController.
  *   - To reach actual match results (not the no_location state) create a
@@ -29,7 +29,14 @@ use Illuminate\Support\Facades\DB;
  *     containing one of: Orlando, Tampa, Sarasota, Naples, Jacksonville,
  *     Fort Lauderdale, Boca Raton, Gainesville, Clearwater, or Ocala;
  *     OR preferred_zip_codes containing one of the postal codes below.
- *   - Price range $200k–$950k with 2–5 beds covers the seeded inventory.
+ *   - Price range $200k–$950k with 2–5 beds covers the seeded Residential inventory.
+ *
+ * Commercial Lease matching (Tenant commercial lease offer listings):
+ *   - Three Active/Commercial Lease records seeded: Tampa (office, $3,500/mo, 2-yr lease),
+ *     Orlando (retail, $2,200/mo, 1-yr lease), Fort Lauderdale (mixed-use, $5,800/mo, 3-5yr).
+ *   - PropertyType = 'Commercial Lease' confirmed from live Bridge API import 2026-06-23.
+ *   - list_price = monthly rent for commercial lease records.
+ *   - LeaseTerm in raw_json is the Bridge field used for lease-term scoring.
  */
 class BridgePropertySeeder extends Seeder
 {
@@ -55,13 +62,17 @@ class BridgePropertySeeder extends Seeder
             );
         }
 
-        $total   = DB::table('bridge_properties')->count();
-        $active  = DB::table('bridge_properties')
+        $total              = DB::table('bridge_properties')->count();
+        $activeResidential  = DB::table('bridge_properties')
             ->where('standard_status', 'Active')
             ->where('property_type', 'Residential')
             ->count();
+        $activeCommercial   = DB::table('bridge_properties')
+            ->where('standard_status', 'Active')
+            ->where('property_type', 'Commercial Lease')
+            ->count();
 
-        $this->command->info("Done. bridge_properties total rows: {$total} ({$active} Active/Residential).");
+        $this->command->info("Done. bridge_properties total rows: {$total} ({$activeResidential} Active/Residential, {$activeCommercial} Active/Commercial Lease).");
     }
 
     // -------------------------------------------------------------------------
@@ -643,6 +654,146 @@ class BridgePropertySeeder extends Seeder
                 'modification_timestamp'  => $now,
                 'imported_at'             => $now,
                 'raw_json'                => json_encode(['ListingKey' => 'SEED-CLW-002', 'seeded' => true]),
+                'created_at'              => $now,
+                'updated_at'              => $now,
+            ],
+
+            // ─────────────────────────────────────────────────────────────────
+            // ACTIVE / COMMERCIAL LEASE — tenant commercial lease matching targets
+            //
+            // PropertyType = 'Commercial Lease' confirmed from live Bridge/Stellar
+            // OData API import on 2026-06-23. list_price = monthly rent for these
+            // records (Bridge field confirmed populated in live sample).
+            // ─────────────────────────────────────────────────────────────────
+
+            // Tampa — office suite, 2-year lease, mid-size
+            [
+                'listing_key'             => 'SEED-COM-TPA-001',
+                'listing_id'              => 'COM-TPA-001',
+                'standard_status'         => 'Active',
+                'property_type'           => 'Commercial Lease',
+                'property_sub_type'       => 'Office',
+                'mls_status'              => 'Active',
+                'list_price'              => 3500.00,
+                'unparsed_address'        => '4830 W Kennedy Blvd Suite 220, Tampa, FL 33609',
+                'city'                    => 'Tampa',
+                'state_or_province'       => 'FL',
+                'postal_code'             => '33609',
+                'county_or_parish'        => 'Hillsborough',
+                'bedrooms_total'          => null,
+                'bathrooms_total_integer' => null,
+                'living_area'             => 1800,
+                'lot_size_sqft'           => null,
+                'year_built'              => 2005,
+                'latitude'                => 27.9464,
+                'longitude'               => -82.5063,
+                'pool_private_yn'         => false,
+                'garage_yn'               => true,
+                'waterfront_yn'           => false,
+                'water_view_yn'           => false,
+                'view_yn'                 => false,
+                'senior_community_yn'     => false,
+                'association_yn'          => false,
+                'new_construction_yn'     => false,
+                'association_fee'         => null,
+                'tax_annual_amount'       => null,
+                'pets_allowed'            => null,
+                'cdd_yn'                  => false,
+                'modification_timestamp'  => $now,
+                'imported_at'             => $now,
+                'raw_json'                => json_encode([
+                    'ListingKey'  => 'SEED-COM-TPA-001',
+                    'LeaseTerm'   => '24 Months',
+                    'seeded'      => true,
+                ]),
+                'created_at'              => $now,
+                'updated_at'              => $now,
+            ],
+
+            // Orlando — retail space, 1-year lease, smaller unit
+            [
+                'listing_key'             => 'SEED-COM-ORL-001',
+                'listing_id'              => 'COM-ORL-001',
+                'standard_status'         => 'Active',
+                'property_type'           => 'Commercial Lease',
+                'property_sub_type'       => 'Retail',
+                'mls_status'              => 'Active',
+                'list_price'              => 2200.00,
+                'unparsed_address'        => '7600 Dr Phillips Blvd Suite 104, Orlando, FL 32819',
+                'city'                    => 'Orlando',
+                'state_or_province'       => 'FL',
+                'postal_code'             => '32819',
+                'county_or_parish'        => 'Orange',
+                'bedrooms_total'          => null,
+                'bathrooms_total_integer' => null,
+                'living_area'             => 1100,
+                'lot_size_sqft'           => null,
+                'year_built'              => 1998,
+                'latitude'                => 28.4542,
+                'longitude'               => -81.4783,
+                'pool_private_yn'         => false,
+                'garage_yn'               => true,
+                'waterfront_yn'           => false,
+                'water_view_yn'           => false,
+                'view_yn'                 => false,
+                'senior_community_yn'     => false,
+                'association_yn'          => false,
+                'new_construction_yn'     => false,
+                'association_fee'         => null,
+                'tax_annual_amount'       => null,
+                'pets_allowed'            => null,
+                'cdd_yn'                  => false,
+                'modification_timestamp'  => $now,
+                'imported_at'             => $now,
+                'raw_json'                => json_encode([
+                    'ListingKey'  => 'SEED-COM-ORL-001',
+                    'LeaseTerm'   => '12 Months',
+                    'seeded'      => true,
+                ]),
+                'created_at'              => $now,
+                'updated_at'              => $now,
+            ],
+
+            // Fort Lauderdale — mixed-use flex space, 3–5 year lease
+            [
+                'listing_key'             => 'SEED-COM-FLL-001',
+                'listing_id'              => 'COM-FLL-001',
+                'standard_status'         => 'Active',
+                'property_type'           => 'Commercial Lease',
+                'property_sub_type'       => 'Mixed Use',
+                'mls_status'              => 'Active',
+                'list_price'              => 5800.00,
+                'unparsed_address'        => '200 E Broward Blvd Suite 300, Fort Lauderdale, FL 33301',
+                'city'                    => 'Fort Lauderdale',
+                'state_or_province'       => 'FL',
+                'postal_code'             => '33301',
+                'county_or_parish'        => 'Broward',
+                'bedrooms_total'          => null,
+                'bathrooms_total_integer' => null,
+                'living_area'             => 3200,
+                'lot_size_sqft'           => null,
+                'year_built'              => 2012,
+                'latitude'                => 26.1224,
+                'longitude'               => -80.1373,
+                'pool_private_yn'         => false,
+                'garage_yn'               => true,
+                'waterfront_yn'           => false,
+                'water_view_yn'           => false,
+                'view_yn'                 => false,
+                'senior_community_yn'     => false,
+                'association_yn'          => false,
+                'new_construction_yn'     => false,
+                'association_fee'         => null,
+                'tax_annual_amount'       => null,
+                'pets_allowed'            => null,
+                'cdd_yn'                  => false,
+                'modification_timestamp'  => $now,
+                'imported_at'             => $now,
+                'raw_json'                => json_encode([
+                    'ListingKey'  => 'SEED-COM-FLL-001',
+                    'LeaseTerm'   => '48 Months',
+                    'seeded'      => true,
+                ]),
                 'created_at'              => $now,
                 'updated_at'              => $now,
             ],

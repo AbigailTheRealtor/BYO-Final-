@@ -46,6 +46,15 @@ class BuyerCriteriaPayload
     public readonly array $communityFeatureKeywords;
     public readonly ?bool $wantsEnergyEfficient;
 
+    /**
+     * Preferred lease durations for commercial/residential rental matching.
+     * Populated by TenantOfferListingCriteriaLoader from the EAV 'desired_lease_length' key.
+     * Example values: ['1 Year', '2 Years', 'Month-to-Month'].
+     * Empty array = no preference (scorer awards full neutral points).
+     * Not used by the Buyer matching flow (BuyerOfferListingCriteriaLoader leaves it empty).
+     */
+    public readonly array $preferredLeaseTerms;
+
     public function __construct(array $data)
     {
         $this->propertyTypes = $data['property_types'] ?? [];
@@ -116,5 +125,7 @@ class BuyerCriteriaPayload
 
         $this->communityFeatureKeywords = $data['community_feature_keywords'] ?? [];
         $this->wantsEnergyEfficient     = $data['wants_energy_efficient']     ?? null;
+
+        $this->preferredLeaseTerms = $data['preferred_lease_terms'] ?? [];
     }
 }

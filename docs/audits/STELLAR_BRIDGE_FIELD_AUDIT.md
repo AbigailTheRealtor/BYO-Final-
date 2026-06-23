@@ -22,6 +22,32 @@
 
 ---
 
+## Commercial Lease PropertyType — Confirmed Addendum
+
+> Added: 2026-06-23 (post-initial-audit supplement)
+
+The original audit sampled 25 records with no PropertyType filter, all of which were
+`Residential` sales. The following confirmation was obtained by a targeted live import:
+
+**Command run:** `php artisan bridge:import-properties --property-type="Commercial Lease" --limit=1`  
+**Result:** 1 record imported; confirmed fields on the live record:
+
+| Field | Value |
+|---|---|
+| `PropertyType` | `Commercial Lease` |
+| `StandardStatus` | `Closed` |
+| `ListPrice` | `475` (monthly rent — this IS the rent amount for commercial lease listings) |
+| `LeaseTerm` | `24 Months` |
+| `City` | `OCALA` |
+
+**Key findings for commercial lease matching:**
+- `PropertyType = 'Commercial Lease'` is the exact OData filter string for commercial rentals.
+- `ListPrice` is populated and represents monthly rent — the existing `list_price ≤ max_price` query filter is therefore correct for commercial lease tenant matching with no bypass needed.
+- `LeaseTerm` is populated in raw_json (e.g. `"24 Months"`) and is used by `BuyerMatchScorer::scoreLeaseTermPreference()` for lease-duration alignment scoring.
+- Commercial lease listings do NOT carry `SeniorCommunityYN = true` — the `is_55_plus_eligible = false` gate is safe for all commercial lease tenants.
+
+---
+
 ## Matching Question Answers
 
 | Question | Available? | Fields |
@@ -37,6 +63,7 @@
 | Year built / condition | ✅ Yes | `YearBuilt`, `PropertyCondition`, `NewConstructionYN` |
 | Lot size | ✅ Yes | `LotSizeAcres`, `LotSizeSquareFeet`, `LotSizeArea` |
 | Zoning | ✅ Yes | `Zoning`, `ZoningDescription` |
+| Commercial lease duration | ✅ Yes (raw_json) | `LeaseTerm` (e.g. `"24 Months"`, `"Month-to-Month"`) |
 
 **Gaps requiring manual input or supplemental data source:** `SchoolDistrict`, `SchoolElementary`, `SchoolMiddleOrJunior`, `SchoolHigh`, `FloodZone`, `FloodZoneCode`, `WalkScore`, `TransitScore`
 

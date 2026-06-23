@@ -464,9 +464,96 @@ class BuyerMatchScorer
             }
         }
 
-        $total = $communityScore + $greenScore + $newConstructionScore + $petScore;
+        // Lease term preference (2 pts) — primary commercial lease scoring dimension.
+        // Compares EAV 'desired_lease_length' (via preferredLeaseTerms) against the
+        // Bridge raw_json 'LeaseTerm' field (e.g. "24 Months", "Month-to-Month").
+        // No preference → neutral 2 pts. Missing Bridge value → neutral 2 pts.
+        $leaseTermScore = $this->scoreLeaseTermPreference($rawJson, $criteria);
+
+        $total = $communityScore + $greenScore + $newConstructionScore + $petScore + $leaseTermScore;
 
         return ['score' => min(5.0, $total)];
+    }
+
+    /**
+     * Score lease-term alignment between tenant preference and Bridge listing.
+     *
+     * Returns 0 pts when no preference is expressed (dimension is inactive — existing
+     * buyer flow scores are preserved exactly as before this field was added).
+     * Returns 2 pts when preference and listing agree, or when a preference is set
+     * but the Bridge listing has no LeaseTerm value (neutral — don't penalise a
+     * listing for missing data). Returns 0 pts when preference exists but does not match.
+     *
+     * Tenant form → canonical month buckets:
+     *   'Month-to-Month'  → matched against "Month-to-Month" Bridge token
+     *   '6 Months'        → 6 months
+     *   '1 Year'          → 12 months
+     *   '2 Years'         → 24 months
+     *   '3-5 Years'       → 36–60 months
+     *   '6+ Years'        → 72+ months
+     *
+     * Bridge LeaseTerm examples: "24 Months", "12 Months", "Month-to-Month", "Annual".
+     */
+    private function scoreLeaseTermPreference(array $rawJson, BuyerCriteriaPayload $criteria): float
+    {
+        // No preference expressed — dimension is inactive.
+        // Returning 0 (not a neutral value) preserves pre-existing buyer scoring
+        // behaviour: buyers who never set preferredLeaseTerms score exactly the
+        // same as before this dimension was introduced.
+        if (empty($criteria->preferredLeaseTerms)) {
+            return 0.0;
+        }
+
+        $bridgeLeaseTerm = $rawJson['LeaseTerm'] ?? null;
+        if ($bridgeLeaseTerm === null || $bridgeLeaseTerm === '') {
+            // Preference set but Bridge record lacks a LeaseTerm value → neutral:
+            // don't penalise the listing for missing data, award full 2 pts.
+            return 2.0;
+        }
+
+        $bridgeTerm = strtolower(trim((string) $bridgeLeaseTerm));
+
+        // Resolve Bridge LeaseTerm to a canonical bucket for comparison.
+        $bridgeMonths = null;
+        $bridgeIsMtm  = false;
+
+        if (str_contains($bridgeTerm, 'month-to-month') || str_contains($bridgeTerm, 'monthly') || $bridgeTerm === 'mtm') {
+            $bridgeIsMtm = true;
+        } elseif (preg_match('/(\d+)\s*months?/i', $bridgeLeaseTerm, $m)) {
+            $bridgeMonths = (int) $m[1];
+        } elseif (preg_match('/(\d+)\s*years?/i', $bridgeLeaseTerm, $m)) {
+            $bridgeMonths = (int) $m[1] * 12;
+        } elseif (str_contains($bridgeTerm, 'annual')) {
+            $bridgeMonths = 12;
+        }
+
+        // If we couldn't parse the Bridge value, award neutral points.
+        if ($bridgeMonths === null && !$bridgeIsMtm) {
+            return 2.0;
+        }
+
+        // Check if any tenant preference bucket overlaps with the Bridge value.
+        foreach ($criteria->preferredLeaseTerms as $pref) {
+            $pref = trim((string) $pref);
+            if ($bridgeIsMtm && strtolower($pref) === 'month-to-month') {
+                return 2.0;
+            }
+            if ($bridgeMonths !== null) {
+                $matched = match ($pref) {
+                    '6 Months'    => $bridgeMonths === 6,
+                    '1 Year'      => $bridgeMonths === 12,
+                    '2 Years'     => $bridgeMonths === 24,
+                    '3-5 Years'   => $bridgeMonths >= 36 && $bridgeMonths <= 60,
+                    '6+ Years'    => $bridgeMonths >= 72,
+                    default       => false,
+                };
+                if ($matched) {
+                    return 2.0;
+                }
+            }
+        }
+
+        return 0.0;
     }
 
     // =========================================================================

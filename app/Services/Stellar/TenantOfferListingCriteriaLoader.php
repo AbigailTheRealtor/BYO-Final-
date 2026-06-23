@@ -14,20 +14,39 @@ use Illuminate\Support\Facades\DB;
  *
  * Only records with workflow_type meta = 'offer_listing' are eligible.
  *
+ * EAV property_type → Bridge OData PropertyType normalization:
+ *   (any value containing 'commercial') → 'Commercial Lease'
+ *   (any other value / null)            → 'Residential'
+ *
+ * SOURCE: 'Commercial Lease' confirmed as the exact Bridge/Stellar OData
+ * PropertyType string via a live API import on 2026-06-23:
+ *   php artisan bridge:import-properties --property-type="Commercial Lease" --limit=1
+ * returned 1 record with property_type='Commercial Lease' and list_price populated
+ * (list_price = monthly rent for commercial lease listings).
+ *
+ * Price note: for commercial lease records, Bridge populates list_price with the
+ * monthly rent amount. The BuyerMatchQueryBuilder price ceiling (list_price <= max_price)
+ * is therefore correct and does NOT need to be bypassed for commercial lease types.
+ *
+ * Senior community gate: is_55_plus_eligible=false is safe for commercial lease tenants.
+ * Commercial lease listings do not carry the senior_community_yn flag, so the gate
+ * never incorrectly excludes them.
+ *
  * Key rename table (offer listing EAV → matcher payload key):
- *   zipCodes              → preferred_zip_codes  (JSON decode; legacy loader hardcoded [])
- *   counties              → preferred_counties   (JSON decode)
- *   maximum_budget/budget → max_price            (maximum_budget preferred)
- *   bedrooms/other_bedrooms → min_bedrooms       (handles 'custom' value)
- *   bathrooms/other_bathrooms → min_bathrooms    (handles 'custom' value)
- *   minimum_heated_square → min_sqft             (positive int)
- *   pool_needed           → wants_pool           (tristate bool)
- *   garage_needed         → wants_garage         (tristate bool)
+ *   zipCodes              → preferred_zip_codes    (JSON decode; legacy loader hardcoded [])
+ *   counties              → preferred_counties     (JSON decode)
+ *   maximum_budget/budget → max_price              (maximum_budget preferred)
+ *   bedrooms/other_bedrooms → min_bedrooms         (handles 'custom' value)
+ *   bathrooms/other_bathrooms → min_bathrooms      (handles 'custom' value)
+ *   minimum_heated_square → min_sqft               (positive int)
+ *   pool_needed           → wants_pool             (tristate bool)
+ *   garage_needed         → wants_garage           (tristate bool)
  *   view_preference       → wants_water_view + wants_any_view
- *   leasing_55_plus       → is_55_plus_eligible  (bool)
- *   condition_prop_buyer  → property_sub_types   (JSON decode)
- *   property_type (scalar)→ property_types       (single-element array)
+ *   leasing_55_plus       → is_55_plus_eligible    (bool)
+ *   condition_prop_buyer  → property_sub_types     (JSON decode)
+ *   property_type (scalar)→ property_types         (single-element array, normalised above)
  *   location_dna blob     → preferred_cities, radius_searches, polygons
+ *   desired_lease_length  → preferred_lease_terms  (JSON decode; used for scoring only)
  */
 class TenantOfferListingCriteriaLoader
 {
@@ -104,7 +123,10 @@ class TenantOfferListingCriteriaLoader
         // -----------------------------------------------------------------------
         $propertyTypeRaw = $get('property_type');
         if ($propertyTypeRaw !== null && str_contains(strtolower($propertyTypeRaw), 'commercial')) {
-            $propertyTypes = ['Commercial'];
+            // 'Commercial Lease' is the exact Bridge/Stellar OData PropertyType string for
+            // commercial rental listings. Confirmed via live API import 2026-06-23.
+            // See class docblock for full normalization table and price-field audit notes.
+            $propertyTypes = ['Commercial Lease'];
         } else {
             $propertyTypes = ['Residential'];
         }
@@ -196,6 +218,15 @@ class TenantOfferListingCriteriaLoader
             ? true
             : null;
 
+        // -----------------------------------------------------------------------
+        // Lease-term preference — commercial lease scoring dimension
+        // EAV key: desired_lease_length (stored as JSON array)
+        // Example values: ["1 Year"], ["2 Years","Month-to-Month"], ["3-5 Years"]
+        // Mapped to criteria payload as 'preferred_lease_terms' for BuyerMatchScorer
+        // to compare against the Bridge raw_json 'LeaseTerm' field.
+        // -----------------------------------------------------------------------
+        $preferredLeaseTerms = $this->decodeJsonMeta($get('desired_lease_length'));
+
         return [
             'property_types'              => $propertyTypes,
             'is_55_plus_eligible'         => $is55Plus,
@@ -239,6 +270,8 @@ class TenantOfferListingCriteriaLoader
 
             'community_feature_keywords'  => [],
             'wants_energy_efficient'      => null,
+
+            'preferred_lease_terms'       => $preferredLeaseTerms,
         ];
     }
 
