@@ -109,10 +109,13 @@ class BuyerOfferListingCriteriaLoader
 
         // -----------------------------------------------------------------------
         // property_types — required non-empty array
+        // Normalize from form EAV casing (e.g. 'residential') to the casing
+        // used in bridge_properties.property_type (e.g. 'Residential') so that
+        // the SQL whereIn in BuyerMatchQueryBuilder matches correctly.
         // -----------------------------------------------------------------------
         $propertyTypeRaw = $get('property_type');
         if ($propertyTypeRaw !== null && trim($propertyTypeRaw) !== '') {
-            $propertyTypes = [trim($propertyTypeRaw)];
+            $propertyTypes = [$this->normalizeBridgePropertyType(trim($propertyTypeRaw))];
         } else {
             $propertyTypes = ['Residential'];
         }
@@ -401,5 +404,35 @@ class BuyerOfferListingCriteriaLoader
             return str_replace(',', '', $value);
         }
         return $value;
+    }
+
+    /**
+     * Normalize a property_type EAV value from the buyer offer listing form
+     * to the casing used in bridge_properties.property_type.
+     *
+     * The buyer offer form stores lowercase slugs (e.g. 'residential', 'income')
+     * while Stellar's Bridge API — and therefore bridge_properties — uses
+     * title-case values (e.g. 'Residential', 'Income', 'Commercial Sale').
+     * PostgreSQL whereIn is case-sensitive, so without normalization the SQL
+     * filter silently returns zero rows.
+     */
+    private function normalizeBridgePropertyType(string $type): string
+    {
+        $map = [
+            'residential'      => 'Residential',
+            'income'           => 'Income',
+            'commercial'       => 'Commercial Sale',
+            'commercial sale'  => 'Commercial Sale',
+            'commercial_sale'  => 'Commercial Sale',
+            'commercial lease' => 'Commercial Lease',
+            'commercial_lease' => 'Commercial Lease',
+            'business'         => 'Business Opportunity',
+            'business opportunity' => 'Business Opportunity',
+            'land'             => 'Vacant Land',
+            'vacant land'      => 'Vacant Land',
+            'vacant_land'      => 'Vacant Land',
+        ];
+
+        return $map[strtolower($type)] ?? ucfirst($type);
     }
 }

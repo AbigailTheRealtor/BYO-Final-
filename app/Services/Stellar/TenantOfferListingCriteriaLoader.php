@@ -142,11 +142,18 @@ class TenantOfferListingCriteriaLoader
         $preferredCounties = $this->decodeJsonMeta($get('counties'));
 
         // -----------------------------------------------------------------------
-        // Price — maximum_budget preferred; budget as fallback
+        // Price — tenant criteria use a monthly rental budget, not a sale price.
+        // bridge_properties.list_price stores sale prices ($200k+), so applying
+        // maximum_budget (~$1k-$5k/mo) as a list_price ceiling would filter out
+        // all results. max_price must be null so BuyerMatchQueryBuilder skips the
+        // price ceiling filter entirely for tenant offer listing criteria.
         // -----------------------------------------------------------------------
         $maxBudgetRaw = $get('maximum_budget');
         $budgetRaw    = $get('budget');
-        $maxPrice     = $this->positiveIntOrNull($this->stripCommas($maxBudgetRaw ?? $budgetRaw));
+        // Kept for potential future use in a tenant-specific scorer, but not
+        // emitted as max_price to avoid misapplication against sale list_price.
+        $this->positiveIntOrNull($this->stripCommas($maxBudgetRaw ?? $budgetRaw)); // parsed but unused as ceiling
+        $maxPrice     = null;
 
         // -----------------------------------------------------------------------
         // Property sub-types

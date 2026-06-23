@@ -125,9 +125,13 @@ class TenantCriteriaLoader
             : [];
 
         // -----------------------------------------------------------------------
-        // Price — monthly_price maps to max_price for the matching pipeline
+        // Price — tenant criteria carry a monthly rental budget, not a sale price.
+        // bridge_properties.list_price stores sale prices ($200k+), so applying
+        // monthly_price (~$1k-$5k/mo) as a list_price ceiling filters out all results.
+        // max_price must be null so BuyerMatchQueryBuilder skips the ceiling filter.
         // -----------------------------------------------------------------------
-        $maxPrice = $this->positiveIntOrNull($infoGet('monthly_price'));
+        $this->positiveIntOrNull($infoGet('monthly_price')); // parsed but unused as ceiling
+        $maxPrice = null;
 
         // -----------------------------------------------------------------------
         // Bedrooms / bathrooms — may be a numeric string or 'custom' with a
