@@ -4,6 +4,7 @@ namespace App\Services\LocationDna;
 
 use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
+use App\Services\LocationDna\LocationDnaRankingEngine;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Client;
 use Throwable;
@@ -187,6 +188,7 @@ class LocationDnaPoiDistanceService
     public function __construct(
         private readonly ?ClientInterface $httpClient = null,
         private readonly ?LocationDnaAuditService $auditService = null,
+        private readonly ?LocationDnaRankingEngine $rankingEngine = null,
     ) {}
 
     /**
@@ -545,10 +547,9 @@ class LocationDnaPoiDistanceService
                 return [[$row->toArray()], []];
             }
 
-            // Apply exclusion filters and persist valid candidates
-            $rank          = 0;
-            $persistedRows = [];
-            $examined      = 0;
+            // Apply exclusion filters to collect valid candidates
+            $validCandidates = [];
+            $examined        = 0;
 
             foreach ($rawCandidates as $place) {
                 if ($examined >= self::MAX_RESULTS_TO_EXAMINE) {
@@ -560,40 +561,15 @@ class LocationDnaPoiDistanceService
                     continue;
                 }
 
-                $rank++;
-                if ($rank > self::MAX_CANDIDATES_PER_CATEGORY) {
+                $validCandidates[] = $place;
+
+                if (count($validCandidates) >= self::MAX_CANDIDATES_PER_CATEGORY) {
                     break;
                 }
-
-                $poiLat        = (float) ($place['geometry']['location']['lat'] ?? 0);
-                $poiLng        = (float) ($place['geometry']['location']['lng'] ?? 0);
-                $distanceMiles = $this->haversineDistanceMiles($sourceLat, $sourceLng, $poiLat, $poiLng);
-
-                $row = $this->createPoiRow(
-                    listingType:   $listingType,
-                    listingId:     $listingId,
-                    category:      $category,
-                    meta:          $meta,
-                    sourceLat:     $sourceLat,
-                    sourceLng:     $sourceLng,
-                    rank:          $rank,
-                    status:        'found',
-                    error:         null,
-                    poiName:       $place['name'] ?? null,
-                    poiAddress:    $place['vicinity'] ?? null,
-                    poiLat:        $poiLat,
-                    poiLng:        $poiLng,
-                    distanceMiles: $distanceMiles,
-                    rating:        isset($place['rating']) ? (float) $place['rating'] : null,
-                    userRatingsTotal: isset($place['user_ratings_total']) ? (int) $place['user_ratings_total'] : null,
-                    typesJson:     $place['types'] ?? null,
-                );
-
-                $persistedRows[] = $row->toArray();
             }
 
             // All results were filtered out by exclusion rules
-            if (empty($persistedRows)) {
+            if (empty($validCandidates)) {
                 $row = $this->createPoiRow(
                     listingType: $listingType,
                     listingId:   $listingId,
@@ -606,6 +582,49 @@ class LocationDnaPoiDistanceService
                     error:       'All candidates were excluded by category quality filters',
                 );
                 return [[$row->toArray()], $rawCandidates];
+            }
+
+            // Pass valid candidates through the ranking engine.
+            // rankCandidates() returns them sorted by ranking_score descending
+            // so rank 1 = highest consumer-relevance score, not nearest distance.
+            $engine = $this->rankingEngine ?? new LocationDnaRankingEngine();
+            $rankedCandidates = $engine->rankCandidates($category, $validCandidates, $sourceLat, $sourceLng);
+
+            // Persist in ranking order
+            $persistedRows = [];
+            foreach ($rankedCandidates as $rank => $place) {
+                $rankNumber    = $rank + 1;
+                $poiLat        = (float) ($place['geometry']['location']['lat'] ?? 0);
+                $poiLng        = (float) ($place['geometry']['location']['lng'] ?? 0);
+                $distanceMiles = $this->haversineDistanceMiles($sourceLat, $sourceLng, $poiLat, $poiLng);
+                $scoring       = $place['_ranking'] ?? [];
+
+                $row = $this->createPoiRow(
+                    listingType:          $listingType,
+                    listingId:            $listingId,
+                    category:             $category,
+                    meta:                 $meta,
+                    sourceLat:            $sourceLat,
+                    sourceLng:            $sourceLng,
+                    rank:                 $rankNumber,
+                    status:               'found',
+                    error:                null,
+                    poiName:              $place['name'] ?? null,
+                    poiAddress:           $place['vicinity'] ?? null,
+                    poiLat:               $poiLat,
+                    poiLng:               $poiLng,
+                    distanceMiles:        $distanceMiles,
+                    rating:               isset($place['rating']) ? (float) $place['rating'] : null,
+                    userRatingsTotal:     isset($place['user_ratings_total']) ? (int) $place['user_ratings_total'] : null,
+                    typesJson:            $place['types'] ?? null,
+                    categoryMatchScore:   $scoring['category_match_score'] ?? null,
+                    consumerRelevance:    $scoring['consumer_relevance_score'] ?? null,
+                    reviewConfidence:     $scoring['review_confidence_score'] ?? null,
+                    rankingScore:         $scoring['ranking_score'] ?? null,
+                    rankingReasons:       $scoring['ranking_reasons_json'] ?? null,
+                );
+
+                $persistedRows[] = $row->toArray();
             }
 
             return [$persistedRows, $rawCandidates];
@@ -703,24 +722,18 @@ class LocationDnaPoiDistanceService
             return [[$row->toArray()]];
         }
 
-        // Sort by quality score descending instead of raw rating.
-        //
-        // Formula: score = rating × min(reviews / TOP_RATED_DINING_MIN_CONFIDENCE_REVIEWS, 1.0)
-        //
-        // Rationale: raw-rating sort allows low-sample 5-star outliers (e.g. 5.0★/19 reviews)
-        // to outrank high-confidence restaurants (e.g. 4.8★/300 reviews). The confidence
-        // multiplier — capped at 1.0 once reviews reach MIN_CONFIDENCE_REVIEWS — down-weights
-        // thinly-reviewed places without penalising established restaurants that exceed the
-        // threshold. Example:
-        //   5.0★ / 19 reviews  → score = 5.0 × min(0.38, 1.0) = 1.90
-        //   4.8★ / 300 reviews → score = 4.8 × min(6.00, 1.0) = 4.80  ← ranks higher
-        usort($qualified, function ($a, $b) {
-            $scoreA = ($a['rating'] ?? 0.0) * min(($a['user_ratings_total'] ?? 0) / self::TOP_RATED_DINING_MIN_CONFIDENCE_REVIEWS, 1.0);
-            $scoreB = ($b['rating'] ?? 0.0) * min(($b['user_ratings_total'] ?? 0) / self::TOP_RATED_DINING_MIN_CONFIDENCE_REVIEWS, 1.0);
-            return $scoreB <=> $scoreA;
-        });
+        // Pass qualified restaurant candidates through the ranking engine
+        // (top_rated_dining profile gives extra weight to review confidence).
+        // rankCandidates() returns them sorted by ranking_score descending.
+        $engine = $this->rankingEngine ?? new LocationDnaRankingEngine();
+        $rankedQualified = $engine->rankCandidates(
+            'top_rated_dining',
+            array_values($qualified),
+            $sourceLat,
+            $sourceLng,
+        );
 
-        $top  = array_slice(array_values($qualified), 0, self::TOP_RATED_DINING_MAX_CANDIDATES);
+        $top  = array_slice($rankedQualified, 0, self::TOP_RATED_DINING_MAX_CANDIDATES);
         $rows = [];
 
         foreach ($top as $index => $place) {
@@ -728,25 +741,31 @@ class LocationDnaPoiDistanceService
             $poiLat        = (float) ($place['geometry']['location']['lat'] ?? 0);
             $poiLng        = (float) ($place['geometry']['location']['lng'] ?? 0);
             $distanceMiles = $this->haversineDistanceMiles($sourceLat, $sourceLng, $poiLat, $poiLng);
+            $scoring       = $place['_ranking'] ?? [];
 
             $row = $this->createPoiRow(
-                listingType:      $listingType,
-                listingId:        $listingId,
-                category:         'top_rated_dining',
-                meta:             $topRatedMeta,
-                sourceLat:        $sourceLat,
-                sourceLng:        $sourceLng,
-                rank:             $rank,
-                status:           'found',
-                error:            null,
-                poiName:          $place['name'] ?? null,
-                poiAddress:       $place['vicinity'] ?? null,
-                poiLat:           $poiLat,
-                poiLng:           $poiLng,
-                distanceMiles:    $distanceMiles,
-                rating:           isset($place['rating']) ? (float) $place['rating'] : null,
-                userRatingsTotal: isset($place['user_ratings_total']) ? (int) $place['user_ratings_total'] : null,
-                typesJson:        $place['types'] ?? null,
+                listingType:         $listingType,
+                listingId:           $listingId,
+                category:            'top_rated_dining',
+                meta:                $topRatedMeta,
+                sourceLat:           $sourceLat,
+                sourceLng:           $sourceLng,
+                rank:                $rank,
+                status:              'found',
+                error:               null,
+                poiName:             $place['name'] ?? null,
+                poiAddress:          $place['vicinity'] ?? null,
+                poiLat:              $poiLat,
+                poiLng:              $poiLng,
+                distanceMiles:       $distanceMiles,
+                rating:              isset($place['rating']) ? (float) $place['rating'] : null,
+                userRatingsTotal:    isset($place['user_ratings_total']) ? (int) $place['user_ratings_total'] : null,
+                typesJson:           $place['types'] ?? null,
+                categoryMatchScore:  $scoring['category_match_score'] ?? null,
+                consumerRelevance:   $scoring['consumer_relevance_score'] ?? null,
+                reviewConfidence:    $scoring['review_confidence_score'] ?? null,
+                rankingScore:        $scoring['ranking_score'] ?? null,
+                rankingReasons:      $scoring['ranking_reasons_json'] ?? null,
             );
 
             $rows[] = $row->toArray();
@@ -771,36 +790,46 @@ class LocationDnaPoiDistanceService
         int     $rank,
         string  $status,
         ?string $error,
-        ?string $poiName          = null,
-        ?string $poiAddress       = null,
-        ?float  $poiLat           = null,
-        ?float  $poiLng           = null,
-        ?float  $distanceMiles    = null,
-        ?float  $rating           = null,
-        ?int    $userRatingsTotal = null,
-        ?array  $typesJson        = null,
+        ?string $poiName           = null,
+        ?string $poiAddress        = null,
+        ?float  $poiLat            = null,
+        ?float  $poiLng            = null,
+        ?float  $distanceMiles     = null,
+        ?float  $rating            = null,
+        ?int    $userRatingsTotal  = null,
+        ?array  $typesJson         = null,
+        ?float  $categoryMatchScore  = null,
+        ?float  $consumerRelevance   = null,
+        ?float  $reviewConfidence    = null,
+        ?float  $rankingScore        = null,
+        ?array  $rankingReasons      = null,
     ): PropertyLocationPoi {
         return PropertyLocationPoi::create([
-            'listing_type'        => $listingType,
-            'listing_id'          => $listingId,
-            'poi_category'        => $category,
-            'rank'                => $rank,
-            'poi_subtype'         => $meta['label'],
-            'poi_name'            => $poiName,
-            'poi_address'         => $poiAddress,
-            'poi_lat'             => $poiLat,
-            'poi_lng'             => $poiLng,
-            'source_lat'          => $sourceLat,
-            'source_lng'          => $sourceLng,
-            'distance_miles'      => $distanceMiles,
-            'rating'              => $rating,
-            'user_ratings_total'  => $userRatingsTotal,
-            'types_json'          => $typesJson,
-            'travel_time_minutes' => null,
-            'data_source'         => 'google_places',
-            'status'              => $status,
-            'error'               => $error,
-            'calculated_at'       => now(),
+            'listing_type'             => $listingType,
+            'listing_id'               => $listingId,
+            'poi_category'             => $category,
+            'rank'                     => $rank,
+            'poi_subtype'              => $meta['label'],
+            'poi_name'                 => $poiName,
+            'poi_address'              => $poiAddress,
+            'poi_lat'                  => $poiLat,
+            'poi_lng'                  => $poiLng,
+            'source_lat'               => $sourceLat,
+            'source_lng'               => $sourceLng,
+            'distance_miles'           => $distanceMiles,
+            'rating'                   => $rating,
+            'user_ratings_total'       => $userRatingsTotal,
+            'types_json'               => $typesJson,
+            'category_match_score'     => $categoryMatchScore,
+            'consumer_relevance_score' => $consumerRelevance,
+            'review_confidence_score'  => $reviewConfidence,
+            'ranking_score'            => $rankingScore,
+            'ranking_reasons_json'     => $rankingReasons,
+            'travel_time_minutes'      => null,
+            'data_source'              => 'google_places',
+            'status'                   => $status,
+            'error'                    => $error,
+            'calculated_at'            => now(),
         ]);
     }
 

@@ -124,7 +124,7 @@ use App\Presenters\LocationDnaPresenter;
         {{-- Top Rated Dining block (admin inspector) --}}
         @if($topRatedDining->isNotEmpty())
         <div class="mb-3">
-            <strong>Top Rated Dining <span class="text-muted small">(derived from restaurant candidates · min. 10 reviews · ranked by quality score: rating × min(reviews/50, 1.0))</span>:</strong>
+            <strong>Top Rated Dining <span class="text-muted small">(derived from restaurant candidates · min. 10 reviews · ranked by ranking engine)</span>:</strong>
             <table class="table table-sm table-bordered mt-2 mb-0" style="font-size:.82rem;">
                 <thead class="thead-light">
                     <tr>
@@ -133,6 +133,10 @@ use App\Presenters\LocationDnaPresenter;
                         <th style="width:90px;">Rating</th>
                         <th style="width:90px;">Reviews</th>
                         <th style="width:90px;">Distance</th>
+                        <th style="width:70px; text-align:right;">Match</th>
+                        <th style="width:70px; text-align:right;">Confidence</th>
+                        <th style="width:70px; text-align:right;">Relevance</th>
+                        <th style="width:80px; text-align:right;">Ranking</th>
                         <th style="width:70px;">Status</th>
                     </tr>
                 </thead>
@@ -144,6 +148,20 @@ use App\Presenters\LocationDnaPresenter;
                             {{ $poi->poi_name ?? '—' }}
                             @if($poi->poi_address)
                                 <div class="text-muted" style="font-size:.78rem;">{{ $poi->poi_address }}</div>
+                            @endif
+                            {{-- Ranking reasons collapsible --}}
+                            @if(!empty($poi->ranking_reasons_json))
+                            <div class="mt-1">
+                                <a data-toggle="collapse" href="#reasons-trd-{{ $poi->id }}" role="button"
+                                   style="font-size:.72rem; color:#888;">signals ▾</a>
+                                <div class="collapse" id="reasons-trd-{{ $poi->id }}">
+                                    <ul class="mb-0 pl-3" style="font-size:.72rem; color:#555;">
+                                        @foreach($poi->ranking_reasons_json as $reason)
+                                            <li>{{ $reason }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
                             @endif
                         </td>
                         <td>
@@ -167,6 +185,34 @@ use App\Presenters\LocationDnaPresenter;
                                 <span class="text-muted">—</span>
                             @endif
                         </td>
+                        <td class="text-right">
+                            @if($poi->category_match_score !== null)
+                                <span title="category_match_score">{{ number_format((float)$poi->category_match_score, 1) }}</span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+                        <td class="text-right">
+                            @if($poi->review_confidence_score !== null)
+                                <span title="review_confidence_score">{{ number_format((float)$poi->review_confidence_score, 1) }}</span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+                        <td class="text-right">
+                            @if($poi->consumer_relevance_score !== null)
+                                <span title="consumer_relevance_score">{{ number_format((float)$poi->consumer_relevance_score, 1) }}</span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+                        <td class="text-right">
+                            @if($poi->ranking_score !== null)
+                                <strong title="ranking_score">{{ number_format((float)$poi->ranking_score, 1) }}</strong>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
                         <td>
                             @if($poi->status === 'found')
                                 <span class="badge badge-success">found</span>
@@ -186,7 +232,7 @@ use App\Presenters\LocationDnaPresenter;
         {{-- POIs grouped by category (all candidates with rank, excluding top_rated_dining) --}}
         @if(!empty($regularPois))
         <div class="mb-0">
-            <strong>Nearby Points of Interest <span class="text-muted small">(all candidates, ranked nearest first)</span>:</strong>
+            <strong>Nearby Points of Interest <span class="text-muted small">(all candidates, ranked by consumer relevance · rank 1 = highest scoring)</span>:</strong>
             <div class="row g-2 mt-1">
                 @foreach($regularPois as $category => $categoryPois)
                 <div class="col-md-6 col-lg-4">
@@ -231,10 +277,33 @@ use App\Presenters\LocationDnaPresenter;
                                     <span class="text-muted">({{ number_format($poi->user_ratings_total) }} reviews)</span>
                                 @endif
                             </div>
-                            {{-- Row 3: types_json collapsed inline --}}
+                            {{-- Row 3: ranking scores --}}
+                            @if($poi->ranking_score !== null)
+                            <div class="d-flex align-items-center gap-2 mt-1" style="color:#888; font-size:.72rem;">
+                                <span title="category_match_score">M:{{ number_format((float)$poi->category_match_score, 0) }}</span>
+                                <span title="review_confidence_score">C:{{ number_format((float)$poi->review_confidence_score, 0) }}</span>
+                                <span title="consumer_relevance_score">R:{{ number_format((float)$poi->consumer_relevance_score, 0) }}</span>
+                                <strong title="ranking_score" style="color:#444;">∑{{ number_format((float)$poi->ranking_score, 0) }}</strong>
+                            </div>
+                            @endif
+                            {{-- Row 4: types_json collapsed inline --}}
                             @if(!empty($poi->types_json))
                             <div class="mt-1" style="line-height:1.3;">
                                 <code style="font-size:.72rem; color:#555; word-break:break-all; white-space:normal;">{{ implode(', ', (array)$poi->types_json) }}</code>
+                            </div>
+                            @endif
+                            {{-- Row 5: ranking reasons collapsible --}}
+                            @if(!empty($poi->ranking_reasons_json))
+                            <div class="mt-1">
+                                <a data-toggle="collapse" href="#reasons-{{ $poi->id }}" role="button"
+                                   style="font-size:.70rem; color:#aaa;">signals ▾</a>
+                                <div class="collapse" id="reasons-{{ $poi->id }}">
+                                    <ul class="mb-0 pl-3" style="font-size:.70rem; color:#666;">
+                                        @foreach($poi->ranking_reasons_json as $reason)
+                                            <li>{{ $reason }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
                             </div>
                             @endif
                             @endif
