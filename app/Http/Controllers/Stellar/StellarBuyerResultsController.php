@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Stellar;
 use App\Http\Controllers\Controller;
 use App\Models\BridgeProperty;
 use App\Services\Stellar\BuyerCriteriaLoader;
+use App\Services\Stellar\BuyerOfferListingCriteriaLoader;
 use App\Services\Stellar\CriteriaListingResolver;
 use App\Services\Stellar\TenantCriteriaLoader;
+use App\Services\Stellar\TenantOfferListingCriteriaLoader;
 use App\Services\Stellar\BuyerResultViewMapper;
 use App\Services\Stellar\Matching\BuyerMatchService;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
@@ -19,11 +21,13 @@ class StellarBuyerResultsController extends Controller
     private const PER_PAGE = 20;
 
     public function __construct(
-        private BuyerCriteriaLoader    $buyerCriteriaLoader,
-        private TenantCriteriaLoader   $tenantCriteriaLoader,
-        private CriteriaListingResolver $criteriaResolver,
-        private BuyerMatchService       $matchService,
-        private BuyerResultViewMapper   $viewMapper
+        private BuyerCriteriaLoader               $buyerCriteriaLoader,
+        private TenantCriteriaLoader              $tenantCriteriaLoader,
+        private BuyerOfferListingCriteriaLoader   $buyerOfferLoader,
+        private TenantOfferListingCriteriaLoader  $tenantOfferLoader,
+        private CriteriaListingResolver           $criteriaResolver,
+        private BuyerMatchService                 $matchService,
+        private BuyerResultViewMapper             $viewMapper
     ) {}
 
     public function index(Request $request)
@@ -55,55 +59,45 @@ class StellarBuyerResultsController extends Controller
         $criteriaId   = $request->input('criteria_id');
 
         if ($criteriaType && $criteriaId) {
-            // Explicit criteria selected via query params.
-            // Always resolve the full list so the switcher strip is available on results pages.
             $criteriaIdInt = (int) $criteriaId;
             $criteriaList  = $this->criteriaResolver->resolveAccessible($user);
             $criteriaData  = $this->loadCriteriaById($criteriaType, $criteriaIdInt, $allowedUserIds);
 
             if ($criteriaData === null) {
-                // Unauthorized, not found, or inactive — safe empty state with no data leak.
                 return $this->emptyView('no_criteria_listings', ['criteriaList' => []]);
             }
 
             $selectedType  = $criteriaType;
             $selectedId    = $criteriaIdInt;
         } else {
-            // No explicit selection — discover accessible criteria for this user
             $criteriaList = $this->criteriaResolver->resolveAccessible($user);
 
             if (count($criteriaList) === 0) {
-                // Agents with no accessible client criteria see the multi-type empty state.
-                // Non-agent buyers with no criteria preserve the original buyer-profile state
-                // ("Your buyer profile isn't complete yet") so their experience is unchanged.
                 if ($user->user_type === 'agent') {
                     return $this->emptyView('no_criteria_listings', ['criteriaList' => []]);
                 }
                 return $this->emptyView('no_criteria', ['criteriaList' => []]);
             }
 
-            if (count($criteriaList) === 1) {
-                // Auto-select the single available profile
-                $selected      = $criteriaList[0];
-                $selectedType  = $selected['type'];
-                $selectedId    = $selected['id'];
-                $criteriaData  = $this->loadCriteriaById($selectedType, $selectedId, $allowedUserIds);
+            // Auto-select the preferred criteria.
+            // Modern offer listing records (buyer_offer / tenant_offer) are preferred over
+            // legacy criteria records (buyer / tenant) when both exist for the same user.
+            // The criteria switcher strip remains visible for all records regardless.
+            $selected     = $this->findPreferredCriteria($criteriaList);
+            $selectedType = $selected['type'];
+            $selectedId   = $selected['id'];
+            $criteriaData = $this->loadCriteriaById($selectedType, $selectedId, $allowedUserIds);
 
-                if ($criteriaData === null) {
-                    return $this->emptyView('no_criteria', [
-                        'criteriaList'         => $criteriaList,
-                        'selectedCriteriaType' => $selectedType,
-                        'selectedCriteriaId'   => $selectedId,
-                        'selectedCriteriaLabel' => $selected['label'],
-                    ]);
-                }
-            } else {
-                // Multiple profiles available — show selector
-                return $this->emptyView('select_criteria', ['criteriaList' => $criteriaList]);
+            if ($criteriaData === null) {
+                return $this->emptyView('no_criteria', [
+                    'criteriaList'          => $criteriaList,
+                    'selectedCriteriaType'  => $selectedType,
+                    'selectedCriteriaId'    => $selectedId,
+                    'selectedCriteriaLabel' => $selected['label'],
+                ]);
             }
         }
 
-        // Resolve the label for the selected criteria (for the selector strip)
         $selectedLabel = $this->findLabel($criteriaList, $selectedType, $selectedId);
 
         // -----------------------------------------------------------------------
@@ -182,8 +176,8 @@ class StellarBuyerResultsController extends Controller
             'selectedCriteriaId'     => $selectedId,
             'selectedCriteriaLabel'  => $selectedLabel,
             'selectedCriteriaEditUrl' => $this->buildEditUrl($selectedType, $selectedId),
-            'buyerCriteriaAddUrl'    => url('/buyer-agent/auction/add'),
-            'tenantCriteriaAddUrl'   => url('/tenant/criteria/auction/add'),
+            'buyerCriteriaAddUrl'    => url('/offer-listing/buyer'),
+            'tenantCriteriaAddUrl'   => url('/offer-listing/tenant/tenant'),
         ]);
     }
 
@@ -192,22 +186,27 @@ class StellarBuyerResultsController extends Controller
     // =========================================================================
 
     /**
-     * Dispatch criteria loading to the correct loader by type.
+     * Dispatch criteria loading to the correct loader by type token.
      *
-     * @param  int[] $allowedUserIds  User IDs allowed to own this record (own + clients for agents).
+     * Legacy types:  'buyer'  → BuyerCriteriaLoader
+     *                'tenant' → TenantCriteriaLoader
+     * Modern types:  'buyer_offer'  → BuyerOfferListingCriteriaLoader
+     *                'tenant_offer' → TenantOfferListingCriteriaLoader
+     *
+     * @param  int[] $allowedUserIds  User IDs allowed to own this record.
      */
     private function loadCriteriaById(string $type, int $id, array $allowedUserIds): ?array
     {
-        if ($type === 'tenant') {
-            return $this->tenantCriteriaLoader->loadById($id, $allowedUserIds);
-        }
-
-        return $this->buyerCriteriaLoader->loadById($id, $allowedUserIds);
+        return match ($type) {
+            'tenant'       => $this->tenantCriteriaLoader->loadById($id, $allowedUserIds),
+            'buyer_offer'  => $this->buyerOfferLoader->loadById($id, $allowedUserIds),
+            'tenant_offer' => $this->tenantOfferLoader->loadById($id, $allowedUserIds),
+            default        => $this->buyerCriteriaLoader->loadById($id, $allowedUserIds),
+        };
     }
 
     /**
      * Find the label for the selected criteria from the criteria list.
-     * Falls back to a type-based default if the list is empty (explicit-param path).
      */
     private function findLabel(array $criteriaList, string $type, int $id): string
     {
@@ -221,8 +220,7 @@ class StellarBuyerResultsController extends Controller
     }
 
     /**
-     * Build a view response for an empty/error state with consistent defaults
-     * for all view variables.
+     * Build a view response for an empty/error state with consistent defaults.
      */
     private function emptyView(string $state, array $extra = []): \Illuminate\View\View
     {
@@ -235,11 +233,10 @@ class StellarBuyerResultsController extends Controller
             'selectedCriteriaId'     => null,
             'selectedCriteriaLabel'  => null,
             'selectedCriteriaEditUrl' => null,
-            'buyerCriteriaAddUrl'    => url('/buyer-agent/auction/add'),
-            'tenantCriteriaAddUrl'   => url('/tenant/criteria/auction/add'),
+            'buyerCriteriaAddUrl'    => url('/offer-listing/buyer'),
+            'tenantCriteriaAddUrl'   => url('/offer-listing/tenant/tenant'),
         ], $extra);
 
-        // Compute edit URL from selectedCriteriaType + selectedCriteriaId if present
         if (empty($base['selectedCriteriaEditUrl'])
             && !empty($base['selectedCriteriaId'])
             && !empty($base['selectedCriteriaType'])) {
@@ -253,14 +250,40 @@ class StellarBuyerResultsController extends Controller
     }
 
     /**
+     * Auto-select the best criteria record for a user who has not explicitly chosen one.
+     *
+     * Priority rule: modern offer listing records (buyer_offer / tenant_offer) are preferred
+     * over legacy criteria records (buyer / tenant) when both exist. Within each tier the
+     * list is already sorted newest-first by CriteriaListingResolver, so the first matching
+     * entry is always the most recent one.
+     *
+     * This satisfies the Phase 1 requirement: "prefer the modern Offer Listing value when
+     * both the modern Offer Listing workflow and the legacy criteria workflow exist for a user."
+     */
+    private function findPreferredCriteria(array $criteriaList): array
+    {
+        $modernTypes = ['buyer_offer', 'tenant_offer'];
+        foreach ($criteriaList as $item) {
+            if (in_array($item['type'], $modernTypes, true)) {
+                return $item;
+            }
+        }
+        return $criteriaList[0];
+    }
+
+    /**
      * Build the edit URL for a given criteria type and ID.
+     *
+     * Modern offer-listing records point to the modern edit routes.
+     * Legacy criteria records point to the legacy edit routes.
      */
     private function buildEditUrl(string $type, int $id): string
     {
-        if ($type === 'tenant') {
-            return url('/tenant/criteria/auction/edit/' . $id);
-        }
-
-        return url('/buyer-agent/auction/edit/' . $id);
+        return match ($type) {
+            'tenant'       => url('/tenant/criteria/auction/edit/' . $id),
+            'buyer_offer'  => url('/offer-listing/buyer/edit/' . $id),
+            'tenant_offer' => url('/offer-listing/tenant/edit/' . $id),
+            default        => url('/buyer-agent/auction/edit/' . $id),
+        };
     }
 }
