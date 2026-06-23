@@ -292,6 +292,70 @@ class LocationDnaRankingProfileService
                 ],
             ],
 
+            // ── Gas Station ───────────────────────────────────────────────────
+            // Convenience use — proximity is the dominant signal. A gas station
+            // one block away is far more useful than an excellent one two miles
+            // out. Review volume matters little; fuel quality is largely uniform.
+            // Penalize restaurant/bar types to avoid misclassified multi-use sites.
+            'gas_station' => [
+                'preferred_types'        => ['gas_station', 'fuel'],
+                'penalized_types'        => ['restaurant', 'bar'],
+                'review_weight'          => 0.10,
+                'relevance_weight'       => 0.15,
+                'match_weight'           => 0.20,
+                'distance_weight'        => 0.55,
+                'min_confidence_reviews' => 20,
+                'relevance_signals'      => [
+                    'high_review_threshold' => 50,
+                    'high_rating_threshold' => 4.0,
+                ],
+            ],
+
+            // ── Transit Station ───────────────────────────────────────────────
+            // Proximity is overwhelmingly the primary value — a transit stop
+            // five blocks away is nearly useless vs. one on the corner. Review
+            // and rating signals carry almost no consumer weight for transit.
+            // Penalize parking facilities which Google sometimes tags as transit.
+            'transit_station' => [
+                'preferred_types'        => [
+                    'transit_station',
+                    'subway_station',
+                    'bus_station',
+                    'train_station',
+                    'light_rail_station',
+                ],
+                'penalized_types'        => ['parking'],
+                'review_weight'          => 0.05,
+                'relevance_weight'       => 0.10,
+                'match_weight'           => 0.20,
+                'distance_weight'        => 0.65,
+                'min_confidence_reviews' => 10,
+                'relevance_signals'      => [
+                    'high_review_threshold' => 30,
+                    'high_rating_threshold' => 4.0,
+                ],
+            ],
+
+            // ── Coffee Shop ───────────────────────────────────────────────────
+            // Quality matters — a great independent café or recognized chain is
+            // preferred over a fast-food drive-through serving coffee as a side.
+            // Review volume is the strongest quality signal here (a Starbucks
+            // with 1 000 reviews is not the same as a no-name gas-station café).
+            // Prefers cafe/coffee_shop types; penalizes fast-food proxies.
+            'coffee_shop' => [
+                'preferred_types'        => ['cafe', 'coffee_shop'],
+                'penalized_types'        => ['fast_food', 'meal_takeaway'],
+                'review_weight'          => 0.30,
+                'relevance_weight'       => 0.25,
+                'match_weight'           => 0.15,
+                'distance_weight'        => 0.30,
+                'min_confidence_reviews' => 50,
+                'relevance_signals'      => [
+                    'high_review_threshold' => 200,
+                    'high_rating_threshold' => 4.2,
+                ],
+            ],
+
             // ── Shopping Center ───────────────────────────────────────────────
             'shopping_center' => [
                 'preferred_types'       => ['shopping_mall', 'department_store', 'point_of_interest'],

@@ -2,7 +2,9 @@
 
 namespace Tests\Unit\Services\LocationDna;
 
+use App\Services\LocationDna\LocationDnaPoiDistanceService;
 use App\Services\LocationDna\LocationDnaRankingEngine;
+use App\Services\LocationDna\LocationDnaRankingProfileService;
 use Tests\TestCase;
 
 /**
@@ -351,6 +353,42 @@ class LocationDnaRankingEngineTest extends TestCase
             $this->assertIsString($reason, 'Each ranking reason must be a string');
             $this->assertNotEmpty($reason, 'Ranking reason must not be an empty string');
         }
+    }
+
+    // =========================================================================
+    // Category coverage assertion — every CATEGORIES key must have a dedicated profile
+    // =========================================================================
+
+    /**
+     * @test
+     *
+     * Asserts that every canonical category key defined in
+     * LocationDnaPoiDistanceService::CATEGORIES has a dedicated entry in
+     * LocationDnaRankingProfileService::profiles() (i.e. the key is explicitly
+     * present and is NOT served by the 'default' fallback).
+     *
+     * This prevents future category additions from silently falling through to
+     * the generic default profile, which would produce distance-only ranking
+     * without any consumer-relevant type signals.
+     */
+    public function every_poi_category_has_a_dedicated_ranking_profile(): void
+    {
+        $profiles   = LocationDnaRankingProfileService::profiles();
+        $categories = array_keys(LocationDnaPoiDistanceService::CATEGORIES);
+
+        $missing = [];
+        foreach ($categories as $categoryKey) {
+            if (! array_key_exists($categoryKey, $profiles)) {
+                $missing[] = $categoryKey;
+            }
+        }
+
+        $this->assertEmpty(
+            $missing,
+            'The following CATEGORIES keys have no dedicated ranking profile and will '
+            . "fall back to the generic 'default' profile. Add a profile for each:\n  - "
+            . implode("\n  - ", $missing),
+        );
     }
 
     /** @test */
