@@ -381,10 +381,18 @@ class LocationDnaPoiDistanceService
             $sourceLng = (float) $dnaRecord->geocoded_lng;
 
             // (d) Cache check: existing rows with matching source coordinates.
-            // Only check rank=1 rows to avoid partial-data false positives.
+            // When coordinates match, current exclusion rules are re-applied against
+            // cached rank-1 rows so that rule improvements made after the initial
+            // fetch are honoured. Categories whose rank-1 still passes are reused;
+            // categories whose rank-1 now fails are deleted and re-fetched below.
             $existingRows = PropertyLocationPoi::where('listing_type', $listingType)
                 ->where('listing_id', $listingId)
                 ->get();
+
+            // Categories to skip in the fetch loop (their cached rows are clean).
+            // Empty on a full run; populated only when a partial cache-invalidation
+            // occurs (some categories stale, others still valid).
+            $cachedCategoriesToSkip = [];
 
             if ($existingRows->isNotEmpty()) {
                 $firstRow = $existingRows->first();
@@ -395,23 +403,79 @@ class LocationDnaPoiDistanceService
                     abs($cachedLat - $sourceLat) < 0.0000001 &&
                     abs($cachedLng - $sourceLng) < 0.0000001
                 ) {
-                    $output = $this->completedOutput(
-                        $listingType,
-                        $listingId,
-                        $sourceLat,
-                        $sourceLng,
-                        $existingRows->toArray(),
-                        'cached',
-                    );
-                    $this->audit($listingType, $listingId, $output);
-                    $this->setLastRunStats($listingType, $listingId, null);
-                    return $output;
-                }
+                    // Re-apply current exclusion rules per category.
+                    // Only the rank-1 row is inspected — it is the primary result.
+                    // Derived categories (e.g. top_rated_dining) are not in CATEGORIES
+                    // and are skipped here; they are rebuilt when restaurant is refetched.
+                    $rowsByCategory  = $existingRows->groupBy('poi_category');
+                    $staleCategories = [];
 
-                // Coordinates changed — clear all existing rows for this listing
-                PropertyLocationPoi::where('listing_type', $listingType)
-                    ->where('listing_id', $listingId)
-                    ->delete();
+                    foreach ($rowsByCategory as $category => $categoryRows) {
+                        if (! array_key_exists($category, self::CATEGORIES)) {
+                            continue;
+                        }
+
+                        $rank1 = $categoryRows->firstWhere('rank', 1);
+                        if ($rank1 === null) {
+                            continue;
+                        }
+
+                        // Build a synthetic Google Places-format array for the filter.
+                        // types_json is cast to array|null by the model; coerce null → []
+                        // so that name-pattern fallback rules (exclude_if_name_matches_when_types_empty)
+                        // fire correctly on rows written before the ranking engine was deployed.
+                        $syntheticPlace = [
+                            'name'  => $rank1->poi_name ?? '',
+                            'types' => $rank1->types_json ?? [],
+                        ];
+
+                        if (! $this->passesExclusionFilter($category, $syntheticPlace)) {
+                            // Delete all rows for this category — they will be re-fetched below.
+                            PropertyLocationPoi::where('listing_type', $listingType)
+                                ->where('listing_id', $listingId)
+                                ->where('poi_category', $category)
+                                ->delete();
+                            $staleCategories[] = $category;
+                        }
+                    }
+
+                    // Also detect CATEGORIES that have no rows at all (e.g. previously deleted
+                    // by ldna:backfill-exclusions). These are invisible to the loop above but
+                    // must be treated as stale so they are re-fetched below.
+                    $presentCategories = array_keys($rowsByCategory->toArray());
+                    foreach (array_keys(self::CATEGORIES) as $category) {
+                        if (! in_array($category, $presentCategories, true)) {
+                            $staleCategories[] = $category;
+                        }
+                    }
+
+                    if (empty($staleCategories)) {
+                        // All cached categories pass current exclusion rules — return as-is.
+                        $output = $this->completedOutput(
+                            $listingType,
+                            $listingId,
+                            $sourceLat,
+                            $sourceLng,
+                            $existingRows->toArray(),
+                            'cached',
+                        );
+                        $this->audit($listingType, $listingId, $output);
+                        $this->setLastRunStats($listingType, $listingId, null);
+                        return $output;
+                    }
+
+                    // Some categories were stale and deleted. Mark the clean ones to skip
+                    // in the fetch loop so we only re-fetch the affected categories.
+                    $cachedCategoriesToSkip = array_values(array_diff(
+                        array_keys(self::CATEGORIES),
+                        $staleCategories,
+                    ));
+                } else {
+                    // Coordinates changed — clear all existing rows for this listing
+                    PropertyLocationPoi::where('listing_type', $listingType)
+                        ->where('listing_id', $listingId)
+                        ->delete();
+                }
             }
 
             // (e) API key guard
@@ -439,10 +503,29 @@ class LocationDnaPoiDistanceService
             // Populated when the primary category is processed.
             $groupedRawCandidates = [];
 
-            // (f) Query Google Places for each category
+            // Seed results with still-valid cached rows from a partial invalidation.
+            // These rows were not deleted above; include their arrays in the output now.
+            // top_rated_dining is excluded here — it is handled in step (g) below.
+            if (! empty($cachedCategoriesToSkip)) {
+                $stillCachedRows = PropertyLocationPoi::where('listing_type', $listingType)
+                    ->where('listing_id', $listingId)
+                    ->whereIn('poi_category', $cachedCategoriesToSkip)
+                    ->get();
+
+                foreach ($stillCachedRows as $row) {
+                    $results[] = $row->toArray();
+                }
+            }
+
+            // (f) Query Google Places for each category.
             // Primary categories in CATEGORY_GROUPS fetch once and supply their raw
             // candidates to the corresponding secondary category.
+            // Categories in $cachedCategoriesToSkip are still valid — skip them.
             foreach (self::CATEGORIES as $category => $meta) {
+                if (in_array($category, $cachedCategoriesToSkip, true)) {
+                    continue;
+                }
+
                 // Determine if this category has preloaded candidates from a group primary
                 $preloaded = $groupedRawCandidates[$category] ?? null;
 
@@ -479,17 +562,31 @@ class LocationDnaPoiDistanceService
                 }
             }
 
-            // (g) Derive and persist Top Rated Dining from restaurant candidates
-            $topRatedRows = $this->deriveAndPersistTopRatedDining(
-                listingType:         $listingType,
-                listingId:           $listingId,
-                sourceLat:           $sourceLat,
-                sourceLng:           $sourceLng,
-                restaurantCandidates: $restaurantRawCandidates,
-            );
+            // (g) Derive and persist Top Rated Dining from restaurant candidates.
+            // If restaurant was not re-fetched (it is in cachedCategoriesToSkip), the
+            // existing top_rated_dining rows in DB are still valid — include them in the
+            // output without re-deriving (no API call was made for restaurant).
+            if (in_array('restaurant', $cachedCategoriesToSkip, true)) {
+                $existingTopRated = PropertyLocationPoi::where('listing_type', $listingType)
+                    ->where('listing_id', $listingId)
+                    ->where('poi_category', 'top_rated_dining')
+                    ->get();
 
-            foreach ($topRatedRows as $row) {
-                $results[] = $row;
+                foreach ($existingTopRated as $row) {
+                    $results[] = $row->toArray();
+                }
+            } else {
+                $topRatedRows = $this->deriveAndPersistTopRatedDining(
+                    listingType:          $listingType,
+                    listingId:            $listingId,
+                    sourceLat:            $sourceLat,
+                    sourceLng:            $sourceLng,
+                    restaurantCandidates: $restaurantRawCandidates,
+                );
+
+                foreach ($topRatedRows as $row) {
+                    $results[] = $row;
+                }
             }
 
             $output = $this->completedOutput(
@@ -677,13 +774,19 @@ class LocationDnaPoiDistanceService
      * @param  array  $place     A single Google Places result object.
      * @return bool              true = keep, false = skip.
      */
-    private function passesExclusionFilter(string $category, array $place): bool
+    public function passesExclusionFilter(string $category, array $place): bool
     {
         $rules = self::CATEGORY_EXCLUSION_RULES[$category] ?? null;
         if ($rules === null) {
             return true;
         }
 
+        // Coerce types to an empty array when null or absent. This handles two cases:
+        //   (1) Sparse Google API responses where 'types' is missing.
+        //   (2) Cached DB rows with types_json = NULL (written before the ranking engine
+        //       persisted types). An empty array correctly allows exclude_if_types_include
+        //       rules to produce no match while still enabling name-pattern fallbacks
+        //       (exclude_if_name_matches and exclude_if_name_matches_when_types_empty).
         $types = $place['types'] ?? [];
         $name  = $place['name'] ?? '';
 

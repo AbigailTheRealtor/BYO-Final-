@@ -878,6 +878,270 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
         ]);
     }
 
+    // =========================================================================
+    // (18) passesExclusionFilter — NULL types_json with BP name → excluded via
+    //       name fallback (exclude_if_name_matches_when_types_empty)
+    // =========================================================================
+
+    /** @test */
+    public function passes_exclusion_filter_excludes_bp_name_when_types_json_is_null(): void
+    {
+        $service = $this->makeService();
+
+        // Simulates a pre-ranking-engine row: types_json stored as NULL in DB,
+        // cast to null by Eloquent, coerced to [] in the filter.
+        $place = [
+            'name'  => 'BP',
+            'types' => null,
+        ];
+
+        $this->assertFalse(
+            $service->passesExclusionFilter('grocery_store', $place),
+            'BP with NULL types should be excluded by exclude_if_name_matches_when_types_empty',
+        );
+    }
+
+    /** @test */
+    public function passes_exclusion_filter_does_not_exclude_real_grocery_when_types_json_is_null(): void
+    {
+        $service = $this->makeService();
+
+        // A legitimate grocery store without types (sparse API response) must NOT
+        // be excluded by the gas-station name guard.
+        $place = [
+            'name'  => 'Publix Super Market',
+            'types' => null,
+        ];
+
+        $this->assertTrue(
+            $service->passesExclusionFilter('grocery_store', $place),
+            'Publix with NULL types should NOT be excluded by the grocery_store name guard',
+        );
+    }
+
+    /** @test */
+    public function passes_exclusion_filter_excludes_animal_hospital_when_types_json_is_null(): void
+    {
+        $service = $this->makeService();
+
+        // Animal Hospital of Seminole scenario: types_json = NULL, name matches
+        // pharmacy exclude_if_name_matches pattern (unconditional name rule).
+        $place = [
+            'name'  => 'Animal Hospital of Seminole',
+            'types' => null,
+        ];
+
+        $this->assertFalse(
+            $service->passesExclusionFilter('pharmacy', $place),
+            'Animal Hospital name with NULL types should be excluded by exclude_if_name_matches',
+        );
+    }
+
+    /** @test */
+    public function passes_exclusion_filter_excludes_adventure_golf_when_types_json_is_null(): void
+    {
+        $service = $this->makeService();
+
+        // Smugglers Cove Adventure Golf scenario: types_json = NULL, but name
+        // matches golf_course exclude_if_name_matches unconditional pattern.
+        $place = [
+            'name'  => 'Smugglers Cove Adventure Golf',
+            'types' => null,
+        ];
+
+        $this->assertFalse(
+            $service->passesExclusionFilter('golf_course', $place),
+            'Adventure Golf name should be excluded by golf_course exclude_if_name_matches regardless of types',
+        );
+    }
+
+    // =========================================================================
+    // (19) Cache path re-applies exclusions — disqualified rank-1 triggers
+    //       a fresh Google fetch for that category only
+    // =========================================================================
+
+    /** @test */
+    public function cache_path_deletes_stale_category_and_fetches_fresh_when_rank1_fails_exclusion(): void
+    {
+        $this->createGeocodedDnaRecord();
+
+        // Pre-populate POI rows with matching source coordinates.
+        // grocery_store rank-1 row has name='BP' and types_json=NULL
+        // (simulates a pre-ranking-engine row that now fails the exclusion rule).
+        // All other categories have clean rank-1 rows.
+        $categories = array_keys(LocationDnaPoiDistanceService::CATEGORIES);
+
+        foreach ($categories as $category) {
+            $isBpRow = ($category === 'grocery_store');
+            PropertyLocationPoi::create([
+                'listing_type'   => self::LISTING_TYPE,
+                'listing_id'     => self::LISTING_ID,
+                'poi_category'   => $category,
+                'poi_subtype'    => $isBpRow ? 'Grocery Store' : 'Test Place',
+                'poi_name'       => $isBpRow ? 'BP' : 'Legit Place',
+                'source_lat'     => self::SOURCE_LAT,
+                'source_lng'     => self::SOURCE_LNG,
+                'rank'           => 1,
+                'distance_miles' => 0.5,
+                'types_json'     => null,
+                'data_source'    => 'google_places',
+                'status'         => 'found',
+                'calculated_at'  => now()->subDay(),
+            ]);
+        }
+
+        // Add a top_rated_dining row (derived, should be preserved since restaurant is clean)
+        PropertyLocationPoi::create([
+            'listing_type'   => self::LISTING_TYPE,
+            'listing_id'     => self::LISTING_ID,
+            'poi_category'   => 'top_rated_dining',
+            'poi_subtype'    => 'Top Rated Dining',
+            'poi_name'       => 'Great Restaurant',
+            'source_lat'     => self::SOURCE_LAT,
+            'source_lng'     => self::SOURCE_LNG,
+            'rank'           => 1,
+            'distance_miles' => 0.3,
+            'types_json'     => ['restaurant', 'food'],
+            'data_source'    => 'google_places',
+            'status'         => 'found',
+            'calculated_at'  => now()->subDay(),
+        ]);
+
+        // Only grocery_store should trigger a fresh fetch — one HTTP call expected.
+        $this->mockClient
+            ->expects($this->once())
+            ->method('request')
+            ->willReturn($this->makePlacesResponse(27.9500, -82.4500, 'Publix'));
+
+        $result = $this->makeService()->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $this->assertContractShape($result);
+        $this->assertTrue($result['success']);
+
+        // The BP rank-1 row must be gone
+        $this->assertDatabaseMissing('property_location_pois', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'poi_category' => 'grocery_store',
+            'poi_name'     => 'BP',
+        ]);
+
+        // A fresh grocery_store row must now exist
+        $this->assertDatabaseHas('property_location_pois', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'poi_category' => 'grocery_store',
+            'poi_name'     => 'Publix',
+        ]);
+
+        // Other categories remain cached and untouched
+        $this->assertDatabaseHas('property_location_pois', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'poi_category' => 'pharmacy',
+            'poi_name'     => 'Legit Place',
+        ]);
+
+        // top_rated_dining (derived, restaurant was cached) must still exist
+        $this->assertDatabaseHas('property_location_pois', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'poi_category' => 'top_rated_dining',
+            'poi_name'     => 'Great Restaurant',
+        ]);
+    }
+
+    /** @test */
+    public function cache_path_refetches_categories_absent_from_db_after_external_deletion(): void
+    {
+        // Simulates the state after ldna:backfill-exclusions deleted grocery_store rows:
+        // all other categories have DB rows with matching coordinates, grocery_store has none.
+        $this->createGeocodedDnaRecord();
+
+        foreach (array_keys(LocationDnaPoiDistanceService::CATEGORIES) as $category) {
+            if ($category === 'grocery_store') {
+                continue; // simulates external (backfill) deletion
+            }
+
+            PropertyLocationPoi::create([
+                'listing_type'   => self::LISTING_TYPE,
+                'listing_id'     => self::LISTING_ID,
+                'poi_category'   => $category,
+                'poi_subtype'    => 'Legit Place',
+                'poi_name'       => 'Legit Place',
+                'source_lat'     => self::SOURCE_LAT,
+                'source_lng'     => self::SOURCE_LNG,
+                'rank'           => 1,
+                'distance_miles' => 0.5,
+                'types_json'     => null,
+                'data_source'    => 'google_places',
+                'status'         => 'found',
+                'calculated_at'  => now()->subDay(),
+            ]);
+        }
+
+        // grocery_store is absent from DB → exactly 1 Google API call expected.
+        $this->mockClient
+            ->expects($this->once())
+            ->method('request')
+            ->willReturn($this->makePlacesResponse(27.9500, -82.4500, 'Publix'));
+
+        $result = $this->makeService()->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $this->assertContractShape($result);
+        $this->assertTrue($result['success']);
+
+        // A fresh grocery_store row must now exist.
+        $this->assertDatabaseHas('property_location_pois', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'poi_category' => 'grocery_store',
+            'poi_name'     => 'Publix',
+        ]);
+
+        // Other categories remain cached and untouched.
+        $this->assertDatabaseHas('property_location_pois', [
+            'listing_type' => self::LISTING_TYPE,
+            'listing_id'   => self::LISTING_ID,
+            'poi_category' => 'pharmacy',
+            'poi_name'     => 'Legit Place',
+        ]);
+    }
+
+    /** @test */
+    public function cache_path_returns_cached_when_all_rank1_rows_pass_exclusions(): void
+    {
+        $this->createGeocodedDnaRecord();
+
+        // Pre-populate with clean rows (Publix passes grocery_store rules).
+        foreach (array_keys(LocationDnaPoiDistanceService::CATEGORIES) as $category) {
+            PropertyLocationPoi::create([
+                'listing_type'   => self::LISTING_TYPE,
+                'listing_id'     => self::LISTING_ID,
+                'poi_category'   => $category,
+                'poi_subtype'    => 'Clean Place',
+                'poi_name'       => 'Publix Super Market',
+                'source_lat'     => self::SOURCE_LAT,
+                'source_lng'     => self::SOURCE_LNG,
+                'rank'           => 1,
+                'distance_miles' => 0.5,
+                'types_json'     => null,
+                'data_source'    => 'google_places',
+                'status'         => 'found',
+                'calculated_at'  => now()->subDay(),
+            ]);
+        }
+
+        // No HTTP calls should be made — all cached rows pass current rules.
+        $this->mockClient->expects($this->never())->method('request');
+
+        $result = $this->makeService()->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $this->assertContractShape($result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('cached', $result['status']);
+    }
+
     /** @test */
     public function poi_distance_service_audit_failure_does_not_alter_return_array(): void
     {
