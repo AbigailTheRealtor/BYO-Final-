@@ -51,9 +51,14 @@ class BridgeApiService
     /**
      * Fetch a single page of properties using OData $top/$skip pagination.
      *
+     * Unlike fetchProperties(), this method THROWS on failure so that callers
+     * (e.g. LazyBridgeImportService) can distinguish a real API error from a
+     * legitimately empty result page and take appropriate action.
+     *
      * @param  int  $top   Page size (max records per request; Bridge API typically caps at 200).
      * @param  int  $skip  Zero-based offset — number of records to skip before this page.
-     * @return array       Array of property records, or empty array on failure.
+     * @return array       Array of property records (empty array = end of feed, no error).
+     * @throws \RuntimeException  On any HTTP error or transport failure.
      */
     public function fetchPropertiesPaginated(int $top = 200, int $skip = 0, ?string $filter = null): array
     {
@@ -61,39 +66,36 @@ class BridgeApiService
         $token   = config('bridge.token');
 
         if (empty($dataset) || empty($token)) {
-            Log::warning('BridgeApiService: bridge.dataset or bridge.token is missing from config. Skipping paginated API call.');
-            return [];
+            throw new \RuntimeException(
+                'BridgeApiService: bridge.dataset or bridge.token is missing from config.'
+            );
         }
 
         $url = "{$this->baseUrl}/{$dataset}/Property";
 
-        try {
-            $params = [
-                '$top'         => $top,
-                '$skip'        => $skip,
-                'access_token' => $token,
-            ];
+        $params = [
+            '$top'         => $top,
+            '$skip'        => $skip,
+            'access_token' => $token,
+        ];
 
-            if ($filter !== null) {
-                $params['$filter'] = $filter;
-            }
-
-            Log::info("BridgeApiService: paginated fetch — top={$top}, skip={$skip}" . ($filter !== null ? ", filter={$filter}" : ''));
-
-            $response = Http::timeout(60)->get($url, $params);
-
-            Log::info('BridgeApiService: paginated HTTP status ' . $response->status());
-
-            if (!$response->successful()) {
-                Log::error('BridgeApiService: paginated API returned non-success status ' . $response->status());
-                return [];
-            }
-
-            $json = $response->json();
-            return $json['value'] ?? [];
-        } catch (\Throwable $e) {
-            Log::error('BridgeApiService: Exception during paginated API call — ' . $e->getMessage());
-            return [];
+        if ($filter !== null) {
+            $params['$filter'] = $filter;
         }
+
+        Log::info("BridgeApiService: paginated fetch — top={$top}, skip={$skip}" . ($filter !== null ? ", filter={$filter}" : ''));
+
+        $response = Http::timeout(60)->get($url, $params);
+
+        Log::info('BridgeApiService: paginated HTTP status ' . $response->status());
+
+        if (!$response->successful()) {
+            throw new \RuntimeException(
+                "BridgeApiService: paginated API returned non-success status {$response->status()}"
+            );
+        }
+
+        $json = $response->json();
+        return $json['value'] ?? [];
     }
 }
