@@ -1895,7 +1895,28 @@ class BuyerOfferListing extends Component
 
             // Location DNA preferences
             $ldnaRaw = $auction->info('location_dna_preferences');
-            $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+            $ldna    = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+
+            // Migrate legacy `cities` meta into the in-memory $ldna used to pre-populate
+            // the LDNA map widget. Does NOT touch $ldnaRaw so the DB value is unchanged
+            // until the user explicitly saves. Records saved before the LDNA map widget
+            // tracked cities have cities:[] in the blob but the real values in the `cities`
+            // EAV key; merging them here causes the city-tag input to render them as tags.
+            if (empty($ldna['cities'] ?? [])) {
+                $legacyCitiesRaw = $auction->info('cities');
+                if ($legacyCitiesRaw) {
+                    $legacyCities = is_string($legacyCitiesRaw)
+                        ? (json_decode($legacyCitiesRaw, true) ?? [])
+                        : (array) $legacyCitiesRaw;
+                    $legacyCities = array_values(array_filter($legacyCities, fn($c) => is_string($c) && trim($c) !== ''));
+                    if (!empty($legacyCities)) {
+                        $ldna['cities'] = $legacyCities;
+                        // $ldnaRaw is intentionally left unchanged here.
+                    }
+                }
+            }
+
+            $this->existingLocationDna = $ldna;
             $this->location_dna_preferences_json = $ldnaRaw ?? '';
 
             // Sale Provision
@@ -2358,6 +2379,10 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
         $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
+        // Keep `cities` meta in sync with the LDNA blob so the loader fallback
+        // and the Clear All path stay consistent across saves.
+        $ldnaDecoded = json_decode($this->location_dna_preferences_json, true);
+        $auction->saveMeta('cities', json_encode($ldnaDecoded['cities'] ?? []));
 
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);

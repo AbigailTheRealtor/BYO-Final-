@@ -140,6 +140,7 @@ class BuyerResultViewMapper
             'category_bars'     => $categoryBars,
             'price_display'     => $priceDisplay,
             'address'           => $address,
+            'city'              => $listing->city ?? null,
             'city_state_zip'    => $cityStateZip ?: null,
             'beds'              => $beds,
             'baths'             => $baths,
@@ -150,6 +151,8 @@ class BuyerResultViewMapper
             'tradeoffs'         => $tradeoffs,
             'caution_flags'     => $cautionFlags,
             'missing_data'      => $missingData,
+            'latitude'          => $listing->latitude !== null ? (float) $listing->latitude : null,
+            'longitude'         => $listing->longitude !== null ? (float) $listing->longitude : null,
         ];
     }
 

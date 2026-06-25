@@ -171,11 +171,33 @@ class StellarBuyerResultsController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
+        // Build map pin data from all matched results (not just the current page).
+        // Each pin carries only the fields needed for a marker popup; results without
+        // valid coordinates are skipped so they don't break fitBounds.
+        $mapPins = [];
+        foreach ($mapped as $card) {
+            $lat = $card['latitude'] ?? null;
+            $lng = $card['longitude'] ?? null;
+            if ($lat === null || $lng === null) {
+                continue;
+            }
+            $mapPins[] = [
+                'lat'           => $lat,
+                'lng'           => $lng,
+                'id'            => $card['listing_key'],
+                'address'       => $card['address'],
+                'city'          => $card['city'],
+                'price_display' => $card['price_display'],
+                'score_display' => $card['score_display'],
+            ];
+        }
+
         return view('stellar.buyer.results', [
             'emptyState'             => null,
             'results'                => $slice,
             'paginator'              => $paginator,
             'total'                  => $total,
+            'mapPins'                => $mapPins,
             'criteriaList'           => $criteriaList,
             'selectedCriteriaType'   => $selectedType,
             'selectedCriteriaId'     => $selectedId,
@@ -233,6 +255,7 @@ class StellarBuyerResultsController extends Controller
             'emptyState'             => $state,
             'results'                => null,
             'paginator'              => null,
+            'mapPins'                => [],
             'criteriaList'           => [],
             'selectedCriteriaType'   => null,
             'selectedCriteriaId'     => null,

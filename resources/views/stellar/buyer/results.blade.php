@@ -54,10 +54,16 @@
                 </small>
             @endif
         </div>
-        {{-- Map View placeholder (Phase C hook) --}}
-        <button class="btn btn-outline-secondary btn-sm" disabled title="Map view coming soon">
+        @if(!empty($mapPins))
+        <button class="btn btn-outline-secondary btn-sm" id="stellar-map-toggle"
+                onclick="stellarToggleMapView()" title="Toggle map view">
+            <i class="fas fa-map me-1" id="stellar-map-icon"></i><span id="stellar-map-label">Map View</span>
+        </button>
+        @else
+        <button class="btn btn-outline-secondary btn-sm" disabled title="No mappable results">
             <i class="fas fa-map me-1"></i>Map View
         </button>
+        @endif
     </div>
 
     {{-- ===================================================================
@@ -204,27 +210,124 @@
         </div>
 
     @else
+        {{-- Map panel — hidden until user clicks Map View. Initialised lazily on first open. --}}
+        <div id="stellar-map-panel" style="display:none; height:480px; border-radius:8px;
+             border:1px solid #e2e8f0; margin-bottom:1rem; overflow:hidden;"></div>
+
         {{-- ===============================================================
              Results grid
         =============================================================== --}}
-        <div class="row row-cols-1 row-cols-lg-2 g-3 mb-4">
-            @foreach($results as $index => $card)
-                <div class="col">
-                    <x-stellar.buyer-result-card
-                        :card="$card"
-                        :is-top="$index === 0 && $paginator->currentPage() === 1"
-                    />
-                </div>
-            @endforeach
-        </div>
-
-        {{-- Pagination --}}
-        @if($paginator->hasPages())
-            <div class="d-flex justify-content-center mt-3">
-                {{ $paginator->links() }}
+        <div id="stellar-results-grid">
+            <div class="row row-cols-1 row-cols-lg-2 g-3 mb-4">
+                @foreach($results as $index => $card)
+                    <div class="col">
+                        <x-stellar.buyer-result-card
+                            :card="$card"
+                            :is-top="$index === 0 && $paginator->currentPage() === 1"
+                        />
+                    </div>
+                @endforeach
             </div>
-        @endif
+
+            {{-- Pagination --}}
+            @if($paginator->hasPages())
+                <div class="d-flex justify-content-center mt-3">
+                    {{ $paginator->links() }}
+                </div>
+            @endif
+        </div>
     @endif
 
 </div>
+
+@if(!empty($mapPins))
+{{-- Load the Maps API only when there are pins to show. --}}
+<x-google-maps-script :libraries="''" :callback="'stellarMapsReady'" />
+
+@push('scripts')
+<script>
+(function () {
+    var _mapsLoaded  = false;
+    var _mapOpened   = false;
+    var _mapInstance = null;
+    var _pins        = @json($mapPins);
+
+    /* Called by the Maps API script once it finishes loading. */
+    window.stellarMapsReady = function () {
+        _mapsLoaded = true;
+        /* If the user already clicked Map View before the API finished loading, init now. */
+        if (_mapOpened && !_mapInstance) {
+            _doInitMap();
+        }
+    };
+
+    window.stellarToggleMapView = function () {
+        var panel  = document.getElementById('stellar-map-panel');
+        var grid   = document.getElementById('stellar-results-grid');
+        var label  = document.getElementById('stellar-map-label');
+        var icon   = document.getElementById('stellar-map-icon');
+        var mapVisible = panel.style.display !== 'none';
+
+        if (mapVisible) {
+            panel.style.display = 'none';
+            grid.style.display  = '';
+            label.textContent   = 'Map View';
+            icon.className      = 'fas fa-map me-1';
+        } else {
+            panel.style.display = '';
+            grid.style.display  = 'none';
+            label.textContent   = 'List View';
+            icon.className      = 'fas fa-list me-1';
+            _mapOpened = true;
+            if (_mapsLoaded && !_mapInstance) {
+                _doInitMap();
+            }
+        }
+    };
+
+    function _esc(str) {
+        var d = document.createElement('div');
+        d.textContent = String(str || '');
+        return d.innerHTML;
+    }
+
+    function _doInitMap() {
+        var el = document.getElementById('stellar-map-panel');
+        if (!el) return;
+
+        var bounds = new google.maps.LatLngBounds();
+        _mapInstance = new google.maps.Map(el, {
+            zoom: 8,
+            center: { lat: 27.9944024, lng: -81.7602544 },
+            mapTypeId: 'roadmap',
+            disableDefaultUI: true,
+            zoomControl: true,
+            fullscreenControl: true,
+        });
+
+        _pins.forEach(function (pin) {
+            var pos    = { lat: pin.lat, lng: pin.lng };
+            var marker = new google.maps.Marker({ position: pos, map: _mapInstance, title: pin.address || '' });
+
+            var html = '<div style="font-size:.875rem;max-width:220px;line-height:1.4;">'
+                + (pin.address    ? '<div style="font-weight:600;">'                          + _esc(pin.address)    + '</div>' : '')
+                + (pin.city       ? '<div style="color:#64748b;font-size:.8rem;">'            + _esc(pin.city)       + '</div>' : '')
+                + (pin.price_display ? '<div style="color:#15803d;font-weight:600;margin-top:.2rem;">' + _esc(pin.price_display) + '</div>' : '')
+                + (pin.score_display ? '<div style="color:#0369a1;font-size:.8rem;">Match: '  + _esc(pin.score_display) + '</div>' : '')
+                + '</div>';
+
+            var iw = new google.maps.InfoWindow({ content: html });
+            marker.addListener('click', function () { iw.open(_mapInstance, marker); });
+            bounds.extend(new google.maps.LatLng(pin.lat, pin.lng));
+        });
+
+        if (!bounds.isEmpty()) {
+            _mapInstance.fitBounds(bounds);
+        }
+    }
+})();
+</script>
+@endpush
+@endif
+
 @endsection

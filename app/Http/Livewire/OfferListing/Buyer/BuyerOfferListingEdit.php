@@ -1822,7 +1822,26 @@ class BuyerOfferListingEdit extends Component
 
             $this->state = $auction->get->state ?? '';
             $ldnaRaw = $auction->info('location_dna_preferences');
-            $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+            $ldna    = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+
+            // Migrate legacy `cities` meta into the in-memory $ldna used to pre-populate
+            // the LDNA map widget. Does NOT touch $ldnaRaw so the DB value is unchanged
+            // until the user explicitly saves.
+            if (empty($ldna['cities'] ?? [])) {
+                $legacyCitiesRaw = $auction->info('cities');
+                if ($legacyCitiesRaw) {
+                    $legacyCities = is_string($legacyCitiesRaw)
+                        ? (json_decode($legacyCitiesRaw, true) ?? [])
+                        : (array) $legacyCitiesRaw;
+                    $legacyCities = array_values(array_filter($legacyCities, fn($c) => is_string($c) && trim($c) !== ''));
+                    if (!empty($legacyCities)) {
+                        $ldna['cities'] = $legacyCities;
+                        // $ldnaRaw is intentionally left unchanged here.
+                    }
+                }
+            }
+
+            $this->existingLocationDna = $ldna;
             $this->location_dna_preferences_json = $ldnaRaw ?? '';
             $this->property_type = $auction->get->property_type ?? '';
 
@@ -2715,6 +2734,9 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('video_link', $this->video_link);
         $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
         $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
+        // Keep `cities` meta in sync with the LDNA blob.
+        $ldnaDecoded = json_decode($this->location_dna_preferences_json, true);
+        $auction->saveMeta('cities', json_encode($ldnaDecoded['cities'] ?? []));
 
         // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
         if ($this->photo && !is_string($this->photo)) {
