@@ -120,9 +120,12 @@ class BuyerCriteriaLoader
         // Only fall back to legacy keys when the blob itself is absent.
         $ldnaBlobPresent = !empty($ldna);
 
-        $preferredCities   = ($ldnaBlobPresent && array_key_exists('cities', $ldna))
-            ? $this->decodeJsonMeta($ldna['cities'])
-            : $this->decodeJsonMeta($infoGet('preferred_cities'));
+        $preferredCities   = array_values(array_filter(array_map(
+            [$this, 'normalizeCityName'],
+            ($ldnaBlobPresent && array_key_exists('cities', $ldna))
+                ? $this->decodeJsonMeta($ldna['cities'])
+                : $this->decodeJsonMeta($infoGet('preferred_cities'))
+        )));
 
         $preferredZipCodes = ($ldnaBlobPresent && array_key_exists('zip_codes', $ldna))
             ? $this->decodeJsonMeta($ldna['zip_codes'])
@@ -137,7 +140,10 @@ class BuyerCriteriaLoader
             : $this->decodeJsonMeta($infoGet('polygons'));
 
         // Counties are not part of the LDNA blob; always read from separate meta
-        $preferredCounties  = $this->decodeJsonMeta($infoGet('preferred_counties'));
+        $preferredCounties  = array_values(array_filter(array_map(
+            [$this, 'normalizeCountyName'],
+            $this->decodeJsonMeta($infoGet('preferred_counties'))
+        )));
         $preferredSubdivisions = $this->decodeJsonMeta($infoGet('preferred_subdivisions'));
         $preferredMlsAreas     = $this->decodeJsonMeta($infoGet('preferred_mls_areas'));
 
@@ -238,6 +244,28 @@ class BuyerCriteriaLoader
             'community_feature_keywords'  => $communityFeatureKeywords,
             'wants_energy_efficient'      => $wantsEnergyEfficient,
         ];
+    }
+
+    /**
+     * Strip state suffix (", FL") and " County" suffix so values like
+     * "Pinellas County, FL" normalise to "Pinellas" to match Bridge API storage.
+     */
+    private function normalizeCountyName(string $county): string
+    {
+        $county = preg_replace('/,\s*[A-Z]{2}\s*$/u', '', trim($county));
+        $county = preg_replace('/\s+County\s*$/iu', '', trim($county));
+        return trim($county);
+    }
+
+    /**
+     * Strip state suffix (", FL") and expand common abbreviations so values like
+     * "St. Petersburg, FL" normalise to "Saint Petersburg" to match Bridge API storage.
+     */
+    private function normalizeCityName(string $city): string
+    {
+        $city = preg_replace('/,\s*[A-Z]{2}\s*$/u', '', trim($city));
+        $city = preg_replace(['/\bSt\.\s+/u', '/\bFt\.\s+/u', '/\bMt\.\s+/u'], ['Saint ', 'Fort ', 'Mount '], $city);
+        return trim($city);
     }
 
     /**
