@@ -136,8 +136,11 @@ class StellarBuyerResultsController extends Controller
 
         // -----------------------------------------------------------------------
         // Run the matching pipeline
+        // Derive the role from selectedType so the lazy importer uses the correct
+        // OData filter builder ('tenant' for tenant_offer/tenant; 'buyer' otherwise).
         // -----------------------------------------------------------------------
-        $matchedCollection = $this->matchService->match($criteria, 200);
+        $role = in_array($selectedType, ['tenant', 'tenant_offer'], true) ? 'tenant' : 'buyer';
+        $matchedCollection = $this->matchService->match($criteria, 200, $role);
 
         // -----------------------------------------------------------------------
         // Empty state: no matches

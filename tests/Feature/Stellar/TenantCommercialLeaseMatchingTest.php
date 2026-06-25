@@ -4,6 +4,8 @@ namespace Tests\Feature\Stellar;
 
 use App\Models\BridgeProperty;
 use App\Models\TenantAgentAuction;
+use App\Services\Bridge\LazyBridgeImportService;
+use App\Services\Bridge\LazyImportResult;
 use App\Services\Stellar\Matching\BuyerMatchQueryBuilder;
 use App\Services\Stellar\Matching\BuyerMatchResultBuilder;
 use App\Services\Stellar\Matching\BuyerMatchScorer;
@@ -53,12 +55,18 @@ class TenantCommercialLeaseMatchingTest extends TestCase
         }
     }
 
-    private function makeService(): BuyerMatchService
+    private function makeService(?LazyBridgeImportService $lazyImport = null): BuyerMatchService
     {
+        if ($lazyImport === null) {
+            $lazyImport = $this->createMock(LazyBridgeImportService::class);
+            $lazyImport->method('importForCriteria')->willReturn(LazyImportResult::cached(0));
+        }
+
         return new BuyerMatchService(
             new BuyerMatchQueryBuilder(),
             new BuyerMatchScorer(),
-            new BuyerMatchResultBuilder()
+            new BuyerMatchResultBuilder(),
+            $lazyImport,
         );
     }
 

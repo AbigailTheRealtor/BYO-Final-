@@ -4,6 +4,8 @@ namespace Tests\Unit\Stellar;
 
 use App\Models\BuyerCriteriaAuction;
 use App\Models\User;
+use App\Services\Bridge\LazyBridgeImportService;
+use App\Services\Bridge\LazyImportResult;
 use App\Services\LocationDna\LocationMatchEngine;
 use App\Services\Stellar\BuyerCriteriaLoader;
 use App\Services\Stellar\Matching\BuyerMatchQueryBuilder;
@@ -298,10 +300,14 @@ class LocationDnaRoundTripTest extends TestCase
             ],
         ]);
 
+        $lazyImport = $this->createMock(LazyBridgeImportService::class);
+        $lazyImport->method('importForCriteria')->willReturn(LazyImportResult::cached(0));
+
         $service = new BuyerMatchService(
             new BuyerMatchQueryBuilder(),
             new BuyerMatchScorer(),
-            new BuyerMatchResultBuilder()
+            new BuyerMatchResultBuilder(),
+            $lazyImport,
         );
 
         $results = $service->match($criteria, 200);

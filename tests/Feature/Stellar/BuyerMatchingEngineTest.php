@@ -3,6 +3,8 @@
 namespace Tests\Feature\Stellar;
 
 use App\Models\BridgeProperty;
+use App\Services\Bridge\LazyBridgeImportService;
+use App\Services\Bridge\LazyImportResult;
 use App\Services\Stellar\Matching\BuyerMatchQueryBuilder;
 use App\Services\Stellar\Matching\BuyerMatchResultBuilder;
 use App\Services\Stellar\Matching\BuyerMatchScorer;
@@ -31,12 +33,18 @@ class BuyerMatchingEngineTest extends TestCase
     // Helpers
     // =========================================================================
 
-    private function makeService(): BuyerMatchService
+    private function makeService(?LazyBridgeImportService $lazyImport = null): BuyerMatchService
     {
+        if ($lazyImport === null) {
+            $lazyImport = $this->createMock(LazyBridgeImportService::class);
+            $lazyImport->method('importForCriteria')->willReturn(LazyImportResult::cached(0));
+        }
+
         return new BuyerMatchService(
             new BuyerMatchQueryBuilder(),
             new BuyerMatchScorer(),
-            new BuyerMatchResultBuilder()
+            new BuyerMatchResultBuilder(),
+            $lazyImport,
         );
     }
 
@@ -711,11 +719,7 @@ class BuyerMatchingEngineTest extends TestCase
             ]);
         }
 
-        $service = new BuyerMatchService(
-            new BuyerMatchQueryBuilder(),
-            new BuyerMatchScorer(),
-            new BuyerMatchResultBuilder()
-        );
+        $service = $this->makeService();
 
         $results = $service->match(
             $this->makeCriteria(['preferred_cities' => ['CapCity']]),
