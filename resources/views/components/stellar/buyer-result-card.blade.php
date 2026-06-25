@@ -10,11 +10,17 @@
       - raw_json, agent PII, brokerage info, lockbox, showing instructions are all absent from $card.
       - This component receives only the allowlisted view-model array from BuyerResultViewMapper.
 --}}
-@props(['card', 'isTop' => false])
+@props(['card', 'isTop' => false, 'criteriaId' => null, 'criteriaType' => 'buyer'])
 
 @php
-    $cardId = 'result-card-' . md5($card['listing_key']);
-    $accordionId = 'accordion-' . md5($card['listing_key']);
+    $cardId      = 'result-card-'  . md5($card['listing_key']);
+    $accordionId = 'accordion-'    . md5($card['listing_key']);
+
+    $detailParams = array_filter([
+        'criteria_id'   => $criteriaId,
+        'criteria_type' => ($criteriaType !== 'buyer' ? $criteriaType : null),
+    ]);
+    $detailUrl = route('stellar.property.show', array_merge(['listingKey' => $card['listing_key']], $detailParams));
 
     $hasWhy      = !empty($card['why_this_matches']);
     $hasTradeoffs = !empty($card['tradeoffs']);
@@ -146,18 +152,16 @@
                 @if($hasWhy)
                     <div class="accordion-item border-0">
                         <h2 class="accordion-header">
-                            <button class="accordion-button collapsed px-0 py-2 bg-transparent shadow-none"
+                            <button class="accordion-button @if(!($isTop && $hasWhy)) collapsed @endif px-0 py-2 bg-transparent shadow-none"
                                     type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#{{ $accordionId }}-why"
-                                    @if($isTop) aria-expanded="true" @else aria-expanded="false" @endif
+                                    onclick="window.sbToggle(this, '{{ $accordionId }}-why')"
+                                    aria-expanded="{{ ($isTop && $hasWhy) ? 'true' : 'false' }}"
                                     style="font-size:.82rem;color:#198754;">
                                 <i class="fas fa-circle-check me-2"></i>Why this matches
                             </button>
                         </h2>
                         <div id="{{ $accordionId }}-why"
-                             class="accordion-collapse collapse @if($isTop) show @endif"
-                             data-bs-parent="">
+                             class="accordion-collapse collapse @if($isTop && $hasWhy) show @endif">
                             <div class="accordion-body px-0 pt-1 pb-2">
                                 <ul class="list-unstyled mb-0" style="font-size:.82rem;">
                                     @foreach($card['why_this_matches'] as $reason)
@@ -181,16 +185,14 @@
                         <h2 class="accordion-header">
                             <button class="accordion-button collapsed px-0 py-2 bg-transparent shadow-none"
                                     type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#{{ $accordionId }}-tradeoffs"
+                                    onclick="window.sbToggle(this, '{{ $accordionId }}-tradeoffs')"
                                     aria-expanded="false"
                                     style="font-size:.82rem;color:#fd7e14;">
                                 <i class="fas fa-circle-half-stroke me-2"></i>Tradeoffs
                             </button>
                         </h2>
                         <div id="{{ $accordionId }}-tradeoffs"
-                             class="accordion-collapse collapse"
-                             data-bs-parent="">
+                             class="accordion-collapse collapse">
                             <div class="accordion-body px-0 pt-1 pb-2">
                                 <ul class="list-unstyled mb-0" style="font-size:.82rem;">
                                     @foreach($card['tradeoffs'] as $tradeoff)
@@ -211,16 +213,14 @@
                         <h2 class="accordion-header">
                             <button class="accordion-button collapsed px-0 py-2 bg-transparent shadow-none"
                                     type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#{{ $accordionId }}-caution"
+                                    onclick="window.sbToggle(this, '{{ $accordionId }}-caution')"
                                     aria-expanded="false"
                                     style="font-size:.82rem;color:#0d6efd;">
                                 <i class="fas fa-circle-info me-2"></i>Things to know
                             </button>
                         </h2>
                         <div id="{{ $accordionId }}-caution"
-                             class="accordion-collapse collapse"
-                             data-bs-parent="">
+                             class="accordion-collapse collapse">
                             <div class="accordion-body px-0 pt-1 pb-2">
                                 <ul class="list-unstyled mb-0" style="font-size:.82rem;">
                                     @foreach($card['caution_flags'] as $flag)
@@ -248,16 +248,14 @@
                         <h2 class="accordion-header">
                             <button class="accordion-button collapsed px-0 py-2 bg-transparent shadow-none"
                                     type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#{{ $accordionId }}-missing"
+                                    onclick="window.sbToggle(this, '{{ $accordionId }}-missing')"
                                     aria-expanded="false"
                                     style="font-size:.82rem;color:#6c757d;">
                                 <i class="fas fa-circle-question me-2"></i>Missing listing data
                             </button>
                         </h2>
                         <div id="{{ $accordionId }}-missing"
-                             class="accordion-collapse collapse"
-                             data-bs-parent="">
+                             class="accordion-collapse collapse">
                             <div class="accordion-body px-0 pt-1 pb-2">
                                 <ul class="list-unstyled mb-0" style="font-size:.82rem;">
                                     @foreach($card['missing_data'] as $item)
@@ -282,16 +280,8 @@
     ==================================================================== --}}
     <div class="card-footer bg-transparent border-top-0 pt-0 pb-3 px-3">
         <div class="d-flex gap-2 flex-wrap">
-            {{--
-                View Details: rendered as a disabled link in Phase B.
-                The listing detail page is out of scope; no IDX detail route exists yet.
-                Do NOT link to any external URL.
-            --}}
-            <a href="#"
-               class="btn btn-primary btn-sm disabled"
-               aria-disabled="true"
-               tabindex="-1"
-               title="Listing detail page coming soon"
+            <a href="{{ $detailUrl }}"
+               class="btn btn-primary btn-sm"
                data-testid="view-details-btn">
                 <i class="fas fa-eye me-1"></i>View Details
             </a>

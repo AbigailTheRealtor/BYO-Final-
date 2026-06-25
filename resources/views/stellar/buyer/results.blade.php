@@ -224,6 +224,8 @@
                         <x-stellar.buyer-result-card
                             :card="$card"
                             :is-top="$index === 0 && $paginator->currentPage() === 1"
+                            :criteria-id="$selectedCriteriaId"
+                            :criteria-type="$selectedCriteriaType ?? 'buyer'"
                         />
                     </div>
                 @endforeach
@@ -239,6 +241,20 @@
     @endif
 
 </div>
+
+{{-- Accordion toggle helper — defined unconditionally so cards work even when mapPins is empty. --}}
+@push('scripts')
+<script>
+window.sbToggle = function (btn, id) {
+    var target = document.getElementById(id);
+    if (!target) return;
+    var willShow = !target.classList.contains('show');
+    bootstrap.Collapse.getOrCreateInstance(target, { toggle: false }).toggle();
+    btn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+    btn.classList.toggle('collapsed', !willShow);
+};
+</script>
+@endpush
 
 @if(!empty($mapPins))
 {{-- Load the Maps API only when there are pins to show. --}}

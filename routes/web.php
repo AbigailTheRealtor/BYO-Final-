@@ -179,6 +179,11 @@ Route::middleware('auth')->group(function () {
     // Stellar — Phase B: Authenticated buyer results page
     Route::get('/stellar/buyer/results', [\App\Http\Controllers\Stellar\StellarBuyerResultsController::class, 'index'])->name('stellar.buyer.results');
 
+    // Stellar — Shared property detail page (Buyer, Tenant, Agent, Landlord preview, Ask AI)
+    Route::get('/stellar/property/{listingKey}', [\App\Http\Controllers\Stellar\StellarPropertyDetailController::class, 'show'])
+        ->name('stellar.property.show')
+        ->where('listingKey', '[A-Za-z0-9\-]+');
+
     // Agent Referral Activity page
     Route::get('/agent/my-referrals', [\App\Http\Controllers\AgentReferralPageController::class, 'index'])->name('agent.my-referrals');
 
@@ -317,16 +322,6 @@ Route::get('/', function () {
 // Referral capture — Phase 4. Public, no auth.
 Route::get('/invite/{code}', [\App\Http\Controllers\ReferralController::class, 'capture'])
     ->name('referral.capture');
-
-/////////////////////////////////Testing Route ///////////////////////////////
-
-Route::get('/testing', function () {
-
-    $get_agent = User::where('user_type', 'agent')->get();
-    dd($get_agent[7]->info('city'));
-});
-
-///////////////////////////////End Testing Route/////////////////////////////////
 
 Route::get('/check_username/{username}', function ($username) {
     $count = User::where('user_name', $username)->count();
