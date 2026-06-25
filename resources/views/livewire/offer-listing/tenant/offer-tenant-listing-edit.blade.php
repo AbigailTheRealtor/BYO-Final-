@@ -1541,13 +1541,13 @@
 
                                 if ($user_type === 'tenant') {
                                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
-                                        $infoTabs[$user_type] ?? null,
                                         'AI Knowledge Base',
+                                        $infoTabs[$user_type] ?? null,
                                     ]);
                                 } else {
                                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
-                                        $infoTabs[$user_type] ?? null,
                                         'AI Knowledge Base',
+                                        $infoTabs[$user_type] ?? null,
                                     ]);
                                 }
 
@@ -1686,11 +1686,12 @@
                         </div>
 
                         <!-- Broker Compensation Tab -->
-                        @if($user_type !== 'tenant')
                         <div class="tab-pane fade {{ $activeTab === $brokerCompTabIndex ? 'show active' : '' }}"
                             id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
-
-                            @if ($user_type === 'seller')
+                            @if ($user_type === 'tenant')
+                                @php $isTenantOfferListing = true; @endphp
+                                @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
+                            @elseif ($user_type === 'seller')
                                 @include('livewire.offer-listing.offer-seller-tabs.commission-based.broker-compensation')
                             @elseif($user_type === 'buyer')
                                 @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
@@ -1698,13 +1699,6 @@
                                 @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
                             @endif
                         </div>
-                        @elseif($user_type === 'tenant')
-                        <div class="tab-pane fade {{ $activeTab === $brokerCompTabIndex ? 'show active' : '' }}"
-                            id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
-                            @php $isTenantOfferListing = true; @endphp
-                            @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
-                        </div>
-                        @endif
 
                         <!-- Referral & Cooperation Terms Tab - Agent only, not shown for tenant -->
                         @if ($isAgentUser && $user_type !== 'tenant')

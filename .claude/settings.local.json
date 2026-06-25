@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan *)",
+      "Bash(xargs ls -la)",
+      "Bash(xargs cat -n)",
+      "Bash(grep -n 'is_approved\\\\|is_sold\\\\|is_draft\\\\|casts\\\\|$casts' /home/runner/workspace/app/Models/BuyerAgentAuction.php)"
+    ]
+  }
+}

@@ -1582,7 +1582,7 @@ $lease_types = [
                     ? 'Sale Terms'
                     : 'Leasing Terms');
                     if ($user_type === 'tenant') {
-                    $restTabs = [$firstRest, 'Pre-Screening', 'Broker Compensation & Agency Agreement Terms', 'Description'];
+                    $restTabs = ['Description', $firstRest, 'Pre-Screening', 'Broker Compensation & Agency Agreement Terms'];
                     } else {
                     $restTabs = [$firstRest, 'Broker Compensation & Agency Agreement Terms', 'Description'];
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
@@ -1603,13 +1603,13 @@ $lease_types = [
 
                     if ($user_type === 'tenant') {
                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
-                        $infoTabs[$user_type] ?? null,
                         'AI Knowledge Base',
+                        $infoTabs[$user_type] ?? null,
                     ]);
                     } else {
                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
-                        $infoTabs[$user_type] ?? null,
                         'AI Knowledge Base',
+                        $infoTabs[$user_type] ?? null,
                     ]);
                     }
                     @endphp
@@ -1726,25 +1726,8 @@ $lease_types = [
                                 </div>
                                 @endif
 
-                                <!-- Additional Details Tab - Adjust index based on user_type -->
-
-                                @php $descriptionTabIndex = $user_type === 'tenant' ? 5 : 4; @endphp
-                                <div class="tab-pane fade {{ $activeTab === $descriptionTabIndex ? 'show active' : '' }}"
-                                    id="description" role="tabpanel" aria-labelledby="description-tab">
-
-                                    @if ($user_type === 'tenant')
-                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'seller')
-                                    @include('livewire.offer-listing.offer-seller-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'buyer')
-                                    @include('livewire.offer-listing.offer-buyer-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'landlord')
-                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.additional-details')
-                                    @endif
-                                </div>
-
                                 <!-- Broker Compensation & Agency Agreement Terms Tab -->
-                                @php $brokerCompTabIndex = $user_type === 'tenant' ? 4 : 3; @endphp
+                                @php $brokerCompTabIndex = $user_type === 'tenant' ? 5 : 3; @endphp
                                 <div class="tab-pane fade {{ $activeTab === $brokerCompTabIndex ? 'show active' : '' }}"
                                     id="broker-compensation-agency-agreement-terms" role="tabpanel"
                                     aria-labelledby="broker-compensation-agency-agreement-terms-tab">
@@ -1792,11 +1775,13 @@ $lease_types = [
                                         default => 'agent-credentials-contact-info'
                                     };
                                     $infoTabIndex = $user_type === 'tenant'
-                                        ? 6
+                                        ? 7
                                         : (in_array($user_type, ['landlord', 'buyer', 'seller'])
                                             ? ($isAgentUser ? 7 : 6)
                                             : ($isAgentUser ? 8 : 7));
-                                    $aiQuestionsTabIndex = $infoTabIndex + 1;
+                                    $aiQuestionsTabIndex = $user_type === 'tenant'
+                                        ? 6
+                                        : ($infoTabIndex + 1);
                                 @endphp
 
                                 <!-- AI Knowledge Base Tab (full_service) -->

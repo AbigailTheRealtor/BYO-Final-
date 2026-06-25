@@ -767,10 +767,9 @@
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @php
-                                    $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Broker Compensation & Agency Agreement Terms'];
+                                    $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Description', 'Purchasing Terms', 'Broker Compensation & Agency Agreement Terms'];
+                                    $additionalDetailsIndex = 2;
                                     $brokerCompIndex        = count($fullServiceTabs) - 1;
-                                    $fullServiceTabs[]      = 'Description';
-                                    $additionalDetailsIndex = count($fullServiceTabs) - 1;
                                     $aiQuestionsIndex      = count($fullServiceTabs);
                                     $agentCredentialsIndex = count($fullServiceTabs) + 1;
                                 @endphp
