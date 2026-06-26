@@ -55,6 +55,14 @@ class SellerCounteredTermsController extends Controller
     }
     public function store(Request $request)
     {
+        // Authorization (HIGH-5): only a party to the auction may submit counter
+        // terms — the listing owner, or an agent who has bid on the listing.
+        $auction = \App\Models\SellerAgentAuction::find($request->sellerId);
+        abort_unless(auth()->check() && $auction && (
+            (int) $auction->user_id === (int) auth()->id() ||
+            \App\Models\SellerAgentAuctionBid::where('seller_agent_auction_id', $auction->id)->where('user_id', auth()->id())->exists()
+        ), 403);
+
         $counter = new SellerCounterTerm();
         $counter->seller_auction_id = $request->sellerId;
         $counter->timeframe = $request->timeframe;
@@ -77,6 +85,12 @@ class SellerCounteredTermsController extends Controller
     public function update(Request $request, $id)
     {
         $counter = SellerCounterTerm::findOrFail($id);
+        // Authorization (HIGH-5): only the listing owner or a bidding agent may update.
+        $auction = \App\Models\SellerAgentAuction::find($counter->seller_agent_auction_id);
+        abort_unless(auth()->check() && $auction && (
+            (int) $auction->user_id === (int) auth()->id() ||
+            \App\Models\SellerAgentAuctionBid::where('seller_agent_auction_id', $auction->id)->where('user_id', auth()->id())->exists()
+        ), 403);
         // Update the attributes
         $sellerCommission = '';
         if ($request->sellerCommission != 'Yes') {

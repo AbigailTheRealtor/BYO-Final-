@@ -45,6 +45,14 @@ class TenantCounteredTermsController extends Controller
     
     public function store(Request $request)
     {
+        // Authorization (HIGH-5): only a party to the auction may submit counter
+        // terms — the listing owner, or an agent who has bid on the listing.
+        $auction = \App\Models\TenantAgentAuction::find($request->tanantId);
+        abort_unless(auth()->check() && $auction && (
+            (int) $auction->user_id === (int) auth()->id() ||
+            \App\Models\TenantAgentAuctionBid::where('tenant_agent_auction_id', $auction->id)->where('user_id', auth()->id())->exists()
+        ), 403);
+
         $counter = new TenantCounterTerm();
         $counter->tenant_auction_id = $request->tanantId;
         $counter->timeframe = $request->timeframe;
@@ -67,6 +75,12 @@ class TenantCounteredTermsController extends Controller
     public function update(Request $request, $id)
     {
         $counter = TenantCounterTerm::findOrFail($id);
+        // Authorization (HIGH-5): only the listing owner or a bidding agent may update.
+        $auction = \App\Models\TenantAgentAuction::find($counter->tenant_agent_auction_id);
+        abort_unless(auth()->check() && $auction && (
+            (int) $auction->user_id === (int) auth()->id() ||
+            \App\Models\TenantAgentAuctionBid::where('tenant_agent_auction_id', $auction->id)->where('user_id', auth()->id())->exists()
+        ), 403);
         // Update the attributes
         $propFeeOpt = '';
         $propFeeOther = '';

@@ -30,6 +30,14 @@ class CounteredTerms extends Controller
     }
     public function store(Request $request)
     {
+        // Authorization (HIGH-5): only a party to the auction may submit counter
+        // terms — the listing owner, or an agent who has bid on the listing.
+        $auction = \App\Models\BuyerAgentAuction::find($request->buyerId);
+        abort_unless(auth()->check() && $auction && (
+            (int) $auction->user_id === (int) auth()->id() ||
+            \App\Models\BuyerAgentAuctionBid::where('buyer_agent_auction_id', $auction->id)->where('user_id', auth()->id())->exists()
+        ), 403);
+
         $counter = new CounterTerm();
         $counter->buyer_auction_id = $request->buyerId;
         $counter->timeframe = $request->timeframe;
@@ -51,6 +59,12 @@ class CounteredTerms extends Controller
     {
         // dd($request->all());
         $counter = CounterTerm::findOrFail($id);
+        // Authorization (HIGH-5): only the listing owner or a bidding agent may update.
+        $auction = \App\Models\BuyerAgentAuction::find($counter->buyer_auction_id);
+        abort_unless(auth()->check() && $auction && (
+            (int) $auction->user_id === (int) auth()->id() ||
+            \App\Models\BuyerAgentAuctionBid::where('buyer_agent_auction_id', $auction->id)->where('user_id', auth()->id())->exists()
+        ), 403);
         $otherCom = '';
         $commissionOpt = '';
         if ($request->commission != 'Other') {
