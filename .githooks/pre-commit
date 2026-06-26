@@ -76,8 +76,10 @@ fi
 # filter or path prefix here — doing so would silently allow debug statements
 # through in any file outside those directories (e.g. tests/, routes/, etc.).
 
-# PHP debug patterns: dd( and var_dump( (Laravel helpers)
-PHP_DEBUG_PATTERN='dd\(|var_dump\('
+# PHP debug patterns: dd(, var_dump(, dump( (Laravel/Symfony helpers).
+# Anchored with \b so the matcher targets real calls and does not match the
+# "dd(" substring inside legitimate identifiers like ->add( / ->odd(.
+PHP_DEBUG_PATTERN='\bdd\(|\bvar_dump\(|\bdump\('
 
 # JS/TS/Vue/Svelte debug patterns: console.log( and debugger;
 JS_DEBUG_PATTERN='console\.log\(|debugger;'
