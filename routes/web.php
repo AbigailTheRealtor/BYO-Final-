@@ -306,10 +306,14 @@ Route::get('/renew_property_sale/{id}', [PropertyAuctionController::class, 'rene
 Route::get('/renew_buyer_criteria/{id}', [BuyerCriteriaAuctionBidController::class, 'renew']);
 Route::get('/renew_landloard_auction/{id}', [LandlordAuctionController::class, 'renew']);
 Route::get('/renew_tenant_criteria/{id}', [TenantCriteriaAuctionController::class, 'renew']);
-Route::post('renew_sale', [PropertyAuctionController::class, 'renew_save'])->name('renewBID');
-Route::post('renew_tenant', [TenantCriteriaAuctionController::class, 'renew_save'])->name('renewTenant');
-Route::post('renew_buyer', [BuyerCriteriaAuctionBidController::class, 'renew_save'])->name('renewBuyer');
-Route::post('renew_landloard', [LandlordAuctionController::class, 'renew_save'])->name('renewLandlord');
+// Phase 1 security remediation: listing renewal mutates listing dates and must
+// require authentication (ownership is enforced in each controller method).
+Route::middleware('auth')->group(function () {
+    Route::post('renew_sale', [PropertyAuctionController::class, 'renew_save'])->name('renewBID');
+    Route::post('renew_tenant', [TenantCriteriaAuctionController::class, 'renew_save'])->name('renewTenant');
+    Route::post('renew_buyer', [BuyerCriteriaAuctionBidController::class, 'renew_save'])->name('renewBuyer');
+    Route::post('renew_landloard', [LandlordAuctionController::class, 'renew_save'])->name('renewLandlord');
+});
 
 
 // general routes
@@ -374,7 +378,7 @@ Route::get('/search/agents', [SearchAgentController::class, 'search'])->name('se
 
 Route::get('/hire/agent/auction/view/{id}', [LandlordAgentAuctionController::class, 'view'])->name('landlord.agent.auction.view');
 Route::get('/hire/agent/auction/bid/view/{id}', [LandlordAgentAuctionBidController::class, 'view'])->name('landlord.agent.auction.bid.view');
-Route::post('/hire/agent/auction/end/{id}', [LandlordAgentAuctionController::class, 'endAuction'])->name('landlord.agent.auction.end');
+Route::post('/hire/agent/auction/end/{id}', [LandlordAgentAuctionController::class, 'endAuction'])->middleware('auth')->name('landlord.agent.auction.end');
 Route::get('/search/hire/landlord/agent/auctions', [LandlordAgentAuctionController::class, 'search'])->name('landlord.agent.auctions.search');
 
 Route::get('tenant/hire/agent/auction/view/{id}', [TenantAgentAuctionController::class, 'view'])->name('tenant.agent.auction.view');
@@ -386,11 +390,14 @@ Route::get('/tenant/criteria/auctions/search', [TenantCriteriaAuctionController:
 
 
 Route::get('/property/listing/view/{id}', [PropertyAuctionController::class, 'viewPropertyListing'])->name('view-pl');
-Route::post('/property/auction/end/{id}', [PropertyAuctionController::class, 'endAuction'])->name('property.auction.end');
+Route::post('/property/auction/end/{id}', [PropertyAuctionController::class, 'endAuction'])->middleware('auth')->name('property.auction.end');
 
-Route::get('property/counter/bid/{bid_id}/{auction_id}', [CounterBidController::class, 'addCounterBid'])->name('add-counterBiding');
-Route::post('/property/counter/bid/{bid_id}', [CounterBidController::class, 'store'])->name('counterBiding');
-Route::post('/seller/counter/bid', [SellerCounterBidController::class, 'store'])->name('sellerCounterBid');
+// Phase 1 security remediation: counter-bid endpoints must require authentication.
+Route::middleware('auth')->group(function () {
+    Route::get('property/counter/bid/{bid_id}/{auction_id}', [CounterBidController::class, 'addCounterBid'])->name('add-counterBiding');
+    Route::post('/property/counter/bid/{bid_id}', [CounterBidController::class, 'store'])->name('counterBiding');
+    Route::post('/seller/counter/bid', [SellerCounterBidController::class, 'store'])->name('sellerCounterBid');
+});
 
 // add new route for seller nisar
 Route::get('/how-it-works-for-sellers-details', function () {
@@ -457,8 +464,13 @@ Route::get('seller/service/auction/view/{id}', [SellerServiceAuctionController::
 Route::get('seller/service/auction/search', [SellerServiceAuctionController::class, 'search'])->name('seller.service.auction.search');
 Route::get("/landlord/auctions/search", [LandlordAuctionController::class, 'search_listing'])->name('agent.landlord.auctions.search');
 Route::get("/landlord/auction/view/{id}", [LandlordAuctionController::class, 'view'])->name('agent.landlord.auction');
-Route::get('/landlord/auction/bid/view/{id}', [LandlordAuctionController::class, 'viewBid'])->name('landlord.auction.bid.view');
-Route::post('/landlord/auction/end/{id}', [LandlordAuctionController::class, 'endAuction'])->name('landlord.auction.end');
+// Phase 1 security remediation: require authentication (these target the legacy
+// LandlordAuction subsystem whose tables no longer exist; auth prevents an
+// unauthenticated 500 and the controllers are slated for Phase 4 removal).
+Route::middleware('auth')->group(function () {
+    Route::get('/landlord/auction/bid/view/{id}', [LandlordAuctionController::class, 'viewBid'])->name('landlord.auction.bid.view');
+    Route::post('/landlord/auction/end/{id}', [LandlordAuctionController::class, 'endAuction'])->name('landlord.auction.end');
+});
 
 
 

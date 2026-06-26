@@ -59,6 +59,17 @@ class SellerCounterBidController extends Controller
     public function destroyCounter($id)
     {
         $counter = SellerAgentAuctionBid::findOrFail($id);
+
+        // Authorization (Phase 1): only a party to the auction may reject/delete
+        // this counter — the listing owner or the bidding agent. Prevents IDOR
+        // deletion of arbitrary bids by ID.
+        $auction = SellerAgentAuction::find($counter->seller_agent_auction_id);
+        $authorized = Auth::check() && $auction && (
+            (int) $auction->user_id === (int) Auth::id() ||
+            (int) $counter->user_id === (int) Auth::id()
+        );
+        abort_unless($authorized, 403);
+
         $counter->delete();
         return redirect()->back()->with('success', 'Counter Bid Has Been Rejected!');
     }

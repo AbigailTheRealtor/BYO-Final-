@@ -17,10 +17,15 @@ class AgentAuth
      */
     public function handle(Request $request, Closure $next)
     {
-        if (Auth::user()) {
-            if (in_array(Auth::user()->user_type, ["seller_agent", "buyer_agent"])) {
-                return redirect()->to(route('dashboard'));
-            }
+        // Agent-only routes. Authentication is enforced upstream by the `auth`
+        // middleware; this gate restricts access to the agent persona only.
+        // Canonical agent type is 'agent' (legacy 'seller_agent'/'buyer_agent'
+        // accounts were already excluded by the prior logic and remain excluded).
+        // Previously this only redirected two legacy agent types and let every
+        // other account (incl. consumers) through — an inverted check.
+        $user = Auth::user();
+        if (!$user || $user->user_type !== 'agent') {
+            return redirect()->to(route('dashboard'));
         }
         return $next($request);
     }

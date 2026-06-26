@@ -2389,7 +2389,7 @@ class TenantAgentAuctionEdit extends Component
             throw new \Exception("Invalid user_type: {$this->user_type}");
         }
 
-        $auction = $auctionClass::find($this->auctionId);
+        $auction = $auctionClass::where('user_id', Auth::id())->find($this->auctionId);
 
         // Fetch the auction object using the ID
         // $auction = HireTenantAgentAuction::find($this->auctionId);
@@ -2428,7 +2428,7 @@ class TenantAgentAuctionEdit extends Component
             throw new \Exception("Invalid user_type: {$this->user_type}");
         }
 
-        $auction = $auctionClass::find($this->auctionId);
+        $auction = $auctionClass::where('user_id', Auth::id())->find($this->auctionId);
         // Ensure the auction exists
         if ($auction) {
             // Delete the photo from storage if it exists
@@ -2498,8 +2498,12 @@ class TenantAgentAuctionEdit extends Component
             throw new \Exception("Invalid user_type: {$user_type}");
         }
 
+        // Authorization (Phase 1): scope the fetch to the authenticated owner so a
+        // user can only load a listing they own. Ownership is keyed on user_id —
+        // one consumer account owns all of its listing types (seller/buyer/
+        // landlord/tenant), so this enforces the existing model without changing it.
         $auction = $auctionId
-            ? $auctionClass::findOrFail($auctionId)
+            ? $auctionClass::where('user_id', Auth::id())->findOrFail($auctionId)
             : new $auctionClass();
 
         // $auction = HireTenantAgentAuction::findOrFail($auctionId);
@@ -3309,8 +3313,10 @@ class TenantAgentAuctionEdit extends Component
                 throw new \Exception("Invalid user_type: {$this->user_type}");
             }
 
+            // Authorization (Phase 1): scope the persist to the authenticated owner
+            // as defence-in-depth (mount already owner-scopes the load).
             $auction = $this->auctionId
-                ? $auctionClass::find($this->auctionId)
+                ? $auctionClass::where('user_id', Auth::id())->findOrFail($this->auctionId)
                 : new $auctionClass();
 
 

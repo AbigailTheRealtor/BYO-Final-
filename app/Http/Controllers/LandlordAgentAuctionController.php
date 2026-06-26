@@ -538,6 +538,8 @@ class LandlordAgentAuctionController extends Controller
     public function endAuction($id)
     {
         $auction = LandlordAgentAuction::findOrFail($id);
+        // Authorization (Phase 1): only the listing owner may end the auction.
+        abort_unless(auth()->check() && (int) $auction->user_id === (int) auth()->id(), 403);
         $auction->update(['auction_ended' => true]);
         return response()->json(['message' => 'Auction ended successfully']);
     }

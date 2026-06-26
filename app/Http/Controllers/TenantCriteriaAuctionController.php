@@ -721,7 +721,9 @@ class TenantCriteriaAuctionController extends Controller
     }
     public function renew_save(Request $request)
     {
-        $tenantCriteriaAuction = TenantCriteriaAuction::find($request->id);
+        // Authorization (Phase 1): only the listing owner may renew it.
+        $tenantCriteriaAuction = TenantCriteriaAuction::findOrFail($request->id);
+        abort_unless(auth()->check() && (int) $tenantCriteriaAuction->user_id === (int) auth()->id(), 403);
         $tenantCriteriaAuction->saveMeta('listing_date', $request->listing_date);
         $tenantCriteriaAuction->saveMeta('expiration_date', $request->expiration_date);
         return redirect('/tenant/criteria/auctions');

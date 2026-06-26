@@ -1512,6 +1512,8 @@ class PropertyAuctionController extends Controller
     public function endAuction($id)
     {
         $auction = PropertyAuction::findOrFail($id);
+        // Authorization (Phase 1): only the listing owner may end the auction.
+        abort_unless(auth()->check() && (int) $auction->user_id === (int) auth()->id(), 403);
         $auction->update(['auction_ended' => true]);
         return response()->json(['message' => 'Auction ended successfully']);
     }
@@ -1701,7 +1703,10 @@ class PropertyAuctionController extends Controller
     }
     public function renew_save(Request $request)
     {
-        PropertyAuction::whereId($request->id)->update([
+        // Authorization (Phase 1): only the listing owner may renew it.
+        $auction = PropertyAuction::findOrFail($request->id);
+        abort_unless(auth()->check() && (int) $auction->user_id === (int) auth()->id(), 403);
+        $auction->update([
             'listing_date' => $request->listing_date,
             'expiration_date' => $request->expiration_date,
         ]);

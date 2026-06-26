@@ -440,7 +440,9 @@ class BuyerCriteriaAuctionBidController extends Controller
     }
     public function renew_save(Request $request)
     {
-        $buyer_criteriaAuction = BuyerCriteriaAuction::find($request->id);
+        // Authorization (Phase 1): only the listing owner may renew it.
+        $buyer_criteriaAuction = BuyerCriteriaAuction::findOrFail($request->id);
+        abort_unless(auth()->check() && (int) $buyer_criteriaAuction->user_id === (int) auth()->id(), 403);
         $buyer_criteriaAuction->saveMeta('listing_date', $request->listing_date);
         $buyer_criteriaAuction->saveMeta('expiration_date', $request->expiration_date);
         return redirect()->route('buyer.criteria.auctions');
