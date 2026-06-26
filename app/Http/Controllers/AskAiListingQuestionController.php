@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\AskAi\AskAiRunnerV2Service;
 use App\Services\AskAi\AskAiRateLimitService;
@@ -11,6 +13,27 @@ use App\Services\AskAi\AskAiUsageLoggerService;
 
 class AskAiListingQuestionController extends Controller
 {
+    /**
+     * Canonical-or-aliased listing_type → the auctions table that stores it.
+     * The AskAi engine serves ONLY these private consumer offer-listings (it has
+     * no public MLS/Bridge support), so every request is authorized against the
+     * listing's user_id ownership column before the runner is invoked.
+     */
+    private const OWNER_TABLES = [
+        'seller'                  => 'seller_agent_auctions',
+        'seller_agent_auction'    => 'seller_agent_auctions',
+        'property_auction'        => 'seller_agent_auctions',
+        'buyer'                   => 'buyer_agent_auctions',
+        'buyer_agent_auction'     => 'buyer_agent_auctions',
+        'buyer_criteria_auction'  => 'buyer_agent_auctions',
+        'landlord'                => 'landlord_agent_auctions',
+        'landlord_agent_auction'  => 'landlord_agent_auctions',
+        'landlord_auction'        => 'landlord_agent_auctions',
+        'tenant'                  => 'tenant_agent_auctions',
+        'tenant_agent_auction'    => 'tenant_agent_auctions',
+        'tenant_criteria_auction' => 'tenant_agent_auctions',
+    ];
+
     private AskAiRunnerV2Service $runner;
     private AskAiUsageLoggerService $logger;
     private AskAiRateLimitService $rateLimiter;
@@ -39,6 +62,22 @@ class AskAiListingQuestionController extends Controller
         $listingId    = (int) $validated['listing_id'];
         $question     = $validated['question'];
         $questionHash = hash('sha256', $question);
+
+        // Object-level authorization: the requester may only ask about a listing
+        // they own. Closes the unauthenticated-IDOR + restricted-field exposure
+        // on this endpoint. Unknown listing types are denied.
+        if (! $this->ownsListing(Auth::id(), $listingType, $listingId)) {
+            return response()->json([
+                'success'             => false,
+                'status'              => 'forbidden',
+                'answer'              => null,
+                'refusal_message'     => null,
+                'disclosures'         => null,
+                'source_attribution'  => null,
+                'error'               => 'You can only ask questions about your own listing.',
+                'follow_up_questions' => [],
+            ], 403);
+        }
 
         $rateLimitResult = $this->rateLimiter->check($request, $listingType, $listingId);
         if ($rateLimitResult !== null) {
@@ -209,5 +248,26 @@ class AskAiListingQuestionController extends Controller
                 'follow_up_questions' => [],
             ]);
         }
+    }
+
+    /**
+     * True only when the given user owns the (type, id) offer listing. Unknown
+     * listing types and guests are denied.
+     */
+    private function ownsListing(?int $userId, string $listingType, int $listingId): bool
+    {
+        if (! $userId) {
+            return false;
+        }
+
+        $table = self::OWNER_TABLES[strtolower($listingType)] ?? null;
+        if ($table === null) {
+            return false;
+        }
+
+        return DB::table($table)
+            ->where('id', $listingId)
+            ->where('user_id', $userId)
+            ->exists();
     }
 }

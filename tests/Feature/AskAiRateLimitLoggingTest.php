@@ -5,11 +5,22 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\AskAiUsageLog;
+use App\Models\SellerAgentAuction;
+use App\Http\Middleware\VerifyCsrfToken;
 use App\Services\AskAi\AskAiRunnerV2Service;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 
+/**
+ * Rate-limit usage-logging coverage for the Ask AI listing-question endpoint.
+ *
+ * The endpoint is authenticated + owner-scoped (see AskAiRateLimiterTest header).
+ * A rate_limited usage-log row is therefore only produced for an authenticated
+ * owner whose request passes auth + ownership and then trips a rate-limit tier.
+ * The guest tier is unreachable via this route (guests get 401 with no log).
+ */
 class AskAiRateLimitLoggingTest extends TestCase
 {
     use DatabaseTransactions;
@@ -18,9 +29,19 @@ class AskAiRateLimitLoggingTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
+        $this->withoutMiddleware([ThrottleRequests::class, VerifyCsrfToken::class]);
     }
 
-    private function payload(int $listingId = 1, string $listingType = 'seller'): array
+    private function ownedListingId(User $user): int
+    {
+        return SellerAgentAuction::forceCreate([
+            'user_id'  => $user->id,
+            'title'    => 'Owned listing',
+            'is_draft' => true,
+        ])->id;
+    }
+
+    private function payload(int $listingId, string $listingType = 'seller'): array
     {
         return [
             'listing_type' => $listingType,
@@ -59,7 +80,7 @@ class AskAiRateLimitLoggingTest extends TestCase
         ];
     }
 
-    private function assertRateLimitedLogRow(string $limitType, int $listingId = 1, string $listingType = 'seller'): void
+    private function assertRateLimitedLogRow(string $limitType, int $listingId, string $listingType = 'seller'): void
     {
         $log = AskAiUsageLog::where('status', 'rate_limited')
             ->where('error_code', $limitType)
@@ -82,26 +103,22 @@ class AskAiRateLimitLoggingTest extends TestCase
     }
 
     /**
-     * (1) guest_ip_hourly: 5 pre-seeded hits trigger the limit; logs a rate_limited row.
+     * (1) Unauthenticated requests are rejected before rate limiting and produce
+     *     no rate_limited usage-log row (the guest tier is unreachable here).
      */
-    public function test_guest_ip_hourly_logs_rate_limited_row(): void
+    public function test_unauthenticated_request_is_not_rate_limited_or_logged(): void
     {
         $this->mockRunnerNeverCalled();
 
-        $hashedIp = hash('sha256', '127.0.0.1');
-        for ($i = 0; $i < 5; $i++) {
-            RateLimiter::hit("ask_ai:guest:{$hashedIp}:hourly", 3600);
-        }
+        $countBefore = AskAiUsageLog::where('status', 'rate_limited')->count();
 
-        $countBefore = AskAiUsageLog::count();
+        $this->postJson('/ask-ai/listing-question', $this->payload(1))
+             ->assertUnauthorized();
 
-        $response = $this->postJson('/ask-ai/listing-question', $this->payload(1001));
-
-        $response->assertStatus(429)
-            ->assertJson(['error' => ['limit_type' => 'guest_ip_hourly']]);
-
-        $this->assertSame($countBefore + 1, AskAiUsageLog::count());
-        $this->assertRateLimitedLogRow('guest_ip_hourly', 1001);
+        $this->assertSame(
+            $countBefore,
+            AskAiUsageLog::where('status', 'rate_limited')->count()
+        );
     }
 
     /**
@@ -111,7 +128,8 @@ class AskAiRateLimitLoggingTest extends TestCase
     {
         $this->mockRunnerNeverCalled();
 
-        $user = User::factory()->create(['user_type' => 'buyer']);
+        $user      = User::factory()->create(['user_type' => 'buyer']);
+        $listingId = $this->ownedListingId($user);
 
         for ($i = 0; $i < 20; $i++) {
             RateLimiter::hit("ask_ai:user:{$user->id}:hourly", 3600);
@@ -120,7 +138,7 @@ class AskAiRateLimitLoggingTest extends TestCase
         $countBefore = AskAiUsageLog::count();
 
         $response = $this->actingAs($user)
-            ->postJson('/ask-ai/listing-question', $this->payload(2001));
+            ->postJson('/ask-ai/listing-question', $this->payload($listingId));
 
         $response->assertStatus(429)
             ->assertJson(['error' => ['limit_type' => 'user_hourly']]);
@@ -145,12 +163,14 @@ class AskAiRateLimitLoggingTest extends TestCase
 
     /**
      * (3) admin_daily: 100 pre-seeded hits trigger the limit; logs a rate_limited row.
+     *     (The admin owns the listing so the request passes the ownership gate.)
      */
     public function test_admin_daily_logs_rate_limited_row(): void
     {
         $this->mockRunnerNeverCalled();
 
-        $admin = User::factory()->create(['user_type' => 'admin']);
+        $admin     = User::factory()->create(['user_type' => 'admin']);
+        $listingId = $this->ownedListingId($admin);
 
         for ($i = 0; $i < 100; $i++) {
             RateLimiter::hit("ask_ai:admin:{$admin->id}:daily", 86400);
@@ -159,7 +179,7 @@ class AskAiRateLimitLoggingTest extends TestCase
         $countBefore = AskAiUsageLog::count();
 
         $response = $this->actingAs($admin)
-            ->postJson('/ask-ai/listing-question', $this->payload(3001));
+            ->postJson('/ask-ai/listing-question', $this->payload($listingId));
 
         $response->assertStatus(429)
             ->assertJson(['error' => ['limit_type' => 'admin_daily']]);
@@ -188,6 +208,9 @@ class AskAiRateLimitLoggingTest extends TestCase
     {
         $this->mockRunnerNeverCalled();
 
+        $user      = User::factory()->create(['user_type' => 'buyer']);
+        $listingId = $this->ownedListingId($user);
+
         $hashedIp = hash('sha256', '127.0.0.1');
         for ($i = 0; $i < 30; $i++) {
             RateLimiter::hit("ask_ai:ip:{$hashedIp}:hourly", 3600);
@@ -195,13 +218,14 @@ class AskAiRateLimitLoggingTest extends TestCase
 
         $countBefore = AskAiUsageLog::count();
 
-        $response = $this->postJson('/ask-ai/listing-question', $this->payload(4001));
+        $response = $this->actingAs($user)
+            ->postJson('/ask-ai/listing-question', $this->payload($listingId));
 
         $response->assertStatus(429)
             ->assertJson(['error' => ['limit_type' => 'ip_shared_hourly']]);
 
         $this->assertSame($countBefore + 1, AskAiUsageLog::count());
-        $this->assertRateLimitedLogRow('ip_shared_hourly', 4001);
+        $this->assertRateLimitedLogRow('ip_shared_hourly', $listingId);
     }
 
     /**
@@ -213,8 +237,9 @@ class AskAiRateLimitLoggingTest extends TestCase
     {
         $this->mockRunnerNeverCalled();
 
+        $user        = User::factory()->create(['user_type' => 'buyer']);
+        $listingId   = $this->ownedListingId($user);
         $listingType = 'seller';
-        $listingId   = 5001;
 
         for ($i = 0; $i < 10; $i++) {
             RateLimiter::hit("ask_ai:listing:{$listingType}:{$listingId}:hourly", 3600);
@@ -222,7 +247,8 @@ class AskAiRateLimitLoggingTest extends TestCase
 
         $countBefore = AskAiUsageLog::count();
 
-        $response = $this->postJson('/ask-ai/listing-question', $this->payload($listingId, $listingType));
+        $response = $this->actingAs($user)
+            ->postJson('/ask-ai/listing-question', $this->payload($listingId, $listingType));
 
         $response->assertStatus(429)
             ->assertJson(['error' => ['limit_type' => 'listing_hourly']]);
@@ -238,12 +264,15 @@ class AskAiRateLimitLoggingTest extends TestCase
     {
         $this->mockRunnerNeverCalled();
 
-        $hashedIp = hash('sha256', '127.0.0.1');
-        for ($i = 0; $i < 5; $i++) {
-            RateLimiter::hit("ask_ai:guest:{$hashedIp}:hourly", 3600);
+        $user      = User::factory()->create(['user_type' => 'buyer']);
+        $listingId = $this->ownedListingId($user);
+
+        for ($i = 0; $i < 10; $i++) {
+            RateLimiter::hit("ask_ai:listing:seller:{$listingId}:hourly", 3600);
         }
 
-        $response = $this->postJson('/ask-ai/listing-question', $this->payload(6001));
+        $response = $this->actingAs($user)
+            ->postJson('/ask-ai/listing-question', $this->payload($listingId));
         $response->assertStatus(429);
 
         $data = $response->json();
@@ -272,9 +301,13 @@ class AskAiRateLimitLoggingTest extends TestCase
         $mock->method('run')->willReturn($this->makeReadyResult());
         $this->app->instance(AskAiRunnerV2Service::class, $mock);
 
+        $user      = User::factory()->create(['user_type' => 'buyer']);
+        $listingId = $this->ownedListingId($user);
+
         $countBefore = AskAiUsageLog::where('status', 'rate_limited')->count();
 
-        $this->postJson('/ask-ai/listing-question', $this->payload(7001))
+        $this->actingAs($user)
+            ->postJson('/ask-ai/listing-question', $this->payload($listingId))
             ->assertOk();
 
         $this->assertSame(
@@ -294,14 +327,17 @@ class AskAiRateLimitLoggingTest extends TestCase
         $loggerMock->method('logListingQuestion')->willThrowException(new \RuntimeException('DB is down'));
         $this->app->instance(\App\Services\AskAi\AskAiUsageLoggerService::class, $loggerMock);
 
-        $hashedIp = hash('sha256', '127.0.0.1');
-        for ($i = 0; $i < 5; $i++) {
-            RateLimiter::hit("ask_ai:guest:{$hashedIp}:hourly", 3600);
+        $user      = User::factory()->create(['user_type' => 'buyer']);
+        $listingId = $this->ownedListingId($user);
+
+        for ($i = 0; $i < 10; $i++) {
+            RateLimiter::hit("ask_ai:listing:seller:{$listingId}:hourly", 3600);
         }
 
-        $response = $this->postJson('/ask-ai/listing-question', $this->payload(8001));
+        $response = $this->actingAs($user)
+            ->postJson('/ask-ai/listing-question', $this->payload($listingId));
 
         $response->assertStatus(429)
-            ->assertJson(['error' => ['limit_type' => 'guest_ip_hourly']]);
+            ->assertJson(['error' => ['limit_type' => 'listing_hourly']]);
     }
 }

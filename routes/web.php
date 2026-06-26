@@ -259,8 +259,11 @@ Route::get('/widget/hire/{agentShortId}/{role}/{propertyType?}', [\App\Http\Cont
     ->where('agentShortId', '[0-9a-f]+')
     ->name('hire.agent.widget');
 
-// Ask AI — public listing question endpoint. No auth required. CSRF-protected.
+// Ask AI — listing question endpoint. Authenticated; the controller answers
+// only about a listing the requester OWNS (the AskAi engine serves private
+// consumer offer-listings, not public MLS data). CSRF + edge throttle.
 Route::post('/ask-ai/listing-question', [\App\Http\Controllers\AskAiListingQuestionController::class, 'run'])
+    ->middleware(['auth', 'throttle:ask-ai-api'])
     ->name('ask-ai.listing-question');
 
 // Ask AI — channel-agnostic canonical API endpoint (web channel).

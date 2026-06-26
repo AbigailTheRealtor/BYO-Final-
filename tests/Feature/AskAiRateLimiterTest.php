@@ -3,12 +3,27 @@
 namespace Tests\Feature;
 
 use Tests\TestCase;
+use App\Models\SellerAgentAuction;
 use App\Models\User;
+use App\Http\Middleware\VerifyCsrfToken;
 use App\Services\AskAi\AskAiRunnerV2Service;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 
+/**
+ * Rate-limiter coverage for the Ask AI listing-question endpoint.
+ *
+ * NOTE: the endpoint is now authenticated and owner-scoped (the AskAi engine
+ * serves private consumer offer-listings, not public MLS data). Consequently:
+ *   - the guest rate-limit tier is unreachable via this route — guests are
+ *     rejected by the auth middleware (401) before any rate limiting; and
+ *   - the per-listing counter can only be incremented by the listing's owner,
+ *     so the per-listing cap is exercised by a single owning account.
+ * The user-hourly, shared-IP, per-listing, and 429-shape behaviours remain and
+ * are exercised below with authenticated owners of the targeted listings.
+ */
 class AskAiRateLimiterTest extends TestCase
 {
     use DatabaseTransactions;
@@ -17,6 +32,9 @@ class AskAiRateLimiterTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
+        // Exercise the controller's AskAiRateLimitService, not the edge throttle;
+        // CSRF uses the blade token in production. Auth middleware stays active.
+        $this->withoutMiddleware([ThrottleRequests::class, VerifyCsrfToken::class]);
     }
 
     private function makeReadyResult(): array
@@ -50,7 +68,21 @@ class AskAiRateLimiterTest extends TestCase
         return $mock;
     }
 
-    private function payload(int $listingId = 1): array
+    /** Create $count seller listings owned by $user; returns their ids. */
+    private function ownedListings(User $user, int $count): array
+    {
+        $ids = [];
+        for ($i = 0; $i < $count; $i++) {
+            $ids[] = SellerAgentAuction::forceCreate([
+                'user_id'  => $user->id,
+                'title'    => 'Owned listing',
+                'is_draft' => true,
+            ])->id;
+        }
+        return $ids;
+    }
+
+    private function payload(int $listingId): array
     {
         return [
             'listing_type' => 'seller',
@@ -60,55 +92,47 @@ class AskAiRateLimiterTest extends TestCase
     }
 
     /**
-     * (a) Guest IP hourly limit blocks on the 6th request.
-     *
-     * Listing IDs 5001-5005 are used (one per request) so the per-listing
-     * limit (10/hr) is never reached within this test.
+     * (a) Unauthenticated requests are rejected by auth before any rate limiting
+     *     (the guest rate-limit tier is unreachable via this route).
      */
-    public function test_guest_ip_hourly_limit_blocks_on_sixth_request(): void
+    public function test_unauthenticated_request_is_rejected(): void
     {
-        $this->mockRunner();
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->expects($this->never())->method('run');
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
 
-        for ($i = 0; $i < 5; $i++) {
-            $this->postJson('/ask-ai/listing-question', $this->payload(5001 + $i))
-                 ->assertOk();
-        }
-
-        $this->postJson('/ask-ai/listing-question', $this->payload(5099))
-             ->assertStatus(429)
-             ->assertJson(['error' => ['limit_type' => 'guest_ip_hourly']]);
+        $this->postJson('/ask-ai/listing-question', $this->payload(1))
+             ->assertUnauthorized();
     }
 
     /**
      * (b) Logged-in user hourly limit blocks on the 21st request.
-     *
-     * Each of the 20 allowed requests targets a distinct listing ID so the
-     * per-listing cap (10/hr) is never hit before the user cap (20/hr).
-     * The shared-IP cap (30/hr) also stays under its limit (20 < 30).
+     *     Each allowed request targets a distinct OWNED listing so the per-listing
+     *     cap (10/hr) is never hit before the user cap (20/hr); the shared-IP cap
+     *     (30/hr) also stays under its limit (20 < 30).
      */
     public function test_user_hourly_limit_blocks_on_21st_request(): void
     {
         $this->mockRunner();
         $user = User::factory()->create(['user_type' => 'buyer']);
+        $ids  = $this->ownedListings($user, 21);
 
         for ($i = 0; $i < 20; $i++) {
             $this->actingAs($user)
-                 ->postJson('/ask-ai/listing-question', $this->payload(6001 + $i))
+                 ->postJson('/ask-ai/listing-question', $this->payload($ids[$i]))
                  ->assertOk();
         }
 
         $this->actingAs($user)
-             ->postJson('/ask-ai/listing-question', $this->payload(6099))
+             ->postJson('/ask-ai/listing-question', $this->payload($ids[20]))
              ->assertStatus(429)
              ->assertJson(['error' => ['limit_type' => 'user_hourly']]);
     }
 
     /**
-     * (c) Shared IP hourly limit blocks on the 31st across mixed guest/auth requests.
-     *
-     * Two users each make 15 requests, all to distinct listing IDs so neither
-     * the per-listing cap nor the per-user cap (20/hr) fires first.
-     * After 30 total requests from the same IP the shared-IP cap (30/hr) fires.
+     * (c) Shared IP hourly limit blocks on the 31st across two users on one IP.
+     *     Each user targets distinct OWNED listings so neither the per-listing nor
+     *     the per-user (20/hr) cap fires first.
      */
     public function test_shared_ip_hourly_limit_blocks_on_31st_mixed_request(): void
     {
@@ -116,61 +140,53 @@ class AskAiRateLimiterTest extends TestCase
 
         $userA = User::factory()->create(['user_type' => 'buyer']);
         $userB = User::factory()->create(['user_type' => 'buyer']);
+        $idsA  = $this->ownedListings($userA, 15);
+        $idsB  = $this->ownedListings($userB, 16);
 
-        // User A: 15 requests, each to a unique listing (shared IP = 15)
         for ($i = 0; $i < 15; $i++) {
             $this->actingAs($userA)
-                 ->postJson('/ask-ai/listing-question', $this->payload(7001 + $i))
+                 ->postJson('/ask-ai/listing-question', $this->payload($idsA[$i]))
                  ->assertOk();
         }
-
-        // User B: 15 requests, each to a unique listing (shared IP = 30)
         for ($i = 0; $i < 15; $i++) {
             $this->actingAs($userB)
-                 ->postJson('/ask-ai/listing-question', $this->payload(7101 + $i))
+                 ->postJson('/ask-ai/listing-question', $this->payload($idsB[$i]))
                  ->assertOk();
         }
 
-        // 31st request from the same IP — shared IP cap fires
+        // 31st request from the same IP — shared IP cap fires.
         $this->actingAs($userB)
-             ->postJson('/ask-ai/listing-question', $this->payload(7999))
+             ->postJson('/ask-ai/listing-question', $this->payload($idsB[15]))
              ->assertStatus(429)
              ->assertJson(['error' => ['limit_type' => 'ip_shared_hourly']]);
     }
 
     /**
-     * (d) Per-listing hourly limit blocks on the 11th request regardless of requester identity.
-     *
-     * Two different users contribute to the same listing counter, proving
-     * the cap is listing-scoped, not identity-scoped.
+     * (d) Per-listing hourly limit blocks on the 11th request to one listing.
+     *     Under owner-scoping only the owner can hit their own listing, so the
+     *     cap is exercised by the single owning account.
      */
     public function test_listing_hourly_limit_blocks_on_11th_request(): void
     {
         $this->mockRunner();
 
-        $userA = User::factory()->create(['user_type' => 'buyer']);
-        $userB = User::factory()->create(['user_type' => 'buyer']);
+        $owner     = User::factory()->create(['user_type' => 'buyer']);
+        $listingId = $this->ownedListings($owner, 1)[0];
 
-        for ($i = 0; $i < 5; $i++) {
-            $this->actingAs($userA)
-                 ->postJson('/ask-ai/listing-question', $this->payload(8001))
-                 ->assertOk();
-        }
-        for ($i = 0; $i < 5; $i++) {
-            $this->actingAs($userB)
-                 ->postJson('/ask-ai/listing-question', $this->payload(8001))
+        for ($i = 0; $i < 10; $i++) {
+            $this->actingAs($owner)
+                 ->postJson('/ask-ai/listing-question', $this->payload($listingId))
                  ->assertOk();
         }
 
-        // 11th request to listing 8001 — per-listing cap fires regardless of who asks
-        $this->actingAs($userA)
-             ->postJson('/ask-ai/listing-question', $this->payload(8001))
+        $this->actingAs($owner)
+             ->postJson('/ask-ai/listing-question', $this->payload($listingId))
              ->assertStatus(429)
              ->assertJson(['error' => ['limit_type' => 'listing_hourly']]);
     }
 
     /**
-     * (e) A request under all limits returns 200 and the runner is called exactly once.
+     * (e) A request under all limits returns 200 and the runner is called once.
      */
     public function test_request_under_all_limits_returns_200(): void
     {
@@ -178,12 +194,17 @@ class AskAiRateLimiterTest extends TestCase
         $mock->expects($this->once())->method('run')->willReturn($this->makeReadyResult());
         $this->app->instance(AskAiRunnerV2Service::class, $mock);
 
-        $this->postJson('/ask-ai/listing-question', $this->payload(9001))
+        $owner     = User::factory()->create(['user_type' => 'buyer']);
+        $listingId = $this->ownedListings($owner, 1)[0];
+
+        $this->actingAs($owner)
+             ->postJson('/ask-ai/listing-question', $this->payload($listingId))
              ->assertOk();
     }
 
     /**
      * (f) The runner is never called when a limit is exceeded.
+     *     Pre-seed the per-listing counter for an owned listing to its max.
      */
     public function test_runner_never_called_when_limit_exceeded(): void
     {
@@ -191,13 +212,15 @@ class AskAiRateLimiterTest extends TestCase
         $mock->expects($this->never())->method('run');
         $this->app->instance(AskAiRunnerV2Service::class, $mock);
 
-        // Pre-seed the guest IP counter to its maximum without going through HTTP
-        $hashedIp = hash('sha256', '127.0.0.1');
-        for ($i = 0; $i < 5; $i++) {
-            RateLimiter::hit("ask_ai:guest:{$hashedIp}:hourly", 3600);
+        $owner     = User::factory()->create(['user_type' => 'buyer']);
+        $listingId = $this->ownedListings($owner, 1)[0];
+
+        for ($i = 0; $i < 10; $i++) {
+            RateLimiter::hit("ask_ai:listing:seller:{$listingId}:hourly", 3600);
         }
 
-        $this->postJson('/ask-ai/listing-question', $this->payload(9002))
+        $this->actingAs($owner)
+             ->postJson('/ask-ai/listing-question', $this->payload($listingId))
              ->assertStatus(429);
     }
 
@@ -209,12 +232,15 @@ class AskAiRateLimiterTest extends TestCase
     {
         $this->mockRunner();
 
-        $hashedIp = hash('sha256', '127.0.0.1');
-        for ($i = 0; $i < 5; $i++) {
-            RateLimiter::hit("ask_ai:guest:{$hashedIp}:hourly", 3600);
+        $owner     = User::factory()->create(['user_type' => 'buyer']);
+        $listingId = $this->ownedListings($owner, 1)[0];
+
+        for ($i = 0; $i < 10; $i++) {
+            RateLimiter::hit("ask_ai:listing:seller:{$listingId}:hourly", 3600);
         }
 
-        $response = $this->postJson('/ask-ai/listing-question', $this->payload(9003));
+        $response = $this->actingAs($owner)
+             ->postJson('/ask-ai/listing-question', $this->payload($listingId));
         $response->assertStatus(429);
 
         $data = $response->json();

@@ -4,11 +4,57 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use App\Services\AskAi\AskAiRunnerV2Service;
+use App\Models\BuyerAgentAuction;
+use App\Models\LandlordAgentAuction;
+use App\Models\SellerAgentAuction;
+use App\Models\TenantAgentAuction;
+use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Routing\Middleware\ThrottleRequests;
+use App\Http\Middleware\VerifyCsrfToken;
 
 class AskAiListingQuestionTest extends TestCase
 {
     use WithFaker;
+    use DatabaseTransactions;
+
+    private User $user;
+    private int $sellerId;
+    private int $buyerId;
+    private int $landlordId;
+    private int $tenantId;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The endpoint is now authenticated and answers only about a listing the
+        // requester OWNS. Seed one owned auction per type (auto-increment ids, so
+        // they never collide with existing data) and reference those ids below.
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+
+        // Avoid edge-throttle flakiness across the many requests in this suite;
+        // the controller's own rate limiter and the auth middleware remain active.
+        // CSRF is disabled for the test harness (production uses the blade @csrf
+        // token); the new auth middleware stays active so 401 coverage holds.
+        $this->withoutMiddleware([ThrottleRequests::class, VerifyCsrfToken::class]);
+
+        $this->sellerId   = $this->ownedAuctionId(SellerAgentAuction::class);
+        $this->buyerId    = $this->ownedAuctionId(BuyerAgentAuction::class);
+        $this->landlordId = $this->ownedAuctionId(LandlordAgentAuction::class);
+        $this->tenantId   = $this->ownedAuctionId(TenantAgentAuction::class);
+    }
+
+    private function ownedAuctionId(string $modelClass): int
+    {
+        return $modelClass::forceCreate([
+            'user_id'  => $this->user->id,
+            'title'    => 'Owned listing',
+            'is_draft' => true,
+        ])->id;
+    }
 
     private function makeReadyResult(array $overrides = []): array
     {
@@ -85,14 +131,14 @@ class AskAiListingQuestionTest extends TestCase
         $mock = $this->createMock(AskAiRunnerV2Service::class);
         $mock->expects($this->once())
             ->method('run')
-            ->with('seller', 42, 'What are the HOA fees?', [])
+            ->with('seller', $this->sellerId, 'What are the HOA fees?', [])
             ->willReturn($this->makeReadyResult());
 
         $this->app->instance(AskAiRunnerV2Service::class, $mock);
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'seller',
-            'listing_id'   => 42,
+            'listing_id'   => $this->sellerId,
             'question'     => 'What are the HOA fees?',
         ]);
 
@@ -113,7 +159,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'buyer',
-            'listing_id'   => 1,
+            'listing_id'   => $this->buyerId,
             'question'     => 'What is the max budget?',
         ]);
 
@@ -138,7 +184,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'landlord',
-            'listing_id'   => 7,
+            'listing_id'   => $this->landlordId,
             'question'     => 'Are pets allowed?',
         ]);
 
@@ -163,7 +209,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'seller',
-            'listing_id'   => 1,
+            'listing_id'   => $this->sellerId,
             'question'     => 'What are the key features?',
         ]);
 
@@ -187,7 +233,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'seller',
-            'listing_id'   => 5,
+            'listing_id'   => $this->sellerId,
             'question'     => 'What are the standout features?',
         ]);
 
@@ -217,7 +263,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'tenant',
-            'listing_id'   => 5,
+            'listing_id'   => $this->tenantId,
             'question'     => 'Is the owner of this property a minority?',
         ]);
 
@@ -246,7 +292,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'seller',
-            'listing_id'   => 3,
+            'listing_id'   => $this->sellerId,
             'question'     => 'What is the price?',
         ]);
 
@@ -277,7 +323,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'seller',
-            'listing_id'   => 1,
+            'listing_id'   => $this->sellerId,
         ]);
 
         $response->assertUnprocessable()
@@ -313,7 +359,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'seller',
-            'listing_id'   => 1,
+            'listing_id'   => $this->sellerId,
             'question'     => str_repeat('a', 1001),
         ]);
 
@@ -346,7 +392,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'seller',
-            'listing_id'   => 1,
+            'listing_id'   => $this->sellerId,
             'question'     => 'What is the seller\'s SSN?',
         ]);
 
@@ -390,7 +436,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'landlord',
-            'listing_id'   => 9,
+            'listing_id'   => $this->landlordId,
             'question'     => 'What is the exact square footage of the garage?',
         ]);
 
@@ -446,7 +492,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'seller',
-            'listing_id'   => 1,
+            'listing_id'   => $this->sellerId,
             'question'     => 'What makes this property stand out?',
         ]);
 
@@ -499,7 +545,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'seller',
-            'listing_id'   => 1,
+            'listing_id'   => $this->sellerId,
             'question'     => 'What is the listing price?',
         ]);
 
@@ -524,7 +570,7 @@ class AskAiListingQuestionTest extends TestCase
 
         $response = $this->postJson('/ask-ai/listing-question', [
             'listing_type' => 'seller',
-            'listing_id'   => 1,
+            'listing_id'   => $this->sellerId,
             'question'     => 'Any question?',
         ]);
 
@@ -540,5 +586,72 @@ class AskAiListingQuestionTest extends TestCase
         $this->assertArrayHasKey('follow_up_questions', $data);
         $this->assertIsArray($data['follow_up_questions']);
         $this->assertEmpty($data['follow_up_questions'], 'exception path must return empty follow_up_questions');
+    }
+
+    // ── C2 — authentication & object-level authorization ──────────────────────
+
+    /**
+     * (C2) Unauthenticated requests are rejected (route is behind auth).
+     */
+    public function test_unauthenticated_request_is_rejected(): void
+    {
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->expects($this->never())->method('run');
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
+
+        auth()->logout();
+
+        $response = $this->postJson('/ask-ai/listing-question', [
+            'listing_type' => 'seller',
+            'listing_id'   => $this->sellerId,
+            'question'     => 'What are the HOA fees?',
+        ]);
+
+        $response->assertUnauthorized(); // 401
+    }
+
+    /**
+     * (C2) An authenticated user cannot ask about a listing they do not own.
+     */
+    public function test_non_owner_is_forbidden(): void
+    {
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->expects($this->never())->method('run');
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
+
+        // A listing owned by a DIFFERENT user — the acting user must not reach it.
+        $victim = User::factory()->create();
+        $victimListingId = SellerAgentAuction::forceCreate([
+            'user_id'  => $victim->id,
+            'title'    => 'Victim listing',
+            'is_draft' => true,
+        ])->id;
+
+        $response = $this->postJson('/ask-ai/listing-question', [
+            'listing_type' => 'seller',
+            'listing_id'   => $victimListingId,
+            'question'     => 'What is the income requirement?',
+        ]);
+
+        $response->assertForbidden(); // 403
+        $this->assertSame('forbidden', $response->json('status'));
+    }
+
+    /**
+     * (C2) An unknown / unsupported listing type is denied (no MLS support exists).
+     */
+    public function test_unknown_listing_type_is_forbidden(): void
+    {
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->expects($this->never())->method('run');
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
+
+        $response = $this->postJson('/ask-ai/listing-question', [
+            'listing_type' => 'bridge',
+            'listing_id'   => 1,
+            'question'     => 'Tell me about this MLS property.',
+        ]);
+
+        $response->assertForbidden(); // 403
     }
 }

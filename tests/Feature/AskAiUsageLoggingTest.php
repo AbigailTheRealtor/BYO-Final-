@@ -4,13 +4,36 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use App\Models\AskAiUsageLog;
+use App\Models\SellerAgentAuction;
+use App\Models\User;
+use App\Http\Middleware\VerifyCsrfToken;
 use App\Services\AskAi\AskAiRunnerV2Service;
 use App\Services\AskAi\AskAiUsageLoggerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 
 class AskAiUsageLoggingTest extends TestCase
 {
     use RefreshDatabase;
+
+    private int $listingId;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Endpoint is authenticated + owner-scoped: act as the owner of the
+        // seller listing the requests target.
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $this->withoutMiddleware([ThrottleRequests::class, VerifyCsrfToken::class]);
+
+        $this->listingId = SellerAgentAuction::forceCreate([
+            'user_id'  => $user->id,
+            'title'    => 'Owned listing',
+            'is_draft' => true,
+        ])->id;
+    }
 
     private function makeReadyResult(array $overrides = []): array
     {
@@ -77,7 +100,7 @@ class AskAiUsageLoggingTest extends TestCase
     {
         return $this->postJson('/ask-ai/listing-question', array_merge([
             'listing_type' => 'seller',
-            'listing_id'   => 42,
+            'listing_id'   => $this->listingId,
             'question'     => 'What are the HOA fees?',
         ], $overrides));
     }
@@ -100,7 +123,7 @@ class AskAiUsageLoggingTest extends TestCase
 
         $log = AskAiUsageLog::latest('id')->first();
         $this->assertSame('seller', $log->listing_type);
-        $this->assertSame(42, (int) $log->listing_id);
+        $this->assertSame($this->listingId, (int) $log->listing_id);
         $this->assertSame('ready', $log->status);
         $this->assertTrue((bool) $log->success);
         $this->assertSame('gpt-4o', $log->model);
