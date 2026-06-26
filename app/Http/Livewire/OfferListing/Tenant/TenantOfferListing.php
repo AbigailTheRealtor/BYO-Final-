@@ -23,10 +23,12 @@ use App\Models\UsCity;
 use App\Support\TenantServicesCatalog;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Services\WizardEventService;
+use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
 class TenantOfferListing extends Component
 {
     use WithFileUploads, HasMlsImport;
+    use ResolvesOwnedAuction;
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
@@ -1582,6 +1584,31 @@ class TenantOfferListing extends Component
     }
 
     // Methods
+    /**
+     * Resolves the auction model class for the current user_type, mirroring the
+     * match() blocks used throughout this component.
+     */
+    private function tenantAuctionClass(): string
+    {
+        return match ($this->user_type) {
+            'tenant'   => HireTenantAgentAuction::class,
+            'landlord' => HirelandLordAgentAuction::class,
+            'buyer'    => HireBuyerAgentAuction::class,
+            'seller'   => HireSellerAgentAuction::class,
+            default    => HireTenantAgentAuction::class,
+        };
+    }
+
+    /**
+     * Owner-only guard for the create/draft path. listingId is null for a brand
+     * new listing (allowed) and set only when resuming the owner's own draft.
+     * See ResolvesOwnedAuction.
+     */
+    public function hydrate()
+    {
+        $this->assertCanManageAuction($this->tenantAuctionClass(), $this->listingId, null);
+    }
+
     public function mount($user_type = null, $listingId = null)
     {
         $this->unit_type_configurations = [

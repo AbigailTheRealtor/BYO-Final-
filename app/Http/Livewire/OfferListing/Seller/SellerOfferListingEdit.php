@@ -15,10 +15,12 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
+use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
 class SellerOfferListingEdit extends Component
 {
     use WithFileUploads;
+    use ResolvesOwnedAuction;
 
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
@@ -1578,12 +1580,29 @@ class SellerOfferListingEdit extends Component
     }
 
    
+    /**
+     * Runs on every subsequent Livewire request (action calls). Re-verifies
+     * ownership against the (possibly tampered) hydrated auctionId so no write
+     * action method is reachable for an unauthorized user. See ResolvesOwnedAuction.
+     */
+    public function hydrate()
+    {
+        // Consumer-owned listing: only the owning consumer account may edit it.
+        // Agents never write consumer listings via this component (two-persona model).
+        $this->assertCanManageAuction(
+            SellerAgentAuctionModel::class,
+            $this->auctionId ?: $this->listingId,
+            null
+        );
+    }
+
     public function mount($auctionId = null)
     {
-       
+
         if ($auctionId) {
             $this->auctionId = $auctionId;
             $this->listingId = $auctionId;
+            $this->assertCanManageAuction(SellerAgentAuctionModel::class, $auctionId, null);
             $this->loadAuctionData($auctionId); // Load auction data if auctionId is provided
             $this->isListingDraft = (bool) $this->isDraft;
         }

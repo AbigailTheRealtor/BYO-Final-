@@ -19,10 +19,12 @@ use App\Models\UsCounty;
 use App\Models\UsCity;
 use App\Support\TenantServicesCatalog;
 use App\Services\WizardEventService;
+use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
 class TenantOfferListingEdit extends Component
 {
     use WithFileUploads;
+    use ResolvesOwnedAuction;
 
     public $isLoadingData = false;
     private bool $_isDraftSave = false;
@@ -2355,6 +2357,31 @@ class TenantOfferListingEdit extends Component
     }
 
     // Methods
+    /**
+     * Resolves the auction model class for the current user_type, mirroring the
+     * match() blocks used throughout this component.
+     */
+    private function tenantAuctionClass(): string
+    {
+        return match ($this->user_type) {
+            'tenant'   => HireTenantAgentAuction::class,
+            'landlord' => HirelandLordAgentAuction::class,
+            'buyer'    => HireBuyerAgentAuction::class,
+            'seller'   => HireSellerAgentAuction::class,
+            default    => HireTenantAgentAuction::class,
+        };
+    }
+
+    /**
+     * Re-verifies ownership on every subsequent Livewire action request so no
+     * write action (and no read of another user's listing) is reachable for an
+     * unauthorized user. Tenant listings are owner-only. See ResolvesOwnedAuction.
+     */
+    public function hydrate()
+    {
+        $this->assertCanManageAuction($this->tenantAuctionClass(), $this->auctionId, null);
+    }
+
     public function mount($auctionId = null, $user_type = null)
     {
         // TenantOfferListingEdit always edits TenantAgentAuction records.
@@ -2370,6 +2397,7 @@ class TenantOfferListingEdit extends Component
             $this->auctionId = $auctionId;
             $this->user_type = $user_type;
 
+            $this->assertCanManageAuction($this->tenantAuctionClass(), $auctionId, null);
             $this->loadAuctionData($auctionId, $user_type); // Load auction data if auctionId is provided
             $this->isListingDraft = (bool) $this->isDraft;
             

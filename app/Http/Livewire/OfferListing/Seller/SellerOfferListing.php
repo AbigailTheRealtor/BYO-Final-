@@ -16,10 +16,12 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Services\WizardEventService;
+use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
 class SellerOfferListing extends Component
 {
     use WithFileUploads, HasMlsImport;
+    use ResolvesOwnedAuction;
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
@@ -1131,6 +1133,17 @@ class SellerOfferListing extends Component
     }
 
     // Methods
+    /**
+     * Owner-only guard for the create/draft path. listingId is null for a brand
+     * new listing (allowed) and set only when resuming the owner's own draft, so
+     * this blocks a tampered listingId in a hydration payload (e.g. the resume-
+     * draft write path). See ResolvesOwnedAuction.
+     */
+    public function hydrate()
+    {
+        $this->assertCanManageAuction(SellerAgentAuctionModel::class, $this->listingId, null);
+    }
+
     public function mount($listingId = null)
     {
         $this->unit_type_configurations = [

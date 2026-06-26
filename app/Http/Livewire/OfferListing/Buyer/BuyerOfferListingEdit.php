@@ -11,10 +11,12 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
+use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
 class BuyerOfferListingEdit extends Component
 {
     use WithFileUploads;
+    use ResolvesOwnedAuction;
 
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
@@ -1313,16 +1315,31 @@ class BuyerOfferListingEdit extends Component
     }
 
    
+    /**
+     * Re-verifies ownership on every subsequent Livewire action request so no
+     * write action is reachable for an unauthorized user. Buyer listings are
+     * owner-only (no assigned-agent allowance). See ResolvesOwnedAuction.
+     */
+    public function hydrate()
+    {
+        $this->assertCanManageAuction(
+            HireBuyerAgentAuction::class,
+            $this->auctionId ?: $this->listingId,
+            null
+        );
+    }
+
     public function mount($auctionId = null)
     {
-       
+
         if ($auctionId) {
             $this->auctionId = $auctionId;
             $this->listingId = $auctionId;
+            $this->assertCanManageAuction(HireBuyerAgentAuction::class, $auctionId, null);
             $this->loadAuctionData($auctionId); // Load auction data if auctionId is provided
             $this->isListingDraft = (bool) $this->isDraft;
         }
-        
+
         // Emit initial state for frontend validation
         $this->dispatchBrowserEvent('buyer-state-init', [
             'countiesCount' => count($this->counties ?? []),

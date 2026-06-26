@@ -15,10 +15,12 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Services\WizardEventService;
+use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
 class LandlordOfferListing extends Component
 {
     use WithFileUploads, HasMlsImport;
+    use ResolvesOwnedAuction;
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
@@ -1069,6 +1071,16 @@ class LandlordOfferListing extends Component
     }
 
     // Methods
+    /**
+     * Owner-only guard for the create/draft path. listingId is null for a brand
+     * new listing (allowed) and set only when resuming the owner's own draft.
+     * See ResolvesOwnedAuction.
+     */
+    public function hydrate()
+    {
+        $this->assertCanManageAuction(HirelandLordAgentAuction::class, $this->listingId, null);
+    }
+
     public function mount($listingId = null)
     {
         $this->addService();
