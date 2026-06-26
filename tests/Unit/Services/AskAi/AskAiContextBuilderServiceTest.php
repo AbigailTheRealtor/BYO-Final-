@@ -321,9 +321,10 @@ class AskAiContextBuilderServiceTest extends TestCase
         $dna->listing_id     = $attrs['listing_id'] ?? 1;
         $dna->geocode_status = $attrs['geocode_status'] ?? 'success';
         $dna->lifestyle_json = $attrs['lifestyle_json'] ?? [
-            'scores'     => ['walkability' => 72],
-            'categories' => ['walkable'],
-            'narrative'  => 'A walkable neighborhood.',
+            'version'              => 'LDNA_LIFESTYLE_V1',
+            'walkability_score'    => 72,
+            'lifestyle_categories' => ['Remote Workers'],
+            'location_narrative'   => 'A walkable neighborhood.',
         ];
         $dna->generated_at   = $attrs['generated_at'] ?? null;
         return $dna;
@@ -793,11 +794,18 @@ class AskAiContextBuilderServiceTest extends TestCase
 
     public function test_case_I_location_intelligence_includes_lifestyle_json(): void
     {
+        // Real production shape persisted by LocationDnaLifestyleScoreService:
+        // five *_score values at the top level, plus lifestyle_categories /
+        // location_narrative / version.
         $lifestyleJson = [
-            'scores'     => ['walkability' => 88, 'transit' => 60],
-            'categories' => ['walkable', 'transit-friendly'],
-            'narrative'  => 'A highly walkable urban neighborhood.',
-            'version'    => 'LIFESTYLE_V2',
+            'version'              => 'LDNA_LIFESTYLE_V1',
+            'coastal_score'        => 67,
+            'walkability_score'    => 88,
+            'convenience_score'    => 74,
+            'commuter_score'       => 60,
+            'family_score'         => 55,
+            'lifestyle_categories' => ['Remote Workers', 'Convenience Seekers'],
+            'location_narrative'   => 'A highly walkable urban neighborhood.',
         ];
 
         $locationDna = $this->makeLocationDna([
@@ -814,11 +822,17 @@ class AskAiContextBuilderServiceTest extends TestCase
         $this->assertNotNull($result['location_intelligence']);
         $this->assertSame($lifestyleJson, $result['location_intelligence']['lifestyle_json']);
         $this->assertSame(
-            ['walkability' => 88, 'transit' => 60],
+            [
+                'coastal_score'     => 67,
+                'walkability_score' => 88,
+                'convenience_score' => 74,
+                'commuter_score'    => 60,
+                'family_score'      => 55,
+            ],
             $result['location_intelligence']['lifestyle_scores']
         );
         $this->assertSame(
-            ['walkable', 'transit-friendly'],
+            ['Remote Workers', 'Convenience Seekers'],
             $result['location_intelligence']['lifestyle_categories']
         );
         $this->assertSame(
@@ -826,7 +840,84 @@ class AskAiContextBuilderServiceTest extends TestCase
             $result['location_intelligence']['location_narrative']
         );
         $this->assertSame('success', $result['location_intelligence']['geocode_status']);
-        $this->assertSame('LIFESTYLE_V2', $result['location_intelligence']['lifestyle_version']);
+        $this->assertSame('LDNA_LIFESTYLE_V1', $result['location_intelligence']['lifestyle_version']);
+    }
+
+    // =========================================================================
+    // Case I (regression) — Ask AI must read the EXACT keys that
+    // LocationDnaLifestyleScoreService persists. A prior bug read 'scores' /
+    // 'categories' / 'narrative', none of which the producer writes, so every
+    // listing's lifestyle context silently resolved to null. This locks the
+    // producer→consumer key contract so the regression cannot return.
+    // =========================================================================
+
+    public function test_case_I_regression_reads_real_producer_lifestyle_keys(): void
+    {
+        // This payload mirrors LocationDnaLifestyleScoreService::computeScores()
+        // + buildNarrative() exactly: five *_score values merged at the TOP LEVEL,
+        // categories under 'lifestyle_categories', summary under 'location_narrative'.
+        $lifestyleJson = [
+            'version'              => 'LDNA_LIFESTYLE_V1',
+            'coastal_score'        => 90,
+            'walkability_score'    => 41,
+            'convenience_score'    => 80,
+            'commuter_score'       => 30,
+            'family_score'         => 62,
+            'lifestyle_categories' => ['Beach Lovers', 'Families'],
+            'location_narrative'   => 'Exceptional coastal access with beaches nearby.',
+        ];
+
+        $locationDna = $this->makeLocationDna([
+            'lifestyle_json' => $lifestyleJson,
+            'geocode_status' => 'success',
+        ]);
+
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($locationDna);
+
+        $li = $service->buildForListing('seller', 1)['location_intelligence'];
+
+        // Guard the exact regression: these must be non-null and fully populated.
+        $this->assertNotNull($li['lifestyle_scores'], 'lifestyle_scores must not be null for a generated listing');
+        $this->assertNotNull($li['lifestyle_categories'], 'lifestyle_categories must not be null for a generated listing');
+        $this->assertNotNull($li['location_narrative'], 'location_narrative must not be null for a generated listing');
+
+        $this->assertSame([
+            'coastal_score'     => 90,
+            'walkability_score' => 41,
+            'convenience_score' => 80,
+            'commuter_score'    => 30,
+            'family_score'      => 62,
+        ], $li['lifestyle_scores']);
+        $this->assertSame(['Beach Lovers', 'Families'], $li['lifestyle_categories']);
+        $this->assertSame('Exceptional coastal access with beaches nearby.', $li['location_narrative']);
+
+        // And the old/incorrect keys must NOT leak a value (they don't exist in the
+        // real payload). lifestyle_scores must be keyed by *_score, never the legacy
+        // bare 'walkability' style.
+        $this->assertArrayNotHasKey('walkability', $li['lifestyle_scores']);
+    }
+
+    public function test_case_I_regression_lifestyle_scores_null_when_scores_absent(): void
+    {
+        // When lifestyle was never generated (no *_score keys), lifestyle_scores
+        // is null rather than an empty array — a clear "not generated" signal.
+        $locationDna = $this->makeLocationDna([
+            'lifestyle_json' => ['version' => 'LDNA_LIFESTYLE_V1'],
+            'geocode_status' => 'success',
+        ]);
+
+        $service = $this->makeService();
+        $service->method('findListing')->willReturn($this->makeListingStub());
+        $service->method('findPropertyLocationDna')->willReturn($locationDna);
+
+        $li = $service->buildForListing('seller', 1)['location_intelligence'];
+
+        $this->assertNull($li['lifestyle_scores']);
+        $this->assertNull($li['lifestyle_categories']);
+        $this->assertNull($li['location_narrative']);
+        $this->assertSame('LDNA_LIFESTYLE_V1', $li['lifestyle_version']);
     }
 
     // =========================================================================
@@ -1025,10 +1116,10 @@ class AskAiContextBuilderServiceTest extends TestCase
     {
         $locationDna = $this->makeLocationDna([
             'lifestyle_json' => [
-                'scores'     => ['walkability' => 80],
-                'categories' => ['walkable'],
-                'narrative'  => 'Walkable.',
-                'version'    => 'LIFESTYLE_DNA_V3',
+                'version'              => 'LIFESTYLE_DNA_V3',
+                'walkability_score'    => 80,
+                'lifestyle_categories' => ['Remote Workers'],
+                'location_narrative'   => 'Walkable.',
             ],
         ]);
 
@@ -1165,10 +1256,10 @@ class AskAiContextBuilderServiceTest extends TestCase
     public function test_case_N_lifestyle_json_fields_always_present_regardless_of_intelligence_service(): void
     {
         $lifestyleJson = [
-            'scores'     => ['walkability' => 90],
-            'categories' => ['walkable'],
-            'narrative'  => 'Very walkable area.',
-            'version'    => 'LIFESTYLE_V3',
+            'version'              => 'LDNA_LIFESTYLE_V1',
+            'walkability_score'    => 90,
+            'lifestyle_categories' => ['Remote Workers'],
+            'location_narrative'   => 'Very walkable area.',
         ];
 
         $locationDna = $this->makeLocationDna(['lifestyle_json' => $lifestyleJson]);
@@ -1182,9 +1273,9 @@ class AskAiContextBuilderServiceTest extends TestCase
         $li = $result['location_intelligence'];
         $this->assertSame($lifestyleJson, $li['lifestyle_json']);
         $this->assertSame('Very walkable area.', $li['location_narrative']);
-        $this->assertSame(['walkability' => 90], $li['lifestyle_scores']);
-        $this->assertSame(['walkable'], $li['lifestyle_categories']);
-        $this->assertSame('LIFESTYLE_V3', $li['lifestyle_version']);
+        $this->assertSame(['walkability_score' => 90], $li['lifestyle_scores']);
+        $this->assertSame(['Remote Workers'], $li['lifestyle_categories']);
+        $this->assertSame('LDNA_LIFESTYLE_V1', $li['lifestyle_version']);
     }
 
     // =========================================================================
@@ -1282,10 +1373,10 @@ class AskAiContextBuilderServiceTest extends TestCase
     {
         $locationDna = $this->makeLocationDna([
             'lifestyle_json' => [
-                'scores'     => ['walkability' => 75],
-                'categories' => ['walkable'],
-                'narrative'  => 'Walkable neighborhood.',
-                'version'    => 'V5',
+                'version'              => 'LDNA_LIFESTYLE_V1',
+                'walkability_score'    => 75,
+                'lifestyle_categories' => ['Remote Workers'],
+                'location_narrative'   => 'Walkable neighborhood.',
             ],
         ]);
 
@@ -1298,7 +1389,7 @@ class AskAiContextBuilderServiceTest extends TestCase
         $this->assertNotNull($result['location_intelligence'],
             'location_intelligence must still be populated from lifestyle_json even when sub-services are missing');
         $this->assertSame('Walkable neighborhood.', $result['location_intelligence']['location_narrative']);
-        $this->assertSame(['walkability' => 75], $result['location_intelligence']['lifestyle_scores']);
+        $this->assertSame(['walkability_score' => 75], $result['location_intelligence']['lifestyle_scores']);
     }
 
     public function test_case_P_no_missing_sources_when_dna_record_exists_but_sub_services_missing(): void

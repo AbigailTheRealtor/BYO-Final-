@@ -2100,11 +2100,17 @@ class AskAiContextBuilderService
         $lifestyleJson = $locationDna->lifestyle_json;
         $lifestyleArr  = is_array($lifestyleJson) ? $lifestyleJson : [];
 
+        // NOTE: read the keys that LocationDnaLifestyleScoreService actually persists.
+        // The producer merges the five score values at the TOP LEVEL (coastal_score,
+        // walkability_score, …) and stores categories under 'lifestyle_categories' and
+        // the summary under 'location_narrative' — NOT under 'scores'/'categories'/
+        // 'narrative'. Reading the old keys silently yielded null for every listing.
+        // See LocationDnaLifestyleScoreService::computeScores()/buildNarrative().
         $context = [
             'lifestyle_json'       => $lifestyleJson,
-            'lifestyle_scores'     => $lifestyleArr['scores'] ?? null,
-            'lifestyle_categories' => $lifestyleArr['categories'] ?? null,
-            'location_narrative'   => $lifestyleArr['narrative'] ?? null,
+            'lifestyle_scores'     => $this->extractLifestyleScores($lifestyleArr),
+            'lifestyle_categories' => $lifestyleArr['lifestyle_categories'] ?? null,
+            'location_narrative'   => $lifestyleArr['location_narrative'] ?? null,
             'lifestyle_version'    => $lifestyleArr['version'] ?? null,
             'geocode_status'       => $locationDna->geocode_status ?? null,
             'generated_at'         => isset($locationDna->generated_at)
@@ -2138,6 +2144,39 @@ class AskAiContextBuilderService
         }
 
         return $context;
+    }
+
+    /**
+     * The five lifestyle score keys persisted at the top level of lifestyle_json
+     * by LocationDnaLifestyleScoreService::computeScores(). Kept in sync with
+     * App\Presenters\LocationDnaPresenter::SCORE_KEYS.
+     */
+    private const LIFESTYLE_SCORE_KEYS = [
+        'coastal_score',
+        'walkability_score',
+        'convenience_score',
+        'commuter_score',
+        'family_score',
+    ];
+
+    /**
+     * Pull the five lifestyle scores out of the persisted lifestyle_json blob into
+     * a dedicated sub-array for the Ask AI context. Returns null when none of the
+     * score keys are present (e.g. lifestyle was never generated for this listing).
+     *
+     * @param  array<string,mixed> $lifestyleArr  Decoded lifestyle_json.
+     * @return array<string,int>|null
+     */
+    private function extractLifestyleScores(array $lifestyleArr): ?array
+    {
+        $scores = [];
+        foreach (self::LIFESTYLE_SCORE_KEYS as $key) {
+            if (isset($lifestyleArr[$key]) && is_numeric($lifestyleArr[$key])) {
+                $scores[$key] = (int) $lifestyleArr[$key];
+            }
+        }
+
+        return $scores === [] ? null : $scores;
     }
 
     // =========================================================================

@@ -231,9 +231,12 @@ class ExtendedKnowledgeLoader
      */
     private function loadLocationDnaSummary(string $listingType, int $listingId): array
     {
+        // The geocode pipeline persists the canonical status 'geocoded'
+        // (LocationDnaGeocodeService). A prior 'success' filter never matched any
+        // row, so Location DNA silently never loaded into Agent AI knowledge.
         $locationDna = PropertyLocationDna::where('listing_type', $listingType)
             ->where('listing_id', $listingId)
-            ->where('geocode_status', 'success')
+            ->where('geocode_status', 'geocoded')
             ->orderByDesc('generated_at')
             ->first();
 

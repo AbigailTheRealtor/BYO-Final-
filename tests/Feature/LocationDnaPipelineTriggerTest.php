@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\ComputeLocationDna;
+use App\Models\BridgeProperty;
 use App\Models\PropertyAuction;
 use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
@@ -255,6 +256,54 @@ class LocationDnaPipelineTriggerTest extends TestCase
     }
 
     // =========================================================================
+    // §11 — Bridge MLS imports geocode using their native lat/lng (Phase 1 fix)
+    //
+    // Regression: the 'bridge' listing type was dispatched by LazyBridgeImportService
+    // but had NO branch in resolveAddressData(), so it fell through to an empty
+    // address → geocode 'skipped' → entire pipeline 'skipped'. Every Bridge import
+    // silently produced no Location DNA. resolveBridgeAddress() now reads the native
+    // address columns and passes MLS latitude/longitude as pre_lat/pre_lng so the
+    // geocode service short-circuits (geocode_source = 'saved_meta', no Google call).
+    // =========================================================================
+
+    public function test_bridge_pipeline_geocodes_using_mls_coordinates(): void
+    {
+        $bridge = $this->makeBridgeListing();
+
+        $runner = $this->makeRunner();
+        $result = $runner->run('bridge', $bridge->id);
+
+        $this->assertSame('success', $result['status'],
+            'Bridge pipeline must succeed (previously returned skipped — no bridge branch).');
+
+        $this->assertDatabaseHas('property_location_dna', [
+            'listing_type'   => 'bridge',
+            'listing_id'     => $bridge->id,
+            'geocode_status' => 'geocoded',
+            'geocode_source' => 'saved_meta',
+        ]);
+
+        $record = PropertyLocationDna::where('listing_type', 'bridge')
+            ->where('listing_id', $bridge->id)
+            ->first();
+
+        $this->assertNotNull($record);
+        $this->assertEqualsWithDelta(27.9659, (float) $record->geocoded_lat, 0.0001,
+            'Bridge geocode must use the MLS-supplied latitude, not a Google lookup.');
+        $this->assertSame('Clearwater', $record->source_city);
+    }
+
+    public function test_bridge_pipeline_returns_skipped_for_missing_record(): void
+    {
+        // No bridge_properties row with this id — pipeline must skip gracefully, not throw.
+        $runner = $this->makeRunner();
+        $result = $runner->run('bridge', 999999);
+
+        $this->assertSame('skipped', $result['status']);
+        $this->assertArrayNotHasKey('error', $result);
+    }
+
+    // =========================================================================
     // Private helpers
     // =========================================================================
 
@@ -359,6 +408,27 @@ class LocationDnaPipelineTriggerTest extends TestCase
         ]);
 
         return PropertyAuction::find($listingId);
+    }
+
+    /**
+     * Create a BridgeProperty (imported MLS listing) carrying native address
+     * columns and MLS-supplied latitude/longitude.
+     */
+    private function makeBridgeListing(): BridgeProperty
+    {
+        return BridgeProperty::create([
+            'listing_key'       => 'TEST-' . uniqid(),
+            'standard_status'   => 'Active',
+            'property_type'     => 'Residential',
+            'unparsed_address'  => '500 Coronado Dr',
+            'city'              => 'Clearwater',
+            'state_or_province' => 'FL',
+            'postal_code'       => '33767',
+            'county_or_parish'  => 'Pinellas',
+            'latitude'          => 27.9659,
+            'longitude'         => -82.8001,
+            'imported_at'       => now(),
+        ]);
     }
 
     /** Return or insert a us_states row; returns id. */

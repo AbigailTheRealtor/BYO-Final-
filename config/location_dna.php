@@ -158,6 +158,28 @@ return [
         */
         'tile_precision'  => env('LOCATION_DNA_POI_TILE_PRECISION', null),
         'tile_cache_ttl'  => (int) env('LOCATION_DNA_POI_TILE_CACHE_TTL', 604800),
+
+        /*
+        |----------------------------------------------------------------------
+        | tile_cache_store
+        |----------------------------------------------------------------------
+        |
+        | Which Laravel cache store backs the POI tile cache. When null (the
+        | default) the application's default cache store is used — the correct
+        | choice for production, where queued ComputeLocationDna jobs each run
+        | in their own process and therefore need a SHARED, persistent store
+        | (redis/database/file) for nearby listings to actually reuse raw
+        | candidates. An in-process store (e.g. 'array') yields zero cross-job
+        | reuse and silently defeats the tile cache.
+        |
+        | Tests and the ldna:benchmark-tile-precision command override this to
+        | 'array' so they can flush deterministically within a single process.
+        |
+        | This setting only has any effect when tile_precision is also set —
+        | the tile cache is disabled entirely otherwise.
+        |
+        */
+        'tile_cache_store' => env('LOCATION_DNA_POI_TILE_CACHE_STORE', null),
     ],
 
 ];

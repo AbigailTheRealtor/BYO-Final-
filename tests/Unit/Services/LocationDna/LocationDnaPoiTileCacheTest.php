@@ -305,4 +305,83 @@ class LocationDnaPoiTileCacheTest extends TestCase
         $this->assertCount(1, array_unique($keys),
             'buildKey() must always produce the same key for the same inputs');
     }
+
+    // =========================================================================
+    // (I) Backing store resolution — must honour config, not hardcode 'array'
+    // =========================================================================
+
+    /** @test */
+    public function store_name_is_null_when_tile_cache_store_config_is_absent(): void
+    {
+        config(['location_dna.poi.tile_cache_store' => null]);
+        $cache = new LocationDnaPoiTileCache();
+
+        // null storeName means Cache::store(null) → application default store.
+        $this->assertNull($cache->storeName());
+    }
+
+    /** @test */
+    public function store_name_is_null_when_tile_cache_store_config_is_empty_string(): void
+    {
+        config(['location_dna.poi.tile_cache_store' => '']);
+        $cache = new LocationDnaPoiTileCache();
+
+        $this->assertNull($cache->storeName(),
+            'An empty store config must fall back to the default store (null), not an empty name');
+    }
+
+    /** @test */
+    public function store_name_reflects_configured_store(): void
+    {
+        config(['location_dna.poi.tile_cache_store' => 'array']);
+        $cache = new LocationDnaPoiTileCache();
+
+        $this->assertSame('array', $cache->storeName());
+    }
+
+    /** @test */
+    public function get_and_put_route_through_the_configured_store_not_a_hardcoded_one(): void
+    {
+        // Define a second, named array-backed store distinct from the default,
+        // then point the tile cache at it. Proves get/put honour config rather
+        // than the previously hardcoded Cache::store('array').
+        config([
+            'cache.stores.ldna_dedicated' => ['driver' => 'array'],
+            'location_dna.poi.tile_precision'   => '0.005',
+            'location_dna.poi.tile_cache_store' => 'ldna_dedicated',
+        ]);
+
+        $cache = new LocationDnaPoiTileCache();
+        $key   = 'ldna_poi_tile_routing_test';
+        $value = [['name' => 'Routed Place']];
+
+        $cache->put($key, $value);
+
+        // Value lands in the dedicated store...
+        $this->assertSame($value, Cache::store('ldna_dedicated')->get($key));
+        // ...and is readable back through the tile cache.
+        $this->assertSame($value, $cache->get($key));
+        // ...but NOT in the application default store (which is 'array' in tests).
+        $this->assertNull(Cache::store('array')->get($key),
+            'Tile cache must not write to the default store when another store is configured');
+    }
+
+    /** @test */
+    public function flush_clears_entries_in_the_configured_store(): void
+    {
+        config([
+            'cache.stores.ldna_dedicated' => ['driver' => 'array'],
+            'location_dna.poi.tile_precision'   => '0.005',
+            'location_dna.poi.tile_cache_store' => 'ldna_dedicated',
+        ]);
+
+        $cache = new LocationDnaPoiTileCache();
+        $cache->put('ldna_poi_tile_flush_test', [['name' => 'Doomed Place']]);
+        $this->assertNotNull($cache->get('ldna_poi_tile_flush_test'));
+
+        $cache->flush();
+
+        $this->assertNull($cache->get('ldna_poi_tile_flush_test'),
+            'flush() must clear the configured backing store');
+    }
 }

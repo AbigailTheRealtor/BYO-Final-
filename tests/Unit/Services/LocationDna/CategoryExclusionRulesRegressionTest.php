@@ -313,4 +313,132 @@ class CategoryExclusionRulesRegressionTest extends TestCase
         $this->assertTrue($this->passes('beach_access', 'Pinellas County Beach Access #5', ['point_of_interest']));
         $this->assertTrue($this->passes('beach_access', 'Treasure Island Beach Access Path', ['natural_feature']));
     }
+
+    // =========================================================================
+    // HOSPITAL — animal hospitals / veterinary providers must never appear
+    // (Location DNA audit Phase 1). Previously vets were only soft-penalized.
+    // =========================================================================
+
+    /** @test */
+    public function hospital_excludes_veterinary_care_type(): void
+    {
+        // Type is authoritative — a vet ER carrying veterinary_care is removed even
+        // if the word "Hospital" appears in its name.
+        $this->assertFalse($this->passes('hospital', 'Bayshore Animal Hospital', ['veterinary_care', 'health']));
+        $this->assertFalse($this->passes('hospital', 'Coastal Pet Emergency', ['veterinary_care']));
+    }
+
+    /** @test */
+    public function hospital_excludes_animal_providers_by_name(): void
+    {
+        // Name guard for vets that Google does NOT tag with veterinary_care.
+        $this->assertFalse($this->passes('hospital', 'Banfield Pet Hospital', ['hospital', 'point_of_interest']));
+        $this->assertFalse($this->passes('hospital', 'VCA Gulf Coast Animal Hospital', ['hospital']));
+        $this->assertFalse($this->passes('hospital', 'BluePearl Pet ER', ['hospital']));
+        $this->assertFalse($this->passes('hospital', 'Westchase Veterinary Clinic', ['hospital']));
+        $this->assertFalse($this->passes('hospital', 'Animal Medical Center of Tampa', ['hospital']));
+    }
+
+    /** @test */
+    public function hospital_still_excludes_medspa_and_aesthetic_clinics(): void
+    {
+        // Existing behavior must not regress with the vet additions.
+        $this->assertFalse($this->passes('hospital', 'Radiance Med Spa', ['hospital', 'spa']));
+        $this->assertFalse($this->passes('hospital', 'Drip IV Therapy Lounge', ['hospital']));
+    }
+
+    /** @test */
+    public function hospital_allows_legitimate_human_hospitals(): void
+    {
+        $this->assertTrue($this->passes('hospital', 'Tampa General Hospital', ['hospital', 'health', 'point_of_interest']));
+        $this->assertTrue($this->passes('hospital', 'AdventHealth North Pinellas', ['hospital', 'health']));
+        $this->assertTrue($this->passes('hospital', 'Morton Plant Hospital', ['hospital']));
+        // "Veterans" contains the substring "vet" but must NOT be excluded —
+        // the regex uses the whole word "veterinary"/"vet clinic", not bare "vet".
+        $this->assertTrue($this->passes('hospital', 'James A. Haley Veterans Hospital', ['hospital', 'health']));
+    }
+
+    // =========================================================================
+    // MARINA — boat dealers / marine retail must never appear as marinas.
+    // Previously the marina category had NO exclusion rule at all.
+    // =========================================================================
+
+    /** @test */
+    public function marina_excludes_car_dealer_type(): void
+    {
+        $this->assertFalse($this->passes('marina', 'Gulf Coast Boat Sales', ['car_dealer', 'store']));
+    }
+
+    /** @test */
+    public function marina_excludes_boat_and_marine_dealers_by_name(): void
+    {
+        $this->assertFalse($this->passes('marina', 'MarineMax Clearwater', ['store', 'point_of_interest']));
+        $this->assertFalse($this->passes('marina', 'Tampa Bay Boat Sales', ['store']));
+        $this->assertFalse($this->passes('marina', 'Galati Yacht Sales', ['store', 'point_of_interest']));
+        $this->assertFalse($this->passes('marina', 'West Marine Supply', ['store']));
+        $this->assertFalse($this->passes('marina', 'Suncoast Boat Rental', []));
+        $this->assertFalse($this->passes('marina', 'Bluewater Yacht Brokerage', ['point_of_interest']));
+    }
+
+    /** @test */
+    public function marina_allows_legitimate_marinas(): void
+    {
+        $this->assertTrue($this->passes('marina', 'Harbour Island Marina', ['marina', 'point_of_interest']));
+        $this->assertTrue($this->passes('marina', 'Clearwater Municipal Marina', ['point_of_interest']));
+        $this->assertTrue($this->passes('marina', 'Marina Bay Yacht Harbor', ['point_of_interest']));
+        $this->assertTrue($this->passes('marina', 'Sailport Waterfront Marina', ['marina']));
+    }
+
+    // =========================================================================
+    // GOLF — standalone driving ranges excluded, but real courses that include
+    // "Driving Range" in their name are preserved (conditional name match).
+    // =========================================================================
+
+    /** @test */
+    public function golf_excludes_standalone_driving_ranges(): void
+    {
+        $this->assertFalse($this->passes('golf_course', 'Palm Bay Driving Range', ['point_of_interest']));
+        $this->assertFalse($this->passes('golf_course', 'Eagle Golf Range', ['point_of_interest']));
+        $this->assertFalse($this->passes('golf_course', 'TopTracer Range at Bay Center', ['point_of_interest']));
+    }
+
+    /** @test */
+    public function golf_still_excludes_entertainment_venues(): void
+    {
+        $this->assertFalse($this->passes('golf_course', 'Topgolf Tampa', ['bowling_alley', 'point_of_interest']));
+        $this->assertFalse($this->passes('golf_course', 'Adventure Golf & Games', ['point_of_interest']));
+        $this->assertFalse($this->passes('golf_course', 'PopStroke Sarasota', ['point_of_interest']));
+        $this->assertFalse($this->passes('golf_course', 'Smugglers Cove Miniature Golf', ['point_of_interest']));
+    }
+
+    /** @test */
+    public function golf_allows_real_courses_including_those_with_a_driving_range(): void
+    {
+        $this->assertTrue($this->passes('golf_course', 'Innisbrook Golf Resort', ['point_of_interest']));
+        $this->assertTrue($this->passes('golf_course', 'Pine Hills Golf Club & Driving Range', ['point_of_interest']));
+        $this->assertTrue($this->passes('golf_course', 'Cypress Run Golf Course Driving Range', ['point_of_interest']));
+        $this->assertTrue($this->passes('golf_course', 'Belleair Country Club', ['point_of_interest']));
+        $this->assertTrue($this->passes('golf_course', 'Tarpon Springs Golf Links', ['point_of_interest']));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // BOAT RAMP — mirrors marina boat-commerce guard (audit Phase 1)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** @test */
+    public function boat_ramp_excludes_boat_dealers_and_marine_retail_by_name(): void
+    {
+        $this->assertFalse($this->passes('boat_ramp', 'MarineMax Clearwater', ['point_of_interest']));
+        $this->assertFalse($this->passes('boat_ramp', 'Tampa Boat Sales', ['point_of_interest']));
+        $this->assertFalse($this->passes('boat_ramp', 'West Marine Supply', ['store']));
+        $this->assertFalse($this->passes('boat_ramp', 'Gulf Coast Boats', ['car_dealer']));
+    }
+
+    /** @test */
+    public function boat_ramp_allows_legitimate_public_ramps(): void
+    {
+        $this->assertTrue($this->passes('boat_ramp', 'Maximo Park Boat Ramp', ['point_of_interest']));
+        $this->assertTrue($this->passes('boat_ramp', 'Fort De Soto Boat Ramp', ['point_of_interest']));
+        $this->assertTrue($this->passes('boat_ramp', 'E.G. Simmons Public Boat Launch', ['point_of_interest']));
+    }
 }

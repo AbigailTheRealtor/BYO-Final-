@@ -213,14 +213,24 @@ class LocationDnaPoiDistanceService
             'exclude_if_name_matches' => '/\b(animal\s+hospital|pet\s+er|emergency\s+animal|banfield|vca\b|bluepearl|blue\s+pearl|pet\s+medication|veterinary|vet\s+clinic|animal\s+care\s+center|animal\s+medical|pet\s+pharmacy)\b/i',
         ],
         'hospital' => [
+            // PRIMARY RULE (types-based, authoritative):
+            //   Exclude any candidate carrying the 'veterinary_care' type — an animal
+            //   hospital is never a human acute-care facility, regardless of the word
+            //   "hospital" in its name. Mirrors the pharmacy rule so vet ERs that Google
+            //   surfaces under a 'hospital' search are removed, not merely soft-penalized.
+            'exclude_if_types_include' => ['veterinary_care'],
+
             // Exclude cosmetic clinics, aesthetic practices, and wellness spas that
-            // Google occasionally surfaces under the 'hospital' type search.
-            // These are not acute-care or primary-care medical facilities.
+            // Google occasionally surfaces under the 'hospital' type search, plus
+            // veterinary / animal-care providers that lack the veterinary_care type.
+            // These are not acute-care or primary-care human medical facilities.
             // Covered: MedSpa / Med Spa, IV Therapy / IV Drip / IV Lounge,
             //   Aesthetics / Aesthetic Center, Botox providers (standalone),
             //   Ketamine clinics, Infusion Lounge, Wellness Spa, CryoTherapy,
-            //   HydraFacial / Hydra Facial studios.
-            'exclude_if_name_matches' => '/\b(med\s*spa|iv\s+therapy|iv\s+drip|iv\s+lounge|infusion\s+lounge|ketamine|cryotherapy|cryo\s+therapy|hydrafacial|hydra\s+facial|aesthetics?\s+center|aesthetic\s+clinic|botox\s+clinic|wellness\s+spa|beauty\s+lounge|laser\s+clinic|laser\s+aesthetics)\b/i',
+            //   HydraFacial / Hydra Facial studios, and animal hospitals / vet ERs
+            //   (animal hospital, pet ER, emergency animal, Banfield, VCA, BluePearl,
+            //   veterinary, vet clinic, animal medical/care center).
+            'exclude_if_name_matches' => '/\b(med\s*spa|iv\s+therapy|iv\s+drip|iv\s+lounge|infusion\s+lounge|ketamine|cryotherapy|cryo\s+therapy|hydrafacial|hydra\s+facial|aesthetics?\s+center|aesthetic\s+clinic|botox\s+clinic|wellness\s+spa|beauty\s+lounge|laser\s+clinic|laser\s+aesthetics|animal\s+hospital|pet\s+er|emergency\s+animal|banfield|vca\b|bluepearl|blue\s+pearl|veterinary|vet\s+clinic|animal\s+care\s+center|animal\s+medical)\b/i',
         ],
         'school' => [
             // Exclude non-accredited enrichment and wellness businesses that Google
@@ -259,11 +269,18 @@ class LocationDnaPoiDistanceService
             'exclude_if_name_matches'  => '/\b(hotel|motel|resort|inn\b|suites?\b|vacation\s+rental|theme\s+park|water\s+park|aquatic\s+park|splash\s+(pad|zone|park)|club\s+med|sandals\b|marriott|hilton|hyatt|sheraton|westin|doubletree|holiday\s+inn|hampton\s+inn|courtyard|airbnb)\b/i',
         ],
         'golf_course' => [
-            // Exclude entertainment and miniature golf venues.
+            // Exclude entertainment / miniature golf venues and standalone driving ranges.
             // Audit findings + #3176 hardening:
             //   adventure golf, mini golf, miniature golf, putt-putt (existing),
             //   Topgolf, Drive Shack, Puttshack, PopStroke, entertainment + golf.
-            'exclude_if_name_matches' => '/adventure\s+golf|mini.?golf|miniature\s+golf|putt.?putt|topgolf|drive\s+shack|puttshack|popstroke|entertainment.*golf|golf.*entertainment/i',
+            // Driving-range handling (Location DNA audit Phase 1):
+            //   A standalone driving range is not a golf course, but a real course
+            //   frequently includes "Driving Range" in its name (e.g. "Pine Hills
+            //   Golf Club & Driving Range"). The final alternation branch therefore
+            //   excludes a name containing "driving range" / "golf range" ONLY when it
+            //   does NOT also contain a course indicator (golf club/course, country
+            //   club, links). "TopTracer" ranges are caught unconditionally.
+            'exclude_if_name_matches' => '/adventure\s+golf|mini.?golf|miniature\s+golf|putt.?putt|topgolf|drive\s+shack|puttshack|popstroke|toptracer|entertainment.*golf|golf.*entertainment|^(?!.*\b(?:golf\s+club|golf\s+course|country\s+club|links)\b).*\b(?:driving|golf)\s+range\b/i',
         ],
         'transit_station' => [
             // Exclude retail stores that Google occasionally tags as transit stops.
@@ -274,6 +291,31 @@ class LocationDnaPoiDistanceService
                 'convenience_store',
                 'clothing_store',
             ],
+        ],
+        'marina' => [
+            // Marina is a keyword search ('marina') and previously had NO exclusion
+            // rule, so boat dealers, marine retailers, and brokerages surfaced as
+            // marinas (Location DNA audit Phase 1). Google has no dedicated
+            // boat-dealer type — dealerships are commonly tagged 'car_dealer' or
+            // 'store' — so exclusion is primarily name-based with a type guard.
+            //
+            // PRIMARY RULE (types-based): a vehicle dealership is never a marina.
+            'exclude_if_types_include' => ['car_dealer'],
+
+            // Name-pattern guard for boat/yacht sales, brokerages, marine retail and
+            // service businesses. Deliberately does NOT match the bare word "marina",
+            // so legitimate names like "Harbour Island Marina" pass.
+            // Covers: boat dealer/sales/brokerage/broker, yacht sales/broker/dealer,
+            //   marine sales/supply/center/electronics/service, MarineMax, boat rental.
+            'exclude_if_name_matches' => '/\b(boat\s+(dealer|sales|brokerage|broker|rental)|yacht\s+(sales|broker|dealer|brokerage)|marine\s+(sales|supply|supplies|center|centre|electronics|service)|marinemax|boat\s+dealership)\b/i',
+        ],
+        'boat_ramp' => [
+            // A 'boat ramp' keyword search surfaces the same boat-commerce false
+            // positives as 'marina' — boat/yacht dealerships, marine retailers, and
+            // brokerages — none of which are public launch ramps. Mirrors the marina
+            // guard exactly (Location DNA audit Phase 1).
+            'exclude_if_types_include' => ['car_dealer'],
+            'exclude_if_name_matches'  => '/\b(boat\s+(dealer|sales|brokerage|broker|rental)|yacht\s+(sales|broker|dealer|brokerage)|marine\s+(sales|supply|supplies|center|centre|electronics|service)|marinemax|boat\s+dealership)\b/i',
         ],
     ];
 

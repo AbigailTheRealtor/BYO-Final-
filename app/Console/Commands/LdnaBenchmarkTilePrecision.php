@@ -6,7 +6,6 @@ use App\Models\PropertyLocationDna;
 use App\Services\LocationDna\LocationDnaPoiDistanceService;
 use App\Services\LocationDna\LocationDnaPoiTileCache;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 /**
@@ -120,14 +119,19 @@ class LdnaBenchmarkTilePrecision extends Command
      */
     private function runAllListings(array $pairs, ?float $precision): array
     {
-        // Flush the array cache store so no tile cache entries bleed across runs
-        Cache::store('array')->flush();
+        // Pin the tile cache to the in-process array store for the benchmark so
+        // each precision run is isolated and deterministically flushable, and set
+        // the precision config for this run.
+        config([
+            'location_dna.poi.tile_precision'  => $precision,
+            'location_dna.poi.tile_cache_store' => 'array',
+        ]);
 
-        // Set the precision config for this run
-        config(['location_dna.poi.tile_precision' => $precision]);
-
-        // Build a fresh tile cache instance reflecting the new config
+        // Build a fresh tile cache instance reflecting the new config, then flush
+        // its backing store so no tile entries bleed across runs (a 0.001° run must
+        // not pollute a subsequent 0.005° run).
         $tileCache = new LocationDnaPoiTileCache();
+        $tileCache->flush();
 
         $results = [];
 

@@ -6,6 +6,7 @@ use App\Enums\AgentAiContextScope;
 use App\Models\AiFaqAnswer;
 use App\Models\AskAiFact;
 use App\Models\AskAiKnowledgeSnapshot;
+use App\Models\PropertyLocationDna;
 use App\Models\SellerAgentAuction;
 use App\Models\User;
 use App\Services\AgentAi\Loaders\ExtendedKnowledgeLoader;
@@ -217,5 +218,66 @@ class ExtendedKnowledgeLoaderTest extends TestCase
         $this->assertNotNull($result);
         $this->assertLessThanOrEqual(3000, $result['token_estimate'],
             "ExtendedKnowledgeLoader token_estimate must not exceed 3,000 tokens for the seller scope.");
+    }
+
+    // =========================================================================
+    // Location DNA summary — geocode_status contract (Location DNA audit Phase 1)
+    // =========================================================================
+
+    /**
+     * Regression: the loader must filter Location DNA rows on the canonical
+     * geocode_status value 'geocoded'. A prior bug filtered on 'success', which
+     * never matched any row, so Location DNA silently never loaded into Agent AI.
+     */
+    public function test_loads_location_summary_for_geocoded_status(): void
+    {
+        $user    = User::factory()->create();
+        $listing = SellerAgentAuction::create(['user_id' => $user->id, 'is_approved' => true, 'is_draft' => false, 'is_sold' => false]);
+
+        PropertyLocationDna::create([
+            'listing_type'   => 'seller',
+            'listing_id'     => $listing->id,
+            'source_city'    => 'Clearwater',
+            'source_state'   => 'FL',
+            'geocode_status' => 'geocoded',
+            'geocoded_lat'   => 27.9659,
+            'geocoded_lng'   => -82.8001,
+            'geocode_source' => 'google',
+            'summary_json'   => ['nearest_by_category' => ['beach' => ['name' => 'Clearwater Beach']]],
+            'lifestyle_json' => ['version' => 'LDNA_LIFESTYLE_V1', 'coastal_score' => 88, 'location_narrative' => 'A coastal community.'],
+            'generated_at'   => now(),
+        ]);
+
+        $result = ($this->loader)($this->makeScopeContext('seller', $listing->id));
+
+        $this->assertNotNull($result, 'A geocoded Location DNA row must produce a fragment.');
+        $this->assertArrayHasKey('location_summary', $result['content'],
+            "Location DNA must load when geocode_status is the canonical 'geocoded' value.");
+        $this->assertSame('Clearwater', $result['content']['location_summary']['city']);
+    }
+
+    /**
+     * A row that has not completed geocoding (status 'pending') must NOT load —
+     * confirms the filter is a real status gate, not a match-everything query.
+     */
+    public function test_does_not_load_location_summary_for_non_geocoded_status(): void
+    {
+        $user    = User::factory()->create();
+        $listing = SellerAgentAuction::create(['user_id' => $user->id, 'is_approved' => true, 'is_draft' => false, 'is_sold' => false]);
+
+        PropertyLocationDna::create([
+            'listing_type'   => 'seller',
+            'listing_id'     => $listing->id,
+            'source_city'    => 'Clearwater',
+            'source_state'   => 'FL',
+            'geocode_status' => 'pending',
+            'summary_json'   => ['nearest_by_category' => ['beach' => ['name' => 'Clearwater Beach']]],
+            'generated_at'   => now(),
+        ]);
+
+        $result = ($this->loader)($this->makeScopeContext('seller', $listing->id));
+
+        // No other knowledge sources exist for this listing, so the whole fragment is null.
+        $this->assertNull($result, 'A pending (non-geocoded) Location DNA row must not load into Agent AI.');
     }
 }

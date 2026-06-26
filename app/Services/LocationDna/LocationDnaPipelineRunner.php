@@ -2,6 +2,7 @@
 
 namespace App\Services\LocationDna;
 
+use App\Models\BridgeProperty;
 use App\Models\LandlordAgentAuction;
 use App\Models\LandlordAuction;
 use App\Models\PropertyAuction;
@@ -174,6 +175,10 @@ class LocationDnaPipelineRunner
             return $this->resolveLandlordAgentAddress($listingId);
         }
 
+        if ($listingType === 'bridge') {
+            return $this->resolveBridgeAddress($listingId);
+        }
+
         return ['address' => '', 'city' => '', 'state' => ''];
     }
 
@@ -279,6 +284,38 @@ class LocationDnaPipelineRunner
             'zip'     => (string) ($listing->info('property_zip') ?: ''),
             'pre_lat' => (string) ($listing->info('property_lat') ?: ''),
             'pre_lng' => (string) ($listing->info('property_lng') ?: ''),
+        ];
+    }
+
+    /**
+     * Resolve address for a BridgeProperty (imported MLS listing) record.
+     *
+     * Bridge records carry native address columns plus MLS-supplied latitude /
+     * longitude. The coordinates are passed through as pre_lat / pre_lng so the
+     * geocode service short-circuits and skips the Google Geocoding API call
+     * entirely (geocode_source = 'saved_meta'). When coordinates are absent the
+     * geocode service falls back to address geocoding using the same fields.
+     */
+    private function resolveBridgeAddress(int $listingId): array
+    {
+        if (! Schema::hasTable('bridge_properties')) {
+            return ['address' => '', 'city' => '', 'state' => ''];
+        }
+
+        $listing = BridgeProperty::find($listingId);
+
+        if ($listing === null) {
+            return ['address' => '', 'city' => '', 'state' => ''];
+        }
+
+        return [
+            'address' => (string) ($listing->unparsed_address ?: ''),
+            'city'    => (string) ($listing->city ?: ''),
+            'state'   => (string) ($listing->state_or_province ?: ''),
+            'county'  => (string) ($listing->county_or_parish ?: ''),
+            'zip'     => (string) ($listing->postal_code ?: ''),
+            'pre_lat' => (string) ($listing->latitude ?: ''),
+            'pre_lng' => (string) ($listing->longitude ?: ''),
         ];
     }
 }

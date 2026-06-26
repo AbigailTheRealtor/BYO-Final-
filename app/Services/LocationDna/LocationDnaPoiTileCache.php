@@ -19,8 +19,9 @@ use Illuminate\Support\Facades\Cache;
  */
 class LocationDnaPoiTileCache
 {
-    private readonly ?float $precision;
-    private readonly int    $ttl;
+    private readonly ?float  $precision;
+    private readonly int     $ttl;
+    private readonly ?string $storeName;
 
     public function __construct()
     {
@@ -31,6 +32,43 @@ class LocationDnaPoiTileCache
             : null;
 
         $this->ttl = (int) config('location_dna.poi.tile_cache_ttl', 604800);
+
+        // Resolve the backing store name. null → application default store
+        // (correct for production: a persistent, cross-process store). Coerce
+        // empty string to null so a blank env value falls back to the default.
+        $store = config('location_dna.poi.tile_cache_store');
+        $this->storeName = ($store !== null && $store !== '') ? (string) $store : null;
+    }
+
+    /**
+     * The cache store name backing this tile cache, or null when the application
+     * default store is used. Resolves the effective store for diagnostics/flush.
+     */
+    public function storeName(): ?string
+    {
+        return $this->storeName;
+    }
+
+    /**
+     * The configured cache repository. Passing null to Cache::store() returns the
+     * application default store, so a null storeName transparently uses it.
+     */
+    private function store(): \Illuminate\Contracts\Cache\Repository
+    {
+        return Cache::store($this->storeName);
+    }
+
+    /**
+     * Flush all entries in the backing store. Used by the benchmark command to
+     * prevent cross-precision contamination between runs. No-op when disabled.
+     *
+     * NOTE: this flushes the ENTIRE store, not just tile keys — only call it in
+     * benchmark/CLI contexts pointed at a dedicated/array store, never against a
+     * shared production cache.
+     */
+    public function flush(): void
+    {
+        $this->store()->flush();
     }
 
     /**
@@ -81,9 +119,9 @@ class LocationDnaPoiTileCache
     /**
      * Retrieve raw candidates from the tile cache.
      *
-     * Always uses the array cache store so that the benchmark runner's
-     * Cache::store('array')->flush() call reliably clears these entries.
-     * Returns null when disabled, key is absent, or TTL has expired.
+     * Uses the configured backing store (default: application default store, a
+     * persistent cross-process cache in production). Returns null when disabled,
+     * the key is absent, or the TTL has expired.
      */
     public function get(string $tileKey): ?array
     {
@@ -91,7 +129,7 @@ class LocationDnaPoiTileCache
             return null;
         }
 
-        $cached = Cache::store('array')->get($tileKey);
+        $cached = $this->store()->get($tileKey);
 
         return is_array($cached) ? $cached : null;
     }
@@ -99,8 +137,7 @@ class LocationDnaPoiTileCache
     /**
      * Store raw candidates in the tile cache.
      *
-     * Always uses the array cache store (in-process, per-request scope).
-     * No-op when tile cache is disabled.
+     * Uses the configured backing store. No-op when tile cache is disabled.
      */
     public function put(string $tileKey, array $rawCandidates): void
     {
@@ -108,7 +145,7 @@ class LocationDnaPoiTileCache
             return;
         }
 
-        Cache::store('array')->put($tileKey, $rawCandidates, $this->ttl);
+        $this->store()->put($tileKey, $rawCandidates, $this->ttl);
     }
 
     /**
