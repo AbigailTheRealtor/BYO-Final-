@@ -4,21 +4,27 @@ namespace App\Http\Controllers\Stellar;
 
 use App\Http\Controllers\Controller;
 use App\Models\BridgeProperty;
+use App\Models\PropertyDnaProfile;
+use App\Services\Dna\PropertyPersonalityService;
+use App\Services\LocationDna\LocationDnaSummaryService;
 use App\Services\Stellar\PropertyDetailViewMapper;
+use App\Services\Stellar\PropertyMatchContextService;
 use Illuminate\Http\Request;
 
 /**
- * Shared property detail controller — role-agnostic.
+ * Canonical property detail page — role-agnostic.
  *
- * Serves Buyer, Tenant, Agent preview, Landlord preview, and Ask AI flows.
- * Role-specific context (match score, bid context) is NOT handled here;
- * callers may pass it via query params and the view layer may render it
- * optionally via the $context variable.
+ * Section 1 (MLS data) is always rendered from bridge_properties.raw_json.
+ * Section 2 (Matchmaker Analysis) is rendered from optional enrichment services;
+ * each sub-section degrades gracefully when data is unavailable.
  */
 class StellarPropertyDetailController extends Controller
 {
     public function __construct(
-        private PropertyDetailViewMapper $mapper
+        private PropertyDetailViewMapper    $mapper,
+        private LocationDnaSummaryService   $locationSummaryService,
+        private PropertyPersonalityService  $personalityService,
+        private PropertyMatchContextService $matchContextService,
     ) {}
 
     public function show(Request $request, string $listingKey): \Illuminate\View\View
@@ -27,23 +33,22 @@ class StellarPropertyDetailController extends Controller
             ->where('standard_status', 'Active')
             ->firstOrFail();
 
-        // IDX gate — same normalisation logic as BuyerMatchService
+        // IDX gate — same normalisation as BuyerMatchService
         $raw = $listing->raw_json ? (json_decode($listing->raw_json, true) ?? []) : [];
-
         if (array_key_exists('IDXParticipationYN', $raw)) {
             $idxRaw    = $raw['IDXParticipationYN'];
             $idxPassed = is_bool($idxRaw)
                 ? $idxRaw
                 : filter_var($idxRaw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== false;
-
             if (!$idxPassed) {
                 abort(403, 'This listing is not eligible for IDX display.');
             }
         }
 
+        // Section 1 — MLS data
         $property = $this->mapper->map($listing);
 
-        // Optional back-link context supplied by the results page
+        // Back-link context from results page
         $criteriaId   = $request->input('criteria_id');
         $criteriaType = $request->input('criteria_type', 'buyer');
 
@@ -54,9 +59,59 @@ class StellarPropertyDetailController extends Controller
               ]))
             : route('stellar.buyer.results');
 
+        // Section 2a — Match context (requires criteria_id in URL and logged-in user)
+        $matchContext = null;
+        if ($criteriaId && $request->user()) {
+            try {
+                $matchContext = $this->matchContextService->resolve(
+                    $listing,
+                    $criteriaType,
+                    (int) $criteriaId,
+                    $request->user()
+                );
+            } catch (\Throwable) {
+                // Non-fatal — detail page renders without match score
+            }
+        }
+
+        // Section 2b — Location DNA summary (pre-computed by pipeline)
+        $locationSummary = [];
+        try {
+            $locationSummary = $this->locationSummaryService->summarizeForListing('bridge', $listing->id);
+        } catch (\Throwable) {
+        }
+
+        // Section 2c — Property personality + target audience (requires DNA profile)
+        $personality = null;
+        try {
+            $dnaProfile = PropertyDnaProfile::where('listing_type', 'bridge')
+                ->where('listing_id', $listing->id)
+                ->first();
+
+            if ($dnaProfile) {
+                $result = $this->personalityService->generate($dnaProfile, $locationSummary);
+                if ($result['success'] ?? false) {
+                    $personality = array_merge($result, [
+                        'archetype_tags'  => $dnaProfile->ai_buyer_archetype_tags ?? [],
+                        'marketing_hooks' => $dnaProfile->ai_marketing_hooks       ?? [],
+                        'walk_score'      => $dnaProfile->walk_score    ?? null,
+                        'transit_score'   => $dnaProfile->transit_score ?? null,
+                        'bike_score'      => $dnaProfile->bike_score    ?? null,
+                    ]);
+                }
+            }
+        } catch (\Throwable) {
+        }
+
         return view('stellar.property.detail', [
-            'property' => $property,
-            'backUrl'  => $backUrl,
+            'property'        => $property,
+            'backUrl'         => $backUrl,
+            'criteriaId'      => $criteriaId,
+            'criteriaType'    => $criteriaType,
+            'matchContext'    => $matchContext,
+            'locationSummary' => $locationSummary,
+            'personality'     => $personality,
+            'listingId'       => $listing->id,
         ]);
     }
 }

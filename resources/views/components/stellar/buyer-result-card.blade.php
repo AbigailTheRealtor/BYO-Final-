@@ -39,15 +39,25 @@
 <div class="card h-100 shadow-sm border-0" id="{{ $cardId }}">
 
     {{-- ====================================================================
-         Photo placeholder (Phase D will replace with IDX-compliant MLS photo)
+         Hero photo from Bridge CDN (or placeholder if none available)
     ==================================================================== --}}
-    <div class="card-img-top d-flex align-items-center justify-content-center bg-light text-muted"
-         style="height: 180px; border-radius: calc(.375rem - 1px) calc(.375rem - 1px) 0 0;">
-        <div class="text-center">
-            <i class="fas fa-house fa-3x mb-2 opacity-25"></i>
-            <div style="font-size:.75rem;">Photo coming soon</div>
+    @if(!empty($card['hero_photo_url']))
+        <a href="{{ $detailUrl }}" tabindex="-1" aria-hidden="true">
+            <img src="{{ $card['hero_photo_url'] }}"
+                 alt="{{ $card['address'] ?? 'Property photo' }}"
+                 class="card-img-top"
+                 style="height:180px;object-fit:cover;border-radius:calc(.375rem - 1px) calc(.375rem - 1px) 0 0;"
+                 loading="lazy">
+        </a>
+    @else
+        <div class="card-img-top d-flex align-items-center justify-content-center bg-light text-muted"
+             style="height:180px;border-radius:calc(.375rem - 1px) calc(.375rem - 1px) 0 0;">
+            <div class="text-center">
+                <i class="fas fa-house fa-3x mb-2 opacity-25"></i>
+                <div style="font-size:.75rem;">No photo available</div>
+            </div>
         </div>
-    </div>
+    @endif
 
     <div class="card-body pb-2">
 

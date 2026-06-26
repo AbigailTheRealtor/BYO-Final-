@@ -2,6 +2,7 @@
 
 namespace App\Services\Stellar;
 
+use App\Models\BridgeProperty;
 use App\Services\Stellar\Matching\DTO\BuyerMatchResult;
 use Illuminate\Support\Collection;
 
@@ -153,12 +154,35 @@ class BuyerResultViewMapper
             'missing_data'      => $missingData,
             'latitude'          => $listing->latitude !== null ? (float) $listing->latitude : null,
             'longitude'         => $listing->longitude !== null ? (float) $listing->longitude : null,
+            'hero_photo_url'    => $this->extractFirstPhotoUrl($listing),
         ];
     }
 
     // =========================================================================
     // Private helpers
     // =========================================================================
+
+    /**
+     * Extract the first public photo CDN URL from raw_json Media[], sorted by Order.
+     */
+    private function extractFirstPhotoUrl(BridgeProperty $listing): ?string
+    {
+        if (!$listing->raw_json) {
+            return null;
+        }
+        $raw   = json_decode($listing->raw_json, true) ?? [];
+        $media = $raw['Media'] ?? [];
+        if (!is_array($media) || empty($media)) {
+            return null;
+        }
+        usort($media, fn($a, $b) => (int) ($a['Order'] ?? 0) <=> (int) ($b['Order'] ?? 0));
+        foreach ($media as $item) {
+            if (!empty($item['MediaURL'])) {
+                return (string) $item['MediaURL'];
+            }
+        }
+        return null;
+    }
 
     /**
      * Map why_this_matches — filter to score_contribution > 0, sort DESC,

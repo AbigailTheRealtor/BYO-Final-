@@ -171,6 +171,11 @@ class PropertyDetailViewMapper
             // Photos — sorted by Order, MediaURL only, max 50
             // ----------------------------------------------------------------
             'photos'              => $this->parsePhotos($raw),
+
+            // ----------------------------------------------------------------
+            // Virtual tour
+            // ----------------------------------------------------------------
+            'virtual_tour_url'    => $this->scalar($raw['VirtualTourURLUnbranded'] ?? null),
         ];
     }
 
