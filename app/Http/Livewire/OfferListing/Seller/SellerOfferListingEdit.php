@@ -785,6 +785,8 @@ class SellerOfferListingEdit extends Component
     public $flood_zone_panel = '';
     public $flood_zone_date = '';
     public $waterfront = '';
+    public $water_frontage = '';
+    public $waterfront_feet = '';
     public $water_access = [];
     public $water_view = [];
     public $interior_features = [];
@@ -2051,6 +2053,8 @@ class SellerOfferListingEdit extends Component
             'flood_zone_panel'                => $this->flood_zone_panel,
             'flood_zone_date'                 => $this->flood_zone_date,
             'waterfront'                      => $this->waterfront,
+            'water_frontage'                  => $this->water_frontage,
+            'waterfront_feet'                 => $this->waterfront_feet,
             'water_access'                    => json_encode($this->water_access),
             'water_view'                      => json_encode($this->water_view),
             'interior_features'               => json_encode($this->interior_features),
@@ -2820,6 +2824,8 @@ class SellerOfferListingEdit extends Component
             $this->flood_zone_panel        = $auction->get->flood_zone_panel ?? '';
             $this->flood_zone_date         = $auction->get->flood_zone_date ?? '';
             $this->waterfront              = $auction->get->waterfront ?? '';
+            $this->water_frontage          = $auction->get->water_frontage ?? '';
+            $this->waterfront_feet         = $auction->get->waterfront_feet ?? '';
             $this->water_access            = is_string($auction->get->water_access) ? json_decode($auction->get->water_access, true) ?? [] : (array)($auction->get->water_access ?? []);
             $this->water_view              = is_string($auction->get->water_view) ? json_decode($auction->get->water_view, true) ?? [] : (array)($auction->get->water_view ?? []);
             $this->interior_features       = is_string($auction->get->interior_features) ? json_decode($auction->get->interior_features, true) ?? [] : (array)($auction->get->interior_features ?? []);
@@ -3837,6 +3843,8 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('flood_zone_panel', $this->flood_zone_panel);
         $auction->saveMeta('flood_zone_date', $this->flood_zone_date);
         $auction->saveMeta('waterfront', $this->waterfront);
+        $auction->saveMeta('water_frontage', $this->water_frontage);
+        $auction->saveMeta('waterfront_feet', $this->waterfront_feet);
         $auction->saveMeta('water_access', json_encode($this->water_access));
         $auction->saveMeta('water_view', json_encode($this->water_view));
         $auction->saveMeta('interior_features', json_encode($this->interior_features));
