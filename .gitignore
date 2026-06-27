@@ -19,3 +19,6 @@ yarn-error.log
 *.zip
 # User-uploaded conversation attachments — should not be version-controlled
 attached_assets/Pasted-*.txt
+
+# Local working scratch (audit diffs) — never commit
+scratch/

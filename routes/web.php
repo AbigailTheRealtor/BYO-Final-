@@ -827,11 +827,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/edit-seller-property-listing/{id}', [PropertyAuctionController::class, 'edit'])->name('edit-seller-property-listing');
         Route::post('/edit-seller-property-listing/{id}', [PropertyAuctionController::class, 'update'])->name('update-seller-property-listing');
 
-        Route::post('property/auction/bids-visibility/{id}/{vis}', [PropertyAuctionController::class, 'bidsVisibility'])->name('property.bids.visibility');
-        Route::post('landlord/auction/bids-visibility/{id}/{vis}', [LandlordAuctionController::class, 'bidsVisibility'])->name('landlord.auction.bids.visibility');
-        Route::post('tenant/criteria/bids-visibility/{id}/{vis}', [TenantCriteriaAuctionController::class, 'bidsVisibility'])->name('tenant.criteria.bids.visibility');
-        Route::post('criteria/auction/bids-visibility/{id}/{vis}', [BuyerCriteriaAuctionController::class, 'bidsVisibility'])->name('criteria.auction.bids.visibility');
-        Route::post('landlord/agent/auction/bids-visibility/{id}/{vis}', [LandlordAgentAuctionController::class, 'bidsVisibility'])->name('landlord.agent.auction.bids.visibility');
+        // WF-6: bids-visibility toggles are owner-only state mutations. Routes were
+        // exposed with only `web` middleware (no auth); add `auth` to mirror the
+        // CRIT-2 pattern (route auth + inline owner guard in each controller).
+        Route::post('property/auction/bids-visibility/{id}/{vis}', [PropertyAuctionController::class, 'bidsVisibility'])->name('property.bids.visibility')->middleware('auth');
+        Route::post('landlord/auction/bids-visibility/{id}/{vis}', [LandlordAuctionController::class, 'bidsVisibility'])->name('landlord.auction.bids.visibility')->middleware('auth');
+        Route::post('tenant/criteria/bids-visibility/{id}/{vis}', [TenantCriteriaAuctionController::class, 'bidsVisibility'])->name('tenant.criteria.bids.visibility')->middleware('auth');
+        Route::post('criteria/auction/bids-visibility/{id}/{vis}', [BuyerCriteriaAuctionController::class, 'bidsVisibility'])->name('criteria.auction.bids.visibility')->middleware('auth');
+        Route::post('landlord/agent/auction/bids-visibility/{id}/{vis}', [LandlordAgentAuctionController::class, 'bidsVisibility'])->name('landlord.agent.auction.bids.visibility')->middleware('auth');
 
         Route::post('/property/listing/step/1', [PropertyAuctionController::class, 'step1'])->name('save-pl-step1');
         Route::post('/property/listing/step/2', [PropertyAuctionController::class, 'step2'])->name('save-pl-step2');

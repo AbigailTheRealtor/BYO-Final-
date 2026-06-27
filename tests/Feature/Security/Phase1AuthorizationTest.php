@@ -235,4 +235,45 @@ class Phase1AuthorizationTest extends TestCase
             );
         }
     }
+
+    // =====================================================================
+    // (A) WF-6 — bids-visibility toggle: route auth wiring (no DB)
+    // =====================================================================
+
+    public function test_wf6_bids_visibility_routes_require_auth(): void
+    {
+        foreach ([
+            'property.bids.visibility',
+            'tenant.criteria.bids.visibility',
+            'criteria.auction.bids.visibility',
+            'landlord.agent.auction.bids.visibility',
+            'landlord.auction.bids.visibility', // dead-table route; auth added for surface reduction
+        ] as $name) {
+            $this->assertRouteRequiresAuth($name);
+        }
+    }
+
+    // =====================================================================
+    // (B) WF-6 — bids-visibility ownership (CI-ready, auto-skipped here)
+    // =====================================================================
+
+    public function test_wf6_non_owner_cannot_toggle_bids_visibility(): void
+    {
+        $this->requireIsolatedDb();
+        $owner    = User::factory()->create();
+        $attacker = User::factory()->create();
+        $auction  = BuyerCriteriaAuction::forceCreate(['user_id' => $owner->id, 'display_bids' => 1]);
+
+        // Non-owner is forbidden and the flag is unchanged.
+        $this->actingAs($attacker)
+            ->post('/criteria/auction/bids-visibility/' . $auction->id . '/hide')
+            ->assertForbidden();
+        $this->assertSame(1, (int) $auction->fresh()->display_bids, 'Non-owner must not change bid visibility');
+
+        // Owner can toggle their own listing.
+        $this->actingAs($owner)
+            ->post('/criteria/auction/bids-visibility/' . $auction->id . '/hide')
+            ->assertRedirect();
+        $this->assertSame(0, (int) $auction->fresh()->display_bids, 'Owner may toggle their own bid visibility');
+    }
 }

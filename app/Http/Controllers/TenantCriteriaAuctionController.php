@@ -304,6 +304,8 @@ class TenantCriteriaAuctionController extends Controller
 
     public function bidsVisibility($id, $vis){
         $auction = TenantCriteriaAuction::where('id', $id)->first();
+        // WF-6: owner-only — block authenticated IDOR on the bid-visibility toggle.
+        abort_unless(auth()->check() && $auction && (int) $auction->user_id === (int) auth()->id(), 403);
         if($vis == 'show'){
             $auction->display_bids = 1;
             $auction->save();
