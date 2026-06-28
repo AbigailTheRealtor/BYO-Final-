@@ -5113,6 +5113,12 @@ class TenantOfferListing extends Component
                 default    => 'tenant_agent_auction_id',
             };
 
+            // WF-3: only the draft's owner may delete it (and its meta).
+            if (! $modelClass::where('id', $draftId)->where('user_id', Auth::id())->exists()) {
+                session()->flash('error', 'You are not authorized to delete this draft.');
+                return;
+            }
+
             DB::table($metaTable)
                 ->where($metaFk, $draftId)
                 ->delete();

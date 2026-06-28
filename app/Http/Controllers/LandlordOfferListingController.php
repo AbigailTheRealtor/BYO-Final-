@@ -133,6 +133,17 @@ class LandlordOfferListingController extends Controller
     {
         $auction = $this->resolveOfferListing($id);
 
+        // WF-2: an archived listing is hidden from everyone except its owner.
+        if ($auction->is_archived && (int) $auction->user_id !== (int) auth()->id()) {
+            abort(404);
+        }
+
+        // WF-4: a draft / not-yet-approved listing is private to its owner (no public leak).
+        if ((! filter_var($auction->is_approved, FILTER_VALIDATE_BOOLEAN) || filter_var($auction->is_draft, FILTER_VALIDATE_BOOLEAN))
+            && (int) $auction->user_id !== (int) auth()->id()) {
+            abort(404);
+        }
+
         $meta = [];
         foreach ($auction->meta as $row) {
             $decoded = json_decode($row->meta_value, true);
@@ -255,6 +266,7 @@ class LandlordOfferListingController extends Controller
             ->selectRaw("*, (SELECT meta_value FROM landlord_agent_auction_metas WHERE landlord_agent_auction_metas.landlord_agent_auction_id = landlord_agent_auctions.id AND meta_key = 'ideal_price') as price")
             ->where('is_approved', true)
             ->where('is_draft', false)
+            ->where('is_archived', 0) // WF-2: hide owner-archived listings from discovery
             // Safety guard: never surface a record explicitly stamped hire_agent
             ->whereDoesntHave('meta', function ($m) {
                 $m->where('meta_key', 'workflow_type')->where('meta_value', 'hire_agent');

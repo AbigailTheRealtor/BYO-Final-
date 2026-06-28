@@ -434,6 +434,16 @@ class BuyerAgentAuctionController extends Controller
         if (!$auction) {
             abort(404);
         }
+        // WF-2: an archived listing is hidden from everyone except its owner.
+        if ($auction->is_archived && (int) $auction->user_id !== (int) auth()->id()) {
+            abort(404);
+        }
+
+        // WF-4: a draft / not-yet-approved listing is private to its owner (no public leak).
+        if ((! filter_var($auction->is_approved, FILTER_VALIDATE_BOOLEAN) || filter_var($auction->is_draft, FILTER_VALIDATE_BOOLEAN))
+            && (int) $auction->user_id !== (int) auth()->id()) {
+            abort(404);
+        }
         // Auto-transition Bidding Period listing to Pending when timer ends
         $this->autoTransitionBpToPending($auction);
 
@@ -490,6 +500,7 @@ class BuyerAgentAuctionController extends Controller
                   ->orWhere('is_approved', 1);
             })
             ->where('is_draft', false)
+            ->where('is_archived', 0) // WF-2: hide owner-archived listings from discovery
             // Primary: exclude records explicitly stamped as offer_listing
             ->whereDoesntHave('meta', function ($m) {
                 $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing');
@@ -571,7 +582,7 @@ class BuyerAgentAuctionController extends Controller
         $count = $auctions_c->count();
         // dd($page_data['count']);
         $pAuctions = $auctions->paginate(15);
-        $buyers = BuyerAgentAuction::where('is_approved', 1)->get();
+        $buyers = BuyerAgentAuction::where('is_approved', 1)->where('is_archived', 0)->get();
         return view('search-buyer-agent-auctions', compact('count', 'pAuctions', 'buyers'));
     }
     //Changes By Waqas

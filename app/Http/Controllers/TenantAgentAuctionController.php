@@ -280,6 +280,17 @@ class TenantAgentAuctionController extends Controller
             abort(404, 'Listing not found');
         }
 
+        // WF-2: an archived listing is hidden from everyone except its owner.
+        if ($auction->is_archived && (int) $auction->user_id !== (int) auth()->id()) {
+            abort(404);
+        }
+
+        // WF-4: a draft / not-yet-approved listing is private to its owner (no public leak).
+        if ((! filter_var($auction->is_approved, FILTER_VALIDATE_BOOLEAN) || filter_var($auction->is_draft, FILTER_VALIDATE_BOOLEAN))
+            && (int) $auction->user_id !== (int) auth()->id()) {
+            abort(404);
+        }
+
         // Auto-transition Bidding Period listing to Pending when timer ends
         $this->autoTransitionBpToPending($auction);
 
@@ -307,6 +318,7 @@ class TenantAgentAuctionController extends Controller
             ->where('is_sold', false)
             ->where('is_approved', true)
             ->where('is_draft', false)
+            ->where('is_archived', 0) // WF-2: hide owner-archived listings from discovery
             // Primary: exclude records explicitly stamped as offer_listing.
             // No meta-key fallback is applied here: TenantAgentAuction hire Livewire writes
             // the same meta keys as TenantOfferListing (security_deposit_budget, pet_information,

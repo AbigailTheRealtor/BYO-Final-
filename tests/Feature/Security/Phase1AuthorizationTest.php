@@ -276,4 +276,129 @@ class Phase1AuthorizationTest extends TestCase
             ->assertRedirect();
         $this->assertSame(0, (int) $auction->fresh()->display_bids, 'Owner may toggle their own bid visibility');
     }
+
+    // =====================================================================
+    // (A) WF-2 — listing archive route requires auth (no DB)
+    // =====================================================================
+
+    public function test_wf2_archive_route_requires_auth(): void
+    {
+        $this->assertRouteRequiresAuth('my.listings.archive');
+    }
+
+    // =====================================================================
+    // (B) WF-2 — only the owner may archive/republish (CI-ready, auto-skipped here)
+    // =====================================================================
+
+    public function test_wf2_non_owner_cannot_archive_listing(): void
+    {
+        $this->requireIsolatedDb();
+        $owner    = User::factory()->create();
+        $attacker = User::factory()->create();
+        $listing  = SellerAgentAuction::forceCreate(['user_id' => $owner->id, 'title' => 'Live']);
+
+        $this->actingAs($attacker)
+            ->post('/my-listings/seller/' . $listing->id . '/archive')
+            ->assertNotFound();
+        $this->assertNotEquals(1, (int) $listing->fresh()->is_archived, 'Non-owner must not archive');
+
+        $this->actingAs($owner)
+            ->post('/my-listings/seller/' . $listing->id . '/archive')
+            ->assertRedirect();
+        $this->assertSame(1, (int) $listing->fresh()->is_archived, 'Owner may archive their own listing');
+    }
+
+    // =====================================================================
+    // (B) WF-3 — non-owner cannot delete another user's draft meta (Livewire; runs on pgsql)
+    // =====================================================================
+
+    public function test_wf3_non_owner_cannot_delete_another_users_draft_meta(): void
+    {
+        $owner    = User::factory()->create();
+        $attacker = User::factory()->create();
+        $draft = SellerAgentAuction::forceCreate(['user_id' => $owner->id, 'is_draft' => true, 'title' => 'Owner draft']);
+        \Illuminate\Support\Facades\DB::table('seller_agent_auction_metas')->insert([
+            'seller_agent_auction_id' => $draft->id,
+            'meta_key'   => 'wf3_probe',
+            'meta_value' => 'secret',
+        ]);
+
+        // Attacker calls deleteDraft on the owner's draft id → ownership gate returns early.
+        $this->actingAs($attacker);
+        Livewire::test(\App\Http\Livewire\HireSellerAgent\SellerAgentAuction::class)->call('deleteDraft', $draft->id);
+
+        $this->assertDatabaseHas('seller_agent_auction_metas', ['seller_agent_auction_id' => $draft->id, 'meta_key' => 'wf3_probe']);
+        $this->assertNotNull($draft->fresh(), 'Non-owner must not delete the draft row');
+
+        // Owner can delete their own draft + its meta.
+        $this->actingAs($owner);
+        Livewire::test(\App\Http\Livewire\HireSellerAgent\SellerAgentAuction::class)->call('deleteDraft', $draft->id);
+
+        $this->assertDatabaseMissing('seller_agent_auction_metas', ['seller_agent_auction_id' => $draft->id, 'meta_key' => 'wf3_probe']);
+        $this->assertNull($draft->fresh(), 'Owner can delete their own draft');
+    }
+
+    // =====================================================================
+    // (B) WF-2 — archived listing detail page is hidden from non-owners (CI-ready, auto-skipped here)
+    // =====================================================================
+
+    public function test_wf2_archived_listing_detail_is_hidden_from_non_owners(): void
+    {
+        $this->requireIsolatedDb();
+        $owner    = User::factory()->create();
+        $attacker = User::factory()->create();
+        $listing  = SellerAgentAuction::forceCreate([
+            'user_id'     => $owner->id,
+            'title'       => 'Archived',
+            'is_approved' => true,
+            'is_draft'    => false,
+            'is_archived' => 1,
+        ]);
+
+        // Guest and non-owner must not reach an archived listing's detail page.
+        $this->get('/seller/agent/auction/view/' . $listing->id)->assertNotFound();
+        $this->actingAs($attacker)
+            ->get('/seller/agent/auction/view/' . $listing->id)
+            ->assertNotFound();
+
+        // After republish, the same non-owner request is no longer blocked by the archive guard.
+        $listing->forceFill(['is_archived' => 0])->save();
+        $this->actingAs($attacker)
+            ->get('/seller/agent/auction/view/' . $listing->id)
+            ->assertStatus(200);
+    }
+
+    // =====================================================================
+    // (B) WF-4 — draft / not-yet-approved listing detail is hidden from non-owners (CI-ready, auto-skipped here)
+    // =====================================================================
+
+    public function test_wf4_draft_or_pending_listing_detail_is_hidden_from_non_owners(): void
+    {
+        $this->requireIsolatedDb();
+        $owner    = User::factory()->create();
+        $attacker = User::factory()->create();
+
+        // (1) Draft (unpublished) — private to the owner.
+        $draft = SellerAgentAuction::forceCreate([
+            'user_id' => $owner->id, 'title' => 'Draft',
+            'is_approved' => false, 'is_draft' => true, 'is_archived' => 0,
+        ]);
+        $this->get('/seller/agent/auction/view/' . $draft->id)->assertNotFound();            // guest
+        $this->actingAs($attacker)->get('/seller/agent/auction/view/' . $draft->id)->assertNotFound(); // non-owner
+        $this->actingAs($owner)->get('/seller/agent/auction/view/' . $draft->id)->assertStatus(200);   // owner may preview own draft
+
+        // (2) Pending moderation (submitted, not yet approved) — still private to the owner.
+        $pending = SellerAgentAuction::forceCreate([
+            'user_id' => $owner->id, 'title' => 'Pending',
+            'is_approved' => false, 'is_draft' => false, 'is_archived' => 0,
+        ]);
+        $this->actingAs($attacker)->get('/seller/agent/auction/view/' . $pending->id)->assertNotFound();
+
+        // (3) Approved + published — publicly viewable.
+        $live = SellerAgentAuction::forceCreate([
+            'user_id' => $owner->id, 'title' => 'Live',
+            'is_approved' => true, 'is_draft' => false, 'is_archived' => 0,
+        ]);
+        $this->actingAs($attacker)->get('/seller/agent/auction/view/' . $live->id)->assertStatus(200);
+    }
 }

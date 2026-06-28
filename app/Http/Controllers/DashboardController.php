@@ -568,4 +568,34 @@ class DashboardController extends Controller
             'sellerOfferListings'=> $sellerOfferListings,
         ]);
     }
+
+    /**
+     * WF-2 — owner-controlled archive / republish of a listing.
+     *
+     * Reversible unpublish: sets `is_archived` on the owner's own listing. The
+     * public/agent discovery surfaces exclude archived listings, so it leaves
+     * circulation, while bids and accepted-bid summaries are preserved. Owner-only.
+     */
+    public function setListingArchived($type, $id, $action)
+    {
+        $models = [
+            'tenant'       => TenantAgentAuction::class,
+            'landlord'     => LandlordAgentAuction::class,
+            'buyer'        => BuyerAgentAuction::class,
+            'seller'       => SellerAgentAuction::class,
+            'seller_offer' => SellerAgentAuction::class,
+        ];
+        abort_unless(isset($models[$type]) && in_array($action, ['archive', 'republish'], true), 404);
+
+        // Owner-scoped: a non-owner (or unknown id) fails closed with 404.
+        $listing = $models[$type]::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+        $listing->is_archived = ($action === 'archive') ? 1 : 0;
+        $listing->save();
+
+        session()->flash('success', $action === 'archive'
+            ? 'Listing unpublished — it is now hidden from public listings (your bids are kept). You can republish it any time.'
+            : 'Listing republished — it is visible again.');
+
+        return back();
+    }
 }

@@ -2437,9 +2437,14 @@ class BuyerAgentAuction extends Component
     public function deleteDraft($draftId)
     {
         try {
-            // Delete metadata first
-            DB::table('tenant_agent_auction_metas')
-                ->where('tenant_agent_auction_id', $draftId)
+            // WF-3: only the draft's owner may delete it (and its meta).
+            if (! HireBuyerAgentAuction::where('id', $draftId)->where('user_id', Auth::id())->exists()) {
+                session()->flash('error', 'You are not authorized to delete this draft.');
+                return;
+            }
+            // Delete metadata first (WF-3: corrected table — was tenant_agent_auction_metas)
+            DB::table('buyer_agent_auction_metas')
+                ->where('buyer_agent_auction_id', $draftId)
                 ->delete();
 
             // Delete the draft

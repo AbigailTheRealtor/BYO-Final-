@@ -431,6 +431,7 @@ class LandlordAgentAuctionController extends Controller
         $auctions->selectRaw("*, (SELECT meta_value FROM landlord_agent_auction_metas WHERE landlord_agent_auction_metas.landlord_agent_auction_id = landlord_agent_auctions.id AND meta_key = 'ideal_price') as price")
             ->where('is_approved', true)
             ->where('is_draft', false)
+            ->where('is_archived', 0) // WF-2: hide owner-archived listings from discovery
             // Primary: exclude records explicitly stamped as offer_listing.
             // No meta-key fallback is applied here: HireLandLordAgent/LandLordAgentAuction
             // Livewire writes the same meta keys as LandlordOfferListing (brokerage_relationship,
@@ -523,6 +524,16 @@ class LandlordAgentAuctionController extends Controller
 
         $page_data['auction'] = $auction = LandlordAgentAuction::with(['bids.user', 'bids.meta', 'user', 'meta'])->find($id);
         if (!$auction) {
+            abort(404);
+        }
+        // WF-2: an archived listing is hidden from everyone except its owner.
+        if ($auction->is_archived && (int) $auction->user_id !== (int) auth()->id()) {
+            abort(404);
+        }
+
+        // WF-4: a draft / not-yet-approved listing is private to its owner (no public leak).
+        if ((! filter_var($auction->is_approved, FILTER_VALIDATE_BOOLEAN) || filter_var($auction->is_draft, FILTER_VALIDATE_BOOLEAN))
+            && (int) $auction->user_id !== (int) auth()->id()) {
             abort(404);
         }
         // Auto-transition Bidding Period listing to Pending when timer ends

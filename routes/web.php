@@ -499,6 +499,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
         Route::get('/my-listings', [DashboardController::class, 'allListings'])->name('my.listings');
+        // WF-2: owner-controlled archive / republish of a published listing.
+        Route::post('/my-listings/{type}/{id}/{action}', [DashboardController::class, 'setListingArchived'])->name('my.listings.archive')->middleware('auth');
         Route::get('/settings', [DashboardController::class, 'settings'])->name('settings');
         Route::post('/settings', [DashboardController::class, 'saveSettings']);
         Route::post('/settings/delete-account', [DashboardController::class, 'deleteAccount'])->name('settings.delete-account');

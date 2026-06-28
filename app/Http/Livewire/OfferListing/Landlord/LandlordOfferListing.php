@@ -4188,6 +4188,11 @@ class LandlordOfferListing extends Component
     public function deleteDraft($draftId)
     {
         try {
+            // WF-3: only the draft's owner may delete it (and its meta).
+            if (! HirelandLordAgentAuction::where('id', $draftId)->where('user_id', Auth::id())->exists()) {
+                session()->flash('error', 'You are not authorized to delete this draft.');
+                return;
+            }
             DB::table('landlord_agent_auction_metas')
                 ->where('landlord_agent_auction_id', $draftId)
                 ->delete();

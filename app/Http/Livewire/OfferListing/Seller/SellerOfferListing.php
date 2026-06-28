@@ -4485,6 +4485,11 @@ class SellerOfferListing extends Component
     public function deleteDraft($draftId)
     {
         try {
+            // WF-3: only the draft's owner may delete it (and its meta).
+            if (! SellerAgentAuctionModel::where('id', $draftId)->where('user_id', Auth::id())->exists()) {
+                session()->flash('error', 'You are not authorized to delete this draft.');
+                return;
+            }
             // Delete metadata first
             DB::table('seller_agent_auction_metas')
                 ->where('seller_agent_auction_id', $draftId)

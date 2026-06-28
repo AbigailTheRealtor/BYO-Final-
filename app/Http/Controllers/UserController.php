@@ -47,16 +47,16 @@ class UserController extends Controller
                 return view('author_inc.agent_service_auctions', $page_data);
             }
         } else if ($user->user_type == 'buyer') {
-            $page_data['pAuctions'] = BuyerAgentAuction::where('is_sold', false)->where('is_approved', 1)->paginate(12);
+            $page_data['pAuctions'] = BuyerAgentAuction::where('is_sold', false)->where('is_approved', 1)->where('is_archived', 0)->paginate(12);
             return view('author_inc.buyer_agent_auctions', $page_data);
         } else if ($user->user_type == 'seller') {
-            $page_data['pAuctions'] = SellerAgentAuction::where('is_sold', 'false')->where('is_approved', 'true')
+            $page_data['pAuctions'] = SellerAgentAuction::where('is_sold', 'false')->where('is_approved', 'true')->where('is_archived', 0)
                 ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
                 ->whereDoesntHave('meta', function ($m) { $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS); })
                 ->paginate(12);
             return view('author_inc.seller_agent_auctions', $page_data);
         } else if ($user->user_type == 'landlord') {
-            $page_data['pAuctions'] = LandlordAgentAuction::where('is_sold', false)->where('is_approved', 1)->paginate(12);
+            $page_data['pAuctions'] = LandlordAgentAuction::where('is_sold', false)->where('is_approved', 1)->where('is_archived', 0)->paginate(12);
             return view('author_inc.landlord_agent_auctions', $page_data);
         } else if ($user->user_type == 'tenant') {
             // Tenant dashboard: Owner sees all their listings (including unapproved),
@@ -69,6 +69,7 @@ class UserController extends Controller
                 if (!$isOwner) {
                     $query->where('is_draft', false);
                     $query->where('is_approved', 1);
+                    $query->where('is_archived', 0); // WF-2: hide owner-archived listings from visitors
                 }
                 $page_data['pAuctions'] = $query->paginate(12);
                 
@@ -89,6 +90,7 @@ class UserController extends Controller
                 if (!$isOwner) {
                     $query->where('is_draft', false);
                     $query->where('is_approved', 'true');
+                    $query->where('is_archived', 0); // WF-2: hide owner-archived listings from visitors
                 }
                 $page_data['pAuctions'] = $query->paginate(12);
                 
@@ -107,6 +109,7 @@ class UserController extends Controller
                 if (!$isOwner) {
                     $query->where('is_draft', false);
                     $query->where('is_approved', 1);
+                    $query->where('is_archived', 0); // WF-2: hide owner-archived listings from visitors
                 }
                 $page_data['pAuctions'] = $query->paginate(12);
                 
@@ -125,6 +128,7 @@ class UserController extends Controller
                 if (!$isOwner) {
                     $query->where('is_draft', false);
                     $query->where('is_approved', 1);
+                    $query->where('is_archived', 0); // WF-2: hide owner-archived listings from visitors
                 }
                 $page_data['pAuctions'] = $query->paginate(12);
                 
@@ -143,6 +147,7 @@ class UserController extends Controller
                 if (!$isOwner) {
                     $query->where('is_draft', false);
                     $query->where('is_approved', 1);
+                    $query->where('is_archived', 0); // WF-2: hide owner-archived listings from visitors
                 }
                 $page_data['pAuctions'] = $query->paginate(12);
                 return view('author_inc.tenant_agent_auctions', $page_data);

@@ -228,9 +228,9 @@ Read-only static trace of every workflow across the lifecycle stages. ✅ wired 
 | ID | Workflow | Finding | Sev | Evidence | Launch Blocker |
 |---|---|---|---|---|---|
 | **WF-1** | Ask AI (both products) | **Closed-but-broken:** widget posts `buyer_offer/tenant_offer/buyer/tenant`; controller `OWNER_TABLES` doesn't map them → 403 for every consumer's own listing | High | `AskAiListingQuestionController.php:22-35,257-272` vs `matchmaker-ask-ai.blade.php:40,90`, `buyer-result-card.blade.php:20-23` | **Yes** |
-| **WF-2** | All 8 listing workflows | **No archive/delete/unpublish** of a published listing — only draft deletion exists | High | absence across all listing controllers/components | **Yes** (user must remove own listing) |
-| **WF-3** | BYA Landlord+Tenant | **Unscoped `deleteDraft()` meta deletion** — meta keyed on attacker-controllable `$draftId`, no `user_id` scope → cross-user data destruction | High (security) | `LandLordAgentAuction.php:2926`, `TenantAgentAuction.php:5140` | **Yes** |
-| **WF-4** | BYA Landlord+Tenant | Public **VIEW leaks draft/pending** listings (no status/auth gate) = MED-23 elevated | Med-High (privacy) | `LandlordAgentAuctionController.php:519`, `TenantAgentAuctionController.php:274` | Recommended→Yes |
+| **WF-2** 🟩 | All 8 listing workflows | ✅ **CLOSED (Pass M-B, owner-approved 2026-06-28).** Was: no archive/delete/unpublish of a published listing. Now: owner-scoped reversible **archive/republish** (`is_archived`), and every public surface is archive-aware — 9 discovery gates + all 8 by-ID/detail/view guards + tenant author multi-tab; bids/history preserved | High | `is_archived` migration; `DashboardController::setListingArchived`; 8 detail-action owner-aware guards; `UserController::author` gated | ~~Yes~~ **DONE** |
+| **WF-3** 🟩 | BYA Landlord+Tenant (found in **all 8**) | ✅ **CLOSED (Pass M-B).** Was: unscoped `deleteDraft()` meta deletion → cross-user data destruction. Now: ownership gate on all 8 `deleteDraft()` + BYA Buyer wrong-table bug fixed; DB-backed Livewire test passes | High (security) | ownership gate across 8 `deleteDraft()`; `Phase1AuthorizationTest::test_wf3_…` | ~~Yes~~ **DONE** |
+| **WF-4** 🟩 | BYA Landlord+Tenant (closed in **all 8**) | ✅ **CLOSED (Pass M-B).** Was: public VIEW leaks draft/pending listings (no status/auth gate). Now: owner-only guard (`abort(404)` when `!is_approved`/`is_draft` and viewer ≠ owner) on all 8 detail actions, bundled with the WF-2 archive guard; CI-ready test added | Med-High (privacy) | owner-only draft/pending guard on 8 detail actions; `Phase1AuthorizationTest::test_wf4_…` | ~~Yes~~ **DONE** |
 | **WF-5** | BYA Seller+Buyer | **Compatibility preferences uneditable after create** — shared editor only handles `tenant_specific` | Med-High | `TenantAgentAuctionEdit.php:2772-2795,3750-3752` | Recommended |
 | **WF-6** | BYA legacy POST routes | Controller `update()` / `bidsVisibility()` lack ownership checks (authenticated IDOR, distinct from CRIT-1 entry points) | Med-High (security) | `LandlordAgentAuctionController.php:231`, `TenantAgentAuctionController.php:182,547` | Recommended→Yes (verify reachability) |
 | **WF-7** | BYA edit (shared) | MED-24 silent locked fields on edit (auction_type/working_with_agent/auction_time reverted, no user message) | Low-Med (UX) | `TenantAgentAuctionEdit.php:3335-3351` | No |
@@ -249,17 +249,17 @@ Read-only static trace of every workflow across the lifecycle stages. ✅ wired 
 
 1. **BYO-C4** — Seller create broker-comp data loss *(Critical)*
 2. **N1** — `AgentCounteredTermsController` IDOR *(High)*
-3. **WF-3** — unscoped `deleteDraft` cross-user data destruction *(High, security — NEW)*
+3. ~~**WF-3** — unscoped `deleteDraft` cross-user data destruction *(High, security — NEW)*~~ **✅ CLOSED (Pass M-B)**
 4. **BYA-H6** — offers never expire (breaks whole negotiation loop) *(High)*
 5. **WF-1** — Ask AI 403 for all consumers (closed-but-broken) *(High — NEW)*
-6. **WF-2** — no delete/unpublish of own published listing *(High — NEW)*
+6. ~~**WF-2** — no delete/unpublish of own published listing *(High — NEW)*~~ **✅ CLOSED (Pass M-B, owner-approved) — owner archive/republish, archive-aware on all public surfaces**
 7. **BYA-H2 / BYA-H3** — self-bid + duplicate-bid integrity *(High)*
 8. **BYA-H4** — consumers shown wrong agent data *(High)*
 9. **BYO-H1 / BYO-H2** — edit publishes blank required fields / waterfront edit crash *(High)*
 10. **BYO-H4** — tenant rentals-vs-sales (Tenant scope confirmed live) *(High)*
 11. **BYA-H11** — Buyer counter-terms SQL-error path *(High)*
 12. **BYO-C2s** — Ask-AI restricted-field stripping *(High — In QA)*
-13. **WF-4 / WF-6** — draft view leak + legacy-route IDOR *(Med-High, security — verify)*
+13. ~~**WF-4 / WF-6** — draft view leak + legacy-route IDOR *(Med-High, security — verify)*~~ **✅ BOTH CLOSED** (WF-6 Pass M-A, WF-4 Pass M-B)
 
 ---
 
@@ -267,3 +267,5 @@ Read-only static trace of every workflow across the lifecycle stages. ✅ wired 
 
 - **2026-06-27 (1)** — Initial reconciliation (Phase 0, Priority 1). Baseline (8 commits) verified in HEAD. All BYA + BYO Critical/High re-verified against current code. CRIT-6 reconciled CLOSED; HIGH-5 reopened as PARTIAL (N1); C4 narrowed (N3); C2 stripping flagged In QA (N4).
 - **2026-06-27 (2)** — End-to-end workflow certification (§9–§11). 13-stage lifecycle traced across both products × 4 roles + negotiation + discovery. **7 new workflow blockers (WF-1…WF-7)**, incl. closed-but-broken Ask AI (WF-1), no listing delete (WF-2), unscoped deleteDraft data destruction (WF-3). Tenant scope resolved (discovery is live → H4 required). H3 reclassified non-blocker; MED-3/MED-7 verified closed. Awaiting itemized V1 checklist to finalize Required/Recommended/Post-Launch tiers and the 7 governance deliverables.
+- **2026-06-28 (1)** — **WF-3 🟩 and WF-2 🟩 CLOSED (Pass M-B, owner-approved).** WF-3: ownership gate on all 8 `deleteDraft()` + BYA Buyer wrong-table fix (DB-backed test passes). WF-2: owner-scoped reversible archive/republish (`is_archived`) made archive-aware across **every public surface** — 9 discovery gates, all 8 by-ID/detail/view actions (owner-aware `abort(404)`), and the tenant author/profile multi-tab; owner retains visibility (My Listings + own detail); bids/summaries/history preserved. §10 + §11 shortlist updated. **Required remaining: 12** (was 15 — WF-6/WF-3/WF-2 closed). Readiness: **BYA ≈64%, BYO ≈61%.** See Master Roadmap change log 2026-06-28 (1) for the full file-level detail.
+- **2026-06-28 (2)** — **WF-4 🟩 CLOSED — doc reconciled to code (recovery audit).** A recovery audit of an interrupted session found the WF-4 draft/pending view-leak guard was already implemented and tested in code but still tracked open here. The owner-only guard (`abort(404)` when `!is_approved`/`is_draft` and viewer ≠ owner) ships on **all 8** by-ID detail actions (bundled with the WF-2 archive guard), with CI-ready test `test_wf4_…`. Updated the §10 WF-4 row and the §11 shortlist. **Required remaining: 11** (WF-6/WF-3/WF-2/WF-4 closed); Phase A (security close-out) complete. Documentation only — no application code modified.

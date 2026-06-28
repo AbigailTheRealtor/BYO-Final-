@@ -260,6 +260,8 @@ $grandTotal = $tenantListings->count() + $landlordListings->count() + $buyerList
                                                         $displayId = $listing->listing_id ?? ('#' . $listing->id);
                                                         $address   = trim($listing->address ?? '');
                                                         $titleText = trim($listing->title ?? '');
+                                                        $isArchived = mlBool($listing->is_archived ?? false);
+                                                        $isDraft    = mlBool($listing->is_draft);
                                                     @endphp
                                                     <tr>
                                                         <td class="ml-listing-id">{{ $displayId }}</td>
@@ -270,11 +272,24 @@ $grandTotal = $tenantListings->count() + $landlordListings->count() + $buyerList
                                                             @endif
                                                         </td>
                                                         <td>
-                                                            <span class="ml-badge {{ $statusClass }}">{{ $statusLabel }}</span>
+                                                            @if($isArchived)
+                                                                <span class="ml-badge badge-pending">Archived</span>
+                                                            @else
+                                                                <span class="ml-badge {{ $statusClass }}">{{ $statusLabel }}</span>
+                                                            @endif
                                                         </td>
                                                         <td class="ml-bids">{{ $listing->bids_count }}</td>
-                                                        <td>
+                                                        <td style="white-space:nowrap;">
                                                             <a href="{{ route($role['viewRoute'], $listing->id) }}" class="btn-ml-view">View</a>
+                                                            {{-- WF-2: owner-controlled unpublish / republish (drafts use Delete, not Archive) --}}
+                                                            @unless($isDraft)
+                                                                <form action="{{ route('my.listings.archive', ['type' => $role['key'], 'id' => $listing->id, 'action' => $isArchived ? 'republish' : 'archive']) }}"
+                                                                      method="post" style="display:inline;"
+                                                                      onsubmit="return confirm('{{ $isArchived ? 'Republish this listing so it appears in public listings again?' : 'Unpublish this listing? It will be hidden from public listings. Your bids are kept and you can republish any time.' }}');">
+                                                                    @csrf
+                                                                    <button type="submit" class="btn-ml-view" style="border:none;cursor:pointer;">{{ $isArchived ? 'Republish' : 'Unpublish' }}</button>
+                                                                </form>
+                                                            @endunless
                                                         </td>
                                                     </tr>
                                                     @endforeach
