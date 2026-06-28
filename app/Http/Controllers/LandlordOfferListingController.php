@@ -20,12 +20,16 @@ class LandlordOfferListingController extends Controller
      * the Hire Landlord's Agent flow — so their presence positively identifies an
      * Offer Listing when the workflow_type stamp is absent.
      */
+    // `auction_type` removed: both the Hire Landlord's Agent and the Create Offer
+    // Landlord flows write it, so it is not a valid Offer-Listing discriminator.
+    // Hire rows are positively tagged workflow_type='hire_agent' (rejected before
+    // this fallback runs); the primary `offer_listing` stamp + these keys identify
+    // legacy Offer rows that pre-date the stamp.
     public const OFFER_LISTING_META_KEYS = [
         'desired_rental_amount',
         'lease_amount_frequency',
         'tenant_require',
         'listing_date',
-        'auction_type',
         'property_photos',
     ];
 

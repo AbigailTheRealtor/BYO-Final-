@@ -20,6 +20,12 @@ class SellerOfferListingController extends Controller
      * Meta keys that are exclusive to Seller Offer Listings (Full Service).
      * Used as a fallback identifier for records that pre-date the workflow_type stamp.
      */
+    // NOTE: keys must be EXCLUSIVE to the Offer Listing flow. `auction_type` and
+    // `brokerage_relationship` were removed because the Hire Seller's Agent flow
+    // also writes them — leaving them here misclassified every Hire Seller listing
+    // as an Offer Listing (draft-mixing bug). Hire rows are now positively tagged
+    // workflow_type='hire_agent'; the primary `offer_listing` stamp + these
+    // exclusive keys identify legacy Offer rows that pre-date the stamp.
     public const OFFER_LISTING_META_KEYS = [
         'parcel_id',
         'flood_zone_code',
@@ -27,9 +33,7 @@ class SellerOfferListingController extends Controller
         'seller_disclosure_available',
         'property_photos',
         'listing_documents',
-        'brokerage_relationship',
         'association_type',
-        'auction_type',
     ];
 
     /**

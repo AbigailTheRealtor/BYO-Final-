@@ -1844,7 +1844,11 @@ class BuyerAgentAuction extends Component
     protected function saveAllMetadata($auction)
     {
         \Log::info('[saveAllMetadata CALLED]', ['auction_id' => $auction->id]);
-        
+
+        // Positive workflow tag so Hire Agent rows never leak into Create Offer
+        // Listing drafts (shared *_agent_auctions tables). See draft-separation fix.
+        $auction->saveMeta('workflow_type', 'hire_agent');
+
         $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
