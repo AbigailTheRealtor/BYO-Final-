@@ -524,7 +524,7 @@
                             value="{{ $fmtMoney(old('seller_financing_balloon_amount', $formData->get('seller_financing_balloon_amount'))) }}">
                     </div>
                     <input type="text" name="seller_financing_balloon_date" class="form-control"
-                        placeholder="Enter due date (e.g., 5 years)"
+                        placeholder="Enter due date (e.g., 5 Years)"
                         value="{{ old('seller_financing_balloon_date', $formData->get('seller_financing_balloon_date')) }}">
                 </div>
             </div>
@@ -1018,7 +1018,7 @@
         <div class="col-md-4">
             <label class="form-label fw-semibold">Number of Occupants</label>
             <input type="number" name="num_occupants" class="form-control" min="1" max="99"
-                placeholder="e.g., 2"
+                placeholder="Enter number of occupants (e.g., 2)"
                 value="{{ old('num_occupants', $formData->get('num_occupants')) }}">
         </div>
     </div>

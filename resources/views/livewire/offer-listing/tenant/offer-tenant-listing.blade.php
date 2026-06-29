@@ -1821,7 +1821,7 @@ $lease_types = [
                                     <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
                                     <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled" wire:target="store">
-                                        <span wire:loading.remove wire:target="store">Submit Rental Offer</span>
+                                        <span wire:loading.remove wire:target="store">Submit</span>
                                         <span wire:loading wire:target="store">Submitting...</span>
                                     </button>
                                 </div>

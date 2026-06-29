@@ -21,7 +21,7 @@ trait LandlordPublishValidation
      */
     protected function getConditionalRules(): array
     {
-        return [
+        $rules = [
             'first_name'           => 'required|string',
             'last_name'            => 'required|string',
             'phone_number'         => 'required|string',
@@ -38,6 +38,14 @@ trait LandlordPublishValidation
             'other_exterior_construction' => 'nullable|string|max:255',
             'other_foundation'         => 'nullable|string|max:255',
         ];
+
+        // A1.4/A1.5: a Bidding Period listing must specify a Bidding Period Length
+        // (auction_time) so the listing timer has an end — parity with Seller.
+        if ($this->auction_type === 'Bidding Period') {
+            $rules['auction_time'] = 'required|string';
+        }
+
+        return $rules;
     }
 
     /**
@@ -53,6 +61,7 @@ trait LandlordPublishValidation
             'email.email'                   => 'Please enter a valid email address.',
             'desired_lease_length.required' => 'Desired Lease Term is required.',
             'desired_lease_length.min'      => 'Please select at least one Desired Lease Term.',
+            'auction_time.required'         => 'Bidding Period Length is required for Bidding Period listings.',
         ];
     }
 }

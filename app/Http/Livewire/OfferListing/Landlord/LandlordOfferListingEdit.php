@@ -3835,13 +3835,15 @@ class LandlordOfferListingEdit extends Component
 
     public function update()
     {
-        // BYO-H1: enforce the SAME full required-field rules as create on the publish
-        // path (drafts stay lenient via saveDraft / saveDraftOnly). Previously this
-        // validated only nullable property fields, so required contact / lease fields
-        // could be blanked and re-published.
-        $this->validate($this->getConditionalRules(), $this->getValidationMessages());
-
         try {
+            // BYO-H1: enforce the SAME full required-field rules as create on the publish
+            // path (drafts stay lenient via saveDraft / saveDraftOnly). Previously this
+            // validated only nullable property fields, so required contact / lease fields
+            // could be blanked and re-published.
+            // A1.10: validate() inside try so a ValidationException on a hidden tab is
+            // surfaced as a flash banner (parity with create store()).
+            $this->validate($this->getConditionalRules(), $this->getValidationMessages());
+
             $this->isDraft = 0;
 
             $auction = $this->auctionId
@@ -3887,6 +3889,16 @@ class LandlordOfferListingEdit extends Component
 
             return redirect()->to($url);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // A1.10: surface missing/invalid required fields as a flash banner on the
+            // edit-publish path too (parity with create store()).
+            \Log::error('Landlord Agent Auction (edit) validation failed', [
+                'errors'  => $e->errors(),
+                'user_id' => Auth::id(),
+            ]);
+            $errorMessages = collect($e->errors())->flatten()->take(3)->implode(' | ');
+            session()->flash('error', 'Missing/invalid: ' . $errorMessages);
+            throw $e; // re-throw so Livewire renders the field-level errors too
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());
         }

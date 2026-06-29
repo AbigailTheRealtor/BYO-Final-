@@ -244,7 +244,7 @@ $auction_lengths_seller = [
         <span class="error mt-2" id="agent_bid_visibility_error"></span>
     </div> --}}
 
-    @if (config('bya_beta.bidding_period_enabled'))
+    {{-- A1.2–A1.4: Listing Type / Bidding Period restored for Landlord (Create Offer). Buyer/Tenant remain Traditional-only via the bya_beta.bidding_period_enabled gate in their own partials. --}}
     <div class="form-group">
         <label class="fw-bold">Listing Type: <span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -286,10 +286,6 @@ $auction_lengths_seller = [
         <i class="fa-solid fa-circle-info me-1"></i>
         <strong>Bidding Period:</strong> The timer creates a structured window for offers to be submitted. You may review, accept, counter, or reject offers at any time during or after the bidding period.
     </div>
-    @else
-    {{-- Bidding Period disabled (BIDDING_PERIOD_ENABLED=false). Default to Traditional. --}}
-    <input type="hidden" wire:model="auction_type" value="Traditional">
-    @endif
 
 </div>
 

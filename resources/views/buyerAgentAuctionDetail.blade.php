@@ -1711,6 +1711,52 @@
                             </div>
                         @endif
 
+                        {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
+                        @php
+                            $rawCompatView = $auction->info('compatibility_preferences');
+                            $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
+                                ? (json_decode($rawCompatView, true) ?? [])
+                                : [];
+                            $bsView = $compatView['buyer_specific'] ?? [];
+
+                            $repResolve = function(string $val, string $otherVal): string {
+                                return ($val === 'Other' && !empty($otherVal)) ? $otherVal : $val;
+                            };
+                            $repResolveArr = function(array $vals, string $otherVal): array {
+                                return array_values(array_filter(array_map(function($v) use ($otherVal) {
+                                    return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
+                                }, $vals)));
+                            };
+                            $repRows = [];
+                            $repAdd = function(string $label, $raw, string $otherVal = '') use (&$repRows, $repResolve, $repResolveArr) {
+                                if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+                                $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
+                                if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
+                            };
+
+                            $repAdd('Primary Transaction Goal', $bsView['primary_transaction_goal'] ?? '', $bsView['primary_transaction_goal_other'] ?? '');
+                            $repAdd('Representation Priorities', $bsView['representation_priorities'] ?? [], $bsView['representation_priorities_other'] ?? '');
+                            $repAdd('Communication Style', $bsView['communication_style'] ?? '', '');
+                            $repAdd('Availability / Best Times to Reach You', $bsView['availability_windows'] ?? '', '');
+                            $repAdd('Negotiation Style', $bsView['negotiation_style'] ?? '', '');
+                            $repAdd('Preferred Agent Working Style', $bsView['preferred_agent_working_style'] ?? '', $bsView['preferred_agent_working_style_other'] ?? '');
+                            $repAdd('Non-Negotiable Requirements / Deal Breakers', $bsView['deal_breakers'] ?? '', '');
+                            $repAdd('Additional Notes for Agent', $bsView['additional_compatibility_notes'] ?? '', '');
+                        @endphp
+
+                        @if (!empty($repRows))
+                        <hr />
+                        <div class="card-header section-header">
+                            <h4 class="section-title">Representation Preferences &amp; Compatibility:</h4>
+                        </div>
+                        @foreach ($repRows as $repRow)
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            {{ $repRow['label'] }}:
+                            <span class="removeBold">{{ $repRow['value'] }}</span>
+                        </div>
+                        @endforeach
+                        @endif
+
                         @php
                             $hasBrokerCompData =
                                 !empty(@$auction->get->commission_structure) ||

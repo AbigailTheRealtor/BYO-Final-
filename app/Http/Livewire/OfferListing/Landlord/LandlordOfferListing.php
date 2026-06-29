@@ -4066,11 +4066,14 @@ class LandlordOfferListing extends Component
 
     public function store()
     {
-        // BYO-H1: full publish rules now live in LandlordPublishValidation so create
-        // and edit-publish enforce identical required fields (single source of truth).
-        $this->validate($this->getConditionalRules(), $this->getValidationMessages());
-
         try {
+            // BYO-H1: full publish rules now live in LandlordPublishValidation so create
+            // and edit-publish enforce identical required fields (single source of truth).
+            // A1.10: validate() runs INSIDE the try so a ValidationException for a required
+            // field on a hidden tab is caught and surfaced as a flash banner (parity with
+            // Seller store()); otherwise submit appears to do nothing.
+            $this->validate($this->getConditionalRules(), $this->getValidationMessages());
+
             $this->isDraft = 0;
 
             $auction = $this->listingId
@@ -4136,6 +4139,16 @@ class LandlordOfferListing extends Component
             // Keep redirect as fallback
             return redirect()->to($url);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // A1.10: surface missing/invalid required fields as a flash banner so the
+            // submit is not silently swallowed when the failing field is on another tab.
+            \Log::error('Landlord Agent Auction validation failed', [
+                'errors'  => $e->errors(),
+                'user_id' => Auth::id(),
+            ]);
+            $errorMessages = collect($e->errors())->flatten()->take(3)->implode(' | ');
+            session()->flash('error', 'Missing/invalid: ' . $errorMessages);
+            throw $e; // re-throw so Livewire renders the field-level errors too
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());
         }

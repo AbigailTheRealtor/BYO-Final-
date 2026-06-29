@@ -1507,6 +1507,58 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         @include('partials.listing-photos-tours-documents')
 
+        {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
+        @php
+            $rawCompatView = $auction->info('compatibility_preferences');
+            $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
+                ? (json_decode($rawCompatView, true) ?? [])
+                : [];
+            $llView = $compatView['landlord_specific'] ?? [];
+
+            $repResolve = function(string $val, string $otherVal): string {
+                return ($val === 'Other' && !empty($otherVal)) ? $otherVal : $val;
+            };
+            $repResolveArr = function(array $vals, string $otherVal): array {
+                return array_values(array_filter(array_map(function($v) use ($otherVal) {
+                    return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
+                }, $vals)));
+            };
+            $repRows = [];
+            $repAdd = function(string $label, $raw, string $otherVal = '') use (&$repRows, $repResolve, $repResolveArr) {
+                if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+                $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
+                if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
+            };
+
+            $repAdd('Primary Leasing Goal', $llView['primary_leasing_goal'] ?? '', $llView['primary_leasing_goal_other'] ?? '');
+            $repAdd('Preferred Tenant Type', $llView['tenant_type_preference'] ?? '', $llView['tenant_type_preference_other'] ?? '');
+            $repAdd('Preferred Lease Duration', $llView['lease_duration_preference'] ?? '', '');
+            $repAdd('Level of Involvement in Day-to-Day Management', $llView['property_management_involvement'] ?? '', '');
+            $repAdd('Preferred Communication Style', $llView['communication_style'] ?? '', '');
+            $repAdd('Preferred Contact Frequency', $llView['preferred_contact_method'] ?? '', '');
+            $repAdd('Expected Agent Response Time', $llView['response_time_expectation'] ?? '', '');
+            $repAdd('Preferred Agent Working Style', $llView['preferred_agent_working_style'] ?? '', '');
+            $repAdd('Negotiation Style', $llView['negotiation_style'] ?? '', '');
+            $repAdd('Representation Priorities', $llView['representation_priorities'] ?? [], '');
+            $repAdd('Risk Tolerance', $llView['risk_tolerance'] ?? '', '');
+            $repAdd('Willingness to Offer Concessions', $llView['concessions_willingness'] ?? '', '');
+            $repAdd('Flexibility on Lease Terms', $llView['lease_terms_flexibility'] ?? '', '');
+            $repAdd('Additional Notes on Representation Preferences', $llView['additional_representation_notes'] ?? '', '');
+        @endphp
+
+        @if (!empty($repRows))
+        <hr />
+        <div class="card-header section-header">
+            <h4 class="section-title">Representation Preferences &amp; Compatibility:</h4>
+        </div>
+        @foreach ($repRows as $repRow)
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            {{ $repRow['label'] }}:
+            <span class="removeBold">{{ $repRow['value'] }}</span>
+        </div>
+        @endforeach
+        @endif
+
         @if (Auth::check()) {{-- broker compensation: hidden from anonymous visitors --}}
         @php
             $hasLandlordBrokerCompData = !empty(@$auction->get->purchase_fee_type)

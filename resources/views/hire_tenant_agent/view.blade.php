@@ -1002,7 +1002,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     );
                 @endphp
 
-                @if ($brokerSectionHasData)
+                {{-- R3/C10: gate broker compensation behind auth, matching seller/landlord/buyer hire views (was ungated → leaked to anonymous visitors). --}}
+                @if ($brokerSectionHasData && Auth::check())
                 <hr />
                 <div class="card-header section-header">
                     <h4 class="section-title">Broker Compensation & Agency Agreement Terms:</h4>

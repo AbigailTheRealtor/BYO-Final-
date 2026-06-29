@@ -6,6 +6,7 @@ use App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing;
 use App\Http\Livewire\OfferListing\Landlord\LandlordOfferListingEdit;
 use App\Http\Livewire\OfferListing\Seller\SellerOfferListing;
 use App\Http\Livewire\OfferListing\Seller\SellerOfferListingEdit;
+use App\Http\Livewire\OfferListing\Tenant\TenantOfferListing;
 use App\Jobs\ComputeLocationDna;
 use App\Models\LandlordAgentAuction;
 use App\Models\LandlordAgentAuctionMeta;
@@ -226,6 +227,133 @@ class CreateEditParityRegressionTest extends TestCase
         $this->assertStringContainsString('Traditional', $html);
     }
 
+    // ─── (b2) A1.2–A1.4 — Bidding Period restored for Seller/Landlord only ────
+
+    /** A1.4: Seller create must now expose the "Bidding Period" Listing Type option. */
+    public function test_seller_create_shows_bidding_period_option(): void
+    {
+        $html = $this->actingAs($this->makeAgentUser())
+            ->get('/offer-listing/seller')->assertStatus(200)->getContent();
+        $this->assertStringContainsString('value="Bidding Period"', $html);
+    }
+
+    /** A1.4: Landlord create must now expose the "Bidding Period" Listing Type option. */
+    public function test_landlord_create_shows_bidding_period_option(): void
+    {
+        $html = $this->actingAs($this->makeAgentUser())
+            ->get('/offer-listing/landlord')->assertStatus(200)->getContent();
+        $this->assertStringContainsString('value="Bidding Period"', $html);
+    }
+
+    /** A1.4 scope guard: Buyer create must NOT expose Bidding Period (Traditional-only). */
+    public function test_buyer_create_hides_bidding_period_option(): void
+    {
+        $html = $this->actingAs($this->makeAgentUser())
+            ->get('/offer-listing/buyer')->assertStatus(200)->getContent();
+        $this->assertStringNotContainsString('value="Bidding Period"', $html);
+    }
+
+    /** A1.4 scope guard: Tenant create must NOT expose Bidding Period (Traditional-only). */
+    public function test_tenant_create_hides_bidding_period_option(): void
+    {
+        $html = $this->actingAs($this->makeAgentUser())
+            ->get('/offer-listing/tenant')->assertStatus(200)->getContent();
+        $this->assertStringNotContainsString('value="Bidding Period"', $html);
+    }
+
+    /** A1.4/A1.5: a Bidding Period Landlord listing must require a Bidding Period Length (auction_time). */
+    public function test_landlord_bidding_period_requires_auction_time(): void
+    {
+        Livewire::actingAs($this->makeAgentUser())
+            ->test(LandlordOfferListing::class)
+            ->set('auction_type', 'Bidding Period')
+            ->call('store')
+            ->assertHasErrors(['auction_time']);
+    }
+
+    // ─── (b3) A1.11/A1.13 — canonical "Submit" publish label on all create pages ─
+
+    /**
+     * A1.11/A1.13: every Create Offer page must use a single canonical publish
+     * button labelled "Submit" — no "Save & Submit Offer" / "Submit Rental Offer".
+     * The Save Draft button remains "Save Draft" (draft action) on the same page.
+     *
+     * @dataProvider createPageProvider
+     */
+    public function test_create_page_publish_button_is_submit(string $path): void
+    {
+        $html = $this->actingAs($this->makeAgentUser())
+            ->get($path)->assertStatus(200)->getContent();
+
+        // Canonical publish button (wire:target="store") is labelled exactly "Submit".
+        $this->assertStringContainsString('wire:target="store">Submit<', $html,
+            "[$path] publish button must be labelled 'Submit'.");
+        // Draft action label preserved.
+        $this->assertStringContainsString('Save Draft', $html, "[$path] must keep 'Save Draft'.");
+        // Old mismatched labels must be gone.
+        $this->assertStringNotContainsString('Save &amp; Submit Offer', $html,
+            "[$path] must not contain 'Save & Submit Offer'.");
+        $this->assertStringNotContainsString('Submit Rental Offer', $html,
+            "[$path] must not contain 'Submit Rental Offer'.");
+    }
+
+    public static function createPageProvider(): array
+    {
+        return [
+            'seller'   => ['/offer-listing/seller'],
+            'buyer'    => ['/offer-listing/buyer'],
+            'landlord' => ['/offer-listing/landlord'],
+            'tenant'   => ['/offer-listing/tenant'],
+        ];
+    }
+
+    // ─── (b4) A7.46 / C3 — server-side submit works for Business & Tenant ─────
+
+    /**
+     * A7.46: a Seller listing with property_type = "Business" must submit (publish)
+     * at the component level — store() passes validation and redirects. (If the
+     * reported "Business cannot submit" still occurs in-browser, it is a client-side
+     * JS validation issue, not a server/validation block — flagged Needs Review.)
+     */
+    public function test_seller_business_listing_submits_server_side(): void
+    {
+        Livewire::actingAs($this->makeAgentUser())
+            ->test(SellerOfferListing::class)
+            ->set('listing_title', 'Business Listing')
+            ->set('property_type', 'Business')
+            ->set('first_name', 'Alice')
+            ->set('last_name', 'Agent')
+            ->set('phone_number', '5551234567')
+            ->set('email', 'alice@example.com')
+            ->set('auction_type', 'Traditional')
+            ->call('store')
+            ->assertHasNoErrors()
+            ->assertRedirect();
+    }
+
+    /**
+     * C3: the Create Tenant listing Submit (publish) path must not be blocked by
+     * validation — store() raises no validation errors for a basic Residential
+     * listing. (Submit BUTTON presence is covered by
+     * test_create_page_publish_button_is_submit / data set "tenant". The full
+     * submit→redirect with complete data is exercised by the entry-flow suite;
+     * here we only assert the publish path is not validation-blocked.)
+     */
+    public function test_tenant_listing_submit_is_not_validation_blocked(): void
+    {
+        Livewire::actingAs($this->makeAgentUser())
+            ->test(TenantOfferListing::class, ['user_type' => 'tenant'])
+            ->set('listing_title', 'Tenant Listing')
+            ->set('property_type', 'Residential')
+            ->set('first_name', 'Tom')
+            ->set('last_name', 'Tenant')
+            ->set('phone_number', '5551234567')
+            ->set('email', 'tom@example.com')
+            ->set('auction_type', 'Traditional')
+            ->call('store')
+            ->assertHasNoErrors();
+    }
+
     // ─── (c) Landlord JS — lease_term_options class present for JS skip ───────
 
     /**
@@ -298,6 +426,25 @@ class CreateEditParityRegressionTest extends TestCase
             ->test(LandlordOfferListing::class)
             ->set('newPropertyPhotos', [$oversizeFile])
             ->assertHasErrors(['newPropertyPhotos.*']);
+    }
+
+    // ─── (d2) A1.10 — Landlord create submit surfaces validation, not silent ──
+
+    /**
+     * A1.10: calling store() with required publish fields blank must (a) register
+     * field-level validation errors AND (b) flash a "Missing/invalid:" banner so the
+     * submit is never silently swallowed when the failing field sits on a hidden tab.
+     */
+    public function test_landlord_create_submit_flashes_missing_fields_and_does_not_redirect(): void
+    {
+        Livewire::actingAs($this->makeAgentUser())
+            ->test(LandlordOfferListing::class)
+            ->call('store')
+            ->assertHasErrors(['first_name', 'last_name', 'phone_number', 'email', 'desired_lease_length'])
+            ->assertNoRedirect()
+            // The re-rendered component must surface the "Missing/invalid:" banner
+            // (offer-landlord-listing.blade.php @if(session()->has('error'))).
+            ->assertSee('Missing/invalid:');
     }
 
     // ─── (e) Document upload — 50 MB hints + message wording fix ─────────────
@@ -917,5 +1064,88 @@ class CreateEditParityRegressionTest extends TestCase
         $this->actingAs($this->makeBuyerUser())
             ->get(route('offer.listing.seller.view', $auction->id))
             ->assertStatus(200);
+    }
+
+    // ─── C11 — AI Knowledge Base stays private (saved, prefills, never public) ─
+
+    /**
+     * C11: the AI Knowledge Base (listing_ai_faq) is private. A non-owner viewing
+     * the public Seller listing detail must NOT see any AI KB answer content.
+     */
+    public function test_seller_public_view_hides_ai_knowledge_base(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'agent']);
+        $auction = $this->makeSellerAuction($owner, '', false);
+
+        SellerAgentAuctionMeta::create([
+            'seller_agent_auction_id' => $auction->id,
+            'meta_key'                => 'listing_ai_faq',
+            'meta_value'              => json_encode(['hoa_details' => 'SECRET_AI_ANSWER_DO_NOT_LEAK']),
+        ]);
+
+        // A non-owner (public) viewer must not see the private AI KB answer.
+        $this->actingAs($this->makeBuyerUser())
+            ->get(route('offer.listing.seller.view', $auction->id))
+            ->assertStatus(200)
+            ->assertDontSee('SECRET_AI_ANSWER_DO_NOT_LEAK');
+    }
+
+    /**
+     * C11: the AI Knowledge Base saves and pre-fills on edit — opening the edit
+     * wizard must repopulate listing_ai_faq from the stored meta.
+     */
+    public function test_seller_edit_prefills_ai_knowledge_base(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'agent']);
+        $auction = $this->makeSellerAuction($owner, '', false);
+
+        SellerAgentAuctionMeta::create([
+            'seller_agent_auction_id' => $auction->id,
+            'meta_key'                => 'listing_ai_faq',
+            'meta_value'              => json_encode(['hoa_details' => 'Quarterly HOA dues are $300.']),
+        ]);
+
+        Livewire::actingAs($owner)
+            ->test(SellerOfferListingEdit::class, ['auctionId' => $auction->id])
+            ->assertSet('listing_ai_faq', ['hoa_details' => 'Quarterly HOA dues are $300.']);
+    }
+
+    // ─── A4.26/A4.27 — canonical Seller property-condition list (unified w/ Hire) ─
+
+    /**
+     * A4.26/A4.27: Create Seller uses the unified descriptive condition list and
+     * no longer offers the demand-side "No Preference" option.
+     */
+    public function test_create_seller_uses_canonical_property_condition_list(): void
+    {
+        $html = $this->actingAs($this->makeAgentUser())
+            ->get('/offer-listing/seller')->assertStatus(200)->getContent();
+
+        $this->assertStringContainsString('Tear Down: Requires complete demolition and reconstruction', $html);
+        $this->assertStringContainsString('Pre-Construction', $html);
+        $this->assertStringContainsString('No updates needed: Completely updated', $html);
+        $this->assertStringNotContainsString('No Preference', $html);
+    }
+
+    /**
+     * A4.26/A4.27 backward-compat: an existing Seller listing saved with a legacy
+     * condition value ("No Preference") must still load and remain selectable on
+     * edit (the option is re-appended) — no data loss.
+     */
+    public function test_seller_edit_preserves_legacy_condition_value(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'agent']);
+        $auction = $this->makeSellerAuction($owner, '', false);
+
+        SellerAgentAuctionMeta::create([
+            'seller_agent_auction_id' => $auction->id,
+            'meta_key'                => 'condition_prop',
+            'meta_value'              => 'No Preference',
+        ]);
+
+        Livewire::actingAs($owner)
+            ->test(SellerOfferListingEdit::class, ['auctionId' => $auction->id])
+            ->assertSet('condition_prop', 'No Preference') // legacy value loaded
+            ->assertSee('No Preference');                  // still rendered as a selectable option
     }
 }

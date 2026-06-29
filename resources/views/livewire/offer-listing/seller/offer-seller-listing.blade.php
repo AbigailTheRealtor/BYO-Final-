@@ -261,7 +261,18 @@
         ['name' => 'No Preference', 'display' => 'No Preference'],
     ];
 
-    $property_condition_seller = $property_condition;
+    // A4.26/A4.27: canonical Seller property-condition list, unified with Hire Seller.
+    // A Seller describes the ACTUAL property condition, so the demand-side "No Preference"
+    // option (kept on Buyer/Tenant) is intentionally excluded here.
+    $property_condition_seller = [
+        ['name' => 'No updates needed: Completely updated'],
+        ['name' => 'Currently being built'],
+        ['name' => 'New Construction'],
+        ['name' => 'Not updated: Requires a complete update'],
+        ['name' => 'Pre-Construction'],
+        ['name' => 'Semi-updated: Needs minor updates'],
+        ['name' => 'Tear Down: Requires complete demolition and reconstruction'],
+    ];
 
     $bedroomsRes = [
         ['name' => '1'],
@@ -1161,7 +1172,7 @@
                             onclick="if(typeof window._wizardNextHandler==='function'){window._wizardNextHandler();}">Next</button>
 
                         <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled" wire:target="store">
-                            <span wire:loading.remove wire:target="store">Save &amp; Submit Offer</span>
+                            <span wire:loading.remove wire:target="store">Submit</span>
                             <span wire:loading wire:target="store">Submitting...</span>
                         </button>
                     </div>

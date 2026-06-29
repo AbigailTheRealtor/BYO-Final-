@@ -329,6 +329,32 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListingEdit.php',
             'app/Http/Livewire/OfferListing/Concerns/SellerPublishValidation.php',
             'app/Http/Livewire/OfferListing/Concerns/LandlordPublishValidation.php',
+            // Create-Offer / Hire-Agent launch remediation
+            // (docs/launch-audits/Create-Offer-and-Hire-Agent-Edits-June-28-2026.md):
+            //   C9 — Representation/Compatibility display parity on the seller/buyer/
+            //        landlord hire detail views; R3/C10 — tenant hire broker-comp gate.
+            //   A1.2–A1.4 — Listing Type / Bidding Period restored on Seller & Landlord
+            //        Create-Offer listing-details (Buyer/Tenant stay Traditional-only).
+            'resources/views/hire_seller_agent/view.blade.php',
+            'resources/views/hire_landlord_agent/view.blade.php',
+            'resources/views/buyerAgentAuctionDetail.blade.php',
+            'resources/views/hire_tenant_agent/view.blade.php',
+            'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/listing-details.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/listing-details.blade.php',
+            //   A1.11/A1.13 — canonical "Submit" publish-button label on the four
+            //        Create Offer wizard pages (was "Save & Submit Offer" / "Submit Rental Offer").
+            'resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php',
+            'resources/views/livewire/offer-listing/buyer/offer-buyer-listing.blade.php',
+            'resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php',
+            'resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php',
+            //   A4.28 — per-unit "SqFt Heated" added to Hire Seller income unit config
+            //        (parity with Create Seller). Hire flow is served by TenantAgentAuction.
+            'app/Http/Livewire/TenantAgentAuction.php',
+            'resources/views/livewire/hire-seller-agent/seller-agent-auction-tabs/commission-based/property-preferences.blade.php',
+            //   A4.26/A4.27 — unified Seller property-condition list on Create Seller
+            //        (canonical 7-option list; "No Preference" removed; backward-compat guard).
+            'resources/views/livewire/offer-listing/seller/offer-seller-listing-edit.blade.php',
+            'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/property-preferences.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

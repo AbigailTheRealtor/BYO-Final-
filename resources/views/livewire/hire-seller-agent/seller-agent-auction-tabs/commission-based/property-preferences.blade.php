@@ -1834,6 +1834,21 @@
                                 placeholder="Enter a brief description (e.g., Upstairs 2/1 with balcony)">
                         </div>
                     </div>
+
+                    {{-- A4.28: SqFt Heated (per unit) — parity with Create Seller income unit config. --}}
+                    <div class="form-group">
+                        <label class="fw-bold">SqFt Heated (per unit):</label>
+                        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                            title="Enter the heated square footage for this unit type.">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </span>
+                        <div class="input-cover">
+                            <input type="number"
+                                wire:model="unit_type_configurations.{{ $index }}.sqft_heated"
+                                class="form-control has-icon" data-icon="fa-solid fa-ruler-combined"
+                                placeholder="Enter heated square footage per unit (e.g., 850)">
+                        </div>
+                    </div>
                 @endif
             </div>
         @endforeach

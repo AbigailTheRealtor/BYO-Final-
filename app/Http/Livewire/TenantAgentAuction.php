@@ -1731,7 +1731,8 @@ class TenantAgentAuction extends Component
             'number_of_units' => '',
             'number_occupied' => '',
             'expected_rent' => '',
-            'unit_type_description' => ''
+            'unit_type_description' => '',
+            'sqft_heated' => '', // A4.28: per-unit heated SqFt, parity with Create Seller
         ];
     }
 
@@ -1772,7 +1773,8 @@ class TenantAgentAuction extends Component
                 'number_of_units' => '',
                 'number_occupied' => '',
                 'expected_rent' => '',
-                'unit_type_description' => ''
+                'unit_type_description' => '',
+                'sqft_heated' => '', // A4.28: per-unit heated SqFt, parity with Create Seller
             ]
         ];
 

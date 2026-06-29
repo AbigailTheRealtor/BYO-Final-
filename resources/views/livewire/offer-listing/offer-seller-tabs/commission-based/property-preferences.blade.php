@@ -719,6 +719,20 @@
 
 @if ($property_type != 'Vacant Land')
 
+    @php
+        // A4.26/A4.27 backward-compat: the canonical Seller condition list changed
+        // (legacy values like "Updated/Renovated" / "No Preference" were removed).
+        // Keep any previously-saved value selectable so existing listings still
+        // display and edit without data loss — never delete the stored value.
+        $sellerConditionOptions = $property_condition_seller;
+        if (!empty($condition_prop) && is_string($condition_prop)) {
+            $sellerConditionOptionNames = array_column($sellerConditionOptions, 'name');
+            if (!in_array($condition_prop, $sellerConditionOptionNames, true)) {
+                $sellerConditionOptions[] = ['name' => $condition_prop];
+            }
+        }
+    @endphp
+
     <div class="form-group">
         <label class="fw-bold">Property Condition: <span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -730,7 +744,7 @@
             <select wire:model="condition_prop" class="form-control has-icon"
                 data-icon="fa-solid fa-screwdriver-wrench" required>
                 <option value="">Select</option>
-                @foreach ($property_condition_seller as $row_pt)
+                @foreach ($sellerConditionOptions as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['display'] ?? $row_pt['name'] }}</option>
                 @endforeach
             </select>
