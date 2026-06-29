@@ -73,6 +73,17 @@ class CreateEditParityRegressionTest extends TestCase
             'meta_value'              => 'offer_listing',
         ]);
 
+        // BYO-H1: a published listing always carries the required publish fields.
+        // Seed them so edit-update() (which now enforces the same rules as create)
+        // reflects a realistic published listing rather than an invalid blank one.
+        SellerAgentAuctionMeta::insert([
+            ['seller_agent_auction_id' => $auction->id, 'meta_key' => 'property_type', 'meta_value' => 'Residential'],
+            ['seller_agent_auction_id' => $auction->id, 'meta_key' => 'first_name',    'meta_value' => 'Test'],
+            ['seller_agent_auction_id' => $auction->id, 'meta_key' => 'last_name',     'meta_value' => 'Agent'],
+            ['seller_agent_auction_id' => $auction->id, 'meta_key' => 'phone_number',  'meta_value' => '5551234567'],
+            ['seller_agent_auction_id' => $auction->id, 'meta_key' => 'email',         'meta_value' => 'agent@example.com'],
+        ]);
+
         if ($address) {
             SellerAgentAuctionMeta::create([
                 'seller_agent_auction_id' => $auction->id,
@@ -105,6 +116,17 @@ class CreateEditParityRegressionTest extends TestCase
             'landlord_agent_auction_id' => $auction->id,
             'meta_key'                  => 'workflow_type',
             'meta_value'                => 'offer_listing',
+        ]);
+
+        // BYO-H1: a published listing always carries the required publish fields.
+        // Seed them so edit-update() (which now enforces the same rules as create)
+        // reflects a realistic published listing rather than an invalid blank one.
+        LandlordAgentAuctionMeta::insert([
+            ['landlord_agent_auction_id' => $auction->id, 'meta_key' => 'first_name',           'meta_value' => 'Test'],
+            ['landlord_agent_auction_id' => $auction->id, 'meta_key' => 'last_name',            'meta_value' => 'Agent'],
+            ['landlord_agent_auction_id' => $auction->id, 'meta_key' => 'phone_number',         'meta_value' => '5551234567'],
+            ['landlord_agent_auction_id' => $auction->id, 'meta_key' => 'email',                'meta_value' => 'agent@example.com'],
+            ['landlord_agent_auction_id' => $auction->id, 'meta_key' => 'desired_lease_length', 'meta_value' => json_encode(['12 Months'])],
         ]);
 
         if ($address) {

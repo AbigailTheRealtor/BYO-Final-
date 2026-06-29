@@ -15,11 +15,13 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\OfferListing\Concerns\LandlordPublishValidation;
 
 class LandlordOfferListingEdit extends Component
 {
     use WithFileUploads;
     use ResolvesOwnedAuction;
+    use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
 
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
@@ -671,6 +673,10 @@ class LandlordOfferListingEdit extends Component
     public $flood_zone_panel = '';
     public $flood_zone_date = '';
     public $waterfront = '';
+    // BYO-H2: shared property-preferences partial binds these via wire:model; without
+    // the declarations Edit threw PublicPropertyNotFoundException (crash + data loss).
+    public $water_frontage = '';
+    public $waterfront_feet = '';
     public $water_access = [];
     public $water_view = [];
     public $interior_features = [];
@@ -2112,6 +2118,8 @@ class LandlordOfferListingEdit extends Component
             'flood_zone_panel'                => $this->flood_zone_panel,
             'flood_zone_date'                 => $this->flood_zone_date,
             'waterfront'                      => $this->waterfront,
+            'water_frontage'                  => $this->water_frontage,
+            'waterfront_feet'                 => $this->waterfront_feet,
             'water_access'                    => json_encode($this->water_access),
             'water_view'                      => json_encode($this->water_view),
             'interior_features'               => json_encode($this->interior_features),
@@ -2886,6 +2894,8 @@ class LandlordOfferListingEdit extends Component
             $this->flood_zone_panel = $auction->get->flood_zone_panel ?? '';
             $this->flood_zone_date = $auction->get->flood_zone_date ?? '';
             $this->waterfront = $auction->get->waterfront ?? '';
+            $this->water_frontage = $auction->get->water_frontage ?? '';
+            $this->waterfront_feet = $auction->get->waterfront_feet ?? '';
             $this->water_access = is_string($auction->get->water_access) ? json_decode($auction->get->water_access, true) ?? [] : (array)($auction->get->water_access ?? []);
             $this->water_view = is_string($auction->get->water_view) ? json_decode($auction->get->water_view, true) ?? [] : (array)($auction->get->water_view ?? []);
             $this->interior_features = is_string($auction->get->interior_features) ? json_decode($auction->get->interior_features, true) ?? [] : (array)($auction->get->interior_features ?? []);
@@ -3681,6 +3691,8 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('flood_zone_panel', $this->flood_zone_panel);
         $auction->saveMeta('flood_zone_date', $this->flood_zone_date);
         $auction->saveMeta('waterfront', $this->waterfront);
+        $auction->saveMeta('water_frontage', $this->water_frontage);
+        $auction->saveMeta('waterfront_feet', $this->waterfront_feet);
         $auction->saveMeta('water_access', json_encode($this->water_access));
         $auction->saveMeta('water_view', json_encode($this->water_view));
         $auction->saveMeta('interior_features', json_encode($this->interior_features));
@@ -3823,18 +3835,11 @@ class LandlordOfferListingEdit extends Component
 
     public function update()
     {
-        $this->validate([
-            'unit_address'             => 'nullable|string|max:100',
-            'roof_type'                => 'nullable|array',
-            'roof_type.*'              => 'string|in:Built-Up,Cement,Concrete,Membrane,Metal,Roof Over,Shake,Shingle,Slate,Tile,Other',
-            'exterior_construction'    => 'nullable|array',
-            'exterior_construction.*'  => 'string|in:Asbestos,Block,Brick,Cedar,Cement Siding,Concrete,HardiPlank Type,ICFs (Insulated Concrete Forms),Log,Metal Frame,Metal Siding,SIP (Structurally Insulated Panel),Stone,Stucco,Tilt up Walls,Vinyl Siding,Wood Frame,Wood Frame (FSC),Wood Siding,Other',
-            'foundation'               => 'nullable|array',
-            'foundation.*'             => 'string|in:Basement,Block,Brick/Mortar,Concrete Perimeter,Crawlspace,Pillar/Post/Pier,Slab,Stem Wall,Stilt/On Piling,Other',
-            'other_roof_type'          => 'nullable|string|max:255',
-            'other_exterior_construction' => 'nullable|string|max:255',
-            'other_foundation'         => 'nullable|string|max:255',
-        ]);
+        // BYO-H1: enforce the SAME full required-field rules as create on the publish
+        // path (drafts stay lenient via saveDraft / saveDraftOnly). Previously this
+        // validated only nullable property fields, so required contact / lease fields
+        // could be blanked and re-published.
+        $this->validate($this->getConditionalRules(), $this->getValidationMessages());
 
         try {
             $this->isDraft = 0;

@@ -130,10 +130,10 @@ Only **unresolved** items. Status reflects implementation only (🟩 requires im
 | BYA-H6 | BYA Audit | Mirror offer deadline to native `expires_at` on submit | High | ⬜ | Yes | Yes | S | Low | none |
 | BYA-H11 | BYA Audit | Remove/repair `BuyerCounteredTermsController` non-existent column | High | ⬜ | Yes | Yes | S | Low | overlaps N1 file |
 | BYA-H8/9/10 | BYA Audit | Create/Edit field+validation parity (consolidate or align) | High | ⬜ | No* | Yes (align), No (consolidate) | M (align) / L (consolidate) | Med | frozen `initializeLimitedService()` untouched |
-| BYO-C4 | BYO Audit | Persist Seller broker-comp (`commission_structure_type` group) on Create | Crit | ⬜ | **Yes** | **Yes** | S–M | Low | run create-vs-edit `saveMeta` diff for all 4 roles |
+| BYO-C4 | BYO Audit | Persist Seller broker-comp (`commission_structure_type` group) on Create | Crit | 🟩 | ~~Yes~~ **DONE (Phase B)** | — | S–M | Low | 6 fields added to Create save/load/draft; round-trip tests green |
 | BYO-C2s | BYO Audit (N4) | Strip RESTRICTED keys at Ask-AI context assembly + runtime probe | High | 🟦 | Yes | Yes | S | Low | runtime/browser probe |
-| BYO-H1 | BYO Audit | Edit submit validation parity with Create (4 roles) | High | ⬜ | Yes | Yes | M | Med (keep draft path lenient) | shared validation concern |
-| BYO-H2 | BYO Audit | Declare+save+load waterfront props in Seller/Landlord Edit | High | ⬜ | Yes | Yes | S | Low | none |
+| BYO-H1 | BYO Audit | Edit submit validation parity with Create (4 roles) | High | 🟩 | ~~Yes~~ **DONE (Phase B)** | — | M | Med (draft path kept lenient) | shared {Seller,Landlord}PublishValidation concerns; create==edit verified identical |
+| BYO-H2 | BYO Audit | Declare+save+load waterfront props in Seller/Landlord Edit | High | 🟩 | ~~Yes~~ **DONE (Phase B)** | — | S | Low | Seller via eb2eed4f3; Landlord Edit 4 layers added |
 | BYO-H3 | BYO Audit | Buyer multiselect submit persistence | High | ⬜ | Yes (if confirmed) | Verify | M | Med | runtime verify |
 | BYO-H4 | BYO Audit | Tenant rentals-vs-sales matching | High | ⬜ | **Scope-gated** | If Tenant in V1 scope | M | Med | **Tenant launch-scope decision** |
 | BYO-H5 | BYO Audit | Two-sided city normalization | High | ⬜ | Verify | Verify | S | Low | runtime `SELECT DISTINCT city` |
@@ -150,13 +150,13 @@ Only **unresolved** items. Status reflects implementation only (🟩 requires im
 
 ## 8. Launch-blocker shortlist (verified, Critical+High, security/data-integrity)
 
-1. **BYO-C4** — Seller create broker-comp data loss *(Critical, data integrity)*
+1. ~~**BYO-C4** — Seller create broker-comp data loss *(Critical, data integrity)*~~ **✅ CLOSED (Phase B)**
 2. **N1** — `AgentCounteredTermsController` IDOR *(High, access control)*
 3. **BYA-H6** — offers never expire *(High, core negotiation workflow)*
 4. **BYA-H2 / BYA-H3** — self-bid + duplicate-bid marketplace integrity *(High)*
 5. **BYA-H4** — consumers shown wrong agent data *(High, product promise)*
 6. **BYO-C2s** — Ask-AI restricted-field stripping *(High, privacy) — In QA*
-7. **BYO-H1 / BYO-H2** — edit-flow publish-with-blank-required + waterfront edit error *(High, data integrity)*
+7. ~~**BYO-H1 / BYO-H2** — edit-flow publish-with-blank-required + waterfront edit error *(High, data integrity)*~~ **✅ BOTH CLOSED (Phase B)**
 8. **BYA-H11** — Buyer counter-terms SQL-error path *(High)*
 
 All confirmed **CLOSED** Criticals (CRIT-1/2/5/6, C1, C3) and the reclassified dead-code items are **not** on this list.
@@ -247,7 +247,7 @@ Read-only static trace of every workflow across the lifecycle stages. ✅ wired 
 
 ### Updated launch-blocker shortlist (supersedes §8 — security + data-integrity + broken core workflows)
 
-1. **BYO-C4** — Seller create broker-comp data loss *(Critical)*
+1. ~~**BYO-C4** — Seller create broker-comp data loss *(Critical)*~~ **✅ CLOSED (Phase B)**
 2. **N1** — `AgentCounteredTermsController` IDOR *(High)*
 3. ~~**WF-3** — unscoped `deleteDraft` cross-user data destruction *(High, security — NEW)*~~ **✅ CLOSED (Pass M-B)**
 4. **BYA-H6** — offers never expire (breaks whole negotiation loop) *(High)*
@@ -255,7 +255,7 @@ Read-only static trace of every workflow across the lifecycle stages. ✅ wired 
 6. ~~**WF-2** — no delete/unpublish of own published listing *(High — NEW)*~~ **✅ CLOSED (Pass M-B, owner-approved) — owner archive/republish, archive-aware on all public surfaces**
 7. **BYA-H2 / BYA-H3** — self-bid + duplicate-bid integrity *(High)*
 8. **BYA-H4** — consumers shown wrong agent data *(High)*
-9. **BYO-H1 / BYO-H2** — edit publishes blank required fields / waterfront edit crash *(High)*
+9. ~~**BYO-H1 / BYO-H2** — edit publishes blank required fields / waterfront edit crash *(High)*~~ **✅ BOTH CLOSED (Phase B)**
 10. **BYO-H4** — tenant rentals-vs-sales (Tenant scope confirmed live) *(High)*
 11. **BYA-H11** — Buyer counter-terms SQL-error path *(High)*
 12. **BYO-C2s** — Ask-AI restricted-field stripping *(High — In QA)*
@@ -269,3 +269,4 @@ Read-only static trace of every workflow across the lifecycle stages. ✅ wired 
 - **2026-06-27 (2)** — End-to-end workflow certification (§9–§11). 13-stage lifecycle traced across both products × 4 roles + negotiation + discovery. **7 new workflow blockers (WF-1…WF-7)**, incl. closed-but-broken Ask AI (WF-1), no listing delete (WF-2), unscoped deleteDraft data destruction (WF-3). Tenant scope resolved (discovery is live → H4 required). H3 reclassified non-blocker; MED-3/MED-7 verified closed. Awaiting itemized V1 checklist to finalize Required/Recommended/Post-Launch tiers and the 7 governance deliverables.
 - **2026-06-28 (1)** — **WF-3 🟩 and WF-2 🟩 CLOSED (Pass M-B, owner-approved).** WF-3: ownership gate on all 8 `deleteDraft()` + BYA Buyer wrong-table fix (DB-backed test passes). WF-2: owner-scoped reversible archive/republish (`is_archived`) made archive-aware across **every public surface** — 9 discovery gates, all 8 by-ID/detail/view actions (owner-aware `abort(404)`), and the tenant author/profile multi-tab; owner retains visibility (My Listings + own detail); bids/summaries/history preserved. §10 + §11 shortlist updated. **Required remaining: 12** (was 15 — WF-6/WF-3/WF-2 closed). Readiness: **BYA ≈64%, BYO ≈61%.** See Master Roadmap change log 2026-06-28 (1) for the full file-level detail.
 - **2026-06-28 (2)** — **WF-4 🟩 CLOSED — doc reconciled to code (recovery audit).** A recovery audit of an interrupted session found the WF-4 draft/pending view-leak guard was already implemented and tested in code but still tracked open here. The owner-only guard (`abort(404)` when `!is_approved`/`is_draft` and viewer ≠ owner) ships on **all 8** by-ID detail actions (bundled with the WF-2 archive guard), with CI-ready test `test_wf4_…`. Updated the §10 WF-4 row and the §11 shortlist. **Required remaining: 11** (WF-6/WF-3/WF-2/WF-4 closed); Phase A (security close-out) complete. Documentation only — no application code modified.
+- **2026-06-29 (1)** — **Phase B 🟩 COMPLETE — BYO-C4 + BYO-H2 + BYO-H1 (Seller/Landlord UI parity).** **BYO-C4:** Seller Create now persists the 6 `commission_structure_type*` broker-comp fields (save/load/draft), mirroring Edit — closes the silent broker-comp drop. **BYO-H2:** Landlord Edit `water_frontage`/`waterfront_feet` added across all 4 layers (Seller Edit was already fixed by `eb2eed4f3`). **BYO-H1:** create/edit publish-validation parity via shared `OfferListing/Concerns/{Seller,Landlord}PublishValidation` (single source — create==edit rule sets verified byte-identical); Edit publish enforces required fields, drafts stay lenient. Frozen `initializeLimitedService()` untouched; no duplicate validators. **Tests:** `CreateEditParityRegressionTest` 41/41 green (fixtures updated to seed required fields); full Offers+ListingImport = 53 failed/415 passed vs 58/410 baseline (net −5 failures), **zero** failures in the offer-listing domain (remaining are pre-existing offer-negotiation/env). **Required remaining: 8** (7/15 closed); Phases A + B complete. See Master Roadmap change log 2026-06-29 (1) for file-level detail.

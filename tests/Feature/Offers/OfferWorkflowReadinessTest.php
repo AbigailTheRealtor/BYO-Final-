@@ -320,6 +320,15 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/Offers/OfferNegotiationChainService.php',
             'app/Services/Offers/OfferTimelineBuilder.php',
             'database/factories/OfferFactory.php',
+            // Phase B — Seller/Landlord UI parity task:
+            // BYO-C4 (Seller broker-comp persistence on create), BYO-H2 (Landlord
+            // waterfront edit parity), BYO-H1 (create/edit publish validation parity
+            // via shared Seller/Landlord PublishValidation concerns).
+            'app/Http/Livewire/OfferListing/Seller/SellerOfferListingEdit.php',
+            'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListing.php',
+            'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListingEdit.php',
+            'app/Http/Livewire/OfferListing/Concerns/SellerPublishValidation.php',
+            'app/Http/Livewire/OfferListing/Concerns/LandlordPublishValidation.php',
         ];
 
         $unexpected = array_values(array_filter(

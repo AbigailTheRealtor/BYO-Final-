@@ -16,11 +16,13 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\OfferListing\Concerns\LandlordPublishValidation;
 
 class LandlordOfferListing extends Component
 {
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
+    use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
@@ -4064,31 +4066,9 @@ class LandlordOfferListing extends Component
 
     public function store()
     {
-        $this->validate([
-            'first_name'           => 'required|string',
-            'last_name'            => 'required|string',
-            'phone_number'         => 'required|string',
-            'email'                => 'required|email',
-            'unit_address'         => 'nullable|string|max:100',
-            'desired_lease_length' => 'required|array|min:1',
-            'roof_type'                => 'nullable|array',
-            'roof_type.*'              => 'string|in:Built-Up,Cement,Concrete,Membrane,Metal,Roof Over,Shake,Shingle,Slate,Tile,Other',
-            'exterior_construction'    => 'nullable|array',
-            'exterior_construction.*'  => 'string|in:Asbestos,Block,Brick,Cedar,Cement Siding,Concrete,HardiPlank Type,ICFs (Insulated Concrete Forms),Log,Metal Frame,Metal Siding,SIP (Structurally Insulated Panel),Stone,Stucco,Tilt up Walls,Vinyl Siding,Wood Frame,Wood Frame (FSC),Wood Siding,Other',
-            'foundation'               => 'nullable|array',
-            'foundation.*'             => 'string|in:Basement,Block,Brick/Mortar,Concrete Perimeter,Crawlspace,Pillar/Post/Pier,Slab,Stem Wall,Stilt/On Piling,Other',
-            'other_roof_type'          => 'nullable|string|max:255',
-            'other_exterior_construction' => 'nullable|string|max:255',
-            'other_foundation'         => 'nullable|string|max:255',
-        ], [
-            'first_name.required'           => 'First Name is required.',
-            'last_name.required'            => 'Last Name is required.',
-            'phone_number.required'         => 'Phone Number is required.',
-            'email.required'                => 'Email Address is required.',
-            'email.email'                   => 'Please enter a valid email address.',
-            'desired_lease_length.required' => 'Desired Lease Term is required.',
-            'desired_lease_length.min'      => 'Please select at least one Desired Lease Term.',
-        ]);
+        // BYO-H1: full publish rules now live in LandlordPublishValidation so create
+        // and edit-publish enforce identical required fields (single source of truth).
+        $this->validate($this->getConditionalRules(), $this->getValidationMessages());
 
         try {
             $this->isDraft = 0;

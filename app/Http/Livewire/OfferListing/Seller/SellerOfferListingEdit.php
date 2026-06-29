@@ -16,11 +16,13 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\OfferListing\Concerns\SellerPublishValidation;
 
 class SellerOfferListingEdit extends Component
 {
     use WithFileUploads;
     use ResolvesOwnedAuction;
+    use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
 
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
@@ -3997,9 +3999,11 @@ class SellerOfferListingEdit extends Component
 
     public function update()
     {
-        $this->validate([
-            'unit_address' => 'nullable|string|max:100',
-        ]);
+        // BYO-H1: enforce the SAME full required-field rules as create on the publish
+        // path (drafts stay lenient via saveDraft / saveDraftOnly). Previously this
+        // validated only unit_address, so required fields could be blanked and
+        // re-published. Rules are shared via SellerPublishValidation (single source).
+        $this->validate($this->getConditionalRules(), $this->getValidationMessages());
 
         try {
             $auction = SellerAgentAuctionModel::find($this->auctionId);
