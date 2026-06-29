@@ -330,8 +330,8 @@ These apply to **all** affected fields across Create Seller/Buyer/Landlord/Tenan
 
 | ID | Item | Priority | Roles | Flows | Status |
 |----|------|----------|-------|-------|--------|
-| **A5.29** | **Seller** contingency dropdowns (Appraisal / Financing / Sale of Buyer's Property) → exactly: Accepted, Not Accepted, Negotiable, Not Applicable. Remove Seller-side **Required** and **Preferred Waived**. Scope: Seller Create/Edit/Draft/Preview. Map legacy: Required→Accepted; Preferred Waived→Negotiable or Not Accepted (⚠ confirm intended). Do not modify Buyer-side here. | High | Seller | Create/Edit/Draft/Detail | ⬜ |
-| **A5.30** | **Buyer** Offer contingencies use buyer-perspective terms. Appraisal: Included/Waived/Negotiable/Not Applicable. Financing: Included/Waived/Negotiable/Not Applicable. Sale of Buyer's Property: Included/Not Included/Negotiable/Not Applicable. Do not use Seller-side Accepted/Not Accepted or "Required". | High | Buyer | Create Offer | ⬜ |
+| **A5.29** | **Seller** contingency dropdowns (Appraisal / Financing / Sale of Buyer's Property) → exactly: Accepted, Not Accepted, Negotiable, Not Applicable. Remove Seller-side **Required** and **Preferred Waived**. Scope: Seller Create/Edit/Draft/Preview. Map legacy: Required→Accepted; Preferred Waived→**Negotiable** (owner decision). Do not modify Buyer-side here. | High | Seller | Create/Edit/Draft/Detail | ✅ (Batch 8 — canonical options; legacy display-map only, no rewrite; create/edit/view) |
+| **A5.30** | **Buyer** Offer contingencies use buyer-perspective terms. Appraisal: Included/Waived/Negotiable/Not Applicable. Financing: Included/Waived/Negotiable/Not Applicable. Sale of Buyer's Property: Included/Not Included/Negotiable/Not Applicable. Do not use Seller-side Accepted/Not Accepted or "Required". | High | Buyer | Create Offer | ✅ (Batch 8 — canonical options; legacy Yes/No→Included/Waived display-map; gates updated; create/edit/view) |
 
 *Compatibility:* legacy Seller values mapped at display; confirm all three Seller fields share one option list; confirm Required/Preferred Waived no longer appear on Seller forms. *Validation:* shared option lists per role-perspective. *Manual:* open a legacy Seller listing — value displays correctly; new options present; Buyer options match spec.
 
@@ -554,10 +554,10 @@ These apply to **all** affected fields across Create Seller/Buyer/Landlord/Tenan
 ### 10.1 Conflicts — ⚠ Needs Review
 
 - **CONF‑0 (architecture):** `TenantAgentAuction` appears to be the live Hire Agent component for all four roles (catch-all route), yet CLAUDE.md forbids refactoring it onto `HasListingLifecycle`, and dedicated `HireSellerAgent/HireBuyerAgent/HireLandLordAgent` components also exist. **Need owner confirmation of which components are authoritative** before Hire Agent edits, to avoid editing dead code or unintentionally diverging. *(Audit resolving definitively.)*
-- **CONF‑1 (Buyer contingency option set):** A5.30 specifies Buyer **Appraisal** = Included/Waived/Negotiable/Not Applicable; B6.2 says "add Waived as third option." Likely compatible (B6.2 is the delta toward A5.30's set) but exact final option order/labels must be confirmed. **Resolution proposed:** treat A5.30 as the authoritative target option set; B6.2/B6.3 are deltas to reach it. Confirm.
+- **CONF‑1 (Buyer contingency option set):** ✅ **RESOLVED (Batch 8).** A5.30 implemented as the authoritative Buyer option sets (Appraisal/Financing = Included/Waived/Negotiable/Not Applicable; Home-Sale = Included/Not Included/Negotiable/Not Applicable). B6.2/B6.3 (Phase 12) are now satisfied by this set; the inspection-contingency dedup (CONF‑2) remains separate in Phase 12.
 - **CONF‑2 (Inspection contingency remove vs add option):** B6.1 says *remove* Inspection Contingency / Due Diligence-Inspection Period if duplicative; B6.3 says *add Waived as an option* to Inspection Contingency; B6.4 adds Inspection Period Duration + "Inspection Contingency Period (Days)". Tension between removing the duplicate and simultaneously enhancing it. **Resolution proposed:** keep one canonical Inspection construct (Inspection Contingency with Included/Waived/Negotiable/Not Applicable + conditional Period Days), remove the true duplicate. Confirm which label survives.
 - **CONF‑3 (Listing Type scope):** A1.1 removes Listing Type from Hire Agent; A1.2 restores it for Create Seller/Landlord only. Buyer/Tenant Create must NOT get Listing Type. No conflict if Buyer/Tenant explicitly excluded — confirmed as intent; flagged to prevent accidental addition.
-- **CONF‑4 (Legacy Seller contingency mapping):** A5.29 "Preferred Waived → Negotiable OR Not Accepted depending on existing intended behavior" is unresolved. **Need owner decision** on the target mapping.
+- **CONF‑4 (Legacy Seller contingency mapping):** ✅ **RESOLVED (Batch 8).** Owner chose **Preferred Waived → Negotiable** (Required → Accepted). Applied as display/edit mapping only — stored values not rewritten.
 - **CONF‑5 (already-misfiled drafts):** A1.15 fixes future draft separation but doesn't define handling for Hire Agent drafts already stored in the Create Offer drafts store. **Need owner decision** (migrate vs leave + display-map).
 - **CONF‑6 (Broker Compensation visibility):** A1.8/A1.9 restore Broker Compensation to the Create *form*; C10/C11/B4.1 require it hidden on the public *detail* page. Not a true conflict (form input vs public display) — documented so the privacy gate is not mistaken for "remove from create."
 
@@ -605,7 +605,7 @@ Rationale: structural save/validation/privacy fixes must land and be verified be
 | 2 | Photos/Documents/Location DNA | 3 | 0 | 0 | 3 | — | ⬜ |
 | 3 | Shared Address/Map | 7 | 0 | 0 | 7 | — | ⬜ |
 | 4 | Field Parity / Property Condition | 3 | 3 | 0 | 0 | — | ✅ Complete (A4.26/A4.27/A4.28) |
-| 5 | Contingencies | 2 | 0 | 0 | 2 | ⚠×1 | ⬜ |
+| 5 | Contingencies | 2 | 2 | 0 | 0 | — | ✅ Complete (A5.29/A5.30; CONF‑1/CONF‑4 resolved) |
 | 6 | Assumable/Exchange/Number | 11 | 0 | 0 | 11 | — | ⬜ |
 | 7 | Seller Size/Business/Vacant Land | 8 | 0 | 0 | 7 | ⚠×1 (A7.46) | 🟡 A7.46 Needs Review |
 | 8 | Tooltip/Placeholder/UI Text | 15 | 0 | 0 | 15 | — | ⬜ |
@@ -615,9 +615,9 @@ Rationale: structural save/validation/privacy fixes must land and be verified be
 | 12 | Hire Buyer + Create Buyer fixes | 18 | 0 | 0 | 18 | ⚠×2 | ⬜ |
 | 13 | Global Parity & Privacy | 14 | 3 | 1 | 10 | — | 🟡 C9,C3,C11 ✅; C10 🟡 |
 | 14 | Final Global UI Standards Audit | 1 | 0 | 0 | 1 | — | ⬜ |
-| **Total** | | **117** | **16** | **1** | **98** | **⚠×2 batch (A1.12,A7.46) + ⚠×6 conflicts** | 🟡 In progress |
+| **Total** | | **117** | **18** | **1** | **96** | **⚠×2 batch (A1.12,A7.46) + ⚠×4 conflicts (CONF‑1/4 resolved)** | 🟡 In progress |
 
-> Progress note: Batch 0 — financing-placeholder fix (S1/S2). Batch 1 — A1.10 ✅, C9 ✅, C10 🟡. Batch 2 — A1.2–A1.7 ✅ (Listing Type / Bidding Period restored; A1.1 deferred). Batch 3 — A1.11 ✅, A1.13 ✅, A1.12 🟡 Needs Review (Create publish labels → "Submit"). Batch 4 — A1.14 ✅, C3 ✅, A7.46 🟡 Needs Review (server-side submit verified). Batch 5 — C11 ✅ (AI Knowledge Base privacy verified; scratch file removed). Batch 6 — A4.28 ✅ (Hire Seller per-unit SqFt Heated); A4.27 Buyer/Tenant/Landlord match ✅. Batch 7 — A4.26/A4.27 ✅ (Seller condition unified on 7-option list per owner decision; "No Preference" removed; backward-compat). **Phase 4 complete.** See §16 Implementation Log.
+> Progress note: Batch 0 — financing-placeholder fix (S1/S2). Batch 1 — A1.10 ✅, C9 ✅, C10 🟡. Batch 2 — A1.2–A1.7 ✅ (Listing Type / Bidding Period restored; A1.1 deferred). Batch 3 — A1.11 ✅, A1.13 ✅, A1.12 🟡 Needs Review (Create publish labels → "Submit"). Batch 4 — A1.14 ✅, C3 ✅, A7.46 🟡 Needs Review (server-side submit verified). Batch 5 — C11 ✅ (AI Knowledge Base privacy verified; scratch file removed). Batch 6 — A4.28 ✅ (Hire Seller per-unit SqFt Heated); A4.27 Buyer/Tenant/Landlord match ✅. Batch 7 — A4.26/A4.27 ✅ (Seller condition unified on 7-option list per owner decision). **Phase 4 complete.** Batch 8 — A5.29/A5.30 ✅ (contingency option sets + legacy display-mapping; CONF‑1/CONF‑4 resolved). **Phase 5 complete.** See §16 Implementation Log.
 
 > Item counts are checklist rows; several rows govern all four roles. Update this table after every phase.
 
@@ -761,6 +761,36 @@ To proceed without blocking, the following defaults are adopted and recorded (re
 ## 16. IMPLEMENTATION LOG
 
 Append one entry per verified batch. Each records files changed, why, verification, and residual risk. Keep newest at top.
+
+### 2026-06-28 — Batch 8: Phase 5 — Contingencies (A5.29 Seller, A5.30 Buyer)
+
+**Owner decisions applied:** Seller "Preferred Waived" → **Negotiable** (display/edit only; CONF‑4 resolved); Buyer legacy "No" → **Waived**. Mapping is **display/edit only — stored values are never rewritten** (no migration, no data deletion).
+
+**Canonical option sets (now enforced):**
+- **Seller** (all three — Appraisal / Financing / Sale of Buyer's Property): `Accepted · Not Accepted · Negotiable · Not Applicable` (seller-perspective: "will I accept an offer carrying this contingency?"). Removed `Required` / `Preferred Waived`; added missing `Not Applicable` to Sale-of-Buyer's-Property.
+- **Buyer Appraisal / Financing**: `Included · Waived · Negotiable · Not Applicable`.
+- **Buyer Sale of Buyer's Property (home sale)**: `Included · Not Included · Negotiable · Not Applicable`.
+
+**Legacy → canonical display map (owner-approved):** Seller Required→Accepted, Preferred Waived→Negotiable. Buyer Yes→Included, No→Waived, "Not Applicable (Cash)"→Not Applicable; home-sale Yes→Included, No→Not Included.
+
+**Files changed (5 prod + 1 test allowlist + 1 test):**
+1. `app/Helpers/ContingencyOptionHelper.php` (NEW) — shared helper: canonical option-set constants (`SELLER`, `BUYER_APPRAISAL_FINANCING`, `BUYER_HOME_SALE`) + `sellerDisplay()` / `buyerAppraisalFinancingDisplay()` / `buyerHomeSaleDisplay()` legacy→canonical mappers. Single source of truth — used by both form partials and both views (no duplicated mapping logic).
+2. `…/offer-seller-tabs/commission-based/seller-terms.blade.php` — 3 Seller selects → canonical options. **Backward-compat without rewrite:** if a stored value is legacy, the matching canonical option carries the *raw* value (so the form shows the canonical label, and an untouched save preserves the original; normalisation only on active re-selection).
+3. `…/offer-buyer-tabs/commission-based/purchasing-terms.blade.php` — 3 Buyer selects → canonical options (same value-preserving pattern). The dependent day/detail sub-fields' gates changed from `=== 'Yes'` to helper-mapped `=== 'Included'`, so they stay visible for both legacy ('Yes') and new ('Included') values. (Inspection Contingency / Due-Diligence left untouched — that's Phase 12 / CONF‑2.)
+4. `offer-listing/seller/view.blade.php` — public detail maps the 3 Seller fields via `sellerDisplay()`.
+5. `offer-listing/buyer/view.blade.php` — public detail maps appraisal/financing/home-sale via the helper, and the home-sale detail gate uses the mapped `=== 'Included'`.
+6. `tests/Feature/Offers/OfferWorkflowReadinessTest.php` — allowlisted the helper + 3 changed views/partials (seller/view was already allowlisted).
+7. `tests/Feature/Offers/CreateEditParityRegressionTest.php` — +4 tests (canonical Seller options / no Preferred Waived; canonical Buyer options / no "Not Applicable (Cash)"; Seller edit preserves a legacy value without rewrite; Seller public view maps the legacy label).
+
+**Compatibility:** no `in:` validation exists on these fields (verified), so legacy and new values both pass publish validation; partials are shared between create and edit (one change covers both); stored data is never mutated by the mapping.
+
+**Verification:** 4 new contingency tests **PASS**; production-files guard **PASS**; `CreateEditParityRegressionTest` + `OfferWorkflowReadinessTest` + A4.28 = **61 passed / 0 failed**; Buyer/Seller-flow + offer-response-form suites unaffected (0 failed); all changed blades compile; both listing views render.
+
+**Residual risk / Needs Review:**
+- Minor: while editing a legacy listing, opening the dropdown shows the legacy value under its canonical label — functionally correct, value preserved. Worth a quick **browser confirm** that legacy listings display/edit as expected (see report).
+- CONF‑1 (Buyer option sets) and CONF‑4 (Seller Preferred Waived) are now **resolved**. CONF‑2 (inspection-contingency dedup) remains **Phase 12** (not in Phase 5 scope).
+
+**Status moves:** A5.29 → ✅ · A5.30 → ✅. **Phase 5 complete.**
 
 ### 2026-06-28 — Batch 7: A4.26/A4.27 — unify Seller property-condition list (owner decision)
 

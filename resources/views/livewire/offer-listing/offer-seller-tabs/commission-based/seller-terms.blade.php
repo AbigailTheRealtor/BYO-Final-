@@ -1861,14 +1861,23 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
+    @php
+        // A5.29: canonical Seller contingency options (seller-perspective: will the
+        // seller accept an offer carrying this contingency?). Legacy values
+        // (Required → Accepted, Preferred Waived → Negotiable) are shown under their
+        // canonical label while their stored value is preserved (no rewrite).
+        $__apOpts   = \App\Helpers\ContingencyOptionHelper::SELLER;
+        $__apCur    = $appraisal_contingency_preference;
+        $__apLegacy = ($__apCur !== '' && !in_array($__apCur, $__apOpts, true))
+            ? \App\Helpers\ContingencyOptionHelper::sellerDisplay($__apCur) : null;
+    @endphp
     <div class="input-cover">
         <select wire:model="appraisal_contingency_preference" class="form-control has-icon"
             data-icon="fa-solid fa-scale-balanced">
             <option value="">Select</option>
-            <option value="Required">Required</option>
-            <option value="Preferred Waived">Preferred Waived</option>
-            <option value="Negotiable">Negotiable</option>
-            <option value="Not Applicable">Not Applicable</option>
+            @foreach ($__apOpts as $__o)
+                <option value="{{ ($__apLegacy === $__o) ? $__apCur : $__o }}">{{ $__o }}</option>
+            @endforeach
         </select>
     </div>
 </div>
@@ -1881,14 +1890,19 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
+    @php
+        $__fnOpts   = \App\Helpers\ContingencyOptionHelper::SELLER;
+        $__fnCur    = $financing_contingency_preference;
+        $__fnLegacy = ($__fnCur !== '' && !in_array($__fnCur, $__fnOpts, true))
+            ? \App\Helpers\ContingencyOptionHelper::sellerDisplay($__fnCur) : null;
+    @endphp
     <div class="input-cover">
         <select wire:model="financing_contingency_preference" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
-            <option value="Required">Required</option>
-            <option value="Preferred Waived">Preferred Waived</option>
-            <option value="Negotiable">Negotiable</option>
-            <option value="Not Applicable">Not Applicable</option>
+            @foreach ($__fnOpts as $__o)
+                <option value="{{ ($__fnLegacy === $__o) ? $__fnCur : $__o }}">{{ $__o }}</option>
+            @endforeach
         </select>
     </div>
 </div>
@@ -1901,13 +1915,21 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
+    @php
+        // A5.29: same canonical option list as the other two Seller contingencies
+        // (adds the previously-missing "Not Applicable").
+        $__sbOpts   = \App\Helpers\ContingencyOptionHelper::SELLER;
+        $__sbCur    = $sale_of_buyer_property_contingency;
+        $__sbLegacy = ($__sbCur !== '' && !in_array($__sbCur, $__sbOpts, true))
+            ? \App\Helpers\ContingencyOptionHelper::sellerDisplay($__sbCur) : null;
+    @endphp
     <div class="input-cover">
         <select wire:model="sale_of_buyer_property_contingency" class="form-control has-icon"
             data-icon="fa-solid fa-house-circle-check">
             <option value="">Select</option>
-            <option value="Accepted">Accepted</option>
-            <option value="Not Accepted">Not Accepted</option>
-            <option value="Negotiable">Negotiable</option>
+            @foreach ($__sbOpts as $__o)
+                <option value="{{ ($__sbLegacy === $__o) ? $__sbCur : $__o }}">{{ $__o }}</option>
+            @endforeach
         </select>
     </div>
 </div>

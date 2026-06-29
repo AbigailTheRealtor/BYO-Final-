@@ -355,6 +355,12 @@ class OfferWorkflowReadinessTest extends TestCase
             //        (canonical 7-option list; "No Preference" removed; backward-compat guard).
             'resources/views/livewire/offer-listing/seller/offer-seller-listing-edit.blade.php',
             'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/property-preferences.blade.php',
+            //   A5.29/A5.30 — Phase 5 contingencies: seller/buyer-perspective option sets
+            //        + shared legacy display-mapping helper (no stored-value rewrite).
+            'app/Helpers/ContingencyOptionHelper.php',
+            'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/seller-terms.blade.php',
+            'resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/purchasing-terms.blade.php',
+            'resources/views/offer-listing/buyer/view.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

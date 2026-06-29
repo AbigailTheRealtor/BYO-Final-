@@ -1342,14 +1342,14 @@
                         {!! $row('Inspection Period Duration', $str('inspection_period_days') === 'Other' ? ($str('inspection_period_other') ?: 'Other') : $str('inspection_period_days')) !!}
                     @endif
                     {!! $row('Inspection Contingency', $str('inspection_contingency_buyer')) !!}
-                    {!! $row('Appraisal Contingency', $str('appraisal_contingency_buyer')) !!}
-                    @if($str('appraisal_contingency_buyer') === 'Yes' && $str('appraisal_contingency_days') !== '')
+                    {!! $row('Appraisal Contingency', \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($str('appraisal_contingency_buyer'))) !!}
+                    @if(\App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($str('appraisal_contingency_buyer')) === 'Included' && $str('appraisal_contingency_days') !== '')
                         {!! $row('Appraisal Contingency Period', $str('appraisal_contingency_days') . ' days') !!}
                     @endif
                 </div>
                 <div class="col-md-6">
-                    {!! $row('Financing Contingency', $str('financing_contingency_buyer')) !!}
-                    @if($str('financing_contingency_buyer') === 'Yes' && $str('financing_contingency_period') !== '')
+                    {!! $row('Financing Contingency', \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($str('financing_contingency_buyer'))) !!}
+                    @if(\App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($str('financing_contingency_buyer')) === 'Included' && $str('financing_contingency_period') !== '')
                         {!! $row('Financing Contingency Period', $str('financing_contingency_period') . ' days') !!}
                     @endif
                 </div>
@@ -1358,11 +1358,11 @@
             {{-- Home Sale Contingency --}}
             @if($str('home_sale_contingency') !== '')
             <hr>
-            @if($str('home_sale_contingency') === 'Yes')
+            @if(\App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($str('home_sale_contingency')) === 'Included')
             <h6 class="fw-semibold mb-2">Home Sale Contingency</h6>
             <div class="row">
                 <div class="col-md-6">
-                    {!! $row('Home Sale Contingency', $str('home_sale_contingency')) !!}
+                    {!! $row('Home Sale Contingency', \App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($str('home_sale_contingency'))) !!}
                     {!! $row('Property Address', $str('home_sale_contingency_address')) !!}
                     {!! $row('Unit / Apt / Suite #', $str('unit_number')) !!}
                     {!! $row('Target Date', $fmtDate($str('home_sale_contingency_date'))) !!}
@@ -1374,7 +1374,7 @@
             </div>
             @else
             <div class="row">
-                <div class="col-md-6">{!! $row('Home Sale Contingency', $str('home_sale_contingency')) !!}</div>
+                <div class="col-md-6">{!! $row('Home Sale Contingency', \App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($str('home_sale_contingency'))) !!}</div>
             </div>
             @endif
             @endif

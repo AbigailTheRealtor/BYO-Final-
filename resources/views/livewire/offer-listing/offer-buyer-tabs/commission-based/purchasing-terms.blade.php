@@ -1623,20 +1623,27 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
+    @php
+        // A5.30: buyer-perspective options (does the buyer's offer include this
+        // contingency?). Legacy values (Yes → Included, No → Waived) render under
+        // their canonical label while their stored value is preserved (no rewrite).
+        $__apOpts   = \App\Helpers\ContingencyOptionHelper::BUYER_APPRAISAL_FINANCING;
+        $__apCur    = $appraisal_contingency_buyer;
+        $__apLegacy = ($__apCur !== '' && !in_array($__apCur, $__apOpts, true))
+            ? \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($__apCur) : null;
+    @endphp
     <div class="input-cover">
         <select wire:model="appraisal_contingency_buyer" class="form-control has-icon"
             data-icon="fa-solid fa-scale-balanced">
             <option value="">Select</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-            @if ($appraisal_contingency_buyer === 'Waived')
-            <option value="Waived">Waived</option>
-            @endif
+            @foreach ($__apOpts as $__o)
+                <option value="{{ ($__apLegacy === $__o) ? $__apCur : $__o }}">{{ $__o }}</option>
+            @endforeach
         </select>
     </div>
 </div>
 
-@if ($appraisal_contingency_buyer === 'Yes')
+@if (\App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($appraisal_contingency_buyer) === 'Included')
 <div class="form-group mt-3">
     <label class="fw-bold">Appraisal Contingency Period (Days):
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1660,20 +1667,25 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
+    @php
+        $__fnOpts   = \App\Helpers\ContingencyOptionHelper::BUYER_APPRAISAL_FINANCING;
+        $__fnCur    = $financing_contingency_buyer;
+        $__fnLegacy = ($__fnCur !== '' && !in_array($__fnCur, $__fnOpts, true))
+            ? \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($__fnCur) : null;
+    @endphp
     <div class="input-cover">
         <select wire:model="financing_contingency_buyer" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-            <option value="Waived">Waived</option>
-            <option value="Not Applicable (Cash)">Not Applicable (Cash)</option>
+            @foreach ($__fnOpts as $__o)
+                <option value="{{ ($__fnLegacy === $__o) ? $__fnCur : $__o }}">{{ $__o }}</option>
+            @endforeach
         </select>
     </div>
 </div>
 
 <!-- 7. Financing Contingency Period -->
-@if ($financing_contingency_buyer === 'Yes')
+@if (\App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($financing_contingency_buyer) === 'Included')
 <div class="form-group mt-3">
     <label class="fw-bold">Financing Contingency Period (Days):
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1697,17 +1709,27 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
+    @php
+        // A5.30: Sale-of-Buyer's-Property contingency (Included / Not Included /
+        // Negotiable / Not Applicable). Legacy Yes → Included, No → Not Included;
+        // stored value preserved.
+        $__hsOpts   = \App\Helpers\ContingencyOptionHelper::BUYER_HOME_SALE;
+        $__hsCur    = $home_sale_contingency;
+        $__hsLegacy = ($__hsCur !== '' && !in_array($__hsCur, $__hsOpts, true))
+            ? \App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($__hsCur) : null;
+    @endphp
     <div class="input-cover">
         <select wire:model="home_sale_contingency" class="form-control has-icon"
             data-icon="fa-solid fa-house-circle-exclamation">
             <option value="">Select</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
+            @foreach ($__hsOpts as $__o)
+                <option value="{{ ($__hsLegacy === $__o) ? $__hsCur : $__o }}">{{ $__o }}</option>
+            @endforeach
         </select>
     </div>
 </div>
 
-@if ($home_sale_contingency === 'Yes')
+@if (\App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($home_sale_contingency) === 'Included')
 <div class="form-group mt-3">
     <label class="fw-bold">Buyer Property Address or Description:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

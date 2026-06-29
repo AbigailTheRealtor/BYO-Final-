@@ -1148,4 +1148,64 @@ class CreateEditParityRegressionTest extends TestCase
             ->assertSet('condition_prop', 'No Preference') // legacy value loaded
             ->assertSee('No Preference');                  // still rendered as a selectable option
     }
+
+    // ─── A5.29/A5.30 — contingency option sets + legacy display mapping ───────
+
+    /** A5.29: Seller contingencies use seller-perspective options; legacy Required/Preferred Waived no longer offered. */
+    public function test_create_seller_contingency_uses_canonical_options(): void
+    {
+        $html = $this->actingAs($this->makeAgentUser())
+            ->get('/offer-listing/seller')->assertStatus(200)->getContent();
+
+        $this->assertStringContainsString('>Accepted</option>', $html);
+        $this->assertStringContainsString('>Not Accepted</option>', $html);
+        $this->assertStringNotContainsString('>Preferred Waived</option>', $html);
+    }
+
+    /** A5.30: Buyer contingencies use buyer-perspective options; old "Not Applicable (Cash)" wording is gone. */
+    public function test_create_buyer_contingency_uses_canonical_options(): void
+    {
+        $html = $this->actingAs($this->makeAgentUser())
+            ->get('/offer-listing/buyer')->assertStatus(200)->getContent();
+
+        $this->assertStringContainsString('>Not Included</option>', $html); // home-sale option, buyer-only
+        $this->assertStringContainsString('>Included</option>', $html);
+        $this->assertStringNotContainsString('>Not Applicable (Cash)</option>', $html);
+    }
+
+    /** A5.29 backward-compat: a legacy Seller value is NOT rewritten on edit-load and stays selectable under its canonical label. */
+    public function test_seller_edit_preserves_legacy_contingency_value(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'agent']);
+        $auction = $this->makeSellerAuction($owner, '', false);
+
+        SellerAgentAuctionMeta::create([
+            'seller_agent_auction_id' => $auction->id,
+            'meta_key'                => 'appraisal_contingency_preference',
+            'meta_value'              => 'Preferred Waived',
+        ]);
+
+        Livewire::actingAs($owner)
+            ->test(SellerOfferListingEdit::class, ['auctionId' => $auction->id])
+            ->assertSet('appraisal_contingency_preference', 'Preferred Waived') // not rewritten
+            ->assertSeeHtml('value="Preferred Waived"');                         // option carries the raw value
+    }
+
+    /** A5.29 display mapping: the public Seller view shows the canonical label, never the legacy text. */
+    public function test_seller_public_view_maps_legacy_contingency_label(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'agent']);
+        $auction = $this->makeSellerAuction($owner, '', false);
+
+        SellerAgentAuctionMeta::create([
+            'seller_agent_auction_id' => $auction->id,
+            'meta_key'                => 'appraisal_contingency_preference',
+            'meta_value'              => 'Preferred Waived',
+        ]);
+
+        $this->actingAs($this->makeBuyerUser())
+            ->get(route('offer.listing.seller.view', $auction->id))
+            ->assertStatus(200)
+            ->assertDontSee('Preferred Waived'); // legacy text mapped to "Negotiable" for display
+    }
 }

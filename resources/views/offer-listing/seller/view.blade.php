@@ -2140,9 +2140,9 @@
     @php
         $sellerTermsFields = array_filter([
             ['Inspection Period', $str('preferred_inspection_period')],
-            ['Appraisal Contingency', $str('appraisal_contingency_preference')],
-            ['Financing Contingency', $str('financing_contingency_preference')],
-            ['Sale of Buyer Property Contingency', $str('sale_of_buyer_property_contingency')],
+            ['Appraisal Contingency', \App\Helpers\ContingencyOptionHelper::sellerDisplay($str('appraisal_contingency_preference'))],
+            ['Financing Contingency', \App\Helpers\ContingencyOptionHelper::sellerDisplay($str('financing_contingency_preference'))],
+            ['Sale of Buyer Property Contingency', \App\Helpers\ContingencyOptionHelper::sellerDisplay($str('sale_of_buyer_property_contingency'))],
             ['Seller Contribution / Credit Offered', $yesNo($str('seller_contribution_credit_offered'))],
             ['Seller Contribution Details', $str('seller_contribution_amount_details')],
             ['Possession Preference', $str('possession_preference')],
