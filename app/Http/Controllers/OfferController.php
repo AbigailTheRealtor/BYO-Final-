@@ -1255,6 +1255,17 @@ class OfferController extends Controller
         // the show view to read all buyer-entered terms from a single consistent source).
         // The meta value is buyer-controlled; the native column is system-controlled.
         $offer->saveMeta('expires_at',   $validated['expires_at'] ?? null);
+
+        // BYA-H6: the comment above always promised a dual-write, but only the meta
+        // write existed — so the native offers.expires_at column stayed NULL on submit
+        // and ExpireOffersCommand (which filters that native column) never expired
+        // submitted offers. Mirror the native write already performed in store() and
+        // counter() so system-level expiration fires. Additive; meta logic above
+        // unchanged. Only set when a response-by date is provided.
+        if (($validated['expires_at'] ?? null) !== null) {
+            $offer->expires_at = $validated['expires_at'];
+            $offer->save();
+        }
         $offer->saveMeta('custom_terms', $validated['custom_terms'] ?? null);
         $offer->saveMeta('notes',        $validated['notes'] ?? null);
 
