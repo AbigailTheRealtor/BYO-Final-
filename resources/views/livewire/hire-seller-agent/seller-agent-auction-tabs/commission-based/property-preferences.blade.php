@@ -758,11 +758,10 @@
 
 <!-- Other Property Style Input -->
 <div class="form-group other_property_items_seller {{ $property_items === 'Other' ? '' : 'd-none' }}">
-    <label class="fw-bold">Other Property Style: <span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model.defer="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
-            placeholder="Enter land use (e.g., Solar Farm, RV Park, Conservation Easement)"
+            placeholder="Enter property style (e.g., Solar farm, RV park, Conservation easement)"
             @if ($property_items === 'Other') required @endif>
     </div>
     <span class="error mt-2" id="other_property_items_error"></span>

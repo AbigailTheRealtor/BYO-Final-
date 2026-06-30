@@ -191,7 +191,7 @@
         <div class="col-12 col-lg-4">
             <x-stellar.matchmaker-ask-ai
                 :listing-key="$property['listing_key']"
-                :criteria-id="$criteriaId"
+                :criteria-id="$askAiCriteriaId ?? null"
                 :criteria-type="$criteriaType"
             />
         </div>

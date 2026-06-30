@@ -1330,87 +1330,104 @@
                                                             Information:
                                                         </h6>
 
+                                                        @php
+                                                            // BYA-H4: agent contact/credential fields show the agent's CURRENT
+                                                            // profile (live from the user account), falling back to the
+                                                            // bid-time snapshot when empty. Terms stay snapshotted.
+                                                            $bidUser = $bid->user ?? null;
+                                                            $liveOr  = function ($live, $snapshot) {
+                                                                if (is_string($live)) { $live = trim($live); }
+                                                                return !empty($live) ? $live : $snapshot;
+                                                            };
+                                                            $cFirstName = $liveOr($bidUser->first_name ?? null, data_get($bid, 'get.first_name'));
+                                                            $cLastName  = $liveOr($bidUser->last_name ?? null,  data_get($bid, 'get.last_name'));
+                                                            $cPhone     = $liveOr($bidUser->phone ?? null,      data_get($bid, 'get.phone'));
+                                                            $cEmail     = $liveOr($bidUser->email ?? null,      data_get($bid, 'get.email'));
+                                                            $cBrokerage = $liveOr($bidUser->brokerage ?? null,  data_get($bid, 'get.brokerage'));
+                                                            $cLicense   = $liveOr($bidUser->license_no ?? null, data_get($bid, 'get.license_no'));
+                                                            $cNarId     = $liveOr($bidUser ? $bidUser->info('nar_id') : null, data_get($bid, 'get.nar_id'));
+                                                        @endphp
                                                         <div class="row">
                                                             <!-- First Name -->
-                                                            @if (data_get($bid, 'get.first_name'))
+                                                            @if ($cFirstName)
                                                             <div class="col-md-6 mb-2">
                                                                 <div class="fw-semibold"
                                                                     style="color: #049399;">First
                                                                     Name:</div>
                                                                 <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.first_name') }}
+                                                                    {{ $cFirstName }}
                                                                 </div>
                                                             </div>
                                                             @endif
 
                                                             <!-- Last Name -->
-                                                            @if (data_get($bid, 'get.last_name'))
+                                                            @if ($cLastName)
                                                             <div class="col-md-6 mb-2">
                                                                 <div class="fw-semibold"
                                                                     style="color: #049399;">Last
                                                                     Name:</div>
                                                                 <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.last_name') }}
+                                                                    {{ $cLastName }}
                                                                 </div>
                                                             </div>
                                                             @endif
 
                                                             <!-- Phone Number -->
-                                                            @if (data_get($bid, 'get.phone'))
+                                                            @if ($cPhone)
                                                             <div class="col-md-6 mb-2">
                                                                 <div class="fw-semibold"
                                                                     style="color: #049399;">Phone
                                                                     Number:</div>
                                                                 <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.phone') }}
+                                                                    {{ $cPhone }}
                                                                 </div>
                                                             </div>
                                                             @endif
 
                                                             <!-- Email -->
-                                                            @if (data_get($bid, 'get.email'))
+                                                            @if ($cEmail)
                                                             <div class="col-md-6 mb-2">
                                                                 <div class="fw-semibold"
                                                                     style="color: #049399;">Email:
                                                                 </div>
                                                                 <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.email') }}
+                                                                    {{ $cEmail }}
                                                                 </div>
                                                             </div>
                                                             @endif
 
                                                             <!-- Brokerage -->
-                                                            @if (data_get($bid, 'get.brokerage'))
+                                                            @if ($cBrokerage)
                                                             <div class="col-12 mb-2">
                                                                 <div class="fw-semibold"
                                                                     style="color: #049399;">
                                                                     Brokerage:</div>
                                                                 <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.brokerage') }}
+                                                                    {{ $cBrokerage }}
                                                                 </div>
                                                             </div>
                                                             @endif
 
                                                             <!-- License Number -->
-                                                            @if (data_get($bid, 'get.license_no'))
+                                                            @if ($cLicense)
                                                             <div class="col-md-6 mb-2">
                                                                 <div class="fw-semibold"
                                                                     style="color: #049399;">Real
                                                                     Estate License #:</div>
                                                                 <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.license_no') }}
+                                                                    {{ $cLicense }}
                                                                 </div>
                                                             </div>
                                                             @endif
 
                                                             <!-- NAR Member ID -->
-                                                            @if (data_get($bid, 'get.nar_id'))
+                                                            @if ($cNarId)
                                                             <div class="col-md-6 mb-2">
                                                                 <div class="fw-semibold"
                                                                     style="color: #049399;">NAR
                                                                     Member ID:</div>
                                                                 <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.nar_id') }}
+                                                                    {{ $cNarId }}
                                                                 </div>
                                                             </div>
                                                             @endif

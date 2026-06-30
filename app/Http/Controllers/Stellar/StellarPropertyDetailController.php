@@ -52,6 +52,25 @@ class StellarPropertyDetailController extends Controller
         $criteriaId   = $request->input('criteria_id');
         $criteriaType = $request->input('criteria_type', 'buyer');
 
+        // WF-1 normalization: the Ask AI widget posts to the owner-only
+        // listing-question endpoint, so only expose it when the viewer actually
+        // OWNS this (criteria_type, criteria_id). A tampered/foreign criteria_id
+        // then renders the "available from your saved criteria" notice instead of
+        // a control that would 403. Does not weaken the endpoint's own check.
+        $askAiCriteriaId = null;
+        if ($criteriaId && $request->user()) {
+            $criteriaTable = $criteriaType === 'tenant'
+                ? 'tenant_agent_auctions'
+                : 'buyer_agent_auctions';
+            $ownsCriteria = \Illuminate\Support\Facades\DB::table($criteriaTable)
+                ->where('id', (int) $criteriaId)
+                ->where('user_id', $request->user()->id)
+                ->exists();
+            if ($ownsCriteria) {
+                $askAiCriteriaId = $criteriaId;
+            }
+        }
+
         $backUrl = $criteriaId
             ? route('stellar.buyer.results', array_filter([
                 'criteria_id'   => $criteriaId,
@@ -108,6 +127,7 @@ class StellarPropertyDetailController extends Controller
             'backUrl'         => $backUrl,
             'criteriaId'      => $criteriaId,
             'criteriaType'    => $criteriaType,
+            'askAiCriteriaId' => $askAiCriteriaId,
             'matchContext'    => $matchContext,
             'locationSummary' => $locationSummary,
             'personality'     => $personality,

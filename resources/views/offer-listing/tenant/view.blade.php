@@ -2106,6 +2106,10 @@
             var listingId = {{ $auction->id }};
             var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
+            /* WF-1: V1 listing-question endpoint is owner-scoped; never route a
+               non-owner to it (source of the Ask AI 403). Public assistant is V2. */
+            var isOwner       = {{ (auth()->id() && (int) auth()->id() === (int) $auction->user_id) ? 'true' : 'false' }};
+
             /* V2 configuration — from Blade */
             var useV2         = {{ $agentAiV2 ? 'true' : 'false' }};
             var v2AgentId     = {{ (int)($agentAiAgentId ?? 0) }};
@@ -2271,7 +2275,18 @@
                 .then(function(data) { setLoading(false); if (textarea) textarea.value = ''; appendTurn(q, data); })
                 .catch(function() { setLoading(false); appendTurn(q, { status: 'failed' }); });
             }
+            function showOwnerOnlyNotice() {
+                setLoading(false);
+                if (!resultDiv) return;
+                resultDiv.innerHTML = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:.5rem;padding:.9rem 1rem;">'
+                    + '<div style="font-size:.8rem;font-weight:700;color:#0369a1;margin-bottom:.35rem;"><i class="fa-solid fa-circle-info me-1"></i>Notice</div>'
+                    + '<div style="font-size:.875rem;color:#1e293b;">Ask AI for this listing is available to the listing owner.</div></div>';
+                resultDiv.style.display = '';
+            }
+
             function submitV1(q) {
+                // WF-1: never call the owner-only endpoint for a non-owner (would 403).
+                if (!isOwner) { showOwnerOnlyNotice(); return; }
                 resetResult();
                 fetch('/ask-ai/listing-question', {
                     method: 'POST',

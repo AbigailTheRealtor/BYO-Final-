@@ -362,21 +362,32 @@
                                         aria-labelledby="headingOne" data-bs-parent="#accordionExample">
                                         <div class="accordion-body">
                                             <div id="bidding_history_data">
+                                                @php
+                                                    // BYA-H4: agent contact/credential fields show the agent's CURRENT
+                                                    // profile (live from the user account), falling back to the legacy
+                                                    // bid-time snapshot column when the live value is empty.
+                                                    $bidUser = $bid->user ?? null;
+                                                    $cName      = trim((string) optional($bidUser)->name)       !== '' ? $bidUser->name       : $bid->name;
+                                                    $cPhone     = trim((string) optional($bidUser)->phone)      !== '' ? $bidUser->phone      : $bid->phone;
+                                                    $cEmail     = trim((string) optional($bidUser)->email)      !== '' ? $bidUser->email      : $bid->email;
+                                                    $cBrokerage = trim((string) optional($bidUser)->brokerage)  !== '' ? $bidUser->brokerage  : $bid->brokerage;
+                                                    $cLicense   = trim((string) optional($bidUser)->license_no) !== '' ? $bidUser->license_no : $bid->license_no;
+                                                @endphp
                                                 <div>
                                                     <p class="d-flex justify-content-between small">Full Name:
-                                                        <span>{{ $bid->name }}</span>
+                                                        <span>{{ $cName }}</span>
                                                     </p>
                                                     <p class="d-flex justify-content-between small">Phone Number:
-                                                        <span>{{ $bid->phone }}</span>
+                                                        <span>{{ $cPhone }}</span>
                                                     </p>
                                                     <p class="d-flex justify-content-between small">Email:
-                                                        <span>{{ $bid->email }}</span>
+                                                        <span>{{ $cEmail }}</span>
                                                     </p>
                                                     <p class="d-flex justify-content-between small">Brokerage:
-                                                        <span>{{ $bid->brokerage }}</span>
+                                                        <span>{{ $cBrokerage }}</span>
                                                     </p>
                                                     <p class="d-flex justify-content-between small">Real Estate License #:
-                                                        <span>{{ $bid->license_no }}</span>
+                                                        <span>{{ $cLicense }}</span>
                                                     </p>
 
                                                     {{-- <p class="d-flex justify-content-between small">MLS ID:

@@ -34,7 +34,9 @@ class LandlordAgentAuctionBidController extends Controller
         if (!$_listingGuard) {
             return redirect()->back()->with('error', 'Listing not found.');
         }
-        if (in_array($_listingGuard->status, ['Hired Agent'])) {
+        // BYA-H6: include 'Expired' so a bidding-period listing past its
+        // expiration_date stops accepting new bids (parity with the other roles).
+        if (in_array($_listingGuard->status, ['Hired Agent', 'Expired'])) {
             return redirect()->back()->with('error', 'This listing is not currently accepting new bids.');
         }
 

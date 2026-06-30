@@ -1438,6 +1438,19 @@ class LandlordAgentAuctionBid extends Component
             $this->validate();
             \Log::info('[LandlordBid] validation passed');
 
+            // BYA-H6: an expired listing no longer accepts NEW bids. Editing an
+            // already-placed bid is unaffected. Mirrors the accept/reject expiry
+            // guards already enforced in the bid controllers (status === 'Expired'
+            // is derived from the listing's expiration_date).
+            if (!($this->isEditMode && $this->editBidId)) {
+                $listingForExpiry = \App\Models\LandlordAgentAuction::find($this->auctionId);
+                if ($listingForExpiry && $listingForExpiry->status === 'Expired') {
+                    DB::rollBack();
+                    session()->flash('error', 'This listing has expired and is no longer accepting new bids.');
+                    return redirect()->route('landlord.agent.auction.view', $this->auctionId);
+                }
+            }
+
             $allowedVideos = ['mp4', 'mov', 'avi'];
             $allowedPhotos = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'ppt', 'pptx'];
 

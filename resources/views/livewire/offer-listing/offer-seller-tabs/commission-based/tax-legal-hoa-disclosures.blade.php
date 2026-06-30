@@ -545,7 +545,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_fee_includes_other" class="form-control has-icon"
                             data-icon="fa-solid fa-list-check"
-                            placeholder="Enter what else is included (e.g., Roof maintenance, Building reserves)">
+                            placeholder="Enter what else is included (e.g., Snow removal, Building reserves, Concierge service)">
                     </div>
                 </div>
             </div>
@@ -661,7 +661,7 @@
                         <div class="input-cover">
                             <input type="text" wire:model="min_lease_period_other" class="form-control has-icon"
                                 data-icon="fa-regular fa-clock"
-                                placeholder="Enter minimum lease period (e.g., 6 months, 12 months, seasonal lease)">
+                                placeholder="Enter minimum lease period (e.g., 18 Months, Seasonal lease, Month-to-month after first year)">
                         </div>
                     </div>
                 @endif

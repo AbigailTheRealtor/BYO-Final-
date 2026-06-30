@@ -983,6 +983,19 @@ class SellerAgentAuctionBid extends Component
         try {
             $this->validate();
 
+            // BYA-H6: an expired listing no longer accepts NEW bids. Editing an
+            // already-placed bid is unaffected. Mirrors the accept/reject expiry
+            // guards already enforced in the bid controllers (status === 'Expired'
+            // is derived from the listing's expiration_date).
+            if (!($this->isEditMode && $this->editBidId)) {
+                $listingForExpiry = SellerAgentAuction::find($this->auctionId);
+                if ($listingForExpiry && $listingForExpiry->status === 'Expired') {
+                    DB::rollBack();
+                    session()->flash('error', 'This listing has expired and is no longer accepting new bids.');
+                    return redirect()->route('seller.agent.auction.detail', $this->auctionId);
+                }
+            }
+
             if ($this->isEditMode && $this->editBidId) {
                 $bid = SellerAgentAuctionBidData::where('id', $this->editBidId)
                     ->where('user_id', Auth::id())
