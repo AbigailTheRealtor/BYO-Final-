@@ -979,6 +979,15 @@ class SellerAgentAuctionBid extends Component
 
     public function submit()
     {
+        // BYA-H2 (Rule B1): the hire-agent listing owner may not submit an agent bid
+        // on their own listing. Checked before validation so a self-bid is rejected
+        // immediately; the listing owner and bidding agents are distinct accounts.
+        $ownerCheckListing = SellerAgentAuction::find($this->auctionId);
+        if ($ownerCheckListing && (int) $ownerCheckListing->user_id === (int) Auth::id()) {
+            session()->flash('error', 'You cannot submit an agent bid on your own listing.');
+            return redirect()->route('seller.agent.auction.detail', $this->auctionId);
+        }
+
         DB::beginTransaction();
         try {
             $this->validate();

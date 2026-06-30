@@ -1264,6 +1264,16 @@ class TenantAgentAuctionBid extends Component
     public function submit()
     {
         Log::info('[TenantBid] submit() called', ['auctionId' => $this->auctionId, 'userId' => Auth::id()]);
+
+        // BYA-H2 (Rule B1): the hire-agent listing owner may not submit an agent bid
+        // on their own listing. Checked before validation so a self-bid is rejected
+        // immediately; the listing owner and bidding agents are distinct accounts.
+        $ownerCheckListing = \App\Models\TenantAgentAuction::find($this->auctionId);
+        if ($ownerCheckListing && (int) $ownerCheckListing->user_id === (int) Auth::id()) {
+            session()->flash('error', 'You cannot submit an agent bid on your own listing.');
+            return redirect()->route('tenant.agent.auction.view', $this->auctionId);
+        }
+
         DB::beginTransaction();
         try {
             $this->validate();
@@ -1274,7 +1284,7 @@ class TenantAgentAuctionBid extends Component
                 session()->flash('error', 'Auction not found.');
                 return;
             }
-            
+
             $endDate = strtotime($auction->end_date . ' ' . ($auction->end_time ?? '23:59:59'));
             if (time() > $endDate) {
                 session()->flash('error', 'This auction has ended. Bidding is no longer available.');

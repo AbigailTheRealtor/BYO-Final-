@@ -41,6 +41,11 @@ class BuyerAgentAuctionBidController extends Controller
         if (in_array($_listingGuard->status, ['Hired Agent', 'Pending', 'Expired'])) {
             return redirect()->back()->with('error', 'This listing is not currently accepting new bids.');
         }
+        // BYA-H2 (Rule B1): the hire-agent listing owner may not submit an agent bid
+        // on their own listing.
+        if ((int) $_listingGuard->user_id === (int) Auth::id()) {
+            return redirect()->back()->with('error', 'You cannot submit an agent bid on your own listing.');
+        }
 
         try {
             DB::beginTransaction();
