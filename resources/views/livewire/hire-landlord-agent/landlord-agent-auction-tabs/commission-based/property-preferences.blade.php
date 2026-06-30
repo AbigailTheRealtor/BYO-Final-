@@ -9,18 +9,8 @@
         </div>
     </div>
 </div>
-<!-- Street Address -->
-<div class="form-group mb-3">
-    <label class="fw-bold"> Street Address:<span class="text-danger">*</span></label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the street address of the property (e.g., 123 Main Street). City, County, and State will be entered separately below.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <input type="text" wire:model="address" class="form-control has-icon" data-icon="fa-solid fa-map-pin"
-            placeholder="Enter street address (e.g., 123 Main Street)" required>
-    </div>
-</div>
+<!-- Street Address + Unit (A3.21–A3.23: shared map-integrated address component) -->
+<x-byo-address-autocomplete street-id="hire-landlord-street-address" callback="byoInitHireLandlordPlaces" />
 <div class="alert alert-warning mt-3 p-2 small">
     <strong>🛡️ On the listing, only your City, County, State, and ZIP code are displayed.</strong> Your full address is shared with the Agent you hire only after an Agent is selected, helping protect your privacy while still allowing Agents to understand your general location.
 </div>

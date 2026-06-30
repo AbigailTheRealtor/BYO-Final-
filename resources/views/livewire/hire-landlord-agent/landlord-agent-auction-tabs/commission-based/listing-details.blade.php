@@ -477,62 +477,10 @@ $auction_lengths_seller = [
         <span class="error mt-2" id="expiration_date_error"></span>
     </div>
 
-<div class="form-group">
-        <label class="fw-bold">Listing Type:<span class="text-danger">*</span>
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select how Agents submit bids for this listing. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Bidding Period:&lt;/strong&gt; Agents may submit bids until the bidding deadline expires. The timer creates a structured window to encourage competitive offers. You may review, accept, counter, or reject bids at any time. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Traditional:&lt;/strong&gt; Agents may submit bids at any time while the listing remains active. There is no structured bidding countdown, and bids may be reviewed and acted on as they are received.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        @if (!empty($isEditMode))
-            <div class="input-cover locked-field-wrapper position-relative" data-lock-msg="Listing Type cannot be edited once the listing is created.">
-                <i class="input-icon fa-solid fa-lock"></i>
-                <input type="text" class="form-control has-icon" value="{{ $auction_type }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
-                <div class="locked-field-overlay" style="position:absolute;inset:0;cursor:not-allowed;z-index:2;"></div>
-            </div>
-            <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Listing Type cannot be changed after the listing has been created.</p>
-        @else
-            <div class="input-cover">
-                <i class="input-icon fa-solid fa-file-lines"></i>
-                <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
-                    data-icon="fa-solid fa-file-lines" required>
-                    <option value="">Select</option>
-                    <option value="Bidding Period" title="Agents may submit bids until the bidding deadline expires. The timer creates a structured window to encourage competitive offers. You may review, accept, counter, or reject bids at any time.">Bidding Period</option>
-                    <option value="Traditional">Traditional</option>
-                </select>
-            </div>
-            <span class="error mt-2" id="auction_type_error"></span>
-        @endif
-    </div>
-
-
-    <div class="form-group mt-3" @if ($auction_type !== 'Bidding Period') style="display: none;" @endif>
-        <label class="fw-bold">Bidding Period Length: <span class="text-danger">*</span>
-
-        </label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how long Agents have to submit bids. The timer defines the active bidding window but does not restrict when you can review or respond to bids.">
-            <i class="fa-solid fa-circle-info"></i> </span>
-        <div class="input-cover">
-            <select wire:model="auction_time" id="auction_time" class="form-control has-icon"
-                data-icon="fa-regular fa-clock" @if ($auction_type === 'Bidding Period') required @endif>
-                <option value="">Select</option>
-                @foreach ($auction_lengths_seller as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
-                @endforeach
-
-           
-            </select>
-        </div>
-        <span class="error mt-2" id="auction_time_error"></span>
-    </div>
-
-    {{-- Bidding Period Advisory Notice (shown only when Bidding Period is selected) --}}
-    <div class="alert alert-info small py-2 mt-2 mb-3" @if ($auction_type !== 'Bidding Period') style="display: none;" @endif wire:key="bp-notice-landlord">
-        <i class="fa-solid fa-circle-info me-1"></i>
-        <strong>Bidding Period:</strong> The timer creates a structured window for Agents to submit competitive bids. You may review, accept, counter, or reject bids at any time during or after the bidding period.
-    </div>
+{{-- A1.1: Listing Type / Bidding Period removed from Hire Agent listings.
+         Listing Type & Bidding Period belong to Create Offer (Seller/Landlord) only (CONF-3).
+         Hire Agent listings are always Traditional; auction_type kept in form state so publish validation passes. --}}
+    <input type="hidden" wire:model="auction_type">
 
     <div class="form-group">
         <label class="fw-bold">Meeting Preference:<span class="text-danger">*</span></label>

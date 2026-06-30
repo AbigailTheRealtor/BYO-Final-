@@ -23,6 +23,10 @@ use App\Support\TenantServicesCatalog;
 class TenantAgentAuctionEdit extends Component
 {
     use WithFileUploads;
+    use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+
+    /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
+    public $unit_address = '';
 
     public $isLoadingData = false;
     private bool $_isDraftSave = false;
@@ -3159,6 +3163,7 @@ class TenantAgentAuctionEdit extends Component
         $this->meeting_details_phone = $auction->info('meeting_details_phone');
         $this->meeting_details_email = $auction->info('meeting_details_email');
         $this->address = $auction->info('address');
+        $this->unit_address = $auction->info('unit_address'); // A3.21
         $this->meeting_details_meeting_time = $auction->info('meeting_details_meeting_time');
         $this->meeting_details_meeting_date = $auction->info('meeting_details_meeting_date');
         $this->meeting_details_time_zone = $auction->info('meeting_details_time_zone');
@@ -3973,6 +3978,7 @@ class TenantAgentAuctionEdit extends Component
 
             // Meeting details yes
             $auction->saveMeta('address', $this->address);
+            $auction->saveMeta('unit_address', $this->unit_address); // A3.21
             $auction->saveMeta('meeting_details_meeting_time', $this->meeting_details_meeting_time);
             $auction->saveMeta('meeting_details_meeting_date', $this->meeting_details_meeting_date);
             $auction->saveMeta('meeting_details_time_zone', $this->meeting_details_time_zone);

@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Storage;
 class SellerAgentAuctionEdit extends Component
 {
     use WithFileUploads;
+    use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+
+    /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
+    public $unit_address = '';
 
 
     // Livewire properties for form fields
@@ -1484,6 +1488,7 @@ class SellerAgentAuctionEdit extends Component
             $this->meeting_details_phone = $auction->get->meeting_details_phone;
             $this->meeting_details_email = $auction->get->meeting_details_email;
             $this->address = $auction->get->address;
+            $this->unit_address = $auction->get->unit_address ?? ''; // A3.21
             $this->meeting_details_meeting_time = $auction->get->meeting_details_meeting_time;
             $this->meeting_details_time_zone = $auction->get->meeting_details_time_zone;
             $this->meeting_details_meeting_date = $auction->get->meeting_details_meeting_date;
@@ -1855,6 +1860,7 @@ class SellerAgentAuctionEdit extends Component
 
         // Meeting details yes
         $auction->saveMeta('address', $this->address);
+        $auction->saveMeta('unit_address', $this->unit_address); // A3.21
         $auction->saveMeta('meeting_details_meeting_time', $this->meeting_details_meeting_time);
         $auction->saveMeta('meeting_details_meeting_date', $this->meeting_details_meeting_date);
         $auction->saveMeta('meeting_details_time_zone', $this->meeting_details_time_zone);

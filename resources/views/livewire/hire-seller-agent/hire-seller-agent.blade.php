@@ -1527,10 +1527,12 @@
                 if (savedExchangeItems.length > 0) {
                     $exEl.val(savedExchangeItems).trigger('change.select2');
                 }
+                $('#other_exchange_item_wrapper').toggle((savedExchangeItems || []).includes('Other'));
                 if (!$exEl.data('exchange-change-bound')) {
                     $exEl.on('change', function(e) {
                         var selectedValues = $(this).val() || [];
                         @this.set('exchange_item', selectedValues, false);
+                        $('#other_exchange_item_wrapper').toggle(selectedValues.includes('Other'));
                     });
                     $exEl.data('exchange-change-bound', true);
                 }

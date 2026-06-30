@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Storage;
 class SellerAgentAuction extends Component
 {
     use WithFileUploads;
+    use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+
+    /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
+    public $unit_address = '';
 
     protected $listeners = [
         'updatePreference' => 'handleUpdatePreference',
@@ -31,7 +35,7 @@ class SellerAgentAuction extends Component
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
     public $user_type = 'seller'; // Default to tenant or whatever makes sense
-    public $auction_type = '';
+    public $auction_type = 'Traditional'; // A1.1: Hire Agent listings are always Traditional (Listing Type UI removed)
     public $listing_title = '';
     public $working_with_agent = '';
     public $listing_date = '';
@@ -2208,6 +2212,7 @@ class SellerAgentAuction extends Component
             $this->meeting_details_phone = $auction->get->meeting_details_phone;
             $this->meeting_details_email = $auction->get->meeting_details_email;
             $this->address = $auction->get->address;
+            $this->unit_address = $auction->get->unit_address ?? ''; // A3.21
             $this->meeting_details_meeting_time = $auction->get->meeting_details_meeting_time;
             $this->meeting_details_time_zone = $auction->get->meeting_details_time_zone;
             $this->meeting_details_meeting_date = $auction->get->meeting_details_meeting_date;
@@ -2685,6 +2690,7 @@ class SellerAgentAuction extends Component
 
         // Meeting details yes
         $auction->saveMeta('address', $this->address);
+        $auction->saveMeta('unit_address', $this->unit_address); // A3.21
         $auction->saveMeta('meeting_details_meeting_time', $this->meeting_details_meeting_time);
         $auction->saveMeta('meeting_details_meeting_date', $this->meeting_details_meeting_date);
         $auction->saveMeta('meeting_details_time_zone', $this->meeting_details_time_zone);

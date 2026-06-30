@@ -32,7 +32,7 @@ class BuyerAgentAuction extends Component
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
     public $user_type = 'buyer'; // Default to tenant or whatever makes sense
-    public $auction_type = '';
+    public $auction_type = 'Traditional'; // A1.1: Hire Agent listings are always Traditional (Listing Type UI removed)
     public $listing_title = '';
     public $working_with_agent = '';
     public $listing_date = '';

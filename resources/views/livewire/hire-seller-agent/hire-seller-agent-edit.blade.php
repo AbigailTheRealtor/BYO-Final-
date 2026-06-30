@@ -926,9 +926,11 @@
                 if (savedExchangeItems.length > 0) {
                     $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
                 }
+                $('#other_exchange_item_wrapper').toggle((savedExchangeItems || []).includes('Other'));
                 $('#exchange_item').off('change.s2sync').on('change.s2sync', function(e) {
                     var selectedValues = $(this).val() || [];
                     @this.set('exchange_item', selectedValues);
+                    $('#other_exchange_item_wrapper').toggle(selectedValues.includes('Other'));
                 });
             } else if ($('#exchange_item').length && $('#exchange_item').hasClass('select2-hidden-accessible')) {
                 var savedExchangeItems = @this.get('exchange_item') || [];
@@ -936,6 +938,7 @@
                 if (savedExchangeItems.length > 0 && currentVal.length === 0) {
                     $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
                 }
+                $('#other_exchange_item_wrapper').toggle(($('#exchange_item').val() || []).includes('Other'));
             }
 
             if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {

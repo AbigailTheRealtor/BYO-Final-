@@ -376,8 +376,9 @@
         <div class="form-group">
             <label class="fw-bold">Buyer's Budget:</label>
             <div class="input-cover">
-                <input type="number" wire:model="cash_budget" class="form-control has-icon"
-                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter buyer’s budget amount (e.g., $450,000)">
+                <input type="text" wire:model="cash_budget" class="form-control has-icon"
+                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter buyer’s budget amount (e.g., $450,000)"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
             <span class="error mt-2" id="number_of_unit_error"></span>
         </div>
@@ -404,8 +405,9 @@
         <div class="form-group">
             <label class="fw-bold">Buyer Pre-Approval Amount:</label>
             <div class="input-cover">
-                <input type="number" wire:model="pre_approval_amount" class="form-control has-icon"
-                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter pre-approved loan amount (e.g., $400,000)">
+                <input type="text" wire:model="pre_approval_amount" class="form-control has-icon"
+                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter pre-approved loan amount (e.g., $400,000)"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
         </div>
     @endif
