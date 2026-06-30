@@ -307,9 +307,14 @@ class SellerOfferListingEdit extends Component
     public $additional_deposit_timeframe = '';
     public $escrow_agent_preference = '';
     public $preferred_inspection_period = '';
+    // Phase 5/6 QA Follow-up (Seller Contingency UX): see SellerOfferListing for rationale.
+    public $inspection_contingency_preference = '';
     public $appraisal_contingency_preference = '';
+    public $appraisal_contingency_period = '';
     public $financing_contingency_preference = '';
+    public $financing_contingency_period = '';
     public $sale_of_buyer_property_contingency = '';
+    public $sale_of_buyer_property_period = '';
     public $seller_contribution_credit_offered = '';
     public $seller_contribution_amount_details = '';
     public $possession_preference = '';
@@ -543,6 +548,7 @@ class SellerOfferListingEdit extends Component
     public $assumable_loan_servicer = '';
     public $assumable_fee_type = '$';
     public $assumable_fee_amount = '';
+    public $assumption_fee_responsibility = ''; // A6.31-A6.34: who pays the assumption fee (Buyer/Seller/Split)
     public $assumable_occupancy_requirement = '';
     public $assumable_occupancy_other = '';
     public $exchange_transfer_method = '';
@@ -1825,6 +1831,7 @@ class SellerOfferListingEdit extends Component
             'assumable_loan_servicer'         => $this->assumable_loan_servicer,
             'assumable_fee_type'              => $this->assumable_fee_type,
             'assumable_fee_amount'            => $this->stripCommas($this->assumable_fee_amount),
+            'assumption_fee_responsibility'  => $this->assumption_fee_responsibility,
             'assumable_occupancy_requirement' => $this->assumable_occupancy_requirement,
             'assumable_occupancy_other'       => $this->assumable_occupancy_other,
             'max_monthly_payment'             => $this->stripCommas($this->max_monthly_payment),
@@ -2029,9 +2036,13 @@ class SellerOfferListingEdit extends Component
             'additional_deposit_timeframe_other' => $this->additional_deposit_timeframe_other,
             'escrow_agent_preference'         => $this->escrow_agent_preference,
             'preferred_inspection_period'     => $this->preferred_inspection_period,
+            'inspection_contingency_preference' => $this->inspection_contingency_preference,
             'appraisal_contingency_preference' => $this->appraisal_contingency_preference,
+            'appraisal_contingency_period'    => $this->appraisal_contingency_period,
             'financing_contingency_preference' => $this->financing_contingency_preference,
+            'financing_contingency_period'    => $this->financing_contingency_period,
             'sale_of_buyer_property_contingency' => $this->sale_of_buyer_property_contingency,
+            'sale_of_buyer_property_period'   => $this->sale_of_buyer_property_period,
             'seller_contribution_credit_offered' => $this->seller_contribution_credit_offered,
             'seller_contribution_amount_details' => $this->seller_contribution_amount_details,
             'possession_preference'           => $this->possession_preference,
@@ -2649,9 +2660,13 @@ class SellerOfferListingEdit extends Component
             $this->additional_deposit_timeframe = $auction->get->additional_deposit_timeframe ?? '';
             $this->escrow_agent_preference = $auction->get->escrow_agent_preference ?? '';
             $this->preferred_inspection_period = $auction->get->preferred_inspection_period ?? '';
+            $this->inspection_contingency_preference = $auction->get->inspection_contingency_preference ?? '';
             $this->appraisal_contingency_preference = $auction->get->appraisal_contingency_preference ?? '';
+            $this->appraisal_contingency_period = $auction->get->appraisal_contingency_period ?? '';
             $this->financing_contingency_preference = $auction->get->financing_contingency_preference ?? '';
+            $this->financing_contingency_period = $auction->get->financing_contingency_period ?? '';
             $this->sale_of_buyer_property_contingency = $auction->get->sale_of_buyer_property_contingency ?? '';
+            $this->sale_of_buyer_property_period = $auction->get->sale_of_buyer_property_period ?? '';
             $this->seller_contribution_credit_offered = $auction->get->seller_contribution_credit_offered ?? '';
             $this->seller_contribution_amount_details = $auction->get->seller_contribution_amount_details ?? '';
             $this->possession_preference = $auction->get->possession_preference ?? '';
@@ -2909,6 +2924,7 @@ class SellerOfferListingEdit extends Component
             $this->assumable_loan_servicer        = $auction->get->assumable_loan_servicer ?? '';
             $this->assumable_fee_type             = $auction->get->assumable_fee_type ?? '$';
             $this->assumable_fee_amount           = $auction->get->assumable_fee_amount ?? '';
+            $this->assumption_fee_responsibility  = $auction->get->assumption_fee_responsibility ?? '';
             $this->assumable_occupancy_requirement = $auction->get->assumable_occupancy_requirement ?? '';
             $this->assumable_occupancy_other      = $auction->get->assumable_occupancy_other ?? '';
             $this->balloon_payment                = $auction->get->balloon_payment ?? '';
@@ -3480,6 +3496,7 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('assumable_loan_servicer', $this->assumable_loan_servicer);
         $auction->saveMeta('assumable_fee_type', $this->assumable_fee_type);
         $auction->saveMeta('assumable_fee_amount', $this->stripCommas($this->assumable_fee_amount));
+        $auction->saveMeta('assumption_fee_responsibility', $this->assumption_fee_responsibility);
         $auction->saveMeta('assumable_occupancy_requirement', $this->assumable_occupancy_requirement);
         $auction->saveMeta('assumable_occupancy_other', $this->assumable_occupancy_other);
         $auction->saveMeta('max_monthly_payment', $this->stripCommas($this->max_monthly_payment));
@@ -3806,9 +3823,13 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('additional_deposit_timeframe_other', $this->additional_deposit_timeframe_other);
         $auction->saveMeta('escrow_agent_preference', $this->escrow_agent_preference);
         $auction->saveMeta('preferred_inspection_period', $this->preferred_inspection_period);
+        $auction->saveMeta('inspection_contingency_preference', $this->inspection_contingency_preference);
         $auction->saveMeta('appraisal_contingency_preference', $this->appraisal_contingency_preference);
+        $auction->saveMeta('appraisal_contingency_period', $this->appraisal_contingency_period);
         $auction->saveMeta('financing_contingency_preference', $this->financing_contingency_preference);
+        $auction->saveMeta('financing_contingency_period', $this->financing_contingency_period);
         $auction->saveMeta('sale_of_buyer_property_contingency', $this->sale_of_buyer_property_contingency);
+        $auction->saveMeta('sale_of_buyer_property_period', $this->sale_of_buyer_property_period);
         $auction->saveMeta('seller_contribution_credit_offered', $this->seller_contribution_credit_offered);
         $auction->saveMeta('seller_contribution_amount_details', $this->seller_contribution_amount_details);
         $auction->saveMeta('possession_preference', $this->possession_preference);

@@ -559,6 +559,25 @@
         <span class="error mt-2" id="assumable_fee_amount_error"></span>
     </div>
 
+    {{-- A6.31–A6.34: Assumption Fee Responsibility — who pays the loan assumption fee. --}}
+    <div class="form-group mt-3">
+        <label class="fw-bold">Assumption Fee Responsibility:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select which party is responsible for paying the loan assumption fee.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="assumption_fee_responsibility" class="form-control has-icon"
+                data-icon="fa-solid fa-handshake">
+                <option value="">Select</option>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Split">Split</option>
+            </select>
+        </div>
+    </div>
+
     <!-- Occupancy Requirement -->
     <div class="form-group mt-3">
         <label class="fw-bold">Occupancy Requirement:
@@ -722,7 +741,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
                 data-icon="fa-solid fa-clock"
-                placeholder="Enter timing of transfer (e.g., Within 48 hours of contract acceptance, Partial transfer at inspection period)">
+                placeholder="Enter Timing of Transfer (e.g., Within 48 hours of contract acceptance)">
         </div>
     </div>
     @endif

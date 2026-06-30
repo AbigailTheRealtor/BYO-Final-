@@ -437,13 +437,12 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <textarea wire:model.defer="compatibility_preferences.tenant_specific.concerns_or_barriers"
+        {{-- Phase 5/6 QA Follow-up (input-style consistency): single-line text input, not a textarea. --}}
+        <input type="text" wire:model.defer="compatibility_preferences.tenant_specific.concerns_or_barriers"
             class="form-control has-icon"
             data-icon="fa-solid fa-comment-dots"
-            rows="1"
-            style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
             placeholder="Enter concerns or barriers (e.g., Prior eviction concern, Limited rental history)"
-            maxlength="2000"></textarea>
+            maxlength="2000">
     </div>
     @error('compatibility_preferences.tenant_specific.concerns_or_barriers')
         <div class="text-danger small mt-1">{{ $message }}</div>
@@ -460,13 +459,12 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <textarea wire:model.defer="compatibility_preferences.tenant_specific.additional_compatibility_notes"
+        {{-- Phase 5/6 QA Follow-up (input-style consistency): single-line text input, not a textarea. --}}
+        <input type="text" wire:model.defer="compatibility_preferences.tenant_specific.additional_compatibility_notes"
             class="form-control has-icon"
             data-icon="fa-solid fa-note-sticky"
-            rows="1"
-            style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
             placeholder="Enter additional compatibility notes (e.g., I prefer an agent with commercial leasing experience, I have a strict move-in date)"
-            maxlength="2000"></textarea>
+            maxlength="2000">
     </div>
     @error('compatibility_preferences.tenant_specific.additional_compatibility_notes')
         <div class="text-danger small mt-1">{{ $message }}</div>

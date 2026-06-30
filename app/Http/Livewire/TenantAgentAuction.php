@@ -126,7 +126,7 @@ class TenantAgentAuction extends Component
     public $cash_percentage_nft = '';
     public $pre_approval_amount = '';
     public $purchase_price = '';
-    public $down_payment_type = '$';
+    public $down_payment_type = '%'; // A6.40: Hire down payment defaults to % (matches Edit; existing listings load their saved value)
     public $down_payment_amount = '';
     public $seller_down_payment_amount = '';
     public $seller_financing_type = '$';
@@ -379,6 +379,7 @@ class TenantAgentAuction extends Component
     public $assumable_loan_servicer = '';
     public $assumable_fee_type = '$';
     public $assumable_fee_amount = '';
+    public $assumption_fee_responsibility = ''; // A6.31-A6.34: who pays the assumption fee (Buyer/Seller/Split)
     public $assumable_occupancy_requirement = '';
     public $assumable_occupancy_other = '';
 
@@ -2851,6 +2852,10 @@ class TenantAgentAuction extends Component
             }
             $data[$f] = $val;
         }
+        // Phase 5/6 QA Follow-up (Rep & Compatibility draft parity): include the whole
+        // role-keyed compatibility_preferences blob so edits to these fields are detected
+        // by draft change-tracking (previously omitted from the hash).
+        $data['compatibility_preferences'] = $this->compatibility_preferences ?? [];
         ksort($data);
         return hash('sha256', json_encode($data));
     }
@@ -3305,6 +3310,7 @@ class TenantAgentAuction extends Component
             $this->assumable_loan_servicer = $auction->info('assumable_loan_servicer') ?? '';
             $this->assumable_fee_type = $auction->info('assumable_fee_type') ?: '$';
             $this->assumable_fee_amount = $auction->info('assumable_fee_amount') ?? '';
+            $this->assumption_fee_responsibility = $auction->info('assumption_fee_responsibility') ?? '';
             $this->assumable_occupancy_requirement = $auction->info('assumable_occupancy_requirement') ?? '';
             $this->assumable_occupancy_other = $auction->info('assumable_occupancy_other') ?? '';
             if ($this->user_type === 'buyer') {
@@ -4508,6 +4514,7 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('assumable_loan_servicer', $this->assumable_loan_servicer);
         $auction->saveMeta('assumable_fee_type', $this->assumable_fee_type);
         $auction->saveMeta('assumable_fee_amount', $this->stripCommas($this->assumable_fee_amount));
+        $auction->saveMeta('assumption_fee_responsibility', $this->assumption_fee_responsibility);
         $auction->saveMeta('assumable_occupancy_requirement', $this->assumable_occupancy_requirement);
         $auction->saveMeta('assumable_occupancy_other', $this->assumable_occupancy_other);
         if ($this->user_type === 'buyer') {

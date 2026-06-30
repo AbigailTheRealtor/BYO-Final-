@@ -686,11 +686,10 @@
 
 <!-- Other Property Style Input -->
 <div class="form-group other_property_items_seller {{ $property_items === 'Other' ? '' : 'd-none' }}">
-    <label class="fw-bold">Other Property Style: <span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model.defer="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
-            placeholder="Enter land use (e.g., Solar farm, RV park, Conservation easement)"
+            placeholder="Enter property style (e.g., Solar farm, RV park, Conservation easement)"
             @if ($property_items === 'Other') required @endif>
     </div>
     <span class="error mt-2" id="other_property_items_error"></span>
@@ -2908,8 +2907,8 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <input type="number" wire:model.defer="front_footage" class="form-control has-icon"
-                data-icon="fa-solid fa-ruler-horizontal" placeholder="Enter front footage in feet (e.g., 150)" min="0">
+            <input type="text" wire:model.defer="front_footage" class="form-control has-icon"
+                data-icon="fa-solid fa-ruler-horizontal" placeholder="Enter front footage in feet (e.g., 150)">
         </div>
         <span class="error mt-2" id="front_footage_error"></span>
     </div>

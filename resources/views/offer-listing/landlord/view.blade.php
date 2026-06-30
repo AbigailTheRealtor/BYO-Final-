@@ -1496,17 +1496,21 @@
          RENTAL PRICING & DEPOSITS
          ============================================================== --}}
     @php
+        // Phase 5/6 QA Follow-up (Bidding Pricing UX): Traditional listings show only
+        // Desired Lease Price; Bidding listings show only Starting Rent / Reserve Rent /
+        // Lease Now Price. Other deposit/frequency rows are unchanged.
+        $__isBidding = ($str('auction_type') === 'Bidding Period');
         $pricingFields = array_filter([
-            ['Desired Rental Amount', $fmtMoney($str('desired_rental_amount'))],
+            $__isBidding ? null : ['Desired Lease Price', $fmtMoney($str('desired_rental_amount'))],
             ['Lease Amount Frequency', $str('lease_amount_frequency')],
-            ['Starting Rent', $fmtMoney($str('starting_rent'))],
-            ['Reserve Rent', $fmtMoney($str('reserve_rent'))],
-            ['Lease Now Price', $fmtMoney($str('lease_now_price'))],
+            $__isBidding ? ['Starting Rent / Opening Offer', $fmtMoney($str('starting_rent'))] : null,
+            $__isBidding ? ['Reserve Rent', $fmtMoney($str('reserve_rent'))] : null,
+            $__isBidding ? ['Lease Now Price', $fmtMoney($str('lease_now_price'))] : null,
             ['Security Deposit Amount', $fmtMoney($str('security_deposit_amount') ?: $str('security_deposit_required'))],
             ['Last Month Rent Required', $yesNo($str('last_month_rent_required'))],
             ['Total Move-In Funds Required', $fmtMoney($str('total_move_in_funds_required'))],
             // min_income_requirement moved to Applicant Requirements section
-        ], fn($f) => !empty($f[1]));
+        ], fn($f) => !empty($f) && !empty($f[1]));
     @endphp
     @if(count($pricingFields))
     <div class="card section-card" id="section-pricing">
@@ -2387,6 +2391,10 @@
             var listingId = {{ $auction->id }};
             var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
+            /* WF-1: V1 listing-question endpoint is owner-scoped; never route a
+               non-owner to it (source of the Ask AI 403). Public assistant is V2. */
+            var isOwner       = {{ (auth()->id() && (int) auth()->id() === (int) $auction->user_id) ? 'true' : 'false' }};
+
             /* V2 configuration — from Blade */
             var useV2         = {{ $agentAiV2 ? 'true' : 'false' }};
             var v2AgentId     = {{ (int)($agentAiAgentId ?? 0) }};
@@ -2552,7 +2560,18 @@
                 .then(function(data) { setLoading(false); if (textarea) textarea.value = ''; appendTurn(q, data); })
                 .catch(function() { setLoading(false); appendTurn(q, { status: 'failed' }); });
             }
+            function showOwnerOnlyNotice() {
+                setLoading(false);
+                if (!resultDiv) return;
+                resultDiv.innerHTML = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:.5rem;padding:.9rem 1rem;">'
+                    + '<div style="font-size:.8rem;font-weight:700;color:#0369a1;margin-bottom:.35rem;"><i class="fa-solid fa-circle-info me-1"></i>Notice</div>'
+                    + '<div style="font-size:.875rem;color:#1e293b;">Ask AI for this listing is available to the listing owner.</div></div>';
+                resultDiv.style.display = '';
+            }
+
             function submitV1(q) {
+                // WF-1: never call the owner-only endpoint for a non-owner (would 403).
+                if (!isOwner) { showOwnerOnlyNotice(); return; }
                 resetResult();
                 fetch('/ask-ai/listing-question', {
                     method: 'POST',

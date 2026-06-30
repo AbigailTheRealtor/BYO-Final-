@@ -98,6 +98,7 @@ class BuyerOfferListingEdit extends Component
     public $assumable_max_interest_rate = '';
     public $assumable_max_monthly_payment = '';
     public $assumable_bridge_gap_cash = '';
+    public $assumption_fee_responsibility = ''; // A6.31-A6.34: who pays the assumption fee (Buyer/Seller/Split)
     
     // Seller Financing Additional Properties
     public $seller_amortization_type = '';
@@ -354,6 +355,8 @@ class BuyerOfferListingEdit extends Component
     public $inspection_period_days = '';
     public $inspection_period_other = '';
     public $inspection_contingency_buyer = '';
+    // Phase 5/6 QA Follow-up (Buyer Inspection Cleanup): see BuyerOfferListing for rationale.
+    public $inspection_contingency_period = '';
     public $appraisal_contingency_buyer = '';
     public $appraisal_contingency_days = '';
     public $financing_contingency_buyer = '';
@@ -372,6 +375,7 @@ class BuyerOfferListingEdit extends Component
     public $closing_cost_responsibility = '';
     public $additional_purchase_terms = '';
     public $home_sale_contingency = '';
+    public $home_sale_contingency_period = '';
     public $home_sale_contingency_address = '';
     public $home_sale_contingency_date = '';
     public $home_sale_contingency_under_contract = '';
@@ -625,6 +629,7 @@ class BuyerOfferListingEdit extends Component
             $this->assumable_max_interest_rate  = '';
             $this->assumable_max_monthly_payment = '';
             $this->assumable_bridge_gap_cash     = '';
+            $this->assumption_fee_responsibility = '';
         }
     }
 
@@ -673,7 +678,7 @@ class BuyerOfferListingEdit extends Component
                 'seller_payment_frequency', 'seller_payment_frequency_other',
                 'seller_late_fee_amount'
             ],
-            'Assumable' => ['assumable_interest', 'assumable_max_interest_rate', 'assumable_max_monthly_payment', 'assumable_bridge_gap_cash'],
+            'Assumable' => ['assumable_interest', 'assumable_max_interest_rate', 'assumable_max_monthly_payment', 'assumable_bridge_gap_cash', 'assumption_fee_responsibility'],
             'Exchange/Trade' => [
                 'exchange_item', 'other_exchange_item', 'exchange_item_value', 
                 'exchange_item_condition', 'additional_cash', 'value_determination',
@@ -1434,6 +1439,7 @@ class BuyerOfferListingEdit extends Component
             'assumable_max_interest_rate'     => $this->stripCommas($this->assumable_max_interest_rate),
             'assumable_max_monthly_payment'   => $this->stripCommas($this->assumable_max_monthly_payment),
             'assumable_bridge_gap_cash'       => $this->stripCommas($this->assumable_bridge_gap_cash),
+            'assumption_fee_responsibility'   => $this->assumption_fee_responsibility,
             'seller_amortization_type'        => $this->seller_amortization_type,
             'seller_amortization_other'       => $this->seller_amortization_other,
             'seller_payment_frequency'        => $this->seller_payment_frequency,
@@ -1652,6 +1658,7 @@ class BuyerOfferListingEdit extends Component
             'inspection_period_days'          => $this->inspection_period_days,
             'inspection_period_other'         => $this->inspection_period_other,
             'inspection_contingency_buyer'    => $this->inspection_contingency_buyer,
+            'inspection_contingency_period'   => $this->inspection_contingency_period,
             'appraisal_contingency_buyer'     => $this->appraisal_contingency_buyer,
             'appraisal_contingency_days'      => $this->appraisal_contingency_days,
             'financing_contingency_buyer'     => $this->financing_contingency_buyer,
@@ -1670,6 +1677,7 @@ class BuyerOfferListingEdit extends Component
             'closing_cost_responsibility'     => $this->closing_cost_responsibility,
             'additional_purchase_terms'       => $this->additional_purchase_terms,
             'home_sale_contingency'           => $this->home_sale_contingency,
+            'home_sale_contingency_period'        => $this->home_sale_contingency_period,
             'home_sale_contingency_address'       => $this->home_sale_contingency_address,
             'home_sale_contingency_date'          => $this->home_sale_contingency_date,
             'home_sale_contingency_under_contract' => $this->home_sale_contingency_under_contract,
@@ -1940,7 +1948,8 @@ class BuyerOfferListingEdit extends Component
             $this->assumable_max_interest_rate = $auction->get->assumable_max_interest_rate ?? '';
             $this->assumable_max_monthly_payment = $auction->get->assumable_max_monthly_payment ?? '';
             $this->assumable_bridge_gap_cash = $auction->get->assumable_bridge_gap_cash ?? '';
-            
+            $this->assumption_fee_responsibility = $auction->get->assumption_fee_responsibility ?? '';
+
             // Seller Financing Additional Fields
             $this->seller_amortization_type = $auction->get->seller_amortization_type ?? '';
             $this->seller_amortization_other = $auction->get->seller_amortization_other ?? '';
@@ -2262,6 +2271,9 @@ class BuyerOfferListingEdit extends Component
             }
             $this->inspection_period_other = $auction->get->inspection_period_other ?? '';
             $this->inspection_contingency_buyer = $auction->get->inspection_contingency_buyer ?? '';
+            $this->inspection_contingency_period = $auction->get->inspection_contingency_period
+                ?? $auction->get->inspection_period_days
+                ?? '';
             $this->appraisal_contingency_buyer = $auction->get->appraisal_contingency_buyer ?? '';
             // Note: legacy "Waived" value is preserved as-is; blade renders a conditional
             // fallback option so existing records remain editable without data loss.
@@ -2284,6 +2296,7 @@ class BuyerOfferListingEdit extends Component
             $this->closing_cost_responsibility = $auction->get->closing_cost_responsibility ?? '';
             $this->additional_purchase_terms = $auction->get->additional_purchase_terms ?? '';
             $this->home_sale_contingency = $auction->get->home_sale_contingency ?? '';
+            $this->home_sale_contingency_period = $auction->get->home_sale_contingency_period ?? '';
             $this->home_sale_contingency_address = $auction->get->home_sale_contingency_address ?? '';
             $this->home_sale_contingency_date = $auction->get->home_sale_contingency_date ?? '';
             $this->home_sale_contingency_under_contract = $auction->get->home_sale_contingency_under_contract ?? '';
@@ -2424,6 +2437,7 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('assumable_max_interest_rate', $this->stripCommas($this->assumable_max_interest_rate));
         $auction->saveMeta('assumable_max_monthly_payment', $this->stripCommas($this->assumable_max_monthly_payment));
         $auction->saveMeta('assumable_bridge_gap_cash', $this->stripCommas($this->assumable_bridge_gap_cash));
+        $auction->saveMeta('assumption_fee_responsibility', $this->assumption_fee_responsibility);
         
         // Seller Financing Additional Fields
         $auction->saveMeta('seller_amortization_type', $this->seller_amortization_type);
@@ -2714,6 +2728,7 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('inspection_period_days', $this->inspection_period_days);
         $auction->saveMeta('inspection_period_other', $this->inspection_period_other);
         $auction->saveMeta('inspection_contingency_buyer', $this->inspection_contingency_buyer);
+        $auction->saveMeta('inspection_contingency_period', $this->inspection_contingency_period);
         $auction->saveMeta('appraisal_contingency_buyer', $this->appraisal_contingency_buyer);
         $auction->saveMeta('appraisal_contingency_days', $this->appraisal_contingency_days);
         $auction->saveMeta('financing_contingency_buyer', $this->financing_contingency_buyer);
@@ -2732,6 +2747,7 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('closing_cost_responsibility', $this->closing_cost_responsibility);
         $auction->saveMeta('additional_purchase_terms', $this->additional_purchase_terms);
         $auction->saveMeta('home_sale_contingency', $this->home_sale_contingency);
+        $auction->saveMeta('home_sale_contingency_period', $this->home_sale_contingency_period);
         $auction->saveMeta('home_sale_contingency_address', $this->home_sale_contingency_address);
         $auction->saveMeta('home_sale_contingency_date', $this->home_sale_contingency_date);
         $auction->saveMeta('home_sale_contingency_under_contract', $this->home_sale_contingency_under_contract);

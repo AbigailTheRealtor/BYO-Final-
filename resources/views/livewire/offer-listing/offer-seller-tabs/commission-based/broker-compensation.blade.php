@@ -230,8 +230,9 @@ $safeKey = function(...$parts) {
                     <div class="col-md-5">
                         <div class="input-group">
                             <span class="input-group-text"> $</span>
-                            <input type="number" wire:model="commission_structure_type_fee_flat_combo"
-                                class="form-control" placeholder="Enter flat fee amount (e.g., 2000)">
+                            <input type="text" wire:model="commission_structure_type_fee_flat_combo"
+                                class="form-control" placeholder="Enter flat fee amount (e.g., 2000)"
+                                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
                     </div>
                 </div>
@@ -414,8 +415,9 @@ $safeKey = function(...$parts) {
                 <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text"> $</span>
-                        <input type="number" wire:model="seller_leasing_gross_flat_combo" class="form-control"
-                            placeholder="Enter percentage of the gross lease value (e.g., 10)">
+                        <input type="text" wire:model="seller_leasing_gross_flat_combo" class="form-control"
+                            placeholder="Enter percentage of the gross lease value (e.g., 10)"
+                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
                 </div>
                 <div class="col-md-1 text-center pt-2">+</div>
@@ -432,8 +434,9 @@ $safeKey = function(...$parts) {
                 <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text"> $</span>
-                        <input type="number" wire:model="seller_leasing_gross_flat_net_combo" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 1500)">
+                        <input type="text" wire:model="seller_leasing_gross_flat_net_combo" class="form-control"
+                            placeholder="Enter flat fee amount (e.g., 1500)"
+                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
                 </div>
                 <div class="col-md-1 text-center pt-2">+</div>

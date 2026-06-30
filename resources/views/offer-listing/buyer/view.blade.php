@@ -1334,22 +1334,35 @@
             @endif
 
             {{-- Inspections & Contingencies --}}
+            @php
+                // Phase 5/6 QA Follow-up (Buyer Inspection Cleanup): the duplicate
+                // "Due Diligence / Inspection Period" + "Inspection Period Duration" rows are
+                // retired; one consolidated "Inspection Contingency" is shown with its period.
+                // Period fields appear when the contingency is Included OR Negotiable.
+                $__buyerShowsPeriod = fn ($v) => in_array(
+                    \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay((string) $v),
+                    ['Included', 'Negotiable'], true
+                );
+                // Period display: prefer the new numeric field; fall back to the legacy
+                // "Inspection Period Duration" value so existing listings still show a period.
+                $__inspPeriod = $str('inspection_contingency_period');
+                $__inspPeriodDisplay = $__inspPeriod !== '' ? ($__inspPeriod . ' days') : $str('inspection_period_days');
+            @endphp
             <h6 class="fw-semibold mb-2">Inspections & Contingencies</h6>
             <div class="row">
                 <div class="col-md-6">
-                    {!! $row('Due Diligence / Inspection Period', $str('due_diligence_yn')) !!}
-                    @if($str('due_diligence_yn') === 'Yes')
-                        {!! $row('Inspection Period Duration', $str('inspection_period_days') === 'Other' ? ($str('inspection_period_other') ?: 'Other') : $str('inspection_period_days')) !!}
+                    {!! $row('Inspection Contingency', \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($str('inspection_contingency_buyer'))) !!}
+                    @if($__buyerShowsPeriod($str('inspection_contingency_buyer')) && $__inspPeriodDisplay !== '')
+                        {!! $row('Inspection Contingency Period', $__inspPeriodDisplay) !!}
                     @endif
-                    {!! $row('Inspection Contingency', $str('inspection_contingency_buyer')) !!}
                     {!! $row('Appraisal Contingency', \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($str('appraisal_contingency_buyer'))) !!}
-                    @if(\App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($str('appraisal_contingency_buyer')) === 'Included' && $str('appraisal_contingency_days') !== '')
+                    @if($__buyerShowsPeriod($str('appraisal_contingency_buyer')) && $str('appraisal_contingency_days') !== '')
                         {!! $row('Appraisal Contingency Period', $str('appraisal_contingency_days') . ' days') !!}
                     @endif
                 </div>
                 <div class="col-md-6">
                     {!! $row('Financing Contingency', \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($str('financing_contingency_buyer'))) !!}
-                    @if(\App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($str('financing_contingency_buyer')) === 'Included' && $str('financing_contingency_period') !== '')
+                    @if($__buyerShowsPeriod($str('financing_contingency_buyer')) && $str('financing_contingency_period') !== '')
                         {!! $row('Financing Contingency Period', $str('financing_contingency_period') . ' days') !!}
                     @endif
                 </div>
@@ -1358,11 +1371,14 @@
             {{-- Home Sale Contingency --}}
             @if($str('home_sale_contingency') !== '')
             <hr>
-            @if(\App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($str('home_sale_contingency')) === 'Included')
+            @if(in_array(\App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($str('home_sale_contingency')), ['Included', 'Negotiable'], true))
             <h6 class="fw-semibold mb-2">Home Sale Contingency</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Home Sale Contingency', \App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($str('home_sale_contingency'))) !!}
+                    @if($str('home_sale_contingency_period') !== '')
+                        {!! $row('Home Sale Contingency Period', $str('home_sale_contingency_period') . ' days') !!}
+                    @endif
                     {!! $row('Property Address', $str('home_sale_contingency_address')) !!}
                     {!! $row('Unit / Apt / Suite #', $str('unit_number')) !!}
                     {!! $row('Target Date', $fmtDate($str('home_sale_contingency_date'))) !!}
@@ -2021,6 +2037,10 @@
         var listingId  = {{ $auction->id }};
         var csrfToken  = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
+        /* WF-1: V1 listing-question endpoint is owner-scoped; never route a
+           non-owner to it (source of the Ask AI 403). Public assistant is V2. */
+        var isOwner       = {{ (auth()->id() && (int) auth()->id() === (int) $auction->user_id) ? 'true' : 'false' }};
+
         /* V2 configuration — from Blade */
         var useV2         = {{ $agentAiV2 ? 'true' : 'false' }};
         var v2AgentId     = {{ (int)($agentAiAgentId ?? 0) }};
@@ -2190,7 +2210,18 @@
             .then(function(data) { setLoading(false); if (textarea) textarea.value = ''; appendTurn(q, data); })
             .catch(function() { setLoading(false); appendTurn(q, { status: 'failed' }); });
         }
+        function showOwnerOnlyNotice() {
+            setLoading(false);
+            if (!resultDiv) return;
+            resultDiv.innerHTML = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:.5rem;padding:.9rem 1rem;">'
+                + '<div style="font-size:.8rem;font-weight:700;color:#0369a1;margin-bottom:.35rem;"><i class="fa-solid fa-circle-info me-1"></i>Notice</div>'
+                + '<div style="font-size:.875rem;color:#1e293b;">Ask AI for this listing is available to the listing owner.</div></div>';
+            resultDiv.style.display = '';
+        }
+
         function submitV1(q) {
+            // WF-1: never call the owner-only endpoint for a non-owner (would 403).
+            if (!isOwner) { showOwnerOnlyNotice(); return; }
             resetResult();
             fetch('/ask-ai/listing-question', {
                 method: 'POST',

@@ -253,21 +253,12 @@
         <i class="fa-solid fa-gavel me-2"></i>Bidding Period Pricing
     </h5>
 </div>
+{{-- Phase 5/6 QA Follow-up (Bidding Pricing UX): Desired Sale Price is intentionally
+     HIDDEN for Bidding Period listings — Buy Now / Starting / Reserve define the bidding
+     workflow, so the competing "Desired Sale Price" target is suppressed here. The
+     $maximum_budget prop + persistence remain intact for Traditional listings and for
+     backward compatibility with existing Bidding listings (no stored value is rewritten). --}}
 <div class="form-group">
-    <label class="fw-bold">Desired Sale Price: <span class="text-danger">*</span></label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the amount the Seller would like to receive for the property.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="maximum_budget" id="seller_desired_sale_price" class="form-control"
-            placeholder="Enter desired sale price (e.g., 500000)" data-error-id="maximum_budget_error"
-            oninput="validateInput(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
-    </div>
-    <span class="error mt-2" id="maximum_budget_error"></span>
-</div>
-<div class="form-group mt-3">
     <label class="fw-bold">Starting Price / Opening Bid:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the minimum price at which bidding will open for this property.">
@@ -615,6 +606,25 @@
             @endif
         </div>
         <span class="error mt-2" id="assumable_fee_amount_error"></span>
+    </div>
+
+    {{-- A6.31–A6.34: Assumption Fee Responsibility — who pays the loan assumption fee. --}}
+    <div class="form-group mt-3">
+        <label class="fw-bold">Assumption Fee Responsibility:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select which party is responsible for paying the loan assumption fee.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="assumption_fee_responsibility" class="form-control has-icon"
+                data-icon="fa-solid fa-handshake">
+                <option value="">Select</option>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Split">Split</option>
+            </select>
+        </div>
     </div>
 
     <!-- Occupancy Requirement -->
@@ -1838,9 +1848,48 @@
     </div>
 </div>
 
-{{-- 6. Preferred Inspection Period (Days) --}}
+@php
+    // Phase 5/6 QA Follow-up (Seller Contingency UX): each Seller contingency now pairs a
+    // canonical preference select (Accepted / Not Accepted / Negotiable / Not Applicable)
+    // with a "Preferred … Period (Days)" field that is shown ONLY when the Seller is open to
+    // the contingency (Accepted or Negotiable) and hidden when Not Accepted / Not Applicable.
+    // Legacy values map for display only (Required → Accepted, Preferred Waived → Negotiable);
+    // the stored value is preserved (no rewrite). Capturing the preferred timeframe even on
+    // "Accepted" improves buyer/seller compatibility scoring and Matchmaker recommendations.
+    $__sellerOpts = \App\Helpers\ContingencyOptionHelper::SELLER;
+    $__showsPeriod = fn ($val) => in_array(
+        \App\Helpers\ContingencyOptionHelper::sellerDisplay((string) $val),
+        ['Accepted', 'Negotiable'],
+        true
+    );
+@endphp
+
+{{-- 6. Inspection Contingency Preference + Preferred Inspection Contingency Period (Days) --}}
 <div class="form-group mt-3">
-    <label class="fw-bold">Preferred Inspection Period (Days):
+    <label class="fw-bold">Inspection Contingency Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Seller will accept, will not accept, is open to negotiating, or considers not applicable an offer carrying a home-inspection contingency.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    @php
+        $__inCur    = $inspection_contingency_preference;
+        $__inLegacy = ($__inCur !== '' && !in_array($__inCur, $__sellerOpts, true))
+            ? \App\Helpers\ContingencyOptionHelper::sellerDisplay($__inCur) : null;
+    @endphp
+    <div class="input-cover">
+        <select wire:model="inspection_contingency_preference" class="form-control has-icon"
+            data-icon="fa-solid fa-magnifying-glass">
+            <option value="">Select</option>
+            @foreach ($__sellerOpts as $__o)
+                <option value="{{ ($__inLegacy === $__o) ? $__inCur : $__o }}">{{ $__o }}</option>
+            @endforeach
+        </select>
+    </div>
+</div>
+@if ($__showsPeriod($inspection_contingency_preference))
+<div class="form-group mt-3">
+    <label class="fw-bold">Preferred Inspection Contingency Period (Days):
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the number of days the Seller is willing to allow for the Buyer's inspection contingency period.">
             <i class="fa-solid fa-circle-info"></i>
@@ -1852,8 +1901,9 @@
             placeholder="Enter number of inspection days (e.g., 10)" min="0">
     </div>
 </div>
+@endif
 
-{{-- 7. Appraisal Contingency Preference --}}
+{{-- 7. Appraisal Contingency Preference + Preferred Appraisal Contingency Period (Days) --}}
 <div class="form-group mt-3">
     <label class="fw-bold">Appraisal Contingency Preference:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1866,23 +1916,37 @@
         // seller accept an offer carrying this contingency?). Legacy values
         // (Required → Accepted, Preferred Waived → Negotiable) are shown under their
         // canonical label while their stored value is preserved (no rewrite).
-        $__apOpts   = \App\Helpers\ContingencyOptionHelper::SELLER;
         $__apCur    = $appraisal_contingency_preference;
-        $__apLegacy = ($__apCur !== '' && !in_array($__apCur, $__apOpts, true))
+        $__apLegacy = ($__apCur !== '' && !in_array($__apCur, $__sellerOpts, true))
             ? \App\Helpers\ContingencyOptionHelper::sellerDisplay($__apCur) : null;
     @endphp
     <div class="input-cover">
         <select wire:model="appraisal_contingency_preference" class="form-control has-icon"
             data-icon="fa-solid fa-scale-balanced">
             <option value="">Select</option>
-            @foreach ($__apOpts as $__o)
+            @foreach ($__sellerOpts as $__o)
                 <option value="{{ ($__apLegacy === $__o) ? $__apCur : $__o }}">{{ $__o }}</option>
             @endforeach
         </select>
     </div>
 </div>
+@if ($__showsPeriod($appraisal_contingency_preference))
+<div class="form-group mt-3">
+    <label class="fw-bold">Preferred Appraisal Contingency Period (Days):
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the number of days the Seller is willing to allow for the Buyer's appraisal contingency period.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="number" wire:model="appraisal_contingency_period" class="form-control has-icon"
+            data-icon="fa-solid fa-scale-balanced"
+            placeholder="Enter number of appraisal days (e.g., 14)" min="0">
+    </div>
+</div>
+@endif
 
-{{-- 8. Financing Contingency Preference --}}
+{{-- 8. Financing Contingency Preference + Preferred Financing Contingency Period (Days) --}}
 <div class="form-group mt-3">
     <label class="fw-bold">Financing Contingency Preference:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1891,23 +1955,37 @@
         </span>
     </label>
     @php
-        $__fnOpts   = \App\Helpers\ContingencyOptionHelper::SELLER;
         $__fnCur    = $financing_contingency_preference;
-        $__fnLegacy = ($__fnCur !== '' && !in_array($__fnCur, $__fnOpts, true))
+        $__fnLegacy = ($__fnCur !== '' && !in_array($__fnCur, $__sellerOpts, true))
             ? \App\Helpers\ContingencyOptionHelper::sellerDisplay($__fnCur) : null;
     @endphp
     <div class="input-cover">
         <select wire:model="financing_contingency_preference" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
-            @foreach ($__fnOpts as $__o)
+            @foreach ($__sellerOpts as $__o)
                 <option value="{{ ($__fnLegacy === $__o) ? $__fnCur : $__o }}">{{ $__o }}</option>
             @endforeach
         </select>
     </div>
 </div>
+@if ($__showsPeriod($financing_contingency_preference))
+<div class="form-group mt-3">
+    <label class="fw-bold">Preferred Financing Contingency Period (Days):
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the number of days the Seller is willing to allow for the Buyer's financing contingency period.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="number" wire:model="financing_contingency_period" class="form-control has-icon"
+            data-icon="fa-solid fa-file-invoice-dollar"
+            placeholder="Enter number of financing days (e.g., 21)" min="0">
+    </div>
+</div>
+@endif
 
-{{-- 9. Sale of Buyer's Property Contingency --}}
+{{-- 9. Sale of Buyer's Property Contingency + Preferred Period (Days) --}}
 <div class="form-group mt-3">
     <label class="fw-bold">Sale of Buyer's Property Contingency:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1918,21 +1996,35 @@
     @php
         // A5.29: same canonical option list as the other two Seller contingencies
         // (adds the previously-missing "Not Applicable").
-        $__sbOpts   = \App\Helpers\ContingencyOptionHelper::SELLER;
         $__sbCur    = $sale_of_buyer_property_contingency;
-        $__sbLegacy = ($__sbCur !== '' && !in_array($__sbCur, $__sbOpts, true))
+        $__sbLegacy = ($__sbCur !== '' && !in_array($__sbCur, $__sellerOpts, true))
             ? \App\Helpers\ContingencyOptionHelper::sellerDisplay($__sbCur) : null;
     @endphp
     <div class="input-cover">
         <select wire:model="sale_of_buyer_property_contingency" class="form-control has-icon"
             data-icon="fa-solid fa-house-circle-check">
             <option value="">Select</option>
-            @foreach ($__sbOpts as $__o)
+            @foreach ($__sellerOpts as $__o)
                 <option value="{{ ($__sbLegacy === $__o) ? $__sbCur : $__o }}">{{ $__o }}</option>
             @endforeach
         </select>
     </div>
 </div>
+@if ($__showsPeriod($sale_of_buyer_property_contingency))
+<div class="form-group mt-3">
+    <label class="fw-bold">Preferred Sale of Buyer's Property Contingency Period (Days):
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the number of days the Seller is willing to allow for the Buyer to complete the sale of their current property.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="number" wire:model="sale_of_buyer_property_period" class="form-control has-icon"
+            data-icon="fa-solid fa-house-circle-check"
+            placeholder="Enter number of days (e.g., 30)" min="0">
+    </div>
+</div>
+@endif
 
 {{-- 10. Seller Contribution / Credit Offered --}}
 <div class="form-group mt-3" id="seller-contribution-credit-wrapper">
@@ -2087,7 +2179,7 @@
         <textarea wire:model="additional_seller_sale_terms" class="form-control has-icon seller-compact-textarea" rows="1"
             data-icon="fa-solid fa-file-lines"
             x-on:input="$el.parentElement.nextElementSibling.querySelector('small').textContent = $el.value.length + ' characters'"
-            placeholder="Enter additional sale terms (e.g., seller retains mineral rights, closing cost contribution required)"></textarea>
+            placeholder="Enter additional sale terms (e.g., Seller retains mineral rights, Closing cost contribution required)"></textarea>
     </div>
     <div class="text-end mt-1"><small class="text-muted">{{ strlen($additional_seller_sale_terms ?? '') }} characters</small></div>
 </div>

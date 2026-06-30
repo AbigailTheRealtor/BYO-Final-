@@ -3716,38 +3716,60 @@
             }
             // ─── Representation Preferences & Compatibility Select2 (Task #1094) ───────
             function initCompatibilitySelect2() {
+                // Phase 5/6 QA Follow-up (Tenant Rep & Compatibility edit parity): rehydrate from
+                // the live Livewire value first (falling back to the data-selected attribute), so
+                // the parent dropdown/multiselect restores the saved value — including "Other" —
+                // instead of resetting to "Select" while only the companion text input preloads.
+                var $wire = @this;
+                // Mirror the create flow exactly (initCompatibilitySelect2 in the create blade):
+                // tenant singles are PLAIN selects rehydrated via el.value from the live Livewire
+                // value, with a single compatOtherMap covering ALL "Other" companion wrappers
+                // (primary goal, communication style, timeline urgency, desired involvement level).
                 var compatSingles = [
-                    { id: '#compat_primary_rental_goal',           prop: 'compatibility_preferences.tenant_specific.primary_rental_goal' },
-                    { id: '#compat_timeline_urgency',              prop: 'compatibility_preferences.tenant_specific.timeline_urgency' },
-                    { id: '#compat_budget_flexibility',            prop: 'compatibility_preferences.tenant_specific.budget_flexibility' },
-                    { id: '#compat_communication_style',           prop: 'compatibility_preferences.tenant_specific.communication_style' },
-                    { id: '#compat_contact_frequency',             prop: 'compatibility_preferences.tenant_specific.contact_frequency' },
-                    { id: '#compat_preferred_contact_method',      prop: 'compatibility_preferences.tenant_specific.preferred_contact_method' },
-                    { id: '#compat_preferred_agent_working_style', prop: 'compatibility_preferences.tenant_specific.preferred_agent_working_style' },
-                    { id: '#compat_negotiation_style',             prop: 'compatibility_preferences.tenant_specific.negotiation_style' },
-                    { id: '#compat_decision_making_style',         prop: 'compatibility_preferences.tenant_specific.decision_making_style' },
+                    { id: '#compat_primary_rental_goal',                    prop: 'compatibility_preferences.tenant_specific.primary_rental_goal' },
+                    { id: '#compat_timeline_urgency',                       prop: 'compatibility_preferences.tenant_specific.timeline_urgency' },
+                    { id: '#compat_budget_flexibility',                     prop: 'compatibility_preferences.tenant_specific.budget_flexibility' },
+                    { id: '#compat_communication_style',                    prop: 'compatibility_preferences.tenant_specific.communication_style' },
+                    { id: '#compat_contact_frequency',                      prop: 'compatibility_preferences.tenant_specific.contact_frequency' },
+                    { id: '#compat_preferred_contact_method',               prop: 'compatibility_preferences.tenant_specific.preferred_contact_method' },
+                    { id: '#compat_preferred_agent_working_style',          prop: 'compatibility_preferences.tenant_specific.preferred_agent_working_style' },
+                    { id: '#compat_negotiation_style',                      prop: 'compatibility_preferences.tenant_specific.negotiation_style' },
+                    { id: '#compat_decision_making_style',                  prop: 'compatibility_preferences.tenant_specific.decision_making_style' },
+                    { id: '#compat_desired_level_of_agent_involvement',     prop: 'compatibility_preferences.tenant_specific.desired_level_of_agent_involvement' },
                 ];
 
+                var compatOtherMap = {
+                    '#compat_primary_rental_goal':                'compat-other-primary-rental-goal-wrapper',
+                    '#compat_communication_style':                'compat-other-communication-style-wrapper',
+                    '#compat_timeline_urgency':                   'compat-other-timeline-urgency-wrapper',
+                    '#compat_desired_level_of_agent_involvement': 'compat-other-desired-level-of-agent-involvement-wrapper',
+                };
+
                 compatSingles.forEach(function(f) {
-                    var $el = $(f.id);
-                    if (!$el.length) return;
-                    if (!$el.hasClass('select2-hidden-accessible')) {
-                        $el.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
+                    var el = document.querySelector(f.id);
+                    if (!el) return;
+
+                    var lwVal = '';
+                    try { lwVal = $wire.get(f.prop) || ''; } catch(e) {}
+                    el.value = lwVal;
+
+                    var otherWrapperId = compatOtherMap[f.id];
+                    if (otherWrapperId) {
+                        var ow = document.getElementById(otherWrapperId);
+                        if (ow) ow.style.display = (lwVal === 'Other') ? 'block' : 'none';
                     }
-                    var saved = $el.data('selected') || '';
-                    if (saved) { $el.val(saved).trigger('change.select2'); }
-                    $el.off('change.compatEditSync').on('change.compatEditSync', function() {
-                        var val = $(this).val() || '';
-                        @this.set(f.prop, val, true);
-                        if (f.id === '#compat_primary_rental_goal') {
-                            var pgWrapper = document.getElementById('compat-other-primary-rental-goal-wrapper');
-                            if (pgWrapper) pgWrapper.style.display = (val === 'Other') ? 'block' : 'none';
-                        }
-                        if (f.id === '#compat_communication_style') {
-                            var csWrapper = document.getElementById('compat-other-communication-style-wrapper');
-                            if (csWrapper) csWrapper.style.display = (val === 'Other') ? 'block' : 'none';
-                        }
-                    });
+
+                    if (!el._compatEditSyncBound) {
+                        el._compatEditSyncBound = true;
+                        el.addEventListener('change', function() {
+                            var val = el.value || '';
+                            safeLivewireSet(f.prop, val);
+                            if (otherWrapperId) {
+                                var ow2 = document.getElementById(otherWrapperId);
+                                if (ow2) ow2.style.display = (val === 'Other') ? 'block' : 'none';
+                            }
+                        });
+                    }
                 });
 
                 var $rp = $('#compat_representation_priorities');
@@ -3756,7 +3778,13 @@
                         $rp.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
                     }
                     var savedRp = [];
-                    try { savedRp = JSON.parse($rp.data('selected') || '[]') || []; } catch(e) {}
+                    try {
+                        savedRp = $wire.get('compatibility_preferences.tenant_specific.representation_priorities') || [];
+                        if (typeof savedRp === 'string') { savedRp = JSON.parse(savedRp) || []; }
+                    } catch(e) {}
+                    if (!savedRp.length) {
+                        try { savedRp = JSON.parse($rp.data('selected') || '[]') || []; } catch(e) {}
+                    }
                     if (savedRp.length) {
                         $rp.val(savedRp).trigger('change.select2');
                         var rpOther = document.getElementById('compat-other-representation-priorities-wrapper');
@@ -3776,7 +3804,13 @@
                         $mat.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
                     }
                     var savedMat = [];
-                    try { savedMat = JSON.parse($mat.data('selected') || '[]') || []; } catch(e) {}
+                    try {
+                        savedMat = $wire.get('compatibility_preferences.tenant_specific.most_important_agent_traits') || [];
+                        if (typeof savedMat === 'string') { savedMat = JSON.parse(savedMat) || []; }
+                    } catch(e) {}
+                    if (!savedMat.length) {
+                        try { savedMat = JSON.parse($mat.data('selected') || '[]') || []; } catch(e) {}
+                    }
                     if (savedMat.length) {
                         $mat.val(savedMat).trigger('change.select2');
                         var matOther = document.getElementById('compat-other-most-important-agent-traits-wrapper');
@@ -3794,6 +3828,46 @@
             // ─── Seller Representation Preferences & Compatibility Select2 (Task #1169) ─
             function initSellerCompatSelect2FieldsEdit() {
                 var $wire = @this;
+                // Phase 5/6 QA Follow-up (Seller Rep & Compatibility edit parity): rehydrate the
+                // Seller SINGLE selects on Edit. The create flow (initSellerCompatSelect2Fields)
+                // already does this; the edit flow was missing the entire singles block, so these
+                // dropdowns showed "Select" and lost their value on Save Edit. Mirrors create.
+                var sellerSingles = [
+                    { id: '#compat_communication_style',           prop: 'compatibility_preferences.seller_specific.communication_style' },
+                    { id: '#compat_negotiation_style',             prop: 'compatibility_preferences.seller_specific.negotiation_style' },
+                    { id: '#compat_primary_transaction_goal',      prop: 'compatibility_preferences.seller_specific.primary_transaction_goal' },
+                    { id: '#compat_preferred_agent_working_style', prop: 'compatibility_preferences.seller_specific.preferred_agent_working_style' },
+                    { id: '#compat_response_time_expectation',     prop: 'compatibility_preferences.seller_specific.response_time_expectation' },
+                    { id: '#compat_firm_on_price',                 prop: 'compatibility_preferences.seller_specific.firm_on_price' },
+                    { id: '#compat_flexibility_on_timeline',       prop: 'compatibility_preferences.seller_specific.flexibility_on_timeline' },
+                    { id: '#compat_post_sale_plan',                prop: 'compatibility_preferences.seller_specific.post_sale_plan' },
+                    { id: '#compat_past_agent_experience',         prop: 'compatibility_preferences.seller_specific.past_agent_experience' },
+                    { id: '#compat_decision_making_style',         prop: 'compatibility_preferences.seller_specific.decision_making_style' },
+                    { id: '#compat_involvement_level',             prop: 'compatibility_preferences.seller_specific.involvement_level' },
+                    { id: '#compat_open_house_preference',         prop: 'compatibility_preferences.seller_specific.open_house_preference' },
+                ];
+                sellerSingles.forEach(function(f) {
+                    var el = document.querySelector(f.id);
+                    if (!el) return;
+                    var lwVal = '';
+                    try { lwVal = $wire.get(f.prop) || ''; } catch(e) {}
+                    el.value = lwVal;
+                    if (f.id === '#compat_primary_transaction_goal') {
+                        var ptgOw = document.getElementById('compat_ptg_other_wrapper');
+                        if (ptgOw) ptgOw.style.display = (lwVal === 'Other') ? '' : 'none';
+                    }
+                    if (!el._sellerCompatEditSyncBound) {
+                        el._sellerCompatEditSyncBound = true;
+                        el.addEventListener('change', function() {
+                            var val = el.value || '';
+                            safeLivewireSet(f.prop, val);
+                            if (f.id === '#compat_primary_transaction_goal') {
+                                var ptgOw2 = document.getElementById('compat_ptg_other_wrapper');
+                                if (ptgOw2) ptgOw2.style.display = (val === 'Other') ? '' : 'none';
+                            }
+                        });
+                    }
+                });
                 var sellerMulti = [
                     { sel: '#compat_preferred_contact_method',  prop: 'compatibility_preferences.seller_specific.preferred_contact_method' },
                     { sel: '#compat_willing_to_negotiate_on',   prop: 'compatibility_preferences.seller_specific.willing_to_negotiate_on' },

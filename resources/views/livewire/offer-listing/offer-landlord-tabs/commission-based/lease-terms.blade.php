@@ -1044,22 +1044,12 @@
         <i class="fa-solid fa-gavel me-2"></i>Bidding Period Lease Pricing
     </h5>
 </div>
+{{-- Phase 5/6 QA Follow-up (Bidding Pricing UX): Desired Lease Price is intentionally
+     HIDDEN for Bidding Period listings — Lease Now / Starting Rent / Reserve Rent define
+     the bidding workflow, so the competing "Desired Lease Price" target is suppressed here.
+     The $desired_rental_amount prop + persistence remain intact for Traditional listings and
+     for backward compatibility with existing Bidding listings (no stored value is rewritten). --}}
 <div class="form-group">
-    <label class="fw-bold">Desired Lease Price: <span class="text-danger">*</span></label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the lease price the Landlord would like to receive.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="desired_rental_amount" id="landlord_desired_lease_price" class="form-control"
-            placeholder="Enter desired lease price (e.g., 2500)" required
-            data-error-id="desired_rental_amount_error"
-            oninput="validateInput(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-    </div>
-    <span class="error mt-2" id="desired_rental_amount_error"></span>
-</div>
-<div class="form-group mt-3">
     <label class="fw-bold">Starting Rent / Opening Offer:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the minimum rent amount at which bidding will open for this lease.">

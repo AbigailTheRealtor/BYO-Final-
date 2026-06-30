@@ -1734,12 +1734,22 @@
                                 if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
                             };
 
+                            // Phase 5/6 QA Follow-up (Buyer Rep & Compatibility): full listing
+                            // parity — every captured field renders here when populated, with
+                            // "Other" custom values resolved for Primary Transaction Goal,
+                            // Representation Priorities and Preferred Agent Working Style.
                             $repAdd('Primary Transaction Goal', $bsView['primary_transaction_goal'] ?? '', $bsView['primary_transaction_goal_other'] ?? '');
                             $repAdd('Representation Priorities', $bsView['representation_priorities'] ?? [], $bsView['representation_priorities_other'] ?? '');
+                            $repAdd('Risk Tolerance Level', $bsView['risk_tolerance'] ?? '', '');
+                            $repAdd('Decision-Making Style', $bsView['decision_making_style'] ?? '', '');
+                            $repAdd('Timeline Flexibility', $bsView['timeline_flexibility'] ?? '', '');
                             $repAdd('Communication Style', $bsView['communication_style'] ?? '', '');
+                            $repAdd('Preferred Contact Method', $bsView['preferred_contact_method'] ?? '', '');
                             $repAdd('Availability / Best Times to Reach You', $bsView['availability_windows'] ?? '', '');
+                            $repAdd('Meeting / Showing Preference', $bsView['communication_frequency'] ?? '', '');
                             $repAdd('Negotiation Style', $bsView['negotiation_style'] ?? '', '');
                             $repAdd('Preferred Agent Working Style', $bsView['preferred_agent_working_style'] ?? '', $bsView['preferred_agent_working_style_other'] ?? '');
+                            $repAdd('Expected Level of Agent Support', $bsView['support_level'] ?? '', '');
                             $repAdd('Non-Negotiable Requirements / Deal Breakers', $bsView['deal_breakers'] ?? '', '');
                             $repAdd('Additional Notes for Agent', $bsView['additional_compatibility_notes'] ?? '', '');
                         @endphp

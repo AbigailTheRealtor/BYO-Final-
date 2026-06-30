@@ -345,13 +345,14 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <textarea wire:model="compatibility_preferences.seller_specific.what_did_not_work_before"
+        {{-- Phase 5/6 QA Follow-up (input-style consistency): single-line text input, matching
+             Target Sale Timeline — not a multiline textarea. --}}
+        <input type="text"
+            wire:model="compatibility_preferences.seller_specific.what_did_not_work_before"
             class="form-control has-icon"
             data-icon="fa-solid fa-comment-dots"
-            rows="1"
-            style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
             maxlength="2000"
-            placeholder="Enter what did not work well with past agents (e.g., Poor communication, Overpriced listing)"></textarea>
+            placeholder="Enter what did not work well with past agents (e.g., Poor communication, Overpriced listing)">
     </div>
 </div>
 
@@ -500,12 +501,12 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <textarea wire:model="compatibility_preferences.seller_specific.additional_compatibility_notes"
+        {{-- Phase 5/6 QA Follow-up (input-style consistency): single-line text input. --}}
+        <input type="text"
+            wire:model="compatibility_preferences.seller_specific.additional_compatibility_notes"
             class="form-control has-icon"
             data-icon="fa-solid fa-note-sticky"
-            rows="1"
-            style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
             maxlength="2000"
-            placeholder="Enter additional compatibility notes (e.g., Prefer a bilingual agent, Need flexible scheduling)"></textarea>
+            placeholder="Enter additional compatibility notes (e.g., Prefer a bilingual agent, Need flexible scheduling)">
     </div>
 </div>

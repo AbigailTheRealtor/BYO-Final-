@@ -305,6 +305,25 @@
             </div>
             <span class="error mt-2" id="assumable_bridge_gap_cash_error"></span>
         </div>
+
+        {{-- A6.33: Assumption Fee Responsibility — who pays the loan assumption fee. --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">Assumption Fee Responsibility:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Who should be responsible for any loan assumption fee if one applies.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <select wire:model="assumption_fee_responsibility" class="form-control has-icon"
+                    data-icon="fa-solid fa-handshake">
+                    <option value="">Select</option>
+                    <option value="Buyer">Buyer</option>
+                    <option value="Seller">Seller</option>
+                    <option value="Split">Split</option>
+                </select>
+            </div>
+        </div>
     </div>
 
 </div>

@@ -241,6 +241,11 @@ class TenantAgentAuctionEdit extends Component
     public $preferance_details = '';
 
     // Representation Preferences & Compatibility (tenant full_service only — Task #1094)
+    // Phase 5/6 QA Follow-up (Rep & Compatibility edit parity): the Edit component must carry
+    // ALL FOUR role sub-arrays. Previously only `tenant_specific` was declared/loaded, so on
+    // Seller/Buyer/Landlord edits the fields never preloaded AND Save Edit wrote a blob
+    // containing only tenant_specific — wiping the other roles' stored data. This mirrors the
+    // create component (TenantAgentAuction::$compatibility_preferences) exactly.
     public $compatibility_preferences = [
         'tenant_specific' => [
             'primary_rental_goal'              => '',
@@ -263,6 +268,67 @@ class TenantAgentAuctionEdit extends Component
             'desired_level_of_agent_involvement'        => '',
             'other_desired_level_of_agent_involvement'  => '',
             'other_timeline_urgency'                    => '',
+        ],
+        'seller_specific' => [
+            'communication_style'              => '',
+            'negotiation_style'                => '',
+            'primary_transaction_goal'         => '',
+            'representation_priorities'        => [],
+            'preferred_agent_working_style'    => '',
+            'preferred_contact_method'         => [],
+            'response_time_expectation'        => '',
+            'willing_to_negotiate_on'          => [],
+            'firm_on_price'                    => '',
+            'primary_transaction_goal_other'   => '',
+            'target_sale_timeline'             => '',
+            'flexibility_on_timeline'          => '',
+            'post_sale_plan'                   => '',
+            'qualities_most_important'         => [],
+            'past_agent_experience'            => '',
+            'what_did_not_work_before'         => '',
+            'decision_making_style'            => '',
+            'involvement_level'                => '',
+            'additional_decision_makers'       => '',
+            'showing_availability'             => [],
+            'open_house_preference'            => '',
+            'additional_compatibility_notes'   => '',
+        ],
+        'buyer_specific' => [
+            'primary_transaction_goal'             => '',
+            'representation_priorities'            => [],
+            'communication_style'                  => '',
+            'negotiation_style'                    => '',
+            'preferred_agent_working_style'        => '',
+            'primary_transaction_goal_other'       => '',
+            'representation_priorities_other'      => '',
+            'risk_tolerance'                       => '',
+            'decision_making_style'                => '',
+            'timeline_flexibility'                 => '',
+            'preferred_contact_method'             => '',
+            'availability_windows'                 => '',
+            'communication_frequency'              => '',
+            'support_level'                        => '',
+            'deal_breakers'                        => '',
+            'additional_compatibility_notes'       => '',
+            'preferred_agent_working_style_other'  => '',
+        ],
+        'landlord_specific' => [
+            'primary_leasing_goal'               => '',
+            'communication_style'                 => '',
+            'preferred_agent_working_style'       => '',
+            'negotiation_style'                   => '',
+            'representation_priorities'           => [],
+            'primary_leasing_goal_other'          => '',
+            'tenant_type_preference'              => '',
+            'tenant_type_preference_other'        => '',
+            'lease_duration_preference'           => '',
+            'property_management_involvement'     => '',
+            'preferred_contact_method'            => '',
+            'response_time_expectation'           => '',
+            'risk_tolerance'                      => '',
+            'concessions_willingness'             => '',
+            'lease_terms_flexibility'             => '',
+            'additional_representation_notes'     => '',
         ],
     ];
 
@@ -555,6 +621,7 @@ class TenantAgentAuctionEdit extends Component
     public $assumable_loan_servicer = '';
     public $assumable_fee_type = '$';
     public $assumable_fee_amount = '';
+    public $assumption_fee_responsibility = ''; // A6.31-A6.34: who pays the assumption fee (Buyer/Seller/Split)
     public $assumable_occupancy_requirement = '';
     public $assumable_occupancy_other = '';
 
@@ -2766,33 +2833,17 @@ class TenantAgentAuctionEdit extends Component
         $this->offered_financing = json_decode($auction->info('offered_financing'), true) ?? [];
         $this->leasing_spaces_tenant = json_decode($auction->info('leasing_spaces_tenant'), true) ?? [];
 
-        // Representation Preferences & Compatibility (tenant full_service only — Task #1094)
+        // Representation Preferences & Compatibility — Phase 5/6 QA Follow-up: load EVERY role's
+        // stored sub-array (merged over the declared per-role defaults), not just tenant_specific.
+        // This restores edit preload for Seller/Buyer/Landlord and prevents Save Edit from wiping
+        // roles that are not currently being edited.
         $rawCompat = $auction->info('compatibility_preferences');
         $loadedCompat = ($rawCompat !== null && $rawCompat !== '') ? (json_decode($rawCompat, true) ?? []) : [];
-        $this->compatibility_preferences = [
-            'tenant_specific' => array_merge([
-                'primary_rental_goal'              => '',
-                'other_primary_rental_goal'        => '',
-                'representation_priorities'        => [],
-                'other_representation_priorities'  => '',
-                'timeline_urgency'                 => '',
-                'budget_flexibility'               => '',
-                'communication_style'              => '',
-                'other_communication_style'        => '',
-                'contact_frequency'                => '',
-                'preferred_contact_method'         => '',
-                'preferred_agent_working_style'    => '',
-                'negotiation_style'                => '',
-                'decision_making_style'            => '',
-                'concerns_or_barriers'             => '',
-                'additional_compatibility_notes'   => '',
-                'most_important_agent_traits'               => [],
-                'other_most_important_agent_traits'         => '',
-                'desired_level_of_agent_involvement'        => '',
-                'other_desired_level_of_agent_involvement'  => '',
-                'other_timeline_urgency'                    => '',
-            ], $loadedCompat['tenant_specific'] ?? []),
-        ];
+        $mergedCompat = [];
+        foreach ($this->compatibility_preferences as $roleKey => $roleDefaults) {
+            $mergedCompat[$roleKey] = array_merge($roleDefaults, $loadedCompat[$roleKey] ?? []);
+        }
+        $this->compatibility_preferences = $mergedCompat;
 
         $this->prior_eviction = $auction->info('prior_eviction');
         $this->eviction_explanation = $auction->info('eviction_explanation');
@@ -2837,6 +2888,7 @@ class TenantAgentAuctionEdit extends Component
         $this->assumable_loan_servicer = $auction->info('assumable_loan_servicer') ?? '';
         $this->assumable_fee_type = $auction->info('assumable_fee_type') ?: '$';
         $this->assumable_fee_amount = $auction->info('assumable_fee_amount') ?? '';
+        $this->assumption_fee_responsibility = $auction->info('assumption_fee_responsibility') ?? '';
         $this->max_monthly_payment = $auction->info('max_monthly_payment');
         $this->gap_payment_type = $auction->info('gap_payment_type');
         $this->outstanding_balance = $auction->info('outstanding_balance');
@@ -3643,6 +3695,7 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('assumable_loan_servicer', $this->assumable_loan_servicer);
             $auction->saveMeta('assumable_fee_type', $this->assumable_fee_type);
             $auction->saveMeta('assumable_fee_amount', $this->stripCommas($this->assumable_fee_amount));
+            $auction->saveMeta('assumption_fee_responsibility', $this->assumption_fee_responsibility);
             $auction->saveMeta('max_monthly_payment', $this->max_monthly_payment);
             $auction->saveMeta('outstanding_balance', $this->outstanding_balance);
             $auction->saveMeta('gap_payment_type', $this->gap_payment_type);

@@ -1904,11 +1904,18 @@
                     {!! $row('Occupant Type', $str('occupant_status')) !!}
                     {!! $row('Occupied Until', $str('occupant_tenant')) !!}
                     {!! $row('Buyer Income Requirement', $fmtMoney($str('monthly_income'))) !!}
-                    {!! $row('Desired Sale Price', $fmtMoney($str('maximum_budget'))) !!}
+                    @php $__isBidding = ($str('auction_type') === 'Bidding Period'); @endphp
+                    {{-- Phase 5/6 QA Follow-up (Bidding Pricing UX): Traditional listings show only
+                         Desired Sale Price; Bidding listings show only Starting / Reserve / Buy Now. --}}
+                    @unless($__isBidding)
+                        {!! $row('Desired Sale Price', $fmtMoney($str('maximum_budget'))) !!}
+                    @endunless
                     {!! $row('Purchase Price', $fmtMoney($str('purchase_price'))) !!}
-                    {!! $row('Starting Price', $fmtMoney($str('starting_price'))) !!}
-                    {!! $row('Reserve Price', $fmtMoney($str('reserve_price'))) !!}
-                    {!! $row('Buy Now Price', $fmtMoney($str('buy_now_price'))) !!}
+                    @if($__isBidding)
+                        {!! $row('Starting Price / Opening Bid', $fmtMoney($str('starting_price'))) !!}
+                        {!! $row('Reserve Price', $fmtMoney($str('reserve_price'))) !!}
+                        {!! $row('Buy Now Price', $fmtMoney($str('buy_now_price'))) !!}
+                    @endif
                 </div>
                 <div class="col-md-6">
                     @php $ofFinancing = $subOther($arr('offered_financing'), $str('other_financing')); @endphp
@@ -2139,10 +2146,16 @@
     {{-- Seller Sale Terms --}}
     @php
         $sellerTermsFields = array_filter([
-            ['Inspection Period', $str('preferred_inspection_period')],
+            // Phase 5/6 QA Follow-up (Seller Contingency UX): each contingency preference is
+            // paired with its preferred period (Days). Empty rows are filtered out below.
+            ['Inspection Contingency', \App\Helpers\ContingencyOptionHelper::sellerDisplay($str('inspection_contingency_preference'))],
+            ['Preferred Inspection Contingency Period (Days)', $str('preferred_inspection_period')],
             ['Appraisal Contingency', \App\Helpers\ContingencyOptionHelper::sellerDisplay($str('appraisal_contingency_preference'))],
+            ['Preferred Appraisal Contingency Period (Days)', $str('appraisal_contingency_period')],
             ['Financing Contingency', \App\Helpers\ContingencyOptionHelper::sellerDisplay($str('financing_contingency_preference'))],
+            ['Preferred Financing Contingency Period (Days)', $str('financing_contingency_period')],
             ['Sale of Buyer Property Contingency', \App\Helpers\ContingencyOptionHelper::sellerDisplay($str('sale_of_buyer_property_contingency'))],
+            ['Preferred Sale of Buyer\'s Property Contingency Period (Days)', $str('sale_of_buyer_property_period')],
             ['Seller Contribution / Credit Offered', $yesNo($str('seller_contribution_credit_offered'))],
             ['Seller Contribution Details', $str('seller_contribution_amount_details')],
             ['Possession Preference', $str('possession_preference')],
@@ -2974,6 +2987,12 @@
         var listingId  = {{ $auction->id }};
         var csrfToken  = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
+        /* WF-1: the V1 listing-question endpoint is owner-scoped by design. A
+           non-owner viewing this public listing must never be routed to it (that
+           is the source of the Ask AI 403). The public-facing assistant is V2;
+           when V2 is unavailable, non-owners get a graceful notice instead. */
+        var isOwner       = {{ (auth()->id() && (int) auth()->id() === (int) $auction->user_id) ? 'true' : 'false' }};
+
         /* V2 configuration — from Blade */
         var useV2         = {{ $agentAiV2 ? 'true' : 'false' }};
         var v2AgentId     = {{ (int)($agentAiAgentId ?? 0) }};
@@ -3145,8 +3164,20 @@
             .catch(function() { setLoading(false); appendTurn(q, { status: 'failed' }); });
         }
 
+        /* --- Owner-only notice (WF-1): shown when a non-owner has no V2 path --- */
+        function showOwnerOnlyNotice() {
+            setLoading(false);
+            if (!resultDiv) return;
+            resultDiv.innerHTML = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:.5rem;padding:.9rem 1rem;">'
+                + '<div style="font-size:.8rem;font-weight:700;color:#0369a1;margin-bottom:.35rem;"><i class="fa-solid fa-circle-info me-1"></i>Notice</div>'
+                + '<div style="font-size:.875rem;color:#1e293b;">Ask AI for this listing is available to the listing owner.</div></div>';
+            resultDiv.style.display = '';
+        }
+
         /* --- V1 fetch submit --- */
         function submitV1(q) {
+            // WF-1: never call the owner-only endpoint for a non-owner (would 403).
+            if (!isOwner) { showOwnerOnlyNotice(); return; }
             resetResult();
             fetch('/ask-ai/listing-question', {
                 method: 'POST',

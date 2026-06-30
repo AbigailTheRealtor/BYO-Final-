@@ -2,12 +2,15 @@
 
 namespace Tests\Feature\Offers;
 
+use App\Http\Livewire\OfferListing\Buyer\BuyerOfferListingEdit;
 use App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing;
 use App\Http\Livewire\OfferListing\Landlord\LandlordOfferListingEdit;
 use App\Http\Livewire\OfferListing\Seller\SellerOfferListing;
 use App\Http\Livewire\OfferListing\Seller\SellerOfferListingEdit;
 use App\Http\Livewire\OfferListing\Tenant\TenantOfferListing;
 use App\Jobs\ComputeLocationDna;
+use App\Models\BuyerAgentAuction;
+use App\Models\BuyerAgentAuctionMeta;
 use App\Models\LandlordAgentAuction;
 use App\Models\LandlordAgentAuctionMeta;
 use App\Models\OfferAuction;
@@ -56,6 +59,26 @@ class CreateEditParityRegressionTest extends TestCase
     private function makeBuyerUser(): User
     {
         return User::factory()->create(['user_type' => 'buyer']);
+    }
+
+    private function makeBuyerAuction(User $user, bool $isDraft = false): BuyerAgentAuction
+    {
+        $auction = BuyerAgentAuction::create([
+            'user_id'     => $user->id,
+            'address'     => '',
+            'title'       => 'Test Buyer Listing',
+            'is_draft'    => $isDraft,
+            'is_approved' => !$isDraft,
+            'is_sold'     => false,
+        ]);
+
+        BuyerAgentAuctionMeta::create([
+            'buyer_agent_auction_id' => $auction->id,
+            'meta_key'               => 'workflow_type',
+            'meta_value'             => 'offer_listing',
+        ]);
+
+        return $auction;
     }
 
     private function makeSellerAuction(User $user, string $address = '', bool $isDraft = false): SellerAgentAuction
@@ -354,6 +377,72 @@ class CreateEditParityRegressionTest extends TestCase
             ->assertHasNoErrors();
     }
 
+    // ─── A6.31–A6.34 — Assumption Fee Responsibility (new field, Seller flows) ─
+
+    /** A6.31–A6.34: Create Seller edit persists assumption_fee_responsibility (save round-trip). */
+    public function test_seller_edit_saves_assumption_fee_responsibility(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'agent']);
+        $auction = $this->makeSellerAuction($owner, '', false);
+
+        Livewire::actingAs($owner)
+            ->test(SellerOfferListingEdit::class, ['auctionId' => $auction->id])
+            ->set('assumption_fee_responsibility', 'Split')
+            ->call('update');
+
+        $this->assertEquals('Split', $auction->fresh()->info('assumption_fee_responsibility'));
+    }
+
+    /** A6.31–A6.34: Create Seller edit pre-fills a saved assumption_fee_responsibility value. */
+    public function test_seller_edit_prefills_assumption_fee_responsibility(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'agent']);
+        $auction = $this->makeSellerAuction($owner, '', false);
+
+        SellerAgentAuctionMeta::create([
+            'seller_agent_auction_id' => $auction->id,
+            'meta_key'                => 'assumption_fee_responsibility',
+            'meta_value'              => 'Buyer',
+        ]);
+
+        Livewire::actingAs($owner)
+            ->test(SellerOfferListingEdit::class, ['auctionId' => $auction->id])
+            ->assertSet('assumption_fee_responsibility', 'Buyer');
+    }
+
+    /** A6.33: Create Buyer edit persists assumption_fee_responsibility (save round-trip). */
+    public function test_buyer_edit_saves_assumption_fee_responsibility(): void
+    {
+        $owner   = $this->makeBuyerUser();
+        $auction = $this->makeBuyerAuction($owner, false);
+
+        Livewire::actingAs($owner)
+            ->test(BuyerOfferListingEdit::class, ['auctionId' => $auction->id])
+            ->set('counties', ['Hillsborough'])
+            ->set('state', 'FL')
+            ->set('assumption_fee_responsibility', 'Split')
+            ->call('update');
+
+        $this->assertEquals('Split', $auction->fresh()->info('assumption_fee_responsibility'));
+    }
+
+    /** A6.33: Create Buyer edit pre-fills a saved assumption_fee_responsibility value. */
+    public function test_buyer_edit_prefills_assumption_fee_responsibility(): void
+    {
+        $owner   = $this->makeBuyerUser();
+        $auction = $this->makeBuyerAuction($owner, false);
+
+        BuyerAgentAuctionMeta::create([
+            'buyer_agent_auction_id' => $auction->id,
+            'meta_key'               => 'assumption_fee_responsibility',
+            'meta_value'             => 'Buyer',
+        ]);
+
+        Livewire::actingAs($owner)
+            ->test(BuyerOfferListingEdit::class, ['auctionId' => $auction->id])
+            ->assertSet('assumption_fee_responsibility', 'Buyer');
+    }
+
     // ─── (c) Landlord JS — lease_term_options class present for JS skip ───────
 
     /**
@@ -369,6 +458,244 @@ class CreateEditParityRegressionTest extends TestCase
             ->getContent();
 
         $this->assertStringContainsString('lease_term_options', $html);
+    }
+
+    // ─── A6.39 — Currency inputs accept commas + decimals (number → text) ─────
+
+    /**
+     * A6.39: the Create Seller broker-compensation flat-fee ($) currency inputs
+     * must use type="text" wired to the validateInput()/reformatNumber() money
+     * pattern so commas + decimals are accepted — matching the already-converted
+     * Hire Seller flow (Hire/Create parity). They must NOT remain type="number".
+     *
+     * Asserted at the blade-source level because these inputs render only behind
+     * several nested conditionals (user_type, property_type, commission_structure_type,
+     * seller_leasing_fee_type), which a render test could not exercise deterministically.
+     */
+    public function test_seller_create_broker_comp_flat_fee_inputs_are_currency_text(): void
+    {
+        $blade = file_get_contents(resource_path(
+            'views/livewire/offer-listing/offer-seller-tabs/commission-based/broker-compensation.blade.php'
+        ));
+
+        $currencyFields = [
+            'commission_structure_type_fee_flat_combo',
+            'seller_leasing_gross_flat_combo',
+            'seller_leasing_gross_flat_net_combo',
+        ];
+
+        foreach ($currencyFields as $field) {
+            // Must be bound on a type="text" input (currency pattern).
+            $this->assertMatchesRegularExpression(
+                '/type="text"\s+wire:model="' . preg_quote($field, '/') . '"/',
+                $blade,
+                "A6.39: {$field} must use type=text for comma/decimal currency entry"
+            );
+
+            // Must not regress back to a bare numeric input.
+            $this->assertStringNotContainsString(
+                'type="number" wire:model="' . $field . '"',
+                $blade,
+                "A6.39: {$field} must not use type=number"
+            );
+        }
+
+        // The shared money-formatting handler must be present in this view.
+        $this->assertStringContainsString('validateInput(this)', $blade);
+    }
+
+    // ─── A7.49 — Front Footage uses a regular text box (not a number box) ─────
+
+    /**
+     * A7.49: the Create Seller "Front Footage" field (Vacant Land section) must
+     * render as a plain text input, not a number input (S8). The field keeps its
+     * full persistence lifecycle (prop → draft → load → saveMeta) and its
+     * server-side `nullable|numeric|min:0` publish rule — only the HTML input
+     * type changes. Rendered with property_type = 'Vacant Land', which gates the
+     * section.
+     */
+    public function test_seller_create_front_footage_is_text_input(): void
+    {
+        Livewire::actingAs($this->makeAgentUser())
+            ->test(SellerOfferListing::class)
+            ->set('property_type', 'Vacant Land')
+            ->assertSeeHtml('type="text" wire:model.defer="front_footage"')
+            ->assertDontSeeHtml('type="number" wire:model.defer="front_footage"');
+    }
+
+    /**
+     * A7.49 lifecycle guard: a numeric Front Footage value survives the Create
+     * Seller save-draft → reload round-trip unchanged (the text-box conversion
+     * must not disturb persistence).
+     */
+    public function test_seller_create_front_footage_round_trips_on_save_draft(): void
+    {
+        $owner = $this->makeAgentUser();
+
+        $component = Livewire::actingAs($owner)
+            ->test(SellerOfferListing::class)
+            ->set('property_type', 'Vacant Land')
+            ->set('front_footage', '150')
+            ->call('saveDraft');
+
+        $auctionId = SellerAgentAuction::where('user_id', $owner->id)->latest('id')->value('id');
+        $this->assertNotNull($auctionId, 'save-draft should create a Seller auction');
+
+        $this->assertDatabaseHas('seller_agent_auction_metas', [
+            'seller_agent_auction_id' => $auctionId,
+            'meta_key'                => 'front_footage',
+            'meta_value'              => '150',
+        ]);
+    }
+
+    // ─── A7.42 / A7.43 — Seller free-text boxes match the reference box size ──
+
+    /**
+     * A7.42/A7.43: the compact Seller free-text boxes (Additional Seller Sale
+     * Terms + the five tax/legal/HOA fields) must render at the same height as
+     * the "Total Number of Parcels" box — the standard Bootstrap .form-control
+     * height — in BOTH the Create and Edit wrappers. A prior fix left the Edit
+     * wrapper at a divergent 50px; this locks Create/Edit sizing parity on the
+     * shared `.seller-compact-textarea` rule.
+     */
+    public function test_seller_compact_textarea_sizing_parity_create_vs_edit(): void
+    {
+        $wrappers = [
+            'create' => file_get_contents(resource_path(
+                'views/livewire/offer-listing/seller/offer-seller-listing.blade.php'
+            )),
+            'edit' => file_get_contents(resource_path(
+                'views/livewire/offer-listing/seller/offer-seller-listing-edit.blade.php'
+            )),
+        ];
+
+        foreach ($wrappers as $flow => $css) {
+            // Sized to the form-control height (matches the Total Number of Parcels input).
+            $this->assertMatchesRegularExpression(
+                '/\.seller-compact-textarea\s*\{[^}]*calc\(1\.5em \+ 0\.75rem \+ 2px\)/s',
+                $css,
+                "A7.42/A7.43: {$flow} wrapper must size .seller-compact-textarea to form-control height"
+            );
+            // Must not retain the divergent 50px height inside that rule.
+            $this->assertDoesNotMatchRegularExpression(
+                '/\.seller-compact-textarea\s*\{[^}]*50px/s',
+                $css,
+                "A7.42/A7.43: {$flow} wrapper must not use the divergent 50px height"
+            );
+        }
+    }
+
+    /**
+     * A7.42: the Additional Seller Sale Terms placeholder examples must be
+     * capitalized (S2), matching the sibling free-text fields' style.
+     */
+    public function test_seller_additional_sale_terms_placeholder_is_capitalized(): void
+    {
+        $blade = file_get_contents(resource_path(
+            'views/livewire/offer-listing/offer-seller-tabs/commission-based/seller-terms.blade.php'
+        ));
+
+        $this->assertStringContainsString(
+            'e.g., Seller retains mineral rights, Closing cost contribution required',
+            $blade,
+            'A7.42: Additional Seller Sale Terms placeholder examples must be capitalized'
+        );
+        $this->assertStringNotContainsString(
+            'seller retains mineral rights, closing cost contribution required',
+            $blade,
+            'A7.42: lowercase placeholder examples must be fixed'
+        );
+    }
+
+    // ─── A7.44 / A7.45 — "Other" placeholders must not duplicate options ──────
+
+    /**
+     * A7.44/A7.45 (S3): the free-text "Other" placeholders for Minimum Lease
+     * Period and Association Fee Includes must illustrate values that are NOT
+     * already selectable options (an example matching an option just tells the
+     * user to type something they could have picked). The old examples duplicated
+     * options ("6 months"/"12 months" = the 6 Months / 1 Year options;
+     * "Roof maintenance" = the Roof Maintenance option).
+     */
+    public function test_seller_other_placeholders_do_not_duplicate_options(): void
+    {
+        $blade = file_get_contents(resource_path(
+            'views/livewire/offer-listing/offer-seller-tabs/commission-based/tax-legal-hoa-disclosures.blade.php'
+        ));
+
+        // A7.44 — Minimum Lease Period "Other"
+        $this->assertStringContainsString(
+            'Enter minimum lease period (e.g., 18 Months, Seasonal lease, Month-to-month after first year)',
+            $blade,
+            'A7.44: Minimum Lease Period "Other" placeholder must use non-option examples'
+        );
+        $this->assertStringNotContainsString('6 months, 12 months', $blade,
+            'A7.44: old option-duplicating examples must be removed');
+
+        // A7.45 — Association Fee Includes "Other"
+        $this->assertStringContainsString(
+            'Enter what else is included (e.g., Snow removal, Building reserves, Concierge service)',
+            $blade,
+            'A7.45: Association Fee Includes "Other" placeholder must use non-option examples'
+        );
+        $this->assertStringNotContainsString('e.g., Roof maintenance, Building reserves', $blade,
+            'A7.45: old option-duplicating example (Roof maintenance) must be removed');
+
+        // Guard: no new example may also exist as a literal selectable <option>.
+        foreach (['18 Months', 'Seasonal lease', 'Month-to-month after first year',
+                  'Snow removal', 'Building reserves', 'Concierge service'] as $example) {
+            $this->assertStringNotContainsString('<option value="' . $example . '"', $blade,
+                "A7.44/A7.45: example '{$example}' must not also be a selectable option");
+        }
+    }
+
+    // ─── A7.47 / A7.48 — Vacant Land "Other" property style input ─────────────
+
+    /**
+     * A7.47 (Hire Seller) + A7.48 (Create Seller): when Property Style = Other,
+     * the custom input must (a) drop the redundant "Other Property Style" label
+     * above it, and (b) use the standard sentence-style placeholder
+     * `Enter property style (e.g., …)` whose examples are NOT existing Vacant Land
+     * dropdown options. Both flows share identical wording. The two shared partials
+     * back Create+Edit (Create Seller) and all Hire create+edit wrappers.
+     */
+    public function test_seller_vacant_land_other_property_style_input(): void
+    {
+        // Vacant Land Property Style options the placeholder examples must avoid.
+        $vacantLandOptions = [
+            'Agricultural', 'Billboard Site', 'Business', 'Cattle', 'Commercial', 'Farm',
+            'Fisher', 'Highway Frontage', 'Horses', 'Industrial', 'Land Fill', 'Livestock',
+            'Mixed Use', 'Multi Family', 'Nursery Orchard', 'Pasture', 'Poultry', 'Ranch',
+            'Residential', 'Retail', 'Row Crops', 'Sod Farm', 'Subdivision', 'Timber',
+            'Tracts', 'Trans/Cell Tower', 'Tree Farm', 'Unimproved Land', 'Well Field',
+        ];
+        $examples = ['Solar farm', 'RV park', 'Conservation easement'];
+        foreach ($examples as $example) {
+            $this->assertNotContains($example, $vacantLandOptions,
+                "A7.47/A7.48: example '{$example}' must not duplicate a Vacant Land option");
+        }
+
+        $partials = [
+            'create' => resource_path('views/livewire/offer-listing/offer-seller-tabs/commission-based/property-preferences.blade.php'),
+            'hire'   => resource_path('views/livewire/hire-seller-agent/seller-agent-auction-tabs/commission-based/property-preferences.blade.php'),
+        ];
+
+        foreach ($partials as $flow => $path) {
+            $blade = file_get_contents($path);
+
+            // (b) standard sentence-style placeholder, identical in both flows
+            $this->assertStringContainsString(
+                'placeholder="Enter property style (e.g., Solar farm, RV park, Conservation easement)"',
+                $blade,
+                "A7.47/A7.48: {$flow} must use the standard 'Enter property style' placeholder"
+            );
+            $this->assertStringNotContainsString('Enter land use (e.g.', $blade,
+                "A7.47/A7.48: {$flow} old 'Enter land use' placeholder must be removed");
+
+            // (a) redundant visible label above the input removed (HTML comment is fine)
+            $this->assertStringNotContainsString('<label class="fw-bold">Other Property Style:', $blade,
+                "A7.47/A7.48: {$flow} redundant 'Other Property Style' label must be removed");
+        }
     }
 
     // ─── (d) Photo upload — max 50 MB ────────────────────────────────────────
@@ -1207,5 +1534,132 @@ class CreateEditParityRegressionTest extends TestCase
             ->get(route('offer.listing.seller.view', $auction->id))
             ->assertStatus(200)
             ->assertDontSee('Preferred Waived'); // legacy text mapped to "Negotiable" for display
+    }
+
+    // ─── Phase 5/6 QA Follow-up: Seller Contingency UX ───────────────────────
+
+    /** Seller create now exposes an "Inspection Contingency Preference" select. */
+    public function test_seller_create_shows_inspection_contingency_preference(): void
+    {
+        $html = $this->actingAs($this->makeAgentUser())
+            ->get('/offer-listing/seller')->assertStatus(200)->getContent();
+
+        $this->assertStringContainsString('Inspection Contingency Preference', $html);
+    }
+
+    /** New Seller contingency preference + period fields persist through edit-save. */
+    public function test_seller_edit_round_trips_new_contingency_fields(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'agent']);
+        $auction = $this->makeSellerAuction($owner, '', false);
+
+        Livewire::actingAs($owner)
+            ->test(SellerOfferListingEdit::class, ['auctionId' => $auction->id])
+            ->set('inspection_contingency_preference', 'Accepted')
+            ->set('preferred_inspection_period', '10')
+            ->set('appraisal_contingency_preference', 'Negotiable')
+            ->set('appraisal_contingency_period', '14')
+            ->set('financing_contingency_preference', 'Accepted')
+            ->set('financing_contingency_period', '21')
+            ->set('sale_of_buyer_property_contingency', 'Negotiable')
+            ->set('sale_of_buyer_property_period', '30')
+            ->call('update');
+
+        $fresh = $auction->fresh();
+        $this->assertEquals('Accepted',   $fresh->info('inspection_contingency_preference'));
+        $this->assertEquals('14',         $fresh->info('appraisal_contingency_period'));
+        $this->assertEquals('21',         $fresh->info('financing_contingency_period'));
+        $this->assertEquals('30',         $fresh->info('sale_of_buyer_property_period'));
+    }
+
+    // ─── Phase 5/6 QA Follow-up: Buyer Inspection Cleanup ────────────────────
+
+    /** Buyer create drops the duplicate "Due Diligence / Inspection Period" UI. */
+    public function test_buyer_create_drops_duplicate_due_diligence_field(): void
+    {
+        $html = $this->actingAs($this->makeAgentUser())
+            ->get('/offer-listing/buyer')->assertStatus(200)->getContent();
+
+        $this->assertStringContainsString('Inspection Contingency', $html);
+        $this->assertStringNotContainsString('Due Diligence / Inspection Period', $html);
+    }
+
+    /** Consolidated Buyer inspection + home-sale period fields persist through edit-save. */
+    public function test_buyer_edit_round_trips_inspection_and_home_sale_periods(): void
+    {
+        $owner   = $this->makeBuyerUser();
+        $auction = $this->makeBuyerAuction($owner, false);
+
+        Livewire::actingAs($owner)
+            ->test(BuyerOfferListingEdit::class, ['auctionId' => $auction->id])
+            ->set('counties', ['Hillsborough'])
+            ->set('state', 'FL')
+            ->set('inspection_contingency_buyer', 'Included')
+            ->set('inspection_contingency_period', '7')
+            ->set('home_sale_contingency', 'Included')
+            ->set('home_sale_contingency_period', '30')
+            ->call('update');
+
+        $fresh = $auction->fresh();
+        $this->assertEquals('7',  $fresh->info('inspection_contingency_period'));
+        $this->assertEquals('30', $fresh->info('home_sale_contingency_period'));
+    }
+
+    // ─── Phase 5/6 QA Follow-up: Bidding Period Pricing UX ───────────────────
+
+    /** Seller Bidding Period hides Desired Sale Price, shows Buy Now / Starting / Reserve. */
+    public function test_seller_bidding_period_hides_desired_sale_price(): void
+    {
+        Livewire::actingAs($this->makeAgentUser())
+            ->test(SellerOfferListing::class)
+            ->set('auction_type', 'Bidding Period')
+            ->assertDontSeeHtml('id="seller_desired_sale_price"')
+            ->assertSeeHtml('wire:model="buy_now_price"')
+            ->assertSeeHtml('wire:model="starting_price"');
+    }
+
+    /** Seller Traditional shows Desired Sale Price and hides the bidding-only prices. */
+    public function test_seller_traditional_shows_desired_sale_price_only(): void
+    {
+        Livewire::actingAs($this->makeAgentUser())
+            ->test(SellerOfferListing::class)
+            ->set('auction_type', 'Traditional')
+            ->assertSeeHtml('wire:model="maximum_budget"')
+            ->assertDontSeeHtml('wire:model="buy_now_price"');
+    }
+
+    /** Landlord Bidding Period hides Desired Lease Price, shows Lease Now / Starting / Reserve. */
+    public function test_landlord_bidding_period_hides_desired_lease_price(): void
+    {
+        Livewire::actingAs($this->makeAgentUser())
+            ->test(LandlordOfferListing::class)
+            ->set('auction_type', 'Bidding Period')
+            ->assertDontSeeHtml('id="landlord_desired_lease_price"')
+            ->assertSeeHtml('wire:model="lease_now_price"')
+            ->assertSeeHtml('wire:model="starting_rent"');
+    }
+
+    // ─── Phase 5/6 QA Follow-up: Hire-Agent Rep & Compatibility edit parity ──
+
+    /**
+     * Critical regression guard: the Hire-Agent EDIT component must declare ALL FOUR
+     * role sub-arrays of compatibility_preferences. When only tenant_specific was present,
+     * Seller/Buyer/Landlord edits failed to preload AND Save Edit wiped the other roles'
+     * stored data.
+     */
+    public function test_hire_edit_component_declares_all_compat_roles(): void
+    {
+        $default = (new ReflectionClass(\App\Http\Livewire\TenantAgentAuctionEdit::class))
+            ->getDefaultProperties()['compatibility_preferences'];
+
+        $this->assertArrayHasKey('tenant_specific', $default);
+        $this->assertArrayHasKey('seller_specific', $default);
+        $this->assertArrayHasKey('buyer_specific', $default);
+        $this->assertArrayHasKey('landlord_specific', $default);
+
+        // Spot-check a few keys that the QA listing-display parity work depends on.
+        $this->assertArrayHasKey('willing_to_negotiate_on', $default['seller_specific']);
+        $this->assertArrayHasKey('support_level', $default['buyer_specific']);
+        $this->assertArrayHasKey('lease_terms_flexibility', $default['landlord_specific']);
     }
 }

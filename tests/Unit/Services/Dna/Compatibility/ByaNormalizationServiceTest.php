@@ -392,10 +392,12 @@ class ByaNormalizationServiceTest extends TestCase
         // representation_philosophy — ABSENT for Tenant
         $this->assertTrue($payload['traits']['representation_philosophy']['missing']);
 
-        // informational_context has exactly 10 keys for Tenant
-        $this->assertCount(10, $ic);
+        // informational_context has exactly 11 keys for Tenant
+        // (BYA_NORM_V1.1: budget_flexibility added — see Phase 5/6 QA Follow-up).
+        $this->assertCount(11, $ic);
         $this->assertArrayHasKey('most_important_agent_traits', $ic);
         $this->assertArrayHasKey('concerns_or_barriers', $ic);
+        $this->assertArrayHasKey('budget_flexibility', $ic);
 
         // proxy_risk_flags empty for Tenant
         $this->assertEmpty($payload['proxy_risk_flags']);
@@ -711,5 +713,89 @@ class ByaNormalizationServiceTest extends TestCase
         $this->assertArrayNotHasKey('proxy_risk_flags',
             $payload['traits']['property_strategy_fit'],
             'property_strategy_fit must not carry proxy_risk_flags when tenant_type_preference is absent');
+    }
+
+    // -------------------------------------------------------------------------
+    // Phase 5/6 QA Follow-up: literal "Other" resolves to the user's companion
+    // free-text so Ask AI / narrative never surface the bare placeholder "Other".
+    // -------------------------------------------------------------------------
+
+    /** Scalar "Other" goal resolves via the suffix companion (Seller/Buyer/Landlord form). */
+    public function test_other_goal_resolves_to_suffix_companion_seller(): void
+    {
+        $listing = $this->makeListingStub(9001, [
+            'seller_specific' => [
+                'primary_transaction_goal'       => 'Other',
+                'primary_transaction_goal_other' => 'Sell quickly to relocate',
+            ],
+        ]);
+
+        $payload = $this->service->normalize($listing, 'seller');
+
+        $this->assertSame('Sell quickly to relocate',
+            $payload['traits']['property_strategy_fit']['value']);
+    }
+
+    /** Scalar "Other" goal resolves via the prefix companion (Tenant naming form). */
+    public function test_other_goal_resolves_to_prefix_companion_tenant(): void
+    {
+        $listing = $this->makeListingStub(9002, [
+            'tenant_specific' => [
+                'primary_rental_goal'       => 'Other',
+                'other_primary_rental_goal' => 'Short-term corporate housing',
+            ],
+        ]);
+
+        $payload = $this->service->normalize($listing, 'tenant');
+
+        $this->assertSame('Short-term corporate housing',
+            $payload['traits']['property_strategy_fit']['value']);
+    }
+
+    /** A multi-select "Other" element is replaced by the companion free-text (Buyer). */
+    public function test_other_in_priorities_array_resolves_buyer(): void
+    {
+        $listing = $this->makeListingStub(9003, [
+            'buyer_specific' => [
+                'representation_priorities'       => ['Market Expertise', 'Other'],
+                'representation_priorities_other' => 'Bilingual negotiation',
+            ],
+        ]);
+
+        $payload = $this->service->normalize($listing, 'buyer');
+        $vals    = $payload['traits']['representation_priorities']['value'];
+
+        $this->assertContains('Bilingual negotiation', $vals);
+        $this->assertNotContains('Other', $vals);
+    }
+
+    /** With no companion text, the literal value is preserved (no data loss). */
+    public function test_other_without_companion_is_preserved(): void
+    {
+        $listing = $this->makeListingStub(9004, [
+            'seller_specific' => ['primary_transaction_goal' => 'Other'],
+        ]);
+
+        $payload = $this->service->normalize($listing, 'seller');
+
+        $this->assertSame('Other', $payload['traits']['property_strategy_fit']['value']);
+    }
+
+    /**
+     * BYA_NORM_V1.1: Tenant budget_flexibility now surfaces in informational_context so
+     * Ask AI can read it (previously unrepresented). Buyer "Meeting / Showing Preference"
+     * (communication_frequency) is already covered by collaboration_style.showing_format_preference.
+     */
+    public function test_tenant_budget_flexibility_surfaces_to_ask_ai(): void
+    {
+        $listing = $this->makeListingStub(9005, [
+            'tenant_specific' => ['budget_flexibility' => 'Flexible for the right home'],
+        ]);
+
+        $payload = $this->service->normalize($listing, 'tenant');
+
+        $this->assertArrayHasKey('budget_flexibility', $payload['informational_context']);
+        $this->assertSame('Flexible for the right home',
+            $payload['informational_context']['budget_flexibility']);
     }
 }

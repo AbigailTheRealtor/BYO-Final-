@@ -254,6 +254,7 @@ All keys in `informational_context` are `null` when the consumer did not populat
 | Key in bag | Source raw sub-key | Type | Description |
 |---|---|---|---|
 | `preferred_contact_time_of_day` | `preferred_contact_method` | string\|null | Preferred time of day to be reached (remapped from the misleadingly named raw key; time-of-day preference is scheduling convenience, not a compatibility trait) |
+| `budget_flexibility` | `budget_flexibility` | string\|null | How flexible the tenant's budget is for the right home (informational, not a scored trait — **added BYA_NORM_V1.1, Phase 5/6 QA Follow-up**) |
 | `most_important_agent_traits` | `most_important_agent_traits` | array\|null | Agent personal qualities valued most (multi-select) |
 | `concerns_or_barriers` | `concerns_or_barriers` | string\|null | Free-text rental-search concerns or circumstances |
 | `additional_compatibility_notes` | `additional_compatibility_notes` | string\|null | Free-text notes the consumer added |

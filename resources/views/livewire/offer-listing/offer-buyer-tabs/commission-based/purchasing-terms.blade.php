@@ -297,6 +297,25 @@
             </div>
             <span class="error mt-2" id="assumable_bridge_gap_cash_error"></span>
         </div>
+
+        {{-- A6.33: Assumption Fee Responsibility — who pays the loan assumption fee. --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">Assumption Fee Responsibility:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Who should be responsible for any loan assumption fee if one applies.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <select wire:model="assumption_fee_responsibility" class="form-control has-icon"
+                    data-icon="fa-solid fa-handshake">
+                    <option value="">Select</option>
+                    <option value="Buyer">Buyer</option>
+                    <option value="Seller">Seller</option>
+                    <option value="Split">Split</option>
+                </select>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -1542,61 +1561,25 @@
     </div>
 </div>
 
-<!-- 3. Due Diligence / Inspection Period -->
-<div class="form-group mt-3">
-    <label class="fw-bold">Due Diligence / Inspection Period:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether the Buyer is requesting a due diligence and property inspection period after contract acceptance.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <select wire:model="due_diligence_yn" class="form-control has-icon"
-            data-icon="fa-solid fa-magnifying-glass">
-            <option value="">Select</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-        </select>
-    </div>
-</div>
+{{-- Phase 5/6 QA Follow-up (Buyer Inspection Cleanup): the three previously-duplicated
+     inspection concepts — "Due Diligence / Inspection Period" ($due_diligence_yn),
+     "Inspection Period Duration" ($inspection_period_days / $inspection_period_other) and
+     "Inspection Contingency" ($inspection_contingency_buyer) — are consolidated into ONE
+     canonical "Inspection Contingency" field (Included / Waived / Negotiable / Not Applicable)
+     with a conditional "Inspection Contingency Period (Days)". The legacy due-diligence props
+     remain wired in the component (draft/load/saveMeta) for backward compatibility — existing
+     stored values are preserved and never rewritten — but their inputs are no longer rendered. --}}
 
-@if ($due_diligence_yn === 'Yes')
-<div class="form-group mt-3">
-    <label class="fw-bold">Inspection Period Duration:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the number of days the Buyer requests for due diligence and property inspections after contract acceptance.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <select wire:model="inspection_period_days" class="form-control has-icon"
-            data-icon="fa-regular fa-calendar-days">
-            <option value="">Select</option>
-            <option value="5 Days">5 Days</option>
-            <option value="7 Days">7 Days</option>
-            <option value="10 Days">10 Days</option>
-            <option value="14 Days">14 Days</option>
-            <option value="15 Days">15 Days</option>
-            <option value="21 Days">21 Days</option>
-            <option value="30 Days">30 Days</option>
-            <option value="Negotiable">Negotiable</option>
-            <option value="Other">Other</option>
-        </select>
-    </div>
-</div>
+@php
+    // Show the period (Days) field only when the Buyer is keeping the contingency in play.
+    $__buyerShowsPeriod = fn ($val) => in_array(
+        \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay((string) $val),
+        ['Included', 'Negotiable'],
+        true
+    );
+@endphp
 
-@if ($inspection_period_days === 'Other')
-<div class="form-group mt-2">
-    <div class="input-cover">
-        <input type="text" wire:model="inspection_period_other" class="form-control has-icon"
-            data-icon="fa-solid fa-magnifying-glass"
-            placeholder="Enter inspection period duration (e.g., 3 days)">
-    </div>
-</div>
-@endif
-@endif
-
-<!-- 4. Inspection Contingency -->
+<!-- 3. Inspection Contingency (canonical, consolidated) -->
 <div class="form-group mt-3">
     <label class="fw-bold">Inspection Contingency:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1604,16 +1587,41 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
+    @php
+        // Canonical buyer option set (Included / Waived / Negotiable / Not Applicable).
+        // Legacy values (Yes → Included, No → Waived) render under their canonical label
+        // while their stored value is preserved (no rewrite).
+        $__inOpts   = \App\Helpers\ContingencyOptionHelper::BUYER_APPRAISAL_FINANCING;
+        $__inCur    = $inspection_contingency_buyer;
+        $__inLegacy = ($__inCur !== '' && !in_array($__inCur, $__inOpts, true))
+            ? \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($__inCur) : null;
+    @endphp
     <div class="input-cover">
         <select wire:model="inspection_contingency_buyer" class="form-control has-icon"
             data-icon="fa-solid fa-file-signature">
             <option value="">Select</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-            <option value="Waived">Waived</option>
+            @foreach ($__inOpts as $__o)
+                <option value="{{ ($__inLegacy === $__o) ? $__inCur : $__o }}">{{ $__o }}</option>
+            @endforeach
         </select>
     </div>
 </div>
+
+@if ($__buyerShowsPeriod($inspection_contingency_buyer))
+<div class="form-group mt-3">
+    <label class="fw-bold">Inspection Contingency Period (Days):
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the number of days the Buyer requires for the inspection contingency period (e.g., 7).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="number" wire:model="inspection_contingency_period" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar-days" min="1" max="365"
+            placeholder="Enter number of days for the inspection contingency (e.g., 7)">
+    </div>
+</div>
+@endif
 
 <!-- 5. Appraisal Contingency -->
 <div class="form-group mt-3">
@@ -1643,7 +1651,7 @@
     </div>
 </div>
 
-@if (\App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($appraisal_contingency_buyer) === 'Included')
+@if ($__buyerShowsPeriod($appraisal_contingency_buyer))
 <div class="form-group mt-3">
     <label class="fw-bold">Appraisal Contingency Period (Days):
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1685,7 +1693,7 @@
 </div>
 
 <!-- 7. Financing Contingency Period -->
-@if (\App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($financing_contingency_buyer) === 'Included')
+@if ($__buyerShowsPeriod($financing_contingency_buyer))
 <div class="form-group mt-3">
     <label class="fw-bold">Financing Contingency Period (Days):
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1729,7 +1737,21 @@
     </div>
 </div>
 
-@if (\App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($home_sale_contingency) === 'Included')
+@if (in_array(\App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($home_sale_contingency), ['Included', 'Negotiable'], true))
+<div class="form-group mt-3">
+    <label class="fw-bold">Home Sale Contingency Period (Days):
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the number of days the Buyer requires to complete the sale of their current home (e.g., 30).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="number" wire:model="home_sale_contingency_period" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar-days" min="1" max="365"
+            placeholder="Enter number of days for the home sale contingency (e.g., 30)">
+    </div>
+</div>
+
 <div class="form-group mt-3">
     <label class="fw-bold">Buyer Property Address or Description:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

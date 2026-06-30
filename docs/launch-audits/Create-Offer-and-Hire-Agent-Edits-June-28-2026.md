@@ -347,17 +347,17 @@ These apply to **all** affected fields across Create Seller/Buyer/Landlord/Tenan
 
 | ID | Item | Priority | Roles | Flows | Status |
 |----|------|----------|-------|-------|--------|
-| **A6.31** | For Assumable: after **Assumption Fee**, add question **Assumption Fee Responsibility**. | Medium | Seller, Buyer | Hire + Create | ⬜ |
-| **A6.32** | Assumption Fee Responsibility options: Buyer, Seller, Split. | Medium | Seller, Buyer | Hire + Create | ⬜ |
-| **A6.33** | Add Assumption Fee Responsibility to: Hire Buyer, Hire Seller, Create Seller, Create Buyer. | Medium | Seller, Buyer | Hire + Create | ⬜ |
-| **A6.34** | Add correct tooltip + placeholder (S1/S4). | Low | Seller, Buyer | Hire + Create | ⬜ |
-| **A6.35** | Timing of Transfer → if **Other**, placeholder matches Create Seller. | Low | Seller | Hire | ⬜ |
-| **A6.36** | Create Seller: Acceptable Exchange Item selects then unselects on click — fix so selection persists. | High | Seller | Create | ⬜ |
-| **A6.37** | Hire Seller: Acceptable Exchange Item **Other** doesn't open selection — fix; Estimated Value + Acceptable Condition must not disappear while typing (S7). | High | Seller | Hire | ⬜ |
-| **A6.38** | Fix Hire Agent number/currency fields where periods are deleted — audit: Additional Cash Seller Will Require, Seller's Desired Offering Price for Lease Option, Monthly Payment the Seller Will Accept, Offered Option Fee, Balloon Payment. | High | Seller (Hire) | Hire | ⬜ |
-| **A6.39** | Number/currency fields must allow commas + decimals where appropriate (S9). | High | All | Hire + Create | ⬜ |
-| **A6.40** | Down Payment in Hire Agent defaults to **%** (S9). | Medium | Buyer/Seller | Hire | ⬜ |
-| **A6.41** | Pets Allowed: Number of Pets Allowed + Maximum Weight Per Pet (lbs) must not use number text input; match Create Seller format. | Medium | Landlord/Seller | Hire vs Create | ⬜ |
+| **A6.31** | For Assumable: after **Assumption Fee**, add question **Assumption Fee Responsibility**. | Medium | Seller, Buyer | Hire + Create | ✅ (Batch 9 — Seller flows; new field added after Assumption Fee) |
+| **A6.32** | Assumption Fee Responsibility options: Buyer, Seller, Split. | Medium | Seller, Buyer | Hire + Create | ✅ (Batch 9 — Buyer/Seller/Split) |
+| **A6.33** | Add Assumption Fee Responsibility to: Hire Buyer, Hire Seller, Create Seller, Create Buyer. | Medium | Seller, Buyer | Hire + Create | ✅ (Batch 9 — all four flows: Hire Seller + Create Seller; Hire Buyer (shared TenantAgentAuction route `hire.agent.auction.draft`) + Create Buyer wired in BuyerOfferListing/Edit; parity tests added) |
+| **A6.34** | Add correct tooltip + placeholder (S1/S4). | Low | Seller, Buyer | Hire + Create | ✅ (Batch 9 — tooltip + Select placeholder) |
+| **A6.35** | Timing of Transfer → if **Other**, placeholder matches Create Seller. | Low | Seller | Hire | ✅ (Batch 9 — matches Create Seller placeholder) |
+| **A6.36** | Create Seller: Acceptable Exchange Item selects then unselects on click — fix so selection persists. | High | Seller | Create | ⚠ Needs Review (Batch 9 — JS select2 init/rehydrate conflict; browser repro needed) |
+| **A6.37** | Hire Seller: Acceptable Exchange Item **Other** doesn't open selection — fix; Estimated Value + Acceptable Condition must not disappear while typing (S7). | High | Seller | Hire | ⚠ Needs Review (Batch 9 — server @if + @this.set(...,false) no-render; browser repro needed) |
+| **A6.38** | Fix Hire Agent number/currency fields where periods are deleted — audit: Additional Cash Seller Will Require, Seller's Desired Offering Price for Lease Option, Monthly Payment the Seller Will Accept, Offered Option Fee, Balloon Payment. | High | Seller (Hire) | Hire | ✅ (Batch 9 — 5 named fields already type=text+validateInput; decimals preserved) |
+| **A6.39** | Number/currency fields must allow commas + decimals where appropriate (S9). | High | All | Hire + Create | ✅ (Batch 10 — all live currency inputs in Seller/Buyer Create+Hire now `type="text"`+`validateInput`; final gap was Create Seller broker-compensation flat-fee combos, now at parity with already-converted Hire Seller. Percentage/term inputs and commented-out dead code intentionally left as `type="number"`.) |
+| **A6.40** | Down Payment in Hire Agent defaults to **%** (S9). | Medium | Buyer/Seller | Hire | ✅ (Batch 9 — TenantAgentAuction down_payment_type default → %) |
+| **A6.41** | Pets Allowed: Number of Pets Allowed + Maximum Weight Per Pet (lbs) must not use number text input; match Create Seller format. | Medium | Landlord/Seller | Hire vs Create | ✅ (Batch 9 — Hire Landlord pets aligned to Create Seller; Hire Seller already matched) |
 
 *Compatibility:* preserve saved numeric/exchange/pet values; map formats safely (S15). *Validation:* numeric fields accept formatted input; Other requires custom value. *Manual:* type decimals/commas — not stripped; select Other on exchange — opens + persists; pets fields match Create format.
 
@@ -372,14 +372,14 @@ These apply to **all** affected fields across Create Seller/Buyer/Landlord/Tenan
 
 | ID | Item | Priority | Roles | Flows | Status |
 |----|------|----------|-------|-------|--------|
-| **A7.42** | Create Seller: Additional Seller Sale Terms box too small → match Total Number of Parcels box (same type/size); fix placeholder capitalization (S2). | Medium | Seller | Create | ⬜ |
-| **A7.43** | Create Seller: enlarge to match Total Number of Parcels box — Additional Parcel ID's, Legal Description, Special Assessment Description, Approval Process Details, Additional Leasing Restrictions. | Medium | Seller | Create | ⬜ |
-| **A7.44** | Minimum Lease Period → if **Other**, placeholder examples that don't already match an option (S3). | Low | Seller | Create | ⬜ |
-| **A7.45** | What Does the Association Fee Include → if **Other**, placeholder examples not already an option (S3). | Low | Seller | Create | ⬜ |
+| **A7.42** | Create Seller: Additional Seller Sale Terms box too small → match Total Number of Parcels box (same type/size); fix placeholder capitalization (S2). | Medium | Seller | Create | ✅ (Batch 12 — `.seller-compact-textarea` = form-control height (= Total Number of Parcels box) already in Create; Edit wrapper aligned 50px → form-control height for Create/Edit parity; placeholder examples capitalized) ⚠ browser-confirm size |
+| **A7.43** | Create Seller: enlarge to match Total Number of Parcels box — Additional Parcel ID's, Legal Description, Special Assessment Description, Approval Process Details, Additional Leasing Restrictions. | Medium | Seller | Create | ✅ (Batch 12 — same shared `.seller-compact-textarea` rule; all five fields already form-control height in Create, now Edit matches too) ⚠ browser-confirm size |
+| **A7.44** | Minimum Lease Period → if **Other**, placeholder examples that don't already match an option (S3). | Low | Seller | Create | ✅ (Batch 13 — `min_lease_period_other` placeholder `6 months, 12 months, seasonal lease` (dupes 6 Months/1 Year options) → `18 Months, Seasonal lease, Month-to-month after first year`) |
+| **A7.45** | What Does the Association Fee Include → if **Other**, placeholder examples not already an option (S3). | Low | Seller | Create | ✅ (Batch 13 — `association_fee_includes_other` placeholder `Roof maintenance, Building reserves` (dupes Roof Maintenance option) → `Snow removal, Building reserves, Concierge service`) |
 | **A7.46** | Create Seller: **Business listing cannot submit** — fix submit. | Critical | Seller | Create (business) | 🟡 Needs Review (Batch 4 — submits cleanly server-side per regression test; reported bug, if real, is client-side JS — needs browser repro) |
-| **A7.47** | Hire Agent Vacant Land Property Style: if **Other** + Vacant Land, remove "Other property style" text above input; correct placeholder format; only first letter of each example capitalized (S2/S3). | Low | Seller | Hire | ⬜ |
-| **A7.48** | Create Offer Vacant Land: if **Other** + Vacant Land, show blank input; placeholder `Enter property style (e.g., [actual examples])`, comma-separated, sentence-style (S1/S2/S3). | Low | Seller | Create | ⬜ |
-| **A7.49** | Create Offer: **Front Footage** can use regular text box (not number box) (S8). | Low | Seller | Create | ⬜ |
+| **A7.47** | Hire Agent Vacant Land Property Style: if **Other** + Vacant Land, remove "Other property style" text above input; correct placeholder format; only first letter of each example capitalized (S2/S3). | Low | Seller | Hire | ✅ (Batch 14 — shared Hire partial `seller-agent-auction-tabs/…/property-preferences`: removed "Other Property Style" label; placeholder Title-Case → sentence-style `Enter property style (e.g., Solar farm, RV park, Conservation easement)`) |
+| **A7.48** | Create Offer Vacant Land: if **Other** + Vacant Land, show blank input; placeholder `Enter property style (e.g., [actual examples])`, comma-separated, sentence-style (S1/S2/S3). | Low | Seller | Create | ✅ (Batch 14 — Create Seller `offer-seller-tabs/…/property-preferences`: removed "Other Property Style" label; placeholder `Enter land use…` → `Enter property style (e.g., Solar farm, RV park, Conservation easement)`; examples are non-options) |
+| **A7.49** | Create Offer: **Front Footage** can use regular text box (not number box) (S8). | Low | Seller | Create | ✅ (Batch 11 — Create Seller `front_footage` input `type="number"` → `type="text"`; lifecycle (prop/draft/load/saveMeta) + `nullable|numeric|min:0` publish rule + public display unchanged; render + save-draft round-trip tests added) |
 
 *Compatibility:* sizing is presentational; business-submit fix must not alter saved business data; preserve vacant-land saved styles. *Validation:* business publish validation passes. *Manual:* submit a business listing; resize boxes match; vacant-land Other shows blank input with correct placeholder.
 
@@ -606,8 +606,8 @@ Rationale: structural save/validation/privacy fixes must land and be verified be
 | 3 | Shared Address/Map | 7 | 0 | 0 | 7 | — | ⬜ |
 | 4 | Field Parity / Property Condition | 3 | 3 | 0 | 0 | — | ✅ Complete (A4.26/A4.27/A4.28) |
 | 5 | Contingencies | 2 | 2 | 0 | 0 | — | ✅ Complete (A5.29/A5.30; CONF‑1/CONF‑4 resolved) |
-| 6 | Assumable/Exchange/Number | 11 | 0 | 0 | 11 | — | ⬜ |
-| 7 | Seller Size/Business/Vacant Land | 8 | 0 | 0 | 7 | ⚠×1 (A7.46) | 🟡 A7.46 Needs Review |
+| 6 | Assumable/Exchange/Number | 11 | 9 | 0 | 0 | ⚠×2 (A6.36/A6.37) | 🟡 part 1 + A6.33 + A6.39 done; A6.36/A6.37 Needs Review |
+| 7 | Seller Size/Business/Vacant Land | 8 | 7 | 0 | 0 | ⚠×1 (A7.46) | 🟡 A7.42–A7.45/A7.47–A7.49 ✅; A7.46 Needs Review (only remaining) |
 | 8 | Tooltip/Placeholder/UI Text | 15 | 0 | 0 | 15 | — | ⬜ |
 | 9 | Buyer/Tenant Search Areas + Important Places | 11 | 0 | 0 | 11 | — | ⬜ |
 | 10 | Description/Additional Details Placeholders | 2 | 0 | 0 | 2 | — | ⬜ |
@@ -615,9 +615,9 @@ Rationale: structural save/validation/privacy fixes must land and be verified be
 | 12 | Hire Buyer + Create Buyer fixes | 18 | 0 | 0 | 18 | ⚠×2 | ⬜ |
 | 13 | Global Parity & Privacy | 14 | 3 | 1 | 10 | — | 🟡 C9,C3,C11 ✅; C10 🟡 |
 | 14 | Final Global UI Standards Audit | 1 | 0 | 0 | 1 | — | ⬜ |
-| **Total** | | **117** | **18** | **1** | **96** | **⚠×2 batch (A1.12,A7.46) + ⚠×4 conflicts (CONF‑1/4 resolved)** | 🟡 In progress |
+| **Total** | | **117** | **33** | **2** | **78** | **⚠×4 batch (A1.12,A7.46,A6.36,A6.37) + ⚠×4 conflicts** | 🟡 In progress |
 
-> Progress note: Batch 0 — financing-placeholder fix (S1/S2). Batch 1 — A1.10 ✅, C9 ✅, C10 🟡. Batch 2 — A1.2–A1.7 ✅ (Listing Type / Bidding Period restored; A1.1 deferred). Batch 3 — A1.11 ✅, A1.13 ✅, A1.12 🟡 Needs Review (Create publish labels → "Submit"). Batch 4 — A1.14 ✅, C3 ✅, A7.46 🟡 Needs Review (server-side submit verified). Batch 5 — C11 ✅ (AI Knowledge Base privacy verified; scratch file removed). Batch 6 — A4.28 ✅ (Hire Seller per-unit SqFt Heated); A4.27 Buyer/Tenant/Landlord match ✅. Batch 7 — A4.26/A4.27 ✅ (Seller condition unified on 7-option list per owner decision). **Phase 4 complete.** Batch 8 — A5.29/A5.30 ✅ (contingency option sets + legacy display-mapping; CONF‑1/CONF‑4 resolved). **Phase 5 complete.** See §16 Implementation Log.
+> Progress note: Batch 0 — financing-placeholder fix (S1/S2). Batch 1 — A1.10 ✅, C9 ✅, C10 🟡. Batch 2 — A1.2–A1.7 ✅ (Listing Type / Bidding Period restored; A1.1 deferred). Batch 3 — A1.11 ✅, A1.13 ✅, A1.12 🟡 Needs Review (Create publish labels → "Submit"). Batch 4 — A1.14 ✅, C3 ✅, A7.46 🟡 Needs Review (server-side submit verified). Batch 5 — C11 ✅ (AI Knowledge Base privacy verified; scratch file removed). Batch 6 — A4.28 ✅ (Hire Seller per-unit SqFt Heated); A4.27 Buyer/Tenant/Landlord match ✅. Batch 7 — A4.26/A4.27 ✅ (Seller condition unified on 7-option list per owner decision). **Phase 4 complete.** Batch 8 — A5.29/A5.30 ✅ (contingency option sets + legacy display-mapping; CONF‑1/CONF‑4 resolved). **Phase 5 complete.** Batch 12 — **Phase 5/6 QA Follow-up** (manual-browser-discovered): Seller Inspection Contingency Preference + conditional per-contingency periods; Buyer inspection consolidation (one Inspection Contingency + period; duplicate Due-Diligence UI retired, data preserved); Bidding-Period pricing (Traditional shows Desired price only, Bidding shows Buy/Lease-Now+Starting+Reserve only); **Hire-Agent Representation & Compatibility parity all 4 roles** — incl. the critical `TenantAgentAuctionEdit` all-roles load/save fix (was wiping seller/buyer/landlord compat data on Save Edit), display parity (Seller/Buyer expanded), Seller/Tenant edit select2 rehydration, textarea→input, draft-hash inclusion. 80/80 in `CreateEditParityRegressionTest`; browser-verify of select2 edit-preload + Ask-AI "Other" resolution (governed) outstanding. See §16 Implementation Log.
 
 > Item counts are checklist rows; several rows govern all four roles. Update this table after every phase.
 
@@ -761,6 +761,190 @@ To proceed without blocking, the following defaults are adopted and recorded (re
 ## 16. IMPLEMENTATION LOG
 
 Append one entry per verified batch. Each records files changed, why, verification, and residual risk. Keep newest at top.
+
+### 2026-06-30 — Batch 12: Phase 5/6 QA Follow-up + Hire-Agent Rep & Compatibility parity
+
+**Scope:** owner-reported follow-ups from manual browser QA, spanning three Create-Offer UX items and the Hire-Agent "Representation Preferences & Compatibility" section across all four roles. Implemented in safe sub-batches (Offer-Listing files first — fully isolated; then the shared `TenantAgentAuction(.php/Edit)` Hire flow). **Not committed — awaiting owner approval.**
+
+**1. Seller Contingency UX (QA-A) — DONE.** Added an **Inspection Contingency Preference** select (Accepted / Not Accepted / Negotiable / Not Applicable, seller-perspective via `ContingencyOptionHelper::SELLER` + legacy display-map) and paired every Seller contingency with a conditional **Preferred … Period (Days)** field shown only when the contingency is Accepted or Negotiable (hidden for Not Accepted / Not Applicable). New persisted fields: `inspection_contingency_preference`, `appraisal_contingency_period`, `financing_contingency_period`, `sale_of_buyer_property_period` (existing `preferred_inspection_period` reused). Full lifecycle (prop / draft payload / load / saveMeta) wired in `SellerOfferListing` + `SellerOfferListingEdit`; detail rows added to `seller/view.blade.php`. Legacy mapping preserved; no stored value rewritten.
+
+**2. Buyer Inspection Cleanup (QA-B) — DONE.** Consolidated the three duplicate inspection concepts (`due_diligence_yn`, `inspection_period_days`/`_other`, `inspection_contingency_buyer`) into ONE canonical **Inspection Contingency** (Included / Waived / Negotiable / Not Applicable via `BUYER_APPRAISAL_FINANCING` + legacy Yes→Included / No→Waived map) with a conditional **Inspection Contingency Period (Days)**. The legacy Due-Diligence inputs are no longer rendered but their props/persistence remain intact (backward compat — values preserved, never rewritten; the new period field falls back to the legacy `inspection_period_days` on load). Extended the Included→show-period gate to **Included OR Negotiable** for Inspection, Appraisal, Financing and Home Sale; added a **Home Sale Contingency Period (Days)** field. New persisted fields: `inspection_contingency_period`, `home_sale_contingency_period` (wired in `BuyerOfferListing` + `BuyerOfferListingEdit`; detail consolidated in `buyer/view.blade.php`).
+
+**3. Bidding Period Pricing UX (QA-C) — DONE.** Traditional listings now show only **Desired Sale Price** (Seller) / **Desired Lease Price** (Landlord); Bidding-Period listings hide that competing target and show only **Buy/Lease Now + Starting + Reserve**. The `$maximum_budget`/`$desired_rental_amount` props + persistence are untouched (Traditional + backward compat). Detail views (`seller/view`, `landlord/view`) gate the pricing rows by `auction_type`. The Landlord detail label was corrected to "Desired Lease Price". (All eight price inputs were already `type="text"` + money JS — no S9 change needed.)
+
+**4. Hire-Agent Representation Preferences & Compatibility (Seller/Buyer/Landlord/Tenant) — DONE (server + JS); browser-verify pending.**
+   - **ROOT-CAUSE FIX (critical, all roles):** `TenantAgentAuctionEdit` declared and loaded **only** `tenant_specific` of the `compatibility_preferences` blob. On Seller/Buyer/Landlord edits this meant (a) nothing preloaded and (b) **Save Edit wrote a blob containing only `tenant_specific`, wiping the other roles' stored data**. Fixed the Edit schema default + load to carry **all four** role sub-arrays (merged over per-role defaults), mirroring the create component. This is the single most important fix and the true cause of "values disappear after Save Edit".
+   - **Listing-display parity:** expanded the Seller (`hire_seller_agent/view`) and Buyer (`buyerAgentAuctionDetail`) detail sections to render every captured field when populated (Seller 9→22 rows; Buyer 8→14), with "Other" resolution. Landlord (`hire_landlord_agent/view`) and Tenant (`hire_tenant_agent/view`) were already at full parity — verified, unchanged.
+   - **Edit select2 rehydration:** ported the missing **Seller single-select** rehydration+sync block from the create blade into `initSellerCompatSelect2FieldsEdit` (12 dropdowns previously never restored on edit). Reworked the **Tenant** edit init to mirror create exactly (plain selects via `el.value`, full `compatOtherMap` for all four "Other" wrappers incl. the previously-missing `desired_level_of_agent_involvement`, live-value rehydration for the two multi-selects) — fixes "dropdown shows Select instead of Other on edit". Landlord singles bind via `wire:model` (native preload) + existing RP multi rehydration.
+   - **Input-style consistency:** converted the Seller (`what_did_not_work_before`, `additional_compatibility_notes`) and Tenant (`concerns_or_barriers`, `additional_compatibility_notes`) textareas to single-line text inputs.
+   - **Draft change-detection:** added `compatibility_preferences` to `TenantAgentAuction::buildDraftPayloadHash()` (was omitted, so compat-only edits didn't bump the draft hash).
+
+**Files changed (this batch — Phase 5/6 QA scope):** `offer-seller-tabs/.../seller-terms.blade.php`, `offer-listing/seller/view.blade.php`, `offer-landlord-tabs/.../lease-terms.blade.php`, `offer-listing/landlord/view.blade.php`, `offer-buyer-tabs/.../purchasing-terms.blade.php`, `offer-listing/buyer/view.blade.php`, `SellerOfferListing.php`, `SellerOfferListingEdit.php`, `BuyerOfferListing.php`, `BuyerOfferListingEdit.php`, `TenantAgentAuction.php`, `TenantAgentAuctionEdit.php`, `tenant-agent-auction-edit.blade.php`, `hire-seller-agent/.../representation-compatibility.blade.php`, `tenant-agent-auction-tabs/.../representation-compatibility.blade.php`, `hire_seller_agent/view.blade.php`, `buyerAgentAuctionDetail.blade.php`; + `tests/Feature/Offers/CreateEditParityRegressionTest.php` (+8 tests), `OfferWorkflowReadinessTest.php` (allowlist).
+
+**Verification:** `CreateEditParityRegressionTest` = **80 passed / 0 failed** (8 new: seller inspection-contingency render + new-field round-trip; buyer duplicate-due-diligence dropped + inspection/home-sale period round-trip; seller/landlord bidding hides desired price; seller traditional shows desired price; **hire edit component declares all 4 compat roles** — the regression guard for the data-wipe fix). All changed components lint clean; all blades compile (`view:cache`). Note: the wider `tests/Feature/Offers/` dir has ~52 PRE-EXISTING cross-suite-pollution failures unrelated to this work (confirmed by stashing this batch and re-running baseline); every suite that renders the changed views passes in isolation.
+
+**5. Ask AI "Other" resolution — DONE (2026-06-30 follow-up).** Implemented at the normalization chokepoint `ByaNormalizationService::slotFromKey()`: a literal `"Other"` (scalar or multi-select element) now resolves to the user's companion free-text, handling **both** naming conventions (`{key}_other` suffix for Seller/Buyer/Landlord and `other_{key}` prefix for Tenant) via a new `otherCompanion()` helper. When no companion text exists the literal is preserved (no data loss). This is the single chokepoint every "Other"-bearing trait (`property_strategy_fit` goal, `representation_priorities`, `collaboration_style`, `guidance_level`, `transaction_pace`, `communication_*`) routes through, so Ask AI / narrative / explanation never surface the bare "Other". 4 new unit tests (suffix, prefix, array, no-companion-preserved). The full BYA compatibility + Ask AI suite (267→**271 passed**) is green; the BYA_NORM_V1 payload **shape** is unchanged (only slot *values* resolve), so no contract/version bump.
+
+**6. PASS/FAIL matrix — see §17.** Every implemented Representation & Compatibility field audited across all 8 lifecycle stages. All 66 fields pass Create/Draft/Edit/Save-Edit/Refresh/Publish/Display; Ask AI passes 63/66 (incl. "Other" resolution) with 3 documented exclusions (2 pre-existing locked-contract gaps + 1 intentional Fair-Housing governance exclusion).
+
+**Residual / browser-verify needed (no faked passes):**
+- The select2 edit-rehydration JS for Seller/Tenant cannot be unit-verified headlessly — needs a live-browser pass of each role's Create → Save Draft → Edit → Save Edit → Refresh → Publish → Listing lifecycle to confirm dropdowns (and "Other") restore and nothing resets to "Select".
+- **Ask AI coverage gaps (governed, owner decision):** Buyer `communication_frequency` ("Meeting / Showing Preference") and Tenant `budget_flexibility` are absent from the **locked** BYA_NORM_V1 `informational_context` (6-key / 10-key counts asserted in `ByaNormalizationServiceTest`). Surfacing them would change the versioned contract + break the count assertions — deferred pending owner sign-off. Landlord `tenant_type_preference` value is intentionally excluded (Fair-Housing proxy flag).
+- QA's Seller "missing field" list named six items with **no backing schema field anywhere** (Travel Flexibility, Emotional Support, Preferred Agent Energy Style, Past Sale Price, "Areas NOT willing to negotiate", Preferred Transaction Date) — confirmed absent (no orphaned UI to hide); implementing them is net-new work requiring owner approval (§17.5).
+
+### 2026-06-28 — Batch 9: Phase 6 part 1 — Assumable / Number / Pets / Down-payment
+
+**Scope note:** Phase 6 (A6.31–A6.41) is large and mixes additive fields, JS-interaction bugs, and broad input-type changes. This batch lands the **clear, verifiable** items + the new field for the **Seller flows**; the broad number conversions, the Buyer-flow placement of the new field, and the two exchange JS bugs are the documented remainder (Phase 6 part 2 — see below).
+
+**Done & verified this batch:**
+1. **A6.31–A6.34 — Assumption Fee Responsibility (Seller flows):** new `assumption_fee_responsibility` select (options `Buyer / Seller / Split`, tooltip + "Select" placeholder) added to the assumable section of **Hire Seller** (`hire-seller-agent/…/seller-terms.blade.php`) and **Create Seller** (`offer-seller-tabs/…/seller-terms.blade.php`). Full persistence (prop + draft payload + submit `saveMeta` + load) added to all four Seller-flow components: `TenantAgentAuction`, `TenantAgentAuctionEdit`, `SellerOfferListing`, `SellerOfferListingEdit` — mirroring the proven `assumable_fee_amount` lifecycle. **Save round-trip + edit prefill tests pass.**
+2. **A6.35 — Timing of Transfer "Other" placeholder:** Hire Seller `crypto_transfer_timing_other` placeholder → matches Create Seller (`Enter Timing of Transfer (e.g., Within 48 hours of contract acceptance)`).
+3. **A6.40 — Down Payment defaults to %:** `TenantAgentAuction::$down_payment_type` default `'$' → '%'` (already `%` in the Edit component; load still reads the saved value, so existing listings are unaffected).
+4. **A6.41 — Pets input format:** Hire **Landlord** `number_of_pets` → `wire:model.defer`, `weight_of_pets` `type="text" → type="number" wire:model.defer`, matching the Create Seller reference. (Hire Seller already matched Create Seller.)
+5. **A6.38 — number/currency periods:** verified the 5 named fields (`additional_cash`, `balloon_payment_amount`, `option_fee_amount`, `lease_option_price`, `lease_option_payment`) **already use** `type="text"` + `validateInput`/`reformatNumber`/`handlePaste`, which preserve decimals; `stripCommas()` only removes commas. So A6.38 is **already compliant** — no period loss in those fields.
+
+**Files changed (7 prod + 2 test):** `TenantAgentAuction.php`, `TenantAgentAuctionEdit.php`, `OfferListing/Seller/SellerOfferListing.php`, `…/SellerOfferListingEdit.php`, `hire-seller-agent/…/seller-terms.blade.php`, `offer-seller-tabs/…/seller-terms.blade.php`, `hire-landlord-agent/…/property-preferences.blade.php`; + `OfferWorkflowReadinessTest.php` (allowlist), `CreateEditParityRegressionTest.php` (+2 tests).
+
+**Verification:** 2 new field tests **PASS**; production-files guard **PASS**; `CreateEditParityRegressionTest` + `OfferWorkflowReadinessTest` + A4.28 = **63 passed / 0 failed**; seller-flow suites green individually (SellerIncomeFieldRoundTrip 22, SellerPaymentAssumptions 19, SellerOfferEntry 5); all 4 components lint-clean; both seller-terms partials compile.
+
+**Phase 6 part 2 — REMAINING (documented, not yet done):**
+- **A6.33 (Buyer-flow placement):** add Assumption Fee Responsibility to **Hire Buyer** + **Create Buyer**. Note: Buyer flows have an Assumable *Financing* section but **no** "Assumption Fee" field, so placement (after the assumable financing block) and whether it's wanted on the buyer side may warrant a quick confirm. ⚠ minor product nuance. → **DONE 2026-06-29** (placed inside the assumable `showDetails` block; see Phase 6 part 2 entry above).
+- **A6.39 (broad currency type=number→text):** → **DONE 2026-06-30 (Batch 10).** Audit of the originally-named fields found them already compliant or out of play: the `$`/flat-fee variants of `assignment_fee_amount`, `down_payment_amount`, and `seller_financing_amount` in Hire Seller/Buyer + Create Buyer are **already** `type="text"`+`validateInput`; their `%` variants are percentages (correctly left `type="number"` — money formatting explicitly excludes percentages); and `cash_budget` / `pre_approval_amount` are **commented-out dead code** in both Seller flows (no runtime effect — not touched). A comment-stripped sweep of all Seller/Buyer Create+Hire tab blades surfaced the real remaining gap in **Create Seller broker-compensation**: three `$` flat-fee currency inputs still `type="number"` while **Hire Seller had already converted them** — see Batch 10 entry below.
+- **A6.36 (Create Seller exchange select/unselect):** ⚠ Needs Review (browser). Root cause: multiple select2 init/rehydrate paths on `#exchange_item` (init at offer-seller-listing.blade.php:1758, a 2nd init ~2223, generic loop ~1447, `rehydrateSelect2MultiFields` 1550) — a stale `.trigger('change.select2')` resets the just-picked option.
+- **A6.37 (Hire Seller exchange "Other" + value/condition):** ⚠ Needs Review (browser). Root cause: Hire reveals "Other" via a server-side `@if`, but the change handler calls `@this.set('exchange_item', …, false)` (no re-render) so the `@if` never re-evaluates; value/condition fields sit in a `wire:ignore.self` subtree torn down on morph. Fix = adopt Create Seller's JS-toggled `#other_exchange_item_wrapper` pattern (needs browser verification).
+
+**Status moves:** A6.31 ✅ · A6.32 ✅ · A6.34 ✅ · A6.35 ✅ · A6.38 ✅ · A6.40 ✅ · A6.41 ✅ · A6.33 🟡 (Seller done, Buyer pending) · A6.39 🟡 (named fields ok; broad conversions pending) · A6.36 ⚠ Needs Review · A6.37 ⚠ Needs Review.
+
+### 2026-06-29 — Batch 9 (Phase 6 part 2): A6.33 Buyer-flow placement — DONE
+
+**Scope:** complete the Buyer half of A6.33 — Assumption Fee Responsibility on **Hire Buyer** + **Create Buyer**, mirroring the Seller work landed in part 1.
+
+**Product nuance resolved:** the Buyer Assumable section is a *Financing* block with no standalone "Assumption Fee" field, so the new `assumption_fee_responsibility` select is placed at the **end of the assumable block, inside the `x-show="showDetails"` (assumable_interest === 'Yes') container** — same options (`Buyer / Seller / Split`), tooltip, and "Select" placeholder as the Seller flows. It therefore resets with the other assumable detail fields when assumable interest is turned off or the Assumable financing type is removed.
+
+**Done & verified:**
+1. **Create Buyer** — `OfferListing/Buyer/BuyerOfferListing.php` + `BuyerOfferListingEdit.php`: full lifecycle wired, mirroring the proven `assumable_bridge_gap_cash` field — prop, `updatedAssumableInterest` reset, `Assumable` financing-removal reset map, draft payload, load (`$auction->get->…`), and submit `saveMeta`. (Edit also gained the new prop declaration.)
+2. **Hire Buyer** — verified persistence **already works** through the shared `TenantAgentAuction` / `TenantAgentAuctionEdit` props: the live Hire-Agent route `hire.agent.auction.draft` (`web.php:677`, `user_type ∈ tenant|landlord|buyer|seller`) is served by `TenantAgentAuction`, whose blade includes the buyer purchasing-terms partial. Prop + load (`info()`) + `saveMeta` already present (added in part 1). **No TenantAgentAuction changes needed.**
+3. Blade field present in `offer-buyer-tabs/commission-based/purchasing-terms.blade.php` and `hire-buyer-agent/…/purchasing-terms.blade.php` (both `wire:model="assumption_fee_responsibility"`).
+
+**Files changed (2 prod + 1 test):** `OfferListing/Buyer/BuyerOfferListing.php`, `…/BuyerOfferListingEdit.php`; + `CreateEditParityRegressionTest.php` (+2 Buyer tests: save round-trip + edit prefill, plus a `makeBuyerAuction` helper). Blade fields were added in the prior session.
+
+**Verification:** both Buyer components lint-clean; `assumption_fee_responsibility` tests (Seller ×2 + Buyer ×2) **4 passed**; full `CreateEditParityRegressionTest` + `OfferWorkflowReadinessTest` previously **63 passed** and unaffected.
+
+**Status move:** A6.33 🟡 → ✅ (all four flows complete). Remaining Phase 6 items unchanged: A6.39 🟡, A6.36 ⚠, A6.37 ⚠.
+
+### 2026-06-30 — Batch 14 (Phase 7, batch 4): A7.47 + A7.48 Vacant Land "Other" property style — DONE
+
+**Scope:** Phase 7 batch 4 — the Property Style = "Other" custom input (Vacant Land) in Hire Seller (A7.47) and Create Seller (A7.48). Remove the redundant label above the input; standardize the placeholder. Hire Seller + Create Seller only.
+
+**Scope confirmation (which files):** the field is `other_property_items` (shown when `property_items === 'Other'`). It lives in two shared partials:
+- **Create Seller:** `offer-listing/offer-seller-tabs/commission-based/property-preferences.blade.php` — `@include`d by `SellerOfferListing` (create) + `SellerOfferListingEdit` (edit).
+- **Hire Seller:** `hire-seller-agent/seller-agent-auction-tabs/commission-based/property-preferences.blade.php` — `@include`d by the Hire Seller create + edit wrappers **and** the Tenant-engine `tenant-agent-auction(.edit).blade.php` and Buyer/Landlord Hire wrappers (one shared Property-Style partial across all Hire flows). Fixing it once gives Create/Edit parity and applies the same corrected wording to every Hire flow (there is no Seller-only Hire partial to fork — and forking would be an unwanted refactor).
+
+**Done & verified (both partials, identical result):**
+1. **Removed the redundant `<label class="fw-bold">Other Property Style:</label>`** above the custom input → clean input (the `<!-- Other Property Style Input -->` HTML comment is invisible dev text, left as-is).
+2. **Placeholder standardized** to `placeholder="Enter property style (e.g., Solar farm, RV park, Conservation easement)"` — `Enter property style` format, sentence-style (first letter of each example only), comma-separated. (Create was `Enter land use (e.g., Solar farm, RV park, Conservation easement)`; Hire was Title-Case `Solar Farm, RV Park, Conservation Easement`.) Examples checked against the Vacant Land option set (Agricultural, Billboard Site, … Well Field) — **0 collisions** (Solar farm / RV park / Conservation easement are not options).
+
+**Parity preserved (presentation-only change):** `other_property_items` keeps full lifecycle wiring — 4 refs each in `SellerOfferListing` + `SellerOfferListingEdit`; persisted in all Hire components (`TenantAgentAuction(.Edit)`, `SellerAgentAuction(.Edit)`); rendered on the public seller view. No prop/persistence/validation change (the input is still conditionally `required` when "Other"), so Draft / Edit preload / Submit / Listing Display / Ask AI all read the same stored value as before.
+
+**Files changed (2 prod + 1 test):** `offer-seller-tabs/…/property-preferences.blade.php` (label + placeholder); `hire-seller-agent/…/property-preferences.blade.php` (label + placeholder); `CreateEditParityRegressionTest.php` (+1 test: both partials use the standard placeholder, old `Enter land use` gone, redundant label gone, examples not Vacant Land options).
+
+**Verification:** new test **PASS**; full `CreateEditParityRegressionTest` = **72 passed / 0 failed**; both partials compile (`view:clear`).
+
+**Manual browser checks still needed:** Create Seller and Hire Seller (and a Hire Buyer/Landlord/Tenant spot-check, since the Hire partial is shared) — set property type to Vacant Land, choose Property Style = "Other", and confirm: no "Other Property Style" label appears above the box, the box is blank, and the placeholder reads `Enter property style (e.g., Solar farm, RV park, Conservation easement)`. Also confirm the field still validates as required and round-trips on save/edit.
+
+**Status move:** A7.47 ⬜ → ✅, A7.48 ⬜ → ✅. **Phase 7 now fully addressed except A7.46 ⚠ Needs Review** (browser repro of the reported business-submit block — untouched).
+
+### 2026-06-30 — Batch 13 (Phase 7, batch 3): A7.44 + A7.45 "Other" placeholder examples — DONE
+
+**Scope:** Phase 7 batch 3 — the free-text "Other" placeholders for two Create Seller HOA fields must show examples that are NOT already selectable options (S3). Placeholder text only; A7.47/A7.48 untouched.
+
+**File:** `offer-listing/offer-seller-tabs/commission-based/tax-legal-hoa-disclosures.blade.php` (Create Seller partial, shared by Create + Edit).
+
+**Done & verified:**
+1. **A7.44 — Minimum Lease Period (`min_lease_period_other`, shown when `min_lease_period === 'Other'`):** placeholder `Enter minimum lease period (e.g., 6 months, 12 months, seasonal lease)` → `Enter minimum lease period (e.g., 18 Months, Seasonal lease, Month-to-month after first year)`. The old examples duplicated existing select options ("6 Months", and "12 months" = the "1 Year" option). New examples are outside the option set (which runs 1 Week … 11 Months, 1 Year, 2 Years).
+2. **A7.45 — What Does the Association Fee Include (`association_fee_includes_other`, shown when "Other" is selected):** placeholder `Enter what else is included (e.g., Roof maintenance, Building reserves)` → `Enter what else is included (e.g., Snow removal, Building reserves, Concierge service)`. The old example "Roof maintenance" duplicated the "Roof Maintenance" option; new examples are outside the option list.
+
+All six new example tokens were checked against the rendered options — **0 collisions**. Examples follow the S3 style (comma-separated, sentence-case, first letter capitalized).
+
+**No persistence/validation change** — placeholder text only. Both `_other` fields already round-trip symmetrically (prop + payload + load + saveMeta = 4 refs each in `SellerOfferListing` + `SellerOfferListingEdit`); the shared partial applies the fix to Create and Edit. Hire Seller has no equivalent field (Create-only, matching the audit scope).
+
+**Files changed (1 prod + 1 test):** `tax-legal-hoa-disclosures.blade.php` (2 placeholders); `CreateEditParityRegressionTest.php` (+1 test asserting new non-option examples present, old option-duplicating examples removed, and no example collides with a literal `<option>`).
+
+**Verification:** new test **PASS**; full `CreateEditParityRegressionTest` = **71 passed / 0 failed**; blade compiles (`view:clear`).
+
+**Manual browser checks still needed:** in the Create **and** Edit Seller HOA section, select "Other" for Minimum Lease Period and for Association Fee Include and confirm the revealed text box shows the new example hints (and that they read as genuine non-option suggestions).
+
+**Status move:** A7.44 ⬜ → ✅, A7.45 ⬜ → ✅. Remaining Phase 7: A7.47/A7.48 (Vacant Land "Other" property style); A7.46 ⚠ Needs Review.
+
+### 2026-06-30 — Batch 12 (Phase 7, batch 2): A7.42 + A7.43 textarea sizing + placeholder cap — DONE
+
+**Scope:** Phase 7 batch 2 — make the six compact Seller free-text boxes match the UI size/format of the "Total Number of Parcels" box; capitalize the A7.42 placeholder examples. Sizing only + the one placeholder; A7.44/A7.45/A7.47/A7.48 untouched.
+
+**Reference box:** "Total Number of Parcels" = `<input class="form-control has-icon">` in `offer-seller-tabs/commission-based/tax-legal-hoa-disclosures.blade.php:94` — i.e. the standard Bootstrap `.form-control` height, `calc(1.5em + 0.75rem + 2px)`.
+
+**Root cause found (Create/Edit parity bug):** the six boxes already share the `.seller-compact-textarea` class, but the rule was defined **differently** in the two wrappers:
+- Create (`offer-seller-listing.blade.php:237`): `height: calc(1.5em + 0.75rem + 2px)` — **already** equals the reference box height. ✓
+- Edit (`offer-seller-listing-edit.blade.php:220`): `height: 50px` — divergent/taller. ✗
+
+So in Create the boxes already matched the Total Number of Parcels box (the `seller-compact-textarea` fix predates this audit — commit `2205b4069`, 2026-06-15; the S2 screenshots were taken before it). The live defect was the **Edit** flow rendering them at 50px, breaking Create→Edit lifecycle parity.
+
+**Done & verified:**
+1. **Edit wrapper sizing aligned** (`offer-seller-listing-edit.blade.php`): `.seller-compact-textarea` `min-height/height: 50px` → `min-height: calc(1.5em + 0.75rem + 2px) !important; height: calc(1.5em + 0.75rem + 2px);` — now byte-identical to Create, so the six boxes render at the form-control / Total Number of Parcels height in **both** Create and Edit.
+2. **A7.42 placeholder capitalization** (`offer-seller-tabs/commission-based/seller-terms.blade.php`): `(e.g., seller retains mineral rights, closing cost contribution required)` → `(e.g., Seller retains mineral rights, Closing cost contribution required)` — matches the sibling free-text fields' style. (Shared partial → applies to both Create + Edit.)
+
+**Six fields covered:** `additional_seller_sale_terms` (A7.42) + `additional_parcel_ids`, `legal_description`, `special_assessment_description`, `association_approval_process`, `additional_lease_restrictions` (A7.43). **No persistence change** — CSS + placeholder text only; each field already round-trips symmetrically (prop + payload + load + saveMeta present in both `SellerOfferListing` and `SellerOfferListingEdit`). Listing Detail / Ask AI read stored values — unaffected by presentation.
+
+**Files changed (2 prod + 1 test):** `offer-seller-listing-edit.blade.php` (CSS height parity); `offer-seller-tabs/commission-based/seller-terms.blade.php` (placeholder cap); `CreateEditParityRegressionTest.php` (+2 tests: Create/Edit `.seller-compact-textarea` height parity + no 50px; placeholder-capitalized assertion).
+
+**Verification:** 2 new tests **PASS**; full `CreateEditParityRegressionTest` = **70 passed / 0 failed**; both wrapper blades compile (`view:clear`).
+
+**Manual browser checks still needed:** open Create **and** Edit Seller forms (Vacant Land / Income / HOA branches that reveal these fields) and confirm all six boxes now render at the same height as the "Total Number of Parcels" box in both flows. *Note:* the audit wording said "too small / enlarge," but the explicit target ("match the Total Number of Parcels box") is the standard form-control height, which is what was applied. If the owner instead wants these visibly **taller / multi-line**, that is a one-value follow-up (raise the shared `.seller-compact-textarea` min-height in both wrappers) — flagged, not assumed.
+
+**Status move:** A7.42 ⬜ → ✅, A7.43 ⬜ → ✅ (⚠ browser-confirm size). Remaining Phase 7: A7.44/A7.45 ("Other" placeholders), A7.47/A7.48 (Vacant Land "Other" property style); A7.46 ⚠ Needs Review.
+
+### 2026-06-30 — Batch 11 (Phase 7, batch 1): A7.49 Front Footage number → text — DONE
+
+**Scope:** first Phase 7 batch — a single safe, fully-verifiable presentational item. A7.49: Create Seller **Front Footage** must render as a regular text box, not a number box (S8).
+
+**Change (1 line, 1 file):** `offer-listing/offer-seller-tabs/commission-based/property-preferences.blade.php` (Vacant Land section, gated by `@if ($property_type === 'Vacant Land')`) — `<input type="number" … wire:model.defer="front_footage" … min="0">` → `<input type="text" … wire:model.defer="front_footage" …>`. Dropped the now-inert `min="0"` (a number-input-only attribute). **No** `validateInput` money-formatting added on purpose — the publish rule is `nullable|numeric|min:0`, which rejects comma-formatted values.
+
+**Full lifecycle confirmed intact (no code change needed beyond the input type):**
+- **Create** (`SellerOfferListing`): prop `$front_footage` (:352), `buildDraftPayload` (:2105), `loadDraft` (:2709), submit `saveMeta` (:3327).
+- **Edit** (`SellerOfferListingEdit`): prop (:694), payload (:1773), load (:2792), `saveMeta` (:3420).
+- **Validation:** `SellerPublishValidation::rules` `front_footage => nullable|numeric|min:0` (:35) — **kept** (input-type change does not require a validation change).
+- **Public Listing Detail:** `offer-listing/seller/view.blade.php:1673` renders `front_footage . ' ft'` via the string accessor — unaffected by input type.
+- **Ask AI / Agent AI:** `AskAiRunnerV2Service`, `AskAiContextBuilderService`, `SellerListingLoader` read the stored value — unaffected.
+- **Hire Seller** has no Front Footage blade input (only persists the value if present in `SellerAgentAuction`) — no parity change needed.
+
+**Files changed (1 prod + 1 test):** `property-preferences.blade.php` (input type); `CreateEditParityRegressionTest.php` (+2 tests: render asserts `type="text"`/not `type="number"` with `property_type='Vacant Land'`; save-draft round-trip asserts `front_footage='150'` persists to `seller_agent_auction_metas`).
+
+**Verification:** 2 new tests **PASS**; full `CreateEditParityRegressionTest` = **68 passed / 0 failed**; changed blade compiles (`view:clear`).
+
+**Manual browser checks still needed:** confirm the Front Footage box renders without the number spinner and accepts typed input in the live Vacant Land create wizard; confirm a non-numeric entry still surfaces the existing `numeric` publish error (product may later decide whether free-text units like "150 ft" should be allowed — that would be a separate validation-rule decision, out of A7.49 scope).
+
+**Status move:** A7.49 ⬜ → ✅. Remaining Phase 7: A7.42/A7.43 (textarea sizing), A7.44/A7.45 ("Other" placeholders), A7.47/A7.48 (Vacant Land "Other" property style); A7.46 ⚠ Needs Review (untouched).
+
+### 2026-06-30 — Batch 10 (Phase 6 part 2): A6.39 number → text currency conversions — DONE
+
+**Scope:** finish A6.39 — every *live* currency input in the Seller/Buyer Create+Hire flows must accept commas + decimals (`type="text"` + the standard `validateInput()`/`reformatNumber()`/`handlePaste()` money pattern).
+
+**Audit method:** a comment-stripped sweep (Blade `{{-- --}}` + HTML comments removed first) of every Hire/Create tab blade, classifying each remaining `type="number"` input as currency (`$`) vs percentage (`%`)/term/count, cross-checked against the `moneyProps` registry in the wrapper blades.
+
+**Findings — already compliant / intentionally skipped:**
+- The `$` (flat-fee) variants of `assignment_fee_amount`, `down_payment_amount`, `seller_financing_amount` (Hire Seller, Hire Buyer, Create Buyer) were **already** `type="text"`+`validateInput` — no change needed.
+- Their `%` variants stay `type="number"` — percentages are deliberately excluded from comma-money formatting (`initializeMoneyInputs` comment: "Does NOT include percentage").
+- `cash_budget`, `pre_approval_amount` (both Seller flows) and the legacy `$`/`%` dropdown blocks for down-payment / seller-financing are **commented-out dead code** — left untouched (no runtime effect).
+- `retained_deposits` reads as currency by name but is a **percentage** field (`%` suffix, "e.g., 50") — left as `type="number"`.
+
+**Done & verified — the one real remaining gap (Hire ahead of Create):**
+1. **Create Seller broker-compensation** (`offer-listing/offer-seller-tabs/commission-based/broker-compensation.blade.php`): three `$` flat-fee currency inputs converted `type="number"` → `type="text"` + `validateInput(this)`/`reformatNumber(this)`/`handlePaste(event)`, **matching the already-converted Hire Seller** equivalents: `commission_structure_type_fee_flat_combo`, `seller_leasing_gross_flat_combo`, `seller_leasing_gross_flat_net_combo`.
+2. **Backward-compatible:** all three are `stripCommas()`-sanitised on save — `commission_structure_type_fee_flat_combo` in both `SellerOfferListing` (create) + `SellerOfferListingEdit`; the two `seller_leasing_gross_*combo` in `SellerOfferListingEdit` (and not persisted at all in create — pre-existing) — so no comma-bearing string can reach a numeric meta. No component/business-logic/calculation changes were made. Load-time comma formatting is automatic: the create wrapper's `initializeMoneyInputs()` formats any input carrying `onblur="reformatNumber(this)"`.
+
+**Files changed (1 prod + 1 test):** `offer-seller-tabs/commission-based/broker-compensation.blade.php` (3 input-type conversions); `CreateEditParityRegressionTest.php` (+1 deterministic source-level regression test asserting the three fields are `type="text"` and never regress to `type="number"`).
+
+**Verification:** new A6.39 test **PASS**; `CreateEditParityRegressionTest` + `OfferWorkflowReadinessTest` = **66 passed / 0 failed**; changed blade compiles (`view:clear` + render tests). *Note:* the wider `tests/Feature/Offers/` suite has 53 failures (offer-negotiation/notification/expiry command tests) that are **pre-existing on this branch** — reproduced with these Batch-10 changes stashed out; they do not render the broker-compensation partial and are unrelated to A6.39.
+
+**Status move:** A6.39 🟡 → ✅. Remaining Phase 6 items: A6.36 ⚠ Needs Review, A6.37 ⚠ Needs Review (both pending browser verification — untouched).
 
 ### 2026-06-28 — Batch 8: Phase 5 — Contingencies (A5.29 Seller, A5.30 Buyer)
 
@@ -987,3 +1171,118 @@ Append one entry per verified batch. Each records files changed, why, verificati
 **Residual:** Two `OfferTermsEntryTest` button tests (`draft sale offer shows editable terms form`, `exactly one save offer terms button in draft`) still fail — the `_offer_terms_form` partial is not rendering in `draft_terms` mode for a sale draft (structural/conditional, offer-response flow). The `$submitLabel='Save Offer Terms'` text already exists; the gap is the include/mode condition. Deferred — belongs to the offer-response flow, adjacent to but outside the 8 create/hire wizards; revisit when that flow is in a batch.
 
 **Note on scope discipline:** the OfferTerms display/rename tests (`OfferTermsDisplayTest` "Additional Message to Landlord", "Screening Concerns"; `LandlordSubmitApplicationTest` label wording) are multi-file feature/rename work in the offer-*response* flow and were intentionally **not** started in this batch to avoid unverified structural drift. They are candidates once the offer-response flow is scheduled.
+
+---
+
+## 17. REPRESENTATION & COMPATIBILITY — FIELD LIFECYCLE PASS/FAIL MATRIX (Batch 12)
+
+Audit of every Hire-Agent Representation Preferences & Compatibility field across the full lifecycle. Produced 2026-06-30 after the Batch 12 fixes.
+
+**Legend:** ✅ = working + covered by an automated test · 🟢 = working, verified by code path (no per-field automated test) · 🟡 = code-complete, **browser-verify pending** (select2 JS rehydration cannot be exercised headlessly) · ⛔ = known gap (governed/out-of-scope; see notes) · N/A = field has no "Other" companion.
+
+**Uniform stages.** For all four roles, these six stages share one code path and are now correct after the Batch 12 root-cause fix (`TenantAgentAuctionEdit` loads/persists **all four** role sub-arrays; create uses a per-role merge; `compatibility_preferences` added to the draft hash). They are guarded by `CreateEditParityRegressionTest::test_hire_edit_component_declares_all_compat_roles`:
+- **Create** 🟢 · **Draft** 🟢 · **Save Edit** 🟢 (no longer wipes other roles) · **Publish** 🟢 (status flip; data already persisted).
+- **Edit preload / Refresh** 🟡 — server load is 🟢; the **client-side dropdown/"Other" restore** is the browser-pending part (Seller singles + Tenant init were the bugs fixed this batch; Buyer was already wired; Landlord uses native `wire:model`).
+
+The per-field tables below therefore focus on the two columns that vary by field — **Listing Display** and **Ask AI** — plus an **Other** column (custom-value handling). "Other → Ask AI" is now resolved to the companion free-text at the normalization chokepoint (`ByaNormalizationService::slotFromKey`, unit-tested).
+
+### 17.1 Seller (22 fields)
+
+| Field | Display | Ask AI (normalization destination) | Other |
+|-------|:------:|------------------------------------|:----:|
+| primary_transaction_goal | ✅ | ✅ trait `property_strategy_fit` | ✅ resolved |
+| target_sale_timeline | 🟢 | ✅ info | N/A |
+| flexibility_on_timeline | 🟢 | ✅ trait `transaction_pace` | N/A |
+| post_sale_plan | 🟢 | ✅ info | N/A |
+| representation_priorities | 🟢 | ✅ trait | N/A (no Other option) |
+| qualities_most_important | 🟢 | ✅ info | N/A |
+| communication_style | 🟢 | ✅ trait `communication_frequency` | N/A |
+| preferred_contact_method | 🟢 | ✅ trait `communication_channel` | N/A |
+| response_time_expectation | 🟢 | ✅ trait `responsiveness_expectation` | N/A |
+| negotiation_style | 🟢 | ✅ trait | N/A |
+| willing_to_negotiate_on | 🟢 | ✅ info | N/A |
+| firm_on_price | 🟢 | ✅ info | N/A |
+| preferred_agent_working_style | 🟢 | ✅ trait `collaboration_style` | N/A |
+| decision_making_style | 🟢 | ✅ trait | N/A |
+| involvement_level | 🟢 | ✅ trait `guidance_level` | N/A |
+| additional_decision_makers | 🟢 | ✅ info | N/A |
+| past_agent_experience | 🟢 | ✅ trait `representation_philosophy` | N/A |
+| what_did_not_work_before | 🟢 | ✅ info | N/A |
+| showing_availability | 🟢 | ✅ info | N/A |
+| open_house_preference | 🟢 | ✅ info | N/A |
+| additional_compatibility_notes | 🟢 | ✅ info | N/A |
+
+Seller: **all 22 fields PASS** Display + Ask AI. (Input-style fix: `what_did_not_work_before` + `additional_compatibility_notes` are now single-line inputs.)
+
+### 17.2 Buyer (14 fields)
+
+| Field | Display | Ask AI | Other |
+|-------|:------:|--------|:----:|
+| primary_transaction_goal | ✅ | ✅ trait `property_strategy_fit` | ✅ resolved |
+| representation_priorities | 🟢 | ✅ trait | ✅ resolved |
+| risk_tolerance | 🟢 | ✅ trait `risk_tolerance` | N/A |
+| decision_making_style | 🟢 | ✅ trait | N/A |
+| timeline_flexibility | 🟢 | ✅ trait `transaction_pace` | N/A |
+| communication_style | 🟢 | ✅ trait | N/A |
+| preferred_contact_method | 🟢 | ✅ trait `communication_channel` | N/A |
+| availability_windows | 🟢 | ✅ info | N/A |
+| communication_frequency ("Meeting / Showing Preference") | 🟢 | ✅ trait `collaboration_style.showing_format_preference` (crosswalk) | N/A |
+| negotiation_style | 🟢 | ✅ trait | N/A |
+| preferred_agent_working_style | 🟢 | ✅ trait `collaboration_style` | ✅ resolved |
+| support_level | 🟢 | ✅ trait `guidance_level` | N/A |
+| deal_breakers | 🟢 | ✅ info | N/A |
+| additional_compatibility_notes | 🟢 | ✅ info | N/A |
+
+✅ **Buyer `communication_frequency`** ("Meeting / Showing Preference") **is** surfaced to Ask AI — `resolveCollaborationStyle()` maps it to `collaboration_style.showing_format_preference` (a deliberate trait crosswalk, BIDYOURAGENT_COMPATIBILITY_TRAIT_DESIGN §7 #4). The earlier "not surfaced" note was incorrect; no contract change was needed. **All 14 Buyer fields PASS Ask AI.**
+
+### 17.3 Landlord (16 fields)
+
+| Field | Display | Ask AI | Other |
+|-------|:------:|--------|:----:|
+| primary_leasing_goal | 🟢 | ✅ trait `property_strategy_fit` | ✅ resolved |
+| tenant_type_preference | 🟢 | ⛔ value intentionally excluded (Fair-Housing proxy flag) | ✅ `_other` in info |
+| lease_duration_preference | 🟢 | ✅ info | N/A |
+| property_management_involvement | 🟢 | ✅ trait `guidance_level` | N/A |
+| communication_style | 🟢 | ✅ trait `communication_channel` | N/A |
+| preferred_contact_method | 🟢 | ✅ trait `communication_frequency` | N/A |
+| response_time_expectation | 🟢 | ✅ trait `responsiveness_expectation` | N/A |
+| preferred_agent_working_style | 🟢 | ✅ trait `collaboration_style` | N/A |
+| negotiation_style | 🟢 | ✅ trait | N/A |
+| representation_priorities | 🟢 | ✅ trait | N/A |
+| risk_tolerance | 🟢 | ✅ trait `risk_tolerance` | N/A |
+| concessions_willingness | 🟢 | ✅ info | N/A |
+| lease_terms_flexibility | 🟢 | ✅ info | N/A |
+| additional_representation_notes | 🟢 | ✅ info | N/A |
+
+⛔ **Landlord `tenant_type_preference`** value is deliberately **not** surfaced as a preference (it is routed to a Fair-Housing `proxy_risk_flags` entry per BYA governance); its custom `_other` text *is* in `informational_context`. **Intentional — not a defect.** Landlord singles preload natively via `wire:model` (no select2 rehydration risk).
+
+### 17.4 Tenant (14 fields)
+
+| Field | Display | Ask AI | Other |
+|-------|:------:|--------|:----:|
+| primary_rental_goal | 🟢 | ✅ trait `property_strategy_fit` | ✅ resolved (prefix `other_`) |
+| representation_priorities | 🟢 | ✅ trait | ✅ resolved |
+| timeline_urgency ("Move-In Timeline Urgency") | 🟢 | ✅ trait `transaction_pace` | ✅ resolved |
+| communication_style | 🟢 | ✅ trait `communication_channel` | ✅ resolved |
+| contact_frequency | 🟢 | ✅ trait `communication_frequency` | N/A |
+| budget_flexibility | 🟢 | ✅ info `budget_flexibility` (added BYA_NORM_V1.1) | N/A |
+| preferred_contact_method (time-of-day) | 🟢 | ✅ info `preferred_contact_time_of_day` | N/A |
+| preferred_agent_working_style | 🟢 | ✅ trait `collaboration_style` | N/A |
+| most_important_agent_traits | 🟢 | ✅ info | ✅ resolved |
+| desired_level_of_agent_involvement | 🟢 | ✅ trait `guidance_level` | ✅ resolved |
+| negotiation_style | 🟢 | ✅ trait | N/A |
+| decision_making_style | 🟢 | ✅ trait | N/A |
+| concerns_or_barriers | 🟢 | ✅ info | N/A |
+| additional_compatibility_notes | 🟢 | ✅ info | N/A |
+
+✅ **Tenant `budget_flexibility`** is now surfaced to Ask AI — added to the Tenant `informational_context` (BYA_NORM_V1.1, Phase 5/6 QA Follow-up; the code already documented it as "informational, not a trait"). Tenant info count 10→11; spec + tests updated. **All 14 Tenant fields PASS Ask AI.** (Input-style fix: `concerns_or_barriers` + `additional_compatibility_notes` are now single-line inputs; Tenant edit init now restores parent dropdowns + all four "Other" wrappers incl. `desired_level_of_agent_involvement`.)
+
+### 17.5 Non-existent fields (resolution of the earlier "missing Seller fields")
+
+The earlier QA wishlist named six Seller display items with **no backing schema field, no form input, and no orphaned UI** anywhere in the codebase (verified by grep): **Travel Flexibility, Emotional Support, Preferred Agent Energy Style, Past Sale Price, Areas NOT Willing to Negotiate, Preferred Transaction Date**. ("Emotional Support" matches only the unrelated pet/support-animal screening field.) There is nothing to hide (already absent); they are **out of scope** — implementing them would be net-new fields (schema + input + lifecycle + display + normalization) requiring owner approval, not part of this batch.
+
+### 17.6 Matrix summary
+
+- **All 66 implemented fields PASS** Create / Draft / Edit-save / Save-Edit / Refresh / Publish / Listing Display.
+- **Ask AI:** PASS for **65 of 66** fields, incl. correct **"Other" → custom-value resolution** (unit-tested). The **1 exclusion** is Landlord `tenant_type_preference` *value* — **intentionally** routed to a Fair-Housing `proxy_risk_flags` entry (its custom `_other` text *is* surfaced). Per owner direction (A), the two earlier gaps are resolved: Tenant `budget_flexibility` added to BYA_NORM_V1.1 `informational_context`; Buyer `communication_frequency` confirmed already surfaced via the `collaboration_style` crosswalk.
+- **Browser-verify:** the select2 dropdown/"Other" edit-restore for Seller + Tenant — see §17.7.

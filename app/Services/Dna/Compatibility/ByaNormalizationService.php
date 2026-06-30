@@ -460,6 +460,10 @@ class ByaNormalizationService
 
     /**
      * Buyer informational_context — 6 keys (Section 5.2).
+     *
+     * Note: the buyer's "Meeting / Showing Preference" (raw key `communication_frequency`)
+     * is intentionally NOT duplicated here — it is surfaced via the trait crosswalk
+     * `collaboration_style.showing_format_preference` (see resolveCollaborationStyle()).
      */
     private function buyerInfoContext(array $raw): array
     {
@@ -489,16 +493,21 @@ class ByaNormalizationService
     }
 
     /**
-     * Tenant informational_context — 10 keys (Section 5.4).
+     * Tenant informational_context — 11 keys (Section 5.4).
      *
      * Naming crosswalk: `preferred_contact_method` (stores time-of-day preference data despite
      * its misleading key name) is remapped to `preferred_contact_time_of_day` here.
      * It must never appear as a trait slot value — only here.
+     *
+     * BYA_NORM_V1.1 (Phase 5/6 QA Follow-up): `budget_flexibility` was previously unrepresented
+     * (no trait slot, absent from informational_context). It is now surfaced here so Ask AI has
+     * access to every populated Tenant representation field.
      */
     private function tenantInfoContext(array $raw): array
     {
         return [
             'preferred_contact_time_of_day'            => $this->infoScalar($raw, 'preferred_contact_method'),
+            'budget_flexibility'                       => $this->infoScalar($raw, 'budget_flexibility'),
             'most_important_agent_traits'              => $this->infoArray($raw, 'most_important_agent_traits'),
             'concerns_or_barriers'                     => $this->infoScalar($raw, 'concerns_or_barriers'),
             'additional_compatibility_notes'           => $this->infoScalar($raw, 'additional_compatibility_notes'),
@@ -583,19 +592,55 @@ class ByaNormalizationService
         $rawValue = $raw[$key] ?? null;
 
         if (is_array($rawValue)) {
-            $filtered = array_values(
-                array_filter($rawValue, static fn ($v) => $v !== null && $v !== '')
-            );
+            $filtered = [];
+            foreach ($rawValue as $v) {
+                if ($v === null || $v === '') {
+                    continue;
+                }
+                // Phase 5/6 QA Follow-up: resolve the literal "Other" token to the user's
+                // companion free-text so downstream consumers (Ask AI, narrative, explanation)
+                // never surface the bare placeholder "Other".
+                $filtered[] = ($v === 'Other')
+                    ? ($this->otherCompanion($raw, $key) ?? $v)
+                    : $v;
+            }
+            $filtered = array_values(array_unique($filtered));
             return [
                 'value'   => empty($filtered) ? null : $filtered,
                 'missing' => false,
             ];
         }
 
+        // Scalar: resolve a literal "Other" to its companion free-text when present.
+        if ($rawValue === 'Other') {
+            $companion = $this->otherCompanion($raw, $key);
+            if ($companion !== null) {
+                $rawValue = $companion;
+            }
+        }
+
         return [
             'value'   => ($rawValue !== null && $rawValue !== '') ? $rawValue : null,
             'missing' => false,
         ];
+    }
+
+    /**
+     * Return the free-text companion value for a field whose value is "Other", or null.
+     *
+     * Handles BOTH companion-key naming conventions used across the four role schemas:
+     *   • suffix form  "{key}_other"  (seller / buyer / landlord), e.g. primary_transaction_goal_other
+     *   • prefix form  "other_{key}"  (tenant),                     e.g. other_primary_rental_goal
+     */
+    private function otherCompanion(array $raw, string $key): ?string
+    {
+        foreach (["{$key}_other", "other_{$key}"] as $companionKey) {
+            $v = $raw[$companionKey] ?? null;
+            if ($v !== null && $v !== '') {
+                return (string) $v;
+            }
+        }
+        return null;
     }
 
     /**

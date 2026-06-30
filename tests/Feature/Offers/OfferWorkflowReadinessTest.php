@@ -361,6 +361,51 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/seller-terms.blade.php',
             'resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/purchasing-terms.blade.php',
             'resources/views/offer-listing/buyer/view.blade.php',
+            //   Batch 12 — Phase 5/6 QA Follow-up: Ask AI "Other" → companion free-text
+            //        resolution in the BYA normalization chokepoint (slotFromKey).
+            'app/Services/Dna/Compatibility/ByaNormalizationService.php',
+            //   Phase 6 (A6.31-A6.34 Assumption Fee Responsibility; A6.35 timing
+            //        placeholder; A6.40 down-payment default %; A6.41 Hire Landlord pets).
+            'app/Http/Livewire/TenantAgentAuctionEdit.php',
+            'resources/views/livewire/hire-seller-agent/seller-agent-auction-tabs/commission-based/seller-terms.blade.php',
+            'resources/views/livewire/hire-landlord-agent/landlord-agent-auction-tabs/commission-based/property-preferences.blade.php',
+            // Phase C — Core Workflow Restoration
+            //   C2/BYA-H6 — expired bidding-period listings reject NEW bids in the
+            //        Seller/Buyer/Landlord Hire-Agent Livewire submit() handlers and
+            //        the Landlord legacy controller ('Expired' added to its guard).
+            'app/Http/Livewire/Seller/SellerAgentAuctionBid.php',
+            'app/Http/Livewire/Buyer/BuyerAgentAuctionBid.php',
+            'app/Http/Livewire/Landlord/LandlordAgentAuctionBid.php',
+            'app/Http/Controllers/LandlordAgentAuctionBidController.php',
+            //   C1/WF-1 — Ask AI 403: non-owners no longer routed to the owner-only
+            //        V1 listing-question endpoint (tenant view; the seller/buyer/
+            //        landlord detail views are already allow-listed above).
+            'resources/views/offer-listing/tenant/view.blade.php',
+            //   C5/BYA-H4 — agent contact/credential fields on bid detail render the
+            //        agent's CURRENT profile (live, snapshot fallback); terms unchanged.
+            'resources/views/partials/bid_detail_body/seller.blade.php',
+            'resources/views/partials/bid_detail_body/buyer.blade.php',
+            'resources/views/partials/bid_detail_body/landlord.blade.php',
+            'resources/views/sellerAgentAuctionDetail.blade.php',
+            // Pre-existing working-tree changes carried in from earlier completed
+            // Phase A/B batches, not previously reflected here (no Phase C edits).
+            'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
+            'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
+            'app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php',
+            'app/Http/Livewire/OfferListing/Seller/SellerOfferListingEdit.php',
+            'app/Http/Livewire/TenantAgentAuction.php',
+            'resources/views/buyerAgentAuctionDetail.blade.php',
+            'resources/views/hire_seller_agent/view.blade.php',
+            'resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/purchasing-terms.blade.php',
+            'resources/views/livewire/hire-seller-agent/seller-agent-auction-tabs/commission-based/property-preferences.blade.php',
+            'resources/views/livewire/hire-seller-agent/seller-agent-auction-tabs/commission-based/representation-compatibility.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/lease-terms.blade.php',
+            'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/broker-compensation.blade.php',
+            'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/tax-legal-hoa-disclosures.blade.php',
+            'resources/views/livewire/offer-listing/seller/offer-seller-listing-edit.blade.php',
+            'resources/views/livewire/tenant-agent-auction-edit.blade.php',
+            'resources/views/livewire/tenant-agent-auction-tabs/commission-based/representation-compatibility.blade.php',
+            'resources/views/offer-listing/landlord/view.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

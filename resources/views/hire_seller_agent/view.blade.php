@@ -1950,14 +1950,30 @@
                                 if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
                             };
 
+                            // Phase 5/6 QA Follow-up (Seller Rep & Compatibility): full
+                            // listing-display parity — every field captured by the Seller
+                            // representation form is rendered here when populated. Primary
+                            // Transaction Goal resolves its "Other" custom value for display.
                             $repAdd('Primary Transaction Goal', $ssView['primary_transaction_goal'] ?? '', $ssView['primary_transaction_goal_other'] ?? '');
                             $repAdd('Target Sale Timeline', $ssView['target_sale_timeline'] ?? '', '');
+                            $repAdd('Timeline Flexibility', $ssView['flexibility_on_timeline'] ?? '', '');
+                            $repAdd('Post-Sale Plans', $ssView['post_sale_plan'] ?? '', '');
                             $repAdd('Representation Priorities', $ssView['representation_priorities'] ?? [], '');
+                            $repAdd('Agent Qualities Most Important to You', $ssView['qualities_most_important'] ?? [], '');
                             $repAdd('Preferred Communication Style', $ssView['communication_style'] ?? '', '');
+                            $repAdd('Preferred Contact Method', $ssView['preferred_contact_method'] ?? [], '');
+                            $repAdd('Expected Agent Response Time', $ssView['response_time_expectation'] ?? '', '');
                             $repAdd('Negotiation Style', $ssView['negotiation_style'] ?? '', '');
+                            $repAdd('Areas Willing to Negotiate On', $ssView['willing_to_negotiate_on'] ?? [], '');
+                            $repAdd('Firm on Asking Price', $ssView['firm_on_price'] ?? '', '');
                             $repAdd('Preferred Agent Working Style', $ssView['preferred_agent_working_style'] ?? '', '');
+                            $repAdd('Decision-Making Style', $ssView['decision_making_style'] ?? '', '');
+                            $repAdd('Involvement Level', $ssView['involvement_level'] ?? '', '');
                             $repAdd('Decision Makers Involved', $ssView['additional_decision_makers'] ?? '', '');
+                            $repAdd('Past Experience Working with a Real Estate Agent', $ssView['past_agent_experience'] ?? '', '');
                             $repAdd('What Did Not Work Well with Past Agents', $ssView['what_did_not_work_before'] ?? '', '');
+                            $repAdd('Showing Availability', $ssView['showing_availability'] ?? [], '');
+                            $repAdd('Open House Preference', $ssView['open_house_preference'] ?? '', '');
                             $repAdd('Additional Compatibility Notes', $ssView['additional_compatibility_notes'] ?? '', '');
                         @endphp
 
