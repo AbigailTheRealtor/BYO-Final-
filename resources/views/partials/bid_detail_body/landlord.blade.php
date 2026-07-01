@@ -283,16 +283,15 @@
 
                                                         {{-- ===== AGENT HIGHLIGHTS STRIP ===== --}}
                                                         @php
-                                                            $bidAgentHighlightProfile = \App\Models\AgentDefaultProfile::where('user_id', $bid->user_id)
-                                                                ->whereNotNull('profile_data')
-                                                                ->orderByDesc('updated_at')
-                                                                ->first();
-                                                            $bidHighlights = $bidAgentHighlightProfile?->profile_data ?? [];
-                                                            $hlYearsExp    = $bidHighlights['years_experience'] ?? null;
-                                                            $hlTxns        = $bidHighlights['transactions_last_12_months'] ?? null;
-                                                            $hlResponse    = $bidHighlights['avg_response_time'] ?? null;
-                                                            $hlAreas       = $bidHighlights['primary_areas_served'] ?? null;
-                                                            $hlReview      = $bidHighlights['review_1'] ?? null;
+                                                            // BYA-H4: Agent Highlights show the values SUBMITTED WITH THIS BID
+                                                            // (bid meta via the shared agent mapper), not the agent's current
+                                                            // AgentDefaultProfile — that profile drifts after the bid is placed
+                                                            // and would show consumers stale figures. Snapshot only.
+                                                            $hlYearsExp    = data_get($bid, 'get.years_experience') ?: null;
+                                                            $hlTxns        = data_get($bid, 'get.transactions_last_12_months') ?: null;
+                                                            $hlResponse    = data_get($bid, 'get.avg_response_time') ?: null;
+                                                            $hlAreas       = data_get($bid, 'get.primary_areas_served') ?: null;
+                                                            $hlReview      = data_get($bid, 'get.review_1') ?: null;
                                                             $hlHasAny      = $hlYearsExp || $hlTxns || $hlResponse || $hlAreas || $hlReview;
                                                             $hlShortId     = optional($bid->user)->short_id;
                                                         @endphp
