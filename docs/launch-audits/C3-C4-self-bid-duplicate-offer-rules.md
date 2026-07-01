@@ -1,9 +1,22 @@
-# C3 / C4 — Self-Bidding & Duplicate-Offer Business Rules (PENDING OWNER APPROVAL)
+# C3 / C4 — Self-Bidding & Duplicate-Offer Business Rules (OWNER-APPROVED)
 
-**Status:** 🟡 Blocked — awaiting owner decision
+**Status:** 🟢 APPROVED — owner decided **2026-06-30**: **A1 / B1 / C2 / D2**. Not yet implemented (decision review only).
 **Audit items:** C3 (BYA-H2, self-bid prevention), C4 (BYA-H3, duplicate-offer prevention)
 **Created during:** Phase C — Core Workflow Restoration
 **Owner:** Abigail Sweeney
+
+---
+
+## 0. Owner decision (2026-06-30) — APPROVED
+
+| Rule | System | Decision | Code change required | Closes |
+|------|--------|----------|----------------------|--------|
+| **A** | BidYourOffer self-bid | **A1** — keep current behavior | **None** (already enforced by `OfferPermissionService`) | — |
+| **B** | BidYourAgent self-bid | **B1** — block owner-as-agent, **all 4 roles** | Small guard in the 4 `*AgentAuctionBid::submit()` + legacy `*BidController` where applicable | **BYA-H2** |
+| **C** | BidYourOffer duplicate | **C2** — defer | **None** right now | — |
+| **D** | BidYourAgent duplicate | **D2** — code parity across Buyer/Seller/Tenant/Landlord (one active bid per agent; later submissions update in place) | Mirror Landlord's update-in-place safeguard in Buyer/Seller/Tenant submit paths. **DB unique index deferred** until after duplicate pre-cleaning | **BYA-H3** |
+
+**Guardrails on implementation (carried from §3):** do **not** reintroduce the blanket `OfferController::store` owner-vs-actor guard (it broke 59 tests). Rule B is scoped to the BidYourAgent components only. Rule D adds update-in-place dedup but **no unique index yet** — the index requires pre-cleaning existing duplicate rows first.
 
 > No code is changing C3/C4 until the rules below are approved. A blanket
 > "listing owner ≠ bidder" guard was prototyped and **reverted** because it
@@ -112,12 +125,12 @@ Already one-active-bid-per-agent (§2).
 
 ## 5. Recommendation summary
 
-| Rule | Recommended | Code change if approved |
-|------|-------------|-------------------------|
+| Rule | Approved (2026-06-30) | Code change |
+|------|-----------------------|-------------|
 | A — BYO self-bid | **A1** (already enforced) | none |
-| B — BYA self-bid | **B1** (block owner-as-agent) | small guard ×4 roles |
+| B — BYA self-bid | **B1** (block owner-as-agent, all 4 roles) | small guard ×4 roles + legacy `*BidController` |
 | C — BYO duplicate | **C2** (defer) | none |
-| D — BYA duplicate | **D1** (keep) / D2 if uniformity wanted | none / small |
+| D — BYA duplicate | **D2** (code parity across all 4 roles; index deferred) | small update-in-place dedup ×3 (Buyer/Seller/Tenant) |
 
 Once you pick A/B/C/D, I will implement only the approved guards (expected:
 just Rule B if you accept the recommendation), with targeted tests, and update
