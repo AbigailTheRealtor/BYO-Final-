@@ -55,4 +55,33 @@ class SearchAreasPartialTest extends TestCase
         $this->assertStringContainsString('name="location_dna_preferences"', $html);
         $this->assertStringContainsString('ldnaAddRadiusSearch()', $html);
     }
+
+    public function test_partial_has_preferred_state_control(): void
+    {
+        $html = $this->render();
+
+        // B1.2 pos 4 — single Preferred State field with a type-ahead US-states datalist
+        $this->assertStringContainsString('Preferred State', $html);
+        $this->assertStringContainsString('id="ldna-state-input"', $html);
+        // Datalist id is suffixed with the panel id; the states populate it (type-ahead)
+        $this->assertStringContainsString('list="ldna-us-states-', $html);
+        $this->assertStringContainsString('<datalist id="ldna-us-states-', $html);
+        $this->assertStringContainsString('<option value="Florida">', $html);
+        $this->assertStringContainsString('<option value="California">', $html);
+        // Serialized shape carries the new `state` key, and the serializer reads it back
+        $this->assertStringContainsString('state:', $html);
+        $this->assertStringContainsString("getElementById('ldna-state-input')", $html);
+    }
+
+    public function test_preferred_state_prefills_from_existing_blob(): void
+    {
+        // A saved blob value round-trips into the input + the ldnaState initializer
+        $html = view('partials.location-dna.map-input', [
+            'existingLocationDna' => ['state' => 'Texas'],
+        ])->render();
+
+        $this->assertStringContainsString('value="Texas"', $html);
+        // The ldnaState JS initializer carries the prefilled value (whitespace-tolerant)
+        $this->assertMatchesRegularExpression('/state:\s*"Texas"/', $html);
+    }
 }

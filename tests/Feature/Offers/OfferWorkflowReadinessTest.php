@@ -406,6 +406,20 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/livewire/tenant-agent-auction-edit.blade.php',
             'resources/views/livewire/tenant-agent-auction-tabs/commission-based/representation-compatibility.blade.php',
             'resources/views/offer-listing/landlord/view.blade.php',
+            // Phase 9 — Search Areas (B1.x). 9A: shared location partial renamed to
+            //   "Search Areas" + radius wording. 9B-1: Preferred State control + US-states
+            //   datalist inside the partial. 9B-2: discrete state/counties ↔ blob prefill +
+            //   write-back in the Buyer/Tenant Create+Edit components (Buyer two already
+            //   allow-listed in the pre-existing block above).
+            'resources/views/partials/location-dna/map-input.blade.php',
+            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
+            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
+            //   9B-3: Search Areas now owns state & counties — the discrete "Acceptable
+            //   Counties"/"Acceptable State" controls were removed from the Buyer/Tenant
+            //   Create+Edit property tabs; the components hydrate $counties/$state from the
+            //   blob before validation and mirror them to the discrete meta on save.
+            'resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/property-preferences.blade.php',
+            'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/property-details.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

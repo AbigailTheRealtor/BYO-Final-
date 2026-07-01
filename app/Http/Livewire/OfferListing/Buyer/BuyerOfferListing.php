@@ -1942,6 +1942,20 @@ class BuyerOfferListing extends Component
             $this->existingLocationDna = $ldna;
             $this->location_dna_preferences_json = $ldnaRaw ?? '';
 
+            // 9B-2 prefill: seed the Search Areas blob's Preferred State / counties from
+            // the discrete meta when the blob lacks them, so the partial pre-populates
+            // (in-memory only; the JS bridge carries the merged blob back on save, exactly
+            // like the legacy `cities` merge above).
+            if (empty($this->existingLocationDna['state'] ?? '') && !empty($this->state)) {
+                $this->existingLocationDna['state'] = $this->state;
+            }
+            if (empty($this->existingLocationDna['counties'] ?? []) && !empty($this->counties)) {
+                $this->existingLocationDna['counties'] = array_values(array_filter(
+                    (array) $this->counties,
+                    fn($c) => is_string($c) && trim($c) !== ''
+                ));
+            }
+
             // Sale Provision
             $saleProvisionRaw = $auction->get->sale_provision ?? null;
             $this->sale_provision = $saleProvisionRaw ? (is_string($saleProvisionRaw) ? json_decode($saleProvisionRaw, true) ?? [] : (array)$saleProvisionRaw) : [];
@@ -2392,6 +2406,30 @@ class BuyerOfferListing extends Component
         $this->property_items = $this->decodeJsonArray($value);
     }
 
+    /**
+     * 9B-3: mirror the Search Areas blob's state/counties into the discrete $state/$counties
+     * props. Called before validation (the discrete Acceptable State/Counties UI was removed
+     * in 9B-3, so the blob is now the editing surface) and again before the discrete saveMeta
+     * write-back. Non-empty guards preserve backward compatibility — an empty blob value never
+     * wipes an existing discrete value.
+     */
+    protected function hydrateDiscreteLocationFromBlob(): void
+    {
+        $ldna = json_decode($this->location_dna_preferences_json ?? '', true);
+        if (!is_array($ldna)) {
+            return;
+        }
+        if (trim((string) ($ldna['state'] ?? '')) !== '') {
+            $this->state = trim((string) $ldna['state']);
+        }
+        if (!empty($ldna['counties'] ?? [])) {
+            $this->counties = array_values(array_filter(
+                (array) $ldna['counties'],
+                fn($c) => is_string($c) && trim($c) !== ''
+            ));
+        }
+    }
+
     protected function saveAllMetadata($auction)
     {
         \Log::info('[saveAllMetadata CALLED]', ['auction_id' => $auction->id]);
@@ -2407,6 +2445,10 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('auction_time', $this->auction_type === 'Bidding Period' ? $this->auction_time : '');
 
         // Location Information
+        // 9B-2 write-back: the Search Areas partial is the editing surface for state /
+        // counties. Mirror its blob into the discrete meta (read by Ask AI, public views,
+        // the match engine). Non-empty guards preserve backward compatibility.
+        $this->hydrateDiscreteLocationFromBlob();
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
         $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
@@ -2900,6 +2942,10 @@ class BuyerOfferListing extends Component
         ]);
 
         try {
+            // 9B-3: hydrate state/counties from the Search Areas blob before validation,
+            // since the discrete Acceptable State/Counties inputs were removed.
+            $this->hydrateDiscreteLocationFromBlob();
+
             // Validate required fields: Counties and State are required, Cities are optional
             $validationRules = [
                 'counties' => 'required|array|min:1',

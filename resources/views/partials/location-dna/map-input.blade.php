@@ -30,6 +30,7 @@
     "zip_codes":        ["33708"],
     "neighborhoods":    [],            ← preserved for backend matching, no UI
     "counties":         ["Pinellas County, FL"],
+    "state":            "Florida",   ← single Preferred State (B1.2 pos 4, additive)
     "polygons":         [ { "label": "…", "path": [{lat,lng},…] } ],
     "radius_searches":  [ { "address":"…", "lat":0, "lng":0, "radius_miles":5 } ],
     "flexible_location": false,
@@ -47,6 +48,8 @@
   $ldnaRadii   = $ldna['radius_searches']  ?? [];
   $ldnaFlex    = $ldna['flexible_location'] ?? false;
   $ldnaNotes   = $ldna['location_notes']   ?? '';
+  $ldnaStateVal = $ldna['state']           ?? '';   /* B1.2 pos 4 — single Preferred State (additive) */
+  $ldnaUsStates = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','District of Columbia','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
   $ldnaJson    = count($ldna) ? json_encode($ldna) : '';
   $mapPanelId  = $mapPanelId ?? 'ldna-map-panel';
 @endphp
@@ -172,6 +175,23 @@
     </div>
   </div>
 
+  {{-- ── Preferred State (B1.2 pos 4 — single state, type-ahead via datalist, additive blob key) ── --}}
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <label class="fw-bold" style="font-size:.88rem;">Preferred State
+        <small class="text-muted">(type &amp; select)</small>
+      </label>
+      <input type="text" class="form-control form-control-sm" id="ldna-state-input"
+        list="ldna-us-states-{{ $mapPanelId }}" placeholder="e.g. Florida"
+        autocomplete="off" value="{{ $ldnaStateVal }}" oninput="ldnaSerialize()">
+      <datalist id="ldna-us-states-{{ $mapPanelId }}">
+        @foreach($ldnaUsStates as $st)
+          <option value="{{ $st }}"></option>
+        @endforeach
+      </datalist>
+    </div>
+  </div>
+
   {{-- ── Map toolbar ── --}}
   <label class="fw-bold" style="font-size:.88rem;">Draw Custom Areas on Map
     <small class="text-muted">(polygon = custom shape, circle = two-click radius)</small>
@@ -290,6 +310,7 @@
     radius_searches:   @json($ldnaRadii),
     flexible_location: {{ $ldnaFlex ? 'true' : 'false' }},
     location_notes:    @json($ldnaNotes),
+    state:             @json($ldnaStateVal),
   };
 
   /* ── Map objects ─────────────────────────────────────────────────────────── */
@@ -328,6 +349,8 @@
     var notesEl = document.getElementById('ldna-location-notes');
     if (flexEl)  ldnaState.flexible_location = flexEl.checked;
     if (notesEl) ldnaState.location_notes    = notesEl.value.trim();
+    var stateEl = document.getElementById('ldna-state-input');
+    if (stateEl) ldnaState.state = stateEl.value.trim();
 
     ldnaState.polygons        = [];
     ldnaState.radius_searches = [];
