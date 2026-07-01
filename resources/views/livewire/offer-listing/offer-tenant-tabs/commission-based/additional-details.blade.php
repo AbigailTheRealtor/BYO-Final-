@@ -13,7 +13,7 @@
                                     <div class="input-cover">
                                         <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
                                             x-on:input="$el.closest('.input-cover').nextElementSibling.querySelector('small').textContent = $el.value.length + ' characters'"
-                                            placeholder="e.g. Quiet professional looking for a 2-bed apartment near South Tampa. Need pet-friendly unit for one small dog. Budget up to $2,200/mo, prefer 12-month lease."></textarea>
+                                            placeholder="{{ \App\Helpers\PropertyTypePlaceholderHelper::placeholder('tenant', 'create', $property_type) }}"></textarea>
                                     </div>
                                     <div class="text-end mt-1"><small class="text-muted">{{ strlen($additional_details ?? '') }} characters</small></div>
                                 </div>

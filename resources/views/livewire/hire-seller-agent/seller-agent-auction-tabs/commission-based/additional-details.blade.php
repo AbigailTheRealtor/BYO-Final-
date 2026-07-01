@@ -13,6 +13,6 @@
                                 <label class="fw-bold">Provide any additional information you would like to share:</label>
                                     <div class="input-cover">
                                         <textarea wire:model="additional_details" class="form-control" rows="4" style="padding: 10px; font-size: 16px;"
-                                            placeholder="Enter additional details (e.g., Preferred closing timeline, Property is occupied, Recent renovations completed)"></textarea>
+                                            placeholder="{{ \App\Helpers\PropertyTypePlaceholderHelper::placeholder('seller', 'hire', $property_type) }}"></textarea>
                                     </div>
                                 </div>

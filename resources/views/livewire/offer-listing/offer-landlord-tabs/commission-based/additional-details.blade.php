@@ -15,7 +15,7 @@
                                     <div class="input-cover">
                                         <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
                                             x-on:input="document.getElementById('landlord-desc-counter').textContent = $el.value.length + ' characters'"
-                                            placeholder="{{ $property_type === 'Commercial Property' ? 'e.g. Modern open floor plan, 2,500 SqFt of leasable space, ADA-compliant, high-traffic corner location. Ideal for retail or professional office use.' : 'e.g. Spacious 2-bed unit with in-unit laundry, covered parking, and updated kitchen. Pet-friendly for small dogs. Quiet building, great for professionals or small families.' }}"></textarea>
+                                            placeholder="{{ \App\Helpers\PropertyTypePlaceholderHelper::placeholder('landlord', 'create', $property_type) }}"></textarea>
                                     </div>
                                     <div class="text-end mt-1"><small class="text-muted" id="landlord-desc-counter">{{ strlen($additional_details ?? '') }} characters</small></div>
                                 </div>
