@@ -22,6 +22,7 @@ use App\Models\UsCounty;
 use App\Models\UsCity;
 use App\Support\TenantServicesCatalog;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
+use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
@@ -29,6 +30,7 @@ class TenantOfferListing extends Component
 {
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
+    use HasImportantPlaces;
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
@@ -3505,6 +3507,8 @@ class TenantOfferListing extends Component
             $this->commute_destination_zip = $auction->get->commute_destination_zip ?? '';
             $this->max_commute_minutes = $auction->get->max_commute_minutes ?? '';
             $this->commute_mode = $auction->get->commute_mode ?? '';
+            // 9C: Important Places (additive; separate meta key — commute fields above untouched)
+            $this->loadImportantPlaces($auction);
             $this->credit_score_range = $auction->get->credit_score_range ?? '';
             // Phase D Tenant Tier 2 & Tier 3 EAV keys
             $this->rental_purpose = $auction->get->rental_purpose ?? '';
@@ -4313,6 +4317,9 @@ class TenantOfferListing extends Component
         $auction->saveMeta('state', $this->state);
         $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
 
+        // 9C Important Places — additive, separate meta key; commute fields untouched.
+        $this->saveImportantPlaces($auction);
+
         $auction->saveMeta('property_city', $this->property_city);
         $auction->saveMeta('property_state', $this->property_state);
         $auction->saveMeta('property_zip', $this->property_zip);
@@ -4961,6 +4968,9 @@ class TenantOfferListing extends Component
             \Log::info('[STORE] About to validate', ['user_type' => $this->user_type]);
 
             $this->validateOnlyFilledFields();
+
+            // 9C: block submit when any Important Place row is partially completed.
+            $this->assertImportantPlacesValid();
             
             \Log::info('[STORE] Validation passed', ['user_type' => $this->user_type]);
 

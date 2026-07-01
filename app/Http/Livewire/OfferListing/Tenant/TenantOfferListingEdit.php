@@ -20,11 +20,13 @@ use App\Models\UsCity;
 use App\Support\TenantServicesCatalog;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
 
 class TenantOfferListingEdit extends Component
 {
     use WithFileUploads;
     use ResolvesOwnedAuction;
+    use HasImportantPlaces;
 
     public $isLoadingData = false;
     private bool $_isDraftSave = false;
@@ -2657,6 +2659,8 @@ class TenantOfferListingEdit extends Component
         $this->commute_destination_zip = $auction->info('commute_destination_zip') ?? '';
         $this->max_commute_minutes = $auction->info('max_commute_minutes') ?? '';
         $this->commute_mode = $auction->info('commute_mode') ?? '';
+        // 9C: Important Places (additive; separate meta key — commute fields above untouched)
+        $this->loadImportantPlaces($auction);
         $this->credit_score_range = $auction->info('credit_score_range') ?? '';
         // Phase D Tenant Tier 2 & Tier 3 EAV keys
         $this->rental_purpose = $auction->info('rental_purpose') ?? '';
@@ -3168,6 +3172,15 @@ class TenantOfferListingEdit extends Component
                     $this->dispatchBrowserEvent('edit-validation-failed', ['fields' => $_svErrors]);
                     return;
                 }
+
+                // 9C: block submit when any Important Place row is partially completed.
+                // Uses this component's native dispatch-and-return idiom (no throw) so the
+                // save aborts cleanly BEFORE DB::beginTransaction (avoids a no-op rollBack).
+                $ipErrors = $this->importantPlacesService()->validate($this->important_places_json ?? '');
+                if (!empty($ipErrors)) {
+                    $this->dispatchBrowserEvent('edit-validation-failed', ['fields' => $ipErrors]);
+                    return;
+                }
             }
 
             DB::beginTransaction();
@@ -3227,6 +3240,10 @@ class TenantOfferListingEdit extends Component
             $this->hydrateDiscreteLocationFromBlob();
             $auction->saveMeta('counties', json_encode($this->counties));
             $auction->saveMeta('state', $this->state);
+
+            // 9C Important Places — additive, separate meta key; commute fields untouched.
+            $this->saveImportantPlaces($auction);
+
             $auction->saveMeta('property_city', $this->property_city);
             $auction->saveMeta('property_state', $this->property_state);
             $auction->saveMeta('property_zip', $this->property_zip);

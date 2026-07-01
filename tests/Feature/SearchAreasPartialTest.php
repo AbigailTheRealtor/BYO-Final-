@@ -20,6 +20,11 @@ class SearchAreasPartialTest extends TestCase
         return view('partials.location-dna.map-input', ['existingLocationDna' => []])->render();
     }
 
+    private function renderWith(array $data): string
+    {
+        return view('partials.location-dna.map-input', array_merge(['existingLocationDna' => []], $data))->render();
+    }
+
     public function test_partial_uses_search_areas_heading(): void
     {
         $html = $this->render();
@@ -83,5 +88,74 @@ class SearchAreasPartialTest extends TestCase
         $this->assertStringContainsString('value="Texas"', $html);
         // The ldnaState JS initializer carries the prefilled value (whitespace-tolerant)
         $this->assertMatchesRegularExpression('/state:\s*"Texas"/', $html);
+    }
+
+    // ── Phase 9C — Important Places ──────────────────────────────────────────
+
+    public function test_important_places_hidden_unless_host_opts_in(): void
+    {
+        // Default (legacy criteria pages): no opt-in → no Important Places UI at all.
+        $html = $this->render();
+
+        $this->assertStringNotContainsString('id="ldna-ip-section"', $html);
+        $this->assertStringNotContainsString('Important Places', $html);
+        $this->assertStringNotContainsString('ldnaIpAddRow()', $html);
+    }
+
+    public function test_important_places_renders_when_enabled(): void
+    {
+        $html = $this->renderWith(['enableImportantPlaces' => true]);
+
+        // Section + repeatable-row scaffolding
+        $this->assertStringContainsString('id="ldna-ip-section"', $html);
+        $this->assertStringContainsString('Important Places', $html);
+        $this->assertStringContainsString('id="ldna-ip-rows"', $html);
+        $this->assertStringContainsString('id="ldna-ip-row-template"', $html);
+        $this->assertStringContainsString('ldnaIpAddRow()', $html);
+        $this->assertStringContainsString('ldnaIpRemoveRow(this)', $html);
+
+        // Field controls: type selector (+ "Other"), address, distance pref + value, travel mode
+        $this->assertStringContainsString('ldna-ip-type', $html);
+        $this->assertStringContainsString('ldna-ip-type-other', $html);
+        $this->assertStringContainsString('ldna-ip-address', $html);
+        $this->assertStringContainsString('ldna-ip-distpref', $html);
+        $this->assertStringContainsString('ldna-ip-distval', $html);
+        $this->assertStringContainsString('ldna-ip-mode', $html);
+        $this->assertStringContainsString('<option value="Work">', $html);
+        $this->assertStringContainsString('<option value="Other">', $html);
+        $this->assertStringContainsString('<option value="driving">', $html);
+
+        // Distance preference offers both miles (circle) and minutes (travel time)
+        $this->assertStringContainsString('Within miles', $html);
+        $this->assertStringContainsString('Within minutes', $html);
+
+        // Serialization sink + serializer, and the "no fake travel-time circles" contract
+        $this->assertStringContainsString('id="ldna-important-places-field"', $html);
+        $this->assertStringContainsString('window.ldnaIpSerialize', $html);
+        $this->assertStringContainsString('never for travel-time minutes', $html);
+    }
+
+    public function test_important_places_prefills_existing_rows(): void
+    {
+        $rows = [[
+            'type'           => 'School',
+            'type_other'     => '',
+            'address'        => '1 School Rd, Tampa, FL',
+            'lat'            => 27.9,
+            'lng'            => -82.4,
+            'distance_pref'  => 'minutes',
+            'distance_value' => 15,
+            'travel_mode'    => 'transit',
+        ]];
+
+        $html = $this->renderWith([
+            'enableImportantPlaces'   => true,
+            'existingImportantPlaces' => $rows,
+        ]);
+
+        // Server-embedded JSON seeds both the hidden field and the JS row builder.
+        $this->assertStringContainsString('1 School Rd, Tampa, FL', $html);
+        $this->assertStringContainsString('"distance_pref":"minutes"', $html);
+        $this->assertStringContainsString('"travel_mode":"transit"', $html);
     }
 }

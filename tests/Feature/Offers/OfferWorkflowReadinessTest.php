@@ -420,6 +420,12 @@ class OfferWorkflowReadinessTest extends TestCase
             //   blob before validation and mirror them to the discrete meta on save.
             'resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/property-preferences.blade.php',
             'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/property-details.blade.php',
+            //   9C: Important Places — repeatable rows persisted to the ADDITIVE
+            //   `important_places_json` meta (commute fields untouched). New shared
+            //   service + trait; the Search Areas partial + Buyer/Tenant Create/Edit
+            //   components and their two tab blades (above) render/persist the rows.
+            'app/Services/Offers/ImportantPlacesService.php',
+            'app/Http/Livewire/OfferListing/Concerns/HasImportantPlaces.php',
         ];
 
         $unexpected = array_values(array_filter(

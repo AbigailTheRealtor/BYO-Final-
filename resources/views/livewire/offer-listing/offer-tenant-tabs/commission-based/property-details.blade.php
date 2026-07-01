@@ -89,8 +89,14 @@
 @error('counties')<div class="error-message mb-2">{{ $message }}</div>@enderror
 @error('state')<div class="error-message mb-2">{{ $message }}</div>@enderror
 
-@include('partials.location-dna.map-input', ['existingLocationDna' => $existingLocationDna ?? [], 'mapPanelId' => 'ldna-map-tenant'])
+@include('partials.location-dna.map-input', [
+    'existingLocationDna'    => $existingLocationDna ?? [],
+    'mapPanelId'             => 'ldna-map-tenant',
+    'enableImportantPlaces'  => true,
+    'existingImportantPlaces'=> $existingImportantPlaces ?? [],
+])
 <input type="hidden" id="ldna-livewire-bridge" wire:model.defer="location_dna_preferences_json">
+<input type="hidden" id="ldna-ip-livewire-bridge" wire:model.defer="important_places_json">
 <script>
 (function () {
     /* Guard: prevent re-wrapping ldnaSerialize on Livewire morphdom re-renders */
@@ -109,6 +115,19 @@
         }
     }
 
+    /* 9C: mirror the Important Places field into its own Livewire bridge. Unlike the
+       Search-Areas blob, an EMPTY value is meaningful (all rows removed) and is synced
+       so clearing every place persists as "no important places". */
+    function syncIpBridge() {
+        var src = document.getElementById('ldna-important-places-field');
+        if (!src) return;
+        var dst = document.getElementById('ldna-ip-livewire-bridge');
+        if (dst) {
+            dst.value = src.value;
+            dst.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+
     /* Wrap ldnaSerialize so every map interaction pushes value to Livewire */
     var _origSerialize = window.ldnaSerialize;
     window.ldnaSerialize = function () {
@@ -116,9 +135,16 @@
         syncLdnaBridge();
     };
 
+    /* Wrap ldnaIpSerialize so every Important Places edit pushes value to Livewire */
+    var _origIpSerialize = window.ldnaIpSerialize;
+    window.ldnaIpSerialize = function () {
+        if (typeof _origIpSerialize === 'function') _origIpSerialize();
+        syncIpBridge();
+    };
+
     /* Initial sync on page load */
-    document.addEventListener('DOMContentLoaded', syncLdnaBridge);
-    document.addEventListener('livewire:load', syncLdnaBridge);
+    document.addEventListener('DOMContentLoaded', function () { syncLdnaBridge(); syncIpBridge(); });
+    document.addEventListener('livewire:load', function () { syncLdnaBridge(); syncIpBridge(); });
 
     /* ── Pre-save hook: inject map JSON into Livewire's updateQueue ────────────
        In Livewire v2, message.sent fires BEFORE xhr.send() and receives the
@@ -131,23 +157,34 @@
         if (window.Livewire && typeof Livewire.hook === 'function') {
 
             Livewire.hook('message.sent', function (message, component) {
-                var src = document.getElementById('ldna-json-field');
-                if (!src || !src.value) return;
-                var jsonValue = src.value;
-
-                /* Deduplicate: remove any prior syncInput for this property */
-                message.updateQueue = message.updateQueue.filter(function (u) {
-                    return !(u.type === 'syncInput' && u.payload &&
-                             u.payload.name === 'location_dna_preferences_json');
-                });
-
                 /* Inject the current map state as a syncInput update.
                    Livewire applies syncInputs BEFORE calling the action method,
                    so $location_dna_preferences_json is set before saveDraft(). */
-                message.updateQueue.push({
-                    type: 'syncInput',
-                    payload: { name: 'location_dna_preferences_json', value: jsonValue }
-                });
+                var src = document.getElementById('ldna-json-field');
+                if (src && src.value) {
+                    message.updateQueue = message.updateQueue.filter(function (u) {
+                        return !(u.type === 'syncInput' && u.payload &&
+                                 u.payload.name === 'location_dna_preferences_json');
+                    });
+                    message.updateQueue.push({
+                        type: 'syncInput',
+                        payload: { name: 'location_dna_preferences_json', value: src.value }
+                    });
+                }
+
+                /* 9C: inject Important Places JSON independently (empty string allowed —
+                   it clears all rows). Not gated by the Search-Areas blob above. */
+                var ipSrc = document.getElementById('ldna-important-places-field');
+                if (ipSrc) {
+                    message.updateQueue = message.updateQueue.filter(function (u) {
+                        return !(u.type === 'syncInput' && u.payload &&
+                                 u.payload.name === 'important_places_json');
+                    });
+                    message.updateQueue.push({
+                        type: 'syncInput',
+                        payload: { name: 'important_places_json', value: ipSrc.value }
+                    });
+                }
             });
 
             /* ── Post-render re-sync ──────────────────────────────────────────
@@ -158,6 +195,7 @@
                fallback alongside the message.sent injection above.             */
             Livewire.hook('message.processed', function (message, component) {
                 syncLdnaBridge();
+                syncIpBridge();
             });
         }
     });

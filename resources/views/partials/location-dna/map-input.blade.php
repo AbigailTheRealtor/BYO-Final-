@@ -52,6 +52,14 @@
   $ldnaUsStates = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','District of Columbia','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
   $ldnaJson    = count($ldna) ? json_encode($ldna) : '';
   $mapPanelId  = $mapPanelId ?? 'ldna-map-panel';
+
+  /* 9C — Important Places (additive; separate important_places_json meta). Rendered only
+     where the host opts in (Buyer/Tenant offer-listing Search Areas), so the legacy criteria
+     pages that reuse this partial are unaffected. */
+  $enableImportantPlaces = $enableImportantPlaces ?? false;
+  $ldnaImportantPlaces   = $existingImportantPlaces ?? [];
+  $ldnaIpTypes           = \App\Services\Offers\ImportantPlacesService::TYPES;
+  $ldnaIpModes           = \App\Services\Offers\ImportantPlacesService::TRAVEL_MODES;
 @endphp
 
 <style>
@@ -268,6 +276,88 @@
     </button>
   </div>
 
+@if($enableImportantPlaces)
+  {{-- ── Important Places (9C — repeatable rows; own additive `important_places_json` key) ── --}}
+  <div class="ldna-ip-section mt-4" id="ldna-ip-section">
+    <label class="fw-bold" style="font-size:.88rem;">Important Places
+      <small class="text-muted">(work, school, family &amp; more — with a distance or travel-time preference)</small>
+    </label>
+    <div class="ldna-hint">
+      <i class="fa-solid fa-location-dot"></i>
+      Each located place drops a pin on the map. A "within miles" preference also draws a radius circle;
+      "within minutes" shows only a pin — travel-time areas are never drawn as fake circles.
+    </div>
+
+    <div id="ldna-ip-rows"></div>
+
+    <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="ldnaIpAddRow()">
+      <i class="fa-solid fa-plus"></i> Add Important Place
+    </button>
+
+    {{-- Row template — cloned by JS for each Important Place row --}}
+    <template id="ldna-ip-row-template">
+      <div class="ldna-ip-row border rounded p-2 mb-2" data-lat="" data-lng="">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="text-muted mb-1" style="font-size:.75rem;">Type</label>
+            <select class="form-select form-select-sm ldna-ip-type" onchange="ldnaIpOnTypeChange(this)">
+              <option value="">Select…</option>
+              @foreach($ldnaIpTypes as $t)
+                <option value="{{ $t }}">{{ $t }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="col-md-3 ldna-ip-type-other-wrap" style="display:none;">
+            <label class="text-muted mb-1" style="font-size:.75rem;">Other type</label>
+            <input type="text" class="form-control form-control-sm ldna-ip-type-other"
+              placeholder="Describe the place" oninput="ldnaIpSerialize()">
+          </div>
+          <div class="col-md-6">
+            <label class="text-muted mb-1" style="font-size:.75rem;">Exact Address</label>
+            <input type="text" class="form-control form-control-sm ldna-ip-address"
+              placeholder="Enter an address" autocomplete="off"
+              onblur="ldnaIpGeocodeRow(this)" oninput="ldnaIpSerialize()">
+          </div>
+        </div>
+        <div class="row g-2 align-items-end mt-1">
+          <div class="col-md-3">
+            <label class="text-muted mb-1" style="font-size:.75rem;">Distance Preference</label>
+            <select class="form-select form-select-sm ldna-ip-distpref" onchange="ldnaIpOnDistPrefChange(this)">
+              <option value="miles">Within miles</option>
+              <option value="minutes">Within minutes</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="text-muted mb-1 ldna-ip-distval-label" style="font-size:.75rem;">Miles</label>
+            <input type="number" min="0.1" step="0.1" class="form-control form-control-sm ldna-ip-distval"
+              placeholder="e.g. 5" oninput="ldnaIpSerialize()">
+          </div>
+          <div class="col-md-3">
+            <label class="text-muted mb-1" style="font-size:.75rem;">Travel Mode</label>
+            <select class="form-select form-select-sm ldna-ip-mode" onchange="ldnaIpSerialize()">
+              @foreach($ldnaIpModes as $m)
+                <option value="{{ $m }}">{{ ucfirst($m) }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="col-md-3 d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="ldnaIpGeocodeRow(this)" title="Show on map">
+              <i class="fa-solid fa-map-pin"></i> Map
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="ldnaIpRemoveRow(this)" title="Remove this place">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    {{-- Serialized Important Places JSON (JS-managed; bridged to `important_places_json`) --}}
+    <textarea id="ldna-important-places-field" name="important_places"
+      style="display:none;">{{ count($ldnaImportantPlaces) ? json_encode($ldnaImportantPlaces) : '' }}</textarea>
+  </div>
+@endif
+
   {{-- ── Flexible + notes ── --}}
   <div class="row g-3 mt-1">
     <div class="col-auto d-flex align-items-center gap-2">
@@ -376,6 +466,211 @@
     var field = document.getElementById('ldna-json-field');
     if (field) field.value = JSON.stringify(ldnaState);
   };
+
+@if($enableImportantPlaces)
+  /* ═══════════════════════════════════════════════════════════════════════════
+     IMPORTANT PLACES (9C) — repeatable rows, own `important_places_json` bridge.
+     Pins for every located place; a radius circle ONLY for the "miles" preference
+     ("minutes"/travel-time gets a pin but no fake circle). Serialized separately
+     from the Search-Areas blob (ldnaState) into #ldna-important-places-field.
+  ═══════════════════════════════════════════════════════════════════════════ */
+  var ldnaIpRowSeq   = 0;
+  var ldnaIpOverlays = {};   /* rowId → { marker, circle } */
+
+  function ldnaIpSyncRowConditionals(row) {
+    if (!row) return;
+    var typeSel   = row.querySelector('.ldna-ip-type');
+    var otherWrap = row.querySelector('.ldna-ip-type-other-wrap');
+    if (typeSel && otherWrap) {
+      otherWrap.style.display = (typeSel.value === 'Other') ? '' : 'none';
+    }
+    var pref = row.querySelector('.ldna-ip-distpref');
+    var lbl  = row.querySelector('.ldna-ip-distval-label');
+    if (pref && lbl) lbl.textContent = (pref.value === 'minutes') ? 'Minutes' : 'Miles';
+  }
+
+  window.ldnaIpSerialize = function () {
+    var rows = document.querySelectorAll('#ldna-ip-rows .ldna-ip-row');
+    var arr  = [];
+    rows.forEach(function (row) {
+      function val(sel) { var e = row.querySelector(sel); return e ? e.value.trim() : ''; }
+      var type    = val('.ldna-ip-type');
+      var distVal = val('.ldna-ip-distval');
+      var lat     = row.dataset.lat, lng = row.dataset.lng;
+      var entry = {
+        type:           type,
+        type_other:     type === 'Other' ? val('.ldna-ip-type-other') : '',
+        address:        val('.ldna-ip-address'),
+        lat:            (lat !== '' && lat != null) ? parseFloat(lat) : null,
+        lng:            (lng !== '' && lng != null) ? parseFloat(lng) : null,
+        distance_pref:  val('.ldna-ip-distpref') || 'miles',
+        distance_value: distVal !== '' ? parseFloat(distVal) : null,
+        travel_mode:    val('.ldna-ip-mode') || 'driving'
+      };
+      /* Drop fully-empty rows from the serialized payload (mirrors the server normalizer). */
+      var empty = !entry.type && !entry.type_other && !entry.address &&
+                  (entry.distance_value === null || isNaN(entry.distance_value));
+      if (empty) return;
+      arr.push(entry);
+    });
+    var field = document.getElementById('ldna-important-places-field');
+    if (field) field.value = arr.length ? JSON.stringify(arr) : '';
+  };
+
+  function ldnaIpClearOverlay(rowId) {
+    var o = ldnaIpOverlays[rowId];
+    if (!o) return;
+    if (o.marker) { try { o.marker.setMap(null); } catch (e) {} }
+    if (o.circle) { try { o.circle.setMap(null); } catch (e) {} }
+    delete ldnaIpOverlays[rowId];
+  }
+
+  function ldnaIpDrawOverlay(row) {
+    if (!ldnaMap || !row) return;
+    var rowId = row.dataset.ipId;
+    ldnaIpClearOverlay(rowId);
+    var lat = parseFloat(row.dataset.lat), lng = parseFloat(row.dataset.lng);
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    var typeSel = row.querySelector('.ldna-ip-type');
+    var title   = (typeSel && typeSel.value) || 'Important place';
+    var marker  = new google.maps.Marker({
+      position: { lat: lat, lng: lng }, map: ldnaMap, title: title,
+      icon: {
+        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+        scale: 5, fillColor: '#dc2626', fillOpacity: 1,
+        strokeColor: '#ffffff', strokeWeight: 1.5,
+      },
+      zIndex: 20,
+    });
+    var overlay = { marker: marker, circle: null };
+
+    /* Radius circle ONLY for the "miles" preference — never for travel-time minutes. */
+    var pref    = row.querySelector('.ldna-ip-distpref');
+    var distEl  = row.querySelector('.ldna-ip-distval');
+    var miles   = distEl ? parseFloat(distEl.value) : NaN;
+    if (pref && pref.value === 'miles' && !isNaN(miles) && miles > 0) {
+      overlay.circle = new google.maps.Circle({
+        center: { lat: lat, lng: lng }, radius: miles * 1609.34,
+        fillColor: '#dc2626', fillOpacity: 0.07,
+        strokeColor: '#dc2626', strokeWeight: 1.5, strokeOpacity: 0.6,
+        clickable: false, map: ldnaMap,
+      });
+    }
+    ldnaIpOverlays[rowId] = overlay;
+    ldnaMap.panTo({ lat: lat, lng: lng });
+  }
+
+  function ldnaIpAttachAddressAutocomplete(row) {
+    if (!row) return;
+    var input = row.querySelector('.ldna-ip-address');
+    if (!input || input._ldnaACAttached) return;
+    if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
+    input._ldnaACAttached = true;
+    var ac = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: 'us' } });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+    ac.addListener('place_changed', function () {
+      var place = ac.getPlace();
+      if (!place || !place.geometry) return;
+      var loc = place.geometry.location;
+      row.dataset.lat = loc.lat();
+      row.dataset.lng = loc.lng();
+      ldnaIpDrawOverlay(row);
+      ldnaIpSerialize();
+    });
+  }
+
+  function ldnaIpBuildRow(prefill) {
+    var tpl       = document.getElementById('ldna-ip-row-template');
+    var container = document.getElementById('ldna-ip-rows');
+    if (!tpl || !container) return null;
+    prefill = prefill || {};
+    var frag = tpl.content.cloneNode(true);
+    var row  = frag.querySelector('.ldna-ip-row');
+    row.dataset.ipId = 'ip-' + (++ldnaIpRowSeq);
+
+    if (prefill.type)          row.querySelector('.ldna-ip-type').value       = prefill.type;
+    if (prefill.type_other)    row.querySelector('.ldna-ip-type-other').value = prefill.type_other;
+    if (prefill.address)       row.querySelector('.ldna-ip-address').value    = prefill.address;
+    if (prefill.distance_pref) row.querySelector('.ldna-ip-distpref').value   = prefill.distance_pref;
+    if (prefill.distance_value !== undefined && prefill.distance_value !== null)
+      row.querySelector('.ldna-ip-distval').value = prefill.distance_value;
+    if (prefill.travel_mode)   row.querySelector('.ldna-ip-mode').value       = prefill.travel_mode;
+    if (prefill.lat !== undefined && prefill.lat !== null &&
+        prefill.lng !== undefined && prefill.lng !== null) {
+      row.dataset.lat = prefill.lat;
+      row.dataset.lng = prefill.lng;
+    }
+
+    container.appendChild(frag);
+    var live = container.querySelector('[data-ip-id="' + row.dataset.ipId + '"]');
+    ldnaIpSyncRowConditionals(live);
+    ldnaIpAttachAddressAutocomplete(live);
+    if (live && live.dataset.lat && live.dataset.lng) ldnaIpDrawOverlay(live);
+    return live;
+  }
+
+  window.ldnaIpAddRow = function () {
+    var r = ldnaIpBuildRow({});
+    ldnaIpSerialize();
+    return r;
+  };
+
+  window.ldnaIpRemoveRow = function (el) {
+    var row = el.closest('.ldna-ip-row');
+    if (!row) return;
+    ldnaIpClearOverlay(row.dataset.ipId);
+    row.remove();
+    ldnaIpSerialize();
+  };
+
+  window.ldnaIpOnTypeChange = function (sel) {
+    ldnaIpSyncRowConditionals(sel.closest('.ldna-ip-row'));
+    ldnaIpSerialize();
+  };
+
+  window.ldnaIpOnDistPrefChange = function (sel) {
+    var row = sel.closest('.ldna-ip-row');
+    ldnaIpSyncRowConditionals(row);
+    ldnaIpDrawOverlay(row);   /* redraw: circle only when miles */
+    ldnaIpSerialize();
+  };
+
+  window.ldnaIpGeocodeRow = function (el) {
+    var row = el.closest('.ldna-ip-row');
+    if (!row) return;
+    var addrEl  = row.querySelector('.ldna-ip-address');
+    var address = addrEl ? addrEl.value.trim() : '';
+    if (!address) return;
+    if (!ldnaMap) { ldnaRequestInit(); setTimeout(function () { window.ldnaIpGeocodeRow(el); }, 600); return; }
+    var geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: address, componentRestrictions: { country: 'us' } }, function (results, status) {
+      if (status !== 'OK' || !results.length) return;
+      var loc = results[0].geometry.location;
+      row.dataset.lat = loc.lat();
+      row.dataset.lng = loc.lng();
+      ldnaIpDrawOverlay(row);
+      ldnaIpSerialize();
+    });
+  };
+
+  /* Render pins/circles for every row already carrying a geocoded lat/lng (edit reload). */
+  function ldnaIpRenderAllOverlays() {
+    document.querySelectorAll('#ldna-ip-rows .ldna-ip-row').forEach(function (row) {
+      ldnaIpAttachAddressAutocomplete(row);
+      if (row.dataset.lat && row.dataset.lng) ldnaIpDrawOverlay(row);
+    });
+  }
+
+  window.ldnaIpInit = function () {
+    var container = document.getElementById('ldna-ip-rows');
+    if (!container || container._ldnaIpBuilt) return;
+    container._ldnaIpBuilt = true;
+    var existing = @json($ldnaImportantPlaces);
+    if (Array.isArray(existing)) existing.forEach(function (p) { ldnaIpBuildRow(p); });
+    ldnaIpSerialize();
+  };
+@endif
 
   /* ═══════════════════════════════════════════════════════════════════════════
      TAG HELPERS
@@ -1107,6 +1402,9 @@
       ldnaAddOverlayListItem(idx, label, 'fa-circle-dot text-secondary');
     });
 
+    /* ── 9C: render saved place pins/circles + wire their address autocompletes ── */
+    if (typeof ldnaIpRenderAllOverlays === 'function') ldnaIpRenderAllOverlays();
+
     /* ── Wire autocompletes ── */
     ldnaInitCitiesAutocomplete();
     ldnaInitRadiusAutocomplete();
@@ -1210,10 +1508,15 @@
   });
 
   /* ── Boot ────────────────────────────────────────────────────────────────── */
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ldnaTryInit);
-  } else {
+  function ldnaBoot() {
     ldnaTryInit();
+    /* 9C rows build immediately (no map dependency); pins render on map init. */
+    if (typeof window.ldnaIpInit === 'function') window.ldnaIpInit();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ldnaBoot);
+  } else {
+    ldnaBoot();
   }
 })();
 </script>

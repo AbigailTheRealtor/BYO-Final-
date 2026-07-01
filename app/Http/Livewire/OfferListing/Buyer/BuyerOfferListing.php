@@ -14,6 +14,7 @@ use App\Models\UsState;
 use App\Models\UsCounty;
 use App\Models\UsCity;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
+use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
@@ -21,6 +22,7 @@ class BuyerOfferListing extends Component
 {
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
+    use HasImportantPlaces;
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
@@ -1910,6 +1912,8 @@ class BuyerOfferListing extends Component
             $this->commute_destination_zip = $auction->get->commute_destination_zip ?? '';
             $this->max_commute_minutes = $auction->get->max_commute_minutes ?? '';
             $this->commute_mode = $auction->get->commute_mode ?? '';
+            // 9C: Important Places (additive; separate meta key — commute fields above untouched)
+            $this->loadImportantPlaces($auction);
             $this->hoa_acceptance = $auction->get->hoa_acceptance ?? '';
             $this->hoa_max_monthly_fee = $auction->get->hoa_max_monthly_fee ?? '';
             $floodZoneRaw = $auction->get->flood_zone_tolerance ?? null;
@@ -2457,6 +2461,9 @@ class BuyerOfferListing extends Component
         $ldnaDecoded = json_decode($this->location_dna_preferences_json, true);
         $auction->saveMeta('cities', json_encode($ldnaDecoded['cities'] ?? []));
 
+        // 9C Important Places — additive, separate meta key; commute fields untouched.
+        $this->saveImportantPlaces($auction);
+
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
 
@@ -2963,7 +2970,10 @@ class BuyerOfferListing extends Component
                 'state.required' => 'State is required.',
                 'auction_time.required' => 'Bidding Period Length is required.',
             ]);
-            
+
+            // 9C: block submit when any Important Place row is partially completed.
+            $this->assertImportantPlacesValid();
+
             $this->isDraft = 0;
 
             $auction = $this->listingId

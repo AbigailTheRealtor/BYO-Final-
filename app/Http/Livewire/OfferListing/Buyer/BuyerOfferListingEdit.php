@@ -12,11 +12,13 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
 
 class BuyerOfferListingEdit extends Component
 {
     use WithFileUploads;
     use ResolvesOwnedAuction;
+    use HasImportantPlaces;
 
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
@@ -1920,6 +1922,8 @@ class BuyerOfferListingEdit extends Component
             $this->commute_destination_zip = $auction->get->commute_destination_zip ?? '';
             $this->max_commute_minutes = $auction->get->max_commute_minutes ?? '';
             $this->commute_mode = $auction->get->commute_mode ?? '';
+            // 9C: Important Places (additive; separate meta key — commute fields above untouched)
+            $this->loadImportantPlaces($auction);
             $this->hoa_acceptance = $auction->get->hoa_acceptance ?? '';
             $this->hoa_max_monthly_fee = $auction->get->hoa_max_monthly_fee ?? '';
             $floodZoneRaw = $auction->get->flood_zone_tolerance ?? null;
@@ -2413,6 +2417,9 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
 
+        // 9C Important Places — additive, separate meta key; commute fields untouched.
+        $this->saveImportantPlaces($auction);
+
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
         $auction->saveMeta('property_items', json_encode($this->property_items));
@@ -2872,7 +2879,10 @@ class BuyerOfferListingEdit extends Component
                 'state.required' => 'State is required.',
                 'auction_time.required' => 'Bidding Period Length is required.',
             ]);
-            
+
+            // 9C: block submit when any Important Place row is partially completed.
+            $this->assertImportantPlacesValid();
+
             $this->isDraft = 0;
 
             $auction =$this->auctionId
