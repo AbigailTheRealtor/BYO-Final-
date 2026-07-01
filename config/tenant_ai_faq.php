@@ -103,13 +103,6 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'faq_q10' => [
-                    'label'         => 'Does the applicant prefer furnished or unfurnished?',
-                    'placeholder'   => 'Enter furnished preference (e.g., Strongly prefer furnished — relocating, Unfurnished only, Open either way)',
-                    'tooltip'       => 'Helps the AI convey furnishing preference (a native gap).',
-                    'category_type' => 'common',
-                    'source'        => 'KB',
-                ],
                 'faq_q8' => [
                     'label'         => 'Is the applicant willing to pay a pet deposit or pet rent if required?',
                     'placeholder'   => 'Enter pet fee flexibility (e.g., Happy to pay a reasonable deposit and pet rent, Prefer to avoid extra pet fees)',
@@ -181,10 +174,10 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'tenant_commercial_parking' => [
-                    'label'         => 'What are the applicant\'s parking needs for staff and customers?',
-                    'placeholder'   => 'Enter parking needs (e.g., 6 staff spaces plus customer turnover, 2 reserved spaces, Minimal parking needed)',
-                    'tooltip'       => 'Helps the AI answer parking-needs questions for the applicant\'s business.',
+                'tenant_growth_plans' => [
+                    'label'         => 'Does the applicant expect their space needs to change over the lease term (growth, seasonal, or downsizing)?',
+                    'placeholder'   => 'Enter growth outlook (e.g., May need a second suite within 2 years, Stable footprint, Seasonal pop-up expansion in Q4)',
+                    'tooltip'       => 'Captures the applicant\'s expected space trajectory — not a structured field. Factual restatement only; never an approval recommendation.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],

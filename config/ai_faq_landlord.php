@@ -96,38 +96,10 @@ return [
         // =====================================================================
         'residential' => [
             'Systems & Amenities' => [
-                'heating_cooling_system' => [
-                    'label'         => 'What heating and cooling system does the property have?',
-                    'placeholder'   => 'Enter HVAC details (e.g., Central A/C and heat replaced 2021, Window units, Mini-split throughout)',
-                    'tooltip'       => 'Lets the AI provide accurate comfort-system details.',
-                    'category_type' => 'common',
-                    'source'        => 'KB',
-                ],
-                'laundry_situation' => [
-                    'label'         => 'Is there in-unit or shared laundry?',
-                    'placeholder'   => 'Enter laundry details (e.g., In-unit washer/dryer included, Shared laundry room, Hookups only)',
-                    'tooltip'       => 'Helps the AI answer one of the most frequently searched rental amenities.',
-                    'category_type' => 'common',
-                    'source'        => 'KB',
-                ],
-                'storage_area_included' => [
-                    'label'         => 'Is dedicated storage included?',
-                    'placeholder'   => 'Enter storage details (e.g., Private storage cage in garage, Attic access, No additional storage)',
-                    'tooltip'       => 'Lets the AI describe storage options to tenants.',
-                    'category_type' => 'common',
-                    'source'        => 'KB',
-                ],
                 'internet_providers' => [
                     'label'         => 'Which internet providers and speeds are available?',
                     'placeholder'   => 'Enter internet options (e.g., Xfinity and AT&T Fiber up to 1 Gbps, Spectrum only, Fiber coming Q3)',
                     'tooltip'       => 'Helps the AI answer connectivity questions for tenants who work from home or stream.',
-                    'category_type' => 'common',
-                    'source'        => 'KB',
-                ],
-                'security_features' => [
-                    'label'         => 'What security features does the property have?',
-                    'placeholder'   => 'Enter security details (e.g., Ring doorbell and deadbolts, Gated community keypad, Cameras in common areas)',
-                    'tooltip'       => 'Lets the AI describe the property\'s safety features.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
@@ -186,13 +158,6 @@ return [
                     'label'         => 'Who is responsible for lawn/landscaping?',
                     'placeholder'   => 'Enter responsibility (e.g., Landlord-provided lawn service, Tenant maintains yard, HOA handles common areas)',
                     'tooltip'       => 'Lets the AI clarify lawn and landscaping responsibility.',
-                    'category_type' => 'common',
-                    'source'        => 'KB',
-                ],
-                'average_utility_costs' => [
-                    'label'         => 'What are typical average utility costs?',
-                    'placeholder'   => 'Enter typical costs (e.g., Electric ~$110/mo, Water ~$45/mo, Internet ~$60/mo)',
-                    'tooltip'       => 'Complements native estimates with typical monthly costs.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
@@ -276,13 +241,6 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'commercial_building_access_hours' => [
-                    'label'         => 'What are the building/suite access hours?',
-                    'placeholder'   => 'Enter access hours (e.g., 24/7 keycard access, 7am–10pm with after-hours by arrangement, M–F 8am–6pm)',
-                    'tooltip'       => 'Helps the AI answer after-hours access and operations questions.',
-                    'category_type' => 'common',
-                    'source'        => 'KB',
-                ],
                 'commercial_buildout_ti' => [
                     'label'         => 'What build-out or tenant-improvement support is available beyond what\'s listed?',
                     'placeholder'   => 'Enter TI/build-out details (e.g., Up to $25/sqft TI for 5+ year leases, Open to wall/plumbing changes with approval, As-is)',
@@ -304,13 +262,6 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'commercial_restroom_count' => [
-                    'label'         => 'How many restrooms are there?',
-                    'placeholder'   => 'Enter restroom count (e.g., Two ADA restrooms in the suite, Shared restrooms on the floor)',
-                    'tooltip'       => 'Helps the AI answer restroom-count questions.',
-                    'category_type' => 'common',
-                    'source'        => 'KB',
-                ],
                 'commercial_co_tenancy' => [
                     'label'         => 'What is the co-tenancy / anchor-tenant situation in the building?',
                     'placeholder'   => 'Enter co-tenancy (e.g., Anchored by a national grocer, Two other suites occupied by offices, Standalone building)',
@@ -318,21 +269,12 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'commercial_permitted_use' => [
-                    'label'         => 'What uses does the zoning permit for this space?',
-                    'placeholder'   => 'Enter permitted uses (e.g., Retail and office permitted; verify with the local jurisdiction)',
-                    'tooltip'       => 'Factual restatement of disclosed permitted use; not legal advice.',
+                'commercial_zoning_context' => [
+                    'label'         => 'Beyond the permitted-use field, are there variances, conditional uses, or restrictions tenants should know about?',
+                    'placeholder'   => 'Enter zoning context (e.g., Conditional-use permit for food service, No auto uses per deed restriction, Signage variance in place; verify with the jurisdiction)',
+                    'tooltip'       => 'Captures owner knowledge the structured permitted-use field cannot — variances, conditional uses, and use restrictions. Factual restatement only; not legal advice.',
                     'category_type' => 'common',
-                    'source'        => 'Field+KB',
-                ],
-            ],
-            'Rental Insights' => [
-                'commercial_zoning_permitted_summary' => [
-                    'label'         => 'What does the listing state about the zoning and permitted uses?',
-                    'placeholder'   => 'Optional — the AI restates disclosed zoning and adds "verify permitted use with the local jurisdiction"',
-                    'tooltip'       => 'Factual restatement of disclosed zoning only; not legal or business advice.',
-                    'category_type' => 'insight',
-                    'source'        => 'Field+KB',
+                    'source'        => 'KB',
                 ],
             ],
         ],

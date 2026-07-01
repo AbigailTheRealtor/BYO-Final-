@@ -53,6 +53,32 @@ return [
         ],
     ],
 
+    /*
+     * Ask AI Knowledge Base gating aliases — single source of truth for reconciling the
+     * two property-type vocabularies used in the app.
+     *
+     * Seller and Buyer listings store SHORT property_type values (Residential, Income,
+     * Commercial, Business, Vacant Land — see the 'buyer'/seller 'types' above). Landlord
+     * and Tenant listings store LONG values (Residential Property, Commercial Property).
+     * The AI-FAQ config 'gating' maps (config/ai_faq_*.php) are keyed by the LONG forms.
+     *
+     * ai-questions-input.blade.php normalizes the stored property_type through this map
+     * before the gating lookup so every property type resolves to its intended KB group.
+     * Any value NOT listed here (already-long forms, Vacant Land) passes through unchanged.
+     *
+     * This is intentionally a normalization layer, NOT a change to the stored values:
+     * property_type is persisted and consumed (match scoring, display helpers, dozens of
+     * blade conditionals) in its native short/long form, so backward compatibility is
+     * preserved for every existing listing.
+     */
+    'ai_faq_gating_aliases' => [
+        'Residential' => 'Residential Property',
+        'Income'      => 'Income Property',
+        'Commercial'  => 'Commercial Property',
+        'Business'    => 'Business Opportunity',
+        // 'Vacant Land' is identical in both vocabularies — no alias needed.
+    ],
+
     'tenant' => [
         'types' => [
             'Residential Property',

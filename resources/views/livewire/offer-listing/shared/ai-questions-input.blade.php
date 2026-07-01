@@ -29,10 +29,18 @@
         $groups = config($configKey . '.groups', []);
         $gating = config($configKey . '.gating', []);
 
+        // Normalize the stored property_type to its canonical gating key. Seller/Buyer
+        // listings store SHORT values (Income, Commercial, Business); Landlord/Tenant and
+        // the gating maps use LONG values (Income Property, ...). This single alias map
+        // (config/property_types.php) bridges the two vocabularies so the intended
+        // property-specific KB groups render. Already-long values pass through unchanged.
+        $gatingAliases = config('property_types.ai_faq_gating_aliases', []);
+        $gatingKey     = $gatingAliases[$propertyType] ?? $propertyType;
+
         // Resolve which groups render for this property type. Fail safe to the
         // residential-style set so a new/unexpected property_type still renders the
         // universal questions rather than nothing.
-        $activeGroups = $gating[$propertyType] ?? ['universal', 'residential'];
+        $activeGroups = $gating[$gatingKey] ?? ['universal', 'residential'];
 
         foreach ($activeGroups as $groupName) {
             $group = $groups[$groupName] ?? [];

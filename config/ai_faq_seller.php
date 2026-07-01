@@ -226,6 +226,13 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
+                'pool_spa_equipment_condition' => [
+                    'label'         => 'If there is a pool or spa, how old is the equipment and what is its condition?',
+                    'placeholder'   => 'Enter pool/spa equipment details (e.g., Pump and heater replaced 2022, Saltwater system, Screen enclosure resealed 2023, No pool)',
+                    'tooltip'       => 'The listing captures whether a pool exists; this adds the equipment age/condition detail buyers ask about, which is not a structured field.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
             ],
             'Costs & Utilities' => [
                 'average_utility_costs' => [
@@ -317,6 +324,13 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
+                'income_rent_roll_context' => [
+                    'label'         => 'How do current rents compare to what the owner believes is market, and are any units below market?',
+                    'placeholder'   => 'Enter rent context (e.g., Units 1–2 at market, Unit 3 long-term tenant ~15% under market, All renew within 12 months)',
+                    'tooltip'       => 'The listing captures per-unit rent as a structured field; this adds the owner\'s factual market-context narrative. The AI restates it and gives no investment/upside advice.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
                 'value_add_opportunities' => [
                     'label'         => 'What recent improvements or income changes has the owner disclosed?',
                     'placeholder'   => 'Enter disclosed changes (e.g., Rents updated to market in 2024, Unit 3 renovated 2023, New roof 2022)',
@@ -390,26 +404,12 @@ return [
         // =====================================================================
         'commercial' => [
             'Building & Use' => [
-                'commercial_zoning_uses' => [
-                    'label'         => 'What is the zoning, and what uses does it permit?',
-                    'placeholder'   => 'Enter zoning and uses (e.g., C-2 commercial; retail and office permitted; verify with the jurisdiction)',
-                    'tooltip'       => 'Factual restatement of disclosed zoning; the AI does not give legal interpretation.',
-                    'category_type' => 'common',
-                    'source'        => 'Field+KB',
-                ],
                 'commercial_building_systems' => [
                     'label'         => 'What are the building systems (HVAC, electrical capacity)?',
                     'placeholder'   => 'Enter systems (e.g., Two rooftop HVAC units, 400A 3-phase power, LED lighting)',
                     'tooltip'       => 'Lets the AI answer questions about building systems and capacity.',
                     'category_type' => 'common',
                     'source'        => 'KB+Field',
-                ],
-                'commercial_ceiling_height' => [
-                    'label'         => 'What is the clear/ceiling height?',
-                    'placeholder'   => 'Enter clear height (e.g., 14 ft clear in warehouse, 9 ft finished ceilings in office)',
-                    'tooltip'       => 'Helps the AI answer space-dimension questions.',
-                    'category_type' => 'common',
-                    'source'        => 'Field',
                 ],
                 'commercial_ada_accessibility' => [
                     'label'         => 'Is the space ADA accessible?',
@@ -446,6 +446,13 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
+                'commercial_zoning_context' => [
+                    'label'         => 'Beyond the zoning code, are there variances, special-use permits, conditional uses, or grandfathered uses in place?',
+                    'placeholder'   => 'Enter zoning context (e.g., Conditional-use permit for restaurant, Grandfathered nonconforming parking, Variance for signage; verify with the jurisdiction)',
+                    'tooltip'       => 'Captures owner knowledge the structured zoning field cannot — variances, special-use permits, and grandfathered uses. Factual restatement only; not legal advice.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
             ],
             'Property Insights' => [
                 'commercial_space_standout' => [
@@ -461,13 +468,6 @@ return [
                     'tooltip'       => 'Objective location data only; no steering.',
                     'category_type' => 'insight',
                     'source'        => 'LocDNA',
-                ],
-                'commercial_zoning_permitted_summary' => [
-                    'label'         => 'What does the listing state about the zoning and permitted uses?',
-                    'placeholder'   => 'Optional — the AI restates disclosed zoning and adds "verify permitted use with the local jurisdiction"',
-                    'tooltip'       => 'Factual restatement of disclosed zoning only; not legal or business advice.',
-                    'category_type' => 'insight',
-                    'source'        => 'Field+KB',
                 ],
             ],
         ],

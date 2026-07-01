@@ -80,6 +80,13 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
+                'buyer_financing_context' => [
+                    'label'         => 'Is there anything about how the buyer is financing the purchase worth knowing?',
+                    'placeholder'   => 'Enter financing context (e.g., Cash reserves for a fast close, Gift funds documented, Self-employed with 2 years of returns, Proceeds from a home under contract)',
+                    'tooltip'       => 'The listing captures the financing type and pre-approval status as structured fields; this adds factual context (funds source, documentation) the AI can restate. It performs no negotiating-position or leverage analysis.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
             ],
             'Buyer Insights' => [
                 'buyer_property_needs' => [
@@ -196,38 +203,38 @@ return [
         // =====================================================================
         'income' => [
             'Investment Criteria' => [
-                'com_property_use' => [
-                    'label'         => 'What\'s the buyer\'s intended use for the property?',
-                    'placeholder'   => 'Enter intended use (e.g., Buy-and-hold rental, Owner-occupy one unit and lease the rest, Mixed-use)',
-                    'tooltip'       => 'Lets the AI restate how the buyer plans to use the property.',
+                'buyer_income_intended_use' => [
+                    'label'         => 'What\'s the buyer\'s intended hold strategy for the property?',
+                    'placeholder'   => 'Enter strategy (e.g., Long-term buy-and-hold, Owner-occupy one unit and lease the rest, Reposition and re-lease)',
+                    'tooltip'       => 'Lets the AI restate how the buyer plans to operate the income property.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'com_occupancy_rate' => [
-                    'label'         => 'What minimum occupancy does the buyer require at purchase?',
-                    'placeholder'   => 'Enter occupancy requirement (e.g., At least 80% occupied, Prefer fully stabilized, Open to some vacancy)',
+                'buyer_income_occupancy_requirement' => [
+                    'label'         => 'What minimum in-place occupancy does the buyer require at purchase?',
+                    'placeholder'   => 'Enter occupancy requirement (e.g., At least 80% occupied, Prefer fully stabilized, Open to value-add with vacancy)',
                     'tooltip'       => 'Helps the AI restate the buyer\'s occupancy requirement factually.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'com_lease_terms' => [
-                    'label'         => 'What lease structure does the buyer prefer (NNN/gross/etc.)?',
-                    'placeholder'   => 'Enter lease preference (e.g., Prefer NNN, Open to gross or modified gross, Flexible)',
-                    'tooltip'       => 'Lets the AI explain the buyer\'s preferred lease structure; it may define terms but not advise.',
+                'buyer_income_rent_roll_expectations' => [
+                    'label'         => 'What does the buyer expect from the existing rent roll and leases (in-place rents, term, escalations)?',
+                    'placeholder'   => 'Enter rent-roll expectations (e.g., Wants current leases and estoppels, At/near-market rents, Some upside acceptable, Flexible on lease term)',
+                    'tooltip'       => 'Income-specific diligence: the AI restates what the buyer wants to see in the rent roll; it gives no valuation or return advice.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'com_1031_exchange' => [
+                'buyer_income_1031_exchange' => [
                     'label'         => 'Is the buyer completing a 1031 exchange with a timing requirement?',
                     'placeholder'   => 'Enter exchange details (e.g., Yes — must close within 60 days, Not a 1031 exchange, Window closing soon)',
                     'tooltip'       => 'Factual timing disclosure; the AI may define a 1031 exchange but gives no tax advice.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'com_environmental_concerns' => [
-                    'label'         => 'Will the buyer require environmental studies (Phase I/II)?',
-                    'placeholder'   => 'Enter study requirements (e.g., Phase I required by lender, Buyer will order Phase I, Phase II may be needed)',
-                    'tooltip'       => 'Helps the AI communicate environmental-study requirements factually.',
+                'buyer_income_environmental' => [
+                    'label'         => 'Will the buyer require environmental or property-condition studies (Phase I/II, PCA)?',
+                    'placeholder'   => 'Enter study requirements (e.g., Phase I required by lender, Buyer will order Phase I, Property-condition assessment planned)',
+                    'tooltip'       => 'Helps the AI communicate diligence-study requirements factually.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
@@ -248,38 +255,38 @@ return [
         // =====================================================================
         'commercial' => [
             'Commercial Criteria' => [
-                'com_property_use' => [
-                    'label'         => 'What\'s the buyer\'s intended use for the space?',
-                    'placeholder'   => 'Enter intended use (e.g., Owner-occupied medical office, Retail, Light industrial)',
-                    'tooltip'       => 'Lets the AI restate how the buyer plans to use the space.',
+                'buyer_commercial_intended_use' => [
+                    'label'         => 'What\'s the buyer\'s intended use for the space, and will they owner-occupy?',
+                    'placeholder'   => 'Enter intended use (e.g., Owner-occupied medical office, Retail with lease-back to seller, Light industrial for own operations)',
+                    'tooltip'       => 'Lets the AI restate how the buyer plans to use the space and whether they intend to occupy it.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'com_occupancy_rate' => [
-                    'label'         => 'What minimum occupancy does the buyer require at purchase?',
-                    'placeholder'   => 'Enter occupancy requirement (e.g., At least 80% occupied, Prefer fully stabilized, Open to some vacancy)',
-                    'tooltip'       => 'Helps the AI restate the buyer\'s occupancy requirement factually.',
+                'buyer_commercial_space_requirements' => [
+                    'label'         => 'What space, layout, or build-out characteristics does the buyer\'s use require?',
+                    'placeholder'   => 'Enter requirements (e.g., Drive-through capability, 16-ft clear height, 3-phase power, Grade-level loading, Existing restaurant build-out)',
+                    'tooltip'       => 'Owner-occupant diligence: the AI restates the physical characteristics the buyer\'s business needs.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'com_lease_terms' => [
-                    'label'         => 'What lease structure does the buyer prefer (NNN/gross/etc.)?',
-                    'placeholder'   => 'Enter lease preference (e.g., Prefer NNN, Open to gross or modified gross, Flexible)',
-                    'tooltip'       => 'Lets the AI explain the buyer\'s preferred lease structure; it may define terms but not advise.',
+                'buyer_commercial_tenancy_preference' => [
+                    'label'         => 'If leased-investment, what lease structure and tenancy does the buyer prefer?',
+                    'placeholder'   => 'Enter preference (e.g., Prefer NNN with credit tenant, Open to owner-occupy vacant, Single-tenant preferred over multi-tenant)',
+                    'tooltip'       => 'Lets the AI explain the buyer\'s preferred lease/tenancy structure; it may define terms but not advise.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'com_1031_exchange' => [
+                'buyer_commercial_1031_exchange' => [
                     'label'         => 'Is the buyer completing a 1031 exchange with a timing requirement?',
                     'placeholder'   => 'Enter exchange details (e.g., Yes — must close within 60 days, Not a 1031 exchange, Window closing soon)',
                     'tooltip'       => 'Factual timing disclosure; the AI may define a 1031 exchange but gives no tax advice.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'com_environmental_concerns' => [
-                    'label'         => 'Will the buyer require environmental studies (Phase I/II)?',
-                    'placeholder'   => 'Enter study requirements (e.g., Phase I required by lender, Buyer will order Phase I, Phase II may be needed)',
-                    'tooltip'       => 'Helps the AI communicate environmental-study requirements factually.',
+                'buyer_commercial_environmental' => [
+                    'label'         => 'Will the buyer require environmental or property-condition studies (Phase I/II, PCA)?',
+                    'placeholder'   => 'Enter study requirements (e.g., Phase I required by lender, Buyer will order Phase I, Property-condition assessment planned)',
+                    'tooltip'       => 'Helps the AI communicate diligence-study requirements factually.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
