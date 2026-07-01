@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 class BuyerAgentAuctionEdit extends Component
 {
     use WithFileUploads;
+    use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror
+    use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows
 
 
     // Livewire properties for form fields
@@ -1292,6 +1294,12 @@ class BuyerAgentAuctionEdit extends Component
 
             $countiesRaw = $auction->get->counties ?? null;
             $this->counties = $countiesRaw ? (is_string($countiesRaw) ? json_decode($countiesRaw, true) ?? [] : (array)$countiesRaw) : [];
+
+            // 9D: Search Areas + Important Places. Runs after the discrete cities/counties/state
+            // loads above so the blob prefill guards see them.
+            $this->loadSearchAreas($auction);
+            $this->loadImportantPlaces($auction);
+
             // Property details
             $propertyItemsRaw = $auction->get->property_items ?? null;
             $this->property_items = $propertyItemsRaw ? (is_string($propertyItemsRaw) ? json_decode($propertyItemsRaw, true) ?? [] : (array)$propertyItemsRaw) : [];
@@ -1728,6 +1736,12 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
 
+        // 9D: Search Areas + Important Places. saveSearchAreas() writes the
+        // location_dna_preferences blob and re-mirrors the discrete cities/counties/state
+        // written just above from the blob (the map is now the single editing surface).
+        $this->saveSearchAreas($auction);
+        $this->saveImportantPlaces($auction);
+
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
         $auction->saveMeta('property_items', json_encode($this->property_items));
@@ -2135,6 +2149,10 @@ class BuyerAgentAuctionEdit extends Component
             'cities' => $this->cities ?? [],
             'state' => $this->state ?? null,
         ]);
+
+        // 9D: block save-edit when a started Important Place row is incomplete. Before the try
+        // so the ValidationException propagates to Livewire rather than being swallowed.
+        $this->assertImportantPlacesValid();
 
         try {
             // Normalize money field before validation so formatted values (e.g. "5,000") pass numeric check

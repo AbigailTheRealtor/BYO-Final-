@@ -825,6 +825,10 @@
     </div>
 </div>
 
+{{-- 9D: Google Maps JS (Places + Drawing) for the Search Areas map. The map-input
+     partial self-boots (polls for google.maps), so no callback is needed. --}}
+<x-google-maps-script :libraries="'places,drawing'" />
+
 @push('scripts')
     <script>
         let currentServiceType = null;

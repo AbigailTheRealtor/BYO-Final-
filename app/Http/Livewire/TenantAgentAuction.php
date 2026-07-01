@@ -27,6 +27,8 @@ class TenantAgentAuction extends Component
 {
     use WithFileUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+    use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
+    use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -3041,6 +3043,13 @@ class TenantAgentAuction extends Component
             $this->zipCodes = is_string($auction->get->zipCodes) ? json_decode($auction->get->zipCodes, true) ?? [] : (array)$auction->get->zipCodes;
             $this->zip_code = $this->zipCodes[0] ?? '';
 
+            // 9D: Search Areas + Important Places (Buyer/Tenant only). Runs after the
+            // discrete cities/counties/state loads above so the blob prefill guards see them.
+            if (in_array($this->user_type, ['buyer', 'tenant'])) {
+                $this->loadSearchAreas($auction);
+                $this->loadImportantPlaces($auction);
+            }
+
             $this->property_city = $auction->info('property_city') ?: '';
             $this->property_state = $auction->info('property_state') ?: '';
             $this->property_zip = $auction->info('property_zip') ?: '';
@@ -4250,6 +4259,14 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
         $auction->saveMeta('state', $this->state);
 
+        // 9D: Search Areas + Important Places (Buyer/Tenant only). saveSearchAreas() writes
+        // the location_dna_preferences blob and re-mirrors the discrete cities/counties/state
+        // written just above from the blob (the map is now the single editing surface).
+        if (in_array($this->user_type, ['buyer', 'tenant'])) {
+            $this->saveSearchAreas($auction);
+            $this->saveImportantPlaces($auction);
+        }
+
         $auction->saveMeta('property_city', $this->property_city);
         $auction->saveMeta('property_state', $this->property_state);
         $auction->saveMeta('property_zip', $this->property_zip);
@@ -4949,7 +4966,14 @@ class TenantAgentAuction extends Component
             'counties' => $this->counties ?? [],
             'timestamp' => now()->toDateTimeString(),
         ]);
-        
+
+        // 9D: block submit when a started Important Place row is incomplete (Buyer/Tenant
+        // only). Thrown BEFORE the try below so the ValidationException propagates to
+        // Livewire instead of being swallowed into a generic error flash by the catch.
+        if (in_array($this->user_type, ['buyer', 'tenant'])) {
+            $this->assertImportantPlacesValid();
+        }
+
         try {
 
             $this->isDraft = 0;

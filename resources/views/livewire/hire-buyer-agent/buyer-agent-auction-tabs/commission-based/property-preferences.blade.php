@@ -131,154 +131,17 @@
 </div>
 
 
-<div class="form-group mb-3">
-    <label class="fw-bold">Acceptable Cities:
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the cities where the Buyer is willing to purchase a property.<br>Selecting a city will automatically populate the associated county and state when available.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-
-
-
-    <div class="input-cover position-relative">
-        <input type="text" wire:model.live.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
-            wire:keydown.arrow-up.prevent="decrementHighlight('City')"
-            wire:keydown.arrow-down.prevent="incrementHighlight('City')"
-            class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
-            autocomplete="off" placeholder="Enter city or cities">
-
-
-        <!-- City Suggestions Dropdown -->
-        @if (count($citySuggestions) > 0)
-            <div class="autocomplete-dropdown shadow-sm">
-                <ul class="list-group">
-                    @foreach ($citySuggestions as $index => $suggestion)
-                        <li class="list-group-item {{ $highlightedCityIndex === $index ? 'bg-light' : '' }}"
-                            @mousedown.prevent="$wire.selectCitySuggestion('{{ $suggestion }}')"
-                            wire:key="city-suggestion-{{ $index }}">
-                            <i class="fa-solid fa-city me-2 text-muted"></i>
-                            {{ $suggestion }}
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        @error('newCity')
-            <div class="error-message">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <!-- Display added cities -->
-    <div class="mt-1 cities-container">
-        @if (count($cities) > 0)
-            @foreach ($cities as $index => $city)
-                <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="city-badge-{{ $index }}">
-                    <i class="fa-solid fa-city me-2"></i>
-                    {{ $city }}
-                    <button type="button" class="byo-pill-remove ms-2"
-                        wire:click="removeCity({{ $index }})" aria-label="Remove">&times;</button>
-                </span>
-            @endforeach
-
-        @endif
-    </div>
-</div>
-
-<!-- Acceptable Counties -->
-<div class="form-group mb-3">
-    <label class="fw-bold">Acceptable Counties:<span class="text-danger">*</span>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the counties where the Buyer is willing to purchase a property.<br>If a county is selected, the state will automatically populate.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover position-relative">
-        <input type="text" wire:model.live.debounce.300ms="newCounty" wire:keydown.enter.prevent="selectCountySuggestion()"
-            wire:keydown.arrow-up.prevent="decrementHighlight('County')"
-            wire:keydown.arrow-down.prevent="incrementHighlight('County')"
-            class="form-control has-icon @error('newCounty') is-invalid @enderror" data-icon="fa-solid fa-map"
-            autocomplete="off" placeholder="Enter county or counties">
-
-        <!-- County Suggestions Dropdown -->
-        @if (count($countySuggestions) > 0)
-            <div class="autocomplete-dropdown-counties shadow-sm">
-                <ul class="list-group">
-                    @foreach ($countySuggestions as $index => $suggestion)
-                        <li class="list-group-item {{ $highlightedCountyIndex === $index ? 'bg-light' : '' }}"
-                            wire:click="selectCountySuggestion('{{ $suggestion }}')"
-                            wire:key="county-suggestion-{{ $index }}">
-                            <i class="fa-solid fa-map me-2 text-muted"></i>
-                            {{ $suggestion }}
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        @error('newCounty')
-            <div class="error-message">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <!-- Hidden field for counties validation - validated via Livewire state -->
-    <input type="hidden" id="counties_hidden" name="counties_hidden" 
-           value="{{ count($counties) > 0 ? json_encode($counties) : '' }}"
-           data-livewire-counties="true">
-
-    <!-- Display added counties -->
-    <div class="mt-1 counties-container">
-        @if (count($counties) > 0)
-            @foreach ($counties as $index => $county)
-                <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="county-badge-{{ $index }}">
-                    <i class="fa-solid fa-map me-2"></i>
-                    {{ $county }}
-                    <button type="button" class="byo-pill-remove ms-2"
-                        wire:click="removeCounty({{ $index }})" aria-label="Remove">&times;</button>
-                </span>
-            @endforeach
-
-        @endif
-    </div>
-    <span class="error mt-2" id="counties_error"></span>
-</div>
-<div class="form-group">
-    <label class="fw-bold">Acceptable State:<span class="text-danger">*</span>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the state where the Buyer is looking to purchase a property.<br>This may be automatically filled based on the counties selected.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-
-
-    <div class="input-cover position-relative">
-        <input type="text" wire:model.defer="state" wire:keydown.enter.prevent="selectStateSuggestion"
-            wire:keydown.arrow-up="decrementHighlight('state')" wire:keydown.arrow-down="incrementHighlight('state')"
-            class="form-control has-icon @error('state') is-invalid @enderror" data-icon="fa-solid fa-flag-usa"
-            autocomplete="off" placeholder="Enter state" required>
-
-        @if (count($stateSuggestions) > 0)
-            <div class="autocomplete-dropdown-counties shadow-sm">
-                <ul class="list-group">
-                    @foreach ($stateSuggestions as $index => $suggestion)
-                        <li class="list-group-item {{ $highlightedStateIndex === $index ? 'bg-light' : '' }}"
-                            wire:click="selectStateSuggestion('{{ $suggestion }}')"
-                            wire:key="state-suggestion-{{ $index }}">
-                            {{ $suggestion }}
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        @error('state')
-            <div class="error-message">{{ $message }}</div>
-        @enderror
-    </div>
-</div>
+{{-- 9D: Search Areas — single editing surface (replaces the legacy Acceptable
+     Cities/Counties/State inputs). Preferred Cities/ZIP/Counties/State live in the
+     location_dna_preferences blob; discrete state/counties/cities meta are mirrored
+     server-side by HasSearchAreas for Ask AI, matching, filtering, and display. --}}
+@include('partials.location-dna.map-input', [
+    'existingLocationDna'     => $existingLocationDna ?? [],
+    'mapPanelId'              => 'ldna-map-hire-buyer',
+    'enableImportantPlaces'   => true,
+    'existingImportantPlaces' => $existingImportantPlaces ?? [],
+])
+@include('partials.location-dna.search-areas-bridge')
 
 <!-- Property Type Dropdown -->
 

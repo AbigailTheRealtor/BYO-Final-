@@ -426,6 +426,25 @@ class OfferWorkflowReadinessTest extends TestCase
             //   components and their two tab blades (above) render/persist the rows.
             'app/Services/Offers/ImportantPlacesService.php',
             'app/Http/Livewire/OfferListing/Concerns/HasImportantPlaces.php',
+            // Phase 9D — Search Areas + Important Places parity for the Hire Buyer/Tenant
+            //   Agent wizards. The shared map partial + HasSearchAreas / HasImportantPlaces
+            //   traits are wired into BOTH Hire component trees (the live catch-all
+            //   TenantAgentAuction(/Edit) and the dedicated HireBuyerAgent\BuyerAgentAuction
+            //   (/Edit) served at /add-auction). The duplicate City/County/State controls
+            //   were removed from the Hire property tabs — the Search Areas map is now the
+            //   single editing surface (blob ↔ discrete state/counties/cities mirror). New
+            //   shared HasSearchAreas trait + search-areas-bridge partial. (TenantAgentAuction.php
+            //   and tenant-agent-auction-edit.blade.php are already allow-listed above.)
+            'app/Http/Livewire/Concerns/HasSearchAreas.php',
+            'resources/views/partials/location-dna/search-areas-bridge.blade.php',
+            'app/Http/Livewire/TenantAgentAuctionEdit.php',
+            'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php',
+            'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
+            'resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php',
+            'resources/views/livewire/hire-buyer-agent/hire-buyer-agent.blade.php',
+            'resources/views/livewire/hire-buyer-agent/hire-buyer-agent-edit.blade.php',
+            'resources/views/livewire/tenant-agent-auction-tabs/commission-based/property-details.blade.php',
+            'resources/views/livewire/tenant-agent-auction.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

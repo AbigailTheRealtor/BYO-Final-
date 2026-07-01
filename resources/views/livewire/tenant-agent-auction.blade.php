@@ -1914,6 +1914,12 @@ $lease_types = [
 </div>
 </div>
 
+{{-- 9D: Google Maps JS (Places + Drawing) for the Search Areas map — Buyer/Tenant only.
+     The map-input partial self-boots (polls for google.maps), so no callback is needed. --}}
+@if(in_array($user_type ?? '', ['buyer', 'tenant']))
+    <x-google-maps-script :libraries="'places,drawing'" />
+@endif
+
 @push('scripts')
 
 
