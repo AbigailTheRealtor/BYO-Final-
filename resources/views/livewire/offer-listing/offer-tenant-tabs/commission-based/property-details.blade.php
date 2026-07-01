@@ -955,6 +955,17 @@
     </div>
 </div>
 
+{{-- B4.4: Rental Purpose "Other" custom input (S1/S3) — stays visible while "Other" is selected --}}
+@if ($rental_purpose === 'Other')
+    <div class="form-group" wire:key="rental-purpose-other-wrapper">
+        <div class="input-cover">
+            <input type="text" wire:model="rental_purpose_other" class="form-control has-icon"
+                data-icon="fa-solid fa-house-user"
+                placeholder="Enter rental purpose (e.g., Temporary relocation)">
+        </div>
+    </div>
+@endif
+
 <div class="form-group">
     <label class="fw-bold">Accessibility Requirements:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

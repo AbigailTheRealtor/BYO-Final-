@@ -277,6 +277,7 @@ class TenantOfferListing extends Component
     public $credit_score_range = '';
     // Phase D Tenant Tier 2 & Tier 3 EAV keys
     public $rental_purpose = '';
+    public $rental_purpose_other = '';
     public $move_in_budget_upfront = '';
     public $move_in_date_earliest = '';
     public $move_in_date_latest = '';
@@ -1140,6 +1141,16 @@ class TenantOfferListing extends Component
 
         if ($value !== 'Other') {
             $this->reset(['agency_agreement_custom']);
+        }
+    }
+
+    // B4.4: clear the Rental Purpose "Other" custom text when a preset purpose is chosen
+    public function updatedRentalPurpose($value)
+    {
+        if ($this->isLoadingData) return;
+
+        if ($value !== 'Other') {
+            $this->reset(['rental_purpose_other']);
         }
     }
 
@@ -3512,6 +3523,7 @@ class TenantOfferListing extends Component
             $this->credit_score_range = $auction->get->credit_score_range ?? '';
             // Phase D Tenant Tier 2 & Tier 3 EAV keys
             $this->rental_purpose = $auction->get->rental_purpose ?? '';
+            $this->rental_purpose_other = $auction->get->rental_purpose_other ?? '';
             $this->move_in_budget_upfront = $auction->get->move_in_budget_upfront ?? '';
             $this->move_in_date_earliest = $auction->get->move_in_date_earliest ?? '';
             $this->move_in_date_latest = $auction->get->move_in_date_latest ?? '';
@@ -4485,6 +4497,7 @@ class TenantOfferListing extends Component
         $auction->saveMeta('credit_score_range', $this->credit_score_range);
         // Phase D Tenant Tier 2 & Tier 3 EAV keys
         $auction->saveMeta('rental_purpose', $this->rental_purpose);
+        $auction->saveMeta('rental_purpose_other', $this->rental_purpose_other);
         $auction->saveMeta('move_in_budget_upfront', $this->move_in_budget_upfront);
         $auction->saveMeta('move_in_date_earliest', $this->move_in_date_earliest);
         $auction->saveMeta('move_in_date_latest', $this->move_in_date_latest);

@@ -214,7 +214,7 @@
         <div class="input-cover">
             <input type="text" wire:model="screening_concerns_explanation" class="form-control has-icon"
                 data-icon="fa-solid fa-list"
-                placeholder="Enter screening concerns (e.g., low credit score, prior eviction, background check issues)">
+                placeholder="Enter screening concerns (e.g., Low credit score, Prior eviction, Background check issues)">
         </div>
     </div>
 @endif

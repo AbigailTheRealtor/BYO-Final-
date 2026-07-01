@@ -280,6 +280,7 @@ class TenantOfferListingEdit extends Component
     public $credit_score_range = '';
     // Phase D Tenant Tier 2 & Tier 3 EAV keys
     public $rental_purpose = '';
+    public $rental_purpose_other = '';
     public $move_in_budget_upfront = '';
     public $move_in_date_earliest = '';
     public $move_in_date_latest = '';
@@ -1097,6 +1098,15 @@ class TenantOfferListingEdit extends Component
         if ($this->isLoadingData) return;
         if ($value !== 'Other') {
             $this->reset(['agency_agreement_custom']);
+        }
+    }
+
+    // B4.4: clear the Rental Purpose "Other" custom text when a preset purpose is chosen
+    public function updatedRentalPurpose($value)
+    {
+        if ($this->isLoadingData) return;
+        if ($value !== 'Other') {
+            $this->reset(['rental_purpose_other']);
         }
     }
 
@@ -2664,6 +2674,7 @@ class TenantOfferListingEdit extends Component
         $this->credit_score_range = $auction->info('credit_score_range') ?? '';
         // Phase D Tenant Tier 2 & Tier 3 EAV keys
         $this->rental_purpose = $auction->info('rental_purpose') ?? '';
+        $this->rental_purpose_other = $auction->info('rental_purpose_other') ?? '';
         $this->move_in_budget_upfront = $auction->info('move_in_budget_upfront') ?? '';
         $this->move_in_date_earliest = $auction->info('move_in_date_earliest') ?? '';
         $this->move_in_date_latest = $auction->info('move_in_date_latest') ?? '';
@@ -3427,6 +3438,7 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('credit_score_range', $this->credit_score_range);
             // Phase D Tenant Tier 2 & Tier 3 EAV keys
             $auction->saveMeta('rental_purpose', $this->rental_purpose);
+            $auction->saveMeta('rental_purpose_other', $this->rental_purpose_other);
             $auction->saveMeta('move_in_budget_upfront', $this->move_in_budget_upfront);
             $auction->saveMeta('move_in_date_earliest', $this->move_in_date_earliest);
             $auction->saveMeta('move_in_date_latest', $this->move_in_date_latest);

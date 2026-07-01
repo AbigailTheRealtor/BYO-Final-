@@ -1732,6 +1732,8 @@ $lease_types = [
                                     id="broker-compensation-agency-agreement-terms" role="tabpanel"
                                     aria-labelledby="broker-compensation-agency-agreement-terms-tab">
                                     @if ($user_type === 'tenant')
+                                        {{-- B4.1: Create Tenant broker tab shows ONLY Commission Structure + Lease Fee (mirror edit flow) --}}
+                                        @php $isTenantOfferListing = true; @endphp
                                         @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
                                     @elseif ($user_type === 'buyer')
                                         @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')

@@ -400,10 +400,9 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="renewal_option_details" class="form-control has-icon" rows="1"
+        <input type="text" wire:model="renewal_option_details" class="form-control has-icon"
             data-icon="fa-solid fa-rotate-right"
-            style="height: calc(1.5em + 0.75rem + 2px); min-height: unset; resize: vertical;"
-            placeholder="Enter renewal option details (e.g., Option to renew for 1 additional year at the same rate)"></textarea>
+            placeholder="Enter renewal option details (e.g., Option to renew for 1 additional year at the same rate)">
     </div>
 </div>
 @endif
@@ -417,11 +416,10 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="tenant_conditions" class="form-control has-icon" rows="1"
+        <input type="text" wire:model="tenant_conditions" class="form-control has-icon"
             data-icon="fa-solid fa-clipboard-list"
-            style="height: calc(1.5em + 0.75rem + 2px); min-height: unset; resize: vertical;"
             x-on:input="$el.parentElement.nextElementSibling.querySelector('small').textContent = $el.value.length + ' characters'"
-            placeholder="Enter tenant conditions (e.g., early termination clause, no-subletting waiver, move-in date flexibility)"></textarea>
+            placeholder="Enter tenant conditions (e.g., early termination clause, no-subletting waiver, move-in date flexibility)">
     </div>
     <div class="text-end mt-1"><small class="text-muted">{{ strlen($tenant_conditions ?? '') }} characters</small></div>
 </div>
@@ -578,10 +576,9 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="commercial_approval_conditions" class="form-control has-icon" rows="1"
+        <input type="text" wire:model="commercial_approval_conditions" class="form-control has-icon"
             data-icon="fa-solid fa-clipboard-check"
-            style="height: calc(1.5em + 0.75rem + 2px); min-height: unset; resize: vertical;"
-            placeholder="Enter any approval conditions, business-use requirements, or documentation the Tenant may need before leasing the space (e.g., commercial use permit, HOA board approval)."></textarea>
+            placeholder="Enter any approval conditions, business-use requirements, or documentation the Tenant may need before leasing the space (e.g., commercial use permit, HOA board approval).">
     </div>
 </div>
 

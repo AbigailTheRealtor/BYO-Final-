@@ -445,6 +445,14 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/livewire/hire-buyer-agent/hire-buyer-agent-edit.blade.php',
             'resources/views/livewire/tenant-agent-auction-tabs/commission-based/property-details.blade.php',
             'resources/views/livewire/tenant-agent-auction.blade.php',
+            // Phase 11 — Hire Tenant + Create Tenant fixes. B3.1/B3.2 (Hire Tenant
+            //   placeholder capitalization) + B4.1 (Create Tenant broker-tab field
+            //   scoping) + B4.4 (Rental Purpose "Other" custom input + persisted
+            //   rental_purpose_other) live in blades/components already allow-listed
+            //   above. These two Create-Tenant tab blades carry B4.2 (rental-history
+            //   placeholder capitalization) and B4.3 (input sizing → single-line).
+            'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/pre-screening.blade.php',
+            'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php',
         ];
 
         $unexpected = array_values(array_filter(
