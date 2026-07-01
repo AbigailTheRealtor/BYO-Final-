@@ -1068,6 +1068,7 @@
                     '#condition_prop_buyer': 'condition_prop_buyer',
                     '#garage_parking_spaces_option': 'garage_parking_spaces_option',
                     '#assets': 'assets',
+                    '#flood_zone_tolerance': 'flood_zone_tolerance',
                 };
                 Object.entries(multiFields).forEach(function([selector, prop]) {
 
@@ -1221,6 +1222,7 @@
             var vp = $('#view_preference').val() || [];
             var gps = $('#garage_parking_spaces_option').val() || [];
             var ass = $('#assets').val() || [];
+            var fzt = $('#flood_zone_tolerance').val() || [];
 
             cpb = [...new Set(cpb)];
             nut = [...new Set(nut)];
@@ -1231,6 +1233,7 @@
             vp = [...new Set(vp)];
             gps = [...new Set(gps)];
             ass = [...new Set(ass)];
+            fzt = [...new Set(fzt)];
 
             @this.set('condition_prop_buyer', cpb);
             @this.set('number_of_unit_type', nut);
@@ -1241,6 +1244,7 @@
             @this.set('view_preference', vp);
             @this.set('garage_parking_spaces_option', gps);
             @this.set('assets', ass);
+            @this.set('flood_zone_tolerance', fzt);
 
             // Sync all compatibility_preferences fields (single-selects + rp) in one batch
             if ($('[data-compat-field]').length || $('#compat_representation_priorities').length) {
@@ -1367,6 +1371,21 @@
                     let selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
                     debouncedSet('assets', selectedValues);
+                });
+            }
+
+            // B5.8: Flood Zone Preference select2 → Livewire sync + "Other" reveal
+            if ($('#flood_zone_tolerance').length && !$('#flood_zone_tolerance').hasClass('select2-hidden-accessible')) {
+                window.initFullServiceSelect2Multiple($('#flood_zone_tolerance'));
+
+                $('#flood_zone_tolerance').off('change.fztSync').on('change.fztSync', function() {
+                    let selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    debouncedSet('flood_zone_tolerance', selectedValues);
+                    var fztOther = document.querySelector('.flood_zone_tolerance_other_wrapper');
+                    if (fztOther) {
+                        fztOther.classList.toggle('d-none', !selectedValues.includes('Other'));
+                    }
                 });
             }
 

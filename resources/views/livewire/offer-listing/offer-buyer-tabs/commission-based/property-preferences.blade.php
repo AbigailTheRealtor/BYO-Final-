@@ -452,7 +452,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_business_type" class="form-control has-icon"
             data-icon="fa-solid fa-briefcase"
-            placeholder="Enter other business type (e.g., Recording studio, Event venue, Repair shop)">
+            placeholder="Enter business type (e.g., Recording studio, Event venue, Repair shop)">
     </div>
 </div>
 @endif

@@ -231,7 +231,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
-            placeholder="Enter other land use (e.g., Solar Farm, RV Park, Conservation Easement)">
+            placeholder="Enter land use (e.g., Solar farm, RV park, Conservation easement)">
     </div>
     <span class="error mt-2" id="other_property_items_error"></span>
 </div>
@@ -260,7 +260,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_business_type" class="form-control has-icon"
             data-icon="fa-solid fa-briefcase"
-            placeholder="Enter other business type (e.g., Recording Studio, Event Venue, Repair Shop)">
+            placeholder="Enter business type (e.g., Recording studio, Event venue, Repair shop)">
     </div>
 </div>
 @endif
@@ -539,10 +539,12 @@
     </div>
 @endif
 <!-- Garage/Parking Spaces Type Dropdown -->
-@if ($this->garage_parking_spaces == 'Yes')
-<div class="form-group" id="garage_parking_spaces_option_wrapper">
+{{-- B5.3: always-rendered + d-none toggle (mirrors the working Tenant pattern) so the
+     select2 stays initialized instead of Livewire adding/removing its DOM. Visibility is
+     driven by the existing toggleGarageOptions() JS (by id) on load/change/message.processed. --}}
+<div class="form-group {{ ($this->garage_parking_spaces ?? '') === 'Yes' ? '' : 'd-none' }}" id="garage_parking_spaces_option_wrapper" wire:ignore>
     <label class="fw-bold">Garage/Parking Features:</label>
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover">
 
         <select id="garage_parking_spaces_option"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" data-placeholder="Select" multiple>
@@ -554,18 +556,15 @@
     </div>
     <span class="error mt-2" id="garage_parking_spaces_option_error"></span>
 </div>
-@endif
 
 <!-- Other Parking Space Text Input -->
-@if (in_array('Other', $garage_parking_spaces_option ?? []))
-<div class="form-group" id="other_parking_space_wrapper">
+<div class="form-group {{ (($this->garage_parking_spaces ?? '') === 'Yes' && in_array('Other', (array)($garage_parking_spaces_option ?? []))) ? '' : 'd-none' }}" id="other_parking_space_wrapper" wire:ignore>
     <div class="input-cover">
         <input type="text" wire:model.defer="other_parking_space_wrapper" id="other_parking_space"
             class="form-control has-icon" data-icon="fa-solid fa-warehouse"
             placeholder="Enter garage/parking features needed (e.g., Tandem Parking, Gated Entry, Shared Driveway) ">
     </div>
 </div>
-@endif
 
 <!-- Pool Needed -->
 @if ($property_type === 'Residential' or $property_type === 'Income')
@@ -710,11 +709,11 @@
         @if ($property_type === 'Residential' or $property_type === 'Income')
             <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                 data-icon="fa-solid fa-lock"
-                placeholder="Enter non-negotiable amenities or features (e.g., Sauna, EV Charger, Outdoor Kitchen)">
+                placeholder="Enter non-negotiable amenities or features (e.g., Sauna, EV charger, Outdoor kitchen)">
         @elseif ($property_type === 'Commercial' or $property_type === 'Business')
             <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                 data-icon="fa-solid fa-lock"
-                placeholder="Enter non-negotiable amenities or features (e.g., Rooftop Access, Backup Generator, Freight Elevator) ">
+                placeholder="Enter non-negotiable amenities or features (e.g., Rooftop access, Backup generator, Freight elevator)">
         @endif
 
     </div>
@@ -915,7 +914,7 @@
 <div class="form-group other_assets {{ in_array('Other', $assets ?? []) ? '' : 'd-none' }}" wire:key="other-assets-wrapper">
     <div class="input-cover">
         <input type="text" wire:model.defer="assets_other" class="form-control has-icon" data-icon="fa-solid fa-building"
-            placeholder="Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
+            placeholder="Enter any included assets (e.g., Inventory, Customer lists, Trademarks, Software rights)">
     </div>
     <span class="error mt-2" id="assets_other_error"></span>
 </div>
@@ -1181,23 +1180,95 @@
         </div>
     </div>
 @endif
-@if ($property_type === 'Income')
-<div class="form-group">
-    <label class="fw-bold">Additional Details:
+{{-- B5.7: removed the Income-only duplicate "Additional Details" question here;
+     the canonical Additional Details field lives on the dedicated Additional Details tab.
+     preferance_details persistence is left untouched. --}}
 
+{{-- B5.8: Create-Buyer fields ported to Hire Buyer (Purchase Purpose, HOA Acceptance,
+     Maximum HOA Monthly Fee, Flood Zone Preference). Mirrors the Create Buyer markup. --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Purchase Purpose:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter any other important preferences, requirements, or notes not covered above.">
+            title="Select the primary reason the Buyer is purchasing this property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-
-
     <div class="input-cover">
-        <textarea wire:model.defer="preferance_details" class="form-control" rows="4"
-            style="padding: 10px; font-size: 16px;" placeholder="Enter additional preferences (e.g., Prefer updated kitchens, No HOA, Near good schools)"></textarea>
+        <select wire:model="purchase_purpose" class="form-control has-icon" data-icon="fa-solid fa-bullseye">
+            <option value="">Select</option>
+            <option value="Primary Residence">Primary Residence</option>
+            <option value="Vacation">Vacation</option>
+            <option value="Second Home">Second Home</option>
+            <option value="Investment">Investment</option>
+            <option value="Business Use">Business Use</option>
+            <option value="Development">Development</option>
+            <option value="Other">Other</option>
+        </select>
     </div>
 </div>
-@endif
+<div class="form-group purchase_purpose_other_wrapper {{ $purchase_purpose === 'Other' ? '' : 'd-none' }}" wire:key="hire-purchase-purpose-other-wrapper">
+    <div class="input-cover">
+        <input type="text" wire:model.defer="purchase_purpose_other" class="form-control has-icon"
+            data-icon="fa-solid fa-bullseye"
+            placeholder="Enter purchase purpose (e.g., Business expansion, House flipping, Estate planning)">
+    </div>
+</div>
+
+<div class="form-group mt-3">
+    <label class="fw-bold">HOA Acceptance:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Buyer is willing to purchase a property with a Homeowners Association.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="hoa_acceptance" class="form-control has-icon" data-icon="fa-solid fa-building-columns">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Flexible">Flexible</option>
+        </select>
+    </div>
+</div>
+<div class="form-group mt-3" x-data x-show="['Yes', 'Flexible'].includes($wire.hoa_acceptance)" x-cloak>
+    <label class="fw-bold">Maximum HOA Monthly Fee:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the maximum monthly HOA fee the Buyer is willing to pay.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="number" wire:model.defer="hoa_max_monthly_fee" class="form-control"
+            placeholder="Enter maximum monthly HOA fee (e.g., $350)" min="0" step="0.01">
+    </div>
+</div>
+
+<div class="form-group mt-3">
+    <label class="fw-bold">Flood Zone Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the Buyer's flood zone preference. Multiple selections allowed.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover has-select-icon" wire:ignore>
+        <select id="flood_zone_tolerance" class="form-control has-icon select2-multiple"
+            data-icon="fa-solid fa-water" data-placeholder="Select" multiple>
+            <option value="No Preference" {{ in_array('No Preference', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>No Preference</option>
+            <option value="Preferred Outside Flood Zones" {{ in_array('Preferred Outside Flood Zones', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>Preferred Outside Flood Zones</option>
+            <option value="Open to Flood Zones with Affordable Insurance" {{ in_array('Open to Flood Zones with Affordable Insurance', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>Open to Flood Zones with Affordable Insurance</option>
+            <option value="Open to Any Flood Zone" {{ in_array('Open to Any Flood Zone', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>Open to Any Flood Zone</option>
+            <option value="Other" {{ in_array('Other', $flood_zone_tolerance ?? []) ? 'selected' : '' }}>Other</option>
+        </select>
+    </div>
+</div>
+<div class="form-group flood_zone_tolerance_other_wrapper {{ in_array('Other', $flood_zone_tolerance ?? []) ? '' : 'd-none' }}" wire:key="hire-flood-zone-tolerance-other-wrapper">
+    <div class="input-cover">
+        <input type="text" wire:model.defer="flood_zone_tolerance_other" class="form-control has-icon"
+            data-icon="fa-solid fa-water"
+            placeholder="Enter flood zone preference (e.g., Open to coastal properties if insurance costs are reasonable)">
+    </div>
+</div>
 </div>
 
 <script>

@@ -184,6 +184,13 @@ class BuyerAgentAuctionEdit extends Component
     public $garage_parking_spaces = '';
     public $garage_parking_spaces_option = '';
     public $other_parking_space_wrapper = '';
+    // B5.8: Create-Buyer fields ported to Hire Buyer (Purchase Purpose, HOA, Flood Zone)
+    public $purchase_purpose = '';
+    public $purchase_purpose_other = '';
+    public $hoa_acceptance = '';
+    public $hoa_max_monthly_fee = '';
+    public $flood_zone_tolerance = [];
+    public $flood_zone_tolerance_other = '';
     public $pool_needed = '';
     public $pool_type = [];
     public $view_preference = [];
@@ -1458,6 +1465,14 @@ class BuyerAgentAuctionEdit extends Component
             $this->other_garage_needed = $auction->get->other_garage_needed ?? '';
             $this->garage_parking_spaces = $auction->get->garage_parking_spaces ?? '';
             $this->garage_parking_spaces_option = $auction->get->garage_parking_spaces_option ?? '';
+            // B5.8 load
+            $this->purchase_purpose = $auction->get->purchase_purpose ?? '';
+            $this->purchase_purpose_other = $auction->get->purchase_purpose_other ?? '';
+            $this->hoa_acceptance = $auction->get->hoa_acceptance ?? '';
+            $this->hoa_max_monthly_fee = $auction->get->hoa_max_monthly_fee ?? '';
+            $floodRaw = $auction->get->flood_zone_tolerance ?? null;
+            $this->flood_zone_tolerance = $floodRaw ? (is_array($floodRaw) ? $floodRaw : (is_string($floodRaw) ? json_decode($floodRaw, true) ?? [] : [])) : [];
+            $this->flood_zone_tolerance_other = $auction->get->flood_zone_tolerance_other ?? '';
             $this->other_parking_space_wrapper = $auction->get->other_parking_space_wrapper ?? '';
             $this->pool_needed = $auction->get->pool_needed ?? '';
 
@@ -1892,6 +1907,13 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('other_garage_needed', $this->other_garage_needed);
         $auction->saveMeta('garage_parking_spaces', $this->garage_parking_spaces);
         $auction->saveMeta('garage_parking_spaces_option', $this->garage_parking_spaces_option);
+        // B5.8 save
+        $auction->saveMeta('purchase_purpose', $this->purchase_purpose);
+        $auction->saveMeta('purchase_purpose_other', $this->purchase_purpose_other);
+        $auction->saveMeta('hoa_acceptance', $this->hoa_acceptance);
+        $auction->saveMeta('hoa_max_monthly_fee', $this->hoa_max_monthly_fee);
+        $auction->saveMeta('flood_zone_tolerance', json_encode($this->flood_zone_tolerance ?? []));
+        $auction->saveMeta('flood_zone_tolerance_other', $this->flood_zone_tolerance_other ?? '');
         $auction->saveMeta('other_parking_space_wrapper', $this->other_parking_space_wrapper);
         $auction->saveMeta('pool_needed', $this->pool_needed);
         $auction->saveMeta('pool_type', json_encode($this->pool_type));

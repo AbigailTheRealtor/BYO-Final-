@@ -1294,6 +1294,25 @@
                 });
             }
 
+            // B5.8: Flood Zone Preference select2 → Livewire sync + "Other" reveal
+            if ($('#flood_zone_tolerance').length && !$('#flood_zone_tolerance').hasClass('select2-hidden-accessible')) {
+                $('#flood_zone_tolerance').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    width: "100%",
+                    closeOnSelect: false,
+                });
+                $('#flood_zone_tolerance').off('change.fztSync').on('change.fztSync', function() {
+                    let selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    debouncedSet('flood_zone_tolerance', selectedValues);
+                    var fztOther = document.querySelector('.flood_zone_tolerance_other_wrapper');
+                    if (fztOther) {
+                        fztOther.classList.toggle('d-none', !selectedValues.includes('Other'));
+                    }
+                });
+            }
+
             if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
                 $('#garage_parking_spaces_option').select2({
                     placeholder: "Select",
