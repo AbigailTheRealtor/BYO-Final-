@@ -27,15 +27,18 @@ class AskAiInternalRunnerService
     private AskAiContextBuilderService $contextBuilder;
     private AskAiResponseContractService $contractService;
     private AskAiPromptBuilderService $promptBuilder;
+    private AskAiViewerAuthorizationService $viewerAuth;
 
     public function __construct(
         AskAiContextBuilderService $contextBuilder,
         AskAiResponseContractService $contractService,
-        AskAiPromptBuilderService $promptBuilder
+        AskAiPromptBuilderService $promptBuilder,
+        ?AskAiViewerAuthorizationService $viewerAuth = null
     ) {
         $this->contextBuilder  = $contextBuilder;
         $this->contractService = $contractService;
         $this->promptBuilder   = $promptBuilder;
+        $this->viewerAuth      = $viewerAuth ?? new AskAiViewerAuthorizationService();
     }
 
     /**
@@ -72,6 +75,13 @@ class AskAiInternalRunnerService
     ): array {
         try {
             $context = $this->contextBuilder->buildForListing($listingType, $listingId, $options);
+
+            // Part J / C-B — redact confidential applicant fields per the requester's
+            // authorization scope BEFORE the context reaches the contract/prompt/model
+            // layers. Scope is resolved upstream (controller) and passed in $options;
+            // when absent we fail closed to 'public' (most-restrictive).
+            $viewerScope = $options['viewer_scope'] ?? AskAiViewerAuthorizationService::SCOPE_PUBLIC;
+            $context     = $this->viewerAuth->redactContext($context, $listingType, $viewerScope);
 
             $contract = $this->contractService->buildContract($questionType, $context);
 

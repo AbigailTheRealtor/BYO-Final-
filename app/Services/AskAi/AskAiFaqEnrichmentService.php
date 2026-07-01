@@ -130,19 +130,26 @@ class AskAiFaqEnrichmentService
             return [];
         }
 
+        // Configs use the two-axis groups/gating shape; AskAiFaqConfigService flattens it
+        // into a uniform category→key→entry map for all roles (seller/buyer/landlord/tenant).
         try {
-            $config = static::loadConfigArray($configKey);
+            $byCategory = AskAiFaqConfigService::questionsByCategory($configKey);
         } catch (\Throwable) {
             return [];
         }
 
-        if (!is_array($config)) {
-            return [];
+        $index = [];
+        foreach ($byCategory as $group => $questions) {
+            foreach ($questions as $key => $def) {
+                $index[(string) $key] = [
+                    'question_group'        => (string) $group,
+                    'question_label'        => $def['label'] ?? null,
+                    'intelligence_category' => static::groupToCategory((string) $group),
+                ];
+            }
         }
 
-        return $listingType === 'tenant'
-            ? static::indexTenantConfig($config)
-            : static::indexGroupedConfig($config);
+        return $index;
     }
 
     /**

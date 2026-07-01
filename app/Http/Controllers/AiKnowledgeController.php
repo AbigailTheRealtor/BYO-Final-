@@ -137,42 +137,25 @@ class AiKnowledgeController extends Controller
 
     private function buildKnowledgeBase(array $aiFaqData, string $listingType): array
     {
+        $configKey = \App\Services\AskAi\AskAiFaqConfigService::CONFIG_MAP[$listingType] ?? null;
+        if ($configKey === null) {
+            return [];
+        }
+
         $groups = [];
 
-        if ($listingType === 'tenant') {
-            $questions = config('tenant_ai_faq.questions', []);
-            $byCategory = [];
-            foreach ($questions as $q) {
-                $cat = $q['category'] ?? 'General';
-                if (!isset($byCategory[$cat])) $byCategory[$cat] = [];
-                $byCategory[$cat][$q['key']] = $q['label'];
-            }
-            foreach ($byCategory as $category => $items) {
-                $answers = [];
-                foreach ($items as $key => $label) {
-                    $val = trim($aiFaqData[$key] ?? '');
-                    if ($val !== '') {
-                        $answers[] = ['question' => $label, 'answer' => $val];
-                    }
-                }
-                if (!empty($answers)) {
-                    $groups[] = ['category' => $category, 'answers' => $answers];
+        // Two-axis config (groups/gating); AskAiFaqConfigService flattens it into a
+        // uniform category→key→entry map for every role.
+        foreach (\App\Services\AskAi\AskAiFaqConfigService::questionsByCategory($configKey) as $category => $questions) {
+            $answers = [];
+            foreach ($questions as $key => $entry) {
+                $val = trim($aiFaqData[$key] ?? '');
+                if ($val !== '') {
+                    $answers[] = ['question' => $entry['label'] ?? $key, 'answer' => $val];
                 }
             }
-        } else {
-            $configKey = 'ai_faq_' . $listingType;
-            $questionGroups = config($configKey . '.questions', []);
-            foreach ($questionGroups as $category => $questions) {
-                $answers = [];
-                foreach ($questions as $key => $label) {
-                    $val = trim($aiFaqData[$key] ?? '');
-                    if ($val !== '') {
-                        $answers[] = ['question' => $label, 'answer' => $val];
-                    }
-                }
-                if (!empty($answers)) {
-                    $groups[] = ['category' => $category, 'answers' => $answers];
-                }
+            if (!empty($answers)) {
+                $groups[] = ['category' => $category, 'answers' => $answers];
             }
         }
 

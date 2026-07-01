@@ -1318,10 +1318,18 @@ class TenantAgentAuctionBid extends Component
                     }
                 }
             } else {
-                $bid = new TenantAgentAuctionBidData();
-                $bid->user_id = Auth::id();
-                $bid->tenant_agent_auction_id = $this->auctionId;
-                $bid->save();
+                // BYA-H3 (Rule D2): backend safeguard — if this agent already has a bid
+                // on this listing, update it in place instead of inserting a duplicate
+                // (mirrors Landlord). One active bid per agent per hire-agent listing.
+                $bid = TenantAgentAuctionBidData::where('tenant_agent_auction_id', $this->auctionId)
+                    ->where('user_id', Auth::id())
+                    ->first();
+                if (!$bid) {
+                    $bid = new TenantAgentAuctionBidData();
+                    $bid->user_id = Auth::id();
+                    $bid->tenant_agent_auction_id = $this->auctionId;
+                    $bid->save();
+                }
             }
 
 

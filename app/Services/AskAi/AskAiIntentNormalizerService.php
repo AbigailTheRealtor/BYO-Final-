@@ -514,37 +514,15 @@ class AskAiIntentNormalizerService
     {
         $keys = [];
 
-        foreach (['ai_faq_seller', 'ai_faq_landlord', 'ai_faq_buyer'] as $configName) {
+        // Configs use the two-axis groups/gating shape; AskAiFaqConfigService flattens
+        // every group into the full key set (and degrades gracefully without a booted app).
+        foreach (['ai_faq_seller', 'ai_faq_landlord', 'ai_faq_buyer', 'tenant_ai_faq'] as $configName) {
             try {
-                $config = config($configName, []) ?? [];
+                $configKeys = \App\Services\AskAi\AskAiFaqConfigService::allKeys($configName);
             } catch (\Throwable $e) {
-                // config() is unavailable outside a bootstrapped Laravel application
-                // (e.g. in pure unit tests). Degrade gracefully to an empty array.
-                $config = [];
+                $configKeys = [];
             }
-
-            foreach ($config['questions'] ?? [] as $category => $questions) {
-                foreach ($questions as $key => $definition) {
-                    $keys[] = 'faq_answers.' . $key;
-                }
-            }
-
-            foreach ($config['addons'] ?? [] as $addonName => $addon) {
-                foreach ($addon['questions'] ?? [] as $key => $definition) {
-                    $keys[] = 'faq_answers.' . $key;
-                }
-            }
-        }
-
-        try {
-            $tenantConfig = config('tenant_ai_faq', []) ?? [];
-        } catch (\Throwable $e) {
-            $tenantConfig = [];
-        }
-
-        foreach ($tenantConfig['questions'] ?? [] as $item) {
-            $key = $item['key'] ?? null;
-            if (is_string($key) && $key !== '') {
+            foreach ($configKeys as $key) {
                 $keys[] = 'faq_answers.' . $key;
             }
         }

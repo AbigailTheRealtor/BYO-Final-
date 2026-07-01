@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use App\Services\AskAi\AskAiRunnerV2Service;
 use App\Services\AskAi\AskAiRateLimitService;
 use App\Services\AskAi\AskAiUsageLoggerService;
+use App\Services\AskAi\AskAiComplianceGuardrailService;
 
 class AskAiListingQuestionController extends Controller
 {
@@ -114,11 +115,17 @@ class AskAiListingQuestionController extends Controller
         }
 
         try {
+            // Ownership was verified above (ownsListing), so the requester is the listing
+            // owner — pass the 'owner' scope so Part J / C-B redaction is a no-op here.
+            $options = $validated['options'] ?? [];
+            $options['viewer_scope']      = AskAiViewerAuthorizationService::SCOPE_OWNER;
+            $options['requester_user_id'] = Auth::id();
+
             $result = $this->runner->run(
                 $listingType,
                 $listingId,
                 $question,
-                $validated['options'] ?? []
+                $options
             );
 
             $responseTimeMs = (int) round((microtime(true) - $startTime) * 1000);
@@ -199,12 +206,19 @@ class AskAiListingQuestionController extends Controller
             $final             = $result['final_response'] ?? [];
             $followUpQuestions = $final['follow_up_questions'] ?? [];
 
+            // C-J — surface the standing educational disclaimer on every answered response.
+            $disclosures = is_array($final['disclosures'] ?? null) ? array_values($final['disclosures']) : [];
+            if (! in_array(AskAiComplianceGuardrailService::EDUCATIONAL_DISCLAIMER, $disclosures, true)) {
+                $disclosures[] = AskAiComplianceGuardrailService::EDUCATIONAL_DISCLAIMER;
+            }
+
             return response()->json([
                 'success'             => $result['success'] ?? false,
                 'status'              => $status,
                 'answer'              => $final['answer']             ?? null,
                 'refusal_message'     => $final['refusal_message']    ?? null,
-                'disclosures'         => $final['disclosures']        ?? null,
+                'disclosures'         => $disclosures,
+                'disclaimer'          => AskAiComplianceGuardrailService::EDUCATIONAL_DISCLAIMER,
                 'source_attribution'  => $final['source_attribution'] ?? null,
                 'source'              => $final['source']             ?? null,
                 'error'               => null,

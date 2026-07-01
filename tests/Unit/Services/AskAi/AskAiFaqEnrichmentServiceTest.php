@@ -106,7 +106,7 @@ class AskAiFaqEnrichmentServiceTest extends TestCase
         $this->assertArrayHasKey('question_group',        $entry);
         $this->assertArrayHasKey('question_label',        $entry);
         $this->assertArrayHasKey('intelligence_category', $entry);
-        $this->assertSame('Property Condition & Maintenance', $entry['question_group']);
+        $this->assertSame('Property Condition & Systems', $entry['question_group']);
         $this->assertNotEmpty($entry['question_label']);
         $this->assertNotEmpty($entry['intelligence_category']);
     }
@@ -122,7 +122,7 @@ class AskAiFaqEnrichmentServiceTest extends TestCase
         $this->assertArrayHasKey('question_group',        $entry);
         $this->assertArrayHasKey('question_label',        $entry);
         $this->assertArrayHasKey('intelligence_category', $entry);
-        $this->assertSame('Maintenance & Property Condition', $entry['question_group']);
+        $this->assertSame('Tenancy & Maintenance', $entry['question_group']);
         $this->assertNotEmpty($entry['question_label']);
         $this->assertNotEmpty($entry['intelligence_category']);
     }
@@ -138,7 +138,7 @@ class AskAiFaqEnrichmentServiceTest extends TestCase
         $this->assertArrayHasKey('question_group',        $entry);
         $this->assertArrayHasKey('question_label',        $entry);
         $this->assertArrayHasKey('intelligence_category', $entry);
-        $this->assertSame('Buyer Intent & Lifestyle', $entry['question_group']);
+        $this->assertSame('Buyer Background', $entry['question_group']);
         $this->assertNotEmpty($entry['question_label']);
         $this->assertNotEmpty($entry['intelligence_category']);
     }
@@ -147,34 +147,34 @@ class AskAiFaqEnrichmentServiceTest extends TestCase
     {
         $index = AskAiFaqEnrichmentService::buildConfigIndex('tenant');
 
-        $this->assertArrayHasKey('faq_q1', $index,
-            "Tenant config index must contain 'faq_q1'");
+        $this->assertArrayHasKey('faq_q14', $index,
+            "Tenant config index must contain 'faq_q14'");
 
-        $entry = $index['faq_q1'];
+        $entry = $index['faq_q14'];
         $this->assertArrayHasKey('question_group',        $entry);
         $this->assertArrayHasKey('question_label',        $entry);
         $this->assertArrayHasKey('intelligence_category', $entry);
-        $this->assertSame('Lifestyle & Priorities', $entry['question_group']);
+        $this->assertSame('Applicant Background', $entry['question_group']);
         $this->assertNotEmpty($entry['question_label']);
         $this->assertNotEmpty($entry['intelligence_category']);
     }
 
     // =========================================================================
-    // Case J — seller addons are included in the index
+    // Case J — seller non-universal (property-type) group questions are indexed
     // =========================================================================
 
-    public function test_case_J_seller_addon_questions_included_in_index(): void
+    public function test_case_J_seller_property_type_group_questions_included_in_index(): void
     {
         $index = AskAiFaqEnrichmentService::buildConfigIndex('seller');
 
-        $this->assertArrayHasKey('annual_net_operating_income', $index,
-            "Seller config index must include addon question 'annual_net_operating_income'");
+        $this->assertArrayHasKey('annual_operating_expenses_detail', $index,
+            "Seller config index must include income-group question 'annual_operating_expenses_detail'");
 
-        $this->assertArrayHasKey('annual_business_revenue', $index,
-            "Seller config index must include addon question 'annual_business_revenue'");
+        $this->assertArrayHasKey('business_reason_for_selling', $index,
+            "Seller config index must include business-group question 'business_reason_for_selling'");
 
-        $this->assertArrayHasKey('land_utilities_availability', $index,
-            "Seller config index must include addon question 'land_utilities_availability'");
+        $this->assertArrayHasKey('land_soil_and_topography', $index,
+            "Seller config index must include land-group question 'land_soil_and_topography'");
     }
 
     // =========================================================================

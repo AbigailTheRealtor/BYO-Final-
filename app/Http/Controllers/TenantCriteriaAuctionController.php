@@ -154,7 +154,7 @@ class TenantCriteriaAuctionController extends Controller
                     'ai_faq'   => ['nullable', 'array'],
                     'ai_faq.*' => ['nullable', 'string'],
                 ]);
-                $allowedKeys = array_column(config('tenant_ai_faq.questions'), 'key');
+                $allowedKeys = \App\Services\AskAi\AskAiFaqConfigService::allKeys('tenant_ai_faq');
                 $rawFaq = array_intersect_key((array) $request->input('ai_faq'), array_flip($allowedKeys));
                 $faqData = array_map(fn($v) => ($v === '' || $v === null) ? null : (string) $v, $rawFaq);
                 $auction->listing_ai_faq = $faqData;
@@ -450,7 +450,7 @@ class TenantCriteriaAuctionController extends Controller
                 'ai_faq'   => ['nullable', 'array'],
                 'ai_faq.*' => ['nullable', 'string'],
             ]);
-            $allowedKeys = array_column(config('tenant_ai_faq.questions'), 'key');
+            $allowedKeys = \App\Services\AskAi\AskAiFaqConfigService::allKeys('tenant_ai_faq');
             $rawFaq = array_intersect_key((array) $request->input('ai_faq'), array_flip($allowedKeys));
             $faqData = array_map(fn($v) => ($v === '' || $v === null) ? null : (string) $v, $rawFaq);
             $auction->listing_ai_faq = $faqData;

@@ -41,6 +41,19 @@ class AskAiFinalResponseBuilderService
         'to generate an AI response.';
 
     /**
+     * Phase A compliance guardrail — output sanitization (C-A) + superlative restriction
+     * (C-I) + educational disclaimer (C-J). Optional constructor arg keeps the existing
+     * no-argument construction used across the test suite working while allowing the
+     * Laravel container to inject the shared instance in production.
+     */
+    private AskAiComplianceGuardrailService $guardrail;
+
+    public function __construct(?AskAiComplianceGuardrailService $guardrail = null)
+    {
+        $this->guardrail = $guardrail ?? new AskAiComplianceGuardrailService();
+    }
+
+    /**
      * Convert a prompt package and a raw adapter result into a normalised final response.
      *
      * Output contract — always returns exactly these 7 keys:
@@ -126,14 +139,26 @@ class AskAiFinalResponseBuilderService
             $rawText = $adapterResult['raw_response'] ?? $adapterResult['text'] ?? $adapterResult['answer'] ?? '';
             $answer  = $this->extractAnswerFromResponse($rawText);
 
+            // Phase A — C-A/C-I output sanitization: scrub steering, demographic,
+            // protected-class, advice, and superlative/comparative content from the
+            // generated text before it leaves the pipeline. Centralised here so every
+            // path that resolves to 'ready' is covered.
+            $sanitized = $this->guardrail->sanitizeAnswer($answer);
+
             return [
                 'success'           => true,
                 'status'            => 'ready',
-                'answer'            => $answer,
+                'answer'            => $sanitized['text'],
                 'disclosures'       => $disclosures,
                 'source_attribution'=> $sourceAttribution,
                 'refusal_message'   => null,
                 'error'             => null,
+                'compliance'        => [
+                    'sanitized'         => $sanitized['modified'],
+                    'withheld'          => $sanitized['withheld'],
+                    'removed_sentences' => $sanitized['removed_sentences'],
+                    'categories'        => $sanitized['categories'],
+                ],
             ];
         } catch (\Throwable $e) {
             return [
