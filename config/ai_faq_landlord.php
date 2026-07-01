@@ -61,11 +61,11 @@ return [
             ],
             'Rental Insights' => [
                 'nearby_amenities' => [
-                    'label'         => 'What location features are nearby?',
-                    'placeholder'   => 'Enter nearby features (e.g., Publix 5 min away, Dog park 2 blocks away, Bus stop at the corner)',
-                    'tooltip'       => 'Lets the AI describe nearby objective features; no steering.',
+                    'label'         => 'What kind of renter tends to love this location, and what do current/past tenants say they enjoy about the area?',
+                    'placeholder'   => 'Enter location appeal (e.g., Walkable to cafes tenants love, Close to the hospital for staff, Quiet and near parks)',
+                    'tooltip'       => 'Location DNA already lists objective nearby features; this adds the human, tenant-experience layer. Describe by area appeal and lifestyle only — never by protected class.',
                     'category_type' => 'insight',
-                    'source'        => 'LocDNA',
+                    'source'        => 'KB+LocDNA',
                 ],
                 'what_makes_property_unique' => [
                     'label'         => 'What makes this rental stand out?',
@@ -198,12 +198,23 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
-                'school_district_assignment' => [
-                    'label'         => 'Which school district serves this rental?',
-                    'placeholder'   => 'Enter assigned district if known (e.g., Pinellas County Schools; verify boundaries with the district)',
-                    'tooltip'       => 'Objective district/boundary information only — no ratings, rankings, or quality opinions.',
+                // school_district_assignment removed in v1.0 — Location DNA (Census TIGER)
+                // resolves the assigned district; the KB prompt duplicated structured data.
+            ],
+            'Management & Fit' => [
+                'landlord_management_style' => [
+                    'label'         => 'How hands-on is the landlord — self-managed or professionally managed — and what\'s their communication style with tenants?',
+                    'placeholder'   => 'Enter management style (e.g., Self-managed and responsive by text, Professional PM with a portal, On-site manager weekdays)',
+                    'tooltip'       => 'Helps the AI set expectations about how the tenancy is managed and how tenants reach the landlord.',
                     'category_type' => 'common',
-                    'source'        => 'LocDNA',
+                    'source'        => 'KB',
+                ],
+                'landlord_tenant_fit' => [
+                    'label'         => 'What features or characteristics make this rental especially enjoyable for the right tenant?',
+                    'placeholder'   => 'Enter feature-based fit (e.g., Quiet building suited to remote work, Fenced yard for a dog, Walkable to campus, Low-maintenance living)',
+                    'tooltip'       => 'The AI describes fit by features and characteristics only — never by the type of person or protected class.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
                 ],
             ],
         ],
@@ -273,6 +284,27 @@ return [
                     'label'         => 'Beyond the permitted-use field, are there variances, conditional uses, or restrictions tenants should know about?',
                     'placeholder'   => 'Enter zoning context (e.g., Conditional-use permit for food service, No auto uses per deed restriction, Signage variance in place; verify with the jurisdiction)',
                     'tooltip'       => 'Captures owner knowledge the structured permitted-use field cannot — variances, conditional uses, and use restrictions. Factual restatement only; not legal advice.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'commercial_cam_structure' => [
+                    'label'         => 'How are CAM / operating expenses handled (NNN, gross, modified), and what\'s included?',
+                    'placeholder'   => 'Enter CAM/expense structure (e.g., NNN with CAM ~$4/sqft, Full-service gross, Modified gross tenant pays electric; verify current figures)',
+                    'tooltip'       => 'Explains the expense structure beyond base rent; the AI restates disclosed terms and gives no financial advice.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'commercial_target_industries' => [
+                    'label'         => 'What types of businesses or uses is this space best suited for, and are any uses restricted?',
+                    'placeholder'   => 'Enter suited/restricted uses (e.g., Ideal for office or medical, No food-service per landlord, Retail requiring a grease trap not available)',
+                    'tooltip'       => 'Objective, use-based suitability and restrictions; not legal advice.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'commercial_parking_ratio' => [
+                    'label'         => 'How many parking spaces are available, or what is the parking ratio for the property?',
+                    'placeholder'   => 'Enter parking count or ratio (e.g., 4 per 1,000 sqft, 25 dedicated spaces, Shared lot with ~60 spaces, Street parking only)',
+                    'tooltip'       => 'A high-value commercial leasing question; captures the parking count or ratio (spaces per 1,000 sqft). Objective figures only.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],

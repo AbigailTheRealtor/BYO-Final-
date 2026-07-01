@@ -37,10 +37,19 @@
         $gatingAliases = config('property_types.ai_faq_gating_aliases', []);
         $gatingKey     = $gatingAliases[$propertyType] ?? $propertyType;
 
-        // Resolve which groups render for this property type. Fail safe to the
-        // residential-style set so a new/unexpected property_type still renders the
-        // universal questions rather than nothing.
-        $activeGroups = $gating[$gatingKey] ?? ['universal', 'residential'];
+        // Resolve which groups render for this property type.
+        //  - No property type selected yet  → show ONLY the universal questions, so a
+        //    property-type interview is never revealed before the type is chosen.
+        //  - Selected & recognized          → universal + that property type's group.
+        //  - Selected but unrecognized      → fail safe to universal-only (never leak
+        //    residential questions for an unexpected value).
+        // Answers already entered persist in $listing_ai_faq across property-type
+        // changes (the components never prune it), so switching type and back is safe.
+        if ($gatingKey === '' || $gatingKey === null) {
+            $activeGroups = ['universal'];
+        } else {
+            $activeGroups = $gating[$gatingKey] ?? ['universal'];
+        }
 
         foreach ($activeGroups as $groupName) {
             $group = $groups[$groupName] ?? [];

@@ -38,23 +38,23 @@ class AskAiKnowledgeBaseRenderTest extends TestCase
         // back to universal+residential and these non-residential assertions would fail.
         return [
             'Seller · Residential' => ['seller', 'Residential',
-                ['How old is the roof', 'What is included in the sale'],
-                ['current lease terms and escalations', 'clear/ceiling height', 'Why is the business being sold', 'soil, perc, or topography']],
+                ['How old is the roof', 'What is included in the sale', 'guests or visitors compliment'],
+                ['current lease terms and escalations', 'ceiling height', 'Why is the business being sold', 'soil, perc, or topography']],
             'Seller · Income' => ['seller', 'Income',
-                ['current lease terms and escalations', 'What is included in the sale'],
-                ['How old is the roof', 'Why is the business being sold', 'soil, perc, or topography']],
+                ['current lease terms and escalations', 'What is included in the sale', 'increase income here'],
+                ['How old is the roof', 'Why is the business being sold', 'soil, perc, or topography', 'guests or visitors compliment']],
             'Seller · Commercial' => ['seller', 'Commercial',
-                ['What are the building systems', 'variances, special-use permits'],
-                ['How old is the roof', 'Why is the business being sold']],
+                ['What are the building systems', 'variances, special-use permits', 'redevelopment, expansion, or change-of-use', 'clear height to the lowest obstruction'],
+                ['How old is the roof', 'Why is the business being sold', 'guests or visitors compliment']],
             'Seller · Business' => ['seller', 'Business',
-                ['Why is the business being sold', 'How concentrated is the customer base'],
-                ['How old is the roof', 'clear/ceiling height', 'soil, perc, or topography']],
+                ['Why is the business being sold', 'How concentrated is the customer base', 'keeps customers coming back'],
+                ['How old is the roof', 'ceiling height', 'soil, perc, or topography', 'guests or visitors compliment']],
             'Seller · Vacant Land' => ['seller', 'Vacant Land',
-                ['soil, perc, or topography', 'prior use'],
-                ['How old is the roof', 'Why is the business being sold', 'clear/ceiling height']],
+                ['soil, perc, or topography', 'prior use', 'utilities are already available'],
+                ['How old is the roof', 'Why is the business being sold', 'ceiling height', 'guests or visitors compliment']],
 
             'Buyer · Residential' => ['buyer', 'Residential',
-                ['architectural style', 'driving the buyer'],
+                ['architectural style', 'driving the buyer', 'willing to compromise'],
                 ['minimum occupancy', 'minimum revenue', 'intended use for the land']],
             'Buyer · Income' => ['buyer', 'Income',
                 ['minimum in-place occupancy', 'driving the buyer'],
@@ -70,18 +70,18 @@ class AskAiKnowledgeBaseRenderTest extends TestCase
                 ['architectural style', 'minimum revenue']],
 
             'Landlord · Residential' => ['landlord', 'Residential Property',
-                ['furnished, unfurnished, or negotiable', 'How are maintenance requests handled'],
-                ['loading dock or freight elevator', 'electrical capacity']],
+                ['furnished, unfurnished, or negotiable', 'How are maintenance requests handled', 'self-managed or professionally managed'],
+                ['loading dock or freight elevator', 'electrical capacity', 'parking ratio']],
             'Landlord · Commercial' => ['landlord', 'Commercial Property',
-                ['loading dock or freight elevator', 'How are maintenance requests handled'],
-                ['in-unit or shared laundry', "What's the noise level"]],
+                ['loading dock or freight elevator', 'How are maintenance requests handled', 'CAM / operating expenses', 'parking ratio'],
+                ['in-unit or shared laundry', "What's the noise level", 'self-managed or professionally managed']],
 
             'Tenant · Residential' => ['tenant', 'Residential Property',
-                ['source and stability of the applicant', 'driving the applicant'],
+                ['source and stability of the applicant', 'driving the applicant', 'work remotely, on-site, hybrid'],
                 ['foot traffic', 'special equipment or power']],
             'Tenant · Commercial' => ['tenant', 'Commercial Property',
-                ['foot traffic', 'driving the applicant'],
-                ['source and stability of the applicant', 'furnished or unfurnished']],
+                ['foot traffic', 'driving the applicant', 'build-out, layout, or improvements'],
+                ['source and stability of the applicant', 'furnished or unfurnished', 'work remotely, on-site, hybrid']],
         ];
     }
 
@@ -108,6 +108,41 @@ class AskAiKnowledgeBaseRenderTest extends TestCase
         $html = $this->render('seller', 'Residential Property');
         $this->assertStringContainsString('not legal, financial, tax', $html,
             'The persistent educational disclaimer must render on the KB tab.');
+    }
+
+    /** @return array<string, array{0:string,1:string,2:string}> */
+    public static function emptyPropertyTypeMatrix(): array
+    {
+        // [user_type, a universal question that MUST render, a property-type-specific
+        //  question that must be ABSENT until a property type is selected]
+        return [
+            'seller'   => ['seller',   'Why is the owner selling the property', 'How old is the roof'],
+            'buyer'    => ['buyer',    'driving the buyer',                     'architectural style'],
+            'landlord' => ['landlord', 'How are maintenance requests handled',  'furnished, unfurnished, or negotiable'],
+            'tenant'   => ['tenant',   'driving the applicant',                 'source and stability of the applicant'],
+        ];
+    }
+
+    /**
+     * Property-type behavior: before a property type is chosen, the tab shows ONLY the
+     * universal questions — no property-type interview is revealed prematurely. The blade
+     * resolves an empty property_type to ['universal'] only (not the residential fallback).
+     *
+     * @dataProvider emptyPropertyTypeMatrix
+     */
+    public function test_unselected_property_type_renders_universal_only(
+        string $userType,
+        string $universalNeedle,
+        string $propertyTypeNeedle
+    ): void {
+        $html = $this->render($userType, '');
+
+        $this->assertStringContainsString('Common Questions', $html,
+            "$userType with no property type must still render its universal Common Questions.");
+        $this->assertStringContainsString($universalNeedle, $html,
+            "$userType with no property type must render universal questions.");
+        $this->assertStringNotContainsString($propertyTypeNeedle, $html,
+            "$userType with no property type must NOT reveal property-type-specific questions.");
     }
 
     /**

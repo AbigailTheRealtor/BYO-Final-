@@ -146,6 +146,29 @@ return [
                     'source'        => 'KB',
                 ],
             ],
+            'Lifestyle & Fit' => [
+                'tenant_work_habits' => [
+                    'label'         => 'Does the applicant work remotely, on-site, hybrid, or have other space needs that should be considered?',
+                    'placeholder'   => 'Enter work/space needs (e.g., Fully remote needs a quiet office, Hybrid 3 days on-site, On-site with no home-office need, Needs room for a home studio)',
+                    'tooltip'       => 'Captures work arrangement and space needs — not a structured field and distinct from employment/income. Factual restatement only; never an approval recommendation.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'tenant_commute_priorities' => [
+                    'label'         => 'What locations does the applicant need to be near (work, school, family), and how important is commute?',
+                    'placeholder'   => 'Enter commute priorities (e.g., Within 20 min of the downtown office, Near the university, Close to aging parents, Commute not a factor)',
+                    'tooltip'       => 'Helps the AI describe the applicant\'s stated location priorities; objective restatement only.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'tenant_deal_breakers' => [
+                    'label'         => 'Beyond the criteria already captured, what are the applicant\'s absolute deal-breakers in a rental?',
+                    'placeholder'   => 'Enter deal-breakers (e.g., No ground-floor units, Must allow a large dog, No shared laundry, Needs assigned parking)',
+                    'tooltip'       => 'Captures qualitative walk-away factors beyond the structured criteria; factual restatement only.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+            ],
         ],
 
         // =====================================================================
@@ -178,6 +201,13 @@ return [
                     'label'         => 'Does the applicant expect their space needs to change over the lease term (growth, seasonal, or downsizing)?',
                     'placeholder'   => 'Enter growth outlook (e.g., May need a second suite within 2 years, Stable footprint, Seasonal pop-up expansion in Q4)',
                     'tooltip'       => 'Captures the applicant\'s expected space trajectory — not a structured field. Factual restatement only; never an approval recommendation.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'tenant_buildout_needs' => [
+                    'label'         => 'What build-out, layout, or improvements would the space need for the applicant\'s operation?',
+                    'placeholder'   => 'Enter build-out needs (e.g., Add two treatment rooms, Open floor plan for retail, Grease trap and hood, ADA restroom upgrade)',
+                    'tooltip'       => 'Mirrors the landlord\'s TI/build-out question from the applicant side; factual restatement only.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],

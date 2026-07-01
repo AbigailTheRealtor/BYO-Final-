@@ -114,11 +114,11 @@ return [
                     'source'        => 'PropDNA+Desc',
                 ],
                 'nearby_amenities_description' => [
-                    'label'         => 'What location features are nearby?',
-                    'placeholder'   => 'Enter nearby features (e.g., Publix 5 min away, Restaurants on Main Street, Dog park 2 blocks away)',
-                    'tooltip'       => 'Lets the AI describe nearby parks, dining, shopping, and transit using objective data only — no steering.',
+                    'label'         => 'Beyond what a map shows, what do you personally love about this location — the neighbors, the street, the daily routine here?',
+                    'placeholder'   => 'Enter the human layer (e.g., Friendly block with an annual potluck, Quiet dead-end street, Walk to coffee every morning)',
+                    'tooltip'       => 'Location DNA already lists objective nearby features; this adds the owner\'s personal, human perspective. Objective attributes only — no steering or protected-class framing.',
                     'category_type' => 'insight',
-                    'source'        => 'LocDNA',
+                    'source'        => 'KB+LocDNA',
                 ],
                 'property_lifestyle_support' => [
                     'label'         => 'What lifestyle does this property appear to support?',
@@ -148,6 +148,43 @@ return [
         // RESIDENTIAL
         // =====================================================================
         'residential' => [
+            'Selling Story & Appeal' => [
+                'seller_emotional_hook' => [
+                    'label'         => 'What first made you fall in love with this home, or what will you miss most about living here?',
+                    'placeholder'   => 'Enter the personal story (e.g., The morning light in the kitchen, Summers on the back porch, Watching the kids grow up here)',
+                    'tooltip'       => 'Captures the owner\'s human story so the AI can add authentic warmth to descriptions and marketing — not a structured field.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'seller_guest_compliments' => [
+                    'label'         => 'What do guests or visitors compliment most about this property?',
+                    'placeholder'   => 'Enter common compliments (e.g., The open flow for entertaining, The private backyard, The natural light, The quiet street)',
+                    'tooltip'       => 'Surfaces the features visitors react to most, giving the AI marketing highlights that photos and data alone miss. Applies to any listing, new or previously marketed.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'seller_best_showing_moment' => [
+                    'label'         => 'Is there a particular time of day, season, or moment when the property shows at its best?',
+                    'placeholder'   => 'Enter the best moment (e.g., Golden hour on the west-facing patio, Spring when the garden blooms, Snowy evenings by the fireplace)',
+                    'tooltip'       => 'Human insight the platform cannot infer — helps the AI with showing recommendations and seasonal marketing narratives.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'seller_ideal_use_fit' => [
+                    'label'         => 'What type of lifestyle or everyday living do you think this property is especially well suited for?',
+                    'placeholder'   => 'Enter by use/lifestyle (e.g., Entertaining and hosting, Quiet remote work, Multigenerational living, Low-maintenance lock-and-leave)',
+                    'tooltip'       => 'The AI describes fit by lifestyle and property use only — never by demographics or "type of person."',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'seller_buyer_feedback' => [
+                    'label'         => 'If the property has been shown before, what feedback, compliments, or hesitations have buyers or agents shared?',
+                    'placeholder'   => 'Enter prior feedback (e.g., Loved the kitchen but wished for a third bath, Thought the yard was a highlight; leave blank if not yet shown)',
+                    'tooltip'       => 'Gives the AI objection-handling context from real showings. Optional and only relevant once the property has been marketed.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+            ],
             'Property Condition & Systems' => [
                 'roof_age_and_condition' => [
                     'label'         => 'How old is the roof, and what condition is it in?',
@@ -289,19 +326,14 @@ return [
                     'source'        => 'KB',
                 ],
                 'commute_options_access' => [
-                    'label'         => 'What are typical commute options and travel times?',
-                    'placeholder'   => 'Enter commute details (e.g., 20 min to downtown, 10 min to I-275 on-ramp, Near Park-n-Ride)',
-                    'tooltip'       => 'Helps the AI respond to questions about travel time and transportation options.',
+                    'label'         => 'Are there commute or access details a buyer wouldn\'t discover on a map — a favorite route, a quick highway on-ramp, walkable errands?',
+                    'placeholder'   => 'Enter local knowledge (e.g., Back-road shortcut to downtown, 3 min to the I-275 on-ramp, Walk to the market and coffee)',
+                    'tooltip'       => 'Location DNA supplies objective commute times; this adds the local, human nuance a map wouldn\'t show.',
                     'category_type' => 'common',
                     'source'        => 'KB+LocDNA',
                 ],
-                'school_district_assignment' => [
-                    'label'         => 'Which school district is this property assigned to?',
-                    'placeholder'   => 'Enter assigned district/schools if known (e.g., Pinellas County Schools; verify boundaries with the district)',
-                    'tooltip'       => 'The AI returns assigned district/boundary information only — no ratings, rankings, or quality opinions.',
-                    'category_type' => 'common',
-                    'source'        => 'LocDNA',
-                ],
+                // school_district_assignment removed in v1.0 — Location DNA (Census TIGER)
+                // resolves the assigned district; the KB prompt duplicated structured data.
             ],
         ],
 
@@ -370,6 +402,20 @@ return [
                     'label'         => 'How old are the roof and major building systems?',
                     'placeholder'   => 'Enter systems age (e.g., Roof 2019, two HVAC units 2018 and 2021, Boiler 2015)',
                     'tooltip'       => 'Helps the AI answer questions about building-systems age.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'income_ideal_operator_fit' => [
+                    'label'         => 'What type of owner or operator would get the most out of this property?',
+                    'placeholder'   => 'Enter by operating profile (e.g., A hands-on local owner, A value-add investor, An operator who self-manages)',
+                    'tooltip'       => 'Describes fit by operating approach only — no investment, return, or demographic framing.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'income_value_add_vision' => [
+                    'label'         => 'If you had more time or capital, what\'s the one improvement you\'d make to increase income here?',
+                    'placeholder'   => 'Enter one improvement (e.g., Renovate Unit 3 to reach market rent, Add in-unit laundry, Convert storage to a rentable unit)',
+                    'tooltip'       => 'Captures the owner\'s factual value-add idea; the AI restates it and gives no investment or upside advice.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
@@ -452,6 +498,27 @@ return [
                     'tooltip'       => 'Captures owner knowledge the structured zoning field cannot — variances, special-use permits, and grandfathered uses. Factual restatement only; not legal advice.',
                     'category_type' => 'common',
                     'source'        => 'KB',
+                ],
+                'commercial_redevelopment_potential' => [
+                    'label'         => 'Is there redevelopment, expansion, or change-of-use potential a buyer should know about?',
+                    'placeholder'   => 'Enter potential (e.g., Adjacent parcel available, Zoning allows a second story, Convertible to medical use; verify with the jurisdiction)',
+                    'tooltip'       => 'Factual restatement of disclosed potential; not development or legal advice.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'commercial_visibility_signage' => [
+                    'label'         => 'What makes this property\'s visibility, frontage, signage, or access especially valuable for a business?',
+                    'placeholder'   => 'Enter visibility/access details (e.g., 150 ft of highway frontage, Monument signage included, Corner lot with two curb cuts, ~25,000 vehicles/day)',
+                    'tooltip'       => 'Objective visibility, frontage, signage, and access characteristics a business operator asks about.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'commercial_ceiling_height' => [
+                    'label'         => 'Beyond the listed ceiling height, what is the clear height to the lowest obstruction, and are there any height limitations a buyer should know about?',
+                    'placeholder'   => 'Enter clear height and limits (e.g., 24 ft clear to joists, low beam at 16 ft in the rear bay, ductwork drops to 12 ft, 14 ft overhead door)',
+                    'tooltip'       => 'Complements the structured ceiling-height field: captures clear height to the lowest obstruction and any height limitations (beams, ductwork, mezzanines) that a single measurement cannot hold. Objective detail only.',
+                    'category_type' => 'common',
+                    'source'        => 'KB+Field',
                 ],
             ],
             'Property Insights' => [
@@ -540,6 +607,20 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
+                'business_growth_opportunities' => [
+                    'label'         => 'What growth opportunities exist that the current owner hasn\'t pursued?',
+                    'placeholder'   => 'Enter untapped opportunities (e.g., No online ordering yet, Extended hours untried, Second location possible, Wholesale channel unexplored)',
+                    'tooltip'       => 'Factual restatement of disclosed opportunities; the AI gives no financial or investment advice.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'business_customer_draw' => [
+                    'label'         => 'What keeps customers coming back, and what do they value most about this business?',
+                    'placeholder'   => 'Enter the draw (e.g., 15-year loyal clientele, Known for fast turnaround, Prime location and parking, Signature product)',
+                    'tooltip'       => 'Captures goodwill and brand strength the numbers don\'t show; objective restatement only.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
             ],
             'Business Insights' => [
                 'business_information_disclosed' => [
@@ -610,6 +691,20 @@ return [
                     'label'         => 'What was the land\'s prior use?',
                     'placeholder'   => 'Enter prior use (e.g., Former pasture, Previously a single-family lot, Never developed)',
                     'tooltip'       => 'Lets the AI answer questions about the parcel\'s prior use.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'land_utilities_available' => [
+                    'label'         => 'Which utilities are already available at the site (water, sewer/septic, power, gas, internet), and how close are they?',
+                    'placeholder'   => 'Enter utility availability (e.g., Power and water at the road, Septic required no sewer, Fiber available, Gas ~200 ft away)',
+                    'tooltip'       => 'Owner-known utility availability at the parcel — distinct from nearby-features data; the AI restates it and defers to providers for confirmation.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'land_entitlement_status' => [
+                    'label'         => 'Are any entitlements, plats, permits, or development approvals in place or underway?',
+                    'placeholder'   => 'Enter entitlement status (e.g., Preliminary plat approved for 4 lots, Building permit ready, No entitlements in place; verify with the jurisdiction)',
+                    'tooltip'       => 'Factual restatement of disclosed entitlement/permit status; not legal or development advice.',
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],

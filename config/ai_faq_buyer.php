@@ -87,6 +87,20 @@ return [
                     'category_type' => 'common',
                     'source'        => 'KB',
                 ],
+                'buyer_deal_breakers' => [
+                    'label'         => 'Beyond the must-haves already captured in the criteria, what would make the buyer decide a property isn\'t the right fit?',
+                    'placeholder'   => 'Enter deal-breakers (e.g., Busy road, No natural light, HOA rental restrictions, Major deferred maintenance)',
+                    'tooltip'       => 'Captures qualitative walk-away factors beyond the structured non-negotiables; the AI restates them factually.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
+                'buyer_compromise_areas' => [
+                    'label'         => 'Where is the buyer most willing to compromise if the right opportunity comes along?',
+                    'placeholder'   => 'Enter flexible areas (e.g., Open to cosmetic updates, Flexible on garage size, Could accept a smaller yard for a better location)',
+                    'tooltip'       => 'Helps the AI represent the buyer\'s flexibility; no negotiation coaching.',
+                    'category_type' => 'common',
+                    'source'        => 'KB',
+                ],
             ],
             'Buyer Insights' => [
                 'buyer_property_needs' => [
