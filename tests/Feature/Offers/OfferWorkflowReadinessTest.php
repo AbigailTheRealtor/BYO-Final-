@@ -453,6 +453,11 @@ class OfferWorkflowReadinessTest extends TestCase
             //   placeholder capitalization) and B4.3 (input sizing → single-line).
             'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/pre-screening.blade.php',
             'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php',
+            // Phase 13 — A2.16 (S11): add "JPEG" to the on-screen Upload Document
+            //   accepted-formats label (Seller + Landlord Create-Offer document
+            //   upload) so visible copy matches the .jpeg the accept attribute allows.
+            'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/documents-disclosures.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/documents-disclosures.blade.php',
         ];
 
         $unexpected = array_values(array_filter(
