@@ -99,9 +99,9 @@
 <div class="ldna-section" wire:ignore>
   <div class="ldna-section-header">
     <i class="fa-solid fa-map-location-dot" style="color:#0369a1;font-size:1.1rem;"></i>
-    <h5>Location Preferences Map
+    <h5>Search Areas
       <span style="font-weight:400;font-size:.85rem;color:#64748b;">
-        (optional — cities and ZIPs draw visible boundaries on the map)
+        Choose where the property search should focus — add cities, ZIP codes, counties, custom map areas, or a radius.
       </span>
     </h5>
   </div>
@@ -227,12 +227,21 @@
   {{-- ── Overlay list (JS populates with delete buttons on map init) ── --}}
   <ul class="list-unstyled mt-1" id="ldna-overlay-list"></ul>
 
-  {{-- ── Radius search form ── --}}
-  <div class="ldna-radius-form mt-2">
-    <input type="text" id="ldna-radius-address" class="form-control form-control-sm"
-      placeholder="Address or place" style="max-width:280px;" autocomplete="off">
-    <input type="number" id="ldna-radius-miles" class="form-control form-control-sm"
-      placeholder="Miles" min="0.1" step="0.1" value="5" style="max-width:90px;">
+  {{-- ── Radius Search form (B1.6) ── --}}
+  <label class="fw-bold mt-2" style="font-size:.88rem;">Radius Search
+    <small class="text-muted">(add one or more radius circles)</small>
+  </label>
+  <div class="ldna-radius-form">
+    <div class="d-flex flex-column">
+      <label for="ldna-radius-address" class="text-muted mb-1" style="font-size:.78rem;">Radius Search Address</label>
+      <input type="text" id="ldna-radius-address" class="form-control form-control-sm"
+        placeholder="Enter an address or place for radius search" style="max-width:280px;" autocomplete="off">
+    </div>
+    <div class="d-flex flex-column">
+      <label for="ldna-radius-miles" class="text-muted mb-1" style="font-size:.78rem;">Radius Miles</label>
+      <input type="number" id="ldna-radius-miles" class="form-control form-control-sm"
+        placeholder="Miles" min="0.1" step="0.1" value="5" style="max-width:90px;">
+    </div>
     <button type="button" class="btn btn-outline-primary btn-sm"
       onclick="ldnaAddRadiusSearch()">
       <i class="fa-solid fa-location-crosshairs"></i> Add Radius Search
