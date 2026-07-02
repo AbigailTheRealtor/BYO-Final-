@@ -1206,7 +1206,7 @@
         </select>
     </div>
 </div>
-<div class="form-group purchase_purpose_other_wrapper {{ $purchase_purpose === 'Other' ? '' : 'd-none' }}" wire:key="hire-purchase-purpose-other-wrapper">
+<div class="form-group purchase_purpose_other_wrapper {{ ($purchase_purpose ?? '') === 'Other' ? '' : 'd-none' }}" wire:key="hire-purchase-purpose-other-wrapper">
     <div class="input-cover">
         <input type="text" wire:model.defer="purchase_purpose_other" class="form-control has-icon"
             data-icon="fa-solid fa-bullseye"
