@@ -131,7 +131,7 @@
           </span>
         @endforeach
         <input type="text" class="ldna-tag-input" id="ldna-cities-input"
-          placeholder="e.g. Seminole, FL" autocomplete="off">
+          placeholder="e.g. St. Petersburg" autocomplete="off">
       </div>
       <div class="ldna-hint">
         <i class="fa-solid fa-circle-info"></i>
@@ -169,7 +169,7 @@
   <div class="row g-3 mb-3">
     <div class="col-md-6">
       <label class="fw-bold" style="font-size:.88rem;">Preferred Counties
-        <small class="text-muted">(type &amp; Enter — e.g. "Pinellas County, FL")</small>
+        <small class="text-muted">(type &amp; select)</small>
       </label>
       <div class="ldna-tag-input-wrap" id="ldna-counties-wrap">
         @foreach($ldnaCounties as $co)
@@ -178,7 +178,11 @@
           </span>
         @endforeach
         <input type="text" class="ldna-tag-input" id="ldna-counties-input"
-          placeholder="Pinellas County, FL" onkeydown="ldnaAddTag(event,'counties')">
+          placeholder="e.g. Pinellas County" autocomplete="off">
+      </div>
+      <div class="ldna-hint">
+        <i class="fa-solid fa-circle-info"></i>
+        Start typing a county (or any place in it) and pick a suggestion — its boundary is drawn on the map.
       </div>
     </div>
   </div>
@@ -788,6 +792,55 @@
     });
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════════
+     PLACES AUTOCOMPLETE — COUNTIES (typeahead; county derived from any US place)
+     Uses the '(regions)' collection (counties aren't a standalone Autocomplete
+     type). Whatever region the user picks, we read administrative_area_level_2
+     so "Clearwater" or "Pinellas" both resolve to "Pinellas County, FL".
+  ═══════════════════════════════════════════════════════════════════════════ */
+  function ldnaInitCountiesAutocomplete() {
+    var input = document.getElementById('ldna-counties-input');
+    if (!input || input._ldnaACAttached) return;
+    if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
+    input._ldnaACAttached = true;
+
+    var ac = new google.maps.places.Autocomplete(input, {
+      types: ['(regions)'],
+      componentRestrictions: { country: 'us' },
+      fields: ['address_components', 'geometry', 'name'],
+    });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+
+    ac.addListener('place_changed', function () {
+      var place = ac.getPlace();
+      if (!place) return;
+
+      /* Derive "County, ST" from address_components (works for a city, ZIP, or the
+         county itself — administrative_area_level_2 is the US county). */
+      var countyName = '', stateName = '';
+      (place.address_components || []).forEach(function (comp) {
+        if (!countyName && comp.types.indexOf('administrative_area_level_2') !== -1)
+          countyName = comp.long_name;
+        if (!stateName && comp.types.indexOf('administrative_area_level_1') !== -1)
+          stateName = comp.short_name;
+      });
+      /* No county component (e.g. a whole state was picked) — nothing to add. */
+      if (!countyName) { input.value = ''; return; }
+      var label = stateName ? (countyName + ', ' + stateName) : countyName;
+
+      ldnaAddTagValue('counties', label);   /* adds tag + fetches county boundary */
+      input.value = '';
+
+      /* Pan map toward the selection */
+      if (ldnaMap && place.geometry) {
+        if (place.geometry.viewport) { ldnaMap.fitBounds(place.geometry.viewport); }
+        else if (place.geometry.location) {
+          ldnaMap.setCenter(place.geometry.location); ldnaMap.setZoom(9);
+        }
+      }
+    });
+  }
+
   /* ── Places Autocomplete for radius address ──────────────────────────────── */
   function ldnaInitRadiusAutocomplete() {
     var input = document.getElementById('ldna-radius-address');
@@ -826,18 +879,27 @@
   /* ═══════════════════════════════════════════════════════════════════════════
      ZIP BOUNDARY — Census TIGER primary, Nominatim fallback, inline warning
   ═══════════════════════════════════════════════════════════════════════════ */
+  /* Only an area geometry should be drawn — a Point (centroid) must never be
+     rendered, or it shows up as a stray Google Maps pin instead of a boundary. */
+  function ldnaIsPolygonFeature(feature) {
+    var t = feature && feature.geometry && feature.geometry.type;
+    return t === 'Polygon' || t === 'MultiPolygon';
+  }
+
   function ldnaFetchZipBoundary(zip, key) {
     if (!zip) return;
-    /* Primary: US Census Bureau TIGERweb ZCTA2020 — no rate limit, complete US coverage */
-    var where = "GEOID20='" + zip + "'";
+    /* Primary: US Census Bureau TIGERweb — "2020 Census ZIP Code Tabulation Areas"
+       layer (PUMA_TAD_TAZ_UGA_ZCTA/MapServer/1). Free, CORS-enabled, no rate limit,
+       complete US coverage, and returns true ZCTA polygon geometry. */
+    var where = "GEOID='" + zip + "'";
     var tigerUrl =
-      'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ZCTA2020' +
-      '/MapServer/0/query' +
+      'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/PUMA_TAD_TAZ_UGA_ZCTA' +
+      '/MapServer/1/query' +
       '?f=geojson' +
       '&where=' + encodeURIComponent(where) +
-      '&outFields=GEOID20' +
+      '&outFields=GEOID' +
       '&returnGeometry=true' +
-      '&geometryPrecision=3' +
+      '&geometryPrecision=5' +
       '&outSR=4326';
 
     fetch(tigerUrl, { headers: { 'Accept': 'application/json' } })
@@ -847,10 +909,10 @@
       })
       .then(function (data) {
         var feats = data && data.features;
-        if (feats && feats.length > 0) {
+        if (feats && feats.length > 0 && ldnaIsPolygonFeature(feats[0])) {
           ldnaRenderBoundaryFeature(key, feats[0]);
         } else {
-          /* No data from TIGER → try Nominatim postalcode */
+          /* No polygon from TIGER → try Nominatim postalcode */
           ldnaFetchZipViaNominatim(zip, key);
         }
       })
@@ -868,10 +930,12 @@
       .then(function (r) { return r.json(); })
       .then(function (data) {
         var feats = data && data.features;
-        if (feats && feats.length > 0) {
+        /* US ZIPs rarely have an OSM area polygon — Nominatim usually returns a
+           Point centroid. Draw only a real polygon; never a bare pin. */
+        if (feats && feats.length > 0 && ldnaIsPolygonFeature(feats[0])) {
           ldnaRenderBoundaryFeature(key, feats[0]);
         } else {
-          ldnaShowZipWarning(zip, 'Boundary data not found for ZIP ' + zip + '. The ZIP will still be used for matching.');
+          ldnaShowZipWarning(zip, 'Boundary outline unavailable for ZIP ' + zip + '. The ZIP is still saved and used for matching.');
         }
       })
       .catch(function () {
@@ -1407,6 +1471,7 @@
 
     /* ── Wire autocompletes ── */
     ldnaInitCitiesAutocomplete();
+    ldnaInitCountiesAutocomplete();
     ldnaInitRadiusAutocomplete();
 
     /* ── Fetch boundaries for existing tags (edit-mode reload) ── */
