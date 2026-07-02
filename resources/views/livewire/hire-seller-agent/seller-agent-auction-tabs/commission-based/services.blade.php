@@ -908,7 +908,7 @@
 
                         <input id="other-services-input-{{ $i }}" type="text"
                             class="form-control mb-2 @error("other_services.$i") is-invalid @enderror"
-                            placeholder="Enter additional services not listed above (e.g., Estate Sale Coordination, Senior Transition Assistance, Pre-Listing Contractor Coordination)"
+                            placeholder="Enter additional services not listed above (e.g., Estate sale coordination, Senior transition assistance, Pre-listing contractor coordination)"
                             wire:model="other_services.{{ $i }}">
 
                         @error("other_services.$i")

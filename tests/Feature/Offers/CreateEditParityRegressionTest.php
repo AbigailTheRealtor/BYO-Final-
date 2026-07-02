@@ -624,8 +624,10 @@ class CreateEditParityRegressionTest extends TestCase
         ));
 
         // A7.44 — Minimum Lease Period "Other"
+        // Phase 8 (A8.51/A8.64): example normalized to sentence-case ("18 months").
+        // A7.44's intent is non-option examples; capitalization is owned by Phase 8.
         $this->assertStringContainsString(
-            'Enter minimum lease period (e.g., 18 Months, Seasonal lease, Month-to-month after first year)',
+            'Enter minimum lease period (e.g., 18 months, Seasonal lease, Month-to-month after first year)',
             $blade,
             'A7.44: Minimum Lease Period "Other" placeholder must use non-option examples'
         );
@@ -642,7 +644,7 @@ class CreateEditParityRegressionTest extends TestCase
             'A7.45: old option-duplicating example (Roof maintenance) must be removed');
 
         // Guard: no new example may also exist as a literal selectable <option>.
-        foreach (['18 Months', 'Seasonal lease', 'Month-to-month after first year',
+        foreach (['18 months', 'Seasonal lease', 'Month-to-month after first year',
                   'Snow removal', 'Building reserves', 'Concierge service'] as $example) {
             $this->assertStringNotContainsString('<option value="' . $example . '"', $blade,
                 "A7.44/A7.45: example '{$example}' must not also be a selectable option");

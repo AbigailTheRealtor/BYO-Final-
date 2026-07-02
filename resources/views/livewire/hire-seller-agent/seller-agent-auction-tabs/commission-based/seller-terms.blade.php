@@ -743,7 +743,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
                 data-icon="fa-solid fa-clock"
-                placeholder="Enter Timing of Transfer (e.g., Within 48 hours of contract acceptance)">
+                placeholder="Enter timing of transfer (e.g., Within 48 hours of contract acceptance)">
         </div>
     </div>
     @endif
@@ -1363,7 +1363,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_transfer_method" class="form-control has-icon"
                 data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, Escrow Smart Contract)">
+                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, Escrow smart contract)">
         </div>
     </div>
 

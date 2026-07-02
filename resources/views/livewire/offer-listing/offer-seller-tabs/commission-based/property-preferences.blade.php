@@ -1150,7 +1150,7 @@
 <div class="form-group" style="display: {{ (is_array($water_access ?? []) && in_array('Other', $water_access ?? [])) ? 'block' : 'none' }};" id="other_water_access_wrapper">
     <div class="input-cover">
         <input type="text" wire:model="other_water_access" class="form-control has-icon"
-            data-icon="fa-solid fa-water" placeholder="Enter title (e.g., example)">
+            data-icon="fa-solid fa-water" placeholder="Enter water access type (e.g., Lagoon, Reservoir)">
     </div>
 </div>
 
@@ -1173,7 +1173,7 @@
 <div class="form-group" style="display: {{ (is_array($water_view ?? []) && in_array('Other', $water_view ?? [])) ? 'block' : 'none' }};" id="other_water_view_wrapper">
     <div class="input-cover">
         <input type="text" wire:model="other_water_view" class="form-control has-icon"
-            data-icon="fa-solid fa-binoculars" placeholder="Enter title (e.g., example)">
+            data-icon="fa-solid fa-binoculars" placeholder="Enter water view type (e.g., Marsh, Wetland)">
     </div>
 </div>
 
@@ -1224,7 +1224,7 @@
 <div class="form-group" style="display: {{ (is_array($interior_features ?? []) && in_array('Other', $interior_features ?? [])) ? 'block' : 'none' }};" id="other_interior_features_wrapper">
     <div class="input-cover">
         <input type="text" wire:model="other_interior_features" class="form-control has-icon"
-            data-icon="fa-solid fa-house" placeholder="Enter title (e.g., example)">
+            data-icon="fa-solid fa-house" placeholder="Enter interior feature (e.g., Recessed lighting, Coffered ceiling)">
     </div>
 </div>
 
@@ -1509,7 +1509,7 @@
         <div class="input-cover">
             <input type="text" wire:model.defer="assets_other" class="form-control has-icon"
                 data-icon="fa-solid fa-building"
-                placeholder="Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
+                placeholder="Enter any included assets (e.g., Inventory, Customer lists, Trademarks, Software rights)">
         </div>
     </div>
 @endif
@@ -2394,7 +2394,7 @@
     <div class="form-group" id="other_building_features_wrapper" style="{{ is_array($building_features) && in_array('Other', $building_features) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_building_features" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter building features (e.g., Skylight, automated gate)">
+                data-icon="fa-solid fa-pen" placeholder="Enter building features (e.g., Skylight, Automated gate)">
         </div>
     </div>
 
@@ -2446,7 +2446,7 @@
     <div class="form-group" id="other_licenses_wrapper" style="{{ is_array($licenses) && in_array('Other', $licenses) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_licenses" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter license (e.g., Catering, entertainment)">
+                data-icon="fa-solid fa-pen" placeholder="Enter license (e.g., Catering, Entertainment)">
         </div>
     </div>
 
@@ -2468,7 +2468,7 @@
     <div class="form-group" id="other_sale_includes_wrapper" style="{{ is_array($sale_includes) && in_array('Other', $sale_includes) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sale_includes" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter items included in sale (e.g., Domain Name, Social Media Accounts)">
+                data-icon="fa-solid fa-pen" placeholder="Enter items included in sale (e.g., Domain name, Social media accounts)">
         </div>
     </div>
 
@@ -3067,7 +3067,7 @@
     <div class="form-group" id="other_fences_wrapper" style="{{ is_array($fences) && in_array('Other', $fences) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_fences" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter fence type (e.g., Electric, invisible)">
+                data-icon="fa-solid fa-pen" placeholder="Enter fence type (e.g., Electric, Invisible)">
         </div>
     </div>
 
@@ -3127,7 +3127,7 @@
     <div class="form-group" id="other_easements_wrapper" style="{{ is_array($easements) && in_array('Other', $easements) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_easements" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter easement type (e.g., Drainage, mineral rights)">
+                data-icon="fa-solid fa-pen" placeholder="Enter easement type (e.g., Conservation, Mineral rights)">
         </div>
     </div>
 

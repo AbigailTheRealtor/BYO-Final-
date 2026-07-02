@@ -774,7 +774,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_business_type" class="form-control has-icon"
             data-icon="fa-solid fa-home"
-            placeholder="Enter other business type (e.g., Recording Studio, Event Venue, Repair Shop)">
+            placeholder="Enter other business type (e.g., Recording studio, Event venue, Repair shop)">
     </div>
 </div>
 
@@ -993,7 +993,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_appliances" class="form-control has-icon"
             data-icon="fa-solid fa-plug"
-            placeholder="Enter appliances (e.g., Air Fryer Oven, Induction Cooktop, Double Oven)"
+            placeholder="Enter appliances (e.g., Air fryer oven, Induction cooktop, Double oven)"
             @if (is_array($appliances) && in_array('Other', $appliances)) required @endif>
     </div>
     <span class="error mt-2" id="other_appliances_error"></span>
@@ -1129,7 +1129,7 @@
         <div class="input-cover">
             <input type="text" wire:model="other_parking_space_wrapper" id="other_parking_space"
                 class="form-control has-icon" data-icon="fa-solid fa-warehouse"
-                placeholder="Enter other garage/parking features (e.g., Tandem Parking, Gated Entry, Shared Driveway)">
+                placeholder="Enter other garage/parking features (e.g., Tandem parking, Gated entry, Shared driveway)">
         </div>
     </div> --}}
 
@@ -1157,7 +1157,7 @@
         <div class="input-cover">
             <input type="text" wire:model.defer="other_parking_space_wrapper" class="form-control has-icon"
                 data-icon="fa-solid fa-warehouse"
-                placeholder="Enter garage/parking features (e.g., Tandem Parking, Gated Entry, Shared Driveway)">
+                placeholder="Enter garage/parking features (e.g., Tandem parking, Gated entry, Shared driveway)">
         </div>
     </div>
 
@@ -1296,11 +1296,11 @@
             @if (in_array($property_type, ['Residential', 'Income']))
                 <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                     data-icon="fa-solid fa-lock"
-                    placeholder="Enter amenities or property features (e.g., Sauna, Ev Charger, Outdoor Kitchen)">
+                    placeholder="Enter amenities or property features (e.g., Sauna, EV charger, Outdoor kitchen)">
             @elseif(in_array($property_type, ['Business', 'Commercial']))
                 <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                     data-icon="fa-solid fa-lock"
-                    placeholder="Enter amenities or property features (e.g., Rooftop Access, Backup Generator, Freight Elevator)">
+                    placeholder="Enter amenities or property features (e.g., Rooftop access, Backup generator, Freight elevator)">
             @endif
         </div>
         <span class="error mt-2" id="other_non_negotiable_amenities_error"></span>
@@ -1388,7 +1388,7 @@
             </span>
             <div class="input-cover">
                 <input type="text" wire:model.defer="breed_restrictions" class="form-control has-icon"
-                    data-icon="fa-solid fa-shield-dog" placeholder="Enter pet restrictions (e.g., No Pit Bulls)">
+                    data-icon="fa-solid fa-shield-dog" placeholder="Enter pet restrictions (e.g., No pit bulls)">
             </div>
             <span class="error mt-2" id="breed_restrictions_error"></span>
         </div>
@@ -1443,7 +1443,7 @@
         <div class="input-cover">
             <input type="text" wire:model.defer="assets_other" class="form-control has-icon"
                 data-icon="fa-solid fa-building"
-                placeholder="Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
+                placeholder="Enter any included assets (e.g., Inventory, Customer lists, Trademarks, Software rights)">
         </div>
     </div>
 @endif

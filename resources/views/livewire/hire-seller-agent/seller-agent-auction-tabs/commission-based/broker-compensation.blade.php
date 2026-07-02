@@ -490,7 +490,7 @@ $safeKey = function(...$parts) {
             <span class="error mt-2" id="seller_leasing_gross_purchase_fee_flat_amount_error"></span>
         @elseif($seller_leasing_fee_type === 'other')
             <input type="text" wire:model="seller_leasing_gross_purchase_fee_other" class="form-control mt-2"
-                placeholder="Enter lease fee structure (e.g., 100% of First Month's Rent, or a Tiered Schedule for Multi-Year Leases)">
+                placeholder="Enter lease fee structure (e.g., 100% of first month's rent, or a tiered schedule for multi-year leases)">
         @elseif($seller_leasing_fee_type === 'Percentage of Net Aggregate Rent')
             <div class="mt-3">
 
@@ -775,7 +775,7 @@ $safeKey = function(...$parts) {
     @if ($agency_agreement_timeframe === 'Other')
         <div class="mt-3">
             <input type="text" wire:model="agency_agreement_custom" class="form-control"
-                placeholder="Enter Seller agency agreement timeframe (e.g., 8 Months)">
+                placeholder="Enter Seller agency agreement timeframe (e.g., 8 months)">
 
         </div>
     @endif

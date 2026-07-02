@@ -792,7 +792,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
                 data-icon="fa-solid fa-clock"
-                placeholder="Enter Timing of Transfer (e.g., Within 48 hours of contract acceptance)">
+                placeholder="Enter timing of transfer (e.g., Within 48 hours of contract acceptance)">
         </div>
     </div>
     @endif
@@ -1773,7 +1773,7 @@
     <div class="input-cover">
         <input type="text" wire:model="initial_deposit_timeframe_other" class="form-control has-icon"
             data-icon="fa-regular fa-calendar-days"
-            placeholder="Enter initial deposit timeframe (e.g., Within 21 Days)">
+            placeholder="Enter initial deposit timeframe (e.g., Within 21 days)">
     </div>
 </div>
 @endif
@@ -1830,7 +1830,7 @@
     <div class="input-cover">
         <input type="text" wire:model="additional_deposit_timeframe_other" class="form-control has-icon"
             data-icon="fa-regular fa-calendar-days"
-            placeholder="Enter additional deposit timeframe (e.g., Within 21 Days)">
+            placeholder="Enter additional deposit timeframe (e.g., Within 21 days)">
     </div>
 </div>
 @endif
@@ -2104,7 +2104,7 @@
     <div class="input-cover">
         <input type="text" wire:model="included_personal_property" class="form-control has-icon seller-icon-deep-pad"
             data-icon="fa-solid fa-couch"
-            placeholder="Enter included personal property (e.g., Refrigerator, Washer/Dryer, Dining Room Chandelier)">
+            placeholder="Enter included personal property (e.g., Refrigerator, Washer/dryer, Dining room chandelier)">
     </div>
 </div>
 

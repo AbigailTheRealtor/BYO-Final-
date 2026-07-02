@@ -458,6 +458,19 @@ class OfferWorkflowReadinessTest extends TestCase
             //   upload) so visible copy matches the .jpeg the accept attribute allows.
             'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/documents-disclosures.blade.php',
             'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/documents-disclosures.blade.php',
+            // Phase 8 — Tooltip / placeholder / UI-text audit (A8.50-A8.64).
+            //   Text-only placeholder/label normalization: S2 sentence-case examples,
+            //   Hire↔Create parity, real "Other" placeholders (no generic templates),
+            //   and A8.57 removal of the phone-number example across all four Agent-Info
+            //   tabs. No validation/persistence/behavior/JS changes. Create-Seller
+            //   property-preferences/seller-terms/tax-legal + Hire-Seller
+            //   property-preferences/seller-terms are already allow-listed above.
+            'resources/views/livewire/hire-seller-agent/seller-agent-auction-tabs/commission-based/broker-compensation.blade.php',
+            'resources/views/livewire/hire-seller-agent/seller-agent-auction-tabs/commission-based/services.blade.php',
+            'resources/views/livewire/seller-agent-auction-bid-tabs/commission-based/agent-info.blade.php',
+            'resources/views/livewire/buyer-agent-auction-bid-tabs/commission-based/agent-info.blade.php',
+            'resources/views/livewire/landlord-agent-auction-bid-tabs/commission-based/agent-info.blade.php',
+            'resources/views/livewire/tenant-agent-auction-bid-tabs/commission-based/agent-info.blade.php',
         ];
 
         $unexpected = array_values(array_filter(
