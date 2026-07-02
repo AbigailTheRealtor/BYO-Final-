@@ -35,8 +35,9 @@ class ByoListingAdapter
      * semantics, which is exactly why the canonical layer exists.
      */
     private const MAP = [
-        // ── Property side: pet POLICY ────────────────────────────────────────
-        'landlord_agent' => [
+        // ── Property side (landlord/seller describe a real property) ──────────
+        'landlord_agent' => self::PROPERTY_FIELDS + [
+            // pet POLICY (Phase 2)
             'pet.policy.pets_allowed'            => ['pets', 'bool'],
             'pet.policy.max_weight_lbs'          => ['pet_max_weight_lbs', 'number'],
             'pet.policy.species_allowed'         => ['pet_species_allowed', 'array'],
@@ -46,25 +47,52 @@ class ByoListingAdapter
             'pet.policy.rent'                    => ['pet_rent', 'number'],
             'pet.policy.fee'                     => ['pet_fee', 'number'],
         ],
-        'seller_agent' => [
+        'seller_agent' => self::PROPERTY_FIELDS + [
             'pet.policy.pets_allowed'            => ['pets', 'bool'],
         ],
 
-        // ── Demand side: pet PROFILE ─────────────────────────────────────────
-        'tenant_agent' => [
+        // ── Demand side (buyer/tenant describe criteria/preferences) ──────────
+        'tenant_agent' => self::DEMAND_FIELDS + [
+            // pet PROFILE (Phase 2)
             'pet.profile.has_pets'   => ['pets', 'bool'],
             'pet.profile.count'      => ['number_of_pets', 'number'],
             'pet.profile.weight_lbs' => ['weight_of_pets', 'number'],
             'pet.profile.species'    => ['type_of_pets', 'array'],
             'pet.profile.breed'      => ['breed_of_pets', 'string'],
         ],
-        'buyer_agent' => [
+        'buyer_agent' => self::DEMAND_FIELDS + [
             'pet.profile.has_pets'   => ['pets', 'bool'],
             'pet.profile.count'      => ['number_of_pets', 'number'],
             'pet.profile.weight_lbs' => ['weight_of_pets', 'number'],
             'pet.profile.species'    => ['type_of_pets', 'array'],
             'pet.profile.breed'      => ['breed_of_pets', 'string'],
         ],
+    ];
+
+    /**
+     * Shared, score-agnostic PROPERTY canonical fields (Phase 3). Mapped once,
+     * consumed by many scores (Lock-and-Leave, Waterfront-Lifestyle, …) — the
+     * point of the canonical layer: map a meta key once, reuse everywhere.
+     */
+    private const PROPERTY_FIELDS = [
+        'property.structure_type'      => ['property_items', 'array'],
+        'property.hoa_fee_includes'    => ['association_fee_includes', 'array'],
+        'property.community_amenities' => ['association_amenities', 'array'],
+        'property.lot_acreage'         => ['total_acreage', 'number'],
+        'property.condition'           => ['condition_prop', 'string'],
+        'property.waterfront'          => ['waterfront', 'bool'],
+        'property.water_access'        => ['water_access', 'array'],
+        'property.water_view'          => ['water_view', 'array'],
+        'property.water_frontage_feet' => ['waterfront_feet', 'number'],
+        'property.view_preference'     => ['view_preference', 'array'],
+    ];
+
+    /** Shared, score-agnostic DEMAND canonical fields (Phase 3). */
+    private const DEMAND_FIELDS = [
+        'demand.current_status'   => ['current_status', 'string'],
+        'demand.purchase_purpose' => ['purchase_purpose', 'string'],
+        'demand.age_targeted'     => ['leasing_55_plus', 'bool'],
+        'demand.view_preference'  => ['view_preference', 'array'],
     ];
 
     /**
