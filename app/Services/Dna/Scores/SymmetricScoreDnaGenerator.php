@@ -16,8 +16,8 @@ use Illuminate\Support\Carbon;
  * tenant/buyer) → upsert on the dna_scores unique key.
  *
  * GOVERNANCE: writes ONLY to dna_scores; no AI, no external calls. Touches no
- * existing table. (The Phase-2 PetFriendlinessDnaGenerator remains as-is; new
- * scores use this generic path.)
+ * existing table. All scalar scores — including Pet-Friendliness — persist
+ * through this single generic path.
  */
 class SymmetricScoreDnaGenerator
 {

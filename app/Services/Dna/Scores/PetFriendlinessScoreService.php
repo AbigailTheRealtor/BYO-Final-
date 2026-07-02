@@ -5,6 +5,7 @@ namespace App\Services\Dna\Scores;
 use App\Services\Canonical\Adapters\ByoListingAdapter;
 use App\Services\Canonical\CanonicalListing;
 use App\Services\Dna\Confidence\ConfidenceCalculator;
+use App\Services\Dna\Scores\Contracts\SymmetricScoreService;
 
 /**
  * PetFriendlinessScoreService — Beyond-MLS Wave 1 / Phase 2 first slice.
@@ -22,7 +23,7 @@ use App\Services\Dna\Confidence\ConfidenceCalculator;
  * ==================================================================================
  * This service MUST NEVER:
  *   - Make external API calls or invoke any AI/OpenAI/Ask AI pipeline.
- *   - Write to the database (persistence lives in PetFriendlinessDnaGenerator).
+ *   - Write to the database (persistence lives in the generic SymmetricScoreDnaGenerator).
  *   - Read a source-specific column — it reads ONLY canonical fields (§F1).
  *
  * FAIR HOUSING (§F3):
@@ -33,12 +34,17 @@ use App\Services\Dna\Confidence\ConfidenceCalculator;
  *   scoring input and must never influence ranking. (C1/C3.)
  * ==================================================================================
  */
-class PetFriendlinessScoreService
+class PetFriendlinessScoreService implements SymmetricScoreService
 {
     public const VERSION   = 'PET_FRIENDLINESS_V1';
     public const SCORE_KEY  = 'pet_friendliness';
     public const SIDE_PROPERTY = 'property';
     public const SIDE_DEMAND   = 'demand';
+
+    public function scoreKey(): string
+    {
+        return self::SCORE_KEY;
+    }
 
     /**
      * Data-completeness weights for the property (policy) side. Sum = 100.

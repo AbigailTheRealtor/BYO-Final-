@@ -9,8 +9,8 @@ use App\Services\Canonical\Adapters\ByoListingAdapter;
 use App\Services\Canonical\CanonicalListing;
 use App\Services\Canonical\CanonicalListingResolver;
 use App\Services\Dna\Confidence\ConfidenceCalculator;
-use App\Services\Dna\Scores\PetFriendlinessDnaGenerator;
 use App\Services\Dna\Scores\PetFriendlinessScoreService;
+use App\Services\Dna\Scores\SymmetricScoreDnaGenerator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -189,9 +189,10 @@ class PetFriendlinessSliceTest extends TestCase
         $auction->saveMeta('has_breed_restrictions', 'no');
         $auction->saveMeta('pet_deposit_amount', '0');
 
-        $gen = app(PetFriendlinessDnaGenerator::class);
+        $gen = app(SymmetricScoreDnaGenerator::class);
+        $pet = app(PetFriendlinessScoreService::class);
 
-        $row = $gen->generateForListing('landlord_agent', $auction->id);
+        $row = $gen->generateForListing($pet, 'landlord_agent', $auction->id);
         $this->assertInstanceOf(DnaScore::class, $row);
         $this->assertSame('property', $row->side);
         $this->assertSame('pet_friendliness', $row->score_key);
@@ -203,7 +204,7 @@ class PetFriendlinessSliceTest extends TestCase
         $this->assertIsArray($row->inputs_json);
 
         // Re-run → upsert, not duplicate.
-        $gen->generateForListing('landlord_agent', $auction->id);
+        $gen->generateForListing($pet, 'landlord_agent', $auction->id);
         $this->assertSame(1, DnaScore::where('listing_type', 'landlord_agent')
             ->where('listing_id', $auction->id)
             ->where('score_key', 'pet_friendliness')
@@ -218,7 +219,8 @@ class PetFriendlinessSliceTest extends TestCase
         $tenant->saveMeta('weight_of_pets', '70');
         $tenant->saveMeta('type_of_pets', json_encode(['dog']));
 
-        $row = app(PetFriendlinessDnaGenerator::class)->generateForListing('tenant_agent', $tenant->id);
+        $row = app(SymmetricScoreDnaGenerator::class)
+            ->generateForListing(app(PetFriendlinessScoreService::class), 'tenant_agent', $tenant->id);
 
         $this->assertSame('demand', $row->side);
         $this->assertSame(100, $row->value);
