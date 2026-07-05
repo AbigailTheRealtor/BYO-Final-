@@ -6,6 +6,7 @@ use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
 use App\Services\LocationDna\LocationDnaPoiDistanceService;
 use App\Services\LocationDna\LocationDnaPoiTileCache;
+use App\Services\LocationDna\LocationDnaVersionService;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -86,6 +87,16 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
     private function makeService(?LocationDnaPoiTileCache $tileCache = null): LocationDnaPoiDistanceService
     {
         return new LocationDnaPoiDistanceService($this->mockClient, null, null, $tileCache);
+    }
+
+    /**
+     * Current fetch version, matching what the service computes at run time.
+     * Cached-path seeds stamp this on their rows to represent the post-backfill
+     * steady state (Stage E0), where versioned rows are eligible for reuse.
+     */
+    private function currentFetchVersion(): string
+    {
+        return (new LocationDnaVersionService())->fetchVersion();
     }
 
     /**
@@ -423,6 +434,7 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
                 'source_lng'     => self::SOURCE_LNG,
                 'distance_miles' => 0.5,
                 'data_source'    => 'google_places',
+                'pois_fetch_version' => $this->currentFetchVersion(),
                 'status'         => 'found',
                 'calculated_at'  => now()->subHour(),
             ]);
@@ -985,6 +997,7 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
                 'distance_miles' => 0.5,
                 'types_json'     => null,
                 'data_source'    => 'google_places',
+                'pois_fetch_version' => $this->currentFetchVersion(),
                 'status'         => 'found',
                 'calculated_at'  => now()->subDay(),
             ]);
@@ -1075,6 +1088,7 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
                 'distance_miles' => 0.5,
                 'types_json'     => null,
                 'data_source'    => 'google_places',
+                'pois_fetch_version' => $this->currentFetchVersion(),
                 'status'         => 'found',
                 'calculated_at'  => now()->subDay(),
             ]);
@@ -1127,6 +1141,7 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
                 'distance_miles' => 0.5,
                 'types_json'     => null,
                 'data_source'    => 'google_places',
+                'pois_fetch_version' => $this->currentFetchVersion(),
                 'status'         => 'found',
                 'calculated_at'  => now()->subDay(),
             ]);

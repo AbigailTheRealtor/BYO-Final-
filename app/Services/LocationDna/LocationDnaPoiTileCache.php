@@ -2,13 +2,15 @@
 
 namespace App\Services\LocationDna;
 
+use App\Services\LocationDna\Providers\LocationProviderRegistry;
 use Illuminate\Support\Facades\Cache;
 
 /**
  * LocationDnaPoiTileCache — Spatial tile cache for Google Places raw candidates.
  *
- * Converts (lat, lng, google_type, keyword) into a stable tile cache key by rounding
- * coordinates to a configurable decimal precision read from config('location_dna.poi.tile_precision').
+ * Converts (lat, lng, google_type, keyword, provider-surface) into a stable tile
+ * cache key by rounding coordinates to a configurable decimal precision read from
+ * config('location_dna.poi.tile_precision').
  *
  * Safe disabled/default mode:
  *   When LOCATION_DNA_POI_TILE_PRECISION is absent or empty, the tile cache is disabled
@@ -23,6 +25,15 @@ class LocationDnaPoiTileCache
     private readonly int     $ttl;
     private readonly ?string $storeName;
 
+    /**
+     * Provider-surface token (Stage E0): a short prefix of the active provider
+     * capabilityHash, mixed into every tile key so raw candidates fetched under
+     * one provider configuration are never reused under another. Constant while
+     * only Google is enabled, so existing production behavior is unchanged apart
+     * from a one-time key change (self-healing within the tile TTL).
+     */
+    private readonly string $capabilityToken;
+
     public function __construct()
     {
         $raw = config('location_dna.poi.tile_precision');
@@ -32,6 +43,12 @@ class LocationDnaPoiTileCache
             : null;
 
         $this->ttl = (int) config('location_dna.poi.tile_cache_ttl', 604800);
+
+        $this->capabilityToken = substr(
+            (new LocationProviderRegistry((array) config('location_providers', [])))->capabilityHash(),
+            0,
+            16
+        );
 
         // Resolve the backing store name. null → application default store
         // (correct for production: a persistent, cross-process store). Coerce
@@ -111,6 +128,7 @@ class LocationDnaPoiTileCache
             (string) $googleType,
             (string) $keyword,
             number_format($precision, 10, '.', ''),
+            $this->capabilityToken,
         ]);
 
         return 'ldna_poi_tile_' . hash('sha256', $raw);

@@ -195,6 +195,42 @@ class LocationDnaPoiTileCacheTest extends TestCase
             'Different google_type values must produce different cache keys');
     }
 
+    /**
+     * Stage E0: the tile key is provider-aware — changing which providers are
+     * enabled changes the capability surface and therefore the key, so raw
+     * candidates from one provider config are never reused under another.
+     *
+     * @test
+     */
+    public function build_key_differs_when_provider_surface_changes(): void
+    {
+        config(['location_dna.poi.tile_precision' => '0.005']);
+
+        // Baseline provider surface (from config/location_providers.php).
+        $keyBaseline = (new LocationDnaPoiTileCache())
+            ->buildKey(self::SAMPLE_META, 27.9506, -82.4572);
+
+        // Enable an additional provider — the capability surface changes.
+        config(['location_providers.providers.osm_overpass.enabled' => true]);
+        $keyChanged = (new LocationDnaPoiTileCache())
+            ->buildKey(self::SAMPLE_META, 27.9506, -82.4572);
+
+        $this->assertNotSame($keyBaseline, $keyChanged,
+            'Changing the enabled provider surface must change the tile cache key');
+    }
+
+    /** @test */
+    public function build_key_is_stable_for_identical_provider_surface(): void
+    {
+        config(['location_dna.poi.tile_precision' => '0.005']);
+
+        $key1 = (new LocationDnaPoiTileCache())->buildKey(self::SAMPLE_META, 27.9506, -82.4572);
+        $key2 = (new LocationDnaPoiTileCache())->buildKey(self::SAMPLE_META, 27.9506, -82.4572);
+
+        $this->assertSame($key1, $key2,
+            'Identical inputs and provider surface must produce identical keys');
+    }
+
     /** @test */
     public function build_key_differs_by_keyword(): void
     {

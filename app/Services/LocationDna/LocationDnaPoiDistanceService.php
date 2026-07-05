@@ -331,6 +331,14 @@ class LocationDnaPoiDistanceService
     private array $lastRunStats = [];
 
     /**
+     * Current fetch/scoring version stamps for this run (Stage E0). Set at the top
+     * of calculateForListing() and written onto every persisted POI row. Empty
+     * only before the first run in a given instance.
+     */
+    private string $currentFetchVersion   = '';
+    private string $currentScoringVersion = '';
+
+    /**
      * Read-only view of the inputs that define the SCORING version
      * (docs/canonical-field-mapping-spec.md §7; Stage E0). These are the rules
      * and constants that change how already-fetched candidates are filtered and
@@ -353,6 +361,7 @@ class LocationDnaPoiDistanceService
         private readonly ?LocationDnaAuditService $auditService = null,
         private readonly ?LocationDnaRankingEngine $rankingEngine = null,
         private readonly ?LocationDnaPoiTileCache $tileCache = null,
+        private readonly ?LocationDnaVersionService $versionService = null,
     ) {}
 
     /**
@@ -395,6 +404,13 @@ class LocationDnaPoiDistanceService
         $this->tileCacheHits     = 0;
         $this->tileCacheMisses   = 0;
         $this->categoriesGrouped = 0;
+
+        // Current version stamps for this run (Stage E0). Computed once; written
+        // onto every persisted row and compared against stored rows to decide
+        // whether cached candidates are still valid for the active fetch surface.
+        $versionService = $this->versionService ?? new LocationDnaVersionService();
+        $this->currentFetchVersion   = $versionService->fetchVersion();
+        $this->currentScoringVersion = $versionService->scoringVersion();
 
         try {
             // (a) Validate: Phase B record must exist
@@ -459,9 +475,20 @@ class LocationDnaPoiDistanceService
                 $cachedLat = (float) $firstRow->source_lat;
                 $cachedLng = (float) $firstRow->source_lng;
 
+                // Stage E0: stored candidates are only reusable when they were
+                // fetched under the SAME fetch surface (category defs, groups,
+                // radius, provider set). A fetch-version mismatch means new query
+                // params/providers could surface candidates never stored, so it is
+                // treated exactly like a coordinate change — full delete + refetch.
+                // NULL (un-stamped) rows are treated as stale by design (explicit
+                // ldna:stamp-versions backfill, not NULL-grandfathering).
+                $fetchVersionMatches =
+                    ((string) $firstRow->pois_fetch_version) === $this->currentFetchVersion;
+
                 if (
                     abs($cachedLat - $sourceLat) < 0.0000001 &&
-                    abs($cachedLng - $sourceLng) < 0.0000001
+                    abs($cachedLng - $sourceLng) < 0.0000001 &&
+                    $fetchVersionMatches
                 ) {
                     // Re-apply current exclusion rules per category.
                     // Only the rank-1 row is inspected — it is the primary result.
@@ -531,7 +558,8 @@ class LocationDnaPoiDistanceService
                         $staleCategories,
                     ));
                 } else {
-                    // Coordinates changed — clear all existing rows for this listing
+                    // Coordinates changed OR fetch-version changed (provider/category/
+                    // radius surface differs) — clear all existing rows for a full refetch.
                     PropertyLocationPoi::where('listing_type', $listingType)
                         ->where('listing_id', $listingId)
                         ->delete();
@@ -1276,6 +1304,9 @@ class LocationDnaPoiDistanceService
             'ranking_reasons_json'     => $rankingReasons,
             'travel_time_minutes'      => null,
             'data_source'              => 'google_places',
+            // Stage E0: stamp the versions this row was fetched/scored under.
+            'pois_fetch_version'       => $this->currentFetchVersion !== '' ? $this->currentFetchVersion : null,
+            'pois_scoring_version'     => $this->currentScoringVersion !== '' ? $this->currentScoringVersion : null,
             'status'                   => $status,
             'error'                    => $error,
             'calculated_at'            => now(),

@@ -12,6 +12,14 @@ use Tests\TestCase;
  */
 class PropertyLocationPoiVersionColumnsTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Self-healing: clear any leftover rows for these fixture ids so the test
+        // is idempotent even if a prior run committed against a shared database.
+        PropertyLocationPoi::whereIn('listing_id', [990001, 990002])->delete();
+    }
+
     public function test_version_columns_are_mass_assignable_and_persist(): void
     {
         $poi = PropertyLocationPoi::create([
