@@ -17,17 +17,15 @@ $safeKey = function(...$parts) {
     </div>
 </div>
 
-@php
-$_isResidential = str_contains(strtolower($property_type ?? ''), 'residential');
-$_isCommercial  = str_contains(strtolower($property_type ?? ''), 'commercial');
-@endphp
-
 {{-- #1 (Batch B): Broker Compensation & Agency Agreement Terms must render on CREATE for a
-     blank property type and for both Residential and Commercial — previously the entire block
-     was gated behind @if($_isResidential), so it never appeared on create (default blank type)
-     and never for Commercial. All fields are optional (see banner above). The backing props are
-     already persisted + hydrated by saveAllMetadata() in both create and edit; only the markup
-     wiring was missing. --}}
+     blank property type and for both Residential and Commercial. Previously the whole block was
+     gated behind @if(str_contains($property_type,'residential')), so it never appeared on create
+     (default blank type) and never for Commercial, and the Agency Agreement Terms partials were
+     orphaned (no @include anywhere). All fields are optional (see banner above). Every backing
+     prop below is already declared, persisted via saveAllMetadata(), and hydrated on edit in both
+     LandlordOfferListing and LandlordOfferListingEdit — verified 2026-07-05 — so this is a
+     markup-wiring fix only; no component/metadata changes are needed. Each partial self-gates on
+     $property_type where a type-specific form is required (see notes below). --}}
 
 <!-- Landlord's Broker Commission Structure -->
 <div class="form-group mb-4">
@@ -50,12 +48,21 @@ $_isCommercial  = str_contains(strtolower($property_type ?? ''), 'commercial');
     </div>
 </div>
 
-<!-- Landlord's Broker Lease Fee -->
+<!-- Landlord's Broker Lease Fee (self-gates to Residential) -->
 @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.landlord_broker_lease_fee')
 
-{{-- Agency Agreement Terms — self-contained partials whose props are already persisted +
-     hydrated. agency_agreement_timeframe + additional_terms are ungated (show for all types);
-     protection_period + early_termination self-gate to Residential by their existing design. --}}
+{{-- Agency Agreement Terms — the previously-orphaned partials, ordered to mirror the Hire
+     Landlord broker-compensation tab. Each is self-contained and self-gating:
+       • tenant_broker_commission   → Residential + Commercial (own @if branches)
+       • payment_timing             → Residential only
+       • agency_agreement_timeframe → all property types (ungated)
+       • protection_period          → Residential only
+       • early_termination          → Residential only
+       • additional_terms           → all property types (ungated)
+     expansion_commission (no bindings) and commented_expansion (fully commented out) are dead
+     partials and are intentionally NOT wired. --}}
+@include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.tenant_broker_commission')
+@include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.payment_timing')
 @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.agency_agreement_timeframe')
 @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.protection_period')
 @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.early_termination')
