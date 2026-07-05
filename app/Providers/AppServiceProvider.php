@@ -12,6 +12,10 @@ use App\Models\PropertyAuction;
 use App\Models\LandlordAuction;
 use App\Models\BuyerCriteriaAuction;
 use App\Models\TenantCriteriaAuction;
+use App\Models\SellerAgentAuction;
+use App\Models\LandlordAgentAuction;
+use App\Models\BuyerAgentAuction;
+use App\Models\TenantAgentAuction;
 use App\Models\BuyerTenantDnaProfile;
 use App\Models\PropertyDnaProfile;
 use App\Observers\Dna\BuyerCriteriaAuctionDnaObserver;
@@ -20,6 +24,10 @@ use App\Observers\Dna\LandlordAuctionDnaObserver;
 use App\Observers\Dna\PropertyAuctionDnaObserver;
 use App\Observers\Dna\PropertyDnaProfileCompatibilityObserver;
 use App\Observers\Dna\TenantCriteriaAuctionDnaObserver;
+use App\Observers\Dna\SellerAgentAuctionDnaScoreObserver;
+use App\Observers\Dna\LandlordAgentAuctionDnaScoreObserver;
+use App\Observers\Dna\BuyerAgentAuctionDnaScoreObserver;
+use App\Observers\Dna\TenantAgentAuctionDnaScoreObserver;
 use App\Services\AskAi\AskAiRunnerV2Service;
 use App\Services\AskAi\AskAiQuestionClassifierService;
 use App\Services\AskAi\AskAiInternalRunnerService;
@@ -186,6 +194,17 @@ class AppServiceProvider extends ServiceProvider
         LandlordAuction::observe(LandlordAuctionDnaObserver::class);
         BuyerCriteriaAuction::observe(BuyerCriteriaAuctionDnaObserver::class);
         TenantCriteriaAuction::observe(TenantCriteriaAuctionDnaObserver::class);
+
+        // Phase 13 — production dna_scores generation. These observers fire on
+        // every save of the four *_agent listing types (the OfferListing flow,
+        // the Hire-an-Agent wizards, and MLS imports all funnel through a model
+        // save), dispatching ComputeDnaScores behind the default-off master flag
+        // (config dna_scores.generation_enabled). Additive and inert until the
+        // owner enables generation; independent of Matching V2.
+        SellerAgentAuction::observe(SellerAgentAuctionDnaScoreObserver::class);
+        LandlordAgentAuction::observe(LandlordAgentAuctionDnaScoreObserver::class);
+        BuyerAgentAuction::observe(BuyerAgentAuctionDnaScoreObserver::class);
+        TenantAgentAuction::observe(TenantAgentAuctionDnaScoreObserver::class);
 
         // Phase F — Compatibility observers.
         // These observers hook PropertyDnaProfile and BuyerTenantDnaProfile saves to dispatch
