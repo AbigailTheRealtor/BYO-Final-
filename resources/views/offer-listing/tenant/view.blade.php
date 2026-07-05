@@ -1386,13 +1386,10 @@
                     {{-- External video link (YouTube / Vimeo / other) --}}
                     @if($ifFilled($str('video_link')))
                         @php
+                            // #5 (Batch B): canonical VideoEmbedHelper instead of inline regex;
+                            // unsupported URLs return null → safe raw-link fallback below.
                             $vLink = $str('video_link');
-                            $vEmbed = null;
-                            if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_\-]{11})/', $vLink, $vm)) {
-                                $vEmbed = 'https://www.youtube.com/embed/' . $vm[1];
-                            } elseif (preg_match('/vimeo\.com\/(\d+)/', $vLink, $vm)) {
-                                $vEmbed = 'https://player.vimeo.com/video/' . $vm[1];
-                            }
+                            $vEmbed = $vLink ? \App\Support\VideoEmbedHelper::getEmbedUrl($vLink) : null;
                         @endphp
                         @if($vEmbed)
                             <div class="ratio ratio-16x9 mb-2" style="max-width:320px;border-radius:8px;overflow:hidden;">

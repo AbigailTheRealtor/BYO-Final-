@@ -945,22 +945,12 @@
                 $videoUrl = $str('video_tour_url');
                 $virtualUrl = $str('virtual_tour_url');
                 $videoLinkUrl = $str('video_link');
-                $videoEmbedUrl = null;
-                $virtualEmbedUrl = null;
-                $videoLinkEmbedUrl = null;
-                foreach ([
-                    ['url' => $videoUrl,     'var' => &$videoEmbedUrl],
-                    ['url' => $virtualUrl,   'var' => &$virtualEmbedUrl],
-                    ['url' => $videoLinkUrl, 'var' => &$videoLinkEmbedUrl],
-                ] as &$_tour) {
-                    if (!$_tour['url']) continue;
-                    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_\-]{11})/', $_tour['url'], $_m)) {
-                        $_tour['var'] = 'https://www.youtube.com/embed/' . $_m[1];
-                    } elseif (preg_match('/vimeo\.com\/(\d+)/', $_tour['url'], $_m)) {
-                        $_tour['var'] = 'https://player.vimeo.com/video/' . $_m[1];
-                    }
-                }
-                unset($_tour);
+                // #5 (Batch B): use the canonical VideoEmbedHelper (YouTube/Vimeo) instead of a
+                // duplicated inline regex, so embed behavior stays consistent with the form
+                // preview + shared partial. Unsupported URLs return null → safe raw-link fallback.
+                $videoEmbedUrl     = $videoUrl     ? \App\Support\VideoEmbedHelper::getEmbedUrl($videoUrl) : null;
+                $virtualEmbedUrl   = $virtualUrl   ? \App\Support\VideoEmbedHelper::getEmbedUrl($virtualUrl) : null;
+                $videoLinkEmbedUrl = $videoLinkUrl ? \App\Support\VideoEmbedHelper::getEmbedUrl($videoLinkUrl) : null;
             @endphp
             @if($videoUrl)
                 @if($videoEmbedUrl)

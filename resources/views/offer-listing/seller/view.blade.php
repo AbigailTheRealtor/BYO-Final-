@@ -1259,24 +1259,13 @@
         <div class="card-header"><i class="fa-solid fa-images me-2"></i>Photos &amp; Tours</div>
         <div class="card-body">
             @php
+                // #5 (Batch B): route through the canonical VideoEmbedHelper (YouTube/Vimeo)
+                // instead of a duplicated inline regex; unsupported URLs return null → safe
+                // raw-link fallback below.
                 $videoUrl = $str('video_tour_url') ?: $str('video_link');
-                $videoEmbedUrl = null;
-                if ($videoUrl) {
-                    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_\-]{11})/', $videoUrl, $vm)) {
-                        $videoEmbedUrl = 'https://www.youtube.com/embed/' . $vm[1];
-                    } elseif (preg_match('/vimeo\.com\/(\d+)/', $videoUrl, $vm)) {
-                        $videoEmbedUrl = 'https://player.vimeo.com/video/' . $vm[1];
-                    }
-                }
+                $videoEmbedUrl = $videoUrl ? \App\Support\VideoEmbedHelper::getEmbedUrl($videoUrl) : null;
                 $virtualUrl = $str('virtual_tour_url');
-                $virtualEmbedUrl = null;
-                if ($virtualUrl) {
-                    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_\-]{11})/', $virtualUrl, $vm)) {
-                        $virtualEmbedUrl = 'https://www.youtube.com/embed/' . $vm[1];
-                    } elseif (preg_match('/vimeo\.com\/(\d+)/', $virtualUrl, $vm)) {
-                        $virtualEmbedUrl = 'https://player.vimeo.com/video/' . $vm[1];
-                    }
-                }
+                $virtualEmbedUrl = $virtualUrl ? \App\Support\VideoEmbedHelper::getEmbedUrl($virtualUrl) : null;
             @endphp
             @if($videoUrl)
                 @if($videoEmbedUrl)
