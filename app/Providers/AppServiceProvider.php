@@ -57,6 +57,8 @@ use App\Services\LocationDna\LocationPreferenceAnalyzer;
 use App\Services\LocationDna\PoiDistanceLookupService;
 use App\Services\LocationDna\Providers\LocationProviderRegistry;
 use App\Services\LocationDna\SchoolDistrictLookupService;
+use App\Services\Dna\Relevance\CandidateSourceInterface;
+use App\Services\Dna\Relevance\ScoredEntityCandidateSource;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -68,6 +70,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        // Matching V2 — candidate discovery (consumption slice 2). The default
+        // candidate source resolves the provider-agnostic universe from the unified
+        // dna_scores layer. Bound behind the interface so future DNA-enabled sources
+        // are additive without touching CandidateDiscoveryService.
+        $this->app->bind(CandidateSourceInterface::class, ScoredEntityCandidateSource::class);
+
         // Explicit binding for AskAiRunnerV2Service to ensure AskAiIntentNormalizerService
         // and AskAiKnowledgeSearchService are always injected as concrete non-null instances.
         // Laravel's auto-wiring would also resolve this correctly today, but explicit DI is
