@@ -28,6 +28,9 @@ class DnaScore extends Model
         'explanation',
         'inputs_json',
         'version',
+        'generated_by',
+        'generator_version',
+        'source_version',
         'computed_at',
     ];
 

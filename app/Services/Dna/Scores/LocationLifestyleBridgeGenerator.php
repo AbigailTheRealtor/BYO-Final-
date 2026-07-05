@@ -44,8 +44,14 @@ class LocationLifestyleBridgeGenerator
      *
      * @return array<int,DnaScore> the persisted rows (empty if no Location DNA)
      */
-    public function generateForListing(string $listingType, int $listingId): array
+    /**
+     * @param array{generated_by?:string} $provenance origin metadata (§ Phase 13);
+     *        generated_by defaults to 'system'.
+     */
+    public function generateForListing(string $listingType, int $listingId, array $provenance = []): array
     {
+        $generatedBy = $provenance['generated_by'] ?? 'system';
+
         $record = PropertyLocationDna::where('listing_type', $listingType)
             ->where('listing_id', $listingId)
             ->first();
@@ -89,6 +95,11 @@ class LocationLifestyleBridgeGenerator
                         'lifestyle_categories' => $lifestyle['lifestyle_categories'] ?? null,
                     ],
                     'version'           => self::VERSION,
+                    // Provenance (§ Phase 13). source_version is the upstream
+                    // Location DNA lifestyle version this score was bridged from.
+                    'generated_by'      => $generatedBy,
+                    'generator_version' => self::VERSION,
+                    'source_version'    => $sourceVersion,
                     'computed_at'       => Carbon::now(),
                 ]
             );

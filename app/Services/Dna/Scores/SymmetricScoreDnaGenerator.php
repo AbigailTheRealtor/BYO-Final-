@@ -30,7 +30,12 @@ class SymmetricScoreDnaGenerator
         $this->resolver = $resolver;
     }
 
-    public function generateForListing(SymmetricScoreService $score, string $listingType, int $listingId): ?DnaScore
+    /**
+     * @param array{generated_by?:string} $provenance origin metadata (§ Phase 13);
+     *        generated_by defaults to 'system' (lifecycle-generated). Other valid
+     *        values: 'ai', 'user', 'imported'.
+     */
+    public function generateForListing(SymmetricScoreService $score, string $listingType, int $listingId, array $provenance = []): ?DnaScore
     {
         $canonical = $this->resolver->resolve($listingType, $listingId);
         if ($canonical === null) {
@@ -55,6 +60,11 @@ class SymmetricScoreDnaGenerator
                 'explanation'       => $result['explanation'],
                 'inputs_json'       => $result['inputs'],
                 'version'           => $result['version'],
+                // Provenance (§ Phase 13). generator_version mirrors `version`;
+                // scalar scores have no upstream data source, so source_version is null.
+                'generated_by'      => $provenance['generated_by'] ?? 'system',
+                'generator_version' => $result['version'],
+                'source_version'    => $result['source_version'] ?? null,
                 'computed_at'       => Carbon::now(),
             ]
         );
