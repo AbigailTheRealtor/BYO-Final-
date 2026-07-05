@@ -1668,7 +1668,7 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
-                    <input type="number" wire:model="number_of_pets" class="form-control has-icon"
+                    <input type="text" wire:model="number_of_pets" class="form-control has-icon"
                         data-icon="fa-solid fa-hashtag" placeholder="Enter number of pets allowed (e.g., 2)">
                 </div>
                 <span class="error mt-2" id="number_of_pets_error"></span>

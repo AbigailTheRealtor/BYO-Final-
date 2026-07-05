@@ -1168,7 +1168,7 @@
         {{-- <label class="fw-bold">Other Lease Term:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_lease_term" class="form-control has-icon"
-                data-icon="fa-solid fa-calendar-days" placeholder="Enter lease term (e.g., 6-month, Week-to-week)">
+                data-icon="fa-solid fa-calendar-days" placeholder="Enter desired lease term (e.g., 8 Months)">
         </div>
     </div>
 

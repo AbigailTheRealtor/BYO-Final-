@@ -4070,7 +4070,11 @@ class SellerOfferListingEdit extends Component
                 return redirect()->route('offer.listing.seller.view', ['id' => $auction->id]);
             }
 
+            // A1.14/#3: after editing an already-published listing, redirect to the
+            // listing detail page (parity with Buyer/Landlord/Tenant) instead of
+            // re-rendering the edit form with a generic success banner.
             session()->flash('success', 'Listing updated successfully!');
+            return redirect()->route('offer.listing.seller.view', ['id' => $auction->id]);
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());

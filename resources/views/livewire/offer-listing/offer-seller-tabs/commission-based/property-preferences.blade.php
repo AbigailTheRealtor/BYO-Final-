@@ -1402,7 +1402,7 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
             <div class="input-cover">
-                <input type="number" wire:model.defer="number_of_pets" class="form-control has-icon"
+                <input type="text" wire:model.defer="number_of_pets" class="form-control has-icon"
                     data-icon="fa-solid fa-hashtag" placeholder="Enter number of pets allowed (e.g., 2)">
             </div>
             <span class="error mt-2" id="number_of_pets_error"></span>
@@ -1438,7 +1438,7 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
             <div class="input-cover">
-                <input type="number" wire:model.defer="weight_of_pets" class="form-control has-icon"
+                <input type="text" wire:model.defer="weight_of_pets" class="form-control has-icon"
                     data-icon="fa-solid fa-weight" placeholder="Enter maximum weight per pet (e.g., 45)">
             </div>
             <span class="error mt-2" id="weight_of_pets_error"></span>

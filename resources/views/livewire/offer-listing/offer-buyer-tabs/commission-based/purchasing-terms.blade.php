@@ -985,7 +985,7 @@
         <div class="input-cover">
             <input type="text" wire:model="lease_purchase_conditions" class="form-control has-icon"
                 data-icon="fa-solid fa-file-lines"
-                placeholder="Enter any conditions or requirements (e.g., Property must appraise at agreed value, seller to cover closing costs)">
+                placeholder="Enter any conditions or requirements (e.g., Property must appraise at agreed value, Seller to cover closing costs)">
         </div>
     </div>
 
