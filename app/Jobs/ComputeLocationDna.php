@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Services\Canonical\CanonicalListingResolver;
 use App\Services\LocationDna\LocationDnaPipelineRunner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -27,7 +28,7 @@ class ComputeLocationDna implements ShouldQueue
         $this->listingId   = $listingId;
     }
 
-    public function handle(LocationDnaPipelineRunner $runner): void
+    public function handle(LocationDnaPipelineRunner $runner, CanonicalListingResolver $resolver): void
     {
         $result = $runner->run($this->listingType, $this->listingId);
 
@@ -37,6 +38,17 @@ class ComputeLocationDna implements ShouldQueue
                 'listing_id'   => $this->listingId,
                 'status'       => $result['status'],
             ]);
+
+            return;
+        }
+
+        // Phase 13 — chain dna_scores generation so the location-lifestyle
+        // bridge picks up the freshly computed Location DNA (and, on a provider
+        // refresh, the new provider data). Gated by the default-off master flag
+        // and restricted to supported *_agent types; the dispatched job itself
+        // re-checks the flag, so this is inert until the owner enables it.
+        if (config('dna_scores.generation_enabled', false) && $resolver->supports($this->listingType)) {
+            ComputeDnaScores::dispatch($this->listingType, $this->listingId);
         }
     }
 
