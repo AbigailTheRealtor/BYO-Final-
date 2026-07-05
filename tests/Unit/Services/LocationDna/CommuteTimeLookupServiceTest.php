@@ -58,6 +58,8 @@ class CommuteTimeLookupServiceTest extends TestCase
             'travel_time_minutes' => null,
             'distance_miles'      => null,
             'source'              => 'stub',
+            'confidence'          => null,
+            'last_refreshed'      => null,
         ];
     }
 
@@ -150,6 +152,8 @@ class CommuteTimeLookupServiceTest extends TestCase
             'travel_time_minutes',
             'distance_miles',
             'source',
+            'confidence',
+            'last_refreshed',
         ];
 
         foreach ($requiredKeys as $key) {

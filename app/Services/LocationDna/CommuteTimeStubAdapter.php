@@ -13,6 +13,9 @@ class CommuteTimeStubAdapter implements CommuteTimeAdapterInterface
      * always 'stub'. This adapter exists solely to satisfy the interface contract
      * during development and testing, until a real provider is wired.
      *
+     * Carries the canonical envelope keys (Stage D) as null: with no real fetch
+     * there is neither a confidence basis nor a meaningful refresh time.
+     *
      * @inheritDoc
      */
     public function lookup(
@@ -34,6 +37,8 @@ class CommuteTimeStubAdapter implements CommuteTimeAdapterInterface
                     'travel_time_minutes' => null,
                     'distance_miles'      => null,
                     'source'              => 'stub',
+                    'confidence'          => null,
+                    'last_refreshed'      => null,
                 ];
             }
         }
