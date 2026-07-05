@@ -224,11 +224,9 @@ class LocationDnaGeocodeService
             }
 
             // (f) Success — persist geocoded data.
-            // Google Geocoding API includes place_id on each result; capture it when present.
             $location = $body['results'][0]['geometry']['location'];
             $lat      = (float) $location['lat'];
             $lng      = (float) $location['lng'];
-            $placeId  = $body['results'][0]['place_id'] ?? null;
 
             $record->geocoded_lat   = $lat;
             $record->geocoded_lng   = $lng;
@@ -238,7 +236,7 @@ class LocationDnaGeocodeService
             $record->geocoded_at    = now();
             $record->save();
 
-            $output = $this->geocodedOutput($listingType, $listingId, $lat, $lng, 'google', $placeId);
+            $output = $this->geocodedOutput($listingType, $listingId, $lat, $lng, 'google');
             $this->audit($listingType, $listingId, $output, $addressData);
             return $output;
 
@@ -298,7 +296,6 @@ class LocationDnaGeocodeService
         float   $lat,
         float   $lng,
         string  $source   = 'google',
-        ?string $placeId  = null,
     ): array {
         return [
             'success'      => true,
@@ -307,7 +304,6 @@ class LocationDnaGeocodeService
             'listing_id'   => $listingId,
             'lat'          => $lat,
             'lng'          => $lng,
-            'place_id'     => $placeId,
             'source'       => $source,
             'error'        => null,
         ];
