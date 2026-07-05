@@ -94,6 +94,7 @@ Beyond standard Laravel keys, this app requires:
 | `OPENAI_API_KEY` | DNA profile generation |
 | `BYA_COMPATIBILITY_KILL_SWITCH` | Consumer compatibility gate (default `true` = blocked) |
 | `BYA_COMPATIBILITY_GA_ENABLED` | GA rollout flag (default `false`) |
+| `DNA_SCORES_GENERATION_ENABLED` | Master gate for production `dna_scores` generation via the lifecycle (observers + `ComputeLocationDna` chain + `dna:generate-scores`). Default `false` = inert. Independent of Matching V2. |
 | `LOCATION_DNA_FLOOD_ZONE_MAX_AREA` | FEMA API bounding-box threshold in sq-degrees |
 | `OFFER_PLAYOFF_ALLOWED_IDS` | Comma-separated user IDs or `*` for all |
 
