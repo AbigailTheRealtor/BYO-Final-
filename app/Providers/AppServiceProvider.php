@@ -59,6 +59,8 @@ use App\Services\LocationDna\Providers\LocationProviderRegistry;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 use App\Services\Dna\Relevance\CandidateSourceInterface;
 use App\Services\Dna\Relevance\ScoredEntityCandidateSource;
+use App\Services\Dna\Relevance\CandidateAttributeResolverInterface;
+use App\Services\Dna\Relevance\OnPlatformCandidateAttributeResolver;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -75,6 +77,11 @@ class AppServiceProvider extends ServiceProvider
         // dna_scores layer. Bound behind the interface so future DNA-enabled sources
         // are additive without touching CandidateDiscoveryService.
         $this->app->bind(CandidateSourceInterface::class, ScoredEntityCandidateSource::class);
+
+        // Matching V2 — candidate narrowing (slice 2B). The default attribute resolver
+        // reads the on-platform *_agent auction tables; provider-specific reads are
+        // isolated here so the narrowers stay provider-agnostic.
+        $this->app->bind(CandidateAttributeResolverInterface::class, OnPlatformCandidateAttributeResolver::class);
 
         // Explicit binding for AskAiRunnerV2Service to ensure AskAiIntentNormalizerService
         // and AskAiKnowledgeSearchService are always injected as concrete non-null instances.

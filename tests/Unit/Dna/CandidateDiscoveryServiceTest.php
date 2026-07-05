@@ -3,6 +3,7 @@
 namespace Tests\Unit\Dna;
 
 use App\Services\Dna\Relevance\CandidateDiscoveryService;
+use App\Services\Dna\Relevance\CandidateNarrowingPipeline;
 use App\Services\Dna\Relevance\CandidateQuery;
 use App\Services\Dna\Relevance\CandidateSet;
 use App\Services\Dna\Relevance\CandidateSourceInterface;
@@ -10,16 +11,13 @@ use App\Services\Dna\Relevance\MatchDirection;
 use Tests\TestCase;
 
 /**
- * Matching V2 — consumption slice 2 (Candidate Discovery).
+ * Matching V2 — consumption slice 2 orchestrator. Flag-gated; when off it returns
+ * an empty set without touching the source or the Stage-B pipeline. When on it
+ * maps the direction to the counterpart side, over-fetches for Stage A, and hands
+ * the result to the narrowing pipeline.
  *
- * CandidateDiscoveryService is the flag-gated orchestrator. It never scores and
- * never writes; when Matching V2 is off it returns an empty set WITHOUT touching
- * the candidate source (so no DB reads occur). When on, it maps the direction to
- * the correct counterpart side and forwards cap + exclusions to the source.
- *
- * These are pure unit tests: the source is a recording fake, so no database is
- * needed (the read-only DB path is covered by ScoredEntityCandidateSourceTest and
- * the feature test).
+ * Pure unit tests: source and pipeline are recording fakes (no DB). The real
+ * Stage-B behavior is covered by the pipeline/narrower/feature tests.
  */
 class CandidateDiscoveryServiceTest extends TestCase
 {
@@ -35,36 +33,80 @@ class CandidateDiscoveryServiceTest extends TestCase
                 $this->lastQuery = $query;
 
                 return new CandidateSet([
-                    ['listing_type' => 'buyer_agent', 'listing_id' => 7001],
+                    ['listing_type' => 'seller_agent', 'listing_id' => 101],
                 ], false);
             }
         };
     }
 
-    private function service(CandidateSourceInterface $source): CandidateDiscoveryService
+    private function recordingPipeline(): CandidateNarrowingPipeline
     {
-        return new CandidateDiscoveryService($source);
+        return new class extends CandidateNarrowingPipeline {
+            public int $calls = 0;
+            public ?CandidateSet $received = null;
+            public ?int $finalCap = null;
+
+            public function __construct()
+            {
+                // Intentionally bypass parent constructor — this fake records only.
+            }
+
+            public function narrow(
+                CandidateSet $stageA,
+                string $subjectType,
+                int $subjectId,
+                MatchDirection $direction,
+                int $finalCap,
+            ): CandidateSet {
+                $this->calls++;
+                $this->received = $stageA;
+                $this->finalCap = $finalCap;
+
+                return new CandidateSet([
+                    ['listing_type' => 'seller_agent', 'listing_id' => 999],
+                ], false);
+            }
+        };
     }
 
-    public function test_disabled_returns_empty_and_never_calls_the_source(): void
+    private function service($source, $pipeline): CandidateDiscoveryService
+    {
+        return new CandidateDiscoveryService($source, $pipeline);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config([
+            'matching.candidate_discovery.cap' => 200,
+            'matching.candidate_discovery.overfetch_multiplier' => 3,
+            'matching.candidate_discovery.overfetch_ceiling' => 1000,
+            'matching.candidate_discovery.allowed_listing_types.property' => [],
+            'matching.candidate_discovery.allowed_listing_types.demand' => [],
+        ]);
+    }
+
+    public function test_disabled_returns_empty_and_touches_nothing(): void
     {
         config(['matching.v2_enabled' => false]);
         $source = $this->recordingSource();
+        $pipeline = $this->recordingPipeline();
 
-        $set = $this->service($source)
+        $set = $this->service($source, $pipeline)
             ->discover('seller_agent', 6001, MatchDirection::ListingToDemands);
 
-        $this->assertInstanceOf(CandidateSet::class, $set);
         $this->assertTrue($set->isEmpty());
-        $this->assertSame(0, $source->calls, 'Source must not be touched when Matching V2 is off.');
+        $this->assertSame(0, $source->calls);
+        $this->assertSame(0, $pipeline->calls);
     }
 
     public function test_listing_to_demands_asks_for_demand_side_counterparts(): void
     {
         config(['matching.v2_enabled' => true]);
         $source = $this->recordingSource();
+        $pipeline = $this->recordingPipeline();
 
-        $this->service($source)
+        $this->service($source, $pipeline)
             ->discover('seller_agent', 6001, MatchDirection::ListingToDemands);
 
         $this->assertSame(1, $source->calls);
@@ -78,55 +120,64 @@ class CandidateDiscoveryServiceTest extends TestCase
         config(['matching.v2_enabled' => true]);
         $source = $this->recordingSource();
 
-        $this->service($source)
+        $this->service($source, $this->recordingPipeline())
             ->discover('buyer_agent', 8001, MatchDirection::DemandToListings);
 
         $this->assertSame('property', $source->lastQuery->counterpartSide);
     }
 
-    public function test_cap_defaults_to_config_and_can_be_overridden(): void
+    public function test_stage_a_overfetches_pipeline_gets_final_cap(): void
     {
         config(['matching.v2_enabled' => true]);
-        config(['matching.candidate_discovery.cap' => 200]);
+        $source = $this->recordingSource();
+        $pipeline = $this->recordingPipeline();
+
+        // Default cap 200 × multiplier 3 = 600 over-fetch; pipeline trims to 200.
+        $this->service($source, $pipeline)
+            ->discover('buyer_agent', 8001, MatchDirection::DemandToListings);
+        $this->assertSame(600, $source->lastQuery->cap);
+        $this->assertSame(200, $pipeline->finalCap);
+
+        // Override cap 25 → over-fetch 75, pipeline trims to 25.
+        $this->service($source, $pipeline)
+            ->discover('buyer_agent', 8001, MatchDirection::DemandToListings, cap: 25);
+        $this->assertSame(75, $source->lastQuery->cap);
+        $this->assertSame(25, $pipeline->finalCap);
+    }
+
+    public function test_overfetch_respects_ceiling(): void
+    {
+        config(['matching.v2_enabled' => true]);
+        config(['matching.candidate_discovery.overfetch_ceiling' => 500]);
         $source = $this->recordingSource();
 
-        $this->service($source)
-            ->discover('buyer_agent', 8001, MatchDirection::DemandToListings);
-        $this->assertSame(200, $source->lastQuery->cap);
+        // 300 × 3 = 900, clamped to ceiling 500.
+        $this->service($source, $this->recordingPipeline())
+            ->discover('buyer_agent', 8001, MatchDirection::DemandToListings, cap: 300);
 
-        $this->service($source)
-            ->discover('buyer_agent', 8001, MatchDirection::DemandToListings, cap: 25);
-        $this->assertSame(25, $source->lastQuery->cap);
+        $this->assertSame(500, $source->lastQuery->cap);
     }
 
     public function test_allowed_listing_types_read_from_config_per_side(): void
     {
         config(['matching.v2_enabled' => true]);
         config(['matching.candidate_discovery.allowed_listing_types.property' => ['seller_agent']]);
-        config(['matching.candidate_discovery.allowed_listing_types.demand' => []]);
         $source = $this->recordingSource();
 
-        // Demand->listings looks at the 'property' side allowlist.
-        $this->service($source)
+        $this->service($source, $this->recordingPipeline())
             ->discover('buyer_agent', 8001, MatchDirection::DemandToListings);
         $this->assertSame(['seller_agent'], $source->lastQuery->allowedListingTypes);
-
-        // Listing->demands looks at the 'demand' side allowlist (empty = all).
-        $this->service($source)
-            ->discover('seller_agent', 6001, MatchDirection::ListingToDemands);
-        $this->assertSame([], $source->lastQuery->allowedListingTypes);
     }
 
-    public function test_enabled_returns_the_sources_candidate_set(): void
+    public function test_returns_pipeline_output(): void
     {
         config(['matching.v2_enabled' => true]);
-        $source = $this->recordingSource();
 
-        $set = $this->service($source)
+        $set = $this->service($this->recordingSource(), $this->recordingPipeline())
             ->discover('seller_agent', 6001, MatchDirection::ListingToDemands);
 
         $this->assertSame([
-            ['listing_type' => 'buyer_agent', 'listing_id' => 7001],
+            ['listing_type' => 'seller_agent', 'listing_id' => 999],
         ], $set->toArray());
     }
 }

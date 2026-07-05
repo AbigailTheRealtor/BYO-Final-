@@ -21,12 +21,19 @@ namespace App\Services\Dna\Relevance;
  * candidate universe is a slice-2 implementation decision; the long-term target is
  * discovery across ALL DNA-enabled sources. See the scope doc §0.2.
  *
+ * STAGE B (slice 2B): after Stage A returns the (over-fetched) universe, the
+ * CandidateNarrowingPipeline applies the mandatory eligibility + 55+ compliance
+ * gates (always, when V2 is on) and the optional geo/attribute narrowers (only
+ * when hard_filters_enabled), then trims to the final cap.
+ *
  * @see docs/matching-v2-consumption-slice-2-candidate-discovery-scope.md
+ * @see docs/matching-v2-consumption-slice-2b-narrowing-compliance-scope.md
  */
 class CandidateDiscoveryService
 {
     public function __construct(
         private readonly CandidateSourceInterface $source,
+        private readonly CandidateNarrowingPipeline $pipeline,
     ) {
     }
 
@@ -64,16 +71,24 @@ class CandidateDiscoveryService
             [],
         );
 
-        $effectiveCap = $cap ?? (int) config('matching.candidate_discovery.cap', 200);
+        $finalCap = $cap ?? (int) config('matching.candidate_discovery.cap', 200);
+
+        // Over-fetch for Stage A so the mandatory gates (which can drop many
+        // ineligible/senior-mismatched rows) still leave up to $finalCap candidates.
+        $multiplier = max(1, (int) config('matching.candidate_discovery.overfetch_multiplier', 3));
+        $ceiling    = (int) config('matching.candidate_discovery.overfetch_ceiling', 1000);
+        $stageACap  = max($finalCap, min($finalCap * $multiplier, $ceiling));
 
         $query = new CandidateQuery(
             counterpartSide: $side,
             allowedListingTypes: array_values($allowedTypes),
             excludeListingType: $listingType,
             excludeListingId: $listingId,
-            cap: $effectiveCap,
+            cap: $stageACap,
         );
 
-        return $this->source->resolve($query);
+        $stageA = $this->source->resolve($query);
+
+        return $this->pipeline->narrow($stageA, $listingType, $listingId, $direction, $finalCap);
     }
 }

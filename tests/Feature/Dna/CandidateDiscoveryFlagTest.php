@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Dna;
 
+use App\Models\BuyerAgentAuction;
 use App\Models\DnaScore;
+use App\Models\SellerAgentAuction;
 use App\Services\Dna\Relevance\CandidateDiscoveryService;
 use App\Services\Dna\Relevance\DnaMatchService;
 use App\Services\Dna\Relevance\MatchDirection;
@@ -12,9 +14,10 @@ use Tests\TestCase;
 /**
  * Matching V2 — consumption slice 2 (Candidate Discovery), end-to-end.
  *
- * Discovery (slice 2) resolves a bounded candidate list from dna_scores that
- * feeds DnaMatchService (slice 1) directly, and the whole path is inert + read-only
- * when the master flag is off.
+ * Discovery resolves a bounded, ELIGIBLE candidate list from dna_scores that
+ * feeds DnaMatchService directly, and is inert + read-only when the flag is off.
+ * (With slice 2B, candidates must be approved offer-listings to survive the
+ * mandatory eligibility gate.)
  */
 class CandidateDiscoveryFlagTest extends TestCase
 {
@@ -37,13 +40,27 @@ class CandidateDiscoveryFlagTest extends TestCase
         ]);
     }
 
+    private function seedEligibleSeller(int $id): void
+    {
+        SellerAgentAuction::create(['id' => $id, 'user_id' => 1, 'is_approved' => true, 'is_sold' => false])
+            ->saveMeta('workflow_type', 'offer_listing');
+    }
+
+    private function seedSubjectBuyer(int $id): void
+    {
+        BuyerAgentAuction::create(['id' => $id, 'user_id' => 2, 'is_approved' => true, 'is_sold' => false])
+            ->saveMeta('workflow_type', 'offer_listing');
+    }
+
     private function seedDemandSubjectAndListingCandidates(): void
     {
-        // Demand subject (buyer) wants pet-friendliness strongly.
+        $this->seedSubjectBuyer(8001);
         $this->score('buyer_agent', 8001, 'demand', 'pet_friendliness', 80);
 
-        // Two property candidates with DNA on the property side.
+        $this->seedEligibleSeller(9001);
         $this->score('seller_agent', 9001, 'property', 'pet_friendliness', 100);
+
+        $this->seedEligibleSeller(9002);
         $this->score('seller_agent', 9002, 'property', 'pet_friendliness', 30);
     }
 
@@ -55,18 +72,15 @@ class CandidateDiscoveryFlagTest extends TestCase
         $candidates = app(CandidateDiscoveryService::class)
             ->discover('buyer_agent', 8001, MatchDirection::DemandToListings);
 
-        // Discovery found both property candidates (and not the demand subject).
         $this->assertEqualsCanonicalizing([
             ['listing_type' => 'seller_agent', 'listing_id' => 9001],
             ['listing_type' => 'seller_agent', 'listing_id' => 9002],
         ], $candidates->toArray());
 
-        // The tuple shape drops straight into the slice-1 matcher.
         $ranked = app(DnaMatchService::class)
             ->matchDemandAgainstListings('buyer_agent', 8001, $candidates->toArray());
 
         $this->assertSame(2, $ranked->determinedCount());
-        // The listing that provides pet fully (9001) outranks the weak one (9002).
         $this->assertSame(9001, $ranked->matches[0]->counterpartId);
     }
 

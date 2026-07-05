@@ -43,9 +43,19 @@ return [
     |   only to deliberately scope discovery (ops/testing).
     |
     | hard_filters_enabled
-    |   RESERVED for the deferred Stage B (geo/attribute narrowing + the
-    |   mandatory 55+/legal gate). Stage B is NOT built in slice 2, so this flag
-    |   is currently inert. Default false.
+    |   Gates ONLY the optional Stage-B geo + attribute narrowers (slice 2B). The
+    |   mandatory eligibility + 55+ compliance gates always run when Matching V2 is
+    |   on, independent of this flag. Default false.
+    |
+    | overfetch_multiplier / overfetch_ceiling
+    |   Stage A over-fetches (cap × multiplier, capped at ceiling) so the mandatory
+    |   gates have headroom to remove ineligible/senior-mismatched rows before the
+    |   final trim to `cap`.
+    |
+    | senior_unknown_policy
+    |   How the mandatory 55+ gate resolves UNKNOWN senior data (OD-1):
+    |     'open'   (default) — unknown never causes a drop (fail-open).
+    |     'closed'           — unknown resolves toward the restrictive value.
     |
     */
 
@@ -58,6 +68,11 @@ return [
         ],
 
         'hard_filters_enabled' => env('MATCHING_V2_HARD_FILTERS_ENABLED', false),
+
+        'overfetch_multiplier' => (int) env('MATCHING_V2_OVERFETCH_MULTIPLIER', 3),
+        'overfetch_ceiling'    => (int) env('MATCHING_V2_OVERFETCH_CEILING', 1000),
+
+        'senior_unknown_policy' => env('MATCHING_V2_SENIOR_UNKNOWN_POLICY', 'open'),
     ],
 
 ];
