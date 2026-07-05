@@ -46,6 +46,11 @@ class PetFriendlinessScoreService implements SymmetricScoreService
         return self::SCORE_KEY;
     }
 
+    public function version(): string
+    {
+        return self::VERSION;
+    }
+
     /**
      * Data-completeness weights for the property (policy) side. Sum = 100.
      * pets_allowed is the decisive field, hence the dominant weight.

@@ -33,6 +33,11 @@ class WaterfrontLifestyleScoreService implements SymmetricScoreService
         return self::SCORE_KEY;
     }
 
+    public function version(): string
+    {
+        return self::VERSION;
+    }
+
     public function scoreProperty(CanonicalListing $listing): array
     {
         $waterfront = $listing->get('property.waterfront');           // ?bool

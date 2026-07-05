@@ -4,6 +4,7 @@ namespace App\Services\Dna\Scores;
 
 use App\Models\DnaScore;
 use App\Models\PropertyLocationDna;
+use App\Services\Dna\Scores\Contracts\DnaScoreGenerator;
 use Illuminate\Support\Carbon;
 
 /**
@@ -23,7 +24,7 @@ use Illuminate\Support\Carbon;
  * bridged at low completeness/confidence; a computed score (even "far") means
  * the data was present.
  */
-class LocationLifestyleBridgeGenerator
+class LocationLifestyleBridgeGenerator implements DnaScoreGenerator
 {
     public const VERSION = 'LOCATION_BRIDGE_V1';
 
@@ -39,18 +40,36 @@ class LocationLifestyleBridgeGenerator
         'family_score'      => ['location_family', 'Family'],
     ];
 
+    public function key(): string
+    {
+        return 'location_lifestyle_bridge';
+    }
+
+    /**
+     * DnaScoreGenerator entrypoint (§ Phase 13). Delegates to generateForListing,
+     * which is retained for existing direct callers.
+     *
+     * @param array{generated_by?:string,only_stale?:bool} $options
+     * @return array<int,DnaScore>
+     */
+    public function generate(string $listingType, int $listingId, array $options = []): array
+    {
+        return $this->generateForListing($listingType, $listingId, $options);
+    }
+
     /**
      * Bridge all five location lifestyle scores for one listing into dna_scores.
      *
+     * @param array{generated_by?:string,only_stale?:bool} $options origin metadata
+     *        (§ Phase 13); generated_by defaults to 'system'. When only_stale is
+     *        true, a score whose persisted generator_version AND source_version
+     *        already match is skipped.
      * @return array<int,DnaScore> the persisted rows (empty if no Location DNA)
      */
-    /**
-     * @param array{generated_by?:string} $provenance origin metadata (§ Phase 13);
-     *        generated_by defaults to 'system'.
-     */
-    public function generateForListing(string $listingType, int $listingId, array $provenance = []): array
+    public function generateForListing(string $listingType, int $listingId, array $options = []): array
     {
-        $generatedBy = $provenance['generated_by'] ?? 'system';
+        $generatedBy = $options['generated_by'] ?? 'system';
+        $onlyStale   = (bool) ($options['only_stale'] ?? false);
 
         $record = PropertyLocationDna::where('listing_type', $listingType)
             ->where('listing_id', $listingId)
@@ -67,6 +86,10 @@ class LocationLifestyleBridgeGenerator
         foreach (self::LDNA_SCORES as $sourceKey => [$scoreKey, $label]) {
             if (! array_key_exists($sourceKey, $lifestyle) || ! is_numeric($lifestyle[$sourceKey])) {
                 continue;
+            }
+
+            if ($onlyStale && $this->isCurrent($listingType, $listingId, $scoreKey, $sourceVersion)) {
+                continue; // both generator and source versions already current
             }
 
             $value = (int) $lifestyle[$sourceKey];
@@ -106,5 +129,23 @@ class LocationLifestyleBridgeGenerator
         }
 
         return $rows;
+    }
+
+    /**
+     * True when the persisted bridged score already carries BOTH the current
+     * generator version and the current upstream source version — so a bulk
+     * (version-aware) pass may skip re-bridging it.
+     */
+    private function isCurrent(string $listingType, int $listingId, string $scoreKey, ?string $sourceVersion): bool
+    {
+        $stored = DnaScore::where('listing_type', $listingType)
+            ->where('listing_id', $listingId)
+            ->where('score_key', $scoreKey)
+            ->where('side', 'property')
+            ->first(['generator_version', 'source_version']);
+
+        return $stored !== null
+            && $stored->generator_version === self::VERSION
+            && $stored->source_version === $sourceVersion;
     }
 }

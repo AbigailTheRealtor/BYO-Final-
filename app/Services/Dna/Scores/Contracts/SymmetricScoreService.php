@@ -20,6 +20,13 @@ interface SymmetricScoreService
 {
     public function scoreKey(): string;
 
+    /**
+     * The generator/algorithm version this score currently writes (e.g.
+     * 'PET_FRIENDLINESS_V1'). Exposed so version-aware regeneration can decide
+     * whether a persisted score is stale WITHOUT recomputing it.
+     */
+    public function version(): string;
+
     /** @return array{score_key:string,side:string,value:?int,data_completeness:int,confidence:int,explanation:string,inputs:array,version:string} */
     public function scoreProperty(CanonicalListing $listing): array;
 

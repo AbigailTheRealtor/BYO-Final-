@@ -40,6 +40,11 @@ class LockAndLeaveScoreService implements SymmetricScoreService
         return self::SCORE_KEY;
     }
 
+    public function version(): string
+    {
+        return self::VERSION;
+    }
+
     public function scoreProperty(CanonicalListing $listing): array
     {
         $structure = $listing->get('property.structure_type');
