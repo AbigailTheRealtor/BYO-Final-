@@ -347,6 +347,79 @@ class LocationDnaPoiDistanceService
      *
      * @return array{exclusion_rules: array, beach_max_meaningful_distance_miles: float, transit_dedup_distance_miles: float}
      */
+    /**
+     * Recompute POI rankings for a listing from STORED candidates only — no Google
+     * API call (Stage E0; docs/launch-audits/location-dna-architecture-review.md §2).
+     *
+     * Re-runs the ranking engine over the persisted rows of each standard fetched
+     * category, updates their score/rank columns, and re-stamps pois_scoring_version
+     * to the current scoring version. Derived categories (e.g. top_rated_dining) are
+     * built by a separate path and left intact. Callers rebuild summary_json /
+     * lifestyle_json afterward for consistency (see ldna:rerank-all).
+     *
+     * @return int Number of rows re-scored.
+     */
+    public function recomputeRankingsFromCache(string $listingType, int $listingId): int
+    {
+        $rows = PropertyLocationPoi::where('listing_type', $listingType)
+            ->where('listing_id', $listingId)
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return 0;
+        }
+
+        $engine          = $this->rankingEngine ?? new LocationDnaRankingEngine();
+        $versionService  = $this->versionService ?? new LocationDnaVersionService();
+        $scoringVersion  = $versionService->scoringVersion();
+
+        $sourceLat = (float) $rows->first()->source_lat;
+        $sourceLng = (float) $rows->first()->source_lng;
+
+        $updated = 0;
+
+        foreach ($rows->groupBy('poi_category') as $category => $categoryRows) {
+            if (! array_key_exists($category, self::CATEGORIES)) {
+                continue; // derived / non-standard category — leave intact
+            }
+
+            $candidates = [];
+            foreach ($categoryRows as $row) {
+                $candidates[] = [
+                    'geometry'           => ['location' => ['lat' => (float) $row->poi_lat, 'lng' => (float) $row->poi_lng]],
+                    'types'              => $row->types_json ?? [],
+                    'rating'             => $row->rating !== null ? (float) $row->rating : null,
+                    'user_ratings_total' => (int) $row->user_ratings_total,
+                    'name'               => $row->poi_name ?? '',
+                    '_row_id'            => $row->id, // preserved through rankCandidates() array_merge
+                ];
+            }
+
+            $ranked = $engine->rankCandidates($category, $candidates, $sourceLat, $sourceLng);
+
+            $rank = 1;
+            foreach ($ranked as $rankedCandidate) {
+                $row = $categoryRows->firstWhere('id', $rankedCandidate['_row_id'] ?? null);
+                if ($row === null) {
+                    continue;
+                }
+
+                $scores = $rankedCandidate['_ranking'];
+                $row->category_match_score     = $scores['category_match_score'];
+                $row->review_confidence_score  = $scores['review_confidence_score'];
+                $row->consumer_relevance_score = $scores['consumer_relevance_score'];
+                $row->ranking_score            = $scores['ranking_score'];
+                $row->ranking_reasons_json     = $scores['ranking_reasons_json'];
+                $row->rank                     = $rank++;
+                $row->pois_scoring_version     = $scoringVersion;
+                $row->save();
+                $updated++;
+            }
+        }
+
+        return $updated;
+    }
+
     public static function scoringInputs(): array
     {
         return [
