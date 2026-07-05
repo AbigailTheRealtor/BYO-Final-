@@ -31,6 +31,12 @@ class PropertyLocationPoi extends Model
         'ranking_reasons_json',
         'travel_time_minutes',
         'data_source',
+        // Canonical-field envelope metadata (docs/canonical-field-mapping-spec.md §1).
+        // Additive; not written by the current pipeline (populated in a later stage).
+        'confidence',
+        'provenance_json',
+        'last_refreshed',
+        'human_corroborated',
         'status',
         'error',
         'calculated_at',
@@ -38,8 +44,12 @@ class PropertyLocationPoi extends Model
 
     protected $casts = [
         'calculated_at'           => 'datetime',
+        'last_refreshed'          => 'datetime',
         'types_json'              => 'array',
         'ranking_reasons_json'    => 'array',
+        'provenance_json'         => 'array',
+        'confidence'              => 'float',
+        'human_corroborated'      => 'boolean',
         'rating'                  => 'float',
         'user_ratings_total'      => 'integer',
         'rank'                    => 'integer',
