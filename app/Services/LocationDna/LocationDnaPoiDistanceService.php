@@ -330,6 +330,24 @@ class LocationDnaPoiDistanceService
     /** Last-run stats, set at the end of calculateForListing() for introspection. */
     private array $lastRunStats = [];
 
+    /**
+     * Read-only view of the inputs that define the SCORING version
+     * (docs/canonical-field-mapping-spec.md §7; Stage E0). These are the rules
+     * and constants that change how already-fetched candidates are filtered and
+     * ranked — a change here recomputes from cache, never a refetch. Exposed for
+     * LocationDnaVersionService::scoringVersion(); does not alter any behavior.
+     *
+     * @return array{exclusion_rules: array, beach_max_meaningful_distance_miles: float, transit_dedup_distance_miles: float}
+     */
+    public static function scoringInputs(): array
+    {
+        return [
+            'exclusion_rules'                     => self::CATEGORY_EXCLUSION_RULES,
+            'beach_max_meaningful_distance_miles' => self::BEACH_MAX_MEANINGFUL_DISTANCE_MILES,
+            'transit_dedup_distance_miles'        => self::TRANSIT_DEDUP_DISTANCE_MILES,
+        ];
+    }
+
     public function __construct(
         private readonly ?ClientInterface $httpClient = null,
         private readonly ?LocationDnaAuditService $auditService = null,

@@ -37,6 +37,9 @@ class PropertyLocationPoi extends Model
         'provenance_json',
         'last_refreshed',
         'human_corroborated',
+        // Row-level version stamps for provider-aware cache invalidation (Stage E0).
+        'pois_fetch_version',
+        'pois_scoring_version',
         'status',
         'error',
         'calculated_at',
