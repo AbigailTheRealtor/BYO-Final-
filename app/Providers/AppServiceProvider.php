@@ -47,6 +47,7 @@ use App\Services\LocationDna\LocationIntelligenceComposer;
 use App\Services\LocationDna\LocationIntelligenceSummaryService;
 use App\Services\LocationDna\LocationPreferenceAnalyzer;
 use App\Services\LocationDna\PoiDistanceLookupService;
+use App\Services\LocationDna\Providers\LocationProviderRegistry;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 
 
@@ -89,14 +90,24 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // POI Distance Lookup — Buyer/Tenant search-area geometry (Phase 3C)
-        // Adapter selection respects location_dna.poi.provider first, then falls back to
-        // StubPoiLookupAdapter whenever the provider is not 'google' or the key is absent.
+        // Stage E: the active POI adapter is now selected via the provider registry
+        // (config/location_providers.php), which supersedes the legacy
+        // location_dna.poi.provider flag (kept but no longer read). With the current
+        // config only google_places is enabled, so effectiveBase('poi.default')
+        // resolves to google_places → GooglePlacesPoiAdapter when the Places key is
+        // present, else StubPoiLookupAdapter — behaviourally identical to before.
         // Bound (not singleton) so config changes in tests always produce a fresh instance.
         $this->app->bind(PoiLookupAdapterInterface::class, function ($app) {
-            $provider = config('location_dna.poi.provider', 'google');
-            if ($provider === 'google' && !blank(config('services.google.places_key'))) {
+            $registry = new LocationProviderRegistry((array) config('location_providers', []));
+            $base     = $registry->effectiveBase('poi.default');
+
+            if (
+                ($base['provider'] ?? null) === 'google_places'
+                && !blank(config('services.google.places_key'))
+            ) {
                 return new GooglePlacesPoiAdapter();
             }
+
             return new StubPoiLookupAdapter();
         });
 
