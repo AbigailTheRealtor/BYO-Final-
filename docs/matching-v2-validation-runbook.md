@@ -154,3 +154,132 @@ php artisan matching:preview buyer_agent <BIG_POOL_ID> --cap=500 --json | jq '.c
 
 - Confirmation this runs in **staging** with generation temporarily enabled there.
 - A go-ahead to (optionally) turn this runbook into a small **read-only harness command** (e.g. `matching:validate` that runs the roster and writes the `out/` JSON + a summary) — that would be a tiny additive, read-only C6.1, only if you want the batch automated. Otherwise we execute the commands above by hand.
+
+---
+
+# How to Run / Pass-Fail / C7 Decision Guide (`matching:validate` — C6.1 shipped)
+
+**Status:** Operational. C6.1 shipped the `matching:validate` harness (commit `428e613786`), which automates the roster + matrix above as one read-only batch. Prefer this section for execution; the manual `matching:preview` matrix (Phases 0–5) remains valid for ad-hoc drill-downs.
+
+**Environment:** staging/dev only. The harness **refuses to run if `APP_ENV=production`** (exit 2, no override). Never run this against production.
+
+## H0. Generate the `dna_scores` corpus (manual, gated)
+
+The harness is a **read-only consumer**; it validates nothing on an empty corpus (exit 2). Populate `dna_scores` in staging first.
+
+**Required flag for generation**
+
+| Flag | Set to | Why |
+|---|---|---|
+| `DNA_SCORES_GENERATION_ENABLED` | `true` | Master gate for `dna:generate-scores`. With it `false`, the command warns "disabled — nothing to do" and writes nothing. Independent of `MATCHING_V2_ENABLED`. |
+
+**Confirm schema is current**
+```
+php artisan migrate:status      # apply anything pending with: php artisan migrate
+```
+
+**Generate scores** (inline — no queue worker needed):
+```
+php artisan dna:generate-scores --sync
+```
+Or per role to stage incrementally:
+```
+php artisan dna:generate-scores --type=seller_agent   --sync
+php artisan dna:generate-scores --type=buyer_agent    --sync
+php artisan dna:generate-scores --type=landlord_agent --sync
+php artisan dna:generate-scores --type=tenant_agent   --sync
+```
+Without `--sync` it dispatches `ComputeDnaScores` to the queue instead — only use that if a queue worker is running, or no rows land. `--only-stale` regenerates only rows behind the current version (use on re-runs).
+
+**Sanity-check the corpus** before validating — confirm both directions return matches for real subjects:
+```
+php artisan matching:preview seller_agent <a_real_seller_id> --json
+php artisan matching:preview buyer_agent  <a_real_buyer_id>  --json
+```
+
+## H1. Runtime flags for the validation run
+
+The harness **force-enables Matching V2 in-process and restores it in a `finally`** — do **not** enable it in `.env`.
+
+| Flag | Set to | Notes |
+|---|---|---|
+| `MATCHING_V2_ENABLED` | leave `false` (default) | Enabled in-process only; leaving env `false` proves the engine works **without** production enablement. |
+| `MATCHING_V2_CANDIDATE_CAP` | leave `200` (default) | The truncation scenario drives caps directly (cap=1 vs high cap). |
+| `MATCHING_V2_HARD_FILTERS_ENABLED` | leave `false` (default) | Only gates the optional Stage-B geo/attribute narrowers. The **mandatory eligibility + 55+ compliance gates always run** regardless. |
+| `MATCHING_V2_SENIOR_UNKNOWN_POLICY` | leave `open` (default) for pass 1 | See the optional second pass in H2. |
+
+**Restore-after-run:** the harness restores `matching.v2_enabled` itself. **You** must restore `DNA_SCORES_GENERATION_ENABLED=false` once H0 is done, so generation cannot fire via the lifecycle after validation.
+
+## H2. Run the harness
+
+```
+php artisan matching:validate
+```
+
+Options (all optional):
+- `--limit=5` — subjects per auto-discovered category (default 5); raise for broader coverage.
+- `--roster=path/to/roster.json` — pin an exact subject set for a reproducible re-run instead of auto-discovery.
+- `--cap=` — candidate-cap passthrough for the non-truncation scenarios.
+- `--determinism-sample=3` — how many subjects get double-run for the determinism check.
+- `--fail-fast` — stop at the first compliance breach.
+
+**Optional second pass — closed senior policy.** The shipped runner exercises the **default** (`open`) unknown-senior policy. To also validate the restrictive policy, set `MATCHING_V2_SENIOR_UNKNOWN_POLICY=closed`, re-run `matching:validate` with a separate `--out` dir, then restore the flag.
+
+## H3. Where outputs are written
+
+Default: **`storage/app/matching-validation/`** (non-public, git-ignored). Override with `--out=`.
+
+- `storage/app/matching-validation/<scenario>-<subject_type>-<subject_id>.json` — one per scenario: the full `OrchestratedMatchResult` plus per-match diagnostics (tier, value, **confidence, coverage**, cleared/shortfall/gap keys via `rankedMatches()`).
+- `storage/app/matching-validation/summary.json` — machine summary: `has_hard_failure`, per-scenario rows, all safety checks.
+- Console: a per-scenario summary table + safety-check list + a final PASS / HARD-FAILURE banner.
+
+Nothing is written to `public/`; nothing is served; no product table is written.
+
+## H4. What pass/fail means
+
+**Exit codes**
+- `0` — all **hard** invariants held. Advisory notes may still appear; they are for human review, not failures.
+- `1` — a **hard** invariant failed (below). The failing report is still written to `--out` for evidence.
+- `2` — refused pre-flight: `APP_ENV=production`, or the `dna_scores` corpus is empty. Nothing ran, nothing written.
+
+**Hard checks (any FAIL ⇒ exit 1 ⇒ blocks C7):**
+- `compliance-no-senior-leak` — a non-eligible seeker received **zero** senior-restricted listings.
+- `compliance-no-ineligible-leak` — a senior-restricted listing surfaced **zero** non-eligible seekers.
+- `type-correctness` — every match sits on the correct counterpart side for the direction (no wrong-side leakage, even with colliding ids across seller/landlord pools).
+- `no-dna-degrades` — a subject with no scores yields `determined=0` and does not crash.
+- `truncation-cap-respected` / `truncation-flag-honest` — the cap is honored and `candidate_pool_truncated` is truthful across caps.
+- `determinism` — identical inputs produce byte-identical JSON across a double run.
+- `read-only` — all product-table row counts are unchanged across the whole run.
+- `flag-restored` — `matching.v2_enabled` is back to its pre-run value.
+
+**Advisory checks (never fail the run — human judgment on quality):**
+- `mixed-pool-spread` — did a mixed pool actually span both property types?
+- `low-dna-graceful` — sparse subjects degrade to lower tiers without fabricated confidence.
+- `confidence-tracks-coverage` — no Exact/Strong tier rests on zero coverage.
+
+## H5. What blocks C7
+
+C7 (any form) is **blocked** until:
+
+1. **Exit is 0.** Any exit `1` is a blocker until fixed.
+2. **Compliance is airtight** — both `compliance-no-*-leak` PASS in every run, including the optional `closed`-policy pass. A single senior/eligibility leak is a legal blocker and outranks everything else.
+3. **Read-only holds** — a `read-only` FAIL means the pipeline mutated a product table; you cannot design persistence on top of a side-effectful read path.
+4. **Determinism holds** — a `determinism` FAIL means results aren't reproducible; both caching (stale/incorrect entries) and consumer exposure (shifting results) are unsafe.
+5. **The corpus was real** — an exit `2` (empty corpus) is not a "pass"; validation never happened. Re-run H0 first.
+
+If any of the above fail, the next work item is **remediation of that failure**, not C7.
+
+## H6. Which C7 the results support
+
+All **hard** checks passing is the gate for *either* path. The **advisory** signals plus the summary metrics (pool sizes, truncation frequency, tier distribution, confidence/coverage) then choose the direction:
+
+**C7 = persistence / caching when:**
+- Hard checks all pass and `determinism` is rock-solid (stable results are safe to cache), **but**
+- Scale/latency is the pressure: large candidate pools, `truncated=yes` firing frequently, or noticeable per-subject runtime, **and/or**
+- Advisory **quality is not yet consumer-grade** (confidence/coverage mediocre, tiers need tuning, mixed-pool balance uneven). The mechanics are sound and reproducible, but not ready to show a human — invest in the persistence/caching substrate while quality matures.
+
+**C7 = Match Check exposure when:**
+- Hard checks all pass **and** advisory quality is already strong: `confidence-tracks-coverage` clean, high tiers backed by real coverage, `low-dna-graceful` shows no fabricated confidence, mixed pools spread and stay type-correct, compliance airtight across both policies, **and**
+- Scale is not the bottleneck: modest pools, truncation rare. Results are correct, compliant, and trustworthy enough to surface to consumers — the value is in exposure, not recomputation cost.
+
+**In short:** hard checks decide *whether* C7 proceeds; determinism + scale pressure vs. advisory quality readiness decide *which* C7. Read the numbers in `summary.json` and the per-scenario `confidence`/`coverage`/`tier` fields to make the call.
