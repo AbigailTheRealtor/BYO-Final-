@@ -70,6 +70,19 @@ final class OrchestratedMatchResult
         return array_slice($this->matches(), 0, max(0, $n));
     }
 
+    /**
+     * Full per-match detail — each RankedMatch's toArray() incl. confidence,
+     * coverage, and the cleared/shortfall/gap breakdown. Additive to matches()
+     * (Matching V2 C6.1): the read-only validation harness uses it to inspect the
+     * confidence/coverage spectrum. matches()/toArray() keep their stable shapes.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function rankedMatches(): array
+    {
+        return array_map(static fn (RankedMatch $m): array => $m->toArray(), $this->ranked->matches);
+    }
+
     public function determinedCount(): int
     {
         return $this->ranked->determinedCount();
