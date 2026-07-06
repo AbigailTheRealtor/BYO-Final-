@@ -399,7 +399,9 @@ Key constraint: `ini_set()` **cannot** raise `post_max_size`/`upload_max_filesiz
 
 ### 11.5 Batch-discipline note
 
-Single-purpose Batch C commit staged with explicit paths (the two blades, `deploy/php/uploads.ini`, `.replit`, the new test, this doc). No unrelated files; the concurrent `§MatchingV2` writer's files were **not** staged.
+Batch C is a single-purpose commit (`804266ffe`) staged with explicit paths: the two photo blades, `deploy/php/uploads.ini`, `.replit` (upload hunk), the new test, and this doc. The concurrent `§MatchingV2` writer's files were **not** included — `docs/match-check-phase4-c5-scope.md` was left staged/untracked and excluded from the commit.
+
+**Deviation (disclosed, not rewritten):** `.replit` already carried two pre-existing, unrelated working-tree edits at the start of this batch — a nix `orbiton` package add and a second `[[ports]]` (8000) block — neither authored by Batch C. I staged only the upload hunk via `git apply --cached`, but the final `git commit -- .replit` re-materialized the full working-tree file (git's partial-commit-by-pathspec semantics), so those two benign lines rode along in `804266ffe`. Correcting this would require `git reset`/`git restore --staged`, both **blocked by this environment's permissions**. Per the established branch policy of **not** rewriting history on `launch-audit-remediation` (see §10), the commit is left as-is and the deviation is recorded here. Net upload/Batch-C behavior is unaffected.
 
 ### 11.6 Deployment actions required (outside this repo — do NOT apply from code)
 
