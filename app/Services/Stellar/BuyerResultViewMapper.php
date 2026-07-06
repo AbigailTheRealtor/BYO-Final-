@@ -45,6 +45,15 @@ class BuyerResultViewMapper
     ];
 
     /**
+     * git-C11 (Plan-C7, F4) — display-only max for the 8th `non_residential` category, which the
+     * scorer emits but the residential CATEGORY_WEIGHTS omit. This is the scorer's neutral-points
+     * value; kept local to the mapper (no scorer change) and used for detailed bar width only.
+     * Sum reconciliation depends on `contributed`, not this max.
+     */
+    private const NON_RESIDENTIAL_MAX = 10;
+    private const NON_RESIDENTIAL_LABEL = 'Property Fit';
+
+    /**
      * Map a collection of BuyerMatchResult DTOs into plain arrays safe for Blade.
      *
      * @param  Collection<BuyerMatchResult> $results
@@ -158,6 +167,34 @@ class BuyerResultViewMapper
         ];
     }
 
+    /**
+     * git-C11 (Plan-C7, F3/F4) — detailed, compliance-preserving mapping for the Match Check
+     * report view. Reuses mapOne() for the compliance-safe scalar fields, then:
+     *   - overrides the explanation blocks with detail-preserving versions (keeps fields_used /
+     *     dimension / deviation that mapOne strips — field names / magnitudes, never values or PII),
+     *   - surfaces the git-C10 blocks (why_not / confidence / recommendations), and
+     *   - renders every CONTRIBUTING category including `non_residential` with a reconciled total
+     *     (F4: contributed_sum + rounding_adjustment == total_score).
+     *
+     * mapOne() and the batch card path are NOT touched. The git-C9 slots may be null (a result that
+     * only went through build(), not buildDetailed()); those are handled gracefully. This method is
+     * unwired — the git-C13 orchestrator will call it. No scorer/weight change (F4 is display-only).
+     */
+    public function mapOneDetailed(BuyerMatchResult $result): array
+    {
+        $base = $this->mapOne($result);
+
+        return array_merge($base, [
+            'category_bars'    => $this->mapDetailedCategoryBars($result),
+            'category_totals'  => $this->reconcileCategoryTotals($result),
+            'why_this_matches' => $this->mapWhyDetailed($result->whyThisMatches),
+            'why_not'          => $this->mapWhyDetailed($result->whyNot ?? []),
+            'tradeoffs'        => $this->mapTradeoffsDetailed($result->tradeoffs),
+            'confidence'       => $this->mapConfidence($result->confidence),
+            'recommendations'  => $this->mapRecommendations($result->recommendations ?? []),
+        ]);
+    }
+
     // =========================================================================
     // Private helpers
     // =========================================================================
@@ -234,5 +271,139 @@ class BuyerResultViewMapper
         return array_map(fn($m) => [
             'label' => $m['label'] ?? '',
         ], $missing);
+    }
+
+    // =========================================================================
+    // git-C11 (Plan-C7, F3/F4) — detailed-view helpers. Reached ONLY via mapOneDetailed();
+    // mapOne()/map() and their helpers above are untouched.
+    // =========================================================================
+
+    /**
+     * Per-category display maxima for the detailed view: the seven residential CATEGORY_WEIGHTS
+     * plus the 8th `non_residential` category the scorer emits. Order matches the scorer.
+     */
+    private function detailedCategoryMaxes(): array
+    {
+        return self::CATEGORY_WEIGHTS + ['non_residential' => self::NON_RESIDENTIAL_MAX];
+    }
+
+    private function detailedCategoryLabel(string $key): string
+    {
+        if ($key === 'non_residential') {
+            return self::NON_RESIDENTIAL_LABEL;
+        }
+
+        return self::CATEGORY_LABELS[$key] ?? ucfirst($key);
+    }
+
+    /**
+     * Detailed category bars — every CONTRIBUTING category (score > 0), across all eight keys,
+     * including `non_residential`. Each exposes contributed / available / pct.
+     */
+    private function mapDetailedCategoryBars(BuyerMatchResult $result): array
+    {
+        $bars = [];
+        foreach ($this->detailedCategoryMaxes() as $key => $max) {
+            $contributed = max(0, min($max, (int) ($result->categoryScores[$key] ?? 0)));
+            if ($contributed <= 0) {
+                continue; // contributing categories only (F4)
+            }
+            $bars[] = [
+                'key'         => $key,
+                'label'       => $this->detailedCategoryLabel($key),
+                'contributed' => $contributed,
+                'available'   => $max,
+                'pct'         => $max > 0 ? round(($contributed / $max) * 100) : 0,
+            ];
+        }
+
+        return $bars;
+    }
+
+    /**
+     * F4 reconciliation: guarantees the visible breakdown reconciles to the authoritative
+     * total_score. Because the scorer computes total = round(Σ raw) while each category is
+     * round(raw_i) independently (and total is clamped to 0–100), Σ(contributed) can differ by a
+     * small delta; rounding_adjustment absorbs it so contributed_sum + rounding_adjustment ==
+     * total_score exactly. No scorer math is changed.
+     */
+    private function reconcileCategoryTotals(BuyerMatchResult $result): array
+    {
+        $totalScore = max(0, min(100, $result->totalScore));
+
+        $contributedSum = 0;
+        foreach ($this->detailedCategoryMaxes() as $key => $max) {
+            $contributed = max(0, min($max, (int) ($result->categoryScores[$key] ?? 0)));
+            if ($contributed > 0) {
+                $contributedSum += $contributed;
+            }
+        }
+
+        return [
+            'contributed_sum'     => $contributedSum,
+            'total_score'         => $totalScore,
+            'rounding_adjustment' => $totalScore - $contributedSum,
+        ];
+    }
+
+    /**
+     * Detailed why_this_matches / why_not — keeps `dimension` + `fields_used` (field names, not
+     * values/PII) that mapOne strips. Sorted by contribution DESC; why_not entries (all zero) keep
+     * their input order. No score-based filtering (why_not is intentionally the zero-scoring set).
+     */
+    private function mapWhyDetailed(array $entries): array
+    {
+        $mapped = array_map(fn($e) => [
+            'dimension'          => $e['dimension'] ?? null,
+            'label'              => $e['label'] ?? '',
+            'fields_used'        => $e['fields_used'] ?? [],
+            'score_contribution' => (int) ($e['score_contribution'] ?? 0),
+        ], $entries);
+
+        usort($mapped, fn($a, $b) => $b['score_contribution'] <=> $a['score_contribution']);
+
+        return array_values($mapped);
+    }
+
+    /**
+     * Detailed tradeoffs — keeps `deviation` (magnitude) + `fields_used` + `dimension` that mapOne
+     * strips. All are field-name / magnitude strings, never values or PII.
+     */
+    private function mapTradeoffsDetailed(array $entries): array
+    {
+        return array_map(fn($e) => [
+            'dimension'   => $e['dimension'] ?? null,
+            'label'       => $e['label'] ?? '',
+            'fields_used' => $e['fields_used'] ?? [],
+            'deviation'   => $e['deviation'] ?? null,
+        ], $entries);
+    }
+
+    /**
+     * Confidence (git-C10) — nullable structured block passthrough. Safe: booleans/floats/labels.
+     */
+    private function mapConfidence(?array $confidence): ?array
+    {
+        if ($confidence === null) {
+            return null;
+        }
+
+        return [
+            'level'   => $confidence['level'] ?? null,
+            'score'   => $confidence['score'] ?? null,
+            'factors' => $confidence['factors'] ?? [],
+        ];
+    }
+
+    /**
+     * Recommendations (git-C10) — keep type (for view iconography) + dimension + label. Safe.
+     */
+    private function mapRecommendations(array $recommendations): array
+    {
+        return array_map(fn($r) => [
+            'type'      => $r['type'] ?? null,
+            'dimension' => $r['dimension'] ?? null,
+            'label'     => $r['label'] ?? '',
+        ], $recommendations);
     }
 }
