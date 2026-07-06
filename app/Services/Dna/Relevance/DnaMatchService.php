@@ -86,7 +86,7 @@ class DnaMatchService
      *
      * @param array<int,array{listing_type:string,listing_id:int}> $candidates
      * @param callable(string,int):array $loader
-     * @return array<int,array{id:int,scores:array}>
+     * @return array<int,array{id:int,type:string,scores:array}>
      */
     private function counterparts(array $candidates, callable $loader): array
     {
@@ -96,8 +96,11 @@ class DnaMatchService
             $type = $candidate['listing_type'];
             $id   = (int) $candidate['listing_id'];
 
+            // 'type' (C6) is carried through into the RankedMatch so a mixed-type
+            // candidate pool remains unambiguous. 'id' stays the bare listing_id.
             $counterparts[] = [
                 'id'     => $id,
+                'type'   => $type,
                 'scores' => $loader($type, $id),
             ];
         }

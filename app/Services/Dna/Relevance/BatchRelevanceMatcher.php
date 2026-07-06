@@ -19,7 +19,11 @@ use InvalidArgumentException;
  * marketplace-scale performance, persistence, and any consumer-facing exposure.
  * The CALLER supplies the already-resolved counterpart score-sets.
  *
- * A counterpart is an array: ['id' => int|string, 'scores' => iterable<DnaScore>].
+ * A counterpart is an array:
+ *   ['id' => int|string, 'scores' => iterable<DnaScore>, 'type' => ?string].
+ * 'type' is optional (Matching V2 C6): when present it is carried through into the
+ * resulting RankedMatch so a mixed-type candidate pool stays unambiguous. Omitting
+ * it preserves the exact pre-C6 behaviour.
  */
 class BatchRelevanceMatcher
 {
@@ -41,10 +45,10 @@ class BatchRelevanceMatcher
 
         $rows = [];
         foreach ($demandProfiles as $counterpart) {
-            [$id, $scores] = $this->counterpart($counterpart);
+            [$id, $scores, $type] = $this->counterpart($counterpart);
             // Subject is the property side; counterpart supplies the demand side.
             $aggregate = $this->aggregator->aggregate($listingScores, $scores);
-            $rows[] = [$id, $this->classifier->classify($aggregate)];
+            $rows[] = [$id, $this->classifier->classify($aggregate), $type];
         }
 
         return $this->rank($rows);
@@ -62,10 +66,10 @@ class BatchRelevanceMatcher
 
         $rows = [];
         foreach ($listings as $counterpart) {
-            [$id, $scores] = $this->counterpart($counterpart);
+            [$id, $scores, $type] = $this->counterpart($counterpart);
             // Counterpart supplies the property side; subject is the demand side.
             $aggregate = $this->aggregator->aggregate($scores, $demandScores);
-            $rows[] = [$id, $this->classifier->classify($aggregate)];
+            $rows[] = [$id, $this->classifier->classify($aggregate), $type];
         }
 
         return $this->rank($rows);
@@ -75,19 +79,19 @@ class BatchRelevanceMatcher
      * Partition determined vs undetermined, then order determined matches by
      * tier rank desc → overall value desc → id asc.
      *
-     * @param array<int,array{0:int|string,1:MatchTierResult}> $rows
+     * @param array<int,array{0:int|string,1:MatchTierResult,2:?string}> $rows
      */
     private function rank(array $rows): RankedMatchSet
     {
         $determined        = [];
         $undeterminedCount = 0;
 
-        foreach ($rows as [$id, $result]) {
+        foreach ($rows as [$id, $result, $type]) {
             if ($result->isUndetermined()) {
                 $undeterminedCount++;
                 continue;
             }
-            $determined[] = new RankedMatch($id, $result);
+            $determined[] = new RankedMatch($id, $result, $type);
         }
 
         usort($determined, static function (RankedMatch $a, RankedMatch $b): int {
@@ -101,16 +105,21 @@ class BatchRelevanceMatcher
             if ($byValue !== 0) {
                 return $byValue;
             }
-            // id ascending (stable, total tie-break)
-            return $a->counterpartId <=> $b->counterpartId;
+            // id ascending, then type ascending — a total, deterministic tie-break
+            // that stays stable even when ids collide across counterpart types.
+            $byId = $a->counterpartId <=> $b->counterpartId;
+            if ($byId !== 0) {
+                return $byId;
+            }
+            return ($a->counterpartType ?? '') <=> ($b->counterpartType ?? '');
         });
 
         return new RankedMatchSet($determined, $undeterminedCount);
     }
 
     /**
-     * @param array{id?:int|string,scores?:iterable} $counterpart
-     * @return array{0:int|string,1:iterable}
+     * @param array{id?:int|string,scores?:iterable,type?:?string} $counterpart
+     * @return array{0:int|string,1:iterable,2:?string}
      */
     private function counterpart(array $counterpart): array
     {
@@ -118,7 +127,7 @@ class BatchRelevanceMatcher
             throw new InvalidArgumentException("Each counterpart must provide an 'id'.");
         }
 
-        return [$counterpart['id'], $counterpart['scores'] ?? []];
+        return [$counterpart['id'], $counterpart['scores'] ?? [], $counterpart['type'] ?? null];
     }
 
     /**

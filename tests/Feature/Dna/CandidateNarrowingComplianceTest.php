@@ -55,7 +55,7 @@ class CandidateNarrowingComplianceTest extends TestCase
 
     private function seedBuyerSubject(int $id, array $meta): void
     {
-        $auction = BuyerAgentAuction::create(['id' => $id, 'user_id' => 2, 'is_approved' => true, 'is_sold' => false]);
+        $auction = BuyerAgentAuction::create(['id' => $id, 'user_id' => 2, 'title' => 't', 'is_approved' => true, 'is_sold' => false]);
         foreach ($meta as $k => $v) {
             $auction->saveMeta($k, $v);
         }

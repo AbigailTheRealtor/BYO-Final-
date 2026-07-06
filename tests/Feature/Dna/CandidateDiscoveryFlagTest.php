@@ -48,7 +48,7 @@ class CandidateDiscoveryFlagTest extends TestCase
 
     private function seedSubjectBuyer(int $id): void
     {
-        BuyerAgentAuction::create(['id' => $id, 'user_id' => 2, 'is_approved' => true, 'is_sold' => false])
+        BuyerAgentAuction::create(['id' => $id, 'user_id' => 2, 'title' => 't', 'is_approved' => true, 'is_sold' => false])
             ->saveMeta('workflow_type', 'offer_listing');
     }
 
