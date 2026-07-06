@@ -31,6 +31,28 @@ class BuyerMatchResultBuilder
         return $result;
     }
 
+    /**
+     * build() PLUS the git-C10 report blocks (Plan-C6, F3): whyNot / confidence / recommendations.
+     *
+     * Used by the Match Check *detailed* path only (git-C11 mapper / git-C13 orchestrator). The
+     * live batch path uses build()/buildAll() and is deliberately left untouched, so it neither
+     * computes nor carries these blocks. Additive and inert: no flag, no I/O beyond the raw_json
+     * decode the existing build() already performs, no now(), no writes.
+     */
+    public function buildDetailed(BuyerMatchResult $result, BuyerCriteriaPayload $criteria): BuyerMatchResult
+    {
+        // Populate the four existing blocks exactly as the batch path does — unchanged behavior.
+        $this->build($result, $criteria);
+
+        $rawJson = $this->decodeRawJson($result->listing);
+
+        $result->whyNot          = $this->buildWhyNot($result);
+        $result->confidence      = $this->buildConfidence($result, $rawJson);
+        $result->recommendations = $this->buildRecommendations($result, $criteria);
+
+        return $result;
+    }
+
     // =========================================================================
     // Block 1: why_this_matches
     // =========================================================================
@@ -353,5 +375,157 @@ class BuyerMatchResultBuilder
         }
 
         return $missing;
+    }
+
+    // =========================================================================
+    // git-C10 (Plan-C6, F3) — detailed report blocks. Reached ONLY via buildDetailed();
+    // the batch build()/buildAll() path never invokes them.
+    // =========================================================================
+
+    /**
+     * Block 5: why_not — one entry per zero-scoring dimension (v1). Shaped like why_this_matches.
+     * Only dimensions the scorer actually evaluated (present in categoryScores) and that earned
+     * exactly zero are included — the unambiguous "why not" signal. "Low-but-nonzero" gradation is
+     * a deferred refinement.
+     */
+    private function buildWhyNot(BuyerMatchResult $result): array
+    {
+        $entries = [];
+        $scores  = $result->categoryScores;
+
+        // Same dimension → fields map buildWhyThisMatches uses (kept local; the existing builder is
+        // not modified).
+        $dimensionFields = [
+            'location'      => ['city', 'postal_code', 'latitude', 'longitude', 'county_or_parish'],
+            'price'         => ['list_price'],
+            'size'          => ['living_area', 'lot_size_sqft', 'year_built'],
+            'property_type' => ['property_type', 'property_sub_type'],
+            'amenities'     => ['pool_private_yn', 'garage_yn', 'waterfront_yn', 'view_yn', 'water_view_yn'],
+            'financial'     => ['association_fee', 'tax_annual_amount', 'association_yn'],
+            'lifestyle'     => ['new_construction_yn', 'pets_allowed'],
+        ];
+
+        foreach ($dimensionFields as $dimension => $fields) {
+            if (array_key_exists($dimension, $scores) && (int) $scores[$dimension] === 0) {
+                $entries[] = [
+                    'dimension'          => $dimension,
+                    'label'              => $this->buildWhyNotLabel($dimension),
+                    'fields_used'        => $fields,
+                    'score_contribution' => 0,
+                ];
+            }
+        }
+
+        return $entries;
+    }
+
+    private function buildWhyNotLabel(string $dimension): string
+    {
+        switch ($dimension) {
+            case 'location':
+                return 'Location does not match your preferred areas';
+            case 'price':
+                return 'Priced outside your budget';
+            case 'size':
+                return 'Size does not match your preferences';
+            case 'property_type':
+                return 'Property type does not match your preferences';
+            case 'amenities':
+                return 'Key amenities you want are not present';
+            case 'financial':
+                return 'Monthly financial burden exceeds your tolerance';
+            case 'lifestyle':
+                return 'Community lifestyle features do not match';
+            default:
+                return "Does not match your {$dimension} preference";
+        }
+    }
+
+    /**
+     * Block 6: confidence — data-completeness + the geo signal. Deterministic; never now()/random.
+     * Shape: ['level' => high|medium|low, 'score' => 0.0–1.0, 'factors' => [geo_precise, completeness]].
+     */
+    private function buildConfidence(BuyerMatchResult $result, array $rawJson): array
+    {
+        $listing = $result->listing;
+
+        $geoPrecise = $listing->latitude !== null && $listing->longitude !== null;
+
+        $keyFields = [
+            $listing->list_price,
+            $listing->living_area,
+            $listing->year_built,
+            $listing->lot_size_sqft,
+            $listing->property_type,
+        ];
+        $present      = count(array_filter($keyFields, fn ($v) => $v !== null && $v !== ''));
+        $completeness = round($present / count($keyFields), 2);
+
+        // Blend: completeness, with a fixed penalty when exact geo is unavailable (mirrors the
+        // reduced_confidence_geo_match caution signal). Clamped to [0, 1].
+        $score = max(0.0, min(1.0, round($completeness - ($geoPrecise ? 0.0 : 0.2), 2)));
+
+        $level = $score >= 0.8 ? 'high' : ($score >= 0.5 ? 'medium' : 'low');
+
+        return [
+            'level'   => $level,
+            'score'   => $score,
+            'factors' => [
+                'geo_precise'  => $geoPrecise,
+                'completeness' => $completeness,
+            ],
+        ];
+    }
+
+    /**
+     * Block 7: recommendations — rule-based v1. widen_price (price under-scored and listing exceeds
+     * the buyer's ideal/max) and consider_adjacent_area (location scored zero). No external lookup.
+     */
+    private function buildRecommendations(BuyerMatchResult $result, BuyerCriteriaPayload $criteria): array
+    {
+        $recommendations = [];
+        $listing = $result->listing;
+        $scores  = $result->categoryScores;
+
+        // widen_price
+        $priceScore = (int) ($scores['price'] ?? 0);
+        $listPrice  = $listing->list_price !== null ? (float) $listing->list_price : null;
+        if ($priceScore < BuyerMatchScorer::PRICE_PROXIMITY_MAX_PTS && $listPrice !== null) {
+            $reference = $criteria->idealPrice ?? $criteria->maxPrice;
+            if ($reference !== null && $listPrice > $reference) {
+                $gap = number_format((int) round($listPrice - $reference));
+                $recommendations[] = [
+                    'type'      => 'widen_price',
+                    'dimension' => 'price',
+                    'label'     => "Consider widening your price range by ~\${$gap}",
+                ];
+            }
+        }
+
+        // consider_adjacent_area
+        if (array_key_exists('location', $scores) && (int) $scores['location'] === 0) {
+            $city  = $criteria->preferredCities[0] ?? null;
+            $label = ($city !== null && $city !== '')
+                ? "Consider areas adjacent to {$city} to find more matches"
+                : 'Consider nearby areas to find more matches';
+            $recommendations[] = [
+                'type'      => 'consider_adjacent_area',
+                'dimension' => 'location',
+                'label'     => $label,
+            ];
+        }
+
+        return $recommendations;
+    }
+
+    /**
+     * Decode a listing's raw_json into an array (empty on absent/invalid). Used by buildDetailed()
+     * so build() stays untouched.
+     */
+    private function decodeRawJson(BridgeProperty $listing): array
+    {
+        $rawJson = $listing->raw_json ? json_decode($listing->raw_json, true) : [];
+
+        return is_array($rawJson) ? $rawJson : [];
     }
 }
