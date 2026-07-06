@@ -5,22 +5,27 @@ namespace Tests\Unit\Stellar\MatchCheck;
 use App\Models\BridgeProperty;
 use App\Models\User;
 use App\Services\Stellar\CriteriaListingResolver;
+use App\Services\Stellar\Matching\BuyerMatchScorer;
+use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
+use App\Services\Stellar\Matching\DTO\BuyerMatchResult;
 use App\Services\Stellar\MatchCheck\CriteriaIntentDetector;
 use App\Services\Stellar\MatchCheck\ListingVisibilityGate;
 use App\Services\Stellar\MatchCheck\MatchCheckOrchestrator;
 use App\Services\Stellar\MatchCheck\MatchCheckPreparation;
+use App\Services\Stellar\MatchCheck\MatchCheckScorer;
 use App\Services\Stellar\MatchCheck\VisibilityDecision;
 use Carbon\Carbon;
 use Mockery;
 use Tests\TestCase;
 
 /**
- * Phase 4 · Wave 2 / C5 — MatchCheckOrchestrator.
+ * Phase 4 · Wave 2 / C5 + C6 — MatchCheckOrchestrator.
  *
- * Verifies the COMPOSITION only (flag gate → visibility → intent → preferred),
- * with the three collaborators mocked. The collaborators' own behaviour is already
- * covered by their C1–C4 tests; here we assert the wiring, the short-circuits, and
- * that the feature stays inert while the master flag is OFF.
+ * Verifies the COMPOSITION only: prepare() (C5 — flag gate → visibility → intent →
+ * preferred) and evaluate() (C6 — prepare() + scoring layer), with the collaborators
+ * mocked. The collaborators' own behaviour is already covered by their own tests; here we
+ * assert the wiring, the short-circuits, and that the feature stays inert while the master
+ * flag is OFF.
  */
 class MatchCheckOrchestratorTest extends TestCase
 {
@@ -166,6 +171,107 @@ class MatchCheckOrchestratorTest extends TestCase
 
         config()->set('mls_match_check.enabled', true);
         $this->assertTrue($orchestrator->isEnabled());
+    }
+
+    // =========================================================================
+    // C6 — evaluate() composes prepare() with the scoring layer.
+    // =========================================================================
+
+    /** @test */
+    public function evaluate_with_flag_off_returns_disabled_result_and_never_touches_the_engine(): void
+    {
+        config()->set('mls_match_check.enabled', false);
+
+        [$gate, $detector, $resolver] = $this->mocks();
+        $gate->shouldNotReceive('decide');
+        $detector->shouldNotReceive('detectFromModel');
+        $resolver->shouldNotReceive('resolvePreferred');
+
+        // Real scorer wrapping a mock engine → prove the engine is never reached when inert.
+        $engine = Mockery::mock(BuyerMatchScorer::class);
+        $engine->shouldNotReceive('score');
+        $scorer = new MatchCheckScorer($engine);
+
+        $result = (new MatchCheckOrchestrator($gate, $detector, $resolver, $scorer))
+            ->evaluate($this->listing(), $this->consumer(), new BuyerCriteriaPayload([
+                'property_types'      => ['Residential'],
+                'is_55_plus_eligible' => false,
+            ]));
+
+        $this->assertTrue($result->isDisabled());
+        $this->assertFalse($result->scorable);
+    }
+
+    /** @test */
+    public function evaluate_defaults_the_scorer_when_none_is_injected(): void
+    {
+        // Constructed with the C5 three-arg signature (scorer defaults to null); the flag is
+        // OFF so evaluate() short-circuits before the lazily-defaulted engine is ever used.
+        config()->set('mls_match_check.enabled', false);
+
+        [$gate, $detector, $resolver] = $this->mocks();
+        $gate->shouldNotReceive('decide');
+
+        $result = (new MatchCheckOrchestrator($gate, $detector, $resolver))
+            ->evaluate($this->listing(), $this->consumer());
+
+        $this->assertTrue($result->isDisabled());
+    }
+
+    /** @test */
+    public function evaluate_visible_with_criteria_and_payload_returns_a_scored_result(): void
+    {
+        config()->set('mls_match_check.enabled', true);
+
+        $listing = $this->listing('Commercial Sale');
+        $user    = $this->consumer();
+        $payload = new BuyerCriteriaPayload([
+            'property_types'      => ['Commercial Sale'],
+            'is_55_plus_eligible' => false,
+        ]);
+        $record = ['id' => 3, 'type' => 'buyer', 'label' => 'B', 'created_at' => Carbon::parse('2026-05-01')];
+
+        [$gate, $detector, $resolver] = $this->mocks();
+        $gate->shouldReceive('decide')->once()->andReturn(VisibilityDecision::visible('idx_true'));
+        $detector->shouldReceive('detectFromModel')->once()->andReturn(CriteriaIntentDetector::BUYER);
+        $resolver->shouldReceive('resolvePreferred')->once()->andReturn($record);
+
+        $engine = Mockery::mock(BuyerMatchScorer::class);
+        $engine->shouldReceive('score')->once()->with($listing, $payload)->andReturn(
+            new BuyerMatchResult('KEY-9', 88, ['location' => 24], $listing)
+        );
+        $scorer = new MatchCheckScorer($engine);
+
+        $result = (new MatchCheckOrchestrator($gate, $detector, $resolver, $scorer))
+            ->evaluate($listing, $user, $payload);
+
+        $this->assertTrue($result->isScored());
+        $this->assertSame('KEY-9', $result->listingKey);
+        $this->assertSame(88, $result->totalScore);
+        $this->assertSame(CriteriaIntentDetector::BUYER, $result->intent);
+    }
+
+    /** @test */
+    public function evaluate_visible_with_criteria_but_no_payload_returns_criteria_not_loaded(): void
+    {
+        config()->set('mls_match_check.enabled', true);
+
+        $record = ['id' => 4, 'type' => 'tenant', 'label' => 'T', 'created_at' => Carbon::parse('2026-05-01')];
+
+        [$gate, $detector, $resolver] = $this->mocks();
+        $gate->shouldReceive('decide')->once()->andReturn(VisibilityDecision::visible('idx_true'));
+        $detector->shouldReceive('detectFromModel')->once()->andReturn(CriteriaIntentDetector::TENANT);
+        $resolver->shouldReceive('resolvePreferred')->once()->andReturn($record);
+
+        $engine = Mockery::mock(BuyerMatchScorer::class);
+        $engine->shouldNotReceive('score');
+        $scorer = new MatchCheckScorer($engine);
+
+        $result = (new MatchCheckOrchestrator($gate, $detector, $resolver, $scorer))
+            ->evaluate($this->listing('Commercial Lease'), $this->consumer(), null);
+
+        $this->assertTrue($result->isCriteriaNotLoaded());
+        $this->assertSame(CriteriaIntentDetector::TENANT, $result->intent);
     }
 
     protected function tearDown(): void
