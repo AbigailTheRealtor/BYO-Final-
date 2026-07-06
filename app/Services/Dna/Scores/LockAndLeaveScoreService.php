@@ -19,13 +19,23 @@ use App\Services\Dna\Scores\Support\ScalarScoreHelpers;
  * GOVERNANCE: deterministic; no AI, no external calls, no DB writes (persistence
  * lives in the generator); reads ONLY canonical fields (§F1); carries F4
  * confidence + F5 explanation. Fair Housing (§F3): uses only objective property
- * attributes and self-declared intent — no protected-class inputs.
+ * attributes and self-declared intent — no protected-class inputs. In particular,
+ * 55+/age (demand.age_targeted) is DELIBERATELY NOT read here: it does not affect
+ * the value, and it is never written into inputs_json or the explanation. All 55+
+ * handling lives solely in the Matching V2 Slice 2B compliance gate
+ * (SeniorCommunityComplianceGate). See docs/matching-v2-55plus-leak-remediation-scope.md.
+ *
+ * VERSION history:
+ *   - V1: demand score folded a +15 "55+ targeted" bump and persisted
+ *         inputs.age_targeted (the leak).
+ *   - V2: age removed entirely from the demand computation; completeness
+ *         rebalanced across the two remaining self-declared signals.
  */
 class LockAndLeaveScoreService implements SymmetricScoreService
 {
     use ScalarScoreHelpers;
 
-    public const VERSION  = 'LOCK_AND_LEAVE_V1';
+    public const VERSION  = 'LOCK_AND_LEAVE_V2';
     public const SCORE_KEY = 'lock_and_leave';
 
     private const LOW_MAINT_STRUCTURES = ['condo', 'condominium', 'villa', 'townhouse', 'townhome', 'co-op', 'apartment'];
@@ -123,14 +133,15 @@ class LockAndLeaveScoreService implements SymmetricScoreService
     {
         $status  = $listing->get('demand.current_status');
         $purpose = $listing->get('demand.purchase_purpose');
-        $age55   = $listing->get('demand.age_targeted'); // ?bool
 
+        // §F3: scored ONLY from self-declared, non-protected intent signals. Age/55+
+        // (demand.age_targeted) is intentionally not read — see class docblock.
+        // Completeness is rebalanced across the two remaining signals to sum to 100.
         $completeness = 0;
-        if ($listing->present('demand.purchase_purpose')) $completeness += 40;
-        if ($listing->present('demand.current_status'))   $completeness += 35;
-        if ($listing->present('demand.age_targeted'))     $completeness += 25;
+        if ($listing->present('demand.purchase_purpose')) $completeness += 55;
+        if ($listing->present('demand.current_status'))   $completeness += 45;
 
-        $inputs = ['current_status' => $status, 'purchase_purpose' => $purpose, 'age_targeted' => $age55];
+        $inputs = ['current_status' => $status, 'purchase_purpose' => $purpose];
 
         if ($completeness === 0) {
             return $this->result(self::SCORE_KEY, 'demand', self::VERSION, null, 0,
@@ -152,11 +163,6 @@ class LockAndLeaveScoreService implements SymmetricScoreService
             $clauses[] = 'snowbird / retiree / downsizing status';
         } elseif ($listing->present('demand.current_status')) {
             $value += 5;
-        }
-
-        if ($age55 === true) {
-            $value += 15;
-            $clauses[] = '55+ targeted';
         }
 
         $value = max(0, min(100, $value));

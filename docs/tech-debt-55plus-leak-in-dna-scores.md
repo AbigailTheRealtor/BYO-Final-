@@ -1,5 +1,12 @@
 # Tech Debt — 55+ / senior-community data leaks into `dna_scores` (generation-side)
 
+> **STATUS: RESOLVED (2026-07-06).** Remediated via Option B — 55+/age removed
+> entirely from the Lock-and-Leave demand computation (`LockAndLeaveScoreService`
+> V1→V2): no age in value, `inputs_json`, or explanation; completeness rebalanced.
+> Straggler cleanup via `dna:scrub-lock-and-leave-age` + regeneration. See
+> `docs/matching-v2-55plus-leak-remediation-scope.md`. The remainder of this file
+> is retained for historical context.
+
 **Type:** Compliance-sensitive technical debt (Fair Housing / HOPA)
 **Opened:** 2026-07-05 (per Matching V2 Slice 2B decision **OD-4**)
 **Owner decision:** Do **not** fix inside Slice 2B (read-only consumption). Track and remediate generation-side separately.

@@ -51,7 +51,7 @@ class ScalarScoreBatchTest extends TestCase
         $this->assertSame(100, $r['data_completeness']);
         $this->assertSame(90, $r['confidence']);
         $this->assertStringContainsString('low-maintenance structure', $r['explanation']);
-        $this->assertSame('LOCK_AND_LEAVE_V1', $r['version']);
+        $this->assertSame('LOCK_AND_LEAVE_V2', $r['version']);
     }
 
     public function test_lock_and_leave_large_single_family_scores_low(): void
@@ -78,12 +78,15 @@ class ScalarScoreBatchTest extends TestCase
         $r = (new LockAndLeaveScoreService())->scoreDemand($this->demand([
             'demand.purchase_purpose' => 'Second Home / Vacation',
             'demand.current_status'   => 'Snowbird',
-            'demand.age_targeted'     => true,
+            'demand.age_targeted'     => true, // present but MUST NOT influence the score (V2)
         ]));
 
         $this->assertSame('demand', $r['side']);
-        $this->assertSame(100, $r['value']); // 20+40+30+15 capped
-        $this->assertSame(100, $r['data_completeness']);
+        $this->assertSame(90, $r['value']);              // 20+40+30 — no age bump
+        $this->assertSame(100, $r['data_completeness']); // 55 purpose + 45 status
+        $this->assertSame('LOCK_AND_LEAVE_V2', $r['version']);
+        $this->assertStringNotContainsString('55', $r['explanation']);
+        $this->assertArrayNotHasKey('age_targeted', $r['inputs']);
     }
 
     // ── Waterfront-Lifestyle ────────────────────────────────────────────────

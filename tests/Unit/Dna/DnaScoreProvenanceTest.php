@@ -35,8 +35,8 @@ class DnaScoreProvenanceTest extends TestCase
 
         $this->assertNotNull($row);
         $this->assertSame('system', $row->generated_by);
-        $this->assertSame('LOCK_AND_LEAVE_V1', $row->generator_version);
-        $this->assertSame('LOCK_AND_LEAVE_V1', $row->version); // legacy column kept in sync
+        $this->assertSame('LOCK_AND_LEAVE_V2', $row->generator_version);
+        $this->assertSame('LOCK_AND_LEAVE_V2', $row->version); // legacy column kept in sync
         $this->assertNull($row->source_version);               // no upstream data source
         $this->assertNotNull($row->computed_at);               // generated_at
     }
