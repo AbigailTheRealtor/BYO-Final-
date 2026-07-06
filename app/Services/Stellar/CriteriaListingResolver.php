@@ -172,6 +172,46 @@ class CriteriaListingResolver
         return $items;
     }
 
+    /**
+     * Resolve the single "preferred" accessible criteria/offer-listing record to
+     * auto-select for Match Check (Phase 4 · F5), or null when none should be auto-picked.
+     *
+     * Rules:
+     *  - Agents (and other power users with type 'agent') NEVER get an auto-default —
+     *    they must choose explicitly, so this returns null for them (F5).
+     *  - For a consumer, returns the newest accessible record; when $intent is given
+     *    ('buyer' or 'tenant'), only records of that side are considered, so a rental
+     *    property auto-selects Tenant criteria and a sale auto-selects Buyer criteria.
+     *  - Returns null when the consumer has no matching record (the caller then shows an
+     *    empty-state prompting them to create the right criteria — never a wrong-engine score).
+     *
+     * Reuses resolveAccessible(), which is already sorted newest-first and access-scoped.
+     *
+     * @param  string|null  $intent  'buyer' | 'tenant' | null (no side filter)
+     * @return array{id: int, type: string, label: string, created_at: \Carbon\Carbon}|null
+     */
+    public function resolvePreferred(User $user, ?string $intent = null): ?array
+    {
+        if ($user->user_type === 'agent') {
+            return null;
+        }
+
+        $items = $this->resolveAccessible($user);
+
+        if ($intent !== null) {
+            $wanted = $intent === 'tenant'
+                ? ['tenant', 'tenant_offer']
+                : ['buyer', 'buyer_offer'];
+
+            $items = array_values(array_filter(
+                $items,
+                fn(array $item) => in_array($item['type'], $wanted, true)
+            ));
+        }
+
+        return $items[0] ?? null;
+    }
+
     // =========================================================================
     // Private label builders
     // =========================================================================
