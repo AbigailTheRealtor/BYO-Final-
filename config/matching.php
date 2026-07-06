@@ -75,4 +75,31 @@ return [
         'senior_unknown_policy' => env('MATCHING_V2_SENIOR_UNKNOWN_POLICY', 'open'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Persistence / caching (Matching V2 — C7)
+    |--------------------------------------------------------------------------
+    |
+    | Gates offline materialization of ranked match results into the additive
+    | matching_v2_match_runs + matching_v2_matches tables. This is a SECOND gate
+    | UNDER v2_enabled above: a write happens only when BOTH are true AND the app
+    | is NOT in the production environment (MatchResultPersister hard-refuses in
+    | production regardless of these flags). Default OFF.
+    |
+    | version
+    |   Materialization version tag stamped on every summary row. The reader
+    |   (PersistedMatchReader) only trusts rows whose version equals this value —
+    |   bumping it invalidates all older rows at read time (the read-time re-gate),
+    |   so a scoring/engine change is invalidated by version bump + re-materialize.
+    |   Event-driven invalidation is a deferred fast-follow, not part of C7.
+    |
+    | See docs/matching-v2-c7-persistence-scope.md.
+    |
+    */
+
+    'persistence' => [
+        'enabled' => env('MATCHING_V2_PERSISTENCE_ENABLED', false),
+        'version' => env('MATCHING_V2_PERSISTENCE_VERSION', 'c7-v1'),
+    ],
+
 ];

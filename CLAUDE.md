@@ -95,6 +95,8 @@ Beyond standard Laravel keys, this app requires:
 | `BYA_COMPATIBILITY_KILL_SWITCH` | Consumer compatibility gate (default `true` = blocked) |
 | `BYA_COMPATIBILITY_GA_ENABLED` | GA rollout flag (default `false`) |
 | `DNA_SCORES_GENERATION_ENABLED` | Master gate for production `dna_scores` generation via the lifecycle (observers + `ComputeLocationDna` chain + `dna:generate-scores`). Default `false` = inert. Independent of Matching V2. |
+| `MATCHING_V2_PERSISTENCE_ENABLED` | Matching V2 C7 persistence gate (materialize ranked results into `matching_v2_*`). Default `false`. A write also requires `MATCHING_V2_ENABLED` and a non-production environment — `MatchResultPersister` hard-refuses in production. |
+| `MATCHING_V2_PERSISTENCE_VERSION` | Materialization version tag stamped on persisted runs; the reader trusts only rows at the current value (read-time re-gate). Default `c7-v1`. |
 | `LOCATION_DNA_FLOOD_ZONE_MAX_AREA` | FEMA API bounding-box threshold in sq-degrees |
 | `OFFER_PLAYOFF_ALLOWED_IDS` | Comma-separated user IDs or `*` for all |
 
