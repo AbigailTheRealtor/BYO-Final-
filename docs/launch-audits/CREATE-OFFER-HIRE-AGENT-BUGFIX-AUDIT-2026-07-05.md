@@ -81,8 +81,8 @@ These override the open questions previously flagged in this audit. They are aut
 | **P1-3** | After edit → land on listing page, not generic success screen | All 4 Create edit | P0 | `SellerOfferListingEdit.php` `update()`:4067-4074 (culprit); Buyer `:2921`, Landlord `:3888`, Tenant `:3923` (correct) | Seller edit of an already-published listing flashes success + no redirect → stays on form; other 3 roles redirect correctly | All 4 roles redirect to `offer.listing.{role}.view` after edit | Seller `update()` only redirects on `$wasDraft` (first publish) branch; non-draft path returns nothing | Add `return redirect()->route('offer.listing.seller.view',['id'=>$auction->id]);` on non-draft path | Low — per-role, isolated to Seller edit | Edit a published Seller listing, save; must land on detail page | **CODE COMPLETE — HUMAN BROWSER QA REQUIRED** (Batch A `0e486dfaf`: non-draft redirect added; Livewire test asserts redirect on published + draft paths) |
 | **P1-4** | Seller Business listing cannot submit | Create Seller | P0 | `SellerOfferListing.php` `store()`:4223, `sanitizeBeforeSubmit()`:4168; `Concerns/SellerPublishValidation.php` (45-106); `financial-details.blade.php:245-486` | Business submit can silently fail validation (caught → flash only) | Business listing submits cleanly | Any Business-only multi-select value absent from `in:` whitelists fails `validate()`; also Tenant-engine parity branch `:4099-4148` | Audit Business form option values vs whitelists; add missing values; ensure error→tab jump | Med — whitelist edits could loosen validation for other types | Create Seller → property type Business → fill Business tab → submit; confirm success + detail page | ⬜ Audited — prior doc A7.46 ✅ Batch 15 but flagged "browser smoke-test recommended" → **must browser-verify** |
 | **P1-5** | Video tour must render embedded with safe fallback | All detail views | P0 | `app/Support/VideoEmbedHelper.php` (22-47); detail views Landlord `view.blade.php:945-995`, Seller `:1262-1295`, Tenant `:1387-1402` | YouTube/Vimeo embed; any other provider (Matterport/Loom/MP4) falls back to raw `<a>` link; detail views duplicate inline regex, bypass helper | Recognized providers embed; unknown URLs show safe fallback link (labeled) without breaking layout | Detail views don't reuse `VideoEmbedHelper`; helper only supports YouTube/Vimeo | Route detail views through `VideoEmbedHelper`; extend helper coverage as needed; keep explicit fallback `<a>` | Med — three duplicated blocks to consolidate; must not break existing YT/Vimeo | Paste YT, Vimeo, and a non-supported URL; view each detail page; confirm embed vs fallback | ⬜ Audited — **NET-NEW, uncovered by prior doc** |
-| **P1-6** | 14 JPG photo upload not working | Create Seller/Landlord | P0 | `config/livewire.php:100,102,108`; `.user.ini`; `LandlordOfferListing.php:3848`, `SellerOfferListing.php:3918`; `photos-tours-documents.blade.php:44` | Rules allow 50MB/file, 50-file cap, mimes jpg/jpeg/png/webp; 14 JPGs within limits | 14 JPGs upload reliably | Code paths appear correct; suspect throttle (`throttle:60,1`), `max_upload_time=5`, or `max_file_uploads=50` intermittently dropping a batch | Reproduce actual failure; audit throttle/time/count-accumulation; improve error messaging | Med — loosening throttle/limits affects all uploads | Upload exactly 14 JPGs in one selection; confirm all persist + reappear on edit | ⬜ Audited — prior doc A2.16 ✅ limits audit only; **specific 14-file failure NOT diagnosed** → reproduce first |
-| **P1-7** | Large document upload not working; audit limits + messages | Create Seller/Landlord | P0 | `config/livewire.php:100`; `.user.ini` (upload_max=50M/post_max=55M); ~16 `updated*File` handlers in Seller/Landlord | Hard 50MB ceiling at 3 layers (Livewire rule, per-field rule, PHP); >50MB rejected; no in-repo nginx `client_max_body_size` | Large docs upload up to a documented limit; clear error when exceeded | 50MB ceiling enforced at Livewire `max:51200` + per-field + PHP `post_max_size=55M`; server body limit unknown (not in repo) | Decide target max; raise all 3 layers together + server `client_max_body_size`; surface friendly size error | High — raising limits affects memory/timeouts across app; server config outside repo | Upload a doc just under and just over limit; confirm success vs a clear error (not silent) | ⬜ Audited — prior doc A2.17 ✅ limits audit only; **failure mode NOT diagnosed** |
+| **P1-6** | 14 JPG photo upload not working | Create Seller/Landlord | P0 | `config/livewire.php:100,102,108`; `.user.ini`; `LandlordOfferListing.php:3848`, `SellerOfferListing.php:3918`; `photos-tours-documents.blade.php:44` | Rules allow 50MB/file, 50-file cap, mimes jpg/jpeg/png/webp; 14 JPGs within limits | 14 JPGs upload reliably | Code paths appear correct; suspect throttle (`throttle:60,1`), `max_upload_time=5`, or `max_file_uploads=50` intermittently dropping a batch | Reproduce actual failure; audit throttle/time/count-accumulation; improve error messaging | Med — loosening throttle/limits affects all uploads | Upload exactly 14 JPGs in one selection; confirm all persist + reappear on edit | **ROOT-CAUSED + FIX COMMITTED — HUMAN BROWSER QA REQUIRED** (Batch C: `php artisan serve` `cli-server` ran at PHP defaults **8M/2M/20** — `.user.ini` is ignored by the CLI SAPI and Laravel 8's `ServeCommand` drops the parent `-d` flags; proven via a `cli-server` HTTP probe. Livewire 2.12 sends the 14-JPG selection as **one** POST > 8M → PHP silently discards the body → empty `$_FILES` → no-op. Fix: `deploy/php/uploads.ini` + `.replit` `PHP_INI_SCAN_DIR` → worker proven to report **50M/150M/50/512M**. Live 14-JPG upload must be browser-verified on the running app) |
+| **P1-7** | Large document upload not working; audit limits + messages | Create Seller/Landlord | P0 | `config/livewire.php:100`; `.user.ini` (upload_max=50M/post_max=55M); ~16 `updated*File` handlers in Seller/Landlord | Hard 50MB ceiling at 3 layers (Livewire rule, per-field rule, PHP); >50MB rejected; no in-repo nginx `client_max_body_size` | Large docs upload up to a documented limit; clear error when exceeded | 50MB ceiling enforced at Livewire `max:51200` + per-field + PHP `post_max_size=55M`; server body limit unknown (not in repo) | Decide target max; raise all 3 layers together + server `client_max_body_size`; surface friendly size error | High — raising limits affects memory/timeouts across app; server config outside repo | Upload a doc just under and just over limit; confirm success vs a clear error (not silent) | **INVENTORIED + FIX COMMITTED — HUMAN BROWSER QA REQUIRED** (Batch C: full stack mapped — Laravel per-field rules + Livewire temp rule + count cap were **already 50M (unchanged)**; the effective ceiling was PHP CLI defaults, NOT `.user.ini`/`.replit -d` (both **inert** under the built-in server). Target set **50M/150M/50/512M** via `deploy/php/uploads.ini` + `PHP_INI_SCAN_DIR`. There is **no nginx/Apache** here — built-in server means **no `client_max_body_size` layer**; documented that + the Replit edge-proxy body cap as deployment-side verifications. `ini_set()` cannot change `post_max_size`/`upload_max_filesize` at runtime — proven. Friendly oversize error added to both photo blades) |
 | **P2-8** | Acceptable Exchange Item selects then unselects | Create Seller + Hire Seller | P1 | Hire `hire-seller-agent/.../seller-terms.blade.php:760-790` + JS `hire-seller-agent.blade.php:1517-1539`; Create `offer-seller-tabs/.../seller-terms.blade.php:810-833` + `offer-seller-listing.blade.php:2698-2720` | Selection toggles back off after Livewire round-trip | Selection persists | select2 in `wire:ignore` re-inits on every `message.processed` from stale `data-selected`; commit is deferred `@this.set(...,false)` so stale set overwrites new selection | Refresh `data-selected` after commit, or guard re-init to skip if user just changed; commit non-deferred | Med — SC2 pattern shared with flood-zone/garage; regressions there | Select an exchange item, wait for spinner; confirm it stays selected + saves | ⬜ Audited — prior doc A6.36 ✅ Batch 15, "browser smoke-test recommended" → **browser-verify** |
 | **P2-9** | Hire Seller Exchange Item "Other" doesn't open input | Hire Seller | P1 | `hire-seller-agent/.../seller-terms.blade.php:782-790`; JS `:1530,1535` | Choosing "Other" doesn't reveal dependent text input | "Other" reveals `other_exchange_item` input | Same SC2 mechanism as #8: re-init resets `val()`, drops "Other"; deferred set never commits so server-side reveal never fires | Fix with #8 (same root); ensure toggle fires + persists | Med — same SC2 shared path | Choose Other in exchange item; confirm input appears + saves | ⬜ Audited — prior doc A6.37 ✅ Batch 15 → **browser-verify** |
 | **P2-10** | Hire Seller Estimated Value & Acceptable Condition disappear while typing | Hire Seller | P1 | `hire-seller-agent/.../seller-terms.blade.php:792-833` (inputs 803, 821) | Fields visually blank mid-typing | Values stay visible/stable | Plain live `wire:model` triggers round-trip each keystroke; sibling `wire:ignore` select2 teardown/re-init morphs these nodes; no `wire:key` to stabilize | Add `wire:key` to the two form-groups; use `wire:model.blur`/`.lazy`; decouple from exchange re-init | Low-Med — local; coupled to SC2 | Type into Estimated Value + Acceptable Condition; confirm no flicker/blank | ⬜ Audited — prior doc A6.37 (same row) ✅ Batch 15 → **browser-verify** |
@@ -347,12 +347,81 @@ Each implementation batch must:
 
 ---
 
+## 11. Implementation log — Batch C (2026-07-06)
+
+**Scope (Owner-approved, Batch C = #6 + #7 only):** diagnose the 14-JPG upload failure (#6) and inventory every upload limit in the stack, splitting code vs. infrastructure (#7). No Match-Check / Matching-V2 / other-launch work touched.
+
+### 11.1 Root cause (proven, not guessed)
+
+The app is served by **`php artisan serve`** (PHP built-in **`cli-server`** SAPI) — there is **no nginx/Apache** in front. Two independent facts mean the intended 50 MB limits never reached the request-handling process:
+
+1. **`.user.ini` is ignored by the CLI/built-in-server SAPI** (it is a CGI/FPM-only mechanism). `php --ini` shows it is not scanned.
+2. **`artisan serve` does not forward its `-d` flags to the worker.** Laravel 8 `ServeCommand::serverCommand()` spawns `[php, '-S', host:port, server.php]` with no `-d`. Proven empirically: a child PHP does **not** inherit the parent's `-d` (parent `55M` → child `8M`), and a `cli-server` HTTP probe returned raw defaults.
+
+**Effective runtime limits (measured this session), vs. declared:**
+
+| Limit | Declared (`.user.ini` / `.replit -d`) | **Actual at runtime (proven)** |
+|---|---|---|
+| `upload_max_filesize` | 50M | **2M** |
+| `post_max_size` | 55M | **8M** |
+| `max_file_uploads` | 50 | **20** |
+| `memory_limit` | 256M | **128M** |
+
+Livewire 2.12 sends a `multiple` selection as **one** multipart POST. 14 phone JPGs (~3–8 MB each) exceed **both** the per-file `2M` and the batch `8M` ceiling → PHP discards the body → `$_FILES` empty → Livewire receives nothing → **silent failure**. Category: **infrastructure/deployment (PHP ini not applied by `artisan serve` on Replit)** — *not* Laravel validation, Livewire config, or the browser (all already correct at 50M).
+
+- **Max successful per-file size (pre-fix):** ~2 MB. **Max successful batch total:** ~8 MB. **Max successful count:** up to 20, only if every file <2M and the sum <8M. All three limits interact on the single POST; `post_max_size` is the binding constraint for the 14-JPG case.
+
+### 11.2 Full limit inventory — code vs. infra (#7)
+
+| Layer | Location | Status |
+|---|---|---|
+| Laravel per-field rule | `SellerOfferListing.php:3922`, `LandlordOfferListing.php:3852` (+doc rules) | `max:51200` (50M) — **already correct, unchanged** |
+| Livewire temp-upload rule | `config/livewire.php:99` | `max:51200` — **unchanged** |
+| App count cap | Seller `:3927` / Landlord `:3857` | 50 photos — **unchanged** |
+| PHP `upload_max_filesize` / `post_max_size` / `max_file_uploads` / `memory_limit` | `deploy/php/uploads.ini` (**new**) applied via `PHP_INI_SCAN_DIR` | **50M / 150M / 50 / 512M** |
+| Web-server body limit | n/a (built-in server) | **None here** — no `client_max_body_size` layer exists; document for any future nginx/Apache prod deploy |
+| Replit edge-proxy body cap | Replit platform (external) | **Unknown** — cannot set from repo; document as a deployment verification |
+
+Key constraint: `ini_set()` **cannot** raise `post_max_size`/`upload_max_filesize` at runtime (proven — returns `false`; they are `PHP_INI_PERDIR`). The only in-repo vector that works under `artisan serve` is `PHP_INI_SCAN_DIR` (ServeCommand passes `$_ENV` to the worker; a starting PHP scans that dir). Proven: `PHP_INI_SCAN_DIR=deploy/php` makes the `cli-server` worker report `50M/150M/50/512M`.
+
+### 11.3 Changes (single-concern, explicit path staging)
+
+- **`deploy/php/uploads.ini` (new)** — declares 50M/150M/50/512M (+ exec/input time), with a header explaining why `.user.ini`/`-d` are inert and how this file is applied.
+- **`.replit`** — dev "Laravel Server" workflow and `[deployment] run` now prefix `PHP_INI_SCAN_DIR="$PWD/deploy/php"` (deployment via `bash -c` so the env prefix takes effect); the inert `-d` flags removed.
+- **`offer-seller-tabs/.../photos-tours-documents.blade.php` + `offer-landlord-tabs/.../photos-tours-documents.blade.php`** — added an Alpine listener for the bubbling `livewire-upload-error` event to surface a friendly oversize message instead of a silent no-op (#7 "clear error when exceeded"). No change to validation, count cap, or the frozen Limited-Service flow.
+- **`.user.ini` / `public/.user.ini` left in place** (documented as inert here) — deleting them would mislead a future FPM/nginx deploy where they *would* apply.
+
+### 11.4 Verification
+
+- **New `tests/Feature/Offers/BatchCUploadLimitsTest.php` (6 tests, all pass):** ini-override values; `.replit` `PHP_INI_SCAN_DIR` wiring (both workflow + deployment) with the inert `-d` gone; per-file 50M rule intact in both handlers; friendly-error markup in both blades; live Livewire oversize-photo rejection for Seller and Landlord.
+- **Runtime proof (manual, this session):** `cli-server` worker with `PHP_INI_SCAN_DIR=deploy/php` reports `50M/150M/50/512M`; `ini_set()` on the two per-dir directives returns `false`.
+- **Regression:** `CreateEditParityRegressionTest` (80) pass; `BatchAUiRegressionTest` (8) pass; `BatchBBrokerVideoTest` (13) pass on a clean run (the one intermittent failure was the pre-existing §10 `User`-factory flakiness, not Batch C — my edits don't touch factories); `view:cache` compiles both edited blades.
+
+### 11.5 Batch-discipline note
+
+Single-purpose Batch C commit staged with explicit paths (the two blades, `deploy/php/uploads.ini`, `.replit`, the new test, this doc). No unrelated files; the concurrent `§MatchingV2` writer's files were **not** staged.
+
+### 11.6 Deployment actions required (outside this repo — do NOT apply from code)
+
+1. On any future **nginx/Apache** front-end, set `client_max_body_size` (or `LimitRequestBody`) **≥ `post_max_size` (150M)**. None exists today (built-in server).
+2. **Verify the Replit edge proxy** does not impose a body cap smaller than 150M; if it does, that becomes the real ceiling and must be raised at the platform level.
+3. The fix takes effect on the next server (re)start via `.replit`; confirm the running worker reports the raised limits after redeploy.
+
+### 11.7 Status
+
+- **#6 = `ROOT-CAUSED + FIX COMMITTED — HUMAN BROWSER QA REQUIRED`.** Live 14-JPG upload against the running app must confirm all 14 persist + reappear on edit.
+- **#7 = `INVENTORIED + FIX COMMITTED — HUMAN BROWSER QA REQUIRED`.** Confirm a >50M single file and an over-`post_max_size` batch each show the friendly error (not a silent drop); confirm a normal 14-JPG batch now succeeds.
+- Nothing marked PASS/COMPLETE/RESOLVED — both stay open pending human browser QA (env has no browser).
+
+---
+
 ## 8. Status summary
 
+- **Batch C implemented + root-caused (see §11). #6/#7 fixed via `deploy/php/uploads.ini` + `.replit` `PHP_INI_SCAN_DIR`; both = `FIX COMMITTED — HUMAN BROWSER QA REQUIRED`.** Root cause = infra (`artisan serve` `cli-server` ran at PHP defaults; `.user.ini` + `-d` inert). Laravel/Livewire rules were already correct at 50M. No `client_max_body_size` layer exists (built-in server); nginx + Replit edge-proxy caps documented as deployment actions (§11.6).
 - **Batch B implemented + code/server-verified (commits `b6e8694f4` #1, `958df08a4` #5, `efccf5b98` tests). #1/#5 = `CODE COMPLETE — HUMAN BROWSER QA REQUIRED`; #4 = `SERVER VERIFIED — HUMAN BROWSER DIAGNOSIS REQUIRED`; #2 = SERVER VERIFIED. None closed.** See §10 for the concurrent-committer batch-discipline deviation.
 - **Batch A implemented + code-verified (commit `0e486dfaf`); all 5 items `CODE COMPLETE — HUMAN BROWSER QA REQUIRED`, none closed.** Remaining 28 issues audit-only.
 - **Real bugs confirmed in code:** #1 (gate + orphaned partials), #3 (Seller redirect), #5, #8-#11, #12, #13, #14-reveal, #15, #16, #20, #23 (`<br>`), #24, #25, #26, #27, #28, #30, #31, #32.
 - **Likely already fixed, verify-only:** #2, #4, #19, #21, #22 (browser-verify), #11 (re-verify).
 - **Owner decisions locked (2026-07-05):** #25 (Create-only scope), #31 (Tenant = `Enter tenant description`), #33 (keep block; remove only a real duplicate). Verification/regression/batch policies strengthened (see top of doc + §7.0–7.2).
-- **Still needs infra input (not part of Batch A):** #7 (target max + server `client_max_body_size`).
+- **Deployment actions carried forward (from Batch C §11.6):** nginx/Apache `client_max_body_size ≥ 150M` on any future front-end; verify the Replit edge-proxy body cap; confirm the running worker reports the raised limits after redeploy.
 - **Ledger rule:** nothing here is PASS/COMPLETE until code- AND browser-verified; environment-blocked items get `CODE COMPLETE — HUMAN BROWSER QA REQUIRED` and stay open in the ledger.

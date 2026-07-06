@@ -4,7 +4,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["unzip"]
+packages = ["unzip", "orbiton"]
 
 [userenv]
 
@@ -53,12 +53,12 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "php -d upload_max_filesize=50M -d post_max_size=55M -d memory_limit=256M -d max_file_uploads=50 artisan serve --host=0.0.0.0 --port=5000"
+args = "PHP_INI_SCAN_DIR=\"$PWD/deploy/php\" php artisan serve --host=0.0.0.0 --port=5000"
 waitForPort = 5000
 
 [deployment]
 deploymentTarget = "vm"
-run = ["php", "artisan", "serve", "--host=0.0.0.0", "--port=5000"]
+run = ["bash", "-c", "PHP_INI_SCAN_DIR=\"$PWD/deploy/php\" php artisan serve --host=0.0.0.0 --port=5000"]
 build = ["composer", "install", "--no-dev", "--optimize-autoloader", ";", "npm", "install", ";", "npm", "run", "prod", ";", "php", "artisan", "config:cache", ";", "php", "artisan", "route:cache", ";", "php", "artisan", "view:cache"]
 
 [postMerge]
@@ -68,3 +68,7 @@ timeoutMs = 120000
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 8000
+externalPort = 8000

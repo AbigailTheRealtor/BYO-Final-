@@ -48,6 +48,21 @@
         wire:loading.attr="disabled" wire:target="newPropertyPhotos"
         @if(count($propertyPhotos ?? []) >= 50) disabled title="Photo limit reached (50/50)" @endif>
 
+    {{-- Batch C (launch-audit #6/#7): if the browser/PHP rejects an oversize upload
+         (a single photo over 50 MB, or a whole selection larger than the server POST limit),
+         Livewire fires a bubbling `livewire-upload-error` event. Surface a clear message
+         instead of the upload silently doing nothing. --}}
+    <div x-data="{ uploadErr: '' }"
+        x-on:livewire-upload-start.window="uploadErr = ''"
+        x-on:livewire-upload-error.window="uploadErr = 'Upload failed — a photo may be larger than 50 MB, or the whole selection is too large to send at once. Please add fewer or smaller photos and try again.'">
+        <template x-if="uploadErr">
+            <div class="alert alert-danger d-flex align-items-center gap-2 mb-3" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span x-text="uploadErr"></span>
+            </div>
+        </template>
+    </div>
+
     {{-- Dropzone Upload Card --}}
     @if(count($propertyPhotos ?? []) < 50)
         <label for="property-photos-input-landlord" id="landlord-photo-dropzone"
