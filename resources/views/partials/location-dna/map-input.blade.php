@@ -136,7 +136,6 @@
       <div class="ldna-hint">
         <i class="fa-solid fa-circle-info"></i>
         Selecting a city draws its boundary on the map.
-        County bias is used so "Seminole, FL" maps to Pinellas, not Seminole County.
       </div>
     </div>
 
