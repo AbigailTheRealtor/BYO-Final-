@@ -61,6 +61,8 @@ use App\Services\Dna\Relevance\CandidateSourceInterface;
 use App\Services\Dna\Relevance\ScoredEntityCandidateSource;
 use App\Services\Dna\Relevance\CandidateAttributeResolverInterface;
 use App\Services\Dna\Relevance\OnPlatformCandidateAttributeResolver;
+use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -111,6 +113,15 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CommuteTimeLookupService::class, function ($app) {
             return new CommuteTimeLookupService($app->make(CommuteTimeAdapterInterface::class));
         });
+
+        // Outbound Guzzle client for the Google Places NearbySearch callers.
+        // Both LocationDnaPoiDistanceService (Path A) and GooglePlacesPoiAdapter
+        // (Path B) resolve their HTTP client from the container instead of doing a
+        // bare `new Client()`, so tests can bind a fake/blocking client and no
+        // live NearbySearch call can slip through unmocked. In production this
+        // returns a plain Guzzle client — behaviourally identical to before.
+        // (See docs/investigations/Google-Places-Root-Cause-Analysis.md.)
+        $this->app->bind(ClientInterface::class, fn () => new Client());
 
         // POI Distance Lookup — Buyer/Tenant search-area geometry (Phase 3C)
         // Stage E: the active POI adapter is now selected via the provider registry

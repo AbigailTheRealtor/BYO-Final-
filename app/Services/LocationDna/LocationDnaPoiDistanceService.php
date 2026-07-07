@@ -438,6 +438,18 @@ class LocationDnaPoiDistanceService
     ) {}
 
     /**
+     * Resolve the outbound HTTP client from the service container so tests can
+     * bind a fake/blocking client. Falls back to a bare Guzzle client only when
+     * the container binding is unexpectedly absent (e.g. non-Laravel context).
+     */
+    private function resolveHttpClient(): ClientInterface
+    {
+        return app()->bound(ClientInterface::class)
+            ? app(ClientInterface::class)
+            : new Client();
+    }
+
+    /**
      * Calculate and persist POI distances for a listing.
      *
      * Reads geocoded coordinates from the Phase B PropertyLocationDna record and
@@ -654,7 +666,10 @@ class LocationDnaPoiDistanceService
                 return $output;
             }
 
-            $client  = $this->httpClient ?? new Client();
+            // Resolve from the container (bound in AppServiceProvider) so tests can
+            // inject a fake/blocking client; no bare `new Client()` that faking
+            // cannot intercept. See Google-Places-Root-Cause-Analysis.md.
+            $client  = $this->httpClient ?? $this->resolveHttpClient();
             $results = [];
 
             // Capture restaurant raw candidates for Top Rated Dining derivation.
