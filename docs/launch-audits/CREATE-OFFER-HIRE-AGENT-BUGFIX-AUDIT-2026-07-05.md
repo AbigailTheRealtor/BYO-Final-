@@ -207,7 +207,7 @@ The master table above already carries all 13 columns per issue. This section ad
 3. **Batch C — Phase-1 diagnosis-required (start early, may need server changes):** #6 (14-JPG reproduce), #7 (large-doc limits + server `client_max_body_size`).
 4. **Batch D — Shared-JS root causes (do once, verify broadly):** SC2 (#8/#9/#10/#18), SC1 (#11), SC3 (#14/#17), then #15/#16, #19-verify.
 5. **Batch E — parity add:** #20 (Hire Tenant fields).
-6. **Batch F — one-file cosmetics:** #26, #28, #29, #30, #31, #24, #25, #27, #23.
+6. **Batch F — one-file cosmetics:** #26, #28, #29, #30, #31, #24, #25, #27, #23. **→ split at implementation: F-1 = #23/#24/#25/#26/#27/#30/#31 (shipped `28f24c5a4`, see §13); F-2 = #28/#29 (deferred — both live in `map-input.blade.php`, which collides with active 9D Location DNA work).**
 7. **Batch G — final sweep:** #33 (delete a commute block **only** if a real duplicate is found — Owner Decision #33; otherwise close as "No code change required — duplicate not found").
 
 ---
@@ -417,8 +417,64 @@ Batch C is a single-purpose commit (`804266ffe`) staged with explicit paths: the
 
 ---
 
+## 12. Implementation log — Batch E (2026-07-07)
+
+**Commit:** `89549834b` — *feat(offers): Batch E #20 — Hire Tenant rental purpose + accessibility parity* (branch `launch-audit-remediation`, parent `77e037b7d`). Builds on the shipped **Batch D `47407e37f`** (SC1/SC2/SC3 shared-JS root causes) + the **SC1 follow-up `55e8fd5ec`** (Hire Tenant currency leading-dot).
+
+**Scope (Owner-approved, Batch E = #20 only):** port the Phase-D Tenant requirement fields from Create Tenant into the Hire Tenant flow. No other issues, no drive-by edits.
+
+**Batch status:** none closed. #20 = **`CODE COMPLETE — HUMAN BROWSER QA REQUIRED`** (env has no working Chromium).
+
+**Files changed (4 — single isolated commit, +278):**
+1. `app/Http/Livewire/TenantAgentAuction.php` — +3 props, hydrate, `saveMeta` (create).
+2. `app/Http/Livewire/TenantAgentAuctionEdit.php` — +3 props, hydrate (`info()`), `saveMeta` (edit).
+3. `resources/views/livewire/tenant-agent-auction-tabs/commission-based/property-details.blade.php` — Rental Purpose `<select>`, reactive "Other" input, Accessibility Requirements `<textarea>`.
+4. `tests/Feature/Offers/BatchEHireTenantParityTest.php` — new (source + component assertions).
+
+**Root cause / approach:** parity gap — `rental_purpose` / `rental_purpose_other` / `accessibility_requirements` existed in Create Tenant (native + engine) but were absent from the Hire Tenant flow. Ported **additively** following the neighboring `other_non_negotiable_amenities` EAV-meta pattern (Tenant persists via `saveMeta()`/`info()` — **no native columns, no migration**). The "Other" branch is a reactive Blade `@if ($rental_purpose === 'Other')` reveal plus an `updatedRentalPurpose()` hook that `reset()`s `rental_purpose_other` when the purpose changes away from "Other" (guarded by `isLoadingData` so draft/edit hydration does not wipe a loaded value). `TenantAgentAuction` was **surgically edited, not refactored** onto `HasListingLifecycle` (CLAUDE.md §3.1).
+
+**Verification (code-only — no browser):** `BatchEHireTenantParityTest` (8) pass; `CreateEditParityRegressionTest` + Batch A–D suites — no regressions; `php -l` clean on both components; `php artisan view:cache` compiles the partial.
+
+> ⚠️ **Batch-discipline note (recovery incident, disclosed).** Mid-implementation a **concurrent Claude session sharing this single worktree** ran `git checkout clean-feature-branch-v6`, moving the working tree off `launch-audit-remediation` (confirmed via `git reflog`). The first-pass Batch E edits were authored against that wrong lineage; they were **discarded (never committed there)** and Batch E was **re-applied cleanly on `launch-audit-remediation`**. The final commit `89549834b` is on the correct lineage and is scope-clean (4 files, #20 only). No history was rewritten; no stashes were touched.
+
+**Remaining unresolved:** #20 awaits human browser QA (Hire Tenant → fill both fields incl. Rental Purpose "Other" → submit → edit → confirm persistence). Nothing marked PASS/COMPLETE/RESOLVED.
+
+---
+
+## 13. Implementation log — Batch F-1 (2026-07-07)
+
+**Commit:** `28f24c5a4` — *feat(offers): Batch F-1 #23/#24/#25/#26/#27/#30/#31 — Offer/Hire cosmetic consistency* (branch `launch-audit-remediation`, parent `89549834b`).
+
+**Scope (Owner-approved):** the **collision-free** subset of Batch F — #23, #24, #25, #26, #27, #30, #31. **#28 / #29 were explicitly deferred to Batch F-2** (see below). Cosmetic-only: placeholder wording/capitalization, tooltip format, helper-driven titles. No functional/logic changes.
+
+**Batch status:** none closed. All seven items = **`CODE COMPLETE — HUMAN BROWSER QA REQUIRED`**.
+
+**Files changed (9 — single isolated commit, +169 / −24; balanced string swaps):**
+1. `app/Helpers/PropertyTypePlaceholderHelper.php` — **#30/#31** (SC6): lowercased the 4 hire titles → `additional details`; the 4 create titles → `property/buyer/rental/tenant description` (Tenant = `tenant description`, Owner Decision #31).
+2. `.../hire-seller-agent/.../property-preferences.blade.php` — **#23**: 3 address tooltips `.<br>` → `. `.
+3. `.../hire-landlord-agent/.../property-preferences.blade.php` — **#23** (3 tooltips) + **#24** (appliances → `Air fryer oven, Induction cooktop, Double oven`).
+4. `.../offer-listing/offer-seller-tabs/.../property-preferences.blade.php` — **#25**: `Enter Water Frontage (…)` / `Enter Waterfront Feet (e.g., 75)`.
+5. `.../offer-listing/offer-landlord-tabs/.../property-preferences.blade.php` — **#25**: same two placeholders.
+6. `.../offer-listing/offer-seller-tabs/.../seller-terms.blade.php` — **#27**: HOA notes `pending`→`Pending`, `new`→`New`.
+7. `resources/views/livewire/partials/agent-credentials.blade.php` — **#26** (SC4): removed `(e.g., …)` from Phone / License / NAR-ID — **one shared partial → all 19 include sites**.
+8. `.../tenant-agent-auction-tabs/.../property-details.blade.php` — **#24**: `(e.g., warming drawer) ` → `(e.g., Warming drawer)`.
+9. `tests/Feature/Offers/BatchFCosmeticsTest.php` — new (7 tests, one per issue).
+
+**Shared-component regression (Owner Decision #5):** SC4 (#26) is satisfied by the single-partial edit covering all 19 include sites; SC6 (#30/#31) is asserted via the **real** `PropertyTypePlaceholderHelper::placeholder()` output across all 4 roles × both contexts. Owner Decisions honored: #25 (Create-only, not Hire); #31 (Tenant = `tenant description`).
+
+**Verification (code-only — no browser):** `BatchFCosmeticsTest` **7/7 pass**; combined Batch **A–F run = 54 pass**, no regressions; `php -l` clean on the helper; `php artisan view:cache` compiles all edited blades. *(Suite must run with `env -u GOOGLE_PLACES_API_KEY` — the test-env safeguard from `0d0c5a1c0` refuses to run while a live key leaks in from the shell env; this is the safeguard's intended usage, not a code issue.)*
+
+**Deferred — Batch F-2 (#28 / #29):** both fixes live in `resources/views/partials/location-dna/map-input.blade.php`, which is under **active concurrent 9D Location DNA development** (recent commits `Phase 9B/9C Search Areas`, `county autocomplete`; also held in `stash@{1}`). Touching it now risks re-triggering the shared-worktree collision documented in §12. **F-2 is gated** on the 9D session releasing that file — recommended execution in an isolated `git worktree`.
+
+**Remaining unresolved:** all seven F-1 items await human browser QA (visually confirm each placeholder/tooltip across the affected Create + Hire flows). Nothing marked PASS/COMPLETE/RESOLVED.
+
+---
+
 ## 8. Status summary
 
+- **Batch F-1 implemented + code-verified (commit `28f24c5a4`, see §13). #23/#24/#25/#26/#27/#30/#31 all `CODE COMPLETE — HUMAN BROWSER QA REQUIRED`, none closed.** Cosmetic-only (placeholder/tooltip/title text). `BatchFCosmeticsTest` 7/7; A–F combined 54 pass. **#28/#29 deferred to Batch F-2** — both in `map-input.blade.php`, gated on active 9D Location DNA work (isolated worktree recommended).
+- **Batch E implemented + code-verified (commit `89549834b`, see §12). #20 = `CODE COMPLETE — HUMAN BROWSER QA REQUIRED`, not closed.** Hire Tenant ↔ Create Tenant parity for `rental_purpose` / `rental_purpose_other` / `accessibility_requirements` (additive EAV meta, no migration). `BatchEHireTenantParityTest` 8 pass; no regressions. Re-applied on the correct lineage after a concurrent-session branch-switch incident (§12 note).
+- **Batch D shipped (`47407e37f`) + SC1 follow-up (`55e8fd5ec`)** — shared-JS root causes (SC1/SC2/SC3) and the Hire Tenant currency leading-dot fix; the launch-audit base that Batch E builds on. (This doc's per-batch §-log for D predates the E/F work; its issue rows carry the Batch-D status inline.)
 - **Batch C implemented + root-caused (see §11). #6/#7 fixed via `deploy/php/uploads.ini` + `.replit` `PHP_INI_SCAN_DIR`; both = `FIX COMMITTED — HUMAN BROWSER QA REQUIRED`.** Root cause = infra (`artisan serve` `cli-server` ran at PHP defaults; `.user.ini` + `-d` inert). Laravel/Livewire rules were already correct at 50M. No `client_max_body_size` layer exists (built-in server); nginx + Replit edge-proxy caps documented as deployment actions (§11.6).
 - **Batch B implemented + code/server-verified (commits `b6e8694f4` #1, `958df08a4` #5, `efccf5b98` tests). #1/#5 = `CODE COMPLETE — HUMAN BROWSER QA REQUIRED`; #4 = `SERVER VERIFIED — HUMAN BROWSER DIAGNOSIS REQUIRED`; #2 = SERVER VERIFIED. None closed.** See §10 for the concurrent-committer batch-discipline deviation.
 - **Batch A implemented + code-verified (commit `0e486dfaf`); all 5 items `CODE COMPLETE — HUMAN BROWSER QA REQUIRED`, none closed.** Remaining 28 issues audit-only.
