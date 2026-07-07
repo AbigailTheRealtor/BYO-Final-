@@ -1,0 +1,190 @@
+
+=====ROLE:seller=====
+universal|About the Sale|seller_motivation_for_selling|common|KB|Why is the owner selling the property?
+universal|About the Sale|items_excluded_from_sale|common|KB+Field|What is included in the sale, and is anything excluded?
+universal|About the Sale|furniture_negotiability|common|KB|Is any furniture or staging negotiable?
+universal|About the Sale|closing_timeline_flexibility|common|KB+Field|How flexible is the timing for closing or possession?
+universal|About the Sale|seller_leaseback_option|common|KB|Would the owner consider a short post-closing leaseback?
+universal|About the Sale|known_defects_issues|common|KB|Are there any known issues or disclosures the owner has shared?
+universal|About the Sale|planned_nearby_development|common|KB+LocDNA|Are there planned developments, road projects, or zoning changes nearby?
+universal|About the Sale|as_is_condition|common|KB|Is the property being sold as-is, or is the owner open to repairs based on inspection?
+universal|About the Sale|seller_concessions_offered|common|KB|Has the owner indicated openness to concessions or credits?
+universal|Property Insights|unique_selling_points|insight|PropDNA+Desc|What features make this property stand out?
+universal|Property Insights|nearby_amenities_description|insight|LocDNA|What location features are nearby?
+universal|Property Insights|property_lifestyle_support|insight|PropDNA+LocDNA|What lifestyle does this property appear to support?
+universal|Property Insights|disclosed_property_information|insight|Field+KB|What property information has been disclosed?
+universal|Property Insights|property_features_buyer_appeal|insight|PropDNA+Match|What property features may appeal to different buyers?
+residential|Property Condition & Systems|roof_age_and_condition|common|KB|How old is the roof, and what condition is it in?
+residential|Property Condition & Systems|hvac_system_age|common|KB|How old is the HVAC system, and when was it last serviced?
+residential|Property Condition & Systems|water_heater_age_type|common|KB|How old is the water heater, and what type is it?
+residential|Property Condition & Systems|recent_renovations_list|common|KB|What renovations or upgrades have been made, and when?
+residential|Property Condition & Systems|permits_for_renovations|common|KB|Were renovations completed with proper permits?
+residential|Property Condition & Systems|foundation_type_and_issues|common|KB|Are there any known foundation or structural issues?
+residential|Property Condition & Systems|pest_termite_history|common|KB|Any pest or termite history, and how was it resolved?
+residential|Property Condition & Systems|flood_damage_history|common|KB|Has the property ever flooded or had water damage?
+residential|Property Condition & Systems|mold_issues_history|common|KB|Any mold history, and how was it addressed?
+residential|Property Condition & Systems|solar_panels_owned_leased|common|KB+Field|Are solar panels present, and are they owned or leased?
+residential|Property Condition & Systems|smart_home_ev_features|common|KB|Are there smart-home or EV-charging features?
+residential|Costs & Utilities|average_utility_costs|common|KB|What are the average monthly utility costs?
+residential|Costs & Utilities|internet_utility_providers|common|KB|Which internet/utility providers serve the property, and what speeds are available?
+residential|Costs & Utilities|insurance_claims_history|common|KB|Has the owner disclosed any insurance claims history for the property?
+residential|Space & Light|storage_space_available|common|KB|What storage options are available?
+residential|Space & Light|natural_light_orientation|common|KB|How is the natural light, and which way does the home face?
+residential|Location & Neighborhood|neighborhood_character|common|KB|What can you share about the area's setting and nearby amenities?
+residential|Location & Neighborhood|traffic_or_noise_concerns|common|KB|Are there notable traffic or noise considerations nearby?
+residential|Location & Neighborhood|commute_options_access|common|KB+LocDNA|What are typical commute options and travel times?
+residential|Location & Neighborhood|school_district_assignment|common|LocDNA|Which school district is this property assigned to?
+income|Operations & Financials|annual_operating_expenses_detail|common|KB|What expenses are included in the operating costs?
+income|Operations & Financials|existing_tenant_lease_terms|common|KB|What are the current lease terms and escalations for existing tenants?
+income|Operations & Financials|value_add_opportunities|common|KB|What recent improvements or income changes has the owner disclosed?
+income|Operations & Financials|tenant_payment_history|common|KB|What has the owner disclosed about tenant payment history?
+income|Operations & Financials|deferred_maintenance_disclosed|common|KB|Is there any deferred maintenance or near-term capital work disclosed?
+income|Operations & Financials|professional_management|common|KB|Is the property professionally managed?
+income|Operations & Financials|income_utilities_split|common|KB+Field|How are utilities split between owner and tenants?
+income|Operations & Financials|income_building_systems_age|common|KB|How old are the roof and major building systems?
+income|Property Insights|income_property_standout|insight|PropDNA+Desc|What features make this property stand out to operators?
+income|Property Insights|income_operations_disclosed|insight|Field+KB|What has been disclosed about this property's operations?
+income|Property Insights|income_location_features|insight|LocDNA|What location features are nearby?
+commercial|Building & Use|commercial_zoning_uses|common|Field+KB|What is the zoning, and what uses does it permit?
+commercial|Building & Use|commercial_building_systems|common|KB+Field|What are the building systems (HVAC, electrical capacity)?
+commercial|Building & Use|commercial_ceiling_height|common|Field|What is the clear/ceiling height?
+commercial|Building & Use|commercial_ada_accessibility|common|KB|Is the space ADA accessible?
+commercial|Building & Use|commercial_restroom_count|common|KB|How many restrooms are there?
+commercial|Building & Use|commercial_parking_loading|common|KB+Field|What parking, access, and loading are available?
+commercial|Building & Use|commercial_systems_age|common|KB|How old are the roof and major systems?
+commercial|Building & Use|commercial_recent_improvements|common|KB|What recent improvements have been made?
+commercial|Property Insights|commercial_space_standout|insight|PropDNA+Desc|What features make this space stand out?
+commercial|Property Insights|commercial_location_features|insight|LocDNA|What location features are nearby?
+commercial|Property Insights|commercial_zoning_permitted_summary|insight|Field+KB|What does the listing state about the zoning and permitted uses?
+business|Business Details|business_reason_for_selling|common|KB|Why is the business being sold?
+business|Business Details|seller_training_transition|common|KB|How much training/transition support will the seller provide?
+business|Business Details|business_staff_retention|common|KB|Will existing staff stay on after the sale?
+business|Business Details|business_customer_concentration|common|KB|How concentrated is the customer base?
+business|Business Details|business_vendor_contracts|common|KB|What vendor or supplier contracts are in place?
+business|Business Details|business_licenses_transferable|common|KB|Are licenses, permits, or franchise rights transferable?
+business|Business Details|business_online_presence|common|KB|What is the business's online presence and review profile?
+business|Business Details|business_seasonality|common|KB|Is the business seasonal?
+business|Business Details|business_owner_involvement|common|KB|How involved is the current owner day-to-day?
+business|Business Insights|business_information_disclosed|insight|Field+KB|What information has been disclosed about this business?
+business|Business Insights|business_sale_includes|insight|Field|What does the sale appear to include?
+land|Site & Access|land_soil_and_topography|common|KB|Are there known soil, perc, or topography considerations?
+land|Site & Access|land_survey_available|common|KB|Is a current survey available, and has the land been cleared/improved?
+land|Site & Access|land_zoning_permitted_uses|common|Field+KB|What uses are permitted under current zoning?
+land|Site & Access|land_development_restrictions|common|KB|Are there deed restrictions beyond recorded easements?
+land|Site & Access|land_access_and_road|common|KB|Are there access limitations or shared-road maintenance obligations?
+land|Site & Access|land_wetlands_environmental|common|KB+LocDNA|Are there wetlands or environmental designations on the parcel?
+land|Site & Access|land_prior_use|common|KB|What was the land's prior use?
+land|Property Insights|land_location_features|insight|LocDNA|What location features are nearby?
+land|Property Insights|land_site_characteristics_disclosed|insight|Field+KB|What objective site characteristics has the listing disclosed?
+
+=====ROLE:buyer=====
+universal|Buyer Background|buyer_motivation|common|KB|What's driving the buyer's search right now?
+universal|Buyer Background|buyer_current_situation|common|KB|What's the buyer's current living/ownership situation?
+universal|Buyer Background|buyer_flexibility|common|KB|How flexible is the buyer on timing or terms if the right property comes along?
+universal|Buyer Background|buyer_biggest_concern|common|KB|What's the buyer's biggest concern or hesitation?
+universal|Buyer Background|buyer_relocation|common|KB|Is the buyer relocating or making decisions remotely?
+universal|Buyer Background|buyer_leaseback|common|KB|Would the buyer allow a short seller leaseback after closing?
+universal|Buyer Insights|buyer_property_needs|insight|BuyerDNA+Match|What property needs and uses has this buyer described?
+universal|Buyer Insights|buyer_disclosed_summary|insight|Field+KB|What has this buyer disclosed about their needs and timeline?
+universal|Buyer Insights|buyer_location_factors|insight|BuyerDNA+LocDNA|What location features matter to this buyer?
+residential|Residential Preferences|buyer_neighborhood_preferences|common|KB|What kind of area setting is the buyer looking for?
+residential|Residential Preferences|buyer_school_district|common|KB|Is a specific school district a requirement or preference?
+residential|Residential Preferences|buyer_noise_tolerance|common|KB|How sensitive is the buyer to noise?
+residential|Residential Preferences|buyer_area_familiarity|common|KB|How familiar is the buyer with the area?
+residential|Residential Preferences|buyer_prefers_off_market|common|KB|Is the buyer open to off-market/pocket listings?
+residential|Residential Preferences|buyer_property_style|common|KB|Does the buyer prefer a particular architectural style or era?
+residential|Residential Preferences|buyer_nice_to_have|common|KB|What's on the buyer's wish list (nice-to-haves)?
+residential|Residential Preferences|buyer_accessibility|common|KB|Does the buyer need any accessibility features?
+residential|Residential Preferences|buyer_privacy_requirements|common|KB|What are the buyer's privacy preferences?
+residential|Residential Preferences|buyer_lifestyle_goals|common|KB|How does the buyer envision using the home?
+residential|Residential Preferences|buyer_outdoor_space|common|KB|How important is outdoor space to the buyer?
+income|Investment Criteria|com_property_use|common|KB|What's the buyer's intended use for the property?
+income|Investment Criteria|com_occupancy_rate|common|KB|What minimum occupancy does the buyer require at purchase?
+income|Investment Criteria|com_lease_terms|common|KB|What lease structure does the buyer prefer (NNN/gross/etc.)?
+income|Investment Criteria|com_1031_exchange|common|KB|Is the buyer completing a 1031 exchange with a timing requirement?
+income|Investment Criteria|com_environmental_concerns|common|KB|Will the buyer require environmental studies (Phase I/II)?
+income|Buyer Insights|buyer_income_property_fit|insight|BuyerDNA+Match|What type of income property fits this buyer's criteria?
+commercial|Commercial Criteria|com_property_use|common|KB|What's the buyer's intended use for the space?
+commercial|Commercial Criteria|com_occupancy_rate|common|KB|What minimum occupancy does the buyer require at purchase?
+commercial|Commercial Criteria|com_lease_terms|common|KB|What lease structure does the buyer prefer (NNN/gross/etc.)?
+commercial|Commercial Criteria|com_1031_exchange|common|KB|Is the buyer completing a 1031 exchange with a timing requirement?
+commercial|Commercial Criteria|com_environmental_concerns|common|KB|Will the buyer require environmental studies (Phase I/II)?
+commercial|Buyer Insights|buyer_commercial_space_fit|insight|BuyerDNA+Match|What type of commercial space fits this buyer's intended use?
+business|Business Criteria|biz_revenue_required|common|KB|What minimum revenue does the buyer require?
+business|Business Criteria|biz_training_expected|common|KB|How much seller training/transition does the buyer expect?
+business|Business Criteria|biz_staff_included|common|KB|Does the buyer want existing staff retained?
+business|Business Criteria|biz_non_compete|common|KB|Does the buyer require a non-compete from the seller?
+business|Business Criteria|biz_sba_financing|common|KB|Is the buyer using SBA or seller financing?
+business|Buyer Insights|buyer_business_type_fit|insight|BuyerDNA+Match|What type of business is this buyer seeking?
+land|Land Criteria|land_intended_use|common|KB|What's the buyer's intended use for the land?
+land|Land Criteria|land_zoning_required|common|KB|What zoning classification does the buyer require?
+land|Land Criteria|land_utilities_needed|common|KB|What utilities does the buyer need available?
+land|Land Criteria|land_soil_testing|common|KB|Will the buyer require soil/perc/environmental testing?
+land|Land Criteria|land_build_timeline|common|KB|What's the buyer's build/development timeline?
+land|Land Criteria|land_access_requirements|common|KB|What road access or easement does the buyer require?
+land|Land Criteria|land_topography|common|KB|Does the buyer have flood/elevation/topography requirements?
+land|Buyer Insights|buyer_land_characteristics_fit|insight|BuyerDNA+Match|What land characteristics matter most to this buyer?
+
+=====ROLE:landlord=====
+universal|Tenancy & Maintenance|maintenance_request_response_time|common|KB|How are maintenance requests handled, including emergencies and response times?
+universal|Tenancy & Maintenance|planned_renovations|common|KB|Are there planned renovations or construction that could affect tenants?
+universal|Tenancy & Maintenance|notice_to_vacate_required|common|KB|How much notice is required to vacate at lease end?
+universal|Tenancy & Maintenance|lease_to_own_option|common|KB|Is a lease-to-own or rent-credit arrangement possible?
+universal|Rental Insights|nearby_amenities|insight|LocDNA|What location features are nearby?
+universal|Rental Insights|what_makes_property_unique|insight|PropDNA+Desc|What makes this rental stand out?
+universal|Rental Insights|rental_lifestyle_support|insight|PropDNA+LocDNA|What lifestyle does this rental appear to support?
+universal|Rental Insights|rental_disclosed_information|insight|Field+KB|What has been disclosed about this rental?
+residential|Systems & Amenities|heating_cooling_system|common|KB|What heating and cooling system does the property have?
+residential|Systems & Amenities|laundry_situation|common|KB|Is there in-unit or shared laundry?
+residential|Systems & Amenities|storage_area_included|common|KB|Is dedicated storage included?
+residential|Systems & Amenities|internet_providers|common|KB|Which internet providers and speeds are available?
+residential|Systems & Amenities|security_features|common|KB|What security features does the property have?
+residential|Systems & Amenities|furnished_or_unfurnished|common|KB|Is the unit furnished, unfurnished, or negotiable?
+residential|Systems & Amenities|ev_charging_available|common|KB|Is EV charging available or installable?
+residential|Policies & Costs|short_term_rentals_allowed|common|KB|Are short-term rentals permitted?
+residential|Policies & Costs|pest_or_mold_history|common|KB|Any pest or mold history, and how was it resolved?
+residential|Policies & Costs|utilities_individually_metered|common|KB+Field|How are utilities metered and billed?
+residential|Policies & Costs|renters_insurance_required|common|KB|Is renter's insurance required, and at what coverage?
+residential|Policies & Costs|application_process|common|KB|What's the application process, fee, and timeline?
+residential|Policies & Costs|lawn_landscaping_responsibility|common|KB|Who is responsible for lawn/landscaping?
+residential|Policies & Costs|average_utility_costs|common|KB|What are typical average utility costs?
+residential|Policies & Costs|typical_tenancy_length|common|KB|According to the landlord, what is the typical length of tenancy?
+residential|Location & Neighborhood|neighborhood_character|common|KB|What can you share about the area's setting and nearby amenities?
+residential|Location & Neighborhood|noise_levels|common|KB|What's the noise level like?
+residential|Location & Neighborhood|proximity_to_public_transit|common|KB+LocDNA|How close is public transit?
+residential|Location & Neighborhood|guest_parking|common|KB|Is guest/visitor parking available?
+residential|Location & Neighborhood|school_district_assignment|common|LocDNA|Which school district serves this rental?
+commercial|Commercial Lease & Space|commercial_loading_dock_freight_elevator|common|KB|Is there a loading dock or freight elevator?
+commercial|Commercial Lease & Space|commercial_electrical_capacity|common|KB|What is the electrical capacity (amperage/voltage/3-phase)?
+commercial|Commercial Lease & Space|commercial_exclusivity_rights|common|KB|Are exclusivity rights available?
+commercial|Commercial Lease & Space|commercial_expansion_option_rofr|common|KB|Is there an expansion option or right of first refusal?
+commercial|Commercial Lease & Space|commercial_building_access_hours|common|KB|What are the building/suite access hours?
+commercial|Commercial Lease & Space|commercial_buildout_ti|common|KB+Field|What build-out or tenant-improvement support is available beyond what's listed?
+commercial|Commercial Lease & Space|commercial_ada_accessibility|common|KB|Is the space ADA accessible?
+commercial|Commercial Lease & Space|commercial_hvac_zones|common|KB|What is the HVAC type, the zoning of zones, and after-hours HVAC availability?
+commercial|Commercial Lease & Space|commercial_restroom_count|common|KB|How many restrooms are there?
+commercial|Commercial Lease & Space|commercial_co_tenancy|common|KB|What is the co-tenancy / anchor-tenant situation in the building?
+commercial|Commercial Lease & Space|commercial_permitted_use|common|Field+KB|What uses does the zoning permit for this space?
+commercial|Rental Insights|commercial_zoning_permitted_summary|insight|Field+KB|What does the listing state about the zoning and permitted uses?
+
+=====ROLE:tenant=====
+universal|Applicant Background|faq_q14|common|KB|What's driving the applicant's rental search?
+universal|Applicant Background|faq_q20|common|KB|What's the applicant's biggest concern in this search?
+universal|Applicant Background|faq_q12|common|KB|Is there any chance the applicant would need to break the lease early?
+universal|Applicant Background|faq_q17|common|KB|Does the applicant have landlord or employer references available?
+universal|Applicant Insights|tenant_background_disclosed|insight|TenantDNA+Match|What has this applicant disclosed about their rental background?
+universal|Applicant Insights|tenant_rental_needs|insight|TenantDNA+Match|What rental needs and uses has the applicant described?
+residential|Residential Applicant|faq_q18|common|KB|What is the source and stability of the applicant's income?
+residential|Residential Applicant|faq_q13|common|KB|Would the applicant consider a longer lease for a locked-in/reduced rate?
+residential|Residential Applicant|faq_q10|common|KB|Does the applicant prefer furnished or unfurnished?
+residential|Residential Applicant|faq_q8|common|KB|Is the applicant willing to pay a pet deposit or pet rent if required?
+residential|Residential Applicant|faq_q15|common|KB|How long was the most recent tenancy, and why is the applicant moving?
+residential|Residential Applicant|faq_q9|common|KB|How flexible is the applicant on lease length?
+residential|Residential Applicant|tenant_cosigner|common|KB|Is a co-signer or guarantor available if needed?
+residential|Residential Applicant|tenant_application_readiness|common|KB|How soon is the applicant ready to apply and provide documentation?
+residential|Residential Applicant|tenant_prior_conduct|common|KB|Has the applicant disclosed any prior rental conduct (late payments, notices)?
+commercial|Commercial Applicant|faq_q22|common|KB|Does the applicant expect customer/client foot traffic, and how much?
+commercial|Commercial Applicant|faq_q23|common|KB|Does the applicant have special equipment or power requirements?
+commercial|Commercial Applicant|faq_q26|common|KB|What are the applicant's expected hours of operation?
+commercial|Commercial Applicant|tenant_commercial_parking|common|KB|What are the applicant's parking needs for staff and customers?
+commercial|Applicant Insights|tenant_business_profile|insight|TenantDNA+Match|What business use and operating profile has this applicant disclosed?

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 14 — Browser QA Checklist</title>
+<style>
+  :root{--bg:#0f1523;--card:#182034;--ink:#e8edf6;--muted:#9fb0cd;--line:#2a3550;
+        --pass:#1f9d57;--fail:#d1435b;--p1:#f0a020;--p2:#5b8def;--chip:#232d47;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{position:sticky;top:0;z-index:10;background:#0c111d;border-bottom:1px solid var(--line);
+         padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+  header h1{font-size:17px;margin:0}
+  .wrap{max-width:960px;margin:0 auto;padding:20px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .tally{font-size:13px;color:var(--muted)}
+  .tally b{color:var(--ink)}
+  button.util{background:var(--chip);color:var(--ink);border:1px solid var(--line);
+              border-radius:7px;padding:6px 11px;font-size:13px;cursor:pointer}
+  button.util:hover{border-color:#3d4c72}
+  .note-banner{background:#1a2embd;background:#172136;border:1px solid var(--line);border-left:3px solid var(--p1);
+       border-radius:8px;padding:11px 14px;margin:0 0 18px;color:var(--muted);font-size:13.5px}
+  .phase{margin:26px 0 10px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+         display:flex;align-items:center;gap:9px}
+  .phase .dot{width:9px;height:9px;border-radius:50%}
+  .p1 .dot{background:var(--p1)} .p2 .dot{background:var(--p2)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:16px 17px;margin:12px 0}
+  .card.done-pass{border-color:#1f9d5766;box-shadow:inset 3px 0 0 var(--pass)}
+  .card.done-fail{border-color:#d1435b66;box-shadow:inset 3px 0 0 var(--fail)}
+  .id{display:inline-block;font-weight:700;font-size:13px;background:var(--chip);border:1px solid var(--line);
+      border-radius:6px;padding:2px 8px;margin-right:8px}
+  .sev{font-size:11.5px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+  .sev.high{color:#ffb3bd;border-color:#d1435b55} .sev.crit{color:#ff9aa8;border-color:#d1435b;background:#2a1620}
+  .sev.med{color:#ffd79a;border-color:#f0a02055} .sev.low{color:#bcd0f5;border-color:#5b8def55}
+  h3.title{margin:9px 0 6px;font-size:15.5px}
+  .meta{color:var(--muted);font-size:13px;margin:2px 0 10px}
+  .lbl{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:12px 0 4px}
+  ol.steps{margin:4px 0 6px;padding-left:20px} ol.steps li{margin:3px 0}
+  ul.exp{margin:4px 0 6px;padding-left:18px} ul.exp li{margin:3px 0}
+  code,.u{background:#0c1120;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.5px;
+       font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
+  a.u{color:#8fb6ff;text-decoration:none} a.u:hover{text-decoration:underline}
+  .net{background:#141c2e;border:1px dashed var(--line);border-radius:8px;padding:9px 12px;margin:10px 0;
+       font-size:13px;color:var(--muted)}
+  .controls{display:flex;gap:8px;align-items:center;margin-top:13px;flex-wrap:wrap}
+  .pf{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:8px;
+      padding:7px 16px;font-weight:600;cursor:pointer;font-size:14px}
+  .pf.pass.on{background:var(--pass);border-color:var(--pass);color:#fff}
+  .pf.fail.on{background:var(--fail);border-color:var(--fail);color:#fff}
+  textarea{width:100%;margin-top:10px;background:#0c1120;color:var(--ink);border:1px solid var(--line);
+           border-radius:8px;padding:9px 11px;font:13.5px/1.5 inherit;resize:vertical;min-height:44px}
+  .hold{color:#ffd79a;font-size:12.5px;margin-top:6px}
+  footer{max-width:960px;margin:20px auto 60px;padding:0 20px;color:var(--muted);font-size:13px}
+  .saved{font-size:12px;color:#6dd39a;opacity:0;transition:opacity .3s}
+  .saved.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>Phase 14 · Browser QA Checklist</h1>
+  <div class="bar">
+    <span class="tally" id="tally">— / 0 answered</span>
+    <span class="saved" id="saved">saved ✓</span>
+    <button class="util" onclick="window.print()">Print / PDF</button>
+    <button class="util" onclick="resetAll()">Reset</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="note-banner">
+    <b>How to use:</b> Log in first at
+    <a class="u" href="/login" target="_blank">/login</a>, then open each item's URL in a new tab.
+    Keep DevTools open (F12) → <b>Console</b> + <b>Network</b> (filter Fetch/XHR, tick “Preserve log”).
+    Click <b>Pass</b>/<b>Fail</b> and add notes — everything saves in this browser automatically.
+    <br><b>Rule (C14):</b> if you can’t clearly see the expected result, mark <b>Fail</b> and say “BLOCKED” — never leave an implied pass.
+    Replace <code>{id}</code> with a real listing ID from <a class="u" href="/my-listings" target="_blank">/my-listings</a>.
+  </div>
+
+  <div class="phase p1"><span class="dot"></span>Priority 1 — fix-pass items &amp; the open hold (do first)</div>
+  <div id="cards-p1"></div>
+
+  <div class="phase p2"><span class="dot"></span>Priority 2 — standards &amp; interactive dimensions</div>
+  <div id="cards-p2"></div>
+</div>
+
+<footer>
+  Base dev URL: <code>this same host</code> — all links below are relative, so they open on whatever domain you loaded this page from.
+  When done, click <b>Print / PDF</b> to save a filled copy, or just leave it — your answers persist in this browser.
+</footer>
+
+<script>
+const BASE = location.origin;
+const ITEMS = [
+ {p:1,id:"BQ-09",sev:["High","high"],title:'$purchase_purpose “Other” reveal — UNIFIED live buyer create + edit',
+  why:'This session fixed a 500 here (commit 3cc3488d5). Confirm the tab renders AND the “Other” free-text field reveals + persists.',
+  urls:[["CREATE","/hire/agent/auction/buyer"],["EDIT","/hire/agent/auction/edit/{id}/buyer"]],
+  steps:['Open CREATE url — page must render fully (no 500 / red error in Console).',
+         'Go to the <b>Property Preferences</b> tab.',
+         'Set <b>Purchase Purpose = Other</b> → a free-text input should appear below it.',
+         'Type text (e.g. “Estate planning”), click <b>Save Draft</b>.',
+         'Resume the draft from /my-listings → return to Property Preferences.',
+         'Repeat on the EDIT url: a saved “Other” value should pre-fill on load.'],
+  exp:['Property Preferences renders with <b>no 500 / no ViewException</b>.',
+       'Selecting “Other” reveals the input; other values hide it.',
+       'After Save Draft + resume (and on Edit load) the value is retained.'],
+  net:'The Purchase Purpose change fires <code>POST /livewire/message/…</code> → must return <b>200</b>, not 500.'},
+
+ {p:1,id:"BQ-10",sev:["Medium — KNOWN HOLD","med"],title:'B5.4 — Min Bedrooms/Bathrooms “Other” makes the select box vanish',
+  why:'Documented open defect — you are confirming it still reproduces, not certifying a fix.',
+  urls:[["PAGE","/hire/agent/auction/buyer"]],
+  steps:['Property Preferences tab → set <b>Property Type = Residential</b> (bed/bath only show for Residential).',
+         'Set <b>Minimum Bedrooms Needed = Other</b> and watch the select box the moment it changes.',
+         'Repeat with <b>Minimum Bathrooms Needed = Other</b>.'],
+  exp:['<b>Defect reproduction:</b> after picking “Other”, the main dropdown box visually disappears, leaving only the small field icon.',
+       'If instead the select stays fully visible and a clean “Other” number input appears → note the defect did NOT reproduce.'],
+  net:'Confirm <code>POST /livewire/message/…</code> returns 200 — the disappearance is a client render artifact, not a server error.',
+  hold:'Expected outcome: Fail (box disappears). A “Pass” here would mean the bug is gone.'},
+
+ {p:1,id:"BQ-01",sev:["Critical — privacy/auth","crit"],title:'Ask AI 403 gating (owner vs non-owner vs guest)',
+  why:'Ask AI is a separate surface — observe only, change nothing.',
+  urls:[["Buyer view","/offer-listing/buyer/view/{id}"],["Seller","/offer-listing/seller/view/{id}"],
+        ["Landlord","/offer-listing/landlord/view/{id}"],["Tenant","/offer-listing/tenant/view/{id}"]],
+  steps:['<b>As OWNER:</b> open “Ask AI About This Property”, submit a question.',
+         '<b>As a different logged-in user:</b> open same modal, submit.',
+         '<b>As a guest (logged out):</b> try the modal.'],
+  exp:['<b>Owner:</b> gets an answer (or normal retry msg); <code>POST /ask-ai/listing-question</code> = <b>200</b>, no 403.',
+       '<b>Non-owner:</b> blue notice “available to the listing owner”; <b>no failed 403</b> fired.',
+       '<b>Guest:</b> non-actionable / same notice; no console error, no raw 403 or login-redirect shown as a broken answer.'],
+  net:'Watch Network for any <b>403</b> on <code>/ask-ai/listing-question</code>.'},
+
+ {p:1,id:"BQ-02",sev:["High","high"],title:'Expired bidding-period listing rejects NEW bids',
+  why:'Needs a Hire-Agent listing in Bidding Period whose expiration_date is in the past.',
+  urls:[["Buyer","/buyer/agent/auction/view/{id}"],["Seller","/seller/agent/auction/view/{id}"],
+        ["Landlord","/hire/agent/auction/view/{id}"],["Tenant","/tenant/agent/auction/view/{id}"]],
+  steps:['On an <b>expired</b> listing (each role): attempt to submit a NEW bid.',
+         'On the same expired listing: edit an EXISTING bid.',
+         'Open a <b>Traditional</b> (non-bidding) listing.',
+         'Open an <b>active</b> (future expiration) bidding listing.'],
+  exp:['New bid on expired → rejected: “This listing has expired and is no longer accepting new bids.” (or legacy wording).',
+       'Editing an existing bid on expired → still works (NOT blocked).',
+       'Traditional → no countdown timer; bidding unaffected.',
+       'Active → accepts new bids; live countdown visible.'],
+  net:''},
+
+ {p:2,id:"BQ-06",sev:["Medium","med"],title:'Conditional reveal + select2 rehydration (S7 · garage B5.3 / ported B5.8)',
+  why:'Persistence is code-verified; the select2 render on reload is browser-only.',
+  urls:[["PAGE","/hire/agent/auction/buyer"]],
+  steps:['Property Preferences → set <b>Garage/Parking = Yes</b> → dependent field(s) appear.',
+         'Add a multi-select value, Save Draft, resume the draft.',
+         'Check ported fields (HOA Acceptance, Max HOA Fee, Flood Zone +Other) reveal/prefill on edit.'],
+  exp:['Dependents appear on “Yes”.',
+       'On reload the select2 multi-select shows your saved chips (rehydrated) — not empty/broken/duplicated.',
+       'Ported fields prefill correctly.'],
+  net:'No red errors and no “select2 already initialized” leaving a dead widget after Livewire updates.'},
+
+ {p:2,id:"BQ-07",sev:["Medium","med"],title:'Shared address / Search Areas autocomplete (S10)',
+  why:'',
+  urls:[["Buyer Search Areas","/hire/agent/auction/buyer"]],
+  steps:['Search Areas tab → type a partial city/address → Google suggestions appear.',
+         'Pick a suggestion (mouse) → field populates, tag added.',
+         '<b>Keyboard:</b> type an area, use ↑/↓ + <b>Enter</b> to select.'],
+  exp:['Suggestions render; mouse-pick works.',
+       'Enter selects the highlighted suggestion — does NOT submit the form or wipe the field.'],
+  net:'Watch for Google Maps errors: <code>ApiNotActivated</code>, <code>RefererNotAllowed</code>, quota.'},
+
+ {p:2,id:"BQ-04",sev:["Medium","med"],title:'“Other” fields persist across draft-resume & edit (S3)',
+  why:'',
+  urls:[["Hire Buyer","/hire/agent/auction/buyer"]],
+  steps:['For 2–3 “Other” fields (amenities, assets, flood zone, purchase purpose): select Other, type a value.',
+         'Save Draft → resume. Then Save Edit → reopen.'],
+  exp:['Each “Other” input stays revealed on reload and keeps its typed value in both draft-resume and edit.'],
+  net:''},
+
+ {p:2,id:"BQ-08",sev:["Medium","med"],title:'Multi-surface parity — Summary / PDF / email / Ask-AI (S11 · S16)',
+  why:'',
+  urls:[["Summary","/accepted-bid-summary/{id}"],["PDF","/accepted-bid-summary/{id}/download-pdf"]],
+  steps:['Open an Accepted Bid Summary → check normalized fields (appliances, amenities, assets, agency timeframe, condition, contingencies).',
+         'Download the PDF → same fields.',
+         '(If available) confirm same values in Ask-AI answers / email summary.'],
+  exp:['Summary shows correct labels/values.',
+       'PDF renders the same — <b>no {{placeholder}} tokens leaking</b>, no blank sections.'],
+  net:''},
+
+ {p:2,id:"BQ-03",sev:["Medium","med"],title:'Agent contact/credential shows LIVE data (C5)',
+  why:'',
+  urls:[],
+  steps:['As an <b>agent</b>, place a bid on a listing.',
+         'Change your profile: phone / brokerage / license # / NAR ID / name.',
+         'As the <b>listing owner</b>, reopen that bid’s detail.'],
+  exp:['Contact/credential block shows UPDATED values (live).',
+       'Negotiated terms (commission %, offered price) and any Accepted Bid Summary stay the historical agreed values.',
+       'A legacy bid whose agent has no profile value falls back to the original snapshot (no blank fields).'],
+  net:''},
+
+ {p:2,id:"BQ-05",sev:["Low","low"],title:'Tooltip visual/format parity (S4 · A8.50)',
+  why:'',
+  urls:[["Hire Buyer","/hire/agent/auction/buyer"]],
+  steps:['Hover the ℹ️ tooltips across the Hire Buyer tabs; spot-check other roles.'],
+  exp:['Single compact dark style, consistent font/size/format everywhere; no clipped, doubled, or light/mismatched tooltips; wording matches the field.'],
+  net:''},
+
+ {p:2,id:"BQ-11",sev:["Medium","med"],title:'Accessibility / visual consistency (S14)',
+  why:'',
+  urls:[["Hire Buyer","/hire/agent/auction/buyer"]],
+  steps:['<b>Keyboard:</b> Tab through a full Hire Buyer tab — logical focus order, visible focus ring on every control.',
+         '<b>Errors:</b> submit empty → required <code>*</code> markers + error icons/messages visible, not hidden by any text change.',
+         '<b>Contrast:</b> labels/placeholders/helper text legible (no near-invisible grey).'],
+  exp:['All three pass with no obscured markers or unreadable text.'],
+  net:''}
+];
+
+const store = JSON.parse(localStorage.getItem('p14qa')||'{}');
+function save(){localStorage.setItem('p14qa',JSON.stringify(store));
+  const s=document.getElementById('saved');s.classList.add('show');setTimeout(()=>s.classList.remove('show'),900);tally();}
+function tally(){let a=0,p=0,f=0;ITEMS.forEach(it=>{const v=store[it.id];if(v&&v.pf){a++;if(v.pf==='pass')p++;if(v.pf==='fail')f++;}});
+  document.getElementById('tally').innerHTML=`<b>${a}</b> / ${ITEMS.length} answered · <b style="color:#6dd39a">${p} pass</b> · <b style="color:#ff9aa8">${f} fail</b>`;}
+function esc(s){return s;}
+function card(it){
+  const v=store[it.id]||{};
+  const urls=it.urls.map(u=>`<div style="margin:3px 0"><span class="lbl" style="display:inline;margin-right:6px">${u[0]}</span><a class="u" href="${BASE+u[1]}" target="_blank">${u[1]}</a></div>`).join('');
+  const steps=it.steps.map(s=>`<li>${s}</li>`).join('');
+  const exp=it.exp.map(s=>`<li>${s}</li>`).join('');
+  return `<div class="card ${v.pf?('done-'+v.pf):''}" id="card-${it.id}">
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
+      <span class="id">${it.id}</span><span class="sev ${it.sev[1]}">${it.sev[0]}</span>
+    </div>
+    <h3 class="title">${it.title}</h3>
+    ${it.why?`<div class="meta">${it.why}</div>`:''}
+    ${urls?`<div class="lbl">Open</div>${urls}`:'<div class="meta">No URL — set up via the app (see steps).</div>'}
+    <div class="lbl">Actions</div><ol class="steps">${steps}</ol>
+    <div class="lbl">Expected</div><ul class="exp">${exp}</ul>
+    ${it.net?`<div class="net">🔎 ${it.net}</div>`:''}
+    ${it.hold?`<div class="hold">⚠︎ ${it.hold}</div>`:''}
+    <div class="controls">
+      <button class="pf pass ${v.pf==='pass'?'on':''}" onclick="setPF('${it.id}','pass')">✓ Pass</button>
+      <button class="pf fail ${v.pf==='fail'?'on':''}" onclick="setPF('${it.id}','fail')">✕ Fail</button>
+    </div>
+    <textarea placeholder="Notes — what you saw, roles checked, any console/network errors…" oninput="setNote('${it.id}',this.value)">${v.note?v.note.replace(/</g,'&lt;'):''}</textarea>
+  </div>`;
+}
+function setPF(id,pf){store[id]=store[id]||{};store[id].pf=(store[id].pf===pf?null:pf);
+  document.getElementById('card-'+id).outerHTML=card(ITEMS.find(i=>i.id===id));save();}
+function setNote(id,val){store[id]=store[id]||{};store[id].note=val;save();}
+function resetAll(){if(confirm('Clear all Pass/Fail marks and notes?')){for(k in store)delete store[k];localStorage.removeItem('p14qa');render();}}
+function render(){
+  document.getElementById('cards-p1').innerHTML=ITEMS.filter(i=>i.p===1).map(card).join('');
+  document.getElementById('cards-p2').innerHTML=ITEMS.filter(i=>i.p===2).map(card).join('');
+  tally();
+}
+render();
+</script>
+</body>
+</html>

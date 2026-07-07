@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direct MLS Import — Design & Plan</title>
+<style>
+  :root{--bg:#0f1523;--card:#182034;--ink:#e8edf6;--muted:#9fb0cd;--line:#2a3550;
+        --pass:#1f9d57;--fail:#d1435b;--p0:#d1435b;--p1:#f0a020;--p2:#5b8def;--chip:#232d47;
+        --green:#1f9d57;--amber:#f0a020;--blue:#5b8def;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{position:sticky;top:0;z-index:10;background:#0c111d;border-bottom:1px solid var(--line);
+         padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+  header h1{font-size:17px;margin:0}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .tally{font-size:13px;color:var(--muted)}
+  button.util{background:var(--chip);color:var(--ink);border:1px solid var(--line);
+              border-radius:7px;padding:6px 11px;font-size:13px;cursor:pointer}
+  button.util:hover{border-color:#3d4c72}
+  .note-banner{background:#172136;border:1px solid var(--line);border-left:3px solid var(--p1);
+       border-radius:8px;padding:12px 15px;margin:0 0 18px;color:var(--muted);font-size:13.5px}
+  .note-banner b{color:var(--ink)}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 20px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 15px;min-width:120px}
+  .kpi .n{font-size:22px;font-weight:700}
+  .kpi .k{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+  .kpi.crit .n{color:#ff9aa8} .kpi.warn .n{color:#ffd79a} .kpi.info .n{color:#bcd0f5} .kpi.ok .n{color:#8ee0ab}
+  .phase{margin:32px 0 4px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+         display:flex;align-items:center;gap:9px}
+  .phase .dot{width:9px;height:9px;border-radius:50%}
+  .p1 .dot{background:var(--p0)} .p2 .dot{background:var(--p1)} .p3 .dot{background:var(--p2)}
+  .phase-sub{color:var(--muted);font-size:13px;margin:0 0 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:16px 18px;margin:12px 0}
+  .chead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .id{display:inline-block;font-weight:700;font-size:13px;background:var(--chip);border:1px solid var(--line);
+      border-radius:6px;padding:2px 8px}
+  .flow{font-size:12px;color:var(--muted);background:#141c2e;border:1px solid var(--line);border-radius:20px;padding:2px 10px}
+  .sev{font-size:11.5px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+  .sev.new{color:#ff9aa8;border-color:var(--p0);background:#2a1620}
+  .sev.reuse{color:#8ee0ab;border-color:#1f9d5766;background:#132520}
+  .sev.edit{color:#ffd79a;border-color:#f0a02055}
+  h3.title{margin:11px 0 6px;font-size:16px}
+  .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:12px 0 3px}
+  .card p{margin:2px 0 4px}
+  p.statusline{background:#141c2e;border:1px dashed var(--line);border-radius:8px;padding:8px 12px;color:var(--muted);font-size:13.5px}
+  ol.steps{margin:4px 0 6px;padding-left:20px} ol.steps li{margin:3px 0}
+  ul.exp{margin:4px 0 6px;padding-left:18px} ul.exp li{margin:4px 0}
+  code{background:#0c1120;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.5px;
+       font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-word}
+  pre{background:#0c1120;border:1px solid var(--line);border-radius:9px;padding:14px 16px;overflow-x:auto;
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.5;color:#cdd8ef}
+  .section{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:16px 18px;margin:14px 0}
+  .section h2{font-size:15px;margin:0 0 8px}
+  .section ul{margin:6px 0;padding-left:20px} .section li{margin:5px 0}
+  .section table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  .section th,.section td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+  .section th{color:var(--muted);font-weight:600;background:#141c2e}
+  .pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+  .pill.a{color:#bcd0f5;border-color:#5b8def55;background:#131c30}
+  .pill.b{color:#d9c2f0;border-color:#9a6ee055;background:#1d182c}
+  .pill.sh{color:#9fe6c8;border-color:#1f9d5744;background:#122420}
+  .flag{color:#ffd79a}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+  footer{max-width:1000px;margin:24px auto 60px;padding:0 20px;color:var(--muted);font-size:13px}
+  a{color:#9cc2ff}
+</style>
+</head>
+<body>
+<header>
+  <h1>Direct MLS Import — Design &amp; Implementation Plan</h1>
+  <div class="bar">
+    <span class="tally">Sign-off draft · 2026-07-05</span>
+    <button class="util" onclick="window.print()">Print / PDF</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="note-banner">
+    <b>Investigation &amp; design only — no production code has been changed.</b> Two separate
+    MLS-powered workflows built on a shared, provider-agnostic lookup core. Markdown source:
+    <code>docs/mls-direct-import-design-and-plan.md</code>. Awaiting your sign-off before Phase 2.
+  </div>
+
+  <div class="kpis">
+    <div class="kpi info"><div class="n">2</div><div class="k">Separate workflows</div></div>
+    <div class="kpi info"><div class="n">6</div><div class="k">Phases</div></div>
+    <div class="kpi ok"><div class="n">~80%</div><div class="k">Match engine reused</div></div>
+    <div class="kpi warn"><div class="n">4</div><div class="k">Net-new services</div></div>
+    <div class="kpi crit"><div class="n">1</div><div class="k">Real refactor (scorer)</div></div>
+  </div>
+
+  <!-- HEADLINE -->
+  <div class="section">
+    <h2>Headline</h2>
+    <p>The building blocks already exist: a live Bridge/Stellar OData integration, a local
+      <code>bridge_properties</code> cache holding full <code>raw_json</code>, a URL/text
+      listing-import pre-fill pipeline, and a complete property-vs-criteria match engine. The two
+      new features are mostly <b>wiring existing parts together behind a normalized data seam</b>,
+      not building new engines.</p>
+    <ul>
+      <li><span class="pill a">Use Case A</span> <b>Seller/Landlord listing prefill</b> — populates
+        the create/edit form (facts only).</li>
+      <li><span class="pill b">Use Case B</span> <b>Buyer/Tenant match check</b> — analyzes a
+        property against saved criteria and shows a match report; never populates a form.</li>
+    </ul>
+    <p>They share only a lookup/cache/normalization core <span class="pill sh">shared</span>. Their
+      user-facing routes and workflows are fully separate.</p>
+  </div>
+
+  <!-- LOCKED DECISIONS -->
+  <div class="phase p1"><span class="dot"></span>Locked decisions · owner sign-off</div>
+  <div class="phase-sub">Confirmed by Abigail on 2026-07-05.</div>
+
+  <div class="section">
+    <table>
+      <tr><th>#</th><th>Decision</th><th>Detail &amp; reason</th></tr>
+      <tr>
+        <td><b>1</b></td>
+        <td>Phase 3 = <b>facts only</b></td>
+        <td>Seller/Landlord prefill imports objective fields only — address, price/rent, beds, baths,
+          sqft, lot size, year built, property type, status, HOA, taxes, pool/garage/waterfront flags,
+          coordinates, factual attributes. <b>No</b> photos, PublicRemarks, agent/private remarks,
+          showing instructions, or agent/office contacts. Avoids Stellar MLS licensing risk
+          (photo/remarks reuse, retention, rehosting). Users add photos/description manually. Fuller
+          media only after written Stellar MLS confirmation.</td>
+      </tr>
+      <tr>
+        <td><b>2</b></td>
+        <td><b>Provider-agnostic</b> via <code>PropertyCandidate</code></td>
+        <td>Both consumers act on a normalized object, never a source-specific record. Sources:
+          Bridge/Stellar (preferred), existing URL/text parser, manual entry (FSBO/off-market), future
+          RESO/Bridge MLSs. Neither the match engine nor the prefill service knows the origin. Scalable
+          as sources are added.</td>
+      </tr>
+      <tr>
+        <td><b>3</b></td>
+        <td>B rollout gate</td>
+        <td>New dedicated feature flag, <b>default OFF</b>. Controls rollout independently.</td>
+      </tr>
+      <tr>
+        <td><b>4</b></td>
+        <td>B criteria selection</td>
+        <td>Auto-select the preferred saved profile via <code>CriteriaListingResolver</code>, with a
+          dropdown to switch profiles.</td>
+      </tr>
+      <tr>
+        <td><b>5</b></td>
+        <td>Lookup UX</td>
+        <td>MLS # primary (resolved to <code>ListingKey</code> internally). Address search is the
+          fallback and shows a chooser when multiple units/properties match.</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="phase p3"><span class="dot"></span>Architecture · provider-agnostic seam</div>
+  <div class="phase-sub">One normalization boundary; two source-blind consumers.</div>
+
+  <div class="section">
+    <pre>   SOURCES (pluggable adapters, added over time)
+   ┌────────────────────────────────────────────────────────────┐
+   │ Bridge/Stellar API   URL/Text parser   Manual entry   Future │
+   │ (preferred)          (Zillow/Redfin/…) (FSBO/off-mkt) RESO   │
+   └──────┬───────────────────┬────────────────┬────────────┬────┘
+   BridgeCandidate     ParsedListing     ManualEntry    &lt;future&gt;
+   Adapter             CandidateAdapter  CandidateAdapter  Adapter
+          └───────────────────┴────────────────┴────────────┘
+                              ▼
+                 ┌──────────────────────────────┐
+                 │   PropertyCandidate  (DTO)    │  ← single normalized shape
+                 │   factual attributes          │
+                 │   + provenance (source, id)   │
+                 └───────────────┬───────────────┘
+              ┌──────────────────┴───────────────────┐
+              ▼                                       ▼
+   A) MlsListingPrefillService          B) MlsPropertyMatchAnalysisService
+      PropertyCandidate →                  PropertyCandidate →
+       FACTS-ONLY canonical form keys       match engine (score + reasons +
+       (Seller/Landlord only)               mismatches + fit bars)
+      Populates the listing FORM           Renders a match REPORT (writes no form)
+      Route: /offer-listing/{seller|landlord}   Route: /match-check (new, flag-gated)</pre>
+    <table>
+      <tr><th>Layer</th><th>Responsibility</th><th>Knows the source?</th></tr>
+      <tr><td>Source adapters</td><td>Raw source record → <code>PropertyCandidate</code></td><td>Yes — the only layer that does</td></tr>
+      <tr><td><code>PropertyCandidate</code> DTO</td><td>Canonical factual shape + provenance</td><td>No</td></tr>
+      <tr><td>Consumers (A prefill / B match)</td><td>Act on a candidate, source-blind</td><td>No</td></tr>
+    </table>
+  </div>
+
+  <!-- COMPLIANCE -->
+  <div class="section">
+    <h2>Compliance boundary (A vs B)</h2>
+    <ul>
+      <li>The <b>facts-only</b> rule constrains <b>what A writes into a publishable form</b> — a
+        single allow-list to audit, aligned with the safe/restricted classification our
+        <code>AuditBridgeFields</code> code already encodes.</li>
+      <li>B reads restricted fields (PublicRemarks, CDD status, etc.) <b>internally to compute a
+        score</b> and never republishes them — a different, lower-risk act. B keeps full internal
+        field access.</li>
+    </ul>
+  </div>
+
+  <!-- INVENTORY -->
+  <div class="phase p2"><span class="dot"></span>Existing vs. net-new</div>
+  <div class="phase-sub">How little is actually new.</div>
+
+  <div class="section">
+    <table>
+      <tr><th>Capability</th><th>Status</th><th>Where</th></tr>
+      <tr><td>Bridge OData client (accepts arbitrary <code>$filter</code>)</td><td><span class="pill sh">exists</span></td><td><code>BridgeApiService</code></td></tr>
+      <tr><td>Local <code>bridge_properties</code> cache (+ full <code>raw_json</code>)</td><td><span class="pill sh">exists</span></td><td><code>BridgeProperty</code> + 4 migrations</td></tr>
+      <tr><td>RESO record → cache upsert</td><td><span class="pill sh">exists</span></td><td><code>BridgePropertyNormalizer</code></td></tr>
+      <tr><td>Lazy-load + cache pattern</td><td><span class="pill sh">exists</span> (criteria-based)</td><td><code>LazyBridgeImportService</code></td></tr>
+      <tr><td><b>Lookup by MLS#/ListingKey/address (single record)</b></td><td><span class="sev new">NEW</span></td><td><code>BridgeListingLookupService</code></td></tr>
+      <tr><td>URL/text parser + form pre-fill pipeline</td><td><span class="pill sh">exists</span></td><td><code>HasMlsImport</code>, <code>MlsFieldMap</code></td></tr>
+      <tr><td><b>PropertyCandidate DTO + source adapters</b></td><td><span class="sev new">NEW</span></td><td>new</td></tr>
+      <tr><td><b>Bridge record → facts-only form keys</b></td><td><span class="sev new">NEW</span></td><td><code>MlsListingPrefillService</code></td></tr>
+      <tr><td>Property-vs-criteria scorer (score + reasons + mismatches)</td><td><span class="pill sh">exists</span></td><td><code>BuyerMatchScorer</code> + <code>BuyerMatchResultBuilder</code></td></tr>
+      <tr><td>One-property/one-criteria → display array</td><td><span class="pill sh">exists</span></td><td><code>PropertyMatchContextService</code>, <code>BuyerResultViewMapper</code></td></tr>
+      <tr><td>Saved buyer/tenant criteria loaders (4 sources)</td><td><span class="pill sh">exists</span></td><td><code>*CriteriaLoader</code></td></tr>
+      <tr><td>"Better matches" (criteria → ranked properties)</td><td><span class="pill sh">exists</span></td><td><code>BuyerMatchService::match()</code></td></tr>
+      <tr><td>Location DNA per property (grocery/beach/park/…, miles)</td><td><span class="pill sh">exists</span>, keyed <code>('bridge', id)</code></td><td><code>PropertyLocationDna</code>, <code>property_location_pois</code></td></tr>
+      <tr><td><b>MLS-property match orchestrator + report UI</b></td><td><span class="sev new">NEW</span></td><td><code>MlsPropertyMatchAnalysisService</code> + route/view</td></tr>
+      <tr><td>Commute times</td><td><span class="flag">stub only</span> (<code>null</code>)</td><td><code>CommuteTimeStubAdapter</code></td></tr>
+      <tr><td>Flood zone / school district per property</td><td><span class="flag">live bbox lookup</span>, not stored</td><td><code>FloodZoneLookupService</code>, <code>SchoolDistrictLookupService</code></td></tr>
+    </table>
+  </div>
+
+  <!-- USE CASE B OUTPUT -->
+  <div class="section">
+    <h2>Use Case B — output shape (already produced by the engine)</h2>
+    <table>
+      <tr><th>Your requested output</th><th>Existing field</th></tr>
+      <tr><td>Match score</td><td><code>total_score</code> (0–100), <code>score_display</code></td></tr>
+      <tr><td>Property fit</td><td><code>category_bars</code>: Size 15 / Type 10 / Amenities 10</td></tr>
+      <tr><td>Financial fit</td><td><code>category_bars</code>: Price 25 / Fees 5</td></tr>
+      <tr><td>Location fit</td><td><code>category_bars</code>: Location 30</td></tr>
+      <tr><td>Match reasons</td><td><code>why_this_matches[]</code></td></tr>
+      <tr><td>Mismatches / missing items</td><td><code>tradeoffs[]</code> + <code>missing_data[]</code></td></tr>
+      <tr><td>Cautions</td><td><code>caution_flags[]</code> (CDD, stale, flood-absent, …)</td></tr>
+      <tr><td>Commute / Location DNA fit</td><td>Phase 5 additions (see risks)</td></tr>
+      <tr><td>Better matches</td><td>Phase 6 via <code>BuyerMatchService::match()</code></td></tr>
+    </table>
+    <p class="statusline">Pipeline: lookup → <code>PropertyCandidate</code> →
+      <code>*CriteriaLoader::loadById()</code> → <code>BuyerCriteriaPayload</code> →
+      <code>BuyerMatchScorer::score()</code> → <code>BuyerMatchResultBuilder::build()</code> →
+      <code>BuyerResultViewMapper::mapOne()</code>.</p>
+  </div>
+
+  <!-- PHASED PLAN -->
+  <div class="phase p1"><span class="dot"></span>Phased plan</div>
+  <div class="phase-sub">Abstraction designed-in now, implemented incrementally.</div>
+
+  <div class="card">
+    <div class="chead"><span class="id">Phase 1</span><span class="flow">design</span><span class="sev reuse">DONE</span></div>
+    <h3 class="title">Investigation &amp; design</h3>
+    <p>This document. Confirmed Bridge lookup capability, local cache, field support, the match
+      engine, criteria loaders, and Location DNA. Locked decisions above. No code.</p>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="id">Phase 2</span><span class="flow">shared · backend only</span></div>
+    <h3 class="title">Shared MLS lookup core + normalization seam</h3>
+    <ul class="exp">
+      <li><span class="sev new">NEW</span> <code>BridgeListingLookupService</code>:
+        <code>findByMlsNumber()</code>, <code>findByListingKey()</code>, <code>searchByAddress()</code>.
+        Local <code>bridge_properties</code> first → Bridge API on miss → upsert (also dispatches
+        <code>ComputeLocationDna</code>).</li>
+      <li><span class="sev new">NEW</span> <code>PropertyCandidate</code> DTO +
+        <code>BridgePropertyCandidateAdapter</code> (first adapter).</li>
+      <li><span class="sev edit">MIGRATION</span> index <code>listing_id</code> and address/<code>city</code>
+        (only <code>listing_key</code> is indexed today — else MLS#/address lookups table-scan).</li>
+      <li><span class="sev reuse">REUSE</span> <code>BridgeApiService</code>,
+        <code>BridgePropertyNormalizer</code>, <code>BridgeProperty</code>. Unit-tested on fixtures. No UI.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="id">Phase 3</span><span class="pill a">Use Case A</span><span class="flow">Seller / Landlord only</span></div>
+    <h3 class="title">Seller/Landlord listing prefill — facts only</h3>
+    <ul class="exp">
+      <li><span class="sev new">NEW</span> <code>MlsListingPrefillService</code>:
+        <code>PropertyCandidate</code> → facts-only canonical-key array, same
+        <code>['success','data','error']</code> shape as <code>MlsListingImportService::import()</code>.</li>
+      <li><span class="sev edit">EDIT</span> <code>HasMlsImport</code> — add
+        <code>importListingFromMls()</code> / <code>importListingFromAddress()</code> beside the URL entry.</li>
+      <li><span class="sev edit">EDIT</span> shared MLS import modal — add "By MLS #" / "By Address"
+        tabs; keep URL/text parser as fallback tab (unchanged) and as a second candidate source.</li>
+      <li><span class="sev reuse">REUSE</span> <code>MlsFieldMap</code> + <code>applyImportedFields()</code>
+        preview/apply. Scoped to Seller + Landlord create/edit only. <code>initializeLimitedService()</code>
+        untouched (frozen).</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="id">Phase 4</span><span class="pill b">Use Case B</span><span class="flow">new route · flag OFF</span></div>
+    <h3 class="title">Buyer/Tenant match check</h3>
+    <ul class="exp">
+      <li><span class="sev new">NEW</span> standalone <code>/match-check</code>
+        route + controller + Livewire + view. Behind the new feature flag (default OFF). Never writes a form.</li>
+      <li><span class="sev new">NEW</span> <code>MlsPropertyMatchAnalysisService</code> orchestrating
+        the pipeline. Auto-select preferred criteria via <code>CriteriaListingResolver</code> + switch dropdown.</li>
+      <li><span class="sev edit">EDIT</span> wire the scorer input to <code>PropertyCandidate</code>
+        (see refactor note in risks).</li>
+      <li><span class="sev reuse">REUSE</span> <code>BuyerMatchScorer</code>,
+        <code>BuyerMatchResultBuilder</code>, <code>BuyerResultViewMapper</code>, all 4 criteria loaders,
+        <code>BuyerCriteriaPayload</code>. MLS#-primary lookup; address chooser for multiple units.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="id">Phase 5</span><span class="pill b">Use Case B</span><span class="flow">report enrichment</span></div>
+    <h3 class="title">Location DNA + commute enrichment</h3>
+    <ul class="exp">
+      <li>Load <code>PropertyLocationDna</code> + <code>property_location_pois</code> keyed
+        <code>('bridge', bridge_property.id)</code> → nearest grocery/beach/park/restaurant/school
+        (miles) + five lifestyle scores.</li>
+      <li>Bridge rows get DNA from the existing dispatch; non-Bridge candidates geocode-then-compute.</li>
+      <li class="flag">Commute is a stub today; flood/schools are live bbox lookups. Surface all as
+        "if available"; first view of a fresh import may show "enriching…".</li>
+      <li>Additive to B's report only — Use Case A untouched.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="id">Phase 6</span><span class="pill b">Use Case B</span><span class="flow">near-zero engine work</span></div>
+    <h3 class="title">Better matches</h3>
+    <p>When the entered property scores low, call the existing
+      <code>BuyerMatchService::match($payload, $cap, $role)</code> and show entries scoring higher than
+      the entered property. Mostly a UI section.</p>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="id">Later</span><span class="flow">post-launch</span></div>
+    <h3 class="title">Additional sources + fuller media</h3>
+    <p>Manual-entry and other-MLS adapters against the same <code>PropertyCandidate</code> contract
+      (zero change to A/B). Preview-only or fuller media/remarks for Use Case A pending written Stellar
+      MLS confirmation.</p>
+  </div>
+
+  <!-- RISKS -->
+  <div class="phase p2"><span class="dot"></span>Known dependencies &amp; risks</div>
+  <div class="section">
+    <ul>
+      <li><b>Scorer↔<code>BridgeProperty</code> coupling</b> — the one real refactor. Recommended:
+        refactor the scorer's input to <code>PropertyCandidate</code> (Bridge path gets a
+        <code>BridgeProperty → PropertyCandidate</code> mapper). Shortcut alternative: hydrate a
+        transient non-persisted <code>BridgeProperty</code> — faster but leaks the Bridge shape; treat
+        as debt.</li>
+      <li><b>Commute provider is a stub</b> (<code>travel_time_minutes</code> always null) — real
+        commute needs a live provider (separate decision).</li>
+      <li><b>Flood zone &amp; school district</b> are live bbox lookups, not stored per property — call
+        on demand from the property's geocoded point.</li>
+      <li><b>Async Location DNA</b> — a freshly-imported MLS row's DNA computes on a queue; design the
+        report to show "enriching…" gracefully.</li>
+      <li><b>Indexes</b> — MLS#/address lookups need the Phase 2 indexes to avoid table scans.</li>
+    </ul>
+  </div>
+
+  <!-- SIGN-OFF -->
+  <div class="section">
+    <h2>Sign-off checklist</h2>
+    <ul>
+      <li>✅ Phase 3 scope = facts only (no media/remarks at launch).</li>
+      <li>✅ Provider-agnostic <code>PropertyCandidate</code> seam for both A and B.</li>
+      <li>✅ B behind a new feature flag, default OFF.</li>
+      <li>✅ B auto-selects preferred criteria via <code>CriteriaListingResolver</code> + switch dropdown.</li>
+      <li>✅ MLS#-primary lookup; address fallback with a chooser.</li>
+      <li>⬜ <b>Your approval to begin Phase 2</b> (backend lookup core — still no consumer surface).</li>
+    </ul>
+  </div>
+
+</div>
+
+<footer>
+  Direct MLS Import — design &amp; plan · generated 2026-07-05 · source
+  <code>docs/mls-direct-import-design-and-plan.md</code> · no production code changed.
+</footer>
+</body>
+</html>

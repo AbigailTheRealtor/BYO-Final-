@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Ask AI KB — Final v1.0 Preview (frozen)</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 960px; margin: 2rem auto; padding: 0 1.2rem 5rem; font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:#1f2328; background:#fff; }
+  h1 { font-size:1.9rem; border-bottom:2px solid #d0d7de; padding-bottom:.3rem; }
+  h2 { font-size:1.5rem; border-bottom:2px solid #d0d7de; padding-bottom:.25rem; margin-top:2.6rem; }
+  h3 { font-size:1.2rem; margin-top:2rem; background:#f6f8fa; padding:.4rem .6rem; border-radius:6px; }
+  h4 { font-size:1.02rem; margin:1.3rem 0 .3rem; text-transform:uppercase; letter-spacing:.03em; color:#0969da; }
+  h5 { font-size:.97rem; margin:1.1rem 0 .3rem; border-bottom:1px solid #d0d7de; padding-bottom:.2rem; }
+  li { margin:.18rem 0; }
+  .legend { background:#f6f8fa; border:1px solid #d0d7de; border-radius:6px; padding:.6rem .9rem; font-size:.9rem; }
+  strong.new { color:#1a7f37; } strong.rw { color:#9a6700; } strong.rm { color:#cf222e; } del { color:#8c959f; }
+  .meta { color:#57606a; font-size:.85rem; margin-bottom:2rem; }
+  @media (prefers-color-scheme: dark){ body{color:#e6edf3;background:#0d1117;} h3,.legend{background:#161b22;border-color:#30363d;} h4{color:#58a6ff;} h1,h2,h5{border-color:#30363d;} strong.new{color:#3fb950;}strong.rw{color:#d29922;}strong.rm{color:#f85149;} }
+</style>
+</head>
+<body>
+<div id="content">Rendering…</div>
+<p class="meta">Read-only preview, generated directly from the frozen v1.0 configs. Nothing implemented beyond the config/blade/test changes under review.</p>
+<script id="src" type="text/markdown">
+# Ask AI Knowledge Base — Final v1.0 User-Experience Preview
+
+Complete final v1.0 as it renders to a listing creator. Each interview = the role's **universal** group + the one group matching the property type. The screen shows **Common Questions** first, then **AI Insights**; questions group under their subsection heading (same-named subsections in the universal + property-type group merge under one heading).
+
+<div class="legend"><strong>Legend:</strong> &nbsp; plain = existing (unchanged) &nbsp;·&nbsp; <strong class="new">✚ NEW</strong> &nbsp;·&nbsp; <strong class="rw">✏️ REWRITTEN</strong> &nbsp;·&nbsp; <strong class="rm">✗ REMOVED</strong> &nbsp;·&nbsp; 🔒 = redacted for unauthorized viewers</div>
+
+**Change tally:** 25 new · 3 rewritten · 1 deleted (2 files). New subsection headings: *Selling Story & Appeal* (Seller Residential), *Management & Fit* (Landlord Residential), *Lifestyle & Fit* (Tenant Residential).
+
+---
+
+## SELLER
+
+### Seller — Residential
+
+#### Common Questions
+
+##### About the Sale
+- Why is the owner selling the property?
+- What is included in the sale, and is anything excluded?
+- Is any furniture or staging negotiable?
+- How flexible is the timing for closing or possession?
+- Would the owner consider a short post-closing leaseback?
+- Are there any known issues or disclosures the owner has shared?
+- Are there planned developments, road projects, or zoning changes nearby?
+- Is the property being sold as-is, or is the owner open to repairs based on inspection?
+- Has the owner indicated openness to concessions or credits?
+
+##### Selling Story & Appeal &nbsp;<strong class="new">✚ NEW subsection</strong>
+- <strong class="new">✚ NEW</strong> What first made you fall in love with this home, or what will you miss most about living here?
+- <strong class="new">✚ NEW</strong> What do guests or visitors compliment most about this property?
+- <strong class="new">✚ NEW</strong> Is there a particular time of day, season, or moment when the property shows at its best?
+- <strong class="new">✚ NEW</strong> What type of lifestyle or everyday living do you think this property is especially well suited for?
+- <strong class="new">✚ NEW</strong> If the property has been shown before, what feedback, compliments, or hesitations have buyers or agents shared?
+
+##### Property Condition & Systems
+- How old is the roof, and what condition is it in?
+- How old is the HVAC system, and when was it last serviced?
+- How old is the water heater, and what type is it?
+- What renovations or upgrades have been made, and when?
+- Were renovations completed with proper permits?
+- Are there any known foundation or structural issues?
+- Any pest or termite history, and how was it resolved?
+- Has the property ever flooded or had water damage?
+- Any mold history, and how was it addressed?
+- Are solar panels present, and are they owned or leased?
+- Are there smart-home or EV-charging features?
+- If there is a pool or spa, how old is the equipment and what is its condition?
+
+##### Costs & Utilities
+- What are the average monthly utility costs?
+- Which internet/utility providers serve the property, and what speeds are available?
+- Has the owner disclosed any insurance claims history for the property?
+
+##### Space & Light
+- What storage options are available?
+- How is the natural light, and which way does the home face?
+
+##### Location & Neighborhood
+- What can you share about the area's setting and nearby amenities?
+- Are there notable traffic or noise considerations nearby?
+- <strong class="rw">✏️ REWRITTEN</strong> Are there commute or access details a buyer wouldn't discover on a map — a favorite route, a quick highway on-ramp, walkable errands?
+- <strong class="rm">✗ REMOVED</strong> <del>Which school district is this property assigned to?</del> *(now answered by Location DNA / Census TIGER)*
+
+#### AI Insights
+
+##### Property Insights
+- What features make this property stand out?
+- <strong class="rw">✏️ REWRITTEN</strong> Beyond what a map shows, what do you personally love about this location — the neighbors, the street, the daily routine here?
+- What lifestyle does this property appear to support?
+- What property information has been disclosed?
+- What property features may appeal to different buyers?
+
+---
+### Seller — Income Property
+
+#### Common Questions
+
+##### About the Sale
+- Why is the owner selling the property?
+- What is included in the sale, and is anything excluded?
+- Is any furniture or staging negotiable?
+- How flexible is the timing for closing or possession?
+- Would the owner consider a short post-closing leaseback?
+- Are there any known issues or disclosures the owner has shared?
+- Are there planned developments, road projects, or zoning changes nearby?
+- Is the property being sold as-is, or is the owner open to repairs based on inspection?
+- Has the owner indicated openness to concessions or credits?
+
+##### Operations & Financials
+- What expenses are included in the operating costs?
+- What are the current lease terms and escalations for existing tenants?
+- How do current rents compare to what the owner believes is market, and are any units below market?
+- What recent improvements or income changes has the owner disclosed?
+- What has the owner disclosed about tenant payment history?
+- Is there any deferred maintenance or near-term capital work disclosed?
+- Is the property professionally managed?
+- How are utilities split between owner and tenants?
+- How old are the roof and major building systems?
+- <strong class="new">✚ NEW</strong> What type of owner or operator would get the most out of this property?
+- <strong class="new">✚ NEW</strong> If you had more time or capital, what's the one improvement you'd make to increase income here?
+
+#### AI Insights
+
+##### Property Insights
+- What features make this property stand out?
+- <strong class="rw">✏️ REWRITTEN</strong> Beyond what a map shows, what do you personally love about this location — the neighbors, the street, the daily routine here?
+- What lifestyle does this property appear to support?
+- What property information has been disclosed?
+- What property features may appeal to different buyers?
+- What features make this property stand out to operators?
+- What has been disclosed about this property's operations?
+- What location features are nearby?
+
+---
+### Seller — Commercial Property
+
+#### Common Questions
+
+##### About the Sale
+- Why is the owner selling the property?
+- What is included in the sale, and is anything excluded?
+- Is any furniture or staging negotiable?
+- How flexible is the timing for closing or possession?
+- Would the owner consider a short post-closing leaseback?
+- Are there any known issues or disclosures the owner has shared?
+- Are there planned developments, road projects, or zoning changes nearby?
+- Is the property being sold as-is, or is the owner open to repairs based on inspection?
+- Has the owner indicated openness to concessions or credits?
+
+##### Building & Use
+- What are the building systems (HVAC, electrical capacity)?
+- Is the space ADA accessible?
+- How many restrooms are there?
+- What parking, access, and loading are available?
+- How old are the roof and major systems?
+- What recent improvements have been made?
+- Beyond the zoning code, are there variances, special-use permits, conditional uses, or grandfathered uses in place?
+- <strong class="new">✚ NEW</strong> Is there redevelopment, expansion, or change-of-use potential a buyer should know about?
+- <strong class="new">✚ NEW</strong> What makes this property's visibility, frontage, signage, or access especially valuable for a business?
+- <strong class="new">✚ NEW</strong> Beyond the listed ceiling height, what is the clear height to the lowest obstruction, and are there any height limitations a buyer should know about? *(complements the structured ceiling-height field)*
+
+#### AI Insights
+
+##### Property Insights
+- What features make this property stand out?
+- <strong class="rw">✏️ REWRITTEN</strong> Beyond what a map shows, what do you personally love about this location — the neighbors, the street, the daily routine here?
+- What lifestyle does this property appear to support?
+- What property information has been disclosed?
+- What property features may appeal to different buyers?
+- What features make this space stand out?
+- What location features are nearby?
+
+---
+### Seller — Business Opportunity
+
+#### Common Questions
+
+##### About the Sale
+- Why is the owner selling the property?
+- What is included in the sale, and is anything excluded?
+- Is any furniture or staging negotiable?
+- How flexible is the timing for closing or possession?
+- Would the owner consider a short post-closing leaseback?
+- Are there any known issues or disclosures the owner has shared?
+- Are there planned developments, road projects, or zoning changes nearby?
+- Is the property being sold as-is, or is the owner open to repairs based on inspection?
+- Has the owner indicated openness to concessions or credits?
+
+##### Business Details
+- Why is the business being sold?
+- How much training/transition support will the seller provide?
+- Will existing staff stay on after the sale?
+- How concentrated is the customer base?
+- What vendor or supplier contracts are in place?
+- Are licenses, permits, or franchise rights transferable?
+- What is the business's online presence and review profile?
+- Is the business seasonal?
+- How involved is the current owner day-to-day?
+- <strong class="new">✚ NEW</strong> What growth opportunities exist that the current owner hasn't pursued?
+- <strong class="new">✚ NEW</strong> What keeps customers coming back, and what do they value most about this business?
+
+#### AI Insights
+
+##### Property Insights
+- What features make this property stand out?
+- <strong class="rw">✏️ REWRITTEN</strong> Beyond what a map shows, what do you personally love about this location — the neighbors, the street, the daily routine here?
+- What lifestyle does this property appear to support?
+- What property information has been disclosed?
+- What property features may appeal to different buyers?
+
+##### Business Insights
+- What information has been disclosed about this business?
+- What does the sale appear to include?
+
+---
+### Seller — Vacant Land
+
+#### Common Questions
+
+##### About the Sale
+- Why is the owner selling the property?
+- What is included in the sale, and is anything excluded?
+- Is any furniture or staging negotiable?
+- How flexible is the timing for closing or possession?
+- Would the owner consider a short post-closing leaseback?
+- Are there any known issues or disclosures the owner has shared?
+- Are there planned developments, road projects, or zoning changes nearby?
+- Is the property being sold as-is, or is the owner open to repairs based on inspection?
+- Has the owner indicated openness to concessions or credits?
+
+##### Site & Access
+- Are there known soil, perc, or topography considerations?
+- Is a current survey available, and has the land been cleared/improved?
+- What uses are permitted under current zoning?
+- Are there deed restrictions beyond recorded easements?
+- Are there access limitations or shared-road maintenance obligations?
+- Are there wetlands or environmental designations on the parcel?
+- What was the land's prior use?
+- <strong class="new">✚ NEW</strong> Which utilities are already available at the site (water, sewer/septic, power, gas, internet), and how close are they?
+- <strong class="new">✚ NEW</strong> Are any entitlements, plats, permits, or development approvals in place or underway?
+
+#### AI Insights
+
+##### Property Insights
+- What features make this property stand out?
+- <strong class="rw">✏️ REWRITTEN</strong> Beyond what a map shows, what do you personally love about this location — the neighbors, the street, the daily routine here?
+- What lifestyle does this property appear to support?
+- What property information has been disclosed?
+- What property features may appeal to different buyers?
+- What location features are nearby?
+- What objective site characteristics has the listing disclosed?
+
+---
+
+## BUYER
+
+### Buyer — Residential
+
+#### Common Questions
+
+##### Buyer Background
+- What's driving the buyer's search right now?
+- What's the buyer's current living/ownership situation?
+- How flexible is the buyer on timing or terms if the right property comes along?
+- What's the buyer's biggest concern or hesitation?
+- Is the buyer relocating or making decisions remotely?
+- Would the buyer allow a short seller leaseback after closing?
+- Is there anything about how the buyer is financing the purchase worth knowing?
+- <strong class="new">✚ NEW</strong> Beyond the must-haves already captured in the criteria, what would make the buyer decide a property isn't the right fit?
+- <strong class="new">✚ NEW</strong> Where is the buyer most willing to compromise if the right opportunity comes along?
+
+##### Residential Preferences
+- What kind of area setting is the buyer looking for?
+- Is a specific school district a requirement or preference?
+- How sensitive is the buyer to noise?
+- How familiar is the buyer with the area?
+- Is the buyer open to off-market/pocket listings?
+- Does the buyer prefer a particular architectural style or era?
+- What's on the buyer's wish list (nice-to-haves)?
+- Does the buyer need any accessibility features?
+- What are the buyer's privacy preferences?
+- How does the buyer envision using the home?
+- How important is outdoor space to the buyer?
+
+#### AI Insights
+
+##### Buyer Insights
+- What property needs and uses has this buyer described?
+- What has this buyer disclosed about their needs and timeline?
+- What location features matter to this buyer?
+
+---
+### Buyer — Income Property
+
+#### Common Questions
+
+##### Buyer Background
+- What's driving the buyer's search right now?
+- What's the buyer's current living/ownership situation?
+- How flexible is the buyer on timing or terms if the right property comes along?
+- What's the buyer's biggest concern or hesitation?
+- Is the buyer relocating or making decisions remotely?
+- Would the buyer allow a short seller leaseback after closing?
+- Is there anything about how the buyer is financing the purchase worth knowing?
+- <strong class="new">✚ NEW</strong> Beyond the must-haves already captured in the criteria, what would make the buyer decide a property isn't the right fit?
+- <strong class="new">✚ NEW</strong> Where is the buyer most willing to compromise if the right opportunity comes along?
+
+##### Investment Criteria
+- What's the buyer's intended hold strategy for the property?
+- What minimum in-place occupancy does the buyer require at purchase?
+- What does the buyer expect from the existing rent roll and leases (in-place rents, term, escalations)?
+- Is the buyer completing a 1031 exchange with a timing requirement?
+- Will the buyer require environmental or property-condition studies (Phase I/II, PCA)?
+
+#### AI Insights
+
+##### Buyer Insights
+- What property needs and uses has this buyer described?
+- What has this buyer disclosed about their needs and timeline?
+- What location features matter to this buyer?
+- What type of income property fits this buyer's criteria?
+
+---
+### Buyer — Commercial Property
+
+#### Common Questions
+
+##### Buyer Background
+- What's driving the buyer's search right now?
+- What's the buyer's current living/ownership situation?
+- How flexible is the buyer on timing or terms if the right property comes along?
+- What's the buyer's biggest concern or hesitation?
+- Is the buyer relocating or making decisions remotely?
+- Would the buyer allow a short seller leaseback after closing?
+- Is there anything about how the buyer is financing the purchase worth knowing?
+- <strong class="new">✚ NEW</strong> Beyond the must-haves already captured in the criteria, what would make the buyer decide a property isn't the right fit?
+- <strong class="new">✚ NEW</strong> Where is the buyer most willing to compromise if the right opportunity comes along?
+
+##### Commercial Criteria
+- What's the buyer's intended use for the space, and will they owner-occupy?
+- What space, layout, or build-out characteristics does the buyer's use require?
+- If leased-investment, what lease structure and tenancy does the buyer prefer?
+- Is the buyer completing a 1031 exchange with a timing requirement?
+- Will the buyer require environmental or property-condition studies (Phase I/II, PCA)?
+
+#### AI Insights
+
+##### Buyer Insights
+- What property needs and uses has this buyer described?
+- What has this buyer disclosed about their needs and timeline?
+- What location features matter to this buyer?
+- What type of commercial space fits this buyer's intended use?
+
+---
+### Buyer — Business Opportunity
+
+#### Common Questions
+
+##### Buyer Background
+- What's driving the buyer's search right now?
+- What's the buyer's current living/ownership situation?
+- How flexible is the buyer on timing or terms if the right property comes along?
+- What's the buyer's biggest concern or hesitation?
+- Is the buyer relocating or making decisions remotely?
+- Would the buyer allow a short seller leaseback after closing?
+- Is there anything about how the buyer is financing the purchase worth knowing?
+- <strong class="new">✚ NEW</strong> Beyond the must-haves already captured in the criteria, what would make the buyer decide a property isn't the right fit?
+- <strong class="new">✚ NEW</strong> Where is the buyer most willing to compromise if the right opportunity comes along?
+
+##### Business Criteria
+- What minimum revenue does the buyer require?
+- How much seller training/transition does the buyer expect?
+- Does the buyer want existing staff retained?
+- Does the buyer require a non-compete from the seller?
+- Is the buyer using SBA or seller financing?
+
+#### AI Insights
+
+##### Buyer Insights
+- What property needs and uses has this buyer described?
+- What has this buyer disclosed about their needs and timeline?
+- What location features matter to this buyer?
+- What type of business is this buyer seeking?
+
+---
+### Buyer — Vacant Land
+
+#### Common Questions
+
+##### Buyer Background
+- What's driving the buyer's search right now?
+- What's the buyer's current living/ownership situation?
+- How flexible is the buyer on timing or terms if the right property comes along?
+- What's the buyer's biggest concern or hesitation?
+- Is the buyer relocating or making decisions remotely?
+- Would the buyer allow a short seller leaseback after closing?
+- Is there anything about how the buyer is financing the purchase worth knowing?
+- <strong class="new">✚ NEW</strong> Beyond the must-haves already captured in the criteria, what would make the buyer decide a property isn't the right fit?
+- <strong class="new">✚ NEW</strong> Where is the buyer most willing to compromise if the right opportunity comes along?
+
+##### Land Criteria
+- What's the buyer's intended use for the land?
+- What zoning classification does the buyer require?
+- What utilities does the buyer need available?
+- Will the buyer require soil/perc/environmental testing?
+- What's the buyer's build/development timeline?
+- What road access or easement does the buyer require?
+- Does the buyer have flood/elevation/topography requirements?
+
+#### AI Insights
+
+##### Buyer Insights
+- What property needs and uses has this buyer described?
+- What has this buyer disclosed about their needs and timeline?
+- What location features matter to this buyer?
+- What land characteristics matter most to this buyer?
+
+---
+
+## LANDLORD
+
+### Landlord — Residential
+
+#### Common Questions
+
+##### Tenancy & Maintenance
+- How are maintenance requests handled, including emergencies and response times?
+- Are there planned renovations or construction that could affect tenants?
+- How much notice is required to vacate at lease end?
+- Is a lease-to-own or rent-credit arrangement possible?
+
+##### Systems & Amenities
+- Which internet providers and speeds are available?
+- Is the unit furnished, unfurnished, or negotiable?
+- Is EV charging available or installable?
+
+##### Policies & Costs
+- Are short-term rentals permitted?
+- Any pest or mold history, and how was it resolved?
+- How are utilities metered and billed?
+- Is renter's insurance required, and at what coverage?
+- What's the application process, fee, and timeline?
+- Who is responsible for lawn/landscaping?
+- According to the landlord, what is the typical length of tenancy?
+
+##### Location & Neighborhood
+- What can you share about the area's setting and nearby amenities?
+- What's the noise level like?
+- How close is public transit?
+- Is guest/visitor parking available?
+- <strong class="rm">✗ REMOVED</strong> <del>Which school district serves this rental?</del> *(now answered by Location DNA / Census TIGER)*
+
+##### Management & Fit &nbsp;<strong class="new">✚ NEW subsection</strong>
+- <strong class="new">✚ NEW</strong> How hands-on is the landlord — self-managed or professionally managed — and what's their communication style with tenants?
+- <strong class="new">✚ NEW</strong> What features or characteristics make this rental especially enjoyable for the right tenant?
+
+#### AI Insights
+
+##### Rental Insights
+- <strong class="rw">✏️ REWRITTEN</strong> What kind of renter tends to love this location, and what do current/past tenants say they enjoy about the area?
+- What makes this rental stand out?
+- What lifestyle does this rental appear to support?
+- What has been disclosed about this rental?
+
+---
+### Landlord — Commercial Property
+
+#### Common Questions
+
+##### Tenancy & Maintenance
+- How are maintenance requests handled, including emergencies and response times?
+- Are there planned renovations or construction that could affect tenants?
+- How much notice is required to vacate at lease end?
+- Is a lease-to-own or rent-credit arrangement possible?
+
+##### Commercial Lease & Space
+- Is there a loading dock or freight elevator?
+- What is the electrical capacity (amperage/voltage/3-phase)?
+- Are exclusivity rights available?
+- Is there an expansion option or right of first refusal?
+- What build-out or tenant-improvement support is available beyond what's listed?
+- Is the space ADA accessible?
+- What is the HVAC type, the zoning of zones, and after-hours HVAC availability?
+- What is the co-tenancy / anchor-tenant situation in the building?
+- Beyond the permitted-use field, are there variances, conditional uses, or restrictions tenants should know about?
+- <strong class="new">✚ NEW</strong> How are CAM / operating expenses handled (NNN, gross, modified), and what's included?
+- <strong class="new">✚ NEW</strong> What types of businesses or uses is this space best suited for, and are any uses restricted?
+- <strong class="new">✚ NEW</strong> How many parking spaces are available, or what is the parking ratio for the property?
+
+#### AI Insights
+
+##### Rental Insights
+- <strong class="rw">✏️ REWRITTEN</strong> What kind of renter tends to love this location, and what do current/past tenants say they enjoy about the area?
+- What makes this rental stand out?
+- What lifestyle does this rental appear to support?
+- What has been disclosed about this rental?
+
+---
+
+## TENANT
+
+### Tenant — Residential
+
+#### Common Questions
+
+##### Applicant Background
+- What's driving the applicant's rental search?
+- What's the applicant's biggest concern in this search? 🔒
+- Is there any chance the applicant would need to break the lease early? 🔒
+- Does the applicant have landlord or employer references available? 🔒
+
+##### Residential Applicant
+- What is the source and stability of the applicant's income? 🔒
+- Would the applicant consider a longer lease for a locked-in/reduced rate?
+- Is the applicant willing to pay a pet deposit or pet rent if required?
+- How long was the most recent tenancy, and why is the applicant moving? 🔒
+- How flexible is the applicant on lease length?
+- Is a co-signer or guarantor available if needed? 🔒
+- How soon is the applicant ready to apply and provide documentation? 🔒
+- Has the applicant disclosed any prior rental conduct (late payments, notices)? 🔒
+
+##### Lifestyle & Fit &nbsp;<strong class="new">✚ NEW subsection</strong>
+- <strong class="new">✚ NEW</strong> Does the applicant work remotely, on-site, hybrid, or have other space needs that should be considered?
+- <strong class="new">✚ NEW</strong> What locations does the applicant need to be near (work, school, family), and how important is commute?
+- <strong class="new">✚ NEW</strong> Beyond the criteria already captured, what are the applicant's absolute deal-breakers in a rental?
+
+#### AI Insights
+
+##### Applicant Insights
+- What has this applicant disclosed about their rental background?
+- What rental needs and uses has the applicant described?
+
+---
+### Tenant — Commercial Property
+
+#### Common Questions
+
+##### Applicant Background
+- What's driving the applicant's rental search?
+- What's the applicant's biggest concern in this search? 🔒
+- Is there any chance the applicant would need to break the lease early? 🔒
+- Does the applicant have landlord or employer references available? 🔒
+
+##### Commercial Applicant
+- Does the applicant expect customer/client foot traffic, and how much?
+- Does the applicant have special equipment or power requirements?
+- What are the applicant's expected hours of operation?
+- Does the applicant expect their space needs to change over the lease term (growth, seasonal, or downsizing)?
+- <strong class="new">✚ NEW</strong> What build-out, layout, or improvements would the space need for the applicant's operation?
+
+#### AI Insights
+
+##### Applicant Insights
+- What has this applicant disclosed about their rental background?
+- What rental needs and uses has the applicant described?
+- What business use and operating profile has this applicant disclosed?
+
+---
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+(function(){var s=document.getElementById('src').textContent,e=document.getElementById('content');
+if(window.marked){e.innerHTML=marked.parse(s);}else{e.innerHTML='<pre style="white-space:pre-wrap">'+s.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</pre>';}})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create Offer + Hire Agent — Bug-Fix Audit</title>
+<style>
+  :root{--bg:#0f1523;--card:#182034;--ink:#e8edf6;--muted:#9fb0cd;--line:#2a3550;
+        --pass:#1f9d57;--fail:#d1435b;--p0:#d1435b;--p1:#f0a020;--p2:#5b8def;--chip:#232d47;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{position:sticky;top:0;z-index:10;background:#0c111d;border-bottom:1px solid var(--line);
+         padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+  header h1{font-size:17px;margin:0}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .tally{font-size:13px;color:var(--muted)}
+  button.util{background:var(--chip);color:var(--ink);border:1px solid var(--line);
+              border-radius:7px;padding:6px 11px;font-size:13px;cursor:pointer}
+  button.util:hover{border-color:#3d4c72}
+  .note-banner{background:#172136;border:1px solid var(--line);border-left:3px solid var(--p1);
+       border-radius:8px;padding:12px 15px;margin:0 0 18px;color:var(--muted);font-size:13.5px}
+  .note-banner b{color:var(--ink)}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 20px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 15px;min-width:120px}
+  .kpi .n{font-size:22px;font-weight:700}
+  .kpi .k{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+  .kpi.crit .n{color:#ff9aa8} .kpi.warn .n{color:#ffd79a} .kpi.info .n{color:#bcd0f5}
+  .phase{margin:30px 0 4px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+         display:flex;align-items:center;gap:9px}
+  .phase .dot{width:9px;height:9px;border-radius:50%}
+  .p1 .dot{background:var(--p0)} .p2 .dot{background:var(--p1)} .p3 .dot{background:var(--p2)}
+  .phase-sub{color:var(--muted);font-size:13px;margin:0 0 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:16px 18px;margin:12px 0}
+  .chead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .id{display:inline-block;font-weight:700;font-size:13px;background:var(--chip);border:1px solid var(--line);
+      border-radius:6px;padding:2px 8px}
+  .flow{font-size:12px;color:var(--muted);background:#141c2e;border:1px solid var(--line);border-radius:20px;padding:2px 10px}
+  .sev{font-size:11.5px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+  .sev.crit{color:#ff9aa8;border-color:var(--p0);background:#2a1620}
+  .sev.high{color:#ffd79a;border-color:#f0a02055}
+  .sev.med{color:#bcd0f5;border-color:#5b8def55}
+  h3.title{margin:11px 0 6px;font-size:16px}
+  .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:12px 0 3px}
+  .card p{margin:2px 0 4px}
+  p.statusline{background:#141c2e;border:1px dashed var(--line);border-radius:8px;padding:8px 12px;color:var(--muted);font-size:13.5px}
+  ol.steps{margin:4px 0 6px;padding-left:20px} ol.steps li{margin:3px 0}
+  ul.exp{margin:4px 0 6px;padding-left:18px} ul.exp li{margin:3px 0}
+  code{background:#0c1120;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.5px;
+       font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-word}
+  .section{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:16px 18px;margin:14px 0}
+  .section h2{font-size:15px;margin:0 0 8px}
+  .section ul{margin:6px 0;padding-left:20px} .section li{margin:4px 0}
+  .section table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  .section th,.section td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+  .section th{color:var(--muted);font-weight:600;background:#141c2e}
+  .order li{margin:6px 0}
+  .flag{color:#ffd79a}
+  footer{max-width:1000px;margin:24px auto 60px;padding:0 20px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Create Offer + Hire Agent · Bug-Fix Audit</h1>
+  <div class="bar">
+    <span class="tally">33 issues · 3 phases · audit only — no code changed</span>
+    <button class="util" onclick="window.print()">Print / PDF</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="note-banner">
+    <b>Read-only audit.</b> No production code was modified. Every “Fix plan” is a proposal.
+    Nothing is marked <b>Fixed</b> — per the brief, an item may only be closed once it is
+    <b>code-verified AND browser-verified</b>. “Claimed-done (prior doc)” means the June-28 master spec
+    logged a code fix but its own Safety Rule 6 left it browser-unverified (“no browser driver in this env”) —
+    these are the highest-risk <b>false greens</b> and must be re-verified.
+    <br>Markdown source: <code>docs/launch-audits/CREATE-OFFER-HIRE-AGENT-BUGFIX-AUDIT-2026-07-05.md</code>
+  </div>
+
+  <div class="section" style="border-left:3px solid var(--p1)">
+    <h2>Batch A — implemented &amp; code-verified 2026-07-05 · commit <code>0e486dfaf</code></h2>
+    <p>Items <b>#3, #12, #13, #21/#22, #32</b> are <b>CODE COMPLETE — HUMAN BROWSER QA REQUIRED</b> (none closed; browser could not run here — Playwright present, Chromium can’t launch). 8 files changed (7 code + 1 test); <b>8 new tests + 80 existing regression tests pass</b>; all Blade partials compile.</p>
+    <ul>
+      <li><b>#3</b> Seller edit non-draft path now redirects to <code>offer.listing.seller.view</code> (Livewire test covers published + draft paths).</li>
+      <li><b>#12</b> 7 pet inputs → <code>type="text"</code> across Create/Hire Seller &amp; Landlord (data-provider markup test).</li>
+      <li><b>#13</b> Landlord lease-term Other placeholder → <code>Enter desired lease term (e.g., 8 Months)</code>.</li>
+      <li><b>#32</b> Buyer lease-purchase placeholder → capitalized <code>Seller</code>.</li>
+      <li><b>#21/#22</b> no code change — <b>CODE REVIEW ONLY</b> (Blade + CSS rule read, not rendered DOM/computed style, no test); computed pixel-QA outstanding.</li>
+    </ul>
+    <p class="flag" style="margin-top:8px"><b>Human QA:</b> run the checklist at <code>/batch-a-browser-qa.html</code> before closing any Batch A item.</p>
+  </div>
+
+  <div class="section" style="border-left:3px solid var(--pass)">
+    <h2>Owner decisions — locked 2026-07-05 (binding on implementation)</h2>
+    <ul>
+      <li><b>#33 Commute Preferences</b> — do NOT remove the only block. Remove only if a genuine duplicate exists under Non-Negotiable Amenities / Property Features. Per the audit, no duplicate was found → close as <b>“No code change required — duplicate not found”</b> unless one surfaces at implementation.</li>
+      <li><b>#25 Water Frontage / Waterfront Feet</b> — do NOT add to Hire. Scope = existing Create Seller / Create Landlord fields only; fix placeholder formatting only where the fields already exist.</li>
+      <li><b>#31 Description placeholders</b> — Seller <code>Enter property description</code>, Buyer <code>Enter buyer description</code>, Landlord <code>Enter rental description</code>, <b>Tenant <code>Enter tenant description</code></b> (decided — not “rental”).</li>
+      <li><b>Verification policy</b> — nothing is PASS / COMPLETE / IMPLEMENTED / RESOLVED until it is <b>code- AND browser-verified</b>. If browser QA can’t run here, mark <code>CODE COMPLETE — HUMAN BROWSER QA REQUIRED</code> and leave it <b>open</b> in the ledger (it is not a pass).</li>
+      <li><b>Shared components (SC1–SC9)</b> — each change must be regression-tested across <b>every affected Create AND Hire flow</b> before its batch is complete.</li>
+      <li><b>Batch discipline</b> — each batch: only its planned fixes · clean <code>git status</code> to start · single isolated commit (report hash) · files changed · root causes · browser verification · remaining unresolved.</li>
+    </ul>
+    <p class="flag" style="margin-top:8px"><b>Gate:</b> implementation is paused pending owner approval to begin <b>Batch A</b>.</p>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi crit"><div class="n">7</div><div class="k">P0 blockers</div></div>
+    <div class="kpi warn"><div class="n">13</div><div class="k">P1 form bugs</div></div>
+    <div class="kpi info"><div class="n">13</div><div class="k">P2 UI/UX</div></div>
+    <div class="kpi"><div class="n">12</div><div class="k">False-greens to re-verify</div></div>
+    <div class="kpi"><div class="n">3</div><div class="k">Net-new</div></div>
+    <div class="kpi"><div class="n">3 ✓</div><div class="k">Owner decisions locked</div></div>
+  </div>
+
+  <div class="section">
+    <h2>Critical architecture facts (govern every fix)</h2>
+    <ul>
+      <li><b>Hire Agent authority (all 4 roles):</b> the live create component is <code>TenantAgentAuction</code> (edit: <code>TenantAgentAuctionEdit</code>), routed via catch-all <code>web.php:677-679</code>. Per-role UI is chosen by <code>@switch($user_type)</code> in <code>tenant-agent-auction.blade.php</code>, which includes tab partials from the dedicated <code>hire-{seller,buyer,landlord}-agent/…</code> and <code>tenant-agent-auction-tabs/…</code> dirs. Hire PHP edits go in <code>TenantAgentAuction.php</code> + <code>TenantAgentAuctionEdit.php</code> — the dedicated Hire* PHP components are legacy/do-not-invest. <code>TenantAgentAuction</code> must NOT be refactored onto <code>HasListingLifecycle</code>.</li>
+      <li><b>Create Offer authority:</b> isolated <code>OfferListing\{Role}\{Role}OfferListing</code> + <code>Edit</code>; Tenant uses the multi-role <code>TenantOfferListing</code>. Each has a monolithic wrapper blade (JS) + tab partials (markup).</li>
+      <li><b>Frozen:</b> <code>initializeLimitedService()</code> in all four Create blades — never touch. Landlord/Tenant persist via EAV meta.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Shared components — fix once, ripples everywhere</h2>
+    <table>
+      <tr><th>Ref</th><th>Component</th><th>Drives</th></tr>
+      <tr><td>SC1</td><td>Currency mask trio <code>validateInput/reformatNumber/handlePaste</code> (copied into every hire/tenant wrapper)</td><td>#11</td></tr>
+      <tr><td>SC2</td><td>select2-in-<code>wire:ignore</code> + re-init-on-<code>message.processed</code> reveal pattern</td><td>#8, #9, #10, #15, #18</td></tr>
+      <tr><td>SC3</td><td>Blade-class “Other” reveal + delegated change handler (<code>offer-seller-listing.blade.php:2698-2720</code>)</td><td>#14, #17</td></tr>
+      <tr><td>SC4</td><td><code>partials/agent-credentials.blade.php</code> (19 include sites)</td><td>#26</td></tr>
+      <tr><td>SC5</td><td><code>partials/location-dna/map-input.blade.php</code></td><td>#28, #29, (#33)</td></tr>
+      <tr><td>SC6</td><td><code>PropertyTypePlaceholderHelper.php</code></td><td>#30, #31</td></tr>
+      <tr><td>SC7</td><td><code>{Seller,Landlord}PublishValidation</code> traits</td><td>#2, #4</td></tr>
+      <tr><td>SC8</td><td><code>VideoEmbedHelper.php</code> (exists but detail views bypass it)</td><td>#5</td></tr>
+      <tr><td>SC9</td><td>Landlord <code>broker-compensation.blade.php</code> (gated on property_type)</td><td>#1</td></tr>
+    </table>
+  </div>
+
+<div class="phase p1"><span class="dot"></span>Phase 1 — Critical launch blockers</div>
+<p class="phase-sub">Priority P0. Must be code- AND browser-verified before launch.</p>
+<div class="card">
+<div class="chead">
+<span class="id">P1-1</span>
+<span class="sev crit">P0 · Launch blocker</span>
+<span class="flow">Create Landlord</span>
+</div>
+<h3 class="title">Landlord create missing Broker Compensation &amp; Agency Agreement Terms</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>offer-landlord-tabs/commission-based/broker-compensation.blade.php (20-24, 48)</li>
+<li>create blade :1248 · edit blade :1114</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Fields render on &lt;b&gt;edit&lt;/b&gt; (property_type already “Residential”) but not on &lt;b&gt;create&lt;/b&gt; (default <code>property_type=&#x27;&#x27;</code>). Commercial never renders at all. The Agency-Agreement partials are orphaned — not <code>@include</code>d anywhere.</p>
+<div class="lbl">Expected behavior</div>
+<p>Broker Compensation + Agency Terms render on create for both Residential &amp;amp; Commercial, at parity with edit.</p>
+<div class="lbl">Root cause</div>
+<p>Entire partial wrapped in <code>@if($_isResidential)</code>; <code>$_isCommercial</code> is computed but never used and there is no <code>@else</code>. Agency-agreement partials never included.</p>
+<div class="lbl">Fix plan</div>
+<p>Add an <code>@else</code>/Commercial branch; wire the orphaned agency-agreement partials into the tab; show the block when type is still blank on create.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — gate change could double-show on edit; Landlord EAV meta save must cover the new fields.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Create Landlord, leave type blank, then pick each property type.</li>
+<li>Confirm both Broker Comp + Agency Terms blocks render.</li>
+<li>Fill + submit; re-open in edit — values persist.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A1.8/A1.9 claimed ✅ but does &lt;b&gt;not&lt;/b&gt; name Landlord; agency partials confirmed orphaned → treat as a real bug.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P1-2</span>
+<span class="sev crit">P0 · Launch blocker</span>
+<span class="flow">Create Landlord</span>
+</div>
+<h3 class="title">Landlord create submit must work; draft/edit still save</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>LandlordOfferListing.php store():4067, saveDraft():2267</li>
+<li>Concerns/LandlordPublishValidation.php</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Submit can silently no-op when a required field on another tab fails; the error only flashes a banner.</p>
+<div class="lbl">Expected behavior</div>
+<p>Create submits; on failure it jumps to the offending tab; draft stays lenient; edit unaffected.</p>
+<div class="lbl">Root cause</div>
+<p>Publish <code>validate()</code> runs and the catch flashes, but create <code>store()</code> does not switch <code>activeTab</code> to the error tab (edit <code>update()</code> does).</p>
+<div class="lbl">Fix plan</div>
+<p>Mirror edit’s error→tab mapping into <code>store()</code>; verify <code>desired_lease_length</code> + contact fields serialize.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — shared trait touches create + edit; drafts must remain lenient.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Create Landlord full happy-path submit → lands on detail page.</li>
+<li>Submit again with a required field missing on a far tab → jumps to that tab.</li>
+<li>Save draft, resume, edit an existing listing — all still work.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A1.10 ✅ Batch 1 w/ regression test; re-verify tab-jump + happy path in browser.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P1-3</span>
+<span class="sev crit">P0 · Launch blocker</span>
+<span class="flow">All 4 Create edit</span>
+</div>
+<h3 class="title">After edit → land on listing page, not generic success screen</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>SellerOfferListingEdit.php update():4067-4074 (culprit)</li>
+<li>Buyer :2921 · Landlord :3888 · Tenant :3923 (all correct)</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Seller edit of an &lt;b&gt;already-published&lt;/b&gt; listing flashes success + no redirect → stays on the form. The other three roles redirect correctly.</p>
+<div class="lbl">Expected behavior</div>
+<p>All four roles redirect to <code>offer.listing.{role}.view</code> after edit.</p>
+<div class="lbl">Root cause</div>
+<p>Seller <code>update()</code> only redirects on the <code>$wasDraft</code> (first-publish) branch; the non-draft path returns nothing.</p>
+<div class="lbl">Fix plan</div>
+<p>Add <code>return redirect()-&gt;route(&#x27;offer.listing.seller.view&#x27;, [&#x27;id&#x27;=&gt;$auction-&gt;id]);</code> on the non-draft path.</p>
+<div class="lbl">Regression risk</div>
+<p>Low — per-role, isolated to Seller edit.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Edit an already-published Seller listing.</li>
+<li>Click Save → must land on the listing detail page, not the form.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">&lt;b&gt;CODE COMPLETE — HUMAN BROWSER QA REQUIRED&lt;/b&gt; (Batch A <code>0e486dfaf</code>: non-draft redirect added; Livewire test asserts redirect on published + draft paths).</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P1-4</span>
+<span class="sev crit">P0 · Launch blocker</span>
+<span class="flow">Create Seller</span>
+</div>
+<h3 class="title">Seller Business listing cannot submit</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>SellerOfferListing.php store():4223, sanitizeBeforeSubmit():4168</li>
+<li>Concerns/SellerPublishValidation.php (45-106) · financial-details.blade.php:245-486</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Business submit can silently fail validation (caught → flash only).</p>
+<div class="lbl">Expected behavior</div>
+<p>A Business listing submits cleanly.</p>
+<div class="lbl">Root cause</div>
+<p>Any Business-only multi-select value absent from the <code>in:</code> whitelists fails <code>validate()</code>; also Tenant-engine parity branch :4099-4148.</p>
+<div class="lbl">Fix plan</div>
+<p>Audit Business-tab option values against the whitelists; add missing values; ensure error→tab jump.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — whitelist edits could loosen validation for other property types.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Create Seller → property type = Business.</li>
+<li>Fill the Business financial-details tab → submit.</li>
+<li>Confirm success + redirect to detail page.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A7.46 ✅ Batch 15 but flagged “browser smoke-test recommended” → must browser-verify.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P1-5</span>
+<span class="sev crit">P0 · Launch blocker</span>
+<span class="flow">All detail views</span>
+</div>
+<h3 class="title">Video tour must render embedded with safe fallback</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>app/Support/VideoEmbedHelper.php (22-47)</li>
+<li>Landlord view.blade.php:945-995 · Seller :1262-1295 · Tenant :1387-1402</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>YouTube/Vimeo embed works, but any other provider (Matterport/Loom/MP4) falls back to a raw <code>&lt;a&gt;</code> link. Detail views duplicate inline regex and bypass the helper.</p>
+<div class="lbl">Expected behavior</div>
+<p>Recognized providers embed; unknown URLs show a safe labeled fallback link without breaking layout.</p>
+<div class="lbl">Root cause</div>
+<p>Detail views don’t reuse <code>VideoEmbedHelper</code>; the helper only supports YouTube + Vimeo.</p>
+<div class="lbl">Fix plan</div>
+<p>Route detail views through <code>VideoEmbedHelper</code>; extend provider coverage; keep an explicit fallback <code>&lt;a&gt;</code>.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — three duplicated inline blocks to consolidate; must not break existing YT/Vimeo embeds.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Paste a YouTube, a Vimeo, and a non-supported URL into a listing.</li>
+<li>View each detail page → confirm embed vs. safe fallback link.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">NET-NEW — uncovered by the prior master doc.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P1-6</span>
+<span class="sev crit">P0 · Launch blocker</span>
+<span class="flow">Create Seller / Landlord</span>
+</div>
+<h3 class="title">14 JPG photo upload not working</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>config/livewire.php:100,102,108 · .user.ini</li>
+<li>LandlordOfferListing.php:3848 · SellerOfferListing.php:3918 · photos-tours-documents.blade.php:44</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Rules allow 50 MB/file, a 50-file cap, mimes jpg/jpeg/png/webp — 14 JPGs are well within limits.</p>
+<div class="lbl">Expected behavior</div>
+<p>14 JPGs upload reliably in one selection.</p>
+<div class="lbl">Root cause</div>
+<p>Code paths look correct; suspect the temp-upload <code>throttle:60,1</code>, <code>max_upload_time=5</code>, or <code>max_file_uploads=50</code> intermittently dropping a batch. &lt;b&gt;Not yet diagnosed.&lt;/b&gt;</p>
+<div class="lbl">Fix plan</div>
+<p>Reproduce the real failure first; audit throttle/time/count-accumulation; improve error messaging.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — loosening throttle/limits affects all uploads.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Select exactly 14 JPGs in one file dialog.</li>
+<li>Confirm all 14 persist and reappear on edit.</li>
+<li>Watch Network for a dropped/failed <code>/livewire/upload</code> request.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A2.16 ✅ limits-audit only; the specific 14-file failure was never diagnosed → reproduce first.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P1-7</span>
+<span class="sev crit">P0 · Launch blocker</span>
+<span class="flow">Create Seller / Landlord</span>
+</div>
+<h3 class="title">Large document upload not working; audit limits + messages</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>config/livewire.php:100 · .user.ini (upload_max=50M / post_max=55M)</li>
+<li>~16 updated*File handlers in Seller/Landlord</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Hard 50 MB ceiling at three layers (Livewire rule, per-field rule, PHP). Anything &amp;gt;50 MB is rejected. No nginx <code>client_max_body_size</code> exists in the repo.</p>
+<div class="lbl">Expected behavior</div>
+<p>Large docs upload up to a documented limit; a clear error when exceeded.</p>
+<div class="lbl">Root cause</div>
+<p>50 MB ceiling enforced at <code>max:51200</code> (Livewire) + per-field + PHP <code>post_max_size=55M</code>. The production server body limit is unknown (outside version control).</p>
+<div class="lbl">Fix plan</div>
+<p>Decide the target max; raise all three layers together + server <code>client_max_body_size</code>; surface a friendly size error.</p>
+<div class="lbl">Regression risk</div>
+<p>High — raising limits affects memory/timeouts app-wide; server config is outside the repo.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Upload a doc just under and just over the limit.</li>
+<li>Confirm success vs. a clear error message (never a silent fail).</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A2.17 ✅ limits-audit only; the failure mode was never diagnosed.</p>
+</div>
+
+<div class="phase p2"><span class="dot"></span>Phase 2 — Functional form bugs</div>
+<p class="phase-sub">Priority P1. Dependent-field / “Other”-reveal, currency, and parity bugs.</p>
+<div class="card">
+<div class="chead">
+<span class="id">P2-8</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Create + Hire Seller</span>
+</div>
+<h3 class="title">Acceptable Exchange Item selects then unselects</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>Hire hire-seller-agent/…/seller-terms.blade.php:760-790 + JS hire-seller-agent.blade.php:1517-1539</li>
+<li>Create offer-seller-tabs/…/seller-terms.blade.php:810-833 + offer-seller-listing.blade.php:2698-2720</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>The selection toggles back off after a Livewire round-trip.</p>
+<div class="lbl">Expected behavior</div>
+<p>The selection persists.</p>
+<div class="lbl">Root cause</div>
+<p>&lt;b&gt;SC2:&lt;/b&gt; select2 in <code>wire:ignore</code> re-inits on every <code>message.processed</code> from the stale <code>data-selected</code>; the commit is deferred <code>@this.set(…,false)</code> so the stale set overwrites the new selection.</p>
+<div class="lbl">Fix plan</div>
+<p>Refresh <code>data-selected</code> after commit, or guard the re-init to skip when the user just changed; commit non-deferred.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — SC2 pattern is shared with flood-zone (#18) &amp;amp; garage (#15).</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Select an exchange item, wait for the spinner.</li>
+<li>Confirm it stays selected + saves on submit.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A6.36 ✅ Batch 15, “browser smoke-test recommended” → browser-verify.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-9</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Hire Seller</span>
+</div>
+<h3 class="title">Exchange Item “Other” doesn’t open dependent input</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>hire-seller-agent/…/seller-terms.blade.php:782-790 · JS :1530, :1535</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Choosing “Other” doesn’t reveal the dependent text input.</p>
+<div class="lbl">Expected behavior</div>
+<p>“Other” reveals the <code>other_exchange_item</code> input.</p>
+<div class="lbl">Root cause</div>
+<p>Same SC2 mechanism as #8: re-init resets <code>val()</code> and drops “Other”; the deferred set never commits so the server-side reveal never fires.</p>
+<div class="lbl">Fix plan</div>
+<p>Fixed together with #8 (same root); ensure the toggle fires + persists.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — same shared SC2 path.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Choose Other in exchange item.</li>
+<li>Confirm the input appears + saves.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A6.37 ✅ Batch 15 → browser-verify.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-10</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Hire Seller</span>
+</div>
+<h3 class="title">Estimated Value &amp; Acceptable Condition disappear while typing</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>hire-seller-agent/…/seller-terms.blade.php:792-833 (inputs 803, 821)</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Fields visually blank mid-typing.</p>
+<div class="lbl">Expected behavior</div>
+<p>Values stay visible/stable.</p>
+<div class="lbl">Root cause</div>
+<p>Plain live <code>wire:model</code> triggers a round-trip each keystroke; the sibling <code>wire:ignore</code> select2 teardown/re-init morphs these nodes; no <code>wire:key</code> stabilizes them.</p>
+<div class="lbl">Fix plan</div>
+<p>Add <code>wire:key</code> to the two form-groups; use <code>wire:model.blur</code>/<code>.lazy</code>; decouple from the exchange re-init.</p>
+<div class="lbl">Regression risk</div>
+<p>Low-Med — local; coupled to SC2.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Type into Estimated Value + Acceptable Condition.</li>
+<li>Confirm no flicker/blank while typing.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A6.37 (same row) ✅ Batch 15 → browser-verify.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-11</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Hire (all wrappers)</span>
+</div>
+<h3 class="title">Currency fields delete periods</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>hire-seller-agent/…/seller-terms.blade.php: additional_cash:846, lease_option_price:949, lease_option_payment:966/1156, option_fee_amount:1007, balloon_payment_amount:1564</li>
+<li>SC1 mask hire-seller-agent.blade.php:2832-2878</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>The trailing decimal is stripped mid-typing (“123.” → “123”).</p>
+<div class="lbl">Expected behavior</div>
+<p>Decimals are preserved while typing.</p>
+<div class="lbl">Root cause</div>
+<p>Live <code>wire:model</code> re-hydrates the input from the string prop each keystroke, dropping the in-progress trailing dot; <code>reformatNumber</code> onblur also drops a lone trailing dot. Fields are already <code>type=&quot;text&quot;</code> (not number).</p>
+<div class="lbl">Fix plan</div>
+<p>Make the model <code>.defer</code>/<code>.lazy</code> or JS-only; fix <code>reformatNumber</code> trailing-dot; centralize SC1.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — SC1 is duplicated across all hire/tenant wrappers; fix once + propagate.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Type “1234.56” slowly into each of the 5 fields.</li>
+<li>Confirm the decimal survives + saves.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A6.38 ✅ Batch 9 “already compliant (verify-only)” → re-verify; symptom persists per code.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-12</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Hire+Create Seller/Landlord</span>
+</div>
+<h3 class="title">Pet fields must be text, not number input</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>Hire Seller property-preferences.blade.php:1341,1377 · Create Seller :1405,1441</li>
+<li>Hire Landlord :891,953 · Create Landlord :1671 (weight already text :1733)</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p><code>type=&quot;number&quot;</code> for “Number of Pets Allowed” &amp;amp; “Max Weight Per Pet” (Create-Landlord weight is already text).</p>
+<div class="lbl">Expected behavior</div>
+<p>Both render as text inputs.</p>
+<div class="lbl">Root cause</div>
+<p>Hard-coded <code>type=&quot;number&quot;</code> in four partials.</p>
+<div class="lbl">Fix plan</div>
+<p>Change to <code>type=&quot;text&quot;</code> (mirror the Create-Landlord weight field); keep numeric validation server-side.</p>
+<div class="lbl">Regression risk</div>
+<p>Low — cosmetic input type; verify no JS relies on number type.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>On each of the four forms, confirm both fields are text inputs.</li>
+<li>Enter a value + save.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">&lt;b&gt;CODE COMPLETE — HUMAN BROWSER QA REQUIRED&lt;/b&gt; (Batch A <code>0e486dfaf</code>: 7 inputs → <code>type=&quot;text&quot;</code>; data-provider test asserts text-not-number on all 4 partials).</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-13</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Create Landlord</span>
+</div>
+<h3 class="title">Desired Lease Term “Other” placeholder repeats an existing option</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>offer-landlord-tabs/commission-based/lease-terms.blade.php:1170-1171 (options 8-11)</li>
+<li>Hire Landlord :1172 (correct ref)</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>The placeholder example “6-month” duplicates the existing “6 Months” option.</p>
+<div class="lbl">Expected behavior</div>
+<p>The example is a value NOT already in the dropdown (mirror Hire’s “8 Months”).</p>
+<div class="lbl">Root cause</div>
+<p>Placeholder copy in the Create-Landlord partial.</p>
+<div class="lbl">Fix plan</div>
+<p>Change the placeholder example to a non-listed term.</p>
+<div class="lbl">Regression risk</div>
+<p>Very Low — text only.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>View the Create Landlord lease-term Other placeholder.</li>
+<li>Confirm it no longer duplicates a listed option.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">&lt;b&gt;CODE COMPLETE — HUMAN BROWSER QA REQUIRED&lt;/b&gt; (Batch A <code>0e486dfaf</code>: placeholder → <code>Enter desired lease term (e.g., 8 Months)</code>; string test asserts no <code>6-month</code>).</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-14</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Create Seller (+ Landlord)</span>
+</div>
+<h3 class="title">Vacant Land Property Style “Other” input doesn’t appear</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>offer-seller-tabs/…/property-preferences.blade.php (select:641, VacantLand:675-680, wrapper:688)</li>
+<li>JS offer-seller-listing.blade.php:2662-2664, 2698-2720 · Create Landlord :255</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Selecting “Other” doesn’t un-hide the input.</p>
+<div class="lbl">Expected behavior</div>
+<p>“Other” reveals a custom input (copy Hire Seller). Placeholder: <code>Enter property style (e.g., Solar farm, RV park, Conservation easement)</code>.</p>
+<div class="lbl">Root cause</div>
+<p>&lt;b&gt;SC3:&lt;/b&gt; <code>property_items</code> is <code>wire:model.defer</code> (no re-render); the delegated handler block has &lt;b&gt;no&lt;/b&gt; handler for <code>#property_style_select</code>. Class mismatch risk (<code>other_property_items_seller</code> vs <code>.other_property_items</code>).</p>
+<div class="lbl">Fix plan</div>
+<p>Register <code>#property_style_select</code> in the SC3 handler to toggle <code>.other_property_items_seller</code>; set the placeholder.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — SC3 block is shared with appliances/view/assets/garage.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Select Vacant Land → Property Style = Other.</li>
+<li>Confirm the input appears with the placeholder + saves.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A7.47/A7.48 ✅ Batch 14 fixed the &lt;b&gt;placeholder only&lt;/b&gt;, NOT the reveal → reveal still broken.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-15</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Hire Buyer</span>
+</div>
+<h3 class="title">Garage/Parking Features Needed = Yes must reveal dependents</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>hire-buyer-agent/…/property-preferences.blade.php (select:530, wrapper:545 wire:ignore, nested Other:561)</li>
+<li>JS hire-buyer-agent.blade.php:1484-1519, 1548-1553</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Selecting Yes may not reveal the dependent parking fields.</p>
+<div class="lbl">Expected behavior</div>
+<p>Yes reveals the dependent parking fields.</p>
+<div class="lbl">Root cause</div>
+<p>The reveal wrapper is <code>wire:ignore</code> (Livewire can’t toggle its <code>d-none</code>); the native change listener is bound once to a node later replaced by morph; reveal then relies solely on the <code>message.processed</code> hook.</p>
+<div class="lbl">Fix plan</div>
+<p>Rebind change on morph, or drive the reveal via reactive state; ensure the hook re-reads the value.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — mirrors the Tenant garage + Create-Landlord garage handlers.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Select Yes for Garage/Parking Features.</li>
+<li>Confirm dependents appear + persist on save.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc B5.3 ⬜ not started.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-16</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Hire Buyer</span>
+</div>
+<h3 class="title">Other for Min Bathrooms/Bedrooms makes the select disappear</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>hire-buyer-agent/…/property-preferences.blade.php (wrapper key:302, bedrooms:313, bathrooms:346)</li>
+<li>JS syncSelectValues:1042-1053, bath:1462-1478, bed:1780</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Choosing “Other” makes the select box vanish.</p>
+<div class="lbl">Expected behavior</div>
+<p>The select stays visible; the Other input appears alongside it.</p>
+<div class="lbl">Root cause</div>
+<p>Live <code>wire:model</code> re-render + the broad <code>select[wire:model</code>] icon/select2 sweep desync the morphed select (left <code>select2-hidden-accessible</code>); <code>wire:key</code> only keys on <code>$property_type</code>.</p>
+<div class="lbl">Fix plan</div>
+<p>Add a stable <code>wire:key</code> per select, or exclude it from the sweep / <code>wire:ignore</code> the enhanced select; keep the Other input.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — the global sweep is shared across selects.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Pick Other for Min Bedrooms, then Min Bathrooms.</li>
+<li>Confirm the select stays visible.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc B5.4 ⬜ not started.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-17</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Hire + Create Buyer</span>
+</div>
+<h3 class="title">Purchase Purpose “Other” input should appear</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>Hire hire-buyer-agent/…/property-preferences.blade.php:1189-1215</li>
+<li>Create offer-buyer-tabs/…/property-preferences.blade.php:1313-1339</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>“Other” may not reveal the input.</p>
+<div class="lbl">Expected behavior</div>
+<p>“Other” reveals the input with placeholder <code>Enter purchase purpose (e.g., Relocating for family support)</code>.</p>
+<div class="lbl">Root cause</div>
+<p>Reveal via blade-class recompute; works only if the select is plain live <code>wire:model</code> and NOT captured by the global <code>select[wire:model</code>] sweep (:1042).</p>
+<div class="lbl">Fix plan</div>
+<p>Verify the select is excluded from the sweep; ensure the wrapper toggles; set the placeholder.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — global sweep interaction.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Choose Other for Purchase Purpose (both flows).</li>
+<li>Confirm input + placeholder + persistence.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc B5.8 ⬜ (field-add only; Other behavior not itemized).</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-18</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Hire + Create Buyer</span>
+</div>
+<h3 class="title">Flood Zone Preference “Other” input should appear</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>Hire hire-buyer-agent/…/property-preferences.blade.php:1247-1271 + JS :1377-1390</li>
+<li>Create offer-buyer-tabs/…/property-preferences.blade.php:1421-1443 + :1551-1552</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>“Other” may not reveal the input.</p>
+<div class="lbl">Expected behavior</div>
+<p>“Other” reveals the input with placeholder <code>Enter flood zone preference (e.g., Prefer elevated property with low-risk designation)</code>.</p>
+<div class="lbl">Root cause</div>
+<p>select2 in <code>wire:ignore</code>, committed via a deferred <code>debouncedSet</code>; the reveal depends on <code>change.fztSync</code>; the SC2 re-init can miss/reset it.</p>
+<div class="lbl">Fix plan</div>
+<p>Fix with the SC2 family; ensure <code>.flood_zone_tolerance_other_wrapper</code> toggles + persists; set the placeholder.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — SC2 shared.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Choose Other for Flood Zone Preference (both flows).</li>
+<li>Confirm input + placeholder.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc B5.8 ⬜ (field-add only).</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-19</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Hire Buyer</span>
+</div>
+<h3 class="title">HOA Acceptance = Yes/Flexible show Max HOA Monthly Fee</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>hire-buyer-agent/…/property-preferences.blade.php:1217-1245 (Alpine x-show:1233, input:1242)</li>
+<li>Create Buyer reference</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Appears already implemented via Alpine <code>x-show</code>.</p>
+<div class="lbl">Expected behavior</div>
+<p>Yes/Flexible reveals the Max HOA fee (same tooltip/placeholder as Create Buyer).</p>
+<div class="lbl">Root cause</div>
+<p><code>x-show=&quot;[&#x27;Yes&#x27;,&#x27;Flexible&#x27;].includes($wire.hoa_acceptance)&quot;</code> is robust; risk only if <code>hoa_acceptance</code> is swept by the global select handler.</p>
+<div class="lbl">Fix plan</div>
+<p>Verify tooltip/placeholder parity + <code>hoa_max_monthly_fee</code> persistence.</p>
+<div class="lbl">Regression risk</div>
+<p>Low — Alpine-driven.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Set HOA Acceptance = Yes, then Flexible.</li>
+<li>Confirm the fee field shows + saves; compare to Create Buyer.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc B5.8 ⬜; code suggests likely already at parity → verify only.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P2-20</span>
+<span class="sev high">P1 · Functional</span>
+<span class="flow">Hire Tenant</span>
+</div>
+<h3 class="title">Parity: add Rental Purpose + Accessibility Requirements</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>Missing in tenant-agent-auction-tabs/…/property-details.blade.php</li>
+<li>Reference Create Tenant offer-tenant-tabs/…/property-details.blade.php:856-894 · props in TenantAgentAuction.php/Edit</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Both fields are absent from Hire Tenant.</p>
+<div class="lbl">Expected behavior</div>
+<p>Both present with the same tooltips/placeholders/Other behavior as Create Tenant.</p>
+<div class="lbl">Root cause</div>
+<p>Parity gap — added to Create Tenant (B4.4), never ported to Hire Tenant.</p>
+<div class="lbl">Fix plan</div>
+<p>Port the markup + <code>rental_purpose</code>/<code>rental_purpose_other</code>/<code>accessibility_requirements</code> props into the Hire Tenant component + edit; save via EAV meta.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — new fields on the 6307-line component; must save via meta on create + edit.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Hire Tenant: fill both fields (incl. Rental Purpose = Other).</li>
+<li>Submit → edit → confirm persisted.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">NET-NEW for Hire Tenant (prior doc only did Create Tenant).</p>
+</div>
+
+<div class="phase p3"><span class="dot"></span>Phase 3 — UI/UX consistency</div>
+<p class="phase-sub">Priority P2. Placeholders, tooltips, sizing, duplicate blocks.</p>
+<div class="card">
+<div class="chead">
+<span class="id">P3-21</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">Create Seller</span>
+</div>
+<h3 class="title">Additional Seller Sale Terms box too small; match Total Parcels</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>offer-seller-tabs/…/seller-terms.blade.php:2174,2181,2184</li>
+<li>ref tax-legal-hoa-disclosures.blade.php:87,94</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>A compact 1-row <code>seller-compact-textarea</code>.</p>
+<div class="lbl">Expected behavior</div>
+<p>Match the Total Number of Parcels box size/type; placeholder sentence-cased.</p>
+<div class="lbl">Root cause</div>
+<p>CSS <code>seller-compact-textarea rows=&quot;1&quot;</code>; the placeholder is already mostly sentence-cased.</p>
+<div class="lbl">Fix plan</div>
+<p>Align sizing to <code>.form-control</code> height (as A7.42 did); confirm placeholder capitalization.</p>
+<div class="lbl">Regression risk</div>
+<p>Low — cosmetic; the shared <code>.seller-compact-textarea</code> class also affects the five fields in #22.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Compare box heights side by side (create + edit).</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">&lt;b&gt;CODE REVIEW ONLY — HUMAN BROWSER QA REQUIRED&lt;/b&gt; (Batch A: no code change; verified by reading Blade + the <code>.seller-compact-textarea</code> CSS rule only — NOT rendered DOM / computed style, no automated test. Computed pixel parity must be confirmed in-browser).</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-22</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">Create Seller</span>
+</div>
+<h3 class="title">Enlarge 5 Seller textareas to match Total Parcels</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>tax-legal-hoa-disclosures.blade.php: Parcel IDs:108, Legal Desc:124, Special Assessment:318, Approval Process:491, Leasing Restrictions:677</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>All five are compact 1-row textareas.</p>
+<div class="lbl">Expected behavior</div>
+<p>All five match the Total Parcels box size.</p>
+<div class="lbl">Root cause</div>
+<p>Shared <code>.seller-compact-textarea rows=&quot;1&quot;</code>.</p>
+<div class="lbl">Fix plan</div>
+<p>Align sizing (same CSS approach as A7.43).</p>
+<div class="lbl">Regression risk</div>
+<p>Low — shared class; verify no other consumer over-grows.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Confirm all five match on create + edit.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">&lt;b&gt;CODE REVIEW ONLY — HUMAN BROWSER QA REQUIRED&lt;/b&gt; (Batch A: no code change; verified by reading Blade + the <code>.seller-compact-textarea</code> CSS rule only — NOT rendered DOM / computed style, no automated test).</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-23</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">Hire (all)</span>
+</div>
+<h3 class="title">Tooltip format audit — Hire must match Create</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>Hire address tooltips use &lt;br&gt;: hire-seller-agent/…:427,466,485 · hire-landlord-agent/…:22,61,80</li>
+<li>Create plain sentence offer-seller-tabs/…:420,459,498</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>The Hire address tooltip uses a <code>&lt;br&gt;</code> line break; Create uses a continuous sentence.</p>
+<div class="lbl">Expected behavior</div>
+<p>Hire tooltips match the Create format/font.</p>
+<div class="lbl">Root cause</div>
+<p>No shared tooltip partial; inline Bootstrap everywhere; the real diff is <code>&lt;br&gt;</code> vs space. NOTE: the deeper split is Tenant-vs-rest (compact-dark override only in Tenant flows), not Hire-vs-Create.</p>
+<div class="lbl">Fix plan</div>
+<p>Replace <code>&lt;br&gt;</code> with a space in the Hire address tooltips; optionally extract a shared tooltip partial.</p>
+<div class="lbl">Regression risk</div>
+<p>Low-Med — many inline sites; scope carefully.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Hover address tooltips on Hire vs Create.</li>
+<li>Confirm identical format.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A8.50 ⬜ not started.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-24</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">All</span>
+</div>
+<h3 class="title">Placeholder capitalization (sentence-style examples)</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>Wrong: hire-landlord-agent/…/property-preferences.blade.php:598</li>
+<li>tenant appliances tenant-agent-auction-tabs/…/property-details.blade.php:398 · many correct refs</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Some placeholders are over-capitalized (Title Case examples).</p>
+<div class="lbl">Expected behavior</div>
+<p><code>Enter appliances (e.g., Air fryer oven, Induction cooktop, Double oven)</code> style.</p>
+<div class="lbl">Root cause</div>
+<p>Inconsistent hand-written placeholders.</p>
+<div class="lbl">Fix plan</div>
+<p>Normalize per the S2 rule across the flagged occurrences.</p>
+<div class="lbl">Regression risk</div>
+<p>Low — text only, but many sites; risk of missing some.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Spot-check appliance + other flagged placeholders in browser.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A8.51 (+ S2 family) ⬜ not started.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-25</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">Create Seller/Landlord only</span>
+</div>
+<h3 class="title">Water Frontage &amp; Waterfront Feet placeholders include the title</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>Create Seller property-preferences.blade.php:1190,1204</li>
+<li>Create Landlord :734,748</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Placeholders read <code>e.g., …</code> and lack the field title.</p>
+<div class="lbl">Expected behavior</div>
+<p><code>Enter Water Frontage (e.g., …)</code> / <code>Enter Waterfront Feet (e.g., 75)</code>.</p>
+<div class="lbl">Root cause</div>
+<p>Placeholder copy.</p>
+<div class="lbl">Fix plan</div>
+<p>Prepend <code>Enter [title] (e.g., …)</code> &lt;b&gt;only where the fields already exist&lt;/b&gt;. &lt;b&gt;OWNER DECISION #25:&lt;/b&gt; do NOT add to Hire.</p>
+<div class="lbl">Regression risk</div>
+<p>Very Low — text.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Confirm both placeholders on Create Seller + Create Landlord.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">&lt;b&gt;OWNER DECISION #25 (locked):&lt;/b&gt; Create Seller/Landlord scope only; the “and Hire” clause is dropped.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-26</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">All (shared partial)</span>
+</div>
+<h3 class="title">Agent Credentials — remove example text from placeholders</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>resources/views/livewire/partials/agent-credentials.blade.php Phone:36, License:67, NAR/NRDS:83</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Placeholders include <code>(e.g., …)</code> examples.</p>
+<div class="lbl">Expected behavior</div>
+<p>No example text for Phone, License #, NAR/NRDS.</p>
+<div class="lbl">Root cause</div>
+<p>Placeholder copy in the shared partial.</p>
+<div class="lbl">Fix plan</div>
+<p>Remove <code>(e.g., …)</code> from the three placeholders — one file fixes all 19 include sites.</p>
+<div class="lbl">Regression risk</div>
+<p>Low — shared partial; confirm no test asserts the old text.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Confirm on any Create + any Hire form (single partial).</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc A8.57 ⬜ not started (exact match).</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-27</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">Create Seller</span>
+</div>
+<h3 class="title">Additional HOA/Association Notes placeholder capitalization</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>offer-seller-tabs/…/seller-terms.blade.php:2168</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p><code>… pending special assessment, new rules …</code>.</p>
+<div class="lbl">Expected behavior</div>
+<p>Capitalize <code>Pending</code> and the first letter of each comma-separated example incl <code>New</code>.</p>
+<div class="lbl">Root cause</div>
+<p>Placeholder copy.</p>
+<div class="lbl">Fix plan</div>
+<p>Edit the placeholder casing.</p>
+<div class="lbl">Regression risk</div>
+<p>Very Low — text.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Confirm the placeholder on Create Seller.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc: under the A8.64 sweep ⬜, not separately itemized.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-28</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">Create+Hire Buyer/Tenant</span>
+</div>
+<h3 class="title">Remove Preferred Cities “County bias” helper text</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>resources/views/partials/location-dna/map-input.blade.php:139</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Shows <code>County bias is used so &quot;Seminole, FL&quot; maps to Pinellas, not Seminole County.</code></p>
+<div class="lbl">Expected behavior</div>
+<p>Helper text removed.</p>
+<div class="lbl">Root cause</div>
+<p>Text in the shared map partial (line 139); other “Seminole” hits are comments/JS, not user-facing.</p>
+<div class="lbl">Fix plan</div>
+<p>Delete line 139 helper text — one file covers all four flows.</p>
+<div class="lbl">Regression risk</div>
+<p>Low — shared partial; verify other consumers are OK without it.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Confirm the text is gone on all four flows.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">NET-NEW — uncovered by the prior master doc.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-29</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">Buyer/Tenant Create+Hire</span>
+</div>
+<h3 class="title">Important Places boxes match Exact Address/Miles</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>resources/views/partials/location-dna/map-input.blade.php:284-359 (Exact Address:320, Distance:328, Travel Mode:340)</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Type / Distance Preference / Travel Mode boxes are sized differently.</p>
+<div class="lbl">Expected behavior</div>
+<p>Match the Exact Address / Miles box size.</p>
+<div class="lbl">Root cause</div>
+<p>CSS/markup in the shared map partial.</p>
+<div class="lbl">Fix plan</div>
+<p>Align input sizing in the partial — one file covers all consumers.</p>
+<div class="lbl">Regression risk</div>
+<p>Low — shared partial.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Compare box sizes in the Important Places rows.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc: part of the net-new B1.7 block ⬜.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-30</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">Hire (all)</span>
+</div>
+<h3 class="title">“Additional Details” placeholder should read “Enter additional details”</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>app/Helpers/PropertyTypePlaceholderHelper.php $titles[&#x27;hire&#x27;] lines 38-43, 126</li>
+<li>consumers hire-*/additional-details.blade.php</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Renders <code>Enter Additional Details (e.g., …)</code>.</p>
+<div class="lbl">Expected behavior</div>
+<p><code>Enter additional details (e.g., …)</code> — keep the examples.</p>
+<div class="lbl">Root cause</div>
+<p>The helper title map is Title-Cased.</p>
+<div class="lbl">Fix plan</div>
+<p>Lowercase the four hire titles (lines 39-42); examples are preserved automatically.</p>
+<div class="lbl">Regression risk</div>
+<p>Low — one helper; ripples to all hire flows.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Confirm the placeholder on each Hire additional-details tab.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">Prior doc B2.1 ⬜ not started.</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-31</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">Create (all)</span>
+</div>
+<h3 class="title">Description tab placeholders per role</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>PropertyTypePlaceholderHelper.php $titles[&#x27;create&#x27;] 32-37</li>
+<li>consumers offer-*/additional-details.blade.php</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>Seller “Property Description”, Buyer “Buyer Description”, Landlord “Rental Description”, Tenant “Tenant Description”.</p>
+<div class="lbl">Expected behavior</div>
+<p>Seller <code>Enter property description</code>, Buyer <code>Enter buyer description</code>, Landlord <code>Enter rental description</code>, &lt;b&gt;Tenant <code>Enter tenant description</code>&lt;/b&gt;.</p>
+<div class="lbl">Root cause</div>
+<p>The helper title map.</p>
+<div class="lbl">Fix plan</div>
+<p>Lowercase the four create titles; set Tenant → <code>Enter tenant description</code>.</p>
+<div class="lbl">Regression risk</div>
+<p>Low — one helper.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Confirm each role’s Description placeholder.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">&lt;b&gt;OWNER DECISION #31 (locked):&lt;/b&gt; Tenant = <code>Enter tenant description</code> (not “rental”).</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-32</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">Create Buyer</span>
+</div>
+<h3 class="title">Conditions for Lease Purchase placeholder capitalization</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>Create Buyer purchasing-terms.blade.php:988 (needs seller→Seller)</li>
+<li>Hire Buyer :996 (already correct)</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>The Create Buyer placeholder lowercases “seller”; Hire already capitalizes it.</p>
+<div class="lbl">Expected behavior</div>
+<p>Capitalize the first letter of each example + capitalize “Seller”.</p>
+<div class="lbl">Root cause</div>
+<p>Placeholder copy in Create Buyer only.</p>
+<div class="lbl">Fix plan</div>
+<p>Capitalize in the Create Buyer placeholder.</p>
+<div class="lbl">Regression risk</div>
+<p>Very Low — text.</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Confirm the Create Buyer placeholder; Hire is already compliant.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">&lt;b&gt;CODE COMPLETE — HUMAN BROWSER QA REQUIRED&lt;/b&gt; (Batch A <code>0e486dfaf</code>: <code>seller</code>→<code>Seller</code>; string test asserts capitalization).</p>
+</div>
+<div class="card">
+<div class="chead">
+<span class="id">P3-33</span>
+<span class="sev med">P2 · Consistency</span>
+<span class="flow">Buyer/Tenant Create+Hire</span>
+</div>
+<h3 class="title">Remove Commute Preferences block ONLY if a real duplicate exists</h3>
+<div class="lbl">Likely files</div>
+<ul class="exp">
+<li>Create Buyer offer-buyer-tabs/…/property-preferences.blade.php:1344-1387</li>
+<li>Create Tenant offer-tenant-tabs/…/property-details.blade.php:811-852 · Hire Buyer/Tenant: 0 occurrences</li>
+</ul>
+<div class="lbl">Current behavior</div>
+<p>The commute block appears &lt;b&gt;once&lt;/b&gt; in each of the two Create flows; it is &lt;b&gt;absent&lt;/b&gt; from both Hire flows; it is NOT duplicated within any single file.</p>
+<div class="lbl">Expected behavior</div>
+<p>Keep the single block; delete only a genuine duplicate directly under Non-Negotiable Amenities / Property Features.</p>
+<div class="lbl">Root cause</div>
+<p>The block is inline (not an <code>@include</code>), present once per Create file; no true duplication was found.</p>
+<div class="lbl">Fix plan</div>
+<p>&lt;b&gt;OWNER DECISION #33:&lt;/b&gt; do NOT remove the only block. At implementation, re-scan each flow for a second commute block under Non-Negotiable Amenities and delete &lt;b&gt;only&lt;/b&gt; if a real duplicate is present.</p>
+<div class="lbl">Regression risk</div>
+<p>Med — removing the single real block deletes the only commute UI (B1.11 says preserve/migrate, not delete).</p>
+<div class="lbl">Browser test steps</div>
+<ol class="steps">
+<li>Re-scan each flow for a duplicate directly under Non-Negotiable Amenities.</li>
+<li>If none exists → no change.</li>
+</ol>
+<div class="lbl">Status &amp; reconciliation</div>
+<p class="statusline">&lt;b&gt;OWNER DECISION #33 (locked):&lt;/b&gt; No code change required — duplicate not found (unless a real duplicate surfaces at implementation).</p>
+</div>
+
+  <div class="section">
+    <h2>Duplicate / shared-component findings</h2>
+    <ul>
+      <li><b>Same root cause, fix together:</b> #8+#9+#10 (SC2) — one fix; #11 (SC1); #14+#17 (SC3); #18 (SC2 family).</li>
+      <li><b>One file fixes many flows:</b> #26 → <code>agent-credentials.blade.php</code>; #28+#29 → <code>map-input.blade.php</code>; #30+#31 → <code>PropertyTypePlaceholderHelper.php</code>; #21+#22 → <code>.seller-compact-textarea</code>.</li>
+      <li><b>Claimed-done but NOT browser-verified (false greens):</b> #1, #3, #4, #6, #7, #8, #9, #10, #11, #14 (only the placeholder was fixed — reveal still broken), #21, #22.</li>
+      <li><b>Net-new / uncovered:</b> #5 (video embed), #28 (County-bias text), #20 (Hire Tenant fields).</li>
+    </ul>
+  </div>
+
+  <div class="section" style="border-left:3px solid var(--pass)">
+    <h2>Conflicts — RESOLVED by owner decisions (2026-07-05)</h2>
+    <ul>
+      <li><b>#33</b> — ✅ keep the only block; delete only a genuine duplicate; else “No code change required — duplicate not found.”</li>
+      <li><b>#25</b> — ✅ Create Seller/Landlord scope only; do NOT add to Hire.</li>
+      <li><b>#31</b> — ✅ Tenant = <code>Enter tenant description</code>.</li>
+      <li><b>Still open (not part of Batch A):</b> #7 needs a target max + server <code>client_max_body_size</code> (infra, outside the repo).</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Recommended implementation order (safest)</h2>
+    <ol class="order">
+      <li><b>Batch A — verify the false-greens (no/low code):</b> #3, #12, #13, #21/#22, #32.</li>
+      <li><b>Batch B — Phase-1 blockers with clear root cause:</b> #1, #2, #4, #5.</li>
+      <li><b>Batch C — Phase-1 diagnosis-required (may need server changes, start early):</b> #6, #7.</li>
+      <li><b>Batch D — shared-JS root causes (do once, verify broadly):</b> SC2 (#8/#9/#10/#18), SC1 (#11), SC3 (#14/#17), then #15/#16, #19-verify.</li>
+      <li><b>Batch E — parity add:</b> #20 (Hire Tenant fields).</li>
+      <li><b>Batch F — one-file cosmetics:</b> #26, #28, #29, #30, #31, #24, #25, #27, #23.</li>
+      <li><b>Batch G — final sweep:</b> #33 (delete a commute block only if a real duplicate is found; else close as “No code change required — duplicate not found”).</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h2>Verification policy (binding — Owner Decisions #4–#6)</h2>
+    <ul>
+      <li><b>Dual verification:</b> nothing is PASS / COMPLETE / IMPLEMENTED / RESOLVED until code- AND browser-verified.</li>
+      <li><b>Env-blocked:</b> if browser QA can’t run here, mark <code>CODE COMPLETE — HUMAN BROWSER QA REQUIRED</code> and leave the item <b>open</b> in the ledger — it is not a pass.</li>
+      <li><b>Shared components (SC1–SC9):</b> regression-test across every affected Create AND Hire flow before the batch is complete.</li>
+      <li><b>Batch discipline:</b> only planned fixes · clean <code>git status</code> to start · single isolated commit (report hash) · files changed · root causes · browser verification · remaining unresolved.</li>
+    </ul>
+    <h2 style="margin-top:14px">Functional gates (per phase)</h2>
+    <ol>
+      <li>Search to list every file touched in the phase.</li>
+      <li>Create Landlord create submit works end-to-end (browser).</li>
+      <li>Landlord draft + edit still save/submit.</li>
+      <li>Create Seller Business listing submits.</li>
+      <li>14-JPG photo upload succeeds in one selection.</li>
+      <li>Large document upload behaves + errors clearly (no silent fail).</li>
+      <li>Video embeds on the listing page with a safe fallback.</li>
+      <li>Browser-test every dependent-field / “Other”-reveal bug (#8, #9, #14, #15, #16, #17, #18).</li>
+      <li>Confirm placeholders/tooltips visually (#21–#32).</li>
+      <li>Report per batch-discipline above.</li>
+    </ol>
+    <p class="flag" style="margin-top:8px">Note: the prior doc repeatedly notes “no browser driver in this env.” If none is available, browser-gated items are marked <code>CODE COMPLETE — HUMAN BROWSER QA REQUIRED</code> and handed to human QA — never closed.</p>
+  </div>
+</div>
+
+<footer>
+  Generated 2026-07-05 from a read-only code audit on branch <code>launch-audit-remediation</code>.
+  Reconciled against <code>docs/launch-audits/Create-Offer-and-Hire-Agent-Edits-June-28-2026.md</code>.
+  All links are relative — this page opens on whatever host you loaded it from.
+</footer>
+</body>
+</html>

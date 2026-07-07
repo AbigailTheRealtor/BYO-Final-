@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phases 1–14 — Full Work Checklist</title>
+<style>
+  :root{--bg:#0f1523;--card:#161e30;--ink:#e8edf6;--muted:#98a9c6;--line:#28324c;--chip:#212b45;
+        --pass:#1f9d57;--fail:#d1435b;--na:#5c6785;
+        --code:#3fb984;--partial:#f0a838;--verify:#5b8def;--held:#e0607a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  header{position:sticky;top:0;z-index:20;background:#0b0f1a;border-bottom:1px solid var(--line);padding:12px 18px}
+  header .row1{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+  header h1{font-size:16px;margin:0}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
+  .legend b{color:var(--ink)}
+  .k{display:inline-flex;align-items:center;gap:5px}
+  .sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .util{background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:6px 11px;font-size:12.5px;cursor:pointer}
+  .util:hover{border-color:#41527a}
+  .wrap{max-width:1040px;margin:0 auto;padding:16px 18px 80px}
+  .intro{background:#14203a;border:1px solid var(--line);border-left:3px solid var(--verify);border-radius:9px;padding:11px 14px;margin:6px 0 14px;color:var(--muted);font-size:13px}
+  .filters{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 4px}
+  .fbtn{background:var(--chip);border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:4px 12px;font-size:12.5px;cursor:pointer}
+  .fbtn.on{background:#26365c;color:#fff;border-color:#3f5too}
+  .fbtn.on{color:#fff;border-color:#4a5f92}
+  details.phase{margin:12px 0;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:#121a2b}
+  details.phase>summary{cursor:pointer;list-style:none;padding:12px 15px;display:flex;align-items:center;gap:10px;background:#15203550}
+  details.phase>summary::-webkit-details-marker{display:none}
+  .pnum{font-weight:700;background:var(--chip);border:1px solid var(--line);border-radius:7px;padding:2px 9px;font-size:12.5px}
+  .ptitle{font-weight:600;font-size:14px;flex:1}
+  .pmini{font-size:11.5px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse}
+  tr{border-top:1px solid var(--line)}
+  td{padding:10px 12px;vertical-align:top}
+  td.id{width:64px;font-weight:700;font-size:12.5px;white-space:nowrap}
+  td.desc{font-size:13px}
+  td.desc .meta{color:var(--muted);font-size:11.5px;margin-top:3px}
+  td.desc .vnote{color:#8ea4c9;font-size:11.5px;margin-top:4px;font-style:italic}
+  td.st{width:96px}
+  .badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid;white-space:nowrap;display:inline-block}
+  .b-code{color:var(--code);border-color:#3fb98455;background:#123024}
+  .b-partial{color:var(--partial);border-color:#f0a83855;background:#2c2410}
+  .b-verify{color:var(--verify);border-color:#5b8def55;background:#131f38}
+  .b-held{color:var(--held);border-color:#e0607a;background:#2a1620}
+  td.act{width:150px;white-space:nowrap}
+  .pf{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;font-weight:600;margin:0 2px 2px 0}
+  .pf.pass.on{background:var(--pass);border-color:var(--pass);color:#fff}
+  .pf.fail.on{background:var(--fail);border-color:var(--fail);color:#fff}
+  .pf.na.on{background:var(--na);border-color:var(--na);color:#fff}
+  tr.done-pass{background:#0e2419} tr.done-fail{background:#25131a} tr.done-na{background:#171b28}
+  .note{width:100%;margin-top:6px;background:#0c1120;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:12.5px inherit;resize:vertical;min-height:0;height:30px;display:none}
+  .note.show{display:block}
+  .notetog{font-size:11px;color:var(--verify);cursor:pointer;margin-top:5px;display:inline-block}
+  .saved{font-size:11.5px;color:#6dd39a;opacity:0;transition:.3s}
+  .saved.show{opacity:1}
+  a.u{color:#8fb6ff}
+</style>
+</head>
+<body>
+<header>
+  <div class="row1">
+    <h1>Phases 1–14 · Full Work Checklist</h1>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span class="saved" id="saved">saved ✓</span>
+      <span id="progress" class="pmini"></span>
+      <button class="util" onclick="expandAll(1)">Expand all</button>
+      <button class="util" onclick="expandAll(0)">Collapse</button>
+      <button class="util" onclick="window.print()">Print/PDF</button>
+      <button class="util" onclick="resetAll()">Reset</button>
+    </div>
+  </div>
+  <div class="legend">
+    <span class="k"><span class="sw" style="background:var(--code)"></span><b>Code</b> implemented &amp; test-verified</span>
+    <span class="k"><span class="sw" style="background:var(--partial)"></span><b>Partial</b> code done, browser dimension left</span>
+    <span class="k"><span class="sw" style="background:var(--verify)"></span><b>Verify</b> QA/regression obligation</span>
+    <span class="k"><span class="sw" style="background:var(--held)"></span><b>Held</b> known open item</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="intro">
+    <b>What this is:</b> every item from the Phase 1–14 master spec (A/B/C series + F.1), grouped by phase, with each item’s reconciled status and a Pass / Fail / N-A control. Status reflects the <b>F1 reconciliation</b> (the master doc’s inline ⬜ marks for Phases 8–13 were stale — those items are committed). Your marks &amp; notes auto-save in this browser.
+    <br><b>How to verify app pages:</b> log in at <a class="u" href="/login" target="_blank">/login</a> first. Focused browser walkthrough of the highest-risk interactive items lives on the companion page: <a class="u" href="/phase-14-browser-qa.html" target="_blank">/phase-14-browser-qa.html</a>.
+    <br><b>Rule (C14):</b> never imply a pass — if you can’t confirm it, mark Fail/leave a note.
+  </div>
+
+  <div class="filters" id="filters">
+    <button class="fbtn on" data-f="all">All</button>
+    <button class="fbtn" data-f="code">Code</button>
+    <button class="fbtn" data-f="partial">Partial</button>
+    <button class="fbtn" data-f="verify">Verify</button>
+    <button class="fbtn" data-f="held">Held</button>
+    <button class="fbtn" data-f="unanswered">Unanswered</button>
+  </div>
+
+  <div id="phases"></div>
+</div>
+
+<script>
+const ITEMS=/*ITEMS*/;
+const PT=/*PTITLES*/;
+const COUNTS=/*COUNTS*/;
+const store=JSON.parse(localStorage.getItem('p114')||'{}');
+let filter='all';
+const BADGE={code:['Code','b-code'],partial:['Partial','b-partial'],verify:['Verify','b-verify'],held:['Held','b-held']};
+
+function save(){localStorage.setItem('p114',JSON.stringify(store));const s=document.getElementById('saved');s.classList.add('show');setTimeout(()=>s.classList.remove('show'),800);progress();}
+function progress(){let a=0;ITEMS.forEach(it=>{if(store[it.id]&&store[it.id].pf)a++;});
+  document.getElementById('progress').textContent=a+' / '+ITEMS.length+' checked';}
+function show(it){if(filter==='all')return true;if(filter==='unanswered')return !(store[it.id]&&store[it.id].pf);return it.vs===filter;}
+function rolesFlows(it){let s=[];if(it.roles)s.push(it.roles);if(it.flows)s.push(it.flows);if(it.prio)s.push('Priority: '+it.prio.replace(/\*/g,''));return s.join(' · ');}
+function row(it){
+  const v=store[it.id]||{};const b=BADGE[it.vs];
+  return `<tr class="${v.pf?('done-'+v.pf):''}" data-id="${it.id}" data-vs="${it.vs}">
+    <td class="id">${it.id}</td>
+    <td class="desc">${it.item}
+      <div class="meta">${rolesFlows(it)}</div>
+      <div class="vnote">${it.vnote}</div>
+      <span class="notetog" onclick="toggleNote('${it.id}')">✎ note</span>
+      <textarea class="note ${v.note?'show':''}" placeholder="Notes…" oninput="setNote('${it.id}',this.value)">${v.note?v.note.replace(/</g,'&lt;'):''}</textarea>
+    </td>
+    <td class="st"><span class="badge ${b[1]}">${b[0]}</span></td>
+    <td class="act">
+      <button class="pf pass ${v.pf==='pass'?'on':''}" onclick="setPF('${it.id}','pass')">✓</button>
+      <button class="pf fail ${v.pf==='fail'?'on':''}" onclick="setPF('${it.id}','fail')">✕</button>
+      <button class="pf na ${v.pf==='na'?'on':''}" onclick="setPF('${it.id}','na')">N/A</button>
+    </td></tr>`;
+}
+function setPF(id,pf){store[id]=store[id]||{};store[id].pf=(store[id].pf===pf?null:pf);save();
+  const it=ITEMS.find(i=>i.id===id);const tr=document.querySelector('tr[data-id="'+id+'"]');if(tr)tr.outerHTML=row(it);}
+function setNote(id,v){store[id]=store[id]||{};store[id].note=v;save();}
+function toggleNote(id){const tr=document.querySelector('tr[data-id="'+id+'"] .note');if(tr)tr.classList.toggle('show');}
+function render(){
+  const phs={};ITEMS.forEach(it=>{(phs[it.phase.num]=phs[it.phase.num]||[]).push(it);});
+  let html='';
+  Object.keys(phs).map(Number).sort((a,b)=>a-b).forEach(p=>{
+    const list=phs[p].filter(show);if(!list.length)return;
+    const total=phs[p].length;
+    const open=(filter!=='all')?'open':'';
+    html+=`<details class="phase" ${open}><summary><span class="pnum">Phase ${p}</span>
+      <span class="ptitle">${PT[p]}</span><span class="pmini">${list.length===total?total:list.length+'/'+total} items</span></summary>
+      <table>${list.map(row).join('')}</table></details>`;
+  });
+  document.getElementById('phases').innerHTML=html||'<div class="intro">No items match this filter.</div>';
+  progress();
+}
+document.getElementById('filters').addEventListener('click',e=>{
+  if(!e.target.dataset.f)return;filter=e.target.dataset.f;
+  [...document.querySelectorAll('.fbtn')].forEach(b=>b.classList.toggle('on',b.dataset.f===filter));render();});
+function expandAll(o){document.querySelectorAll('details.phase').forEach(d=>d.open=!!o);}
+function resetAll(){if(confirm('Clear all Pass/Fail/N-A marks and notes?')){for(k in store)delete store[k];localStorage.removeItem('p114');render();}}
+render();expandAll(1);
+</script>
+</body>
+</html>

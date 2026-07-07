@@ -1,0 +1,1273 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bid Your Offer ↔ Stellar Gap Analysis</title><style>:root{--fg:#1f2933;--muted:#616e7c;--line:#e4e7eb;--accent:#2563eb;--bg:#fff;--code:#f5f7fa;}
+*{box-sizing:border-box}
+body{margin:0;color:var(--fg);background:var(--bg);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+.wrap{max-width:1200px;margin:0 auto;padding:32px 24px 120px;}
+.meta{color:var(--muted);font-size:13px;margin:-8px 0 24px;}
+h1{font-size:30px;line-height:1.2;border-bottom:2px solid var(--line);padding-bottom:10px;margin-top:8px;}
+h2{font-size:23px;margin-top:44px;border-bottom:1px solid var(--line);padding-bottom:6px;}
+h3{font-size:19px;margin-top:32px;}
+h4{font-size:16px;margin-top:24px;color:var(--muted);text-transform:none;}
+h1,h2,h3,h4{scroll-margin-top:16px;}
+p,li{max-width:none;}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:12.5px;font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;}
+pre code{display:block;padding:12px;overflow:auto;}
+a{color:var(--accent);}
+blockquote{margin:16px 0;padding:8px 16px;border-left:4px solid var(--accent);background:#f8fafc;color:var(--muted);}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:12.5px;display:block;overflow-x:auto;}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;}
+th{background:#f0f4f8;position:sticky;top:0;font-weight:600;}
+tr:nth-child(even) td{background:#fafbfc;}
+hr{border:0;border-top:1px solid var(--line);margin:40px 0;}</style></head><body><div class="wrap"><div class="meta">Generated 2026-07-01 18:33 · source: docs/bid-your-offer-stellar-gap-analysis.md</div><h1>Bid Your Offer ↔ Stellar MLS — Gap Analysis &amp; Data-Model Roadmap</h1>
+<p><strong>Type:</strong> Documentation-only audit. No code, migrations, or config were changed. Nothing committed.
+<strong>Date:</strong> 2026-07-01
+<strong>Sources of truth:</strong></p>
+<ul>
+<li>Current implementation → <code>docs/bid-your-offer-field-audit.md</code> (the BYO Field Audit).</li>
+<li>Target reference → the seven Stellar MLS data-entry forms in <code>attached_assets/</code> (all pages read): Residential (14pp), Income (12pp), Commercial Sale (10pp), Business Opportunity (10pp), Commercial Lease (9pp), Rental (13pp), Vacant Land (9pp).</li>
+</ul>
+<p><strong>Purpose:</strong> Decide which Stellar fields to adopt into Bid Your Offer (BYO) to strengthen Property DNA, Buyer DNA, Tenant DNA, Location DNA, lifestyle metadata, matching, Ask AI, search, marketing, and target-audience intelligence — and, just as importantly, which Stellar fields to deliberately <strong>not</strong> adopt.</p>
+<blockquote>
+<p><strong>Guiding rule (applied throughout):</strong> A Stellar field is only recommended if it meaningfully improves BYO's AI, matching, DNA, search, marketing, or UX. MLS-administrative/internal/agent-workflow fields are explicitly excluded (Section: &quot;Do NOT add&quot;).</p>
+</blockquote>
+<hr />
+<h2>How the comparison was done</h2>
+<p>Stellar's forms describe a <strong>property/listing from the seller/landlord side</strong>. BYO mirrors each attribute twice: once as a <strong>listing</strong> (Seller sale / Landlord lease) and once as <strong>criteria</strong> (Buyer / Tenant). So each Stellar form is compared against the two BYO flows it maps to:</p>
+<table>
+<thead>
+<tr>
+<th>Stellar form</th>
+<th>BYO listing flow</th>
+<th>BYO criteria flow</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Residential</td>
+<td>Seller — Residential</td>
+<td>Buyer — Residential</td>
+</tr>
+<tr>
+<td>Income</td>
+<td>Seller — Income</td>
+<td>Buyer — Income</td>
+</tr>
+<tr>
+<td>Commercial Sale</td>
+<td>Seller — Commercial</td>
+<td>Buyer — Commercial</td>
+</tr>
+<tr>
+<td>Business Opportunity</td>
+<td>Seller — Business</td>
+<td>Buyer — Business</td>
+</tr>
+<tr>
+<td>Vacant Land</td>
+<td>Seller — Vacant Land</td>
+<td>Buyer — Vacant Land</td>
+</tr>
+<tr>
+<td>Rental</td>
+<td>Landlord — Residential Rental</td>
+<td>Tenant — Residential Rental</td>
+</tr>
+<tr>
+<td>Commercial Lease</td>
+<td>Landlord — Commercial Lease</td>
+<td>Tenant — Commercial Lease</td>
+</tr>
+</tbody>
+</table>
+<p>Each field is classified as: <strong>Implemented</strong> (present in BYO, same meaning) · <strong>Partial</strong> (present but weaker — free-text vs structured, listing-side only, or missing sub-fields) · <strong>Missing</strong> · <strong>Covered under a different name</strong> (BYO name ≠ Stellar name) · <strong>Duplicate</strong> (BYO-internal duplication to clean up) · <strong>Do NOT add</strong> (MLS-only/admin/internal).</p>
+<p><strong>Missing-field table columns:</strong> <code>Field</code> · <code>Property Type(s)</code> · <code>Priority</code> (Critical / High / Medium / Low) · <code>Why add</code> · <code>Search?</code> (should be a search filter) · <code>Public?</code> (display on public listing) · <code>Ask AI?</code> · <code>DNA / lifestyle tags</code>.</p>
+<p>Priority definitions:</p>
+<ul>
+<li><strong>Critical</strong> — needed for a credible launch of that property type (a buyer/seller would consider the listing incomplete without it) or unblocks matching/search.</li>
+<li><strong>High</strong> — strong, differentiated DNA / lifestyle / target-audience value; adopt in the first enhancement wave.</li>
+<li><strong>Medium</strong> — useful structured data that improves search/AI/marketing but not launch-blocking.</li>
+<li><strong>Low</strong> — nice-to-have; niche or long-tail.</li>
+</ul>
+<hr />
+<h2>Executive summary — the big picture</h2>
+<ol>
+<li>
+<p><strong>BYO is already strongly aligned with Stellar on core physical attributes.</strong> The BYO option lists for property style, condition, waterfront (access/view/frontage/feet), interior features, appliances, view, roof, exterior construction, foundation, heating/AC/water/sewer/utilities, pool, garage/carport, HOA/association (fee, frequency, includes, amenities, approval, leasing restrictions), flood zone, CDD, special assessments, pets, financing types, and sale provisions are clearly derived from Stellar and match option-for-option. <strong>Most Stellar <em>consumer</em> fields are already Implemented or Covered-under-a-different-name.</strong> The gap is not breadth of physical description — it is a specific set of <strong>high-signal lifestyle / DNA / target-audience fields Stellar has that BYO omitted</strong>, plus <strong>structured commercial/income economics</strong>.</p>
+</li>
+<li>
+<p><strong>BYO is genuinely <em>ahead</em> of Stellar in several areas</strong> — do not regress these: consumer-side <strong>commute</strong> (zip/minutes/mode), <strong>Location DNA search-areas + Important Places</strong>, <strong>Buyer/Tenant criteria capture</strong>, <strong>structured financing sub-forms</strong> (assumable, seller-financing, lease-option/purchase, crypto, NFT, exchange), <strong>business-opportunity economics</strong> (SDE/EBITDA, inventory value, FF&amp;E value, reason for sale, employee count, NDA, financial-statements-available — Stellar only has NOI/gross), and <strong>tenant pre-screening self-disclosure</strong>.</p>
+</li>
+<li>
+<p><strong>The most valuable net-new Stellar fields for BYO's AI/DNA are a small, high-leverage set</strong> (all currently Missing): <strong>Schools</strong>, <strong>Front Exposure (sun orientation)</strong>, <strong>Architectural Style</strong>, <strong>Accessibility Features</strong>, <strong>Community Features</strong> (gated/golf/dog-park/etc. as structured lifestyle tags), <strong>In-Law Suite/ADU + Additional Rooms (home office, media, Florida room)</strong>, <strong>Disaster Mitigation</strong> (hurricane shutters/windows, above flood plain — FL-critical for insurance and marketing), <strong>Solar / Green Energy Generation + Solar Panel Ownership</strong> (owned/leased/financed — materially affects the deal), <strong>Fireplace</strong>, and <strong>exact Lot Size (sqft/acres) + Lot Features (topography/wetlands)</strong>.</p>
+</li>
+<li>
+<p><strong>Commercial needs structured economics, not more physical fields.</strong> BYO already has zoning, ceiling height, building features, electrical service, space class. The commercial gaps are <strong>Lease Price Unit ($/sqft vs monthly)</strong>, <strong>loading/dock bays + door dimensions</strong>, <strong>structured pass-through/CAM</strong> (currently free-text), <strong>structured TI allowance / rent-escalation</strong> (currently free-text), <strong>vacancy rate / gross scheduled income / number of tenants / anchor tenant</strong> on the sale side.</p>
+</li>
+<li>
+<p><strong>Do NOT port ~40% of every Stellar form.</strong> Office Exclusive, Listing Type/Service Type, Seller Representation, all legal survey identifiers (Section/Township/Range/Plat Book/Block/Lot/Alt Key/Census), GeoLocation (BYO geocodes itself), Agent/Office IDs, Seller's Preferred Closing Agent, Showing Instructions/lockbox/ShowingTime, Listing Distribution/IDX/VOW/syndication, Realtor-Only/Confidential remarks, signatures, and municipal Use/Land-Use codes are MLS-workflow artifacts with no BYO value.</p>
+</li>
+</ol>
+<hr />
+<h2>1. RESIDENTIAL  (Stellar Residential ↔ Seller-Residential + Buyer-Residential)</h2>
+<h3>Already Implemented (present in BYO with equivalent meaning)</h3>
+<p>List Price/asking price; Special Sale Provision; address block; Property Style (<code>property_items</code>); Property Condition (<code>condition_prop</code>/<code>condition_prop_buyer</code>); Beds/Full Baths/Half Baths; SqFt Heated (<code>minimum_heated_square</code>); SqFt Total (<code>total_square_feet</code>); SqFt Heated Source (<code>sqft_heated_source</code>); Year Built; Zoning; Total Acreage range (<code>total_acreage</code>); Lot Dimensions; Private Pool + Pool Features/type; Spa (partial); Garage/Carport + spaces + Garage/Parking Features; Waterfront/Water Access/Water View/Water Extras/Water Frontage + footage + Water Name; Dock (full block); View (<code>view_preference</code>); Interior Features; Appliances Included; Roof; Exterior Construction; Foundation; Heating and Fuel; Air Conditioning; Water; Sewer; Utilities; Floor Covering (<code>floor_covering</code>, Landlord side); Laundry Features (Landlord); Security Features (Landlord); Flood Zone Code/Date/Panel; CDD + Annual CDD Fee; Special Assessments; HOA/Association full block (fee, requirement, frequency, includes, amenities, approval, application fee, master assoc, leasing restrictions, min lease period, max leases/yr); Pets Allowed + number/size/weight/restrictions; Home Warranty; Ownership occupant status; Existing lease/occupant (<code>occupant_status</code>/<code>occupant_tenant</code>); Financing Available (<code>offered_financing</code>); Public Remarks (<code>additional_details</code>); Virtual Tour / Web links; Possession preference.</p>
+<h3>Covered under a different name</h3>
+<ul>
+<li>Stellar <strong>Property Style</strong> = BYO <code>property_items</code> · <strong>Housing for Older Persons</strong> = <code>leasing_55_plus</code> · <strong>SqFt Heated</strong> = <code>minimum_heated_square</code> · <strong>Furnishings</strong> = <code>tenant_require</code> · <strong>Heating and Fuel</strong> = <code>heating_and_fuel</code>/<code>heating_fuel</code> · <strong>Total Acreage</strong> (range) = <code>total_acreage</code> · <strong>Fee Includes</strong> = <code>association_fee_includes</code> · <strong>Association Amenities</strong> = <code>association_amenities</code> · <strong>Special Sale Provision</strong> = <code>sale_provision</code> · <strong>Financing Available</strong> = <code>offered_financing</code> · <strong>Public Remarks</strong> = <code>additional_details</code>.</li>
+</ul>
+<h3>Partial (present but weaker)</h3>
+<ul>
+<li><strong>Lot Size Square Footage / Lot Size Acres</strong> — BYO captures the <code>total_acreage</code> <em>range</em> + <code>lot_dimensions</code> text, but not the exact numeric sqft/acres Stellar requires. → tighten for search/valuation.</li>
+<li><strong>Spa / Pool Features</strong> — pool is strong; Spa Features (<code>Swim Spa</code>, etc.) not fully modeled.</li>
+<li><strong>Fencing / Security Features / Floor Covering</strong> — exist on the Landlord side but <strong>not on Seller/Buyer Residential</strong>. → extend to sale side.</li>
+<li><strong>Existing Lease detail</strong> — BYO has occupant status; Stellar adds monthly rent, lease end date, notice-to-tenant. → add for tenant-occupied sales (investor buyers).</li>
+</ul>
+<h3>MISSING — recommended additions</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Field</th>
+<th>Property Type(s)</th>
+<th>Priority</th>
+<th>Why add</th>
+<th>Search?</th>
+<th>Public?</th>
+<th>Ask AI?</th>
+<th>DNA / lifestyle tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td><strong>Schools</strong> (Elementary / Middle / High)</td>
+<td>Residential (Seller list + Buyer criteria)</td>
+<td><strong>Critical</strong></td>
+<td>#1 residential decision driver; enables family/target-audience matching, school-zone search, and Ask AI &quot;what schools serve this home?&quot;</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Location DNA: <code>school_zone</code>, <code>school_rated</code>; Buyer DNA: <code>family_oriented</code>, <code>school_priority</code></td>
+</tr>
+<tr>
+<td>R2</td>
+<td><strong>Front Exposure</strong> (N/S/E/W + intercardinal)</td>
+<td>Residential, all sale types</td>
+<td><strong>High</strong></td>
+<td>Sun orientation = lifestyle + energy; cheap to collect, strong DNA signal (&quot;morning sun lanai&quot;, &quot;north-facing cool&quot;)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Property DNA: <code>exposure_south</code>, <code>natural_light</code>; lifestyle <code>sunrise_view</code>/<code>sunset_view</code></td>
+</tr>
+<tr>
+<td>R3</td>
+<td><strong>Architectural Style</strong> (Coastal, Key West, Mediterranean, Colonial, Craftsman, Mid-Century, Ranch, Victorian, Contemporary…)</td>
+<td>Residential</td>
+<td><strong>High</strong></td>
+<td>Marketing + Property DNA personality + style-based search; BYO <code>property_items</code> is <em>structure</em> type only, not architectural character</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Property DNA: <code>architectural_style:*</code>; marketing tone</td>
+</tr>
+<tr>
+<td>R4</td>
+<td><strong>Accessibility Features</strong> (24-value list)</td>
+<td>Residential (+ Rental, Commercial)</td>
+<td><strong>High</strong></td>
+<td>Underserved target audience (aging-in-place, mobility); ADA/senior matching; strong Ask AI intent</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Buyer/Tenant DNA: <code>accessibility_needed</code>; lifestyle <code>single_level</code>, <code>wheelchair_accessible</code></td>
+</tr>
+<tr>
+<td>R5</td>
+<td><strong>In-Law Suite / ADU</strong> (Y/N + description: attached/detached, kitchen, private entrance, beds/baths, sqft)</td>
+<td>Residential</td>
+<td><strong>High</strong></td>
+<td>Multigenerational + rental-income + remote-work; high buyer intent; BYO only has ADU as a landlord <em>leasing-space</em> option</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Property DNA: <code>has_adu</code>, <code>multigenerational</code>, <code>income_potential</code>; Buyer DNA <code>multigen_need</code></td>
+</tr>
+<tr>
+<td>R6</td>
+<td><strong>Additional Rooms</strong> (Den/Office, Bonus Room, Media Room, Great Room, Florida Room, Loft, Inside Utility)</td>
+<td>Residential</td>
+<td><strong>High</strong></td>
+<td>Remote-work (home office) + lifestyle rooms are top post-2020 buyer intents; enables &quot;home office&quot; search + DNA</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Property DNA: <code>home_office</code>, <code>media_room</code>, <code>flex_space</code>; Buyer DNA <code>remote_work</code></td>
+</tr>
+<tr>
+<td>R7</td>
+<td><strong>Fireplace</strong> (Y/N) + <strong>Fireplace Description</strong> (Gas/Wood/Electric/location)</td>
+<td>Residential</td>
+<td><strong>Medium</strong></td>
+<td>Common buyer filter + marketing; distinct from generic interior features</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>lifestyle <code>fireplace</code>, <code>cozy</code></td>
+</tr>
+<tr>
+<td>R8</td>
+<td><strong>Community Features</strong> (Gated w/ or w/o Guard, Golf Community, Dog Park, Playground, Fitness Center, Clubhouse, Sidewalks, Tennis/Pickleball, Deed Restrictions, Golf Carts OK)</td>
+<td>Residential (+ all)</td>
+<td><strong>High</strong></td>
+<td>These are prime <strong>lifestyle/target-audience tags</strong> and top search filters; BYO only partially captures via <code>association_amenities</code></td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Lifestyle: <code>gated</code>, <code>golf_community</code>, <code>dog_friendly</code>, <code>family_amenities</code>, <code>active_adult</code>, <code>walkable</code></td>
+</tr>
+<tr>
+<td>R9</td>
+<td><strong>Disaster Mitigation</strong> (Hurricane Shutters/Windows, Above Flood Plain, Safe Room, Fire-Resistant Exterior, Hurricane-Insurance-Deduction Qualified)</td>
+<td>Residential (+ all FL types)</td>
+<td><strong>High</strong></td>
+<td>FL-critical: insurability + resilience is a real buyer concern and marketing edge; ties to Location DNA flood data</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Property DNA: <code>hurricane_hardened</code>, <code>insurance_friendly</code>; Location DNA flood synergy</td>
+</tr>
+<tr>
+<td>R10</td>
+<td><strong>Green Energy Generation</strong> (Y/N + Solar/Wind) + <strong>Solar Panel Ownership</strong> (Owned/Leased/Financed/Utility) + <strong>Solar Lease/Finance Terms</strong> (Assumable/Seller-paid)</td>
+<td>Residential (+ all)</td>
+<td><strong>High</strong></td>
+<td>Solar ownership materially changes the transaction &amp; financing; owned-solar is a marketing/DNA asset, leased-solar a diligence item</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Property DNA: <code>solar_owned</code>, <code>energy_efficient</code>, <code>low_utility_cost</code></td>
+</tr>
+<tr>
+<td>R11</td>
+<td><strong>Exact Lot Size</strong> (Lot Size SqFt + Lot Size Acres, numeric)</td>
+<td>Residential (+ all land-bearing)</td>
+<td><strong>Medium</strong></td>
+<td>Precise search/valuation vs. current range bucket; supports &quot;≥ X sqft lot&quot; filters</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Property DNA <code>large_lot</code>, <code>oversized_lot</code></td>
+</tr>
+<tr>
+<td>R12</td>
+<td><strong>Ownership Type</strong> (Fee Simple / Condominium / Co-op / Leasehold / Fractional) + <strong>Land Lease</strong> (Y/N + fee)</td>
+<td>Residential (+ all)</td>
+<td><strong>Medium</strong></td>
+<td>Affects financing &amp; fees; leasehold/land-lease are material diligence and lending constraints</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>fee_simple</code>, <code>leasehold</code>, <code>land_lease</code></td>
+</tr>
+<tr>
+<td>R13</td>
+<td><strong>Patio &amp; Porch Features</strong> (Screened, Covered, Front Porch, Lanai, Wrap-Around)</td>
+<td>Residential</td>
+<td><strong>Medium</strong></td>
+<td>FL outdoor-living lifestyle marketing + search</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>lifestyle <code>screened_lanai</code>, <code>outdoor_living</code></td>
+</tr>
+<tr>
+<td>R14</td>
+<td><strong>Architectural / Property Description</strong> (Corner Unit, End Unit, Penthouse, High/Mid Rise, Stilt Home, Walk-Up)</td>
+<td>Residential (condo/attached)</td>
+<td><strong>Medium</strong></td>
+<td>Condo/townhome buyer filters; floor position drives value</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>penthouse</code>, <code>corner_unit</code>, <code>top_floor</code></td>
+</tr>
+<tr>
+<td>R15</td>
+<td><strong>Building / Floor info for condos</strong> (Floor Number, Total Floors, Building Elevator)</td>
+<td>Residential (condo)</td>
+<td><strong>Medium</strong></td>
+<td>Elevator + floor level are decisive for condo buyers (accessibility, views)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>elevator</code>, <code>high_floor</code>, <code>top_floor</code></td>
+</tr>
+<tr>
+<td>R16</td>
+<td><strong>Window Features</strong> (Impact/Storm, Double-Pane, ENERGY STAR, Tinted)</td>
+<td>Residential (+ all)</td>
+<td><strong>Low/Medium</strong></td>
+<td>Impact windows = insurance + storm resilience (FL); energy signal</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>impact_windows</code>, <code>energy_efficient</code></td>
+</tr>
+<tr>
+<td>R17</td>
+<td><strong>Green Building Certifications</strong> (LEED, ENERGY STAR, HERS Index, FGBC)</td>
+<td>Residential (+ all)</td>
+<td><strong>Low</strong></td>
+<td>Niche but strong marketing for eco-conscious audience</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>green_certified</code>, <code>energy_star</code></td>
+</tr>
+<tr>
+<td>R18</td>
+<td><strong>Indoor Air Quality</strong> (MERV filters, No/Low-VOC, Whole-house vacuum)</td>
+<td>Residential</td>
+<td><strong>Low</strong></td>
+<td>Health-conscious/allergy target audience; long-tail</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>healthy_home</code>, <code>low_voc</code></td>
+</tr>
+<tr>
+<td>R19</td>
+<td><strong>Room dimensions grid</strong> (Room Type + L×W + level)</td>
+<td>Residential</td>
+<td><strong>Low</strong></td>
+<td>Nice for marketing/AI but heavy to collect on a bidding platform; defer</td>
+<td>No</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3>Duplicate / cleanup (BYO-internal, surfaced by the audit — not Stellar-driven)</h3>
+<ul>
+<li><code>condition_prop</code> vs <code>condition_prop_buyer</code> (two condition fields); <code>pet_policy</code> meta always empty while <code>pets</code> is the live field; <code>video_tour_url</code> / <code>virtual_tour_url</code> label inversion. → consolidate when touching these areas.</li>
+</ul>
+<h3>Do NOT add (MLS-only / admin / internal)</h3>
+<p>Office Exclusive (+Temporary Exclusion); Listing Contract Date; Listing Type; Listing Service Type; Seller Representation (BYO handles agency via broker-compensation); GeoLocation (BYO geocodes); Permit #/Builder License #; all legal survey IDs (Tax ID beyond BYO's <code>parcel_id</code>, Section/Township/Range/Plat Book/Block/Lot #/Alt Key/Legal Subdivision/Census Tract/Census Block); SqFt Total Source (keep only Heated Source); Owner/Tenant name &amp; phone; Association manager contact/email/website; Realtor Information &amp; Realtor Information Confidential; Documents-and-Disclosures grid (BYO has its own docs rows); List Agent/Office IDs &amp; Team; Seller's Preferred Closing Agent block; Call Center/ShowingTime/Occupant Type/Showing Instructions/Showing Considerations; Internet/Delayed Distribution/Third Party/Show Address/IDX-VOW/AVM/Distribute-To; Create-Auto-Virtual-Tour; Realtor Only Remarks; Driving Directions; signatures/dates.</p>
+<h2>2. INCOME  (Stellar Income ↔ Seller-Income + Buyer-Income)</h2>
+<h3>Already Implemented</h3>
+<p>Total # of Buildings (<code>unit_buildings</code>); Total # of Units (<code>unit_number</code>); <strong>Unit-mix / rent-roll grid</strong> (BYO <code>unit_type_configurations[]</code> with per-row unit type, beds/baths, spaces, # units, # occupied, expected rent, sqft — matches Stellar's Units table); Annual Gross Income (<code>gross_annual_income</code>); Annual Net Income / NOI (<code>minimum_annual_net_income</code>); Annual Expenses (<code>annual_operating_expenses</code>); Cap Rate (<code>minimum_cap_rate</code>); Rent Roll Available / Operating Statement Available; Number Water Meters / Number Electric Meters; all Residential physical attributes (Property Style Duplex/Triplex/Quad, construction systems, pool, pets, etc.); Financing; HOA; Flood/CDD.</p>
+<h3>Covered under a different name</h3>
+<p>Stellar <strong>Property Style</strong> (Duplex/Triplex/Quadruplex) = BYO <code>property_items</code>; <strong>Annual Net Income</strong> = <code>minimum_annual_net_income</code>; <strong>Number Water/Electric Meters</strong> = same in BYO.</p>
+<h3>Partial</h3>
+<ul>
+<li><strong>Individually Metered</strong> (Stellar checkbox: Cable/Electric/Gas/Internet/Sewer/Trash/Water) — BYO has meter <em>counts</em> but not the per-utility &quot;which utilities are individually metered&quot; flag. → add for investor DNA.</li>
+<li><strong>Terms of Lease / Tenant Pays</strong> (income) — BYO Income has these partially via Seller terms; Stellar has explicit Gross/Net/Pass-Throughs + Tenant-Pays expense responsibility. → structure.</li>
+<li><strong>Est Annual Market Income / Gross Scheduled Income / Total Monthly Rent &amp; Expenses</strong> — BYO has gross/net/expenses but not the market-vs-actual and gross-scheduled distinctions. → add for underwriting AI.</li>
+</ul>
+<h3>MISSING — recommended additions</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Field</th>
+<th>Property Type(s)</th>
+<th>Priority</th>
+<th>Why add</th>
+<th>Search?</th>
+<th>Public?</th>
+<th>Ask AI?</th>
+<th>DNA / lifestyle tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>I1</td>
+<td><strong>Individually Metered utilities</strong> (per-utility multi-select)</td>
+<td>Income</td>
+<td><strong>High</strong></td>
+<td>Separately-metered units are a core investor value driver (tenant-paid utilities); enables investor matching</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Investor DNA: <code>separately_metered</code>, <code>low_owner_expense</code></td>
+</tr>
+<tr>
+<td>I2</td>
+<td><strong>Gross Scheduled Income</strong> + <strong>Est. Market (potential) Income</strong></td>
+<td>Income</td>
+<td><strong>Medium</strong></td>
+<td>Distinguishes actual vs. pro-forma; feeds Ask AI underwriting and value-add DNA</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Investor DNA: <code>value_add</code>, <code>upside_potential</code></td>
+</tr>
+<tr>
+<td>I3</td>
+<td><strong>Financial Source</strong> (Accountant / Broker / Owner / Tax Return)</td>
+<td>Income</td>
+<td><strong>Medium</strong></td>
+<td>Credibility signal for the financials; Ask AI can qualify confidence</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>financials_verified</code></td>
+</tr>
+<tr>
+<td>I4</td>
+<td><strong>Total Monthly Rent</strong> &amp; <strong>Total Monthly Expenses</strong> (aggregate)</td>
+<td>Income</td>
+<td><strong>Medium</strong></td>
+<td>Quick DSCR/cash-flow signal without opening the rent roll</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>cash_flowing</code></td>
+</tr>
+<tr>
+<td>I5</td>
+<td><strong>Terms of Lease / Tenant Pays</strong> (structured, income)</td>
+<td>Income</td>
+<td><strong>Medium</strong></td>
+<td>Expense-responsibility structure drives NOI; today it's implicit</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>tenant_pays_utilities</code></td>
+</tr>
+<tr>
+<td>I6</td>
+<td><strong>GRM (Gross Rent Multiplier)</strong> — derived display</td>
+<td>Income</td>
+<td><strong>Low</strong></td>
+<td>Cheap derived metric; not a stored field (compute from price ÷ gross income)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>grm</code></td>
+</tr>
+</tbody>
+</table>
+<p><em>(Vacancy is already captured via per-unit &quot;# Occupied&quot; in the BYO unit grid — no separate field needed.)</em></p>
+<h3>Do NOT add</h3>
+<p>Same MLS-admin exclusions as Residential (listing agreement, legal survey IDs, agent/office, showing, distribution, signatures). Stellar Income adds no admin fields BYO should adopt.</p>
+<hr />
+<h2>3. COMMERCIAL SALE  (Stellar Commercial Sale ↔ Seller-Commercial + Buyer-Commercial)</h2>
+<h3>Already Implemented</h3>
+<p>Property Style / use type (<code>property_items</code>); Business Type (<code>business_type</code>); Zoning; Year Built; Total # of Buildings; Total Units on Property; Ceiling Height; Building Features; Electrical Service (incl. 3-phase); Air Conditioning/HVAC; Water/Sewer/Utilities; Foundation; Exterior Construction; Roof; Road Frontage (incl. Rail) + Road Surface; Cap Rate; NOI (<code>minimum_annual_net_income</code>); Price per SqFt (<code>price_per_sqft</code>); Existing Lease Type + Lease Expiration + Lease Assignable; Business Assets (<code>business_assets</code>); Office/Retail Space SqFt; Flex Space SqFt (via commercial block); Front Footage / Road Frontage Feet; Flood Zone; Total Acreage; Lot Size; Waterfront/Dock; Financing (incl. SBA-adjacent via <code>offered_financing</code>).</p>
+<h3>Covered under a different name</h3>
+<p>Stellar <strong>SqFt Total</strong> (building) = BYO <code>total_square_feet</code>/<code>minimum_heated_square</code>; <strong>Lot Size SqFt</strong> (land) = BYO lot fields; <strong>Property Style</strong> = <code>property_items</code>; <strong>Ceiling Height</strong> = <code>ceiling_height</code>.</p>
+<h3>Partial</h3>
+<ul>
+<li><strong>Space Classification (A/B/C/D)</strong> &amp; <strong>Space Type (Gray/Vanilla Shell, Re-Let)</strong> — present on the BYO <strong>Landlord</strong> commercial side but <strong>not confirmed on Seller-Commercial</strong>. → extend to sale.</li>
+<li><strong>Electrical Service / Building Features</strong> — present but verify parity of option lists with Stellar (3-phase, generator, high bays, clear span, columns).</li>
+<li><strong>Existing lease economics</strong> — BYO has lease type/expiration/assignable; missing tenancy economics below.</li>
+</ul>
+<h3>MISSING — recommended additions</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Field</th>
+<th>Property Type(s)</th>
+<th>Priority</th>
+<th>Why add</th>
+<th>Search?</th>
+<th>Public?</th>
+<th>Ask AI?</th>
+<th>DNA / lifestyle tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CS1</td>
+<td><strong>Loading / Dock configuration</strong> (# Bays Grade-Level, # Bays Dock-High, # Bays Dock-Well, Door Height/Width, Truck Doors/Well, High Bays, Clear Span, Columns)</td>
+<td>Commercial Sale + Lease</td>
+<td><strong>High</strong></td>
+<td>Decisive for industrial/warehouse matching &amp; search; today unmodeled</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Commercial DNA: <code>dock_high</code>, <code>drive_in</code>, <code>clear_span</code>, <code>industrial_ready</code></td>
+</tr>
+<tr>
+<td>CS2</td>
+<td><strong>Number of Tenants / Tenant Count</strong> (Multi/Single/Vacant) + <strong>Anchor or Co-Tenant</strong></td>
+<td>Commercial Sale</td>
+<td><strong>High</strong></td>
+<td>Core to investment-grade commercial matching (single-tenant NNN vs multi-tenant); anchor drives value</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Investor DNA: <code>single_tenant_nnn</code>, <code>multi_tenant</code>, <code>anchored</code></td>
+</tr>
+<tr>
+<td>CS3</td>
+<td><strong>Vacancy Rate</strong> + <strong>Gross Scheduled Income</strong> + <strong>Income Includes</strong> (Rent/Parking/Storage/Laundry)</td>
+<td>Commercial Sale</td>
+<td><strong>Medium</strong></td>
+<td>Completes the underwriting picture for Ask AI / investor DNA</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>stabilized</code>, <code>value_add</code></td>
+</tr>
+<tr>
+<td>CS4</td>
+<td><strong>NOI Type / Income Type</strong> (Actual vs Projected)</td>
+<td>Commercial Sale</td>
+<td><strong>Medium</strong></td>
+<td>Distinguishes in-place vs pro-forma NOI — material for cap-rate trust</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>actual_noi</code>, <code>proforma</code></td>
+</tr>
+<tr>
+<td>CS5</td>
+<td><strong>Total Parking Spaces</strong> (+ parking ratio)</td>
+<td>Commercial Sale + Lease</td>
+<td><strong>Medium</strong></td>
+<td>Retail/office viability filter (spaces per 1,000 sqft)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>ample_parking</code>, <code>parking_ratio</code></td>
+</tr>
+<tr>
+<td>CS6</td>
+<td><strong>Signage</strong> (Pole Sign / On Building / Directory / Street)</td>
+<td>Commercial Sale + Lease</td>
+<td><strong>Medium</strong></td>
+<td>Retail visibility is a real value/marketing driver</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>pole_sign</code>, <code>high_visibility</code></td>
+</tr>
+<tr>
+<td>CS7</td>
+<td><strong>Adjoining Property / Adjacent Use</strong></td>
+<td>Commercial Sale + Lease</td>
+<td><strong>Medium</strong></td>
+<td>Context for use compatibility &amp; Ask AI (&quot;what's next door?&quot;)</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>commercial_corridor</code>, <code>anchor_adjacent</code></td>
+</tr>
+<tr>
+<td>CS8</td>
+<td><strong># of Restrooms / Offices / Conference Rooms / Hotel-Motel Rooms</strong></td>
+<td>Commercial Sale + Lease</td>
+<td><strong>Medium</strong></td>
+<td>Office/hospitality fit-out search; BYO has some on lease side</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>turnkey_office</code>, <code>built_out</code></td>
+</tr>
+<tr>
+<td>CS9</td>
+<td><strong>Freezer Space / Freestanding / Converted Residence</strong></td>
+<td>Commercial Sale</td>
+<td><strong>Low</strong></td>
+<td>Niche use-type flags (restaurant/retail)</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>restaurant_ready</code>, <code>freestanding</code></td>
+</tr>
+<tr>
+<td>CS10</td>
+<td><strong>Management Type</strong> (Owner/Professional On-Off site)</td>
+<td>Commercial Sale + Income</td>
+<td><strong>Low</strong></td>
+<td>Operational context for investors</td>
+<td>No</td>
+<td>Yes</td>
+<td>Partial</td>
+<td><code>professionally_managed</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Do NOT add</h3>
+<p>Use Code / State-County Land-Use codes; all legal survey IDs; agent/office/closing-agent; showing/distribution/signatures; Realtor Information Confidential.</p>
+<hr />
+<h2>4. COMMERCIAL LEASE  (Stellar Commercial Lease ↔ Landlord-Commercial-Lease + Tenant-Commercial-Lease)</h2>
+<h3>Already Implemented</h3>
+<p>Lease Term; Terms of Lease / commercial lease type (NNN/Gross/Modified Gross/Absolute Net/Percentage — BYO <code>commercial_lease_type</code> + <code>terms_of_lease</code>); Owner Pays / Tenant Pays (<code>owner_pays</code>/<code>tenant_pays</code>); Net Leasable SqFt (<code>minimum_leaseable</code>); Office/Retail &amp; Flex SqFt; Ceiling Height; Space Classification (A/B/C/D) + Space Type; Zoning; Property Style/use; Building Features; Electrical Service; HVAC; Signage (<code>signage_rights</code>/<code>signage_request</code>); Permitted use / approval conditions; Personal Guarantee; CAM/NNN charges (free-text <code>cam_nnn_additional_rent_charges</code>); Rent escalation (free-text); TI/buildout (free-text); # restrooms/offices/conference rooms (Landlord).</p>
+<h3>Covered under a different name</h3>
+<p>Stellar <strong>Terms of Lease</strong> = BYO <code>terms_of_lease</code> / <code>commercial_lease_type</code> (+ <code>commercial_lease_type_preference</code> on Tenant); <strong>Net Leasable SqFt</strong> = <code>minimum_leaseable</code>; <strong>Owner/Tenant Pays</strong> = same.</p>
+<h3>Partial → should become structured</h3>
+<ul>
+<li><strong>CAM / Pass-Through Expenses</strong> — Stellar structures it (Pass-Through Expense Includes checklist + Initial Pass-Through Expenses amount + type Flat-Monthly vs Annual $/SqFt). BYO stores it as <strong>free text</strong> (<code>cam_nnn_additional_rent_charges</code>, <code>cam_nnn_preference</code>). → structure for matching/AI.</li>
+<li><strong>Rent Escalation / TI Allowance</strong> — Stellar's <strong>Commercial Transaction Terms</strong> (Annual Rate Increase, Improvement Allowance, Pre-Leasing, Sub-Leasing) is structured; BYO is free-text (<code>rent_escalation_terms</code>/<code>rent_escalation_preference</code>, <code>tenant_improvement_buildout_terms</code>/<code>buildout_tenant_improvement_request</code>). → structure.</li>
+</ul>
+<h3>MISSING — recommended additions</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Field</th>
+<th>Property Type(s)</th>
+<th>Priority</th>
+<th>Why add</th>
+<th>Search?</th>
+<th>Public?</th>
+<th>Ask AI?</th>
+<th>DNA / lifestyle tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CL1</td>
+<td><strong>Lease Price Unit</strong> ($ Total Monthly vs Per Square Foot) + <strong>Lease Amount Frequency</strong> (Annual/Monthly)</td>
+<td>Commercial Lease (Landlord + Tenant)</td>
+<td><strong>Critical</strong></td>
+<td>Without a rate <em>unit</em>, commercial rents can't be normalized or compared/searched ($18/sqft/yr vs $2,400/mo). Blocks credible commercial-lease matching &amp; search</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>rate_per_sqft</code>, <code>nnn_rate</code></td>
+</tr>
+<tr>
+<td>CL2</td>
+<td><strong>Pass-Through Expense Includes</strong> (structured checklist) + <strong>Initial Pass-Through Expenses</strong> ($ + Flat-Monthly / Annual $-per-SqFt)</td>
+<td>Commercial Lease</td>
+<td><strong>High</strong></td>
+<td>Converts free-text CAM into structured, comparable data for total-occupancy-cost matching &amp; Ask AI</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>low_cam</code>, <code>nnn_transparent</code></td>
+</tr>
+<tr>
+<td>CL3</td>
+<td><strong>Commercial Transaction Terms</strong> (Annual Rate Increase / Improvement Allowance / Pre-Leasing / Sub-Leasing) — structured</td>
+<td>Commercial Lease</td>
+<td><strong>High</strong></td>
+<td>Structures escalations, TI allowance, build-to-suit, and sublease availability for matching</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>ti_allowance</code>, <code>build_to_suit</code>, <code>sublease_ok</code>, <code>escalation</code></td>
+</tr>
+<tr>
+<td>CL4</td>
+<td><strong>Loading / Dock config</strong> (see CS1)</td>
+<td>Commercial Lease</td>
+<td><strong>High</strong></td>
+<td>Same industrial/warehouse driver as sale side</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>dock_high</code>, <code>drive_in</code>, <code>clear_span</code></td>
+</tr>
+<tr>
+<td>CL5</td>
+<td><strong>Number of Tenants / Tenant Count</strong></td>
+<td>Commercial Lease</td>
+<td><strong>Medium</strong></td>
+<td>Multi-tenant context / co-tenancy</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>multi_tenant</code></td>
+</tr>
+<tr>
+<td>CL6</td>
+<td><strong>Total Parking Spaces / ratio</strong>, <strong>Signage</strong>, <strong>Adjoining Property</strong>, <strong>Door dimensions</strong></td>
+<td>Commercial Lease</td>
+<td><strong>Medium</strong></td>
+<td>Retail/office fit filters (mirror CS5–CS7)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>parking_ratio</code>, <code>high_visibility</code></td>
+</tr>
+<tr>
+<td>CL7</td>
+<td><strong>Freezer Space / Freestanding / Converted Residence</strong></td>
+<td>Commercial Lease</td>
+<td><strong>Low</strong></td>
+<td>Restaurant/retail niche</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>restaurant_ready</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Do NOT add</h3>
+<p>Use Code / municipal codes; legal survey IDs; agent/office; showing/distribution; Realtor Only/Confidential; signatures; Property Manager contact.</p>
+<h2>5. BUSINESS OPPORTUNITY  (Stellar Business Opportunity ↔ Seller-Business + Buyer-Business)</h2>
+<p><strong>BYO is ahead of Stellar here.</strong> BYO already captures SDE/EBITDA, gross profit, inventory value, FF&amp;E value, reason for sale, employee count, NDA-required, financial-statements-available, tax-returns-available, and business-location-leased sub-terms — none of which exist as discrete Stellar fields (Stellar pushes them into Remarks/Documents). Keep and promote these as differentiators.</p>
+<h3>Already Implemented</h3>
+<p>Business Name; Year Established; Business Type (<code>business_type</code>, 50-category list); Real Estate Included (<code>real_estate_purchase</code>); Sale Includes (<code>sale_includes</code>); Licenses (Beer/Wine, Liquor, On/Off-site); Annual Gross Income / NOI / Annual Expenses / Cap Rate; Anchor/Co-Tenant context; Financing incl. SBA/Owner/Lease-Back; plus the BYO-only extras above (SDE/EBITDA, inventory, FF&amp;E, reason for sale, employees, NDA, statements available).</p>
+<h3>Covered under a different name</h3>
+<p>Stellar <strong>Sale Includes</strong> = BYO <code>sale_includes</code>; <strong>Business Type</strong> = <code>business_type</code>; <strong>Confidentiality Letter Req</strong> (NDA) = BYO <code>nda_required</code>; <strong>Real Estate Included</strong> = <code>real_estate_purchase</code>.</p>
+<h3>Partial</h3>
+<ul>
+<li><strong>Ownership legal structure</strong> — Stellar Ownership adds <em>Franchise / Sole Proprietor / LLC / Corporation / Partnership / Leasehold</em>. BYO doesn't capture the entity/franchise structure. → add (franchise resale is a distinct buyer intent).</li>
+</ul>
+<h3>MISSING — recommended additions</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Field</th>
+<th>Property Type(s)</th>
+<th>Priority</th>
+<th>Why add</th>
+<th>Search?</th>
+<th>Public?</th>
+<th>Ask AI?</th>
+<th>DNA / lifestyle tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B1</td>
+<td><strong>Ownership / Entity Structure</strong> (Franchise / Sole Proprietor / LLC / Corporation / Partnership / Leasehold)</td>
+<td>Business</td>
+<td><strong>High</strong></td>
+<td>Franchise vs independent is a primary buyer filter; entity form affects the deal</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Business DNA: <code>franchise</code>, <code>independent</code>, <code>absentee_owner</code></td>
+</tr>
+<tr>
+<td>B2</td>
+<td><strong>Number of Tenants / Anchor or Co-Tenant</strong></td>
+<td>Business (retail/strip)</td>
+<td><strong>Medium</strong></td>
+<td>For strip/retail business sales with sub-tenants</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>anchored</code>, <code>multi_tenant</code></td>
+</tr>
+<tr>
+<td>B3</td>
+<td><strong>NOI Type / Income Type</strong> (Actual vs Projected)</td>
+<td>Business</td>
+<td><strong>Medium</strong></td>
+<td>Trust signal on the stated financials</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>actual_financials</code></td>
+</tr>
+<tr>
+<td>B4</td>
+<td><strong>Hours / Days of Operation</strong></td>
+<td>Business</td>
+<td><strong>Low</strong></td>
+<td>Operational profile for buyers (absentee-friendly?)</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>absentee_run</code>, <code>limited_hours</code></td>
+</tr>
+<tr>
+<td>B5</td>
+<td><strong>Non-Compete</strong> (Y/N + term) &amp; <strong>Seller Training</strong> (Y/N + period)</td>
+<td>Business</td>
+<td><strong>Low/Medium</strong></td>
+<td>Common terms buyers screen on; currently only free-text</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>training_provided</code>, <code>non_compete</code></td>
+</tr>
+<tr>
+<td>B6</td>
+<td><strong>Freezer Space / Converted Residence / Freestanding</strong></td>
+<td>Business (restaurant/retail)</td>
+<td><strong>Low</strong></td>
+<td>Use-fit flags</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>restaurant_ready</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Do NOT add</h3>
+<p>Use Code; legal survey IDs; agent/office/closing; showing/distribution; Realtor Confidential; signatures. (Reason for Sale / Employees / NDA are already BYO fields — do not re-add.)</p>
+<hr />
+<h2>6. VACANT LAND  (Stellar Vacant Land ↔ Seller-Vacant Land + Buyer-Vacant Land)</h2>
+<p><strong>BYO Seller-Vacant-Land is strongly aligned.</strong> It already has current use, adjacent use, zoning, buildable, utility-availability (water/sewer/electric/gas/telecom), road frontage/surface, wells/septics, fences, vegetation, easements, front footage, lot dimensions, and acreage.</p>
+<h3>Already Implemented</h3>
+<p>Current Use (<code>current_use</code>); Current Adjacent Use (<code>current_adjacent_use</code>); Zoning; Buildable (<code>buildable</code>); Water/Sewer/Electric/Gas/Telecom Available; # Wells / # Septics; Road Frontage; Road Surface; Fences; Vegetation; Easements (+ water rights via list); Front Footage; Lot Dimensions; Total Acreage (+ <code>min_acreage</code>); Flood Zone; Waterfront/Dock; Financing; HOA.</p>
+<h3>Covered under a different name</h3>
+<p>Stellar <strong>Current Use</strong> (Property Style) = BYO <code>current_use</code>; <strong>Utilities</strong> (available) = BYO <code>*_available</code> flags; <strong>Front Footage</strong> = same.</p>
+<h3>Partial</h3>
+<ul>
+<li><strong>Exact Lot Size SqFt / Acres</strong> — BYO has acreage range + dimensions; add numeric sqft/acres (Buyer criteria especially).</li>
+<li><strong>Buyer-Vacant-Land is sparse</strong> — the BYO Buyer flow only captures style/acreage/view structurally; <strong>land buyers cannot specify zoning / utilities / topography / buildability as structured criteria</strong> (free-text KB only). → this is the biggest land gap (see VL-buyer items).</li>
+</ul>
+<h3>MISSING — recommended additions</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Field</th>
+<th>Property Type(s)</th>
+<th>Priority</th>
+<th>Why add</th>
+<th>Search?</th>
+<th>Public?</th>
+<th>Ask AI?</th>
+<th>DNA / lifestyle tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VL1</td>
+<td><strong>Structured land criteria on the Buyer side</strong> (Zoning intent, Utilities-required, Buildable, Min acreage, Road access, Current-use intent)</td>
+<td>Vacant Land — <strong>Buyer</strong></td>
+<td><strong>High</strong></td>
+<td>Land buyers today can't express structured wants; blocks land matching &amp; search entirely on the criteria side</td>
+<td>Yes</td>
+<td>n/a (criteria)</td>
+<td>Yes</td>
+<td>Buyer DNA: <code>land_use_intent</code>, <code>utilities_required</code>, <code>buildable_only</code></td>
+</tr>
+<tr>
+<td>VL2</td>
+<td><strong>Lot Features</strong> (Topography: Hilly/Level/Sloped/Rolling; Wetlands; Flood Plain; Conservation Area; Cleared/Wooded; Filled/May-Need-Fill; Compact Soil; Brownfield)</td>
+<td>Vacant Land</td>
+<td><strong>High</strong></td>
+<td>Topography/wetlands/soil drive buildability &amp; cost — top land-valuation signals; currently unmodeled</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Land DNA: <code>level_lot</code>, <code>wetlands</code>, <code>cleared</code>, <code>wooded</code>, <code>buildable</code></td>
+</tr>
+<tr>
+<td>VL3</td>
+<td><strong>Future Land Use</strong> designation + <strong>Zoning Compatible</strong> (Y/N)</td>
+<td>Vacant Land</td>
+<td><strong>Medium</strong></td>
+<td>Development potential; comp/entitlement AI</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>development_potential</code>, <code>rezoning_candidate</code></td>
+</tr>
+<tr>
+<td>VL4</td>
+<td><strong>Farm Type</strong> + <strong>AG Exemption</strong> (Y/N)</td>
+<td>Vacant Land (agricultural)</td>
+<td><strong>Medium</strong></td>
+<td>Ag classification affects taxes &amp; use; farm-buyer target audience</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>agricultural</code>, <code>ag_exemption</code>, <code>equestrian</code></td>
+</tr>
+<tr>
+<td>VL5</td>
+<td><strong>Exact Lot Size</strong> (SqFt + Acres numeric)</td>
+<td>Vacant Land</td>
+<td><strong>Medium</strong></td>
+<td>Precise acreage search</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>large_acreage</code></td>
+</tr>
+<tr>
+<td>VL6</td>
+<td><strong>Planned Unit Development (PUD)</strong> (Y/N) + <strong>Additional Parcels / Total # Parcels</strong></td>
+<td>Vacant Land</td>
+<td><strong>Low/Medium</strong></td>
+<td>Assemblage &amp; subdivision potential</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>assemblage</code>, <code>subdividable</code></td>
+</tr>
+<tr>
+<td>VL7</td>
+<td><strong>Horse/Barn amenities</strong> (already partly in BYO?) + <strong># Paddocks/Stalls</strong></td>
+<td>Vacant Land (equestrian)</td>
+<td><strong>Low</strong></td>
+<td>Equestrian target audience</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>equestrian</code>, <code>horses_allowed</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Do NOT add</h3>
+<p>Legal survey IDs; State/County Land-Use &amp; Property-Use codes; Designated Builder; agent/office/closing; showing/distribution; signatures.</p>
+<hr />
+<h2>7. RESIDENTIAL RENTAL  (Stellar Rental ↔ Landlord-Residential-Rental + Tenant-Residential-Rental)</h2>
+<h3>Already Implemented</h3>
+<p>Rent Price + Lease Amount Frequency; Lease Term / desired lease length; Minimum Lease; Date Available; Security Deposit (<code>security_deposit_amount</code> / tenant <code>security_deposit_budget</code>); Rent Includes; Furnishings; Pets Allowed + pet deposit/monthly-fee/fee/rent + restrictions (BYO ahead here); Housing for Older Persons (<code>leasing_55_plus</code>); Property Style; all interior/exterior physical attributes; Association info; Occupant Type; applicant pre-screening (Landlord: credit/income/employment/eviction/bankruptcy/criminal/reference/verification — BYO ahead); tenant pre-screening self-disclosure (Tenant: income, credit range, screening concerns, smoking, occupants — BYO ahead).</p>
+<h3>Covered under a different name</h3>
+<p>Stellar <strong>Furnishings</strong> = <code>tenant_require</code>; <strong>Housing for Older Persons</strong> = <code>leasing_55_plus</code>; <strong>Rent Includes</strong> = <code>rent_includes</code>; <strong>Lease Term/Minimum Lease</strong> = <code>desired_lease_length</code>.</p>
+<h3>Partial</h3>
+<ul>
+<li><strong>Association Fees for Tenants</strong> (Application/Approval, Security Deposit, Parking, Other + frequencies) — BYO has generic HOA + applicant reqs; Stellar structures tenant-borne association fees. → add for true move-in cost.</li>
+<li><strong>Tenant Pays</strong> (utilities the tenant covers) — BYO Landlord has <code>est_*</code> utility <em>estimates</em>; add explicit tenant-pays responsibility list.</li>
+</ul>
+<h3>MISSING — recommended additions</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Field</th>
+<th>Property Type(s)</th>
+<th>Priority</th>
+<th>Why add</th>
+<th>Search?</th>
+<th>Public?</th>
+<th>Ask AI?</th>
+<th>DNA / lifestyle tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RN1</td>
+<td><strong>Application Fee</strong> + <strong>Additional Applicant Fee</strong></td>
+<td>Rental (Landlord)</td>
+<td><strong>High</strong></td>
+<td>Standard, expected rental cost; missing today; affects true move-in cost &amp; tenant matching</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>application_fee</code></td>
+</tr>
+<tr>
+<td>RN2</td>
+<td><strong>Short-Term / Seasonal block</strong> (Long-Term Y/N, Seasonal Rent, Off-Season Rent, Weeks/Months Available calendar)</td>
+<td>Rental (Landlord + Tenant)</td>
+<td><strong>High</strong></td>
+<td>FL seasonal/vacation rentals are a huge segment BYO can't currently express (seasonal pricing + availability windows)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Rental DNA: <code>seasonal</code>, <code>snowbird</code>, <code>vacation_rental</code>, <code>annual</code></td>
+</tr>
+<tr>
+<td>RN3</td>
+<td><strong>Association Fees for Tenants</strong> (Approval Fee, Security Deposit, Parking Fee, Other + frequency)</td>
+<td>Rental (Landlord)</td>
+<td><strong>Medium</strong></td>
+<td>Real move-in cost transparency; association-approval friction is a tenant concern</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>hoa_approval_required</code>, <code>move_in_cost</code></td>
+</tr>
+<tr>
+<td>RN4</td>
+<td><strong>Association Approval Required</strong> (Y/N) + <strong>Approval Process/Timeframe</strong></td>
+<td>Rental (Landlord)</td>
+<td><strong>Medium</strong></td>
+<td>Approval delay is decisive for move-in timing; Ask AI intent</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>association_approval</code></td>
+</tr>
+<tr>
+<td>RN5</td>
+<td><strong>Tenant Pays</strong> (utilities responsibility list)</td>
+<td>Rental (Landlord + Tenant)</td>
+<td><strong>Medium</strong></td>
+<td>Clarifies total cost of occupancy; complements Rent Includes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>tenant_pays_utilities</code></td>
+</tr>
+<tr>
+<td>RN6</td>
+<td><strong>Primary Bed Size</strong> (King/Queen/etc.)</td>
+<td>Rental (furnished/seasonal)</td>
+<td><strong>Low</strong></td>
+<td>Relevant for furnished/seasonal listings</td>
+<td>No</td>
+<td>Yes</td>
+<td>Partial</td>
+<td><code>furnished_detail</code></td>
+</tr>
+<tr>
+<td>RN7</td>
+<td><strong>Pet Restrictions Source</strong> (Association vs Landlord)</td>
+<td>Rental</td>
+<td><strong>Low</strong></td>
+<td>Clarifies who sets the pet rule (negotiability signal for AI)</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>pet_rule_source</code></td>
+</tr>
+</tbody>
+</table>
+<p><em>(RentSpree screening integration = Do NOT add — BYO has its own pre-screening. Accessibility Features (R4) and Community Features (R8) from the Residential section apply equally to rentals — do not duplicate the recommendation.)</em></p>
+<h3>Do NOT add</h3>
+<p>Long-Term flag as an <em>admin</em> toggle (adopt only as part of the seasonal block RN2), Office Exclusive, listing agreement/service type, legal survey IDs, agent/office, RentSpree, showing/distribution/IDX/VOW, signatures, Owner/Tenant contact.</p>
+<hr />
+<h1>MASTER FINDINGS &amp; ROADMAP</h1>
+<h2>1. Critical fields missing before launch</h2>
+<p>These block a credible launch of the affected property type (listing feels incomplete, or matching/search can't function):</p>
+<ol>
+<li><strong>Schools (Elementary / Middle / High)</strong> — Residential (Seller + Buyer). The single biggest residential decision factor; absence is conspicuous.</li>
+<li><strong>Lease Price Unit ($/sqft vs monthly) + Lease Amount Frequency</strong> — Commercial Lease (Landlord + Tenant). Commercial rents are meaningless without a rate unit; blocks commercial-lease comparison/search/matching.</li>
+<li><strong>Structured land criteria on the Buyer side</strong> — Vacant Land (Buyer). Land buyers currently cannot state zoning/utilities/buildability wants; land matching is impossible without it.</li>
+<li><strong>Application Fee + move-in cost fields</strong> — Residential Rental. Expected on every rental; needed for true cost-of-occupancy.</li>
+<li><strong>Exact Lot Size (SqFt/Acres)</strong> — where BYO only stores acreage <em>ranges</em> today and a numeric filter is expected (Residential, Vacant Land).</li>
+<li><strong>Ownership / Entity Structure (Franchise vs Independent)</strong> — Business Opportunity. Primary buyer filter for business listings.</li>
+</ol>
+<p><em>(Everything else below is enhancement, not launch-blocking. Note: several &quot;launch&quot; gaps are narrow — BYO's physical-attribute coverage is otherwise launch-ready.)</em></p>
+<h2>2. High-value lifestyle / DNA metadata opportunities</h2>
+<p>The highest ROI net-new data for BYO's AI/DNA (all currently Missing), because they turn into rich, searchable, marketable tags:</p>
+<ul>
+<li><strong>Front Exposure</strong> → sun orientation (<code>exposure_south</code>, <code>natural_light</code>, <code>sunset_view</code>).</li>
+<li><strong>Architectural Style</strong> → property personality (<code>key_west</code>, <code>mediterranean</code>, <code>mid_century</code>, <code>coastal</code>).</li>
+<li><strong>Community Features</strong> → lifestyle/target-audience (<code>gated</code>, <code>golf_community</code>, <code>dog_friendly</code>, <code>active_adult</code>, <code>walkable</code>, <code>family_amenities</code>).</li>
+<li><strong>Accessibility Features</strong> → underserved audience (<code>single_level</code>, <code>wheelchair_accessible</code>, <code>aging_in_place</code>).</li>
+<li><strong>In-Law Suite / ADU + Additional Rooms</strong> → (<code>multigenerational</code>, <code>home_office</code>, <code>income_potential</code>, <code>media_room</code>, <code>flex_space</code>).</li>
+<li><strong>Disaster Mitigation</strong> → FL insurability/resilience (<code>hurricane_hardened</code>, <code>impact_windows</code>, <code>above_flood_plain</code>, <code>insurance_friendly</code>).</li>
+<li><strong>Solar / Green Energy + Ownership</strong> → (<code>solar_owned</code>, <code>energy_efficient</code>, <code>low_utility_cost</code>).</li>
+<li><strong>Patio/Porch, Fireplace, Pool detail</strong> → cozy/outdoor-living lifestyle (<code>screened_lanai</code>, <code>outdoor_living</code>, <code>fireplace</code>, <code>heated_pool</code>).</li>
+<li><strong>Purchase-purpose / rental-purpose</strong> (BYO already has these) → tie into Buyer/Tenant DNA (<code>investor</code>, <code>snowbird</code>, <code>primary_residence</code>).</li>
+</ul>
+<p>These pair with BYO's existing <strong>Location DNA</strong> (schools, commute, flood, POIs) to produce a genuinely differentiated buyer/tenant DNA profile.</p>
+<h2>3. Commercial-specific gaps (Sale + Lease)</h2>
+<ul>
+<li><strong>Rate normalization:</strong> Lease Price Unit ($/sqft vs monthly) + frequency — <em>Critical</em> for lease.</li>
+<li><strong>Structured CAM / pass-throughs</strong> (checklist + initial amount + flat vs $/sqft) — replaces BYO free-text.</li>
+<li><strong>Structured Commercial Transaction Terms</strong> (annual escalation, TI allowance, pre-leasing/build-to-suit, sub-leasing) — replaces BYO free-text.</li>
+<li><strong>Loading/dock configuration</strong> (dock-high/grade/well bays, door dims, truck doors, high bays, clear span, columns) — industrial matching.</li>
+<li><strong>Tenancy economics (sale):</strong> number of tenants (single/multi), anchor/co-tenant, vacancy rate, gross scheduled income, NOI actual-vs-projected, income-includes.</li>
+<li><strong>Parking count/ratio, signage, adjoining property, restrooms/offices/conference-room counts</strong> — retail/office fit.</li>
+<li><strong>Space Classification (A–D) on the sale side</strong> (already on lease side).</li>
+</ul>
+<h2>4. Income-property gaps</h2>
+<ul>
+<li><strong>Individually-metered utilities</strong> (per-utility flags) — investor value driver.</li>
+<li><strong>Gross Scheduled Income + Est. Market Income</strong> (actual vs pro-forma) and <strong>Total Monthly Rent/Expenses</strong> aggregates — underwriting AI.</li>
+<li><strong>Financial Source</strong> (accountant/tax-return/owner) — credibility signal.</li>
+<li><strong>Structured Terms-of-Lease / Tenant-Pays</strong> for income units.</li>
+<li>(BYO already leads on unit-mix/rent-roll grid, NOI, cap rate, meter counts — keep.)</li>
+</ul>
+<h2>5. Rental-specific gaps</h2>
+<ul>
+<li><strong>Application Fee + Additional Applicant Fee</strong> — <em>High</em>, expected on every rental.</li>
+<li><strong>Short-Term / Seasonal block</strong> (long-term flag, seasonal &amp; off-season rent, weeks/months-available calendar) — <em>High</em>, FL seasonal market.</li>
+<li><strong>Association Fees for Tenants</strong> (approval/parking/security + frequency) &amp; <strong>Association Approval Required + process/timeframe</strong> — real move-in cost &amp; timing.</li>
+<li><strong>Tenant Pays</strong> utilities responsibility.</li>
+<li>(BYO already leads on pet economics + pre-screening — keep.)</li>
+</ul>
+<h2>6. Vacant-land gaps</h2>
+<ul>
+<li><strong>Structured Buyer-side land criteria</strong> — <em>High</em>, currently absent.</li>
+<li><strong>Lot Features</strong> (topography, wetlands, flood plain, conservation, cleared/wooded, soil, buildable) — top valuation drivers.</li>
+<li><strong>Future Land Use + Zoning Compatible</strong> — development potential.</li>
+<li><strong>Farm Type + AG Exemption</strong> — agricultural/equestrian audience.</li>
+<li><strong>Exact Lot Size (sqft/acres)</strong>, <strong>PUD</strong>, <strong>additional parcels/assemblage</strong>.</li>
+</ul>
+<h2>7. Business-opportunity gaps</h2>
+<ul>
+<li><strong>Ownership / Entity Structure</strong> (Franchise/Sole-Prop/LLC/Corp/Partnership) — <em>High</em>.</li>
+<li><strong>NOI Actual-vs-Projected</strong>, <strong>Number of Tenants / Anchor</strong> (retail).</li>
+<li><strong>Hours/Days of Operation</strong>, <strong>Non-Compete + term</strong>, <strong>Seller Training + period</strong> (structure BYO's free-text).</li>
+<li>(BYO already leads on SDE/EBITDA, inventory, FF&amp;E, reason-for-sale, employees, NDA — keep and market these.)</li>
+</ul>
+<h2>8. Top 100 recommended field additions</h2>
+<p>Ordered by priority tier, then domain. Flags: <strong>S</strong>=should be searchable, <strong>P</strong>=display publicly, <strong>AI</strong>=Ask AI should use it. All are net-new to BYO (or a structured replacement of a BYO free-text field). This list intentionally <strong>excludes</strong> MLS-admin fields.</p>
+<h3>Tier: CRITICAL (1–15)</h3>
+<ol>
+<li>Elementary School — Residential (Seller+Buyer) — S/P/AI</li>
+<li>Middle School — Residential — S/P/AI</li>
+<li>High School — Residential — S/P/AI</li>
+<li>School Zone (verified, Location-DNA derived) — Residential — S/P/AI</li>
+<li>Lease Price Unit ($/SqFt vs Total Monthly) — Commercial Lease — S/P/AI</li>
+<li>Lease Amount Frequency (Annual/Monthly) — Commercial Lease — S/P/AI</li>
+<li>Buyer land criteria — Zoning intent — Vacant Land (Buyer) — S/AI</li>
+<li>Buyer land criteria — Utilities required — Vacant Land (Buyer) — S/AI</li>
+<li>Buyer land criteria — Buildable required — Vacant Land (Buyer) — S/AI</li>
+<li>Buyer land criteria — Minimum acreage — Vacant Land (Buyer) — S/AI</li>
+<li>Application Fee — Residential Rental (Landlord) — S/P/AI</li>
+<li>Additional Applicant Fee — Residential Rental — S/P/AI</li>
+<li>Lot Size — exact SqFt (numeric) — Residential + Land — S/P/AI</li>
+<li>Lot Size — exact Acres (numeric) — Residential + Land — S/P/AI</li>
+<li>Ownership / Entity Structure (Franchise/Sole-Prop/LLC/Corp/Partnership) — Business — S/P/AI</li>
+</ol>
+<h3>Tier: HIGH (16–67)</h3>
+<ol start="16">
+<li>Front Exposure (compass orientation) — Residential + all — S/P/AI</li>
+<li>Architectural Style (Coastal/Key West/Mediterranean/Colonial/…) — Residential — S/P/AI</li>
+<li>Accessibility Features (24-value set) — Residential/Rental/Commercial — S/P/AI</li>
+<li>In-Law Suite / ADU (Y/N) — Residential — S/P/AI</li>
+<li>In-Law Suite description (attached/detached/kitchen/private-entrance) — Residential — S/P/AI</li>
+<li>In-Law Suite sqft (under-air + total) — Residential — P/AI</li>
+<li>Additional Room — Home Office / Den — Residential — S/P/AI</li>
+<li>Additional Room — Bonus Room — Residential — S/P/AI</li>
+<li>Additional Room — Media Room — Residential — S/P/AI</li>
+<li>Additional Room — Florida Room / Sunroom — Residential — S/P/AI</li>
+<li>Additional Room — Great Room — Residential — S/P/AI</li>
+<li>Additional Room — Loft — Residential — S/P/AI</li>
+<li>Community Feature — Gated (Guard / No Guard) — Residential + all — S/P/AI</li>
+<li>Community Feature — Golf Community — Residential — S/P/AI</li>
+<li>Community Feature — Dog Park — Residential — S/P/AI</li>
+<li>Community Feature — Playground — Residential — S/P/AI</li>
+<li>Community Feature — Fitness Center — Residential — S/P/AI</li>
+<li>Community Feature — Clubhouse — Residential — S/P/AI</li>
+<li>Community Feature — Tennis / Pickleball — Residential — S/P/AI</li>
+<li>Community Feature — Sidewalks / Walkable — Residential — S/P/AI</li>
+<li>Community Feature — Deed Restrictions — Residential — S/P/AI</li>
+<li>Disaster Mitigation — Hurricane Shutters / Impact Windows — Residential + all — S/P/AI</li>
+<li>Disaster Mitigation — Above Flood Plain — Residential + all — S/P/AI</li>
+<li>Disaster Mitigation — Safe Room — Residential — P/AI</li>
+<li>Disaster Mitigation — Hurricane-Insurance-Deduction Qualified — Residential — P/AI</li>
+<li>Green Energy Generation (Y/N + Solar/Wind/Hydro) — Residential + all — S/P/AI</li>
+<li>Solar Panel Ownership (Owned/Leased/Financed/Utility) — Residential + all — S/P/AI</li>
+<li>Solar Lease/Finance Terms (Assumable/Seller-paid-at-closing) — Residential — P/AI</li>
+<li>Individually-Metered utilities (per-utility flags) — Income — S/P/AI</li>
+<li>Loading — # Bays Dock-High — Commercial Sale + Lease — S/P/AI</li>
+<li>Loading — # Bays Grade-Level — Commercial Sale + Lease — S/P/AI</li>
+<li>Loading — # Bays Dock-Well — Commercial Sale + Lease — S/P/AI</li>
+<li>Loading — Door Height / Width — Commercial — S/P/AI</li>
+<li>Building — High Bays / Clear Span / Columns — Commercial — S/P/AI</li>
+<li>Number of Tenants (Single / Multi / Vacant) — Commercial Sale + Lease — S/P/AI</li>
+<li>Anchor or Co-Tenant — Commercial Sale — P/AI</li>
+<li>Pass-Through Expense Includes (structured CAM checklist) — Commercial Lease — S/P/AI</li>
+<li>Initial Pass-Through Expenses ($ + Flat-Monthly/Annual-$per-SqFt) — Commercial Lease — S/P/AI</li>
+<li>Commercial Transaction Term — Annual Rate Increase / Escalation — Commercial Lease — S/P/AI</li>
+<li>Commercial Transaction Term — Improvement (TI) Allowance — Commercial Lease — S/P/AI</li>
+<li>Commercial Transaction Term — Pre-Leasing / Build-to-Suit — Commercial Lease — S/P/AI</li>
+<li>Commercial Transaction Term — Sub-Leasing available — Commercial Lease — S/P/AI</li>
+<li>Seasonal — Long-Term (Y/N) indicator — Rental — S/AI</li>
+<li>Seasonal — Seasonal Rent — Rental — S/P/AI</li>
+<li>Seasonal — Off-Season Rent — Rental — S/P/AI</li>
+<li>Seasonal — Weeks / Months Available calendar — Rental — S/P/AI</li>
+<li>Lot Feature — Topography (Level/Sloped/Hilly/Rolling) — Vacant Land + Residential — S/P/AI</li>
+<li>Lot Feature — Wetlands — Vacant Land — S/P/AI</li>
+<li>Lot Feature — Flood Plain — Vacant Land — S/P/AI</li>
+<li>Lot Feature — Conservation Area — Vacant Land — S/P/AI</li>
+<li>Lot Feature — Cleared / Wooded — Vacant Land — S/P/AI</li>
+<li>Fireplace (Y/N) — Residential — S/P/AI</li>
+</ol>
+<h3>Tier: MEDIUM (68–95)</h3>
+<ol start="68">
+<li>Fireplace Description (Gas/Wood/Electric + location) — Residential — P/AI</li>
+<li>Ownership Type (Fee Simple/Condo/Co-op/Leasehold/Fractional) — Residential + all — S/P/AI</li>
+<li>Land Lease (Y/N + annual fee) — Residential + all — S/P/AI</li>
+<li>Patio &amp; Porch Features (Screened/Covered/Lanai/Wrap-Around) — Residential — S/P/AI</li>
+<li>Property Position (Corner/End/Penthouse/High-Rise/Mid-Rise/Stilt) — Residential (condo) — S/P/AI</li>
+<li>Floor Number — Residential (condo) — S/P/AI</li>
+<li>Total # of Floors — Residential (condo) — P/AI</li>
+<li>Building Elevator (Y/N) — Residential (condo) — S/P/AI</li>
+<li>Window Features (Impact/Double-Pane/ENERGY STAR/Tinted) — Residential + all — S/P/AI</li>
+<li>Fencing (extend to Seller/Buyer Residential) — Residential — S/P/AI</li>
+<li>Security Features (extend to Seller/Buyer Residential) — Residential — S/P/AI</li>
+<li>Floor Covering (extend to Seller/Buyer Residential) — Residential — S/P/AI</li>
+<li>Spa + Spa Features — Residential — S/P/AI</li>
+<li>Existing-Lease detail (monthly rent + lease end + notice) — Residential/Income sales — P/AI</li>
+<li>Gross Scheduled Income — Income + Commercial Sale — P/AI</li>
+<li>Est. Market (potential) Income — Income — P/AI</li>
+<li>Financial Source (Accountant/Tax-Return/Broker/Owner) — Income + Business — P/AI</li>
+<li>Total Monthly Rent + Total Monthly Expenses (aggregate) — Income — S/P/AI</li>
+<li>Terms of Lease / Tenant Pays (structured) — Income — P/AI</li>
+<li>NOI Type (Actual vs Projected) — Commercial Sale + Income + Business — P/AI</li>
+<li>Vacancy Rate — Commercial Sale — S/P/AI</li>
+<li>Income Includes (Rent/Parking/Storage/Laundry) — Commercial Sale — P/AI</li>
+<li>Total Parking Spaces / ratio — Commercial Sale + Lease — S/P/AI</li>
+<li>Signage (Pole/On-Building/Directory/Street) — Commercial Sale + Lease — S/P/AI</li>
+<li>Adjoining Property / Adjacent Use — Commercial Sale + Lease — P/AI</li>
+<li>
+<h1>of Restrooms / Offices / Conference Rooms (extend to sale) — Commercial — S/P/AI</h1>
+</li>
+<li>Space Classification (A/B/C/D) on Sale side — Commercial Sale — S/P/AI</li>
+<li>Association Fees for Tenants (approval/parking/security + freq) — Rental — S/P/AI</li>
+</ol>
+<h3>Tier: MEDIUM / LOW (96–100)</h3>
+<ol start="96">
+<li>Association Approval Required + Process/Timeframe — Rental — S/P/AI</li>
+<li>Tenant Pays (utilities responsibility list) — Rental + Income — S/P/AI</li>
+<li>Future Land Use + Zoning Compatible (Y/N) — Vacant Land — S/P/AI</li>
+<li>Farm Type + AG Exemption (Y/N) — Vacant Land — S/P/AI</li>
+<li>Non-Compete (+term) &amp; Seller Training (+period), structured — Business — P/AI</li>
+</ol>
+<p><strong>Low-priority backlog (beyond the Top 100, adopt opportunistically):</strong> Green Building Certifications (LEED/ENERGY STAR/HERS); Indoor Air Quality (MERV/low-VOC); Room-dimensions grid; Primary Bed Size (furnished/seasonal); Pet-Restriction Source (Association vs Landlord); PUD (Y/N); Additional Parcels / assemblage; GRM (derived); Hours/Days of Operation (Business); Freezer Space / Freestanding / Converted Residence (commercial/business); Barn/Horse amenities + paddocks/stalls (equestrian land).</p>
+<h2>9. Top 100 recommended metadata / lifestyle tags</h2>
+<p>Tag slugs for Property DNA / Buyer DNA / Tenant DNA / Location DNA / lifestyle / target-audience layers. Most are <strong>derivable</strong> from the fields in Section 8 plus BYO's existing data — they are the searchable/marketable output of the new fields, not new inputs. Grouped by DNA layer.</p>
+<p><strong>Location DNA (1–12):</strong> 1 <code>school_zone_rated</code> · 2 <code>top_school_district</code> · 3 <code>walkable</code> · 4 <code>near_public_transit</code> · 5 <code>golf_community</code> · 6 <code>gated_community</code> · 7 <code>waterfront</code> · 8 <code>water_view</code> · 9 <code>beach_proximity</code> · 10 <code>downtown_proximity</code> · 11 <code>short_commute</code> · 12 <code>low_hoa</code></p>
+<p><strong>Property DNA — style/character (13–24):</strong> 13 <code>architectural_coastal</code> · 14 <code>architectural_key_west</code> · 15 <code>architectural_mediterranean</code> · 16 <code>architectural_modern</code> · 17 <code>architectural_traditional</code> · 18 <code>new_construction</code> · 19 <code>move_in_ready</code> · 20 <code>fixer_upper</code> · 21 <code>luxury</code> · 22 <code>historic</code> · 23 <code>single_level</code> · 24 <code>multi_story</code></p>
+<p><strong>Property DNA — features (25–45):</strong> 25 <code>pool_home</code> · 26 <code>heated_pool</code> · 27 <code>spa_hot_tub</code> · 28 <code>screened_lanai</code> · 29 <code>outdoor_living</code> · 30 <code>fireplace</code> · 31 <code>gourmet_kitchen</code> · 32 <code>open_floorplan</code> · 33 <code>high_ceilings</code> · 34 <code>smart_home</code> · 35 <code>home_office</code> · 36 <code>media_room</code> · 37 <code>flex_space</code> · 38 <code>florida_room</code> · 39 <code>bonus_room</code> · 40 <code>oversized_garage</code> · 41 <code>rv_boat_parking</code> · 42 <code>ev_charging</code> · 43 <code>large_lot</code> · 44 <code>corner_lot</code> · 45 <code>cul_de_sac</code></p>
+<p><strong>Lifestyle / exposure (46–55):</strong> 46 <code>exposure_south</code> · 47 <code>natural_light</code> · 48 <code>sunset_view</code> · 49 <code>sunrise_view</code> · 50 <code>private_backyard</code> · 51 <code>fenced_yard</code> · 52 <code>dog_friendly</code> · 53 <code>equestrian</code> · 54 <code>boater_lifestyle</code> · 55 <code>golf_cart_community</code></p>
+<p><strong>Target audience (56–68):</strong> 56 <code>family_oriented</code> · 57 <code>active_adult_55plus</code> · 58 <code>multigenerational</code> · 59 <code>remote_worker_ready</code> · 60 <code>investor_ready</code> · 61 <code>snowbird_seasonal</code> · 62 <code>first_time_buyer</code> · 63 <code>downsizer</code> · 64 <code>accessibility_ready</code> · 65 <code>aging_in_place</code> · 66 <code>wheelchair_accessible</code> · 67 <code>pet_owner_friendly</code> · 68 <code>eco_conscious</code></p>
+<p><strong>Resilience / green / cost (69–80):</strong> 69 <code>hurricane_hardened</code> · 70 <code>impact_windows</code> · 71 <code>above_flood_plain</code> · 72 <code>insurance_friendly</code> · 73 <code>flood_zone_low_risk</code> · 74 <code>solar_owned</code> · 75 <code>energy_efficient</code> · 76 <code>low_utility_cost</code> · 77 <code>green_certified</code> · 78 <code>no_cdd</code> · 79 <code>low_property_tax</code> · 80 <code>assumable_financing</code></p>
+<p><strong>Financial / deal (81–88):</strong> 81 <code>cash_flowing</code> · 82 <code>value_add</code> · 83 <code>high_cap_rate</code> · 84 <code>seller_financing_available</code> · 85 <code>lease_option_available</code> · 86 <code>turnkey_investment</code> · 87 <code>tenant_occupied</code> · 88 <code>below_market_rent</code></p>
+<p><strong>Commercial (89–95):</strong> 89 <code>nnn_investment</code> · 90 <code>single_tenant_net_lease</code> · 91 <code>multi_tenant</code> · 92 <code>anchored_center</code> · 93 <code>industrial_dock_high</code> · 94 <code>high_visibility_retail</code> · 95 <code>build_to_suit</code></p>
+<p><strong>Land (96–98):</strong> 96 <code>buildable_lot</code> · 97 <code>agricultural_zoned</code> · 98 <code>development_potential</code></p>
+<p><strong>Rental (99–100):</strong> 99 <code>furnished_rental</code> · 100 <code>annual_lease</code></p>
+<blockquote>
+<p><strong>Tagging principle:</strong> tags should be <strong>derived</strong> at save/DNA-generation time from structured fields (Section 8) + existing BYO data, not hand-entered — this keeps them consistent for matching, search facets, and Ask AI retrieval. Store them on the listing's DNA profile and expose as search facets.</p>
+</blockquote>
+<h2>10. Recommended implementation order</h2>
+<p>Sequenced to unblock launch first, then maximize DNA/marketing value, then long-tail. Each wave is a coherent migration + Livewire + Blade + display + Ask-AI-registry + DNA-tag unit of work.</p>
+<p><strong>Wave 0 — Launch blockers (Critical).</strong></p>
+<ul>
+<li>Schools (Elementary/Middle/High) on Residential Seller + Buyer (+ wire into Location DNA and Ask AI).</li>
+<li>Commercial-Lease rate normalization: Lease Price Unit + Lease Amount Frequency (Landlord + Tenant).</li>
+<li>Structured Buyer-side Vacant-Land criteria (zoning/utilities/buildable/min-acreage).</li>
+<li>Rental Application Fee + Additional Applicant Fee.</li>
+<li>Exact Lot Size (SqFt/Acres) numeric on Residential + Land.</li>
+<li>Business Ownership/Entity Structure.</li>
+</ul>
+<p><strong>Wave 1 — High-value residential DNA &amp; lifestyle.</strong></p>
+<ul>
+<li>Front Exposure; Architectural Style; Accessibility Features; In-Law Suite/ADU + Additional Rooms; Community Features; Fireplace.</li>
+<li>Wire each into the DNA tag deriver + search facets + Ask AI registry.</li>
+</ul>
+<p><strong>Wave 2 — Florida resilience &amp; energy (marketing/insurance edge).</strong></p>
+<ul>
+<li>Disaster Mitigation (hurricane shutters/impact windows/above-flood-plain/safe-room/insurance-qualified).</li>
+<li>Green Energy Generation + Solar Panel Ownership + Solar Finance Terms.</li>
+<li>Window Features (impact); Patio/Porch; Spa.</li>
+</ul>
+<p><strong>Wave 3 — Commercial economics &amp; industrial matching.</strong></p>
+<ul>
+<li>Loading/dock configuration; structured Pass-Through/CAM; structured Commercial Transaction Terms (escalation/TI/build-to-suit/sublease); Number of Tenants + Anchor; Parking count/ratio; Signage; Space Class on sale side; restrooms/offices/conference counts.</li>
+</ul>
+<p><strong>Wave 4 — Income &amp; investor intelligence.</strong></p>
+<ul>
+<li>Individually-metered utilities; Gross Scheduled + Market Income; Financial Source; Total Monthly Rent/Expenses; NOI Type; Vacancy Rate; structured Terms-of-Lease/Tenant-Pays.</li>
+</ul>
+<p><strong>Wave 5 — Rental depth &amp; seasonal market.</strong></p>
+<ul>
+<li>Short-Term/Seasonal block (seasonal/off-season rent + availability calendar); Association Fees for Tenants + Approval Required/process; Tenant Pays.</li>
+</ul>
+<p><strong>Wave 6 — Land depth.</strong></p>
+<ul>
+<li>Lot Features (topography/wetlands/flood-plain/conservation/cleared-wooded); Future Land Use + Zoning Compatible; Farm Type + AG Exemption; PUD/assemblage.</li>
+</ul>
+<p><strong>Wave 7 — Ownership/legal + condo depth + backlog.</strong></p>
+<ul>
+<li>Ownership Type + Land Lease; condo Floor/Elevator/Position; extend Fencing/Security/Floor-Covering to sale side; Existing-Lease detail; then the Low-priority backlog list.</li>
+</ul>
+<p><strong>Cross-cutting (every wave):</strong> for each field added, also (a) add its option list to config, (b) mirror listing↔criteria (Seller/Landlord ↔ Buyer/Tenant), (c) register it in <code>AskAiFieldQuestionRegistryService</code>, (d) add derived DNA/lifestyle tags, (e) add search facets where flagged <strong>S</strong>, (f) respect the &quot;Do NOT add&quot; exclusions. Also fold in the BYO-internal duplicate cleanups noted per section (e.g., <code>condition_prop</code> vs <code>condition_prop_buyer</code>, empty <code>pet_policy</code>, tour-URL label inversion).</p>
+<hr />
+<h2>Files reviewed</h2>
+<ul>
+<li><strong>Source of truth:</strong> <code>docs/bid-your-offer-field-audit.md</code> (BYO Field Audit — full in context).</li>
+<li><strong>Stellar forms (all pages):</strong> <code>attached_assets/{Residential,Income,Commercial_Sale,Business_Opportunity,Commercial_Lease,Rental,Vacant_Land}_Data_Entry_Form_1782925021820.pdf</code>.</li>
+<li><strong>Extracted Stellar inventories (working artifacts):</strong> <code>scratchpad/stellar-{residential,income,commercial-sale,business,commercial-lease,rental,vacant-land}.md</code> (exhaustive per-form field inventories, one section per form section, ~1,000+ fields total across forms).</li>
+</ul>
+<p>Field counts inventoried from Stellar (consumer + admin): Residential ~205 · Income ~197 · Commercial Sale 146 · Business Opportunity 226 · Commercial Lease 132 · Rental ~155 · Vacant Land 133.</p>
+<h2>Recommended next step</h2>
+<p>Turn this roadmap into an executable backlog: create a ticket per <strong>Wave 0</strong> item (schools, commercial rate unit, buyer land criteria, rental application fee, exact lot size, business entity), each specifying the migration, Livewire props, Blade tab, public-display binding, Ask-AI registry entry, and derived DNA tags — then proceed wave by wave. Because BYO's physical-attribute coverage already matches Stellar, the effort concentrates on the ~15 launch items and the high-value lifestyle/DNA layer (Waves 1–2), not on wholesale field porting.</p>
+</div></body></html>

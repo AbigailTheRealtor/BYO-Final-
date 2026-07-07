@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Beyond-MLS Property DNA — Wave 1 Implementation Architecture</title><style>:root{--fg:#1f2933;--muted:#616e7c;--line:#e4e7eb;--accent:#2563eb;--bg:#fff;--code:#f5f7fa;}
+*{box-sizing:border-box}
+body{margin:0;color:var(--fg);background:var(--bg);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+.wrap{max-width:1200px;margin:0 auto;padding:32px 24px 120px;}
+.meta{color:var(--muted);font-size:13px;margin:-8px 0 24px;}
+h1{font-size:30px;line-height:1.2;border-bottom:2px solid var(--line);padding-bottom:10px;margin-top:8px;}
+h2{font-size:23px;margin-top:44px;border-bottom:1px solid var(--line);padding-bottom:6px;}
+h3{font-size:19px;margin-top:32px;}
+h4{font-size:15px;margin:22px 0 4px;color:var(--accent);}
+h4+ul{margin-top:4px;}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:12.5px;font-family:"SFMono-Regular",Consolas,Menlo,monospace;}
+pre code{display:block;padding:12px;overflow:auto;}
+a{color:var(--accent);}
+blockquote{margin:16px 0;padding:8px 16px;border-left:4px solid var(--accent);background:#f8fafc;color:var(--muted);}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:12px;display:block;overflow-x:auto;}
+th,td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top;}
+th{background:#f0f4f8;position:sticky;top:0;font-weight:600;}
+tr:nth-child(even) td{background:#fafbfc;}
+hr{border:0;border-top:1px solid var(--line);margin:40px 0;}</style></head><body>
+<div class="wrap">
+<div class="meta">Generated 2026-07-02 &middot; source: docs/beyond-mls-wave1-implementation-architecture.md</div>
+<h1>Beyond-MLS Property DNA — Wave 1 Implementation Architecture</h1>
+<p><strong>Document type:</strong> Companion implementation-architecture doc (Phase 1 — reconciliation)
+<strong>Companion to:</strong> <code>docs/beyond-mls-property-dna-roadmap.md</code> (Version 2.4, FROZEN)
+<strong>Status:</strong> Reconciliation &amp; planning — <strong>no code, no migrations, nothing committed</strong>
+<strong>Date:</strong> 2026-07-02
+<strong>Author:</strong> Claude Code</p>
+<blockquote>
+<p><strong>Relationship to the frozen roadmap.</strong> This document does <strong>not</strong> modify, expand, or reinterpret the frozen v2.4 roadmap. It is the separate companion architecture document mandated by the freeze policy. Its job is to map the roadmap's foundation (§F1–§F8) and Wave 1 onto the <strong>actual codebase</strong> so implementation reuses what exists instead of rebuilding it. Every roadmap concept keeps its frozen definition; this doc only says <em>where it already lives, what to extend, and what is genuinely new</em>.</p>
+</blockquote>
+<hr />
+<h2>1. Executive finding</h2>
+<p>The v2.4 roadmap was written greenfield, but the Bid Your Offer repo already contains roughly <strong>60% of the F1–F8 foundation</strong> in working form. The single most important consequence:</p>
+<blockquote>
+<p><strong>The Canonical Data Model should be a resolver/adapter layer over the storage and addressing scheme that already exist — not a new physical mega-table.</strong> The <code>(listing_type, listing_id)</code> canonical addressing the roadmap prescribes is <em>already the convention</em> used by <code>property_location_dna</code>, <code>property_location_pois</code>, and <code>listing_compatibility_scores</code>.</p>
+</blockquote>
+<p>Three facts reshape the plan:</p>
+<ol>
+<li><strong>There is no single MLS/listing vocabulary — there are three</strong>, all describing the same real-world attributes under different names:</li>
+<li><strong>Bridge/RESO</strong> → <code>BridgePropertyNormalizer</code> → <code>bridge_properties</code> (RESO snake_case + <code>raw_json</code>).</li>
+<li><strong>Pasted-MLS-text</strong> → <code>app/Services/ListingImport/</code> (<code>MlsFieldMap</code> / <code>MlsNormalizer</code>) → auction-creation forms.</li>
+<li>
+<p><strong>Per-role auction fields</strong> → EAV meta via <code>saveMeta()</code>.
+   The canonical model's real work is <strong>reconciling these three vocabularies</strong>, and <code>BridgePropertyNormalizer</code> is one adapter, not the target shape.</p>
+</li>
+<li>
+<p><strong>The CLAUDE.md "seller/buyer = native columns, landlord/tenant = EAV" split is obsolete for extended fields.</strong> The modern <code>OfferListing</code> flow persists virtually all DNA-relevant fields via <code>saveMeta()</code> for <strong>all four roles</strong> (verified: <code>SellerOfferListing.php:3743-3777</code> writes <code>waterfront</code>, <code>association_*</code>, <code>flood_zone_*</code>, <code>interior_features</code>, <code>pet_restrictions</code> all as EAV). Native columns are only the small legacy Hire-Agent core. <strong>This greatly simplifies F2 role-symmetry</strong>: the DNA input fields are already uniform EAV meta across roles, and the four <code>app/Exports/ListingFieldMaps/{Role}FieldMap.php</code> files are the authoritative <code>human-label → meta_key</code> registries — the ideal source for the BYO canonical adapter.</p>
+</li>
+<li>
+<p><strong>The confidence signal (F4) does not exist anywhere.</strong> Every existing score is either a deterministic coverage metric or a weighted match percent. This is the single cleanest net-new architectural piece.</p>
+</li>
+</ol>
+<hr />
+<h2>2. Existing infrastructure inventory</h2>
+<table>
+<thead>
+<tr>
+<th>Roadmap concept</th>
+<th>Already in the codebase</th>
+<th>Location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source adapter (MLS→normalized)</td>
+<td>✅ Partial</td>
+<td><code>BridgePropertyNormalizer</code> → <code>bridge_properties</code>; <code>app/Services/ListingImport/*</code></td>
+</tr>
+<tr>
+<td>Canonical <code>(type,id)</code> addressing</td>
+<td>✅ Convention exists</td>
+<td><code>property_location_dna</code>, <code>property_location_pois</code>, <code>listing_compatibility_scores</code></td>
+</tr>
+<tr>
+<td>Property-side Location DNA + scores</td>
+<td>✅ Strong</td>
+<td><code>LocationDnaPipelineRunner</code>; <code>property_location_dna.lifestyle_json</code> (5 scores, <code>LDNA_LIFESTYLE_V1</code>)</td>
+</tr>
+<tr>
+<td>Location source adapters (POI/flood/school/commute)</td>
+<td>✅ Built</td>
+<td><code>GooglePlacesPoiAdapter</code>, <code>FemaFloodZoneAdapter</code>, <code>CensusSchoolDistrictAdapter</code>, <code>CommuteTime*</code></td>
+</tr>
+<tr>
+<td>Per-side DNA stores (versioned)</td>
+<td>✅ Built</td>
+<td><code>property_dna_profiles</code>, <code>buyer_tenant_dna_profiles</code></td>
+</tr>
+<tr>
+<td>Symmetric pair-keyed match store (versioned + explanations)</td>
+<td>✅ Built</td>
+<td><code>listing_compatibility_scores</code> (+ <code>ComputeCompatibilityScore</code> → <code>CompatibilityEngine</code>)</td>
+</tr>
+<tr>
+<td>Explanation strings (F5)</td>
+<td>✅ Built (neutral static maps)</td>
+<td><code>PropertyDnaExplanationService</code>, <code>CompatibilityExplanationService</code>, <code>BuyerTenantDnaExplanationService</code></td>
+</tr>
+<tr>
+<td>Agent↔client match engine</td>
+<td>✅ Built (separate concern)</td>
+<td><code>config/match_scoring.php</code>, <code>*BidMatchScoreHelper</code>, <code>bid_score_snapshots</code></td>
+</tr>
+<tr>
+<td><strong>Confidence (F4)</strong></td>
+<td>❌ <strong>Net-new</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>True symmetric <em>quality</em> score</strong></td>
+<td>❌ <strong>Net-new computation</strong></td>
+<td>current <code>overall_score</code> is coverage-only</td>
+</tr>
+<tr>
+<td><strong>Canonical field vocabulary (3-way reconciled)</strong></td>
+<td>❌ <strong>Net-new</strong></td>
+<td>three disjoint vocabularies today</td>
+</tr>
+<tr>
+<td><strong>Demand-side Location Preference DNA (numeric, shared taxonomy)</strong></td>
+<td>❌ <strong>Net-new</strong></td>
+<td><code>LocationMatchEngine</code> is boolean geo-overlap only</td>
+</tr>
+<tr>
+<td>F7 Marketplace Intelligence</td>
+<td>❌ Net-new (read surface)</td>
+<td><code>ListingCompatibilityScore</code> is the raw material</td>
+</tr>
+<tr>
+<td>F8 Learning loops / Behavioral DNA</td>
+<td>⚠️ Signals exist</td>
+<td><code>BidFunnelTimestamp</code>, <code>bid_score_snapshots</code>, funnel events</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>3. F1–F8 + Wave-1 reconciliation (Reuse / Extend / New)</h2>
+<table>
+<thead>
+<tr>
+<th>Roadmap element</th>
+<th>Verdict</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>F1 Canonical Data Model</strong></td>
+<td><strong>Extend</strong></td>
+<td>Build a <code>CanonicalListingResolver</code> service over existing role listings (via <code>{Role}FieldMap</code>) + a canonical DTO; refactor <code>BridgePropertyNormalizer</code> into the Bridge adapter; add a <code>ListingImport</code> adapter. No mega-table for Wave 1.</td>
+</tr>
+<tr>
+<td><strong>F1 source adapters / provenance</strong></td>
+<td><strong>Extend / New</strong></td>
+<td>Adapters exist (Bridge, ListingImport, Location). Per-field <strong>provenance + confidence + freshness</strong> metadata is new but lightweight.</td>
+</tr>
+<tr>
+<td><strong>F2 DNA persistence</strong></td>
+<td><strong>Extend</strong></td>
+<td>Reuse the <code>property_location_dna</code> pattern: a new <code>(type,id,score_key,version)</code> <code>dna_scores</code> table for scalar §8 scores; keep <code>property_dna_profiles</code>/<code>buyer_tenant_dna_profiles</code> for per-side blobs. Non-destructive.</td>
+</tr>
+<tr>
+<td><strong>F2 versioning</strong></td>
+<td><strong>Reuse</strong></td>
+<td>Version columns already standard (<code>version</code>, <code>scoring_framework_version</code>, <code>LDNA_LIFESTYLE_V1</code>, etc.).</td>
+</tr>
+<tr>
+<td><strong>F3 Fair Housing</strong></td>
+<td><strong>Extend</strong></td>
+<td>Explanation services are already neutral static maps (safe). Add the <strong>compliance filter enforcement point</strong> over canonical inputs + generated outputs (policy layer).</td>
+</tr>
+<tr>
+<td><strong>F4 Confidence &amp; Completeness</strong></td>
+<td><strong>New</strong></td>
+<td>No confidence anywhere. Add <code>confidence</code> + a <code>data_completeness</code> derivation (from populated canonical fields). Cleanest new piece.</td>
+</tr>
+<tr>
+<td><strong>F5 Explainability</strong></td>
+<td><strong>Reuse</strong></td>
+<td>Explanation services + <code>score_explanation</code>/<code>compatibility_narrative</code> already exist. Ensure every new score emits an explanation string via the same pattern.</td>
+</tr>
+<tr>
+<td><strong>F6 Universal Relevance Scoring</strong></td>
+<td><strong>Extend</strong></td>
+<td><code>listing_compatibility_scores</code> already has symmetric 0–100 category sub-scores (physical/financial/location/terms) + explanations. Add categories + Match Confidence; keep it as the relevance store.</td>
+</tr>
+<tr>
+<td><strong>F7 Marketplace Intelligence</strong></td>
+<td><strong>New (read view)</strong></td>
+<td>Aggregate <code>listing_compatibility_scores</code> in reverse (demand→listing) into per-listing demand counts + segments. No new asked fields.</td>
+</tr>
+<tr>
+<td><strong>F8 Learning / Behavioral DNA</strong></td>
+<td><strong>Extend / New</strong></td>
+<td>Lifecycle events partly captured (<code>BidFunnelTimestamp</code>, funnel snapshots). Behavioral DNA vector + re-weighting loop are new (roadmap-classified <em>Future</em>).</td>
+</tr>
+<tr>
+<td><strong>Wave-1 Location scores</strong></td>
+<td><strong>Reuse</strong></td>
+<td><code>walkability</code>, <code>coastal</code>, <code>convenience</code>, <code>commuter</code>, <code>family</code> already 0–100 in <code>lifestyle_json</code>.</td>
+</tr>
+<tr>
+<td><strong>Wave-1 property/investment scores</strong></td>
+<td><strong>New compute, inputs exist</strong></td>
+<td>Boating, Lock-and-Leave, Pet-Friendliness, Waterfront-Lifestyle, Accessibility, Energy, Cash-Flow, Investment — all inputs present as Seller/Landlord EAV meta (see §5).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>4. Canonical Data Model — concrete Wave-1 design</h2>
+<p><strong>Principle:</strong> formalize, don't duplicate. The canonical model for Wave 1 is a <strong>read/resolve layer</strong>, not a schema migration.</p>
+<pre><code>                        ┌─────────────────────────────┐
+   BYO role listings ──▶│  ByoListingAdapter          │
+   (EAV via FieldMaps)  │   (uses {Role}FieldMap)     │──┐
+                        └─────────────────────────────┘  │
+   bridge_properties ──▶│  BridgeAdapter               │  │   ┌──────────────────────┐
+   (RESO snake_case)    │   (refactor of Normalizer)  │──┼──▶│ CanonicalListing DTO │──▶ DNA / scores / matching
+                        └─────────────────────────────┘  │   │  addressed by        │
+   pasted MLS text  ───▶│  ListingImportAdapter        │  │   │  (listing_type, id)  │
+   (MlsFieldMap keys)   │   (reconcile vocabulary)     │──┘   │  + per-field         │
+                        └─────────────────────────────┘      │  provenance/conf/    │
+                                                             │  freshness           │
+                                                             └──────────────────────┘
+</code></pre>
+<ul>
+<li><strong>CanonicalListing DTO</strong> — a source-neutral, RESO-aligned field set (formalize the union of <code>BridgePropertyNormalizer</code>'s output + the <code>{Role}FieldMap</code> meta_keys + <code>MlsFieldMap</code> keys). Addressed by the <strong>existing</strong> <code>(listing_type, listing_id)</code> convention.</li>
+<li><strong>ByoListingAdapter (Wave-1 priority)</strong> — reads a role listing's EAV meta through its <code>{Role}FieldMap</code> registry and emits canonical fields. This is the "BYO adapter" §F1 requires; it needs no schema change because the FieldMaps already exist.</li>
+<li><strong>BridgeAdapter</strong> — split <code>BridgePropertyNormalizer</code> so <code>normalize()</code> (shape) is decoupled from <code>upsert()</code> (Bridge persistence); the normalize half becomes the Bridge→canonical adapter.</li>
+<li><strong>ListingImportAdapter</strong> — reconcile <code>MlsFieldMap</code>/<code>MlsNormalizer</code> keys to the same canonical names (they already describe the same attributes).</li>
+<li><strong>Per-field metadata</strong> — each canonical value carries <code>source</code>, <code>confidence</code>, <code>provenance</code>, <code>freshness</code> (§F1). New, but a thin wrapper.</li>
+</ul>
+<p><strong>Deferred:</strong> a physical canonical listing table. Not needed until multi-source listings must be queried uniformly; Wave-1 derived scores read <em>through</em> the resolver.</p>
+<hr />
+<h2>5. Wave-1 score set — inputs confirmed present</h2>
+<p>Property-side inputs are Seller/Landlord EAV meta (the property-describing roles); demand-side is the symmetric preference weight (§8 convention). Verified field homes:</p>
+<table>
+<thead>
+<tr>
+<th>Wave-1 score</th>
+<th>Property-side canonical inputs (exist as EAV meta)</th>
+<th>Reuse status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Walkability / Coastal / Convenience / Commuter / Family (location)</td>
+<td><code>property_location_dna.lifestyle_json</code></td>
+<td>✅ <strong>Exists</strong> (<code>LDNA_LIFESTYLE_V1</code>)</td>
+</tr>
+<tr>
+<td>Boating / Waterfront-Lifestyle</td>
+<td><code>waterfront</code>, <code>water_access</code>, <code>water_view</code>, <code>water_frontage</code>, <code>waterfront_feet</code> (+ marina POIs, <code>coastal_score</code>)</td>
+<td>New compute; inputs ✅</td>
+</tr>
+<tr>
+<td>Lock-and-Leave</td>
+<td><code>association_fee_includes</code>, <code>association_amenities</code>, gated <code>community</code>, <code>total_acreage</code>, <code>condition_prop</code>, property structure</td>
+<td>New compute; inputs ✅</td>
+</tr>
+<tr>
+<td>Pet-Friendliness / Dog-Owner</td>
+<td><code>pets</code>, <code>pet_*</code> (Landlord richest: <code>pet_max_weight_lbs</code>, <code>pet_species_allowed</code>, …), fenced-yard, dog-park POIs</td>
+<td>New compute; inputs ✅ (<strong>best symmetric slice</strong> — Tenant <code>pet_information</code> on demand side)</td>
+</tr>
+<tr>
+<td>Accessibility</td>
+<td>Tenant <code>accessibility_requirements</code> (demand); property single-level/features</td>
+<td>New compute; asymmetric inputs</td>
+</tr>
+<tr>
+<td>Energy-Efficiency</td>
+<td>green/solar/<code>window_features</code>, HVAC/year fields</td>
+<td>New compute; inputs partial</td>
+</tr>
+<tr>
+<td>Cash-Flow / Investment</td>
+<td><code>minimum_annual_net_income</code>, <code>minimum_cap_rate</code>, <code>price_per_sqft</code>, <code>rent_roll_available</code></td>
+<td>New compute; inputs ✅</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Asymmetry note (natural, not a defect):</strong> property-describing fields (<code>waterfront</code>, <code>association_*</code>, <code>interior_features</code>, <code>flood_zone_code</code>, <code>year_built</code>) exist on <strong>Seller + Landlord</strong> (supply) only; Buyer/Tenant carry criteria/preferences. This is exactly the supply/demand split §8's symmetric axis is built for — property score on the supply side, preference weight on the demand side.</p>
+<hr />
+<h2>6. The two genuine net-new architectural pieces</h2>
+<p>Everything else extends existing code. These two are new and should be designed first:</p>
+<ol>
+<li>
+<p><strong>F4 Confidence &amp; Completeness.</strong> Add <code>data_completeness</code> (derived from populated canonical fields per property-type-relevant set), <code>dna_confidence</code> (per score, from input completeness × source reliability × model version), and <code>match_confidence</code> (propagated, non-inflating). Add <code>confidence</code> columns to <code>dna_scores</code> (new) and <code>listing_compatibility_scores</code> (extend). <em>This is the roadmap's clearest differentiator that has zero existing implementation.</em></p>
+</li>
+<li>
+<p><strong>True symmetric quality score.</strong> Today <code>overall_score</code>/DNA scores are <strong>coverage metrics</strong>, and the honest two-sided comparison (<code>BuyerPropertyCompatibilityService</code>) deliberately emits no number and is not persisted. F6 needs a persisted symmetric <em>quality</em> score. This is new computation over existing inputs — <strong>not</strong> a new table (reuse <code>listing_compatibility_scores</code>).</p>
+</li>
+</ol>
+<hr />
+<h2>7. Proposed build sequence</h2>
+<ul>
+<li><strong>Phase 1 (this doc)</strong> — reconciliation. ✅ Complete on delivery. No code.</li>
+<li><strong>Phase 2 — Canonical resolver + BYO adapter + one vertical slice.</strong> Build <code>CanonicalListingResolver</code> + <code>ByoListingAdapter</code> (via FieldMaps); implement <strong>one</strong> Wave-1 score end-to-end with F4 confidence + F5 explanation, persisted in a new <code>dna_scores</code> table (following the <code>property_location_dna</code> pattern), computed symmetrically. <strong>Recommended first slice: Pet-Friendliness</strong> (richest genuinely-symmetric data: Landlord pet policy ↔ Tenant pet profile). Alt: Lock-and-Leave (property-side, snowbird demand).</li>
+<li><strong>Phase 3 — Wave-1 score batch</strong> on the canonical resolver; reuse the 5 Location scores; wire confidence/explanation uniformly.</li>
+<li><strong>Phase 4 — F6 relevance</strong> (extend <code>listing_compatibility_scores</code> with categories + match confidence + true quality score).</li>
+<li><strong>Phase 5 — F7 Marketplace Intelligence</strong> (reverse-aggregate read view).</li>
+<li><strong>Phase 6+ — Bridge/ListingImport adapters</strong> to canonical; then F8 learning loops / Behavioral DNA (roadmap <em>Future</em>).</li>
+</ul>
+<hr />
+<h2>8. Risks &amp; open decisions (for Phase 2 kickoff)</h2>
+<ol>
+<li><strong>Canonical vocabulary authority</strong> — adopt RESO names (roadmap F1 mandate) as canonical, with <code>{Role}FieldMap</code> meta_keys + <code>BridgePropertyNormalizer</code> names + <code>MlsFieldMap</code> keys as the three source mappings. Confirm naming ownership.</li>
+<li><strong><code>dna_scores</code> table vs. extend existing profiles</strong> — recommend a new normalized <code>dna_scores</code> table (<code>type,id,score_key,value,confidence,explanation,version,computed_at</code>) mirroring <code>property_location_dna</code>; keeps §8 scores queryable and symmetric without bloating the coverage-metric profile tables.</li>
+<li><strong>Confidence formula</strong> — define the completeness→confidence derivation before the first slice (it propagates everywhere).</li>
+<li><strong>Compatibility-score semantics</strong> — decide whether the new symmetric quality score lives beside the existing coverage <code>overall_score</code> (recommended: new <code>quality_score</code> column, coverage stays) to avoid breaking <code>phase-h-v1</code> consumers.</li>
+<li><strong>First-slice pick</strong> — Pet-Friendliness vs Lock-and-Leave (see Phase 2).</li>
+</ol>
+<hr />
+<h2>9. Compliance statement</h2>
+<p>No production code, schema, migration, or config was modified in producing this document. Nothing was committed. This is a companion planning artifact; the frozen v2.4 roadmap is unchanged. Phase 2 will begin only on your go-ahead and will introduce code changes under normal review.</p>
+</div></body></html>

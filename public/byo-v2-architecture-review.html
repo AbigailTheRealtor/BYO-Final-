@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bid Your Offer — v2.1 Final Architecture Review</title><style>:root{--fg:#1f2933;--muted:#616e7c;--line:#e4e7eb;--accent:#2563eb;--bg:#fff;--code:#f5f7fa;}
+*{box-sizing:border-box}
+body{margin:0;color:var(--fg);background:var(--bg);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+.wrap{max-width:1200px;margin:0 auto;padding:32px 24px 120px;}
+.meta{color:var(--muted);font-size:13px;margin:-8px 0 24px;}
+h1{font-size:30px;line-height:1.2;border-bottom:2px solid var(--line);padding-bottom:10px;margin-top:8px;}
+h2{font-size:23px;margin-top:44px;border-bottom:1px solid var(--line);padding-bottom:6px;}
+h3{font-size:19px;margin-top:32px;}
+h4{font-size:16px;margin-top:24px;color:var(--muted);text-transform:none;}
+h1,h2,h3,h4{scroll-margin-top:16px;}
+p,li{max-width:none;}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:12.5px;font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;}
+pre code{display:block;padding:12px;overflow:auto;}
+a{color:var(--accent);}
+blockquote{margin:16px 0;padding:8px 16px;border-left:4px solid var(--accent);background:#f8fafc;color:var(--muted);}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:12.5px;display:block;overflow-x:auto;}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;}
+th{background:#f0f4f8;position:sticky;top:0;font-weight:600;}
+tr:nth-child(even) td{background:#fafbfc;}
+hr{border:0;border-top:1px solid var(--line);margin:40px 0;}</style></head><body><div class="wrap"><div class="meta">Generated 2026-07-02 03:58 · source: docs/bid-your-offer-v2.1-architecture-review.md</div>
+<h1 id="bid-your-offer-version-21-final-architecture-review">Bid Your Offer — Version 2.1 Final Architecture Review</h1>
+<p><strong>Type:</strong> Independent architecture review board — documentation review only. <strong>No code, Blade, Livewire, migrations, or config were changed. Nothing committed.</strong>
+<strong>Date:</strong> 2026-07-02
+<strong>Reviewed artifact:</strong> <code>docs/bid-your-offer-v1-master-roadmap.md</code> (Version 2.0).
+<strong>Method:</strong> Roadmap read end-to-end; checklist coverage grep-verified (presence/absence of every system the board asked about) against the actual document.</p>
+<p><strong>Verdict up front: DO NOT FREEZE YET.</strong> The roadmap has an exceptionally strong <em>data and field</em> foundation (Canonical Data Model, field dictionary, field mapping, required/optional Stellar coverage, and richly enumerated intelligence catalogs in Appendices A–L). But as an <em>intelligence platform</em> architecture it has <strong>~10 material gaps</strong> — several are first-class systems the review explicitly asked for that are simply absent from the document. These are cheap to add now and expensive to retrofit. Fix them, then freeze.</p>
+<hr>
+<h2 id="architecture-review-system-by-system-coverage">Architecture review — system-by-system coverage</h2>
+<p>Legend: ✅ covered as a first-class phase/deliverable · 🟡 present but implicit/under-specified · ❌ absent.</p>
+<table>
+<thead>
+<tr>
+<th>System the board required</th>
+<th>Status</th>
+<th>Evidence in roadmap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Multi-source ingestion (BYO/Stellar/future MLS/RentCast/ATTOM/Public Records/CSV/future APIs)</td>
+<td>✅</td>
+<td>Phase 3.5 Canonical Field Mapping; future-source slots; Orientation layering diagram</td>
+</tr>
+<tr>
+<td>Canonical Data Dictionary</td>
+<td>✅</td>
+<td>Phase 3</td>
+</tr>
+<tr>
+<td>Canonical Field Mapping</td>
+<td>✅</td>
+<td>Phase 3.5</td>
+</tr>
+<tr>
+<td><strong>Canonical Entity Dictionary</strong></td>
+<td>❌</td>
+<td>0 hits. Only <em>fields</em> are canonicalized — no object/entity model (Property, Listing, Unit, Parcel, Agent, Buyer, Tenant, Media, Transaction, Neighborhood)</td>
+</tr>
+<tr>
+<td><strong>Master Intelligence Taxonomy</strong> (governed, versioned)</td>
+<td>🟡</td>
+<td>Taxonomies exist scattered across Appendices C–J, but there is no single governed/versioned taxonomy deliverable that all engines bind to</td>
+</tr>
+<tr>
+<td>Metadata Engine</td>
+<td>✅</td>
+<td>Phase 4</td>
+</tr>
+<tr>
+<td>Property DNA</td>
+<td>✅</td>
+<td>Phase 5</td>
+</tr>
+<tr>
+<td>Buyer DNA</td>
+<td>✅</td>
+<td>Phase 6</td>
+</tr>
+<tr>
+<td>Tenant DNA</td>
+<td>✅</td>
+<td>Phase 7</td>
+</tr>
+<tr>
+<td><strong>Seller DNA</strong></td>
+<td>❌</td>
+<td>0 hits</td>
+</tr>
+<tr>
+<td><strong>Landlord DNA</strong></td>
+<td>❌</td>
+<td>0 hits</td>
+</tr>
+<tr>
+<td>Location DNA</td>
+<td>✅</td>
+<td>Phase 8</td>
+</tr>
+<tr>
+<td><strong>Lifestyle DNA</strong></td>
+<td>🟡</td>
+<td>Named only as a matching input (Phase 13) and a tag family — not its own engine</td>
+</tr>
+<tr>
+<td><strong>Luxury DNA</strong></td>
+<td>❌</td>
+<td>0 hits (luxury exists only as tags/scores)</td>
+</tr>
+<tr>
+<td><strong>Investment DNA</strong></td>
+<td>🟡</td>
+<td>Referenced as a score label; not a first-class engine</td>
+</tr>
+<tr>
+<td><strong>Commercial DNA</strong></td>
+<td>🟡</td>
+<td>Referenced as a tag label; not a first-class engine</td>
+</tr>
+<tr>
+<td><strong>Community DNA</strong></td>
+<td>❌</td>
+<td>0 hits</td>
+</tr>
+<tr>
+<td><strong>Story Engine</strong></td>
+<td>❌</td>
+<td>0 hits — entirely absent</td>
+</tr>
+<tr>
+<td>Recommendation Engine</td>
+<td>✅</td>
+<td>Phase 10</td>
+</tr>
+<tr>
+<td>Marketing Intelligence</td>
+<td>✅</td>
+<td>Phase 11</td>
+</tr>
+<tr>
+<td>Ask AI</td>
+<td>✅</td>
+<td>Phase 12</td>
+</tr>
+<tr>
+<td>Matching Engine</td>
+<td>✅</td>
+<td>Phase 13</td>
+</tr>
+<tr>
+<td>Analytics / Explainability</td>
+<td>✅</td>
+<td>Phase 14</td>
+</tr>
+<tr>
+<td>Confidence Model / Data Provenance</td>
+<td>✅</td>
+<td>Phase 3.5 + Principle 14</td>
+</tr>
+<tr>
+<td><strong>Compliance / Fair Housing / Responsible AI / Data Governance / Privacy</strong></td>
+<td>❌</td>
+<td>0 hits for Fair Housing/governance/Responsible AI; "compliance" appears only as a field-purpose label</td>
+</tr>
+<tr>
+<td><strong>AI Automation</strong> (validation, contradiction detection, NLP description analysis, image understanding)</td>
+<td>❌</td>
+<td>0 hits for contradiction; image only appears in a tree-canopy tag</td>
+</tr>
+<tr>
+<td><strong>Technical scalability</strong> (storage/search infra at 100k+ agents, multi-MLS)</td>
+<td>❌</td>
+<td>No scalability decision; EAV meta is the storage model (15 references) with no scale strategy</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Bottom line:</strong> the roadmap treats intelligence as <em>properties of the Property</em> (Property DNA + Location DNA + tags). The board's spec treats intelligence as <em>a set of symmetric DNA systems across all five actors plus place, narrated by a Story Engine, governed by a taxonomy and a compliance layer, and physically scalable</em>. That structural difference is the core finding.</p>
+<hr>
+<h2 id="location-intelligence">Location Intelligence</h2>
+<p><strong>Partially covered — under-specified on the highest-value parts.</strong> Phase 8 expands Location DNA across 18 dimensions, emits the 50 neighborhood tags (Appendix H), and registers Location DNA as a canonical <em>source</em> with provenance. Good.</p>
+<p><strong>Missing/implicit:</strong></p>
+<ul>
+<li>Phase 8 stops at <em>tags and proximities</em>. It does <strong>not</strong> explicitly produce <strong>community personality</strong>, <strong>neighborhood personality</strong>, <strong>location-level luxury/investment/marketing signals</strong>, <strong>AI location summaries</strong>, <strong>explainable location stories</strong>, or <strong>location-level target audiences</strong>. The board asked for all of these.</li>
+<li><strong>Buyer/Tenant Location <em>Preference</em> DNA is not a defined artifact.</strong> Phase 6 lists "location preferences" as one bullet; there is no symmetric <strong>Location Preference DNA</strong> built from map search-areas, drawn polygons, Important Places, and commute anchors — and no statement that it uses the <strong>same canonical location vocabulary</strong> as property-side Location DNA. This symmetry is the whole point of the Canonical Data Model and is currently asserted only for Property/Buyer DNA generally, not for location specifically. <strong>This is a real gap</strong> — without it, map-search intent can't be matched against location DNA on identical axes.</li>
+</ul>
+<hr>
+<h2 id="master-intelligence-taxonomy">Master Intelligence Taxonomy</h2>
+<p>The <em>content</em> is excellent (Appendices C–J enumerate lifestyle, luxury-adjacent, audience, personality, motivation, investment, commercial, marketing, neighborhood, and score vocabularies). What's missing is <strong>governance</strong>: there is no single deliverable declaring these as one <strong>versioned, namespaced taxonomy</strong> (<code>lifestyle:*</code>, <code>audience:*</code>, <code>personality:*</code>, <code>investment:*</code>, <code>location:*</code>, <code>story:*</code>) that every engine binds to, with add/deprecate rules. Without it, Phase 4/5/9/11 each risk inventing divergent tag spellings. Add taxonomies the board named that are currently thin: <strong>Architecture styles</strong>, <strong>Amenities</strong>, <strong>Property Features</strong>, <strong>Community Personality</strong>, <strong>Location Themes</strong>, and <strong>Story types</strong> as governed vocabularies (architecture/amenities are today only loose tag examples).</p>
+<hr>
+<h2 id="story-engine">Story Engine</h2>
+<p><strong>Completely absent.</strong> This is the single largest missing system relative to the board's spec. The roadmap generates DNA <em>explanation strings</em> (Phase 5) and <em>marketing copy</em> (Phase 11), but there is no <strong>Story Engine</strong> producing the twelve narrative artifacts requested (Property, Location, Lifestyle, Community, Luxury, Investment, Buyer, Tenant, Seller, Landlord, Neighborhood, Marketing stories) from structured data + metadata + taxonomy + DNA. Stories are both a consumer-facing differentiator and a matching/marketing input — this warrants its own phase.</p>
+<hr>
+<h2 id="ask-ai">Ask AI</h2>
+<p><strong>Strong (Phase 12)</strong> — it consumes canonical fields + all intelligence layers + explanation strings, and can cite provenance/confidence. But its answer surface is only as broad as its inputs. It <strong>cannot</strong> answer questions about <strong>stories</strong> (no Story Engine), <strong>community/neighborhood personality</strong>, <strong>Seller/Landlord DNA</strong>, or <strong>location preference intent</strong> until those systems exist. Phase 12's coverage checklist should be extended to include those layers once they're added.</p>
+<hr>
+<h2 id="mls-import">MLS Import</h2>
+<p><strong>The mapping exists; the automated end-to-end pipeline is not made explicit.</strong> Phase 3.5 defines the ingestion contract and normalization, and Principle 12 guarantees consumers read canonical. But nowhere does the roadmap state as a <strong>verifiable deliverable</strong> that <em>an imported MLS listing automatically triggers the full chain</em> — normalize → metadata → DNA → <strong>stories</strong> → target audiences → marketing → Ask AI knowledge snapshot → search facets → matching signals — with <strong>zero manual tagging</strong>. This should be an explicit pipeline spec + a Phase 15 verification item ("import a raw MLS record; confirm all downstream artifacts generate with no human step").</p>
+<hr>
+<h2 id="ai-automation">AI Automation</h2>
+<p><strong>Largely absent.</strong> Present: inferred metadata (Phase 4), completeness/missing-data recs (Phase 10/14). Missing: <strong>AI data validation</strong>, <strong>cross-source contradiction detection</strong> (critical — you're merging BYO + Stellar + ATTOM + RentCast + public records; conflicts <em>will</em> occur and Phase 3.5's precedence policy resolves <em>which wins</em> but nothing <em>detects and surfaces</em> that they disagree), <strong>AI free-text description analysis / NLP</strong> (MLS "Public Remarks" is a goldmine of structured signal), <strong>AI completeness scoring</strong>, and <strong>future image understanding</strong> (vision-derived tags like <code>chef-kitchen</code>, <code>designer-finishes</code> in Appendix C.1 assume vision but no phase produces them). This should be a dedicated phase.</p>
+<hr>
+<h2 id="matching">Matching</h2>
+<p><strong>Well-specified (Phase 13)</strong> — canonical DNA vectors, gates vs. weights, intent re-weighting, config discipline. Gaps are downstream of the DNA gaps: matching can't use <strong>Seller/Landlord DNA, Community DNA, Stories, or symmetric Location Preference DNA</strong> because those don't exist yet. Also missing a <strong>behavioral feedback loop</strong> (clicks/saves/accepted-bids re-weighting) — the Beyond-MLS source explicitly calls for this (its "Wave 8") and it's a major defensibility asset; the roadmap dropped it.</p>
+<hr>
+<h2 id="marketing">Marketing</h2>
+<p><strong>Covered (Phase 11 + Appendix I)</strong> for the listed channels, with an integrity guardrail tied to confidence/provenance — genuinely good. It will be materially stronger once the Story Engine feeds it Property/Location/Lifestyle stories (currently Phase 11 references "stories" it can't yet source).</p>
+<hr>
+<h2 id="compliance-responsible-ai">Compliance &amp; Responsible AI</h2>
+<p><strong>This is the most serious omission, and it is launch-blocking for a real estate platform.</strong> There is <strong>no</strong> treatment of <strong>Fair Housing</strong>, <strong>Responsible AI</strong>, <strong>data governance</strong>, or <strong>privacy</strong> as an architectural concern. A platform that auto-generates <strong>target audiences</strong> ("Growing Family," "Retiree/55+," "Military," "College Student"), <strong>audience-targeted marketing</strong>, and <strong>recommendations</strong> is operating in the exact area where Fair Housing steering/disparate-impact risk lives. The roadmap has good <em>building blocks</em> (marketing-integrity guardrail, provenance/confidence, "objective property facts" principle), but no phase that:</p>
+<ul>
+<li>Constrains audience/marketing generation to <strong>objective property + user-stated preference</strong> signals and explicitly <strong>firewalls protected-class proxies</strong> (e.g. audience labels must not drive <em>who sees</em> a listing in a way that implicates familial status, national origin, etc.);</li>
+<li>Separates <strong>facts vs. AI inferences</strong> in every consumer-facing narrative (the board asked for this explicitly);</li>
+<li>Defines <strong>data-governance/retention/PII handling</strong> across the new external sources (ATTOM/public records carry PII and licensing constraints);</li>
+<li>Addresses <strong>MLS data-licensing/display compliance</strong> for imported listings (RESO/IDX/VOW rules on what imported data may be shown/derived).</li>
+</ul>
+<p>This must be its own phase, and several of its checks belong in the Phase 15 launch gate.</p>
+<hr>
+<h2 id="multi-disciplinary-findings-high-impact-only">Multi-disciplinary findings (high-impact only)</h2>
+<ul>
+<li><strong>Real estate software architect / Data architect:</strong> the <strong>EAV meta storage model</strong> is fine for form persistence but is the wrong substrate for <strong>canonical search facets + vector matching at 100k+ listings</strong>. There's no decision to <strong>materialize canonical fields into a query-optimized store</strong> (columnar/denormalized table or search index) or a <strong>vector store</strong> for the DNA/embedding vectors. Decide this <em>now</em> — it's the classic expensive retrofit.</li>
+<li><strong>MLS technology architect:</strong> no <strong>RESO Web API / Data Dictionary</strong> alignment statement, no <strong>incremental sync / replication / de-dup across overlapping MLSs</strong> (the same property listed in two MLSs), and no listing <strong>lifecycle/staleness</strong> handling for imported data.</li>
+<li><strong>Luxury expert:</strong> luxury is only tags/scores; there's no <strong>Luxury DNA + Luxury Story + luxury presentation</strong> workflow (brochure-grade narrative, discretion/privacy handling).</li>
+<li><strong>Commercial / PM expert:</strong> <strong>Commercial DNA</strong> and <strong>Landlord DNA</strong> as first-class systems are missing; commercial <em>fields</em> are strong but the <em>intelligence</em> layer over them is implicit.</li>
+<li><strong>Search/recommendation architect:</strong> no <strong>knowledge graph</strong> linking entities (property↔neighborhood↔audience↔story), which is where the hardest-to-copy retrieval quality comes from; no feedback loop.</li>
+<li><strong>Privacy architect:</strong> external-source PII (public records, ATTOM) has no governance/consent/retention model.</li>
+<li><strong>UX architect:</strong> explainability is specified (Phase 14) — good; but no spec for <strong>how facts vs. inferences are visually distinguished</strong> to consumers.</li>
+<li><strong>Product manager:</strong> Phase 15 is a solid V1 gate, but "launch readiness" today omits compliance sign-off and a scale/load test.</li>
+</ul>
+<hr>
+<h2 id="scalability-review-100000-agents-multiple-mlss">Scalability review (100,000+ agents, multiple MLSs)</h2>
+<p>Decide these now to avoid refactoring:</p>
+<ol>
+<li><strong>Canonical read model.</strong> Persist canonical values into an indexed/denormalized store (not queried live from EAV meta) — this is the single biggest future-refactor risk.</li>
+<li><strong>Search infrastructure.</strong> A dedicated search index (facets over canonical fields) and a <strong>vector store</strong> for DNA/embedding vectors; matching as vector ops won't scale on relational scans.</li>
+<li><strong>Ingestion at scale.</strong> Queued, idempotent, incremental MLS sync with cross-MLS de-duplication and rate/licensing controls.</li>
+<li><strong>DNA recompute strategy.</strong> Event-driven, versioned, partial recompute on canonical-field change (Phase 5 says "refresh on change" but not how at volume).</li>
+<li><strong>Taxonomy/model versioning</strong> so re-scoring 100k+ listings after a model change is a governed migration, not an outage.</li>
+</ol>
+<hr>
+<h2 id="product-pre-mortem-3-years-out-most-plausible-failure-causes">Product pre-mortem (3 years out — most plausible failure causes)</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Why it happens</th>
+<th>Warning signs</th>
+<th>Roadmap addresses?</th>
+<th>Add now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Fair Housing / regulatory incident</strong></td>
+<td>Audience-targeted marketing/recs implicate protected classes</td>
+<td>Legal review flags targeting; complaint</td>
+<td>❌</td>
+<td>Compliance/Responsible-AI phase + Phase 15 gate</td>
+</tr>
+<tr>
+<td><strong>EAV can't scale</strong></td>
+<td>Facet/match queries over meta rows degrade</td>
+<td>Slow search, timeouts as listings grow</td>
+<td>❌</td>
+<td>Canonical read model + search/vector infra decision</td>
+</tr>
+<tr>
+<td><strong>AI trust collapse</strong></td>
+<td>Ungrounded narratives / cross-source contradictions shown as fact</td>
+<td>Users catch wrong "facts"; churn</td>
+<td>🟡 (provenance exists)</td>
+<td>AI validation + contradiction detection + fact/inference separation</td>
+</tr>
+<tr>
+<td><strong>"Just another portal"</strong></td>
+<td>Story Engine + symmetric DNA (the differentiators) never shipped</td>
+<td>Feature parity with Zillow, no moat</td>
+<td>🟡</td>
+<td>Ship Story Engine + full DNA suite early</td>
+</tr>
+<tr>
+<td><strong>Dirty imported data</strong></td>
+<td>No auto-validation post-import</td>
+<td>Garbage DNA/marketing on imported listings</td>
+<td>❌</td>
+<td>AI Automation phase + explicit import pipeline verification</td>
+</tr>
+<tr>
+<td><strong>Cold-start / no learning</strong></td>
+<td>No behavioral feedback loop</td>
+<td>Match quality never improves</td>
+<td>❌</td>
+<td>Feedback-loop stage in Matching V2</td>
+</tr>
+<tr>
+<td><strong>Multi-MLS duplication</strong></td>
+<td>Same property from 2 MLSs</td>
+<td>Duplicate listings, split intelligence</td>
+<td>❌</td>
+<td>Entity resolution / de-dup in ingestion</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="competitive-review-vs-zillow-realtorcom-homescom-redfin-mls">Competitive review (vs. Zillow / Realtor.com / Homes.com / Redfin / MLS)</h2>
+<ul>
+<li><strong>Durable, hard-to-copy (once built):</strong> the <strong>symmetric Canonical DNA model</strong> (property <em>and</em> demand on identical axes), a <strong>Story Engine</strong> grounded in structured data, and a <strong>knowledge graph</strong> linking property↔location↔audience↔story. Competitors have data and even AVMs, but not a <em>symmetric buyer↔property DNA matching substrate</em> with explainable narratives.</li>
+<li><strong>Easy to copy:</strong> the field lists, tag catalogs, and "AI description generator" (everyone has these).</li>
+<li><strong>Strengthen for defensibility:</strong> ship the Story Engine + full DNA suite + behavioral feedback loop + knowledge graph. The <strong>feedback loop</strong> especially compounds: proprietary accepted-bid/outcome data trains matching in a way competitors can't replicate. Right now the roadmap under-invests in exactly the three components that would be hardest to replicate (stories, symmetric location DNA, feedback learning).</li>
+</ul>
+<hr>
+<h2 id="final-report-scores-0100">Final Report — scores (0–100)</h2>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th style="text-align: right;">Score</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Overall architecture</strong></td>
+<td style="text-align: right;"><strong>78</strong></td>
+<td>Elite data/canonical foundation; missing several first-class systems + compliance + scale decision</td>
+</tr>
+<tr>
+<td><strong>AI readiness</strong></td>
+<td style="text-align: right;"><strong>72</strong></td>
+<td>DNA/metadata/Ask AI strong; no Story Engine, AI validation/contradiction/NLP/vision, feedback loop</td>
+</tr>
+<tr>
+<td><strong>MLS readiness</strong></td>
+<td style="text-align: right;"><strong>84</strong></td>
+<td>Canonical mapping + Stellar excellent; import auto-pipeline implicit; multi-MLS de-dup + RESO alignment absent</td>
+</tr>
+<tr>
+<td><strong>Scalability</strong></td>
+<td style="text-align: right;"><strong>55</strong></td>
+<td>No storage/search/vector-infra decision; EAV at 100k+ is a real risk</td>
+</tr>
+<tr>
+<td><strong>Luxury market readiness</strong></td>
+<td style="text-align: right;"><strong>70</strong></td>
+<td>Tags/scores present; no Luxury DNA/Story or luxury workflow</td>
+</tr>
+<tr>
+<td><strong>Commercial readiness</strong></td>
+<td style="text-align: right;"><strong>78</strong></td>
+<td>Strong commercial fields/economics; Commercial/Landlord DNA not first-class</td>
+</tr>
+<tr>
+<td><strong>Launch readiness</strong></td>
+<td style="text-align: right;"><strong>66</strong></td>
+<td>Phase 15 gate is good but omits compliance sign-off + load test; Fair Housing gap is launch-blocking</td>
+</tr>
+<tr>
+<td><strong>Competitive defensibility</strong></td>
+<td style="text-align: right;"><strong>74</strong></td>
+<td>Canonical + DNA are a moat; the hardest-to-copy parts (stories, feedback loop, knowledge graph) are missing/implicit</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="would-you-freeze-this-roadmap-and-begin-implementation">"Would you freeze this roadmap and begin implementation?"</h2>
+<p><strong>No — not yet.</strong> The field/data architecture is ready to freeze; the <strong>intelligence, compliance, and scalability architecture is not.</strong> These are inexpensive to specify now and structurally painful later. Add the following <strong>high-impact items only</strong> (no low-value enhancements), then freeze:</p>
+<ol>
+<li><strong>Compliance / Responsible-AI / Fair-Housing / Data-Governance / Privacy phase</strong> <em>(launch-blocking)</em> — objective-signal-only targeting, protected-class proxy firewall, fact-vs-inference separation in all narratives, PII/retention governance for external sources, and MLS display/licensing compliance. Fold key checks into Phase 15.</li>
+<li><strong>Story Engine phase</strong> — the 12 story types generated from canonical data + metadata + taxonomy + DNA; feeds Marketing, Ask AI, and Matching.</li>
+<li><strong>Seller DNA + Landlord DNA phases</strong>, and promote <strong>Lifestyle / Luxury / Investment / Commercial / Community DNA</strong> to first-class engines (with symmetric buyer/tenant-side counterparts) — completing the DNA suite the board specified.</li>
+<li><strong>Symmetric Location Preference DNA</strong> — built from map searches/polygons/Important Places/commute anchors, using the <em>same canonical location vocabulary</em> as Property Location DNA; and expand Phase 8 to emit community/neighborhood personality, location signals (luxury/investment/marketing), AI location summaries, location stories, and location-level target audiences.</li>
+<li><strong>Canonical Entity Dictionary</strong> — the object model (Property, Listing, Unit, Parcel, Agent, Buyer, Tenant, Media, Neighborhood, Transaction) beneath the field dictionary; prerequisite for a knowledge graph and multi-MLS entity resolution.</li>
+<li><strong>Master Intelligence Taxonomy</strong> as a governed, versioned, namespaced deliverable all engines bind to (add Architecture, Amenities, Property Features, Community Personality, Location Themes, Story types).</li>
+<li><strong>AI Automation phase</strong> — data validation, cross-source contradiction detection, NLP description analysis, completeness scoring, and a slot for future image understanding (which Appendix C.1's vision tags already presume).</li>
+<li><strong>Technical scalability decision (now)</strong> — materialized canonical read model + search index + vector store for DNA/embeddings; event-driven versioned DNA recompute; queued idempotent incremental MLS sync with cross-MLS de-duplication.</li>
+<li><strong>Explicit automated MLS-import pipeline</strong> — normalize→metadata→DNA→stories→audiences→marketing→Ask AI→search→matching with zero manual tagging, plus a Phase 15 verification.</li>
+<li><strong>Behavioral feedback loop</strong> in Matching V2 (clicks/saves/accepted-bids re-weighting) — restores the Beyond-MLS "Wave 8" and is a top defensibility asset.</li>
+</ol>
+<p>Everything else in the roadmap (Phases 0–3.5, the canonical model, the field coverage, the intelligence catalogs, the full-lifecycle definition of done, the principles) is <strong>excellent and ready to freeze as-is.</strong></p>
+<hr>
+<p><em>This is an architecture review document only. No code, Blade, Livewire, migration, or config file was modified in producing it, and nothing was committed. Once items 1–10 are folded into the master roadmap, the result becomes the frozen Version 2.1 blueprint.</em></p>
+</div></body></html>
