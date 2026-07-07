@@ -837,7 +837,7 @@
         </div>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" wire:key="create-seller-exchange-item-value">
         <label class="fw-bold">Estimated Value of Exchange/Trade Item:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -857,7 +857,7 @@
 
     </div>
 
-    <div class="form-group">
+    <div class="form-group" wire:key="create-seller-exchange-item-condition">
         <label class="fw-bold">Acceptable Condition of Exchange/Trade Item:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

@@ -1777,6 +1777,9 @@
                     $exEl.on('change', function(e) {
                         var selectedValues = $(this).val() || [];
                         @this.set('exchange_item', selectedValues, false);
+                        // Keep data-selected in sync so the re-init pass on the next
+                        // message.processed reads the fresh selection, never a stale value (#8).
+                        $exEl.attr('data-selected', JSON.stringify(selectedValues));
                         $('#other_exchange_item_wrapper').toggle(selectedValues.includes('Other'));
                     });
                     $exEl.data('exchange-change-bound', true);
@@ -2716,6 +2719,15 @@
                 var vals = $(this).val() || [];
                 $('#other_garage_parking_spaces_option_landlord').toggle(vals.includes('Other'));
                 @this.set('garage_parking_spaces_option', vals, false);
+            });
+            // Vacant Land "Property Style" → reveal the custom "Other" input (#14).
+            // property_style_select is a Select2 single-select whose synthetic change
+            // events the native listener misses; this delegated handler catches them and
+            // toggles the .other_property_items_seller wrapper. Persistence of
+            // property_items is still handled by the existing change.pss handler.
+            $(document).on('change', '#property_style_select', function() {
+                var val = $(this).val();
+                $('.other_property_items_seller').toggleClass('d-none', val !== 'Other');
             });
         }
     </script>

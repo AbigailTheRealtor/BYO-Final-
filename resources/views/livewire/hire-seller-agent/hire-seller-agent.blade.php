@@ -1532,6 +1532,9 @@
                     $exEl.on('change', function(e) {
                         var selectedValues = $(this).val() || [];
                         @this.set('exchange_item', selectedValues, false);
+                        // Keep data-selected in sync so the re-init pass on the next
+                        // message.processed reads the fresh selection, never a stale value (#8).
+                        $exEl.attr('data-selected', JSON.stringify(selectedValues));
                         $('#other_exchange_item_wrapper').toggle(selectedValues.includes('Other'));
                     });
                     $exEl.data('exchange-change-bound', true);
