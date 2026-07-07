@@ -2,8 +2,11 @@
 
 namespace Tests;
 
+use GuzzleHttp\ClientInterface;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use RuntimeException;
+use Tests\Support\BlocksGooglePlacesHttpClient;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -40,6 +43,19 @@ abstract class TestCase extends BaseTestCase
         // ── Rule 4: pre-test safety guard ────────────────────────────────────
         $this->assertSafeTestDatabase();
 
+        // ── Google Places hard block (2026-07-05 NearbySearch incident) ──────
+        //    (a) Refuse to run if a live GOOGLE_PLACES_API_KEY leaked in as a
+        //        system env var (dotenv cannot override it — this is exactly how
+        //        the billable test-suite calls happened).
+        //    (b) Force the key blank in config regardless, so no code path can
+        //        authenticate a NearbySearch call.
+        //    (c) Bind a fail-loud HTTP client so any un-mocked outbound Google
+        //        request throws instead of reaching the live network.
+        //    See docs/investigations/Google-Places-Root-Cause-Analysis.md.
+        $this->guardAgainstLiveGooglePlacesKey();
+        config(['services.google.places_key' => null]);
+        $this->app->instance(ClientInterface::class, new BlocksGooglePlacesHttpClient());
+
         // ── Rule 1 / Rule 3: one-time schema setup for SQLite :memory: ───────
         //    Run BEFORE parent::setUpTraits() so migrations execute OUTSIDE the
         //    DatabaseTransactions wrapping transaction (DDL in SQLite is
@@ -57,6 +73,58 @@ abstract class TestCase extends BaseTestCase
         }
 
         return parent::setUpTraits();
+    }
+
+    /**
+     * Detect a non-blank GOOGLE_PLACES_API_KEY present in the real process
+     * environment. Checks $_SERVER / $_ENV / getenv so a system-level secret
+     * (which phpdotenv's immutable repository will not override) is caught even
+     * though phpunit.xml sets the value to an empty string.
+     *
+     * Returns the leaked value (for length reporting) or null when clean. The
+     * value is never logged or asserted on — only its presence matters.
+     */
+    public static function detectLiveGooglePlacesKey(): ?string
+    {
+        $var = 'GOOGLE_PLACES_API_KEY';
+
+        foreach ([$_SERVER, $_ENV] as $bag) {
+            if (array_key_exists($var, $bag) && trim((string) $bag[$var]) !== '') {
+                return trim((string) $bag[$var]);
+            }
+        }
+
+        $raw = getenv($var);
+        if ($raw !== false && trim($raw) !== '') {
+            return trim($raw);
+        }
+
+        return null;
+    }
+
+    /**
+     * Throw immediately when APP_ENV=testing and a real Google Places key is
+     * present. Fail-closed: a leaked key is exactly what let the test suite make
+     * ~21,702 billable NearbySearch calls on 2026-07-05.
+     *
+     * @throws RuntimeException when a live key is detected under APP_ENV=testing
+     */
+    protected function guardAgainstLiveGooglePlacesKey(): void
+    {
+        if (config('app.env') !== 'testing') {
+            return;
+        }
+
+        $leaked = static::detectLiveGooglePlacesKey();
+
+        if ($leaked !== null) {
+            throw new RuntimeException(
+                'A live GOOGLE_PLACES_API_KEY (length ' . strlen($leaked) . ') is present in the '
+                . 'testing environment. Refusing to run: unset it so no billable Google Places '
+                . 'NearbySearch call can occur. The key value is intentionally not shown. See '
+                . 'docs/investigations/Google-Places-Root-Cause-Analysis.md.'
+            );
+        }
     }
 
     /**
