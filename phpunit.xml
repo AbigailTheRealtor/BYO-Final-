@@ -28,5 +28,11 @@
         <server name="QUEUE_CONNECTION" value="sync"/>
         <server name="SESSION_DRIVER" value="array"/>
         <server name="TELESCOPE_ENABLED" value="false"/>
+        <!-- Google Places safeguards: blank key + kill switch off so no test can
+             make a live NearbySearch call. tests/TestCase.php enforces this. -->
+        <server name="GOOGLE_PLACES_API_KEY" value=""/>
+        <server name="GOOGLE_PLACES_ENABLED" value="false"/>
+        <server name="GOOGLE_PLACES_DAILY_LIMIT" value="100"/>
+        <server name="GOOGLE_PLACES_HOURLY_LIMIT" value="25"/>
     </php>
 </phpunit>
