@@ -10,6 +10,7 @@ use App\Services\Property\PropertyCandidate;
 use App\Services\Stellar\BuyerCriteriaLoader;
 use App\Services\Stellar\BuyerOfferListingCriteriaLoader;
 use App\Services\Stellar\CriteriaListingResolver;
+use App\Services\Stellar\Matching\BuyerMatchResultBuilder;
 use App\Services\Stellar\Matching\BuyerMatchScorer;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 use App\Services\Stellar\TenantCriteriaLoader;
@@ -41,8 +42,13 @@ use Illuminate\Support\Collection;
  * MLS#/ListingKey/address lookup FRONT-END on top of evaluate(): they resolve a consumer identifier
  * to a BridgeProperty via BridgeListingLookupService (with the seam's own DNA auto-dispatch
  * suppressed), run evaluate(), route any Match Check-initiated Location DNA enrichment through the
- * git-C12 LocationDnaEnrichmentGuard, and wrap it all into a single MatchCheckAnalysis. (The rich
- * MatchReport slot on that analysis stays null until git-C13b adds MatchReportFactory.)
+ * git-C12 LocationDnaEnrichmentGuard, and wrap it all into a single MatchCheckAnalysis.
+ *
+ * git-C13b fills the analysis's rich MatchReport slot for the SCORED case via a dedicated report
+ * step (buildReport()). The lean MatchCheckScorer discards the rich BuyerMatchResult, so the report
+ * step RE-RUNS the pure BuyerMatchScorer::score() (no I/O), decorates it with the git-C10
+ * buildDetailed() F3 blocks, and projects it through MatchReportFactory. MatchCheckScorer and
+ * MatchCheckResult stay lean and unchanged; every non-SCORED status keeps report = null.
  *
  * INERT BY DESIGN. prepare()/evaluate() perform only reads. The analyzeBy*() entries DO perform I/O
  * (lookup, enrichment dispatch) — so their inertness is STRUCTURAL, not purity-based: every entry
@@ -70,6 +76,10 @@ class MatchCheckOrchestrator
         private readonly ?BridgeListingLookupService $lookup = null,
         private readonly ?LocationDnaEnrichmentGuard $enrichmentGuard = null,
         private readonly ?EnrichmentThrottleStore $throttleStore = null,
+        // git-C13b collaborators for the SCORED-only report step. Nullable + lazily defaulted like the
+        // above; both are pure/no-arg constructible, so a flag-OFF or non-SCORED path never builds them.
+        private readonly ?BuyerMatchResultBuilder $reportBuilder = null,
+        private readonly ?MatchReportFactory $reportFactory = null,
     ) {
     }
 
@@ -128,18 +138,45 @@ class MatchCheckOrchestrator
         ?BuyerCriteriaPayload $criteria = null,
     ): MatchCheckResult {
         $preparation = $this->prepare($listing, $user);
+        $criteria    = $this->resolveScorableCriteria($preparation, $user, $criteria);
 
-        // git-C8 — close the CRITERIA_NOT_LOADED seam. Auto-load a payload ONLY when the caller
-        // supplied none AND the preparation actually resolved a preferred criteria record. Any
-        // explicit $criteria is honored as-is (override preserved). Disabled / blocked / READY-
-        // without-record preparations all carry hasPreferredCriteria() === false, so the loader is
-        // never constructed or called — the inert guarantee holds while the flag is OFF.
-        if ($criteria === null && $preparation->hasPreferredCriteria()) {
-            $criteria = $this->resolveCriteriaLoader()->load($preparation, $user);
+        return $this->runScorer($preparation, $listing, $criteria);
+    }
+
+    /**
+     * Resolve the scorable payload for a preparation (git-C8's auto-load seam), extracted so both
+     * evaluate() and the analyzeBy*() path resolve it once. An explicit payload is honored verbatim
+     * (loader skipped). Otherwise the payload is auto-loaded ONLY when the preparation resolved a
+     * preferred criteria record; disabled / blocked / READY-without-record all carry
+     * hasPreferredCriteria() === false, so the loader is never constructed or called — the inert
+     * guarantee holds while the flag is OFF.
+     */
+    private function resolveScorableCriteria(
+        MatchCheckPreparation $preparation,
+        User $user,
+        ?BuyerCriteriaPayload $explicit,
+    ): ?BuyerCriteriaPayload {
+        if ($explicit !== null) {
+            return $explicit;
         }
 
-        // Default the scorer so direct (non-container) construction still works. BuyerMatchScorer
-        // has no dependencies and MatchCheckScorer::score() only reaches it in the SCORED state.
+        if ($preparation->hasPreferredCriteria()) {
+            return $this->resolveCriteriaLoader()->load($preparation, $user);
+        }
+
+        return null;
+    }
+
+    /**
+     * Run the lean scoring layer. Defaults the scorer so direct (non-container) construction still
+     * works — BuyerMatchScorer has no dependencies and MatchCheckScorer::score() only reaches it in
+     * the SCORED state.
+     */
+    private function runScorer(
+        MatchCheckPreparation $preparation,
+        BridgeProperty $listing,
+        ?BuyerCriteriaPayload $criteria,
+    ): MatchCheckResult {
         $scorer = $this->scorer ?? new MatchCheckScorer(new BuyerMatchScorer());
 
         return $scorer->score($preparation, $listing, $criteria);
@@ -210,8 +247,13 @@ class MatchCheckOrchestrator
     }
 
     /**
-     * Resolve a single looked-up candidate to its BridgeProperty, evaluate it, route enrichment, and
-     * wrap the outcome. A null candidate (or one whose source record no longer resolves) → NOT_FOUND.
+     * Resolve a single looked-up candidate to its BridgeProperty, evaluate it, route enrichment,
+     * produce the rich MatchReport for SCORED, and wrap it all. A null candidate (or one whose source
+     * record no longer resolves) → NOT_FOUND.
+     *
+     * Preparation and the scorable payload are resolved ONCE here (not via evaluate(), which would
+     * re-run prepare() and the criteria load) and reused for the report step (git-C13b, decision B) —
+     * so the SCORED path performs no duplicate criteria DB read.
      */
     private function analyzeCandidate(?PropertyCandidate $candidate, User $user): MatchCheckAnalysis
     {
@@ -224,12 +266,50 @@ class MatchCheckOrchestrator
             return MatchCheckAnalysis::notFound();
         }
 
-        $result = $this->evaluate($listing, $user);
+        $preparation = $this->prepare($listing, $user);
+        $criteria    = $this->resolveScorableCriteria($preparation, $user, null);
+        $result      = $this->runScorer($preparation, $listing, $criteria);
 
-        // git-C13b will produce the rich MatchReport here for the SCORED case; until then report=null.
+        // Rich report ONLY for SCORED (which guarantees a payload); every other status → null.
+        $report = $result->isScored()
+            ? $this->buildReport($preparation, $listing, $criteria)
+            : null;
+
         return MatchCheckAnalysis::fromResult(
             $result,
             $this->routeEnrichment($listing, $user, $result),
+            $report,
+        );
+    }
+
+    /**
+     * Report step (git-C13b, decision A). Re-runs the PURE BuyerMatchScorer::score() to recover the
+     * rich BuyerMatchResult the lean MatchCheckScorer discards (a side-effect-free comparison — no DB,
+     * no API, no lazy import), decorates it with the git-C10 buildDetailed() F3 blocks, and projects
+     * it into a MatchReport via MatchReportFactory with the criteria identity, source, and an INJECTED
+     * ISO-8601 generatedAt (never now() inside the factory/DTO).
+     *
+     * Reached only for a SCORED result, which guarantees a non-null payload and a resolved preferred
+     * criteria record; the null-guards are defensive belt-and-braces.
+     */
+    private function buildReport(
+        MatchCheckPreparation $preparation,
+        BridgeProperty $listing,
+        ?BuyerCriteriaPayload $criteria,
+    ): ?MatchReport {
+        if ($criteria === null || ! $preparation->hasPreferredCriteria()) {
+            return null;
+        }
+
+        $engineResult = (new BuyerMatchScorer())->score($listing, $criteria);
+        $detailed     = $this->resolveReportBuilder()->buildDetailed($engineResult, $criteria);
+
+        return $this->resolveReportFactory()->fromDetailed(
+            $detailed,
+            (int) $preparation->preferredCriteria['id'],
+            (string) $preparation->preferredCriteria['type'],
+            self::SOURCE,
+            CarbonImmutable::now()->toIso8601String(),
         );
     }
 
@@ -291,6 +371,18 @@ class MatchCheckOrchestrator
     private function resolveThrottleStore(): EnrichmentThrottleStore
     {
         return $this->throttleStore ?? new EnrichmentThrottleStore();
+    }
+
+    /** The injected report builder, or a lazily-built default (pure, no-arg constructible). */
+    private function resolveReportBuilder(): BuyerMatchResultBuilder
+    {
+        return $this->reportBuilder ?? new BuyerMatchResultBuilder();
+    }
+
+    /** The injected report factory, or a lazily-built default (pure, no-arg constructible). */
+    private function resolveReportFactory(): MatchReportFactory
+    {
+        return $this->reportFactory ?? new MatchReportFactory();
     }
 
     /**
