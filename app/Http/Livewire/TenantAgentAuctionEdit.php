@@ -194,6 +194,9 @@ class TenantAgentAuctionEdit extends Component
     public $leasing_55_plus = '';
     public $non_negotiable_amenities = [];
     public $other_non_negotiable_amenities = '';
+    public $rental_purpose = '';               // #20: Hire Tenant parity with Create Tenant (Phase D Tier 2/3)
+    public $rental_purpose_other = '';         // #20: revealed when Rental Purpose === 'Other'
+    public $accessibility_requirements = '';   // #20: Hire Tenant parity with Create Tenant (Phase D Tier 2/3)
     public $budget = '';
     public $occupied_until = '';
     public $occupancy_status  = '';
@@ -1251,6 +1254,16 @@ class TenantAgentAuctionEdit extends Component
     {
         if ($value !== 'Other') {
             $this->reset(['agency_agreement_custom']);
+        }
+    }
+
+    // #20: clear the Rental Purpose "Other" custom text when a preset purpose is chosen
+    public function updatedRentalPurpose($value)
+    {
+        if ($this->isLoadingData) return;
+
+        if ($value !== 'Other') {
+            $this->reset(['rental_purpose_other']);
         }
     }
 
@@ -2751,6 +2764,9 @@ class TenantAgentAuctionEdit extends Component
         $this->leasing_55_plus = $auction->info('leasing_55_plus');
         $this->non_negotiable_amenities = json_decode($auction->info('non_negotiable_amenities'), true) ?? [];
         $this->other_non_negotiable_amenities = $auction->info('other_non_negotiable_amenities');
+        $this->rental_purpose = $auction->info('rental_purpose') ?? '';                             // #20
+        $this->rental_purpose_other = $auction->info('rental_purpose_other') ?? '';                 // #20
+        $this->accessibility_requirements = $auction->info('accessibility_requirements') ?? '';     // #20
         $this->budget = $auction->info('budget');
         $this->lease_for = json_decode($auction->info('lease_for'), true) ?? [];
         $this->other_lease_for = $auction->info('other_lease_for');
@@ -3539,6 +3555,9 @@ class TenantAgentAuctionEdit extends Component
             // Requirements
             $auction->saveMeta('non_negotiable_amenities', json_encode($this->non_negotiable_amenities));
             $auction->saveMeta('other_non_negotiable_amenities', $this->other_non_negotiable_amenities);
+            $auction->saveMeta('rental_purpose', $this->rental_purpose);                             // #20
+            $auction->saveMeta('rental_purpose_other', $this->rental_purpose_other);                 // #20
+            $auction->saveMeta('accessibility_requirements', $this->accessibility_requirements);     // #20
             $auction->saveMeta('real_estate_purchase', $this->real_estate_purchase);
             $auction->saveMeta('assets', $this->assets);
             $auction->saveMeta('assets_other', $this->assets_other);

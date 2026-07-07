@@ -698,4 +698,48 @@
         </div>
         <span class="error mt-2" id="other_non_negotiable_amenities_error"></span>
     </div>
+
+    {{-- #20: Hire Tenant parity with Create Tenant — Phase D Tenant Tier 2 & Tier 3 Fields --}}
+    <div class="form-group">
+        <label class="fw-bold">Rental Purpose:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the primary purpose for renting the property (e.g., Primary Residence, Vacation, Student Housing).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="rental_purpose" class="form-control has-icon" data-icon="fa-solid fa-house-user">
+                <option value="">Select</option>
+                <option value="Primary Residence">Primary Residence</option>
+                <option value="Vacation">Vacation</option>
+                <option value="Temporary">Temporary</option>
+                <option value="Student Housing">Student Housing</option>
+                <option value="Corporate">Corporate</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
+
+    {{-- #20: Rental Purpose "Other" custom input — stays visible while "Other" is selected --}}
+    @if ($rental_purpose === 'Other')
+        <div class="form-group" wire:key="rental-purpose-other-wrapper">
+            <div class="input-cover">
+                <input type="text" wire:model="rental_purpose_other" class="form-control has-icon"
+                    data-icon="fa-solid fa-house-user"
+                    placeholder="Enter rental purpose (e.g., Temporary relocation)">
+            </div>
+        </div>
+    @endif
+
+    <div class="form-group">
+        <label class="fw-bold">Accessibility Requirements:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe any accessibility needs for the property (e.g., ground floor, elevator, wheelchair accessible). This information is used only to help find matching properties.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <textarea wire:model="accessibility_requirements" class="form-control has-icon" rows="1"
+                data-icon="fa-solid fa-wheelchair"
+                placeholder="Enter accessibility requirements (e.g., Ground floor or elevator required)"></textarea>
+        </div>
+    </div>
 </div>
