@@ -23,9 +23,12 @@ use Illuminate\View\View;
  *   Thin surface ONLY. This controller holds no business logic — it validates the
  *   identifier and delegates 100% to MatchCheckOrchestrator, then hands the returned
  *   MatchCheckAnalysis (a data-only, F7-safe value object) to a Blade view. No scoring,
- *   lookup, or enrichment happens here. v1 exposes MLS # + address modes only (owner
- *   §7.2); the Buyer/Tenant intent is auto-selected inside the orchestrator, so there is
- *   deliberately no Seller/Landlord variant of this surface (owner §7.5).
+ *   lookup, or enrichment happens here. v1 exposes MLS #, address, and (for AMBIGUOUS
+ *   disambiguation re-submit) listing_key modes; the Buyer/Tenant intent is auto-selected
+ *   inside the orchestrator, so there is deliberately no Seller/Landlord variant of this
+ *   surface (owner §7.5). Free-text address lookup uses the orchestrator's baseline
+ *   whole-string match for now; robust, locality-preserving address resolution (C1) is
+ *   deferred to its own slice (git-C14.2) — see the TODO on lookup().
  */
 class MatchCheckController extends Controller
 {
@@ -42,6 +45,10 @@ class MatchCheckController extends Controller
      * branch of the analysis is rendered by the result view (SCORED / AMBIGUOUS /
      * NOT_FOUND / BLOCKED / NO_CRITERIA / CRITERIA_NOT_LOADED). DISABLED is unreachable
      * here — the middleware 404s before the controller runs.
+     *
+     * The `listing_key` mode is not a user-typed field; it backs the AMBIGUOUS
+     * disambiguation re-submit (git-C14 · C2), resolving the chosen candidate by its
+     * globally-unique RESO ListingKey for an exact, no-re-ambiguity result.
      */
     public function lookup(MatchCheckLookupRequest $request, MatchCheckOrchestrator $orchestrator): View
     {
@@ -49,13 +56,20 @@ class MatchCheckController extends Controller
         $data = $request->validated();
         $user = $request->user();
 
-        $analysis = $data['mode'] === 'mls'
-            ? $orchestrator->analyzeByMlsNumber($data['mls_number'], $user)
-            : $orchestrator->analyzeByAddress(['address' => $data['address']], $user);
+        // TODO (git-C14.2 — DEFERRED): free-text address lookup passes the whole string to the
+        // orchestrator's forgiving substring match. That is SAFE — an address that does not match a
+        // stored record yields NOT_FOUND — but it misses real listings whose stored address differs
+        // in its city/state/ZIP tail (the original C1 gap). Proper address resolution
+        // (parsing/geocoding with a LOCALITY-PRESERVING lookup, so a street match can never silently
+        // score a wrong-city listing) needs its own slice. The heuristic street-term parser explored
+        // for C1 was reverted here: dropping city/state risked a confident wrong-city SCORED result,
+        // a worse failure mode than the baseline NOT_FOUND.
+        $analysis = match ($data['mode']) {
+            'mls'         => $orchestrator->analyzeByMlsNumber($data['mls_number'], $user),
+            'listing_key' => $orchestrator->analyzeByListingKey($data['listing_key'], $user),
+            default       => $orchestrator->analyzeByAddress(['address' => $data['address']], $user),
+        };
 
-        return view('match-check.result', [
-            'analysis' => $analysis,
-            'mode'     => $data['mode'],
-        ]);
+        return view('match-check.result', ['analysis' => $analysis]);
     }
 }

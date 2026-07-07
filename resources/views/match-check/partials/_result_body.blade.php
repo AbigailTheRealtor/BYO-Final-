@@ -105,11 +105,19 @@
                                 @endif
                             </small>
                         </div>
-                        @if (!empty($candidate['mls_number']))
+                        {{-- Re-submit by the globally-unique ListingKey (always present → every
+                             candidate is selectable, C2), falling back to MLS # only if a
+                             candidate somehow lacks a key. --}}
+                        @php($resubmit = !empty($candidate['listing_key'])
+                            ? ['mode' => 'listing_key', 'field' => 'listing_key', 'value' => $candidate['listing_key']]
+                            : (!empty($candidate['mls_number'])
+                                ? ['mode' => 'mls', 'field' => 'mls_number', 'value' => $candidate['mls_number']]
+                                : null))
+                        @if ($resubmit)
                             <form method="POST" action="{{ route('match-check.lookup') }}" class="mb-0">
                                 @csrf
-                                <input type="hidden" name="mode" value="mls">
-                                <input type="hidden" name="mls_number" value="{{ $candidate['mls_number'] }}">
+                                <input type="hidden" name="mode" value="{{ $resubmit['mode'] }}">
+                                <input type="hidden" name="{{ $resubmit['field'] }}" value="{{ $resubmit['value'] }}">
                                 <button type="submit" class="btn btn-sm btn-outline-primary">Check this one</button>
                             </form>
                         @endif

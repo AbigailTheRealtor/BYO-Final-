@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\MatchCheck;
 
+use App\Services\Property\PropertyCandidate;
 use App\Services\Stellar\MatchCheck\EnrichmentGuardDecision;
 use App\Services\Stellar\MatchCheck\MatchCheckAnalysis;
 use App\Services\Stellar\MatchCheck\MatchCheckPreparation;
@@ -127,5 +128,60 @@ class MatchCheckResultRenderTest extends TestCase
         );
 
         $this->assertStringContainsString('data-status="criteria_not_loaded"', $html);
+    }
+
+    /** @test */
+    public function ambiguous_candidate_without_mls_number_still_renders_a_selectable_control(): void
+    {
+        // C2 — a matched candidate lacking an MLS # must not dead-end. It stays selectable via
+        // its globally-unique ListingKey; without this the row would render no actionable control.
+        $html = $this->render(MatchCheckAnalysis::ambiguous(collect([
+            $this->ambiguousCandidate(mlsNumber: null, listingKey: 'BRIDGE-KEY-NOMLS', address: '9 Harbor Rd Unit 2'),
+        ])));
+
+        $this->assertStringContainsString('data-status="ambiguous"', $html);
+        $this->assertStringContainsString('9 Harbor Rd Unit 2', $html);
+        $this->assertStringContainsString('name="mode" value="listing_key"', $html);
+        $this->assertStringContainsString('name="listing_key" value="BRIDGE-KEY-NOMLS"', $html);
+        $this->assertStringContainsString('Check this one', $html);
+    }
+
+    private function ambiguousCandidate(?string $mlsNumber, string $listingKey, string $address): PropertyCandidate
+    {
+        return new PropertyCandidate(
+            source: 'bridge',
+            sourceRecordId: '201',
+            mlsNumber: $mlsNumber,
+            listingKey: $listingKey,
+            standardStatus: 'Active',
+            mlsStatus: 'Active',
+            propertyType: 'Residential',
+            propertySubType: 'Condominium',
+            listPrice: 550000.0,
+            unparsedAddress: $address,
+            city: 'Sarasota',
+            stateOrProvince: 'FL',
+            postalCode: '34236',
+            countyOrParish: 'Sarasota',
+            bedrooms: 3,
+            bathrooms: 2,
+            livingAreaSqft: 1800,
+            lotSizeSqft: null,
+            yearBuilt: 2005,
+            latitude: null,
+            longitude: null,
+            associationFee: null,
+            taxAnnualAmount: null,
+            petsAllowed: null,
+            pool: null,
+            garage: null,
+            waterfront: null,
+            view: null,
+            waterView: null,
+            seniorCommunity: null,
+            association: null,
+            newConstruction: null,
+            cdd: null,
+        );
     }
 }

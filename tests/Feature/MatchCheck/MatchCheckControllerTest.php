@@ -52,20 +52,52 @@ class MatchCheckControllerTest extends TestCase
     }
 
     /** @test */
-    public function address_mode_dispatches_to_analyze_by_address(): void
+    public function address_mode_dispatches_the_whole_string_to_analyze_by_address(): void
     {
+        // C1 deferred (git-C14.2): the free-text address is passed through verbatim as the freeform
+        // `address` part — the safe baseline whole-string match, no heuristic parsing.
         $mock = Mockery::mock(MatchCheckOrchestrator::class);
         $mock->shouldReceive('analyzeByAddress')
             ->once()
-            ->with(['address' => '123 Ocean Dr'], Mockery::type(User::class))
+            ->with(['address' => '123 Ocean Dr, Sarasota, FL 34236'], Mockery::type(User::class))
             ->andReturn(MatchCheckAnalysis::notFound());
         $mock->shouldNotReceive('analyzeByMlsNumber');
         $this->instance(MatchCheckOrchestrator::class, $mock);
 
         $this->actingAs($this->user())
-            ->post('/match-check', ['mode' => 'address', 'address' => '123 Ocean Dr'])
+            ->post('/match-check', ['mode' => 'address', 'address' => '123 Ocean Dr, Sarasota, FL 34236'])
             ->assertOk()
             ->assertSee('data-status="not_found"', false);
+    }
+
+    /** @test */
+    public function listing_key_mode_dispatches_to_analyze_by_listing_key(): void
+    {
+        // C2 — the AMBIGUOUS disambiguation re-submit resolves the chosen candidate by ListingKey.
+        $mock = Mockery::mock(MatchCheckOrchestrator::class);
+        $mock->shouldReceive('analyzeByListingKey')
+            ->once()
+            ->with('BRIDGE-KEY-1', Mockery::type(User::class))
+            ->andReturn(MatchCheckAnalysis::notFound());
+        $mock->shouldNotReceive('analyzeByMlsNumber');
+        $mock->shouldNotReceive('analyzeByAddress');
+        $this->instance(MatchCheckOrchestrator::class, $mock);
+
+        $this->actingAs($this->user())
+            ->post('/match-check', ['mode' => 'listing_key', 'listing_key' => 'BRIDGE-KEY-1'])
+            ->assertOk()
+            ->assertSee('data-status="not_found"', false);
+    }
+
+    /** @test */
+    public function missing_listing_key_fails_validation_when_mode_is_listing_key(): void
+    {
+        $this->instance(MatchCheckOrchestrator::class, Mockery::mock(MatchCheckOrchestrator::class));
+
+        $this->actingAs($this->user())
+            ->post('/match-check', ['mode' => 'listing_key'])   // no listing_key
+            ->assertStatus(302)
+            ->assertSessionHasErrors('listing_key');
     }
 
     /** @test */
@@ -86,7 +118,7 @@ class MatchCheckControllerTest extends TestCase
         $this->instance(MatchCheckOrchestrator::class, Mockery::mock(MatchCheckOrchestrator::class));
 
         $this->actingAs($this->user())
-            ->post('/match-check', ['mode' => 'listing_key', 'mls_number' => 'X'])
+            ->post('/match-check', ['mode' => 'zipcode', 'mls_number' => 'X'])
             ->assertStatus(302)
             ->assertSessionHasErrors('mode');
     }
