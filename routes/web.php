@@ -286,6 +286,19 @@ Route::middleware('agent-ai-v2')->group(function () {
         ->name('agent-ai.escalate');
 });
 
+// Match Check (MLS Direct Import — Phase 4) — consumer Buyer/Tenant match lookup.
+// First surface for the feature (git-C14). Gated behind CheckMatchCheckEnabled
+// (config/mls_match_check.php, default OFF → every route 404s). Requires auth: the
+// orchestrator's analyzeBy*() resolve per-user criteria. The POST is throttled to bound
+// consumer-driven Bridge lookups (Location DNA enrichment is separately guarded in C12/C13).
+Route::middleware(['auth', 'match-check'])->group(function () {
+    Route::get('/match-check', [\App\Http\Controllers\MatchCheck\MatchCheckController::class, 'show'])
+        ->name('match-check.show');
+    Route::post('/match-check', [\App\Http\Controllers\MatchCheck\MatchCheckController::class, 'lookup'])
+        ->middleware('throttle:20,1')
+        ->name('match-check.lookup');
+});
+
 // Route::post('/notification', [NotificationController::class, 'notification']);
 
 
