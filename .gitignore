@@ -20,5 +20,7 @@ yarn-error.log
 # User-uploaded conversation attachments — should not be version-controlled
 attached_assets/Pasted-*.txt
 
-# Local working scratch (audit diffs) — never commit
+# Local working scratch (audit diffs, one-off logs/artifacts) — never commit.
+# Reusable generators live in scripts/; substantial docs live in docs/.
 scratch/
+scratchpad/
