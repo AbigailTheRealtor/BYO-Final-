@@ -19,7 +19,7 @@
 <div class="form-group mb-3">
     <label class="fw-bold">City:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the city where the property is located.<br>Selecting a city will automatically populate the county and state.">
+        title="Enter the city where the property is located. Selecting a city will automatically populate the county and state.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover position-relative">
@@ -58,7 +58,7 @@
 <div class="form-group mb-3">
     <label class="fw-bold">State:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Select the state where the property is located.<br>This will be automatically populated when a city or county is selected.">
+        title="Select the state where the property is located. This will be automatically populated when a city or county is selected.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
@@ -77,7 +77,7 @@
 <div class="form-group mb-3">
     <label class="fw-bold">County:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the county where the property is located.<br>This may be automatically populated when a city is selected.">
+        title="Enter the county where the property is located. This may be automatically populated when a city is selected.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
@@ -595,7 +595,7 @@
     <div class="input-cover">
         <input type="text" wire:model="other_appliances" class="form-control has-icon"
             data-icon="fa-solid fa-plug"
-            placeholder="Enter appliances (e.g., Air Fryer Oven, Induction Cooktop, Double Oven)"
+            placeholder="Enter appliances (e.g., Air fryer oven, Induction cooktop, Double oven)"
             @if (is_array($this->appliances) && in_array('Other', $this->appliances)) required @endif>
     </div>
     <span class="error mt-2" id="other_appliances_error"></span>

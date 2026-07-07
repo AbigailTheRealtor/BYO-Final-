@@ -2165,7 +2165,7 @@
     <div class="input-cover">
         <input type="text" wire:model="hoa_condo_association_terms" class="form-control has-icon"
             data-icon="fa-solid fa-building-user"
-            placeholder="Enter any additional HOA notes (e.g., $200 transfer fee, pending special assessment, new rules effective Jan 2026)">
+            placeholder="Enter any additional HOA notes (e.g., $200 transfer fee, Pending special assessment, New rules effective Jan 2026)">
     </div>
 </div>
 

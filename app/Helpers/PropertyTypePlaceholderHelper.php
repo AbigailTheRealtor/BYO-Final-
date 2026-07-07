@@ -30,16 +30,16 @@ class PropertyTypePlaceholderHelper
     /** Section title per context+role (the "[title]" token). */
     protected static array $titles = [
         'create' => [
-            'seller'   => 'Property Description',
-            'buyer'    => 'Buyer Description',
-            'landlord' => 'Rental Description',
-            'tenant'   => 'Tenant Description',
+            'seller'   => 'property description',   // #31: lowercase per owner decision
+            'buyer'    => 'buyer description',       // #31
+            'landlord' => 'rental description',      // #31
+            'tenant'   => 'tenant description',      // #31: Tenant = "tenant description" (owner decision, not "rental")
         ],
         'hire' => [
-            'seller'   => 'Additional Details',
-            'buyer'    => 'Additional Details',
-            'landlord' => 'Additional Details',
-            'tenant'   => 'Additional Details',
+            'seller'   => 'additional details',      // #30: lowercase
+            'buyer'    => 'additional details',      // #30
+            'landlord' => 'additional details',      // #30
+            'tenant'   => 'additional details',      // #30
         ],
     ];
 

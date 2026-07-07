@@ -1187,7 +1187,7 @@
     <div class="input-cover">
         <input type="text" wire:model="water_frontage" class="form-control has-icon"
             data-icon="fa-solid fa-water"
-            placeholder="e.g., Intracoastal Waterway, Gulf/Ocean, Lake">
+            placeholder="Enter Water Frontage (e.g., Intracoastal Waterway, Gulf/Ocean, Lake)">
     </div>
 </div>
 
@@ -1201,7 +1201,7 @@
     <div class="input-cover">
         <input type="number" wire:model="waterfront_feet" class="form-control has-icon"
             data-icon="fa-solid fa-ruler-horizontal"
-            placeholder="e.g., 75" min="0">
+            placeholder="Enter Waterfront Feet (e.g., 75)" min="0">
     </div>
 </div>
 
