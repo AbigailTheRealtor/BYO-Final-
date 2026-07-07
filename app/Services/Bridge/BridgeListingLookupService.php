@@ -39,8 +39,14 @@ class BridgeListingLookupService
     /**
      * Look up by human-facing MLS Number (RESO ListingId).
      * Local `listing_id` match first; then `ListingId eq '...'` against the API.
+     *
+     * @param  bool  $dispatchDna  Whether an API-fallback cache write may dispatch ComputeLocationDna
+     *                             for a new/address-changed row. Default true reproduces the seam's
+     *                             original prefill behavior exactly; the Match Check caller passes false
+     *                             so it can route enrichment through LocationDnaEnrichmentGuard instead
+     *                             (git-C13). A local cache hit dispatches nothing either way.
      */
-    public function findByMlsNumber(string $mlsNumber): ?PropertyCandidate
+    public function findByMlsNumber(string $mlsNumber, bool $dispatchDna = true): ?PropertyCandidate
     {
         $mlsNumber = trim($mlsNumber);
         if ($mlsNumber === '') {
@@ -52,7 +58,7 @@ class BridgeListingLookupService
             return $this->adapter->fromModel($local);
         }
 
-        $model = $this->fetchOneAndCache("ListingId eq '" . $this->escape($mlsNumber) . "'");
+        $model = $this->fetchOneAndCache("ListingId eq '" . $this->escape($mlsNumber) . "'", $dispatchDna);
 
         return $model !== null ? $this->adapter->fromModel($model) : null;
     }
@@ -60,8 +66,10 @@ class BridgeListingLookupService
     /**
      * Look up by globally-unique RESO ListingKey.
      * Local `listing_key` match first; then `ListingKey eq '...'` against the API.
+     *
+     * @param  bool  $dispatchDna  See findByMlsNumber(). Default true preserves original behavior.
      */
-    public function findByListingKey(string $listingKey): ?PropertyCandidate
+    public function findByListingKey(string $listingKey, bool $dispatchDna = true): ?PropertyCandidate
     {
         $listingKey = trim($listingKey);
         if ($listingKey === '') {
@@ -73,7 +81,7 @@ class BridgeListingLookupService
             return $this->adapter->fromModel($local);
         }
 
-        $model = $this->fetchOneAndCache("ListingKey eq '" . $this->escape($listingKey) . "'");
+        $model = $this->fetchOneAndCache("ListingKey eq '" . $this->escape($listingKey) . "'", $dispatchDna);
 
         return $model !== null ? $this->adapter->fromModel($model) : null;
     }
@@ -90,9 +98,10 @@ class BridgeListingLookupService
      * the API and cache what it finds.
      *
      * @param  array<string,string> $parts
+     * @param  bool  $dispatchDna  See findByMlsNumber(). Default true preserves original behavior.
      * @return Collection<int,PropertyCandidate>
      */
-    public function searchByAddress(array $parts): Collection
+    public function searchByAddress(array $parts, bool $dispatchDna = true): Collection
     {
         $parts = $this->normalizeParts($parts);
         if (empty($parts)) {
@@ -113,7 +122,7 @@ class BridgeListingLookupService
 
         $models = [];
         foreach ($records as $record) {
-            $model = $this->cacheRecord($record);
+            $model = $this->cacheRecord($record, $dispatchDna);
             if ($model !== null) {
                 $models[] = $model;
             }
@@ -133,29 +142,33 @@ class BridgeListingLookupService
      * Returns null when the API yields nothing or the record is unusable
      * (e.g. missing ListingKey).
      */
-    private function fetchOneAndCache(string $filter): ?BridgeProperty
+    private function fetchOneAndCache(string $filter, bool $dispatchDna = true): ?BridgeProperty
     {
         $records = $this->api->fetchProperties(1, $filter);
         if (empty($records)) {
             return null;
         }
 
-        return $this->cacheRecord($records[0]);
+        return $this->cacheRecord($records[0], $dispatchDna);
     }
 
     /**
      * Upsert one raw API record into bridge_properties. Dispatches
      * ComputeLocationDna for new/address-changed rows, matching
      * ImportBridgeProperties and LazyBridgeImportService.
+     *
+     * @param  bool  $dispatchDna  When false, the caller has opted to route enrichment elsewhere
+     *                             (Match Check via LocationDnaEnrichmentGuard), so this seam does not
+     *                             dispatch. Default true is the original, unchanged behavior.
      */
-    private function cacheRecord(array $record): ?BridgeProperty
+    private function cacheRecord(array $record, bool $dispatchDna = true): ?BridgeProperty
     {
         $result = $this->normalizer->upsert($record);
         if ($result === null) {
             return null;
         }
 
-        if ($result->shouldDispatchDna()) {
+        if ($dispatchDna && $result->shouldDispatchDna()) {
             ComputeLocationDna::dispatch('bridge', $result->model->id);
         }
 
