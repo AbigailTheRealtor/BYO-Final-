@@ -6168,8 +6168,7 @@ $lease_types = [
             v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
         }
 
-        // No leading dot
-        if (v.startsWith('.')) v = v.slice(1);
+        // Preserve a leading decimal point (e.g. ".75" stays ".75") — do not strip it (SC1)
 
         // Format with commas
         const formatted = formatNumberWithCommas(v);
@@ -6219,8 +6218,7 @@ $lease_types = [
             text = text.slice(0, firstDot + 1) + text.slice(firstDot + 1).replace(/\./g, '');
         }
 
-        // No leading dot
-        if (text.startsWith('.')) text = text.slice(1);
+        // Preserve a leading decimal point (e.g. ".75" stays ".75") — do not strip it (SC1)
 
         input.value = formatNumberWithCommas(text);
         errorEl && (errorEl.innerText = "");
@@ -6245,15 +6243,7 @@ $lease_types = [
     }
 
     function formatAllMoneyInputsOnLoad() {
-        // Format flat-fee wire:key-prefixed inputs (lease_value, purchase_value, etc.)
-        ['lease-value-input-flat', 'purchase-value-input-flat'].forEach(function(prefix) {
-            document.querySelectorAll('[wire\\:key^="' + prefix + '"]').forEach(function(input) {
-                if (input.value && typeof formatWithCommas === 'function') {
-                    formatWithCommas(input);
-                }
-            });
-        });
-        // Format all remaining money inputs that use reformatNumber on blur
+        // Format all money inputs that use reformatNumber on blur
         document.querySelectorAll('input[onblur*="reformatNumber"]').forEach(function(input) {
             if (input.value && input.value.trim() !== '') {
                 reformatNumber(input);

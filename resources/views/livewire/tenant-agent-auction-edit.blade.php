@@ -5261,8 +5261,7 @@
             v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
         }
 
-        // No leading dot
-        if (v.startsWith('.')) v = v.slice(1);
+        // Preserve a leading decimal point (e.g. ".75" stays ".75") — do not strip it (SC1)
 
         // Format with commas
         const formatted = formatNumberWithCommas(v);
@@ -5312,8 +5311,7 @@
             text = text.slice(0, firstDot + 1) + text.slice(firstDot + 1).replace(/\./g, '');
         }
 
-        // No leading dot
-        if (text.startsWith('.')) text = text.slice(1);
+        // Preserve a leading decimal point (e.g. ".75" stays ".75") — do not strip it (SC1)
 
         input.value = formatNumberWithCommas(text);
         errorEl && (errorEl.innerText = "");
