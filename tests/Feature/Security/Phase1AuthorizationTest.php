@@ -278,6 +278,86 @@ class Phase1AuthorizationTest extends TestCase
     }
 
     // =====================================================================
+    // (B) WF-6 — LandlordAuction bids-visibility ownership guard (latent gap).
+    //
+    // The legacy LandlordAuction subsystem has no CREATE migration and its
+    // tables are absent from the live schema, so this guard cannot be reached
+    // against the real database: the model query on the line above it raises
+    // QueryException (undefined table) before abort_unless() ever evaluates.
+    // The guard is therefore parity/defence-in-depth, dormant until the table
+    // is restored — a latent authorization gap, not a live IDOR.
+    // To pin the authorization contract itself we stand up only the columns
+    // the controller and model touch. The surrounding DatabaseTransactions
+    // rollback removes them. If the real tables are ever restored, this test
+    // uses them as-is instead.
+    // =====================================================================
+
+    /** Minimal stand-in schema for the legacy LandlordAuction tables. */
+    private function createLegacyLandlordAuctionSchema(): void
+    {
+        $schema = \Illuminate\Support\Facades\Schema::connection(null);
+
+        if (! $schema->hasTable('landlord_auctions')) {
+            $schema->create('landlord_auctions', function (\Illuminate\Database\Schema\Blueprint $t) {
+                $t->id();
+                $t->unsignedBigInteger('user_id')->nullable();
+                $t->string('listing_id')->nullable();
+                $t->boolean('display_bids')->default(0);
+                $t->boolean('is_approved')->default(true);
+                $t->boolean('is_draft')->default(false);
+                $t->timestamps();
+            });
+        }
+
+        // LandlordAuction eager-loads `meta` ($with), so the relation table must exist.
+        if (! $schema->hasTable('landlord_auction_meta')) {
+            $schema->create('landlord_auction_meta', function (\Illuminate\Database\Schema\Blueprint $t) {
+                $t->id();
+                $t->unsignedBigInteger('landlord_auction_id')->index();
+                $t->string('meta_key')->nullable();
+                $t->text('meta_value')->nullable();
+            });
+        }
+    }
+
+    public function test_wf6_non_owner_cannot_toggle_landlord_auction_bids_visibility(): void
+    {
+        $this->createLegacyLandlordAuctionSchema();
+
+        // The route group is auth + verified + AgentAuth, so both personas must
+        // be verified agents to reach the controller at all. The guard under
+        // test is what separates them once they are inside.
+        $owner    = User::factory()->asAgent()->create();
+        $attacker = User::factory()->asAgent()->create();
+
+        $id = \Illuminate\Support\Facades\DB::table('landlord_auctions')->insertGetId([
+            'user_id'      => $owner->id,
+            'listing_id'   => 'LA-G003TEST',
+            'display_bids' => 1,
+        ]);
+
+        $flag = fn () => (int) \Illuminate\Support\Facades\DB::table('landlord_auctions')
+            ->where('id', $id)->value('display_bids');
+
+        // Non-owner is forbidden and the flag is unchanged.
+        $this->actingAs($attacker)
+            ->post('/landlord/auction/bids-visibility/' . $id . '/hide')
+            ->assertForbidden();
+        $this->assertSame(1, $flag(), 'Non-owner must not change landlord bid visibility');
+
+        // Unknown id → the null guard returns 403 rather than dereferencing null.
+        $this->actingAs($attacker)
+            ->post('/landlord/auction/bids-visibility/2147483000/hide')
+            ->assertForbidden();
+
+        // Owner may toggle their own listing.
+        $this->actingAs($owner)
+            ->post('/landlord/auction/bids-visibility/' . $id . '/hide')
+            ->assertRedirect();
+        $this->assertSame(0, $flag(), 'Owner may toggle their own bid visibility');
+    }
+
+    // =====================================================================
     // (A) WF-2 — listing archive route requires auth (no DB)
     // =====================================================================
 
