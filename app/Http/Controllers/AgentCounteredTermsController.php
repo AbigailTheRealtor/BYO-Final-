@@ -27,6 +27,16 @@ class AgentCounteredTermsController extends Controller
     }
     public function store(Request $request)
     {
+        // Authorization (N1 / HIGH-5 parity): only a party to the agent-service
+        // auction may submit counter terms — the auction owner, or an agent who
+        // has bid on it. Mirrors the BuyerCounteredTermsController guard.
+        // `without('meta')` avoids hydrating the unneeded EAV meta relation.
+        $auction = \App\Models\AgentServiceAuction::without('meta')->find($request->agentId);
+        abort_unless(auth()->check() && $auction && (
+            (int) $auction->user_id === (int) auth()->id() ||
+            \App\Models\AgentServiceAuctionBid::where('agent_service_auction_id', $auction->id)->where('user_id', auth()->id())->exists()
+        ), 403);
+
         $counter = new AgentCounterTerm();
         $counter->agent_auction_id = $request->agentId;
         $counter->timeframe = $request->timeframe;
@@ -51,6 +61,14 @@ class AgentCounteredTermsController extends Controller
     {
         // dd($request->all());
         $counter = AgentCounterTerm::findOrFail($id);
+        // Authorization (N1 / HIGH-5 parity): only the auction owner or a bidding
+        // agent may update. Mirrors the BuyerCounteredTermsController guard.
+        // `without('meta')` avoids hydrating the unneeded EAV meta relation.
+        $auction = \App\Models\AgentServiceAuction::without('meta')->find($counter->agent_auction_id);
+        abort_unless(auth()->check() && $auction && (
+            (int) $auction->user_id === (int) auth()->id() ||
+            \App\Models\AgentServiceAuctionBid::where('agent_service_auction_id', $auction->id)->where('user_id', auth()->id())->exists()
+        ), 403);
         // Update the attributes
         $agentCharge = '';
         $agentChargeOther = '';
