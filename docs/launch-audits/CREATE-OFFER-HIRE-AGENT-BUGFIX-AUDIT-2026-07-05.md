@@ -464,15 +464,43 @@ Batch C is a single-purpose commit (`804266ffe`) staged with explicit paths: the
 
 **Verification (code-only — no browser):** `BatchFCosmeticsTest` **7/7 pass**; combined Batch **A–F run = 54 pass**, no regressions; `php -l` clean on the helper; `php artisan view:cache` compiles all edited blades. *(Suite must run with `env -u GOOGLE_PLACES_API_KEY` — the test-env safeguard from `0d0c5a1c0` refuses to run while a live key leaks in from the shell env; this is the safeguard's intended usage, not a code issue.)*
 
-**Deferred — Batch F-2 (#28 / #29):** both fixes live in `resources/views/partials/location-dna/map-input.blade.php`, which is under **active concurrent 9D Location DNA development** (recent commits `Phase 9B/9C Search Areas`, `county autocomplete`; also held in `stash@{1}`). Touching it now risks re-triggering the shared-worktree collision documented in §12. **F-2 is gated** on the 9D session releasing that file — recommended execution in an isolated `git worktree`.
+**Deferred — Batch F-2 (#28 / #29):** both fixes live in `resources/views/partials/location-dna/map-input.blade.php`, which is under **active concurrent 9D Location DNA development** (recent commits `Phase 9B/9C Search Areas`, `county autocomplete`; also held in `stash@{1}`). Touching it now risks re-triggering the shared-worktree collision documented in §12. **F-2 is gated** on the 9D session releasing that file — recommended execution in an isolated `git worktree`. **→ RESOLVED: implemented as Batch F-2 (`803a337b6`) — see §14.**
 
 **Remaining unresolved:** all seven F-1 items await human browser QA (visually confirm each placeholder/tooltip across the affected Create + Hire flows). Nothing marked PASS/COMPLETE/RESOLVED.
 
 ---
 
+## 14. Implementation log — Batch F-2 (2026-07-07)
+
+**Commit:** `803a337b6` — *feat(offers): Batch F-2 #28 county-bias helper removal; #29 verify-only* (branch `launch-audit-remediation`, parent `0dae41455`). Authored + committed in an **isolated `git worktree`** (branch `batch-f2-map-input`), then **fast-forwarded** into `launch-audit-remediation`; the worktree and temp branch were removed after merge.
+
+**Scope:** the deferred Batch-F subset — **#28 + #29**, both in the shared Location-DNA map partial (`resources/views/partials/location-dna/map-input.blade.php`, SC5 → Create Buyer/Tenant + Hire Buyer/Tenant). Cosmetic-only.
+
+**Batch status:** none closed. **#28 = `CODE COMPLETE — HUMAN BROWSER QA REQUIRED`**; **#29 = `VERIFY-ONLY — ALREADY AT PARITY`** (browser-confirm only).
+
+**Files changed (2 — single isolated commit, +86 / −1):**
+1. `resources/views/partials/location-dna/map-input.blade.php` — **#28**: removed the one user-facing county-bias sentence from the Preferred Cities hint.
+2. `tests/Feature/Offers/BatchF2MapInputTest.php` — new (3 tests).
+
+**Root causes / findings:**
+- **#28** — the Preferred Cities hint carried a user-facing line `County bias is used so "Seminole, FL" maps to Pinellas, not Seminole County.` Removed **only** that sentence; the sibling hint (`Selecting a city draws its boundary on the map.`) stays, and the **non-user-facing** "Seminole" occurrences (the explanatory code comment + the JS-config example `"cities": ["Seminole, FL"]`) were deliberately **preserved**.
+- **#29 — VERIFY-ONLY (no code change; Owner-accepted).** The audit flagged the Important Places Type / Distance Preference / Travel Mode controls as sized differently from Exact Address / Miles. On inspection they are **already at parity**: the layout loads **Bootstrap 5.2.2**, where `.form-select-sm` and `.form-control-sm` share identical height tokens; every Important Places control already carries the `-sm` class (selects `form-select-sm`; the Exact Address / Miles inputs `form-control-sm`) and the small columns are all `col-md-3`. No divergent width/height/inline-CSS exists. **No markup change was fabricated;** a parity **guard test** pins the current sizing against future regression. Any residual in-browser difference (e.g., select rendering) is browser-QA territory.
+
+**9D safety:** the `map-input` change is a single text-line deletion, well outside the JS. **`ldnaIpSerialize()`, the geocode/serialize handlers, and `important_places_json` were not touched** (those identifiers appear only in the new test's docstring, describing what was left alone).
+
+**Verification (code-only — no browser):** `BatchF2MapInputTest` **3/3 pass** (#28 removed; #28 non-user-facing refs preserved; #29 parity guard). Full regression — **137 pass**: Batch A/B/C/D/E/F + F-2 + `CreateEditParityRegressionTest`. `php artisan view:cache` compiles the edited partial. *(Worktree tests run via `vendor`/`.env` symlinks from main + `APP_BASE_PATH=<worktree>` so `base_path()` resolves to the worktree; suite run with `env -u GOOGLE_PLACES_API_KEY` per the safeguard.)*
+
+**Batch-discipline note:** the isolated-worktree approach **prevented** the shared-worktree collision that disrupted Batch E (§12) — main stayed clean on `launch-audit-remediation` throughout, and the fast-forward was a clean single-commit advance.
+
+**Remaining unresolved:** #28 and #29 await human browser QA (all 4 flows: county-bias text gone; Important Places controls align with Exact Address/Miles). Nothing marked PASS/COMPLETE/RESOLVED.
+
+---
+
 ## 8. Status summary
 
-- **Batch F-1 implemented + code-verified (commit `28f24c5a4`, see §13). #23/#24/#25/#26/#27/#30/#31 all `CODE COMPLETE — HUMAN BROWSER QA REQUIRED`, none closed.** Cosmetic-only (placeholder/tooltip/title text). `BatchFCosmeticsTest` 7/7; A–F combined 54 pass. **#28/#29 deferred to Batch F-2** — both in `map-input.blade.php`, gated on active 9D Location DNA work (isolated worktree recommended).
+- **Batch F implementation-complete** (F-1 `28f24c5a4` + F-2 `803a337b6`). All nine Batch-F cosmetic issues (#23–#31) are implemented; **none closed** — every item stays `CODE COMPLETE — HUMAN BROWSER QA REQUIRED` (#29 is verify-only / already at parity, browser-confirm only). **With Batches A–F all implemented, the audit's implementation phase is complete; the remaining gate is human browser QA.**
+- **Batch F-2 implemented + code-verified (commit `803a337b6`, see §14). #28 = `CODE COMPLETE — HUMAN BROWSER QA REQUIRED`; #29 = VERIFY-ONLY (already at parity), browser-confirm only.** Removed the user-facing county-bias helper text from `map-input.blade.php`; **no 9D logic touched**. Done in an isolated `git worktree`, fast-forwarded in (no collision). `BatchF2MapInputTest` 3/3; A–F + F-2 + parity = 137 pass.
+- **Batch F-1 implemented + code-verified (commit `28f24c5a4`, see §13). #23/#24/#25/#26/#27/#30/#31 all `CODE COMPLETE — HUMAN BROWSER QA REQUIRED`, none closed.** Cosmetic-only (placeholder/tooltip/title text). `BatchFCosmeticsTest` 7/7; A–F combined 54 pass. **#28/#29 completed in Batch F-2** (`803a337b6`, §14).
 - **Batch E implemented + code-verified (commit `89549834b`, see §12). #20 = `CODE COMPLETE — HUMAN BROWSER QA REQUIRED`, not closed.** Hire Tenant ↔ Create Tenant parity for `rental_purpose` / `rental_purpose_other` / `accessibility_requirements` (additive EAV meta, no migration). `BatchEHireTenantParityTest` 8 pass; no regressions. Re-applied on the correct lineage after a concurrent-session branch-switch incident (§12 note).
 - **Batch D shipped (`47407e37f`) + SC1 follow-up (`55e8fd5ec`)** — shared-JS root causes (SC1/SC2/SC3) and the Hire Tenant currency leading-dot fix; the launch-audit base that Batch E builds on. (This doc's per-batch §-log for D predates the E/F work; its issue rows carry the Batch-D status inline.)
 - **Batch C implemented + root-caused (see §11). #6/#7 fixed via `deploy/php/uploads.ini` + `.replit` `PHP_INI_SCAN_DIR`; both = `FIX COMMITTED — HUMAN BROWSER QA REQUIRED`.** Root cause = infra (`artisan serve` `cli-server` ran at PHP defaults; `.user.ini` + `-d` inert). Laravel/Livewire rules were already correct at 50M. No `client_max_body_size` layer exists (built-in server); nginx + Replit edge-proxy caps documented as deployment actions (§11.6).
