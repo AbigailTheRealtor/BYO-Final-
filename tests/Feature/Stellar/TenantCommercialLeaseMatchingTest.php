@@ -21,7 +21,10 @@ use Tests\TestCase;
  * Tenant Commercial Lease MLS Matching — regression tests.
  *
  * TC-TCLM-01  CriteriaLoader maps any 'commercial*' EAV property_type to 'Commercial Lease'.
- * TC-TCLM-02  CriteriaLoader maps a non-commercial EAV property_type to 'Residential'.
+ * TC-TCLM-02  CriteriaLoader maps a non-commercial EAV property_type to 'Residential Lease' (BYO-H4).
+ * TC-TCLM-10  CriteriaLoader emits the monthly budget as max_price for Residential Lease (BYO-H4).
+ * TC-TCLM-11  CriteriaLoader emits the monthly budget as max_price for Commercial Lease (BYO-H4).
+ * TC-TCLM-12  CriteriaLoader emits a null max_price when the budget is blank (ceiling skipped).
  * TC-TCLM-03  End-to-end: seeded Commercial Lease bridge record + matching offer listing → ≥1 match with score > 0.
  * TC-TCLM-04  Price filter: null list_price commercial lease record is NOT excluded when max_price is set.
  * TC-TCLM-05  Price filter: commercial lease record with list_price ≤ max_price is included.
@@ -197,10 +200,11 @@ class TenantCommercialLeaseMatchingTest extends TestCase
     }
 
     // =========================================================================
-    // TC-TCLM-02: Non-commercial EAV property_type maps to 'Residential'
+    // TC-TCLM-02: Non-commercial EAV property_type maps to 'Residential Lease' (BYO-H4)
+    //   Verified Bridge rental PropertyType; 'Residential' is the FOR-SALE type.
     // =========================================================================
 
-    public function test_tc_tclm_02_non_commercial_property_type_maps_to_residential(): void
+    public function test_tc_tclm_02_non_commercial_property_type_maps_to_residential_lease(): void
     {
         $this->skipIfTableMissing();
 
@@ -213,12 +217,90 @@ class TenantCommercialLeaseMatchingTest extends TestCase
         $result = $loader->loadById($auction->id, [$userId]);
 
         $this->assertNotNull($result);
-        $this->assertContains(
-            'Residential',
+        $this->assertSame(
+            ['Residential Lease'],
             $result['property_types'],
-            'Non-commercial EAV property_type must map to "Residential"'
+            'Non-commercial EAV property_type must map to the Bridge rental type "Residential Lease", not the for-sale "Residential"'
         );
+        $this->assertNotContains('Residential', $result['property_types']);
         $this->assertNotContains('Commercial Lease', $result['property_types']);
+    }
+
+    // =========================================================================
+    // TC-TCLM-10: Residential tenant → 'Residential Lease' + budget as max_price (BYO-H4)
+    // =========================================================================
+
+    public function test_tc_tclm_10_residential_lease_emits_budget_as_max_price(): void
+    {
+        $this->skipIfTableMissing();
+
+        $userId  = $this->makeUser();
+        $auction = $this->makeTenantOfferListing($userId, [
+            'property_type'  => 'Residential Property',
+            'maximum_budget' => '2,500',
+        ]);
+
+        $loader = new TenantOfferListingCriteriaLoader();
+        $result = $loader->loadById($auction->id, [$userId]);
+
+        $this->assertNotNull($result);
+        $this->assertSame(['Residential Lease'], $result['property_types']);
+        $this->assertSame(
+            2500,
+            $result['max_price'],
+            'The parsed monthly budget must be emitted as max_price for Residential Lease (comma-stripped)'
+        );
+    }
+
+    // =========================================================================
+    // TC-TCLM-11: Commercial tenant → 'Commercial Lease' unchanged + budget as max_price (BYO-H4)
+    // =========================================================================
+
+    public function test_tc_tclm_11_commercial_lease_emits_budget_as_max_price(): void
+    {
+        $this->skipIfTableMissing();
+
+        $userId  = $this->makeUser();
+        $auction = $this->makeTenantOfferListing($userId, [
+            'property_type'  => 'Commercial Lease Tenant',
+            'maximum_budget' => '4000',
+        ]);
+
+        $loader = new TenantOfferListingCriteriaLoader();
+        $result = $loader->loadById($auction->id, [$userId]);
+
+        $this->assertNotNull($result);
+        $this->assertSame(['Commercial Lease'], $result['property_types']);
+        $this->assertSame(
+            4000,
+            $result['max_price'],
+            'The parsed monthly budget must be emitted as max_price for Commercial Lease (ceiling no longer bypassed)'
+        );
+    }
+
+    // =========================================================================
+    // TC-TCLM-12: Blank budget → null max_price (price ceiling skipped)
+    // =========================================================================
+
+    public function test_tc_tclm_12_blank_budget_yields_null_max_price(): void
+    {
+        $this->skipIfTableMissing();
+
+        $userId  = $this->makeUser();
+        $auction = $this->makeTenantOfferListing($userId, [
+            'property_type'  => 'Residential Property',
+            'maximum_budget' => '',
+        ]);
+
+        $loader = new TenantOfferListingCriteriaLoader();
+        $result = $loader->loadById($auction->id, [$userId]);
+
+        $this->assertNotNull($result);
+        $this->assertSame(['Residential Lease'], $result['property_types']);
+        $this->assertNull(
+            $result['max_price'],
+            'A blank budget must yield a null max_price so the BuyerMatchQueryBuilder ceiling is skipped'
+        );
     }
 
     // =========================================================================

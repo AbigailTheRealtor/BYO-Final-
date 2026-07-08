@@ -16,17 +16,19 @@ use Illuminate\Support\Facades\DB;
  *
  * EAV property_type → Bridge OData PropertyType normalization:
  *   (any value containing 'commercial') → 'Commercial Lease'
- *   (any other value / null)            → 'Residential'
+ *   (any other value / null)            → 'Residential Lease'
  *
- * SOURCE: 'Commercial Lease' confirmed as the exact Bridge/Stellar OData
- * PropertyType string via a live API import on 2026-06-23:
- *   php artisan bridge:import-properties --property-type="Commercial Lease" --limit=1
- * returned 1 record with property_type='Commercial Lease' and list_price populated
- * (list_price = monthly rent for commercial lease listings).
+ * SOURCE: both are rental PropertyTypes confirmed against the live Bridge/Stellar
+ * OData dataset:
+ *   - 'Commercial Lease' — via a live API import on 2026-06-23.
+ *   - 'Residential Lease' (BYO-H4) — via a live read-only query: it returns rental
+ *     records with list_price = monthly rent (LeaseAmountFrequency='Monthly'), while
+ *     'Residential Rental'/'Rental' return nothing and 'Residential' is the FOR-SALE
+ *     type. The prior mapping to 'Residential' matched for-sale inventory.
  *
- * Price note: for commercial lease records, Bridge populates list_price with the
- * monthly rent amount. The BuyerMatchQueryBuilder price ceiling (list_price <= max_price)
- * is therefore correct and does NOT need to be bypassed for commercial lease types.
+ * Price note: for BOTH lease PropertyTypes Bridge populates list_price with the monthly
+ * rent amount, so the BuyerMatchQueryBuilder price ceiling (list_price <= max_price) is
+ * correct and the tenant's monthly budget is emitted as max_price (not bypassed).
  *
  * Senior community gate: is_55_plus_eligible=false is safe for commercial lease tenants.
  * Commercial lease listings do not carry the senior_community_yn flag, so the gate
@@ -128,7 +130,12 @@ class TenantOfferListingCriteriaLoader
             // See class docblock for full normalization table and price-field audit notes.
             $propertyTypes = ['Commercial Lease'];
         } else {
-            $propertyTypes = ['Residential'];
+            // BYO-H4: residential rentals are 'Residential Lease', NOT 'Residential'
+            // (which is the FOR-SALE type). Verified against the live Bridge dataset:
+            // PropertyType 'Residential Lease' returns rental records with list_price =
+            // monthly rent (LeaseAmountFrequency='Monthly'); 'Residential Rental'/'Rental'
+            // return nothing. Using 'Residential' matched for-sale inventory.
+            $propertyTypes = ['Residential Lease'];
         }
 
         // -----------------------------------------------------------------------
@@ -164,18 +171,18 @@ class TenantOfferListingCriteriaLoader
         $preferredCounties = $this->decodeJsonMeta($get('counties'));
 
         // -----------------------------------------------------------------------
-        // Price — tenant criteria use a monthly rental budget, not a sale price.
-        // bridge_properties.list_price stores sale prices ($200k+), so applying
-        // maximum_budget (~$1k-$5k/mo) as a list_price ceiling would filter out
-        // all results. max_price must be null so BuyerMatchQueryBuilder skips the
-        // price ceiling filter entirely for tenant offer listing criteria.
+        // Price — tenant criteria use a monthly rental budget. BYO-H4: both target
+        // PropertyTypes ('Residential Lease' and 'Commercial Lease') store the monthly
+        // rent in Bridge's list_price (verified: LeaseAmountFrequency='Monthly'), so the
+        // BuyerMatchQueryBuilder ceiling (list_price <= max_price) applies correctly.
+        // Emit the parsed monthly budget as max_price (maximum_budget preferred, else
+        // budget); a blank/zero/non-numeric budget yields null so the ceiling is skipped.
+        // The earlier code discarded the budget (max_price = null) because it assumed the
+        // for-sale 'Residential' type, whose list_price is a sale price — no longer true.
         // -----------------------------------------------------------------------
         $maxBudgetRaw = $get('maximum_budget');
         $budgetRaw    = $get('budget');
-        // Kept for potential future use in a tenant-specific scorer, but not
-        // emitted as max_price to avoid misapplication against sale list_price.
-        $this->positiveIntOrNull($this->stripCommas($maxBudgetRaw ?? $budgetRaw)); // parsed but unused as ceiling
-        $maxPrice     = null;
+        $maxPrice     = $this->positiveIntOrNull($this->stripCommas($maxBudgetRaw ?? $budgetRaw));
 
         // -----------------------------------------------------------------------
         // Property sub-types
