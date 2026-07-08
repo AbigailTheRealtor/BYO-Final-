@@ -297,6 +297,10 @@ Route::middleware(['auth', 'match-check'])->group(function () {
     Route::post('/match-check', [\App\Http\Controllers\MatchCheck\MatchCheckController::class, 'lookup'])
         ->middleware('throttle:20,1')
         ->name('match-check.lookup');
+    // git-C14.1 (Post/Redirect/Get): the lookup POST redirects here; this GET renders the
+    // flashed MatchCheckAnalysis (or redirects to the form if the flash was consumed).
+    Route::get('/match-check/result', [\App\Http\Controllers\MatchCheck\MatchCheckController::class, 'result'])
+        ->name('match-check.result');
 });
 
 // Route::post('/notification', [NotificationController::class, 'notification']);

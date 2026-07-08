@@ -4,7 +4,10 @@ namespace App\Http\Controllers\MatchCheck;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MatchCheck\MatchCheckLookupRequest;
+use App\Services\Stellar\MatchCheck\MatchCheckAnalysis;
 use App\Services\Stellar\MatchCheck\MatchCheckOrchestrator;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -49,8 +52,12 @@ class MatchCheckController extends Controller
      * The `listing_key` mode is not a user-typed field; it backs the AMBIGUOUS
      * disambiguation re-submit (git-C14 · C2), resolving the chosen candidate by its
      * globally-unique RESO ListingKey for an exact, no-re-ambiguity result.
+     *
+     * git-C14.1 (Post/Redirect/Get): this POST does not render — it flashes the resulting
+     * MatchCheckAnalysis and redirects to the GET result route, so a browser refresh or
+     * back never re-POSTs (which would re-run the Bridge lookup and burn the throttle).
      */
-    public function lookup(MatchCheckLookupRequest $request, MatchCheckOrchestrator $orchestrator): View
+    public function lookup(MatchCheckLookupRequest $request, MatchCheckOrchestrator $orchestrator): RedirectResponse
     {
         // Laravel 8 FormRequest::validated() returns the full validated array (no key arg).
         $data = $request->validated();
@@ -69,6 +76,29 @@ class MatchCheckController extends Controller
             'listing_key' => $orchestrator->analyzeByListingKey($data['listing_key'], $user),
             default       => $orchestrator->analyzeByAddress(['address' => $data['address']], $user),
         };
+
+        // PRG: carry the analysis across a redirect (session flash) instead of rendering here.
+        return redirect()
+            ->route('match-check.result')
+            ->with('matchCheckAnalysis', $analysis);
+    }
+
+    /**
+     * Render the result of the most recent lookup (git-C14.1 · Post/Redirect/Get).
+     *
+     * The MatchCheckAnalysis is carried across the redirect in the session flash bag. A
+     * direct hit or a refresh — where the one-shot flash has already been consumed — has
+     * nothing to render, so it redirects back to the lookup form rather than erroring or
+     * silently re-running a lookup. Rendering is otherwise identical to the pre-PRG path:
+     * the same MatchCheckAnalysis flows through the same result view.
+     */
+    public function result(Request $request): View|RedirectResponse
+    {
+        $analysis = $request->session()->get('matchCheckAnalysis');
+
+        if (! $analysis instanceof MatchCheckAnalysis) {
+            return redirect()->route('match-check.show');
+        }
 
         return view('match-check.result', ['analysis' => $analysis]);
     }

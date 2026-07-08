@@ -209,7 +209,10 @@ class MatchCheckComplianceTest extends TestCase
             ->andReturn($this->candidateFor($listing));
         $this->bindRealOrchestrator($lookup);
 
+        // PRG (git-C14.1): the lookup POST redirects; follow it so the F9 sweep runs against
+        // the rendered result page. The compliance assertions are otherwise unchanged.
         $response = $this->actingAs($this->user())
+            ->followingRedirects()
             ->post('/match-check', ['mode' => 'mls', 'mls_number' => $listing->listing_id])
             ->assertOk()
             ->assertSee('data-status="blocked"', false)
@@ -238,7 +241,10 @@ class MatchCheckComplianceTest extends TestCase
         $lookup->shouldReceive('searchByAddress')->once()->andReturn($candidates);
         $this->bindRealOrchestrator($lookup);
 
+        // PRG (git-C14.1): the lookup POST redirects; follow it so the F7 sweep runs against
+        // the rendered result page. The compliance assertions are otherwise unchanged.
         $response = $this->actingAs($this->user())
+            ->followingRedirects()
             ->post('/match-check', ['mode' => 'address', 'address' => '1 Ocean Dr'])
             ->assertOk()
             ->assertSee('data-status="ambiguous"', false)

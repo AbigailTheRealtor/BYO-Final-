@@ -58,6 +58,17 @@ class MatchCheckRouteGateTest extends TestCase
     }
 
     /** @test */
+    public function result_route_404s_when_flag_off(): void
+    {
+        // git-C14.1 — the PRG result route lives in the same gated group; invisible while OFF.
+        Config::set('mls_match_check.enabled', false);
+
+        $this->actingAs($this->user())
+            ->get('/match-check/result')
+            ->assertNotFound();
+    }
+
+    /** @test */
     public function guest_is_redirected_to_login_when_flag_on(): void
     {
         Config::set('mls_match_check.enabled', true);

@@ -45,7 +45,9 @@ class MatchCheckControllerTest extends TestCase
         $mock->shouldNotReceive('analyzeByAddress');
         $this->instance(MatchCheckOrchestrator::class, $mock);
 
+        // PRG (git-C14.1): the POST redirects; follow it to render the flashed analysis.
         $this->actingAs($this->user())
+            ->followingRedirects()
             ->post('/match-check', ['mode' => 'mls', 'mls_number' => 'A4567890'])
             ->assertOk()
             ->assertSee('data-status="not_found"', false);
@@ -65,6 +67,7 @@ class MatchCheckControllerTest extends TestCase
         $this->instance(MatchCheckOrchestrator::class, $mock);
 
         $this->actingAs($this->user())
+            ->followingRedirects()
             ->post('/match-check', ['mode' => 'address', 'address' => '123 Ocean Dr, Sarasota, FL 34236'])
             ->assertOk()
             ->assertSee('data-status="not_found"', false);
@@ -84,6 +87,7 @@ class MatchCheckControllerTest extends TestCase
         $this->instance(MatchCheckOrchestrator::class, $mock);
 
         $this->actingAs($this->user())
+            ->followingRedirects()
             ->post('/match-check', ['mode' => 'listing_key', 'listing_key' => 'BRIDGE-KEY-1'])
             ->assertOk()
             ->assertSee('data-status="not_found"', false);
@@ -133,6 +137,7 @@ class MatchCheckControllerTest extends TestCase
         $this->instance(MatchCheckOrchestrator::class, $mock);
 
         $response = $this->actingAs($this->user())
+            ->followingRedirects()
             ->post('/match-check', ['mode' => 'address', 'address' => '1 Ocean Dr'])
             ->assertOk()
             ->assertSee('data-status="ambiguous"', false)
@@ -142,6 +147,58 @@ class MatchCheckControllerTest extends TestCase
         // F7 — no restricted source data ever reaches the rendered HTML.
         $response->assertDontSee('raw_json');
         $response->assertDontSee('PublicRemarks');
+    }
+
+    /** @test */
+    public function lookup_redirects_to_the_result_route_and_flashes_the_analysis(): void
+    {
+        // PRG (git-C14.1): the POST itself is a redirect carrying the analysis in the flash bag.
+        $mock = Mockery::mock(MatchCheckOrchestrator::class);
+        $mock->shouldReceive('analyzeByMlsNumber')->once()->andReturn(MatchCheckAnalysis::notFound());
+        $this->instance(MatchCheckOrchestrator::class, $mock);
+
+        $this->actingAs($this->user())
+            ->post('/match-check', ['mode' => 'mls', 'mls_number' => 'A4567890'])
+            ->assertRedirect(route('match-check.result'))
+            ->assertSessionHas('matchCheckAnalysis');
+    }
+
+    /** @test */
+    public function result_route_without_a_flashed_analysis_redirects_to_the_form(): void
+    {
+        // A direct hit / refresh (flash already consumed) must not error or re-run a lookup.
+        $this->instance(MatchCheckOrchestrator::class, Mockery::mock(MatchCheckOrchestrator::class));
+
+        $this->actingAs($this->user())
+            ->get('/match-check/result')
+            ->assertRedirect(route('match-check.show'));
+    }
+
+    /** @test */
+    public function refreshing_the_result_does_not_rerun_the_lookup(): void
+    {
+        // The orchestrator must be hit exactly once (the POST) — never again on render or refresh.
+        $mock = Mockery::mock(MatchCheckOrchestrator::class);
+        $mock->shouldReceive('analyzeByMlsNumber')->once()->andReturn(MatchCheckAnalysis::notFound());
+        $this->instance(MatchCheckOrchestrator::class, $mock);
+
+        $user = $this->user();
+
+        // POST → redirect (lookup runs once, analysis flashed).
+        $this->actingAs($user)
+            ->post('/match-check', ['mode' => 'mls', 'mls_number' => 'A4567890'])
+            ->assertRedirect(route('match-check.result'));
+
+        // First GET renders from the flash — no second orchestrator call.
+        $this->actingAs($user)
+            ->get('/match-check/result')
+            ->assertOk()
+            ->assertSee('data-status="not_found"', false);
+
+        // Refresh (flash consumed) → back to the form; still no re-lookup (mock is once()).
+        $this->actingAs($user)
+            ->get('/match-check/result')
+            ->assertRedirect(route('match-check.show'));
     }
 
     private function candidate(): PropertyCandidate
