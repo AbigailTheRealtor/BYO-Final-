@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use App\Services\AskAi\AskAiRunnerV2Service;
+use App\Services\AskAi\AskAiViewerAuthorizationService;
+use App\Services\AskAi\AskAiComplianceGuardrailService;
 use App\Models\BuyerAgentAuction;
 use App\Models\LandlordAgentAuction;
 use App\Models\SellerAgentAuction;
@@ -128,10 +130,16 @@ class AskAiListingQuestionTest extends TestCase
      */
     public function test_valid_post_calls_service_and_returns_safe_json(): void
     {
+        // The controller verifies ownership, then hands the runner an 'owner'
+        // viewer scope + requester id so downstream redaction is a no-op for the
+        // authenticated owner. Assert those options reach the runner verbatim.
         $mock = $this->createMock(AskAiRunnerV2Service::class);
         $mock->expects($this->once())
             ->method('run')
-            ->with('seller', $this->sellerId, 'What are the HOA fees?', [])
+            ->with('seller', $this->sellerId, 'What are the HOA fees?', [
+                'viewer_scope'      => AskAiViewerAuthorizationService::SCOPE_OWNER,
+                'requester_user_id' => $this->user->id,
+            ])
             ->willReturn($this->makeReadyResult());
 
         $this->app->instance(AskAiRunnerV2Service::class, $mock);
@@ -146,6 +154,41 @@ class AskAiListingQuestionTest extends TestCase
             'success', 'status', 'answer', 'refusal_message',
             'disclosures', 'source_attribution', 'error', 'follow_up_questions',
         ]);
+    }
+
+    /**
+     * (A2/WF-1) Regression: after ownership passes, the owner reaches the runner
+     * (no fatal), receives a grounded 200 answer, and the runner is invoked with
+     * viewer_scope = SCOPE_OWNER. Guards the missing-import fatal that previously
+     * turned every owner request into a swallowed soft-failure.
+     */
+    public function test_owner_reaches_runner_with_owner_scope_and_gets_answer(): void
+    {
+        $captured = null;
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->expects($this->once())
+            ->method('run')
+            ->willReturnCallback(function ($type, $id, $question, $options) use (&$captured) {
+                $captured = $options;
+                return $this->makeReadyResult();
+            });
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
+
+        $response = $this->postJson('/ask-ai/listing-question', [
+            'listing_type' => 'seller',
+            'listing_id'   => $this->sellerId,
+            'question'     => 'What are the HOA fees?',
+        ]);
+
+        $response->assertOk()->assertJson([
+            'success' => true,
+            'status'  => 'ready',
+            'answer'  => 'The HOA fee is $250/month.',
+        ]);
+
+        $this->assertNotNull($captured, 'The runner was not reached.');
+        $this->assertSame(AskAiViewerAuthorizationService::SCOPE_OWNER, $captured['viewer_scope']);
+        $this->assertSame($this->user->id, $captured['requester_user_id']);
     }
 
     /**
@@ -192,7 +235,9 @@ class AskAiListingQuestionTest extends TestCase
             'success'            => true,
             'status'             => 'ready',
             'answer'             => 'The HOA fee is $250/month.',
-            'disclosures'        => 'AI-generated. Verify independently.',
+            // Production contract: the controller normalizes disclosures to an
+            // array and always includes the educational disclaimer.
+            'disclosures'        => [AskAiComplianceGuardrailService::EDUCATIONAL_DISCLAIMER],
             'source_attribution' => 'Listing data only.',
             'error'              => null,
         ]);
@@ -444,7 +489,8 @@ class AskAiListingQuestionTest extends TestCase
             'status'      => 'insufficient_context',
             'success'     => false,
             'answer'      => 'There isn\'t enough information in this listing to answer that question.',
-            'disclosures' => 'AI-generated. Verify independently.',
+            // Production contract: disclosures is an array containing the disclaimer.
+            'disclosures' => [AskAiComplianceGuardrailService::EDUCATIONAL_DISCLAIMER],
             'error'       => null,
         ]);
 

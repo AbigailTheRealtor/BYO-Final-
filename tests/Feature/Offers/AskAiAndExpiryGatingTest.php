@@ -5,6 +5,7 @@ namespace Tests\Feature\Offers;
 use App\Models\SellerAgentAuction;
 use App\Models\SellerAgentAuctionMeta;
 use App\Models\User;
+use App\Services\AskAi\AskAiRunnerV2Service;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -54,6 +55,42 @@ class AskAiAndExpiryGatingTest extends TestCase
         ]);
 
         $response->assertStatus(403);
+    }
+
+    // ── C1: the owner IS served an answer (not a swallowed soft-failure) ────
+
+    public function test_owner_receives_answer_from_listing_question_endpoint(): void
+    {
+        $owner   = User::factory()->create();
+        $listing = $this->makeSellerOfferListing($owner);
+
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->method('run')->willReturn([
+            'success'        => true,
+            'status'         => 'ready',
+            'final_response' => [
+                'success'             => true,
+                'status'              => 'ready',
+                'answer'              => 'The asking price is $500,000.',
+                'refusal_message'     => null,
+                'disclosures'         => [],
+                'source_attribution'  => null,
+                'follow_up_questions' => [],
+            ],
+        ]);
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
+
+        $response = $this->actingAs($owner)->postJson(route('ask-ai.listing-question'), [
+            'listing_type' => 'seller',
+            'listing_id'   => $listing->id,
+            'question'     => 'What is the asking price?',
+        ]);
+
+        $response->assertOk()->assertJson([
+            'success' => true,
+            'status'  => 'ready',
+            'answer'  => 'The asking price is $500,000.',
+        ]);
     }
 
     // ── C1: view exposes the owner-only Ask AI path only to the owner ───────

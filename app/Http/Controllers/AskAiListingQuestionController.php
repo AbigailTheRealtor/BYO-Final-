@@ -11,6 +11,7 @@ use App\Services\AskAi\AskAiRunnerV2Service;
 use App\Services\AskAi\AskAiRateLimitService;
 use App\Services\AskAi\AskAiUsageLoggerService;
 use App\Services\AskAi\AskAiComplianceGuardrailService;
+use App\Services\AskAi\AskAiViewerAuthorizationService;
 
 class AskAiListingQuestionController extends Controller
 {
@@ -227,6 +228,21 @@ class AskAiListingQuestionController extends Controller
 
         } catch (\Throwable $e) {
             $responseTimeMs = (int) round((microtime(true) - $startTime) * 1000);
+
+            // Surface unexpected runner/controller fatals that would otherwise be
+            // masked by this catch (they are returned to the client as a generic
+            // "could not generate" soft-failure). Log only non-sensitive metadata:
+            // the question is recorded as a hash, never in cleartext, and no answer
+            // or listing context is included.
+            Log::error('AskAi listing-question fatal', [
+                'listing_type'  => $listingType,
+                'listing_id'    => $listingId,
+                'question_hash' => $questionHash,
+                'exception'     => get_class($e),
+                'message'       => $e->getMessage(),
+                'file'          => $e->getFile(),
+                'line'          => $e->getLine(),
+            ]);
 
             try {
                 $this->logger->logListingQuestion([
