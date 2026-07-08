@@ -118,6 +118,26 @@ class AskAiViewerAuthorizationService
     ];
 
     /**
+     * Compliance-restricted listing tokens (C2s). Mirrors SnapshotFactVisibility's
+     * 'restricted' tier and covers the aliases the context builder actually emits
+     * (e.g. 'hoa_fee', 'security_deposit_amount', 'annual_cdd_fee', 'max_rent').
+     * Stripped from context['listing'] for every non-owner scope.
+     *
+     * Matched on whole '_'-delimited key segments (see stripRestrictedComplianceKeys),
+     * NOT raw substrings, so unrelated keys are never caught — e.g. the 'rent' token
+     * matches 'max_rent'/'rent_amount' but not 'current_use' or 'rental_purpose'.
+     */
+    private const RESTRICTED_COMPLIANCE_TOKENS = [
+        'flood_zone', 'flood_zone_code', 'is_in_flood_zone',
+        'security_deposit', 'security_deposit_amount',
+        'hoa', 'hoa_fee', 'max_hoa_fee',
+        'cdd',
+        'rent', 'rental_price', 'min_rent', 'max_rent',
+        'income_requirement', 'income_multiplier',
+        'seller_financing',
+    ];
+
+    /**
      * Resolve the authorization scope of a requester for a listing.
      *
      * @param  int|null $userId       Authenticated requester id, or null for a guest.
@@ -172,6 +192,16 @@ class AskAiViewerAuthorizationService
     public function redactContext(array $context, string $listingType, string $scope): array
     {
         $role = self::CANONICAL_ROLE[strtolower($listingType)] ?? strtolower($listingType);
+
+        // C2s — compliance-restricted listing fields (SnapshotFactVisibility's
+        // 'restricted' tier: flood zone, HOA/CDD, security deposit, rent pricing/
+        // terms, income requirement, seller financing) are surfaced only to the
+        // listing owner. Strip them for every non-owner scope (public AND
+        // authorized) across ALL roles — this runs before the role-specific
+        // applicant handling below so seller/buyer/landlord/tenant are all covered.
+        if ($scope !== self::SCOPE_OWNER && isset($context['listing']) && is_array($context['listing'])) {
+            $context['listing'] = $this->stripRestrictedComplianceKeys($context['listing']);
+        }
 
         if ($role !== 'tenant') {
             return $context;
@@ -240,6 +270,37 @@ class AskAiViewerAuthorizationService
             $lower = strtolower((string) $key);
             foreach ($deniedTokens as $token) {
                 if ($lower === $token || str_contains($lower, $token)) {
+                    unset($fields[$key]);
+                    break;
+                }
+            }
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Strip compliance-restricted listing fields (C2s) using whole-segment token
+     * matching. A key is removed when a RESTRICTED_COMPLIANCE_TOKENS entry equals
+     * the key, or appears as a complete '_'-delimited segment span within it
+     * (prefix 'token_', suffix '_token', or infix '_token_'). Segment matching
+     * (not substring) prevents false positives such as 'current_use' matching the
+     * 'rent' token. Removing an absent key is a no-op.
+     *
+     * @param  array $fields
+     * @return array
+     */
+    private function stripRestrictedComplianceKeys(array $fields): array
+    {
+        foreach (array_keys($fields) as $key) {
+            $lower = strtolower((string) $key);
+            foreach (self::RESTRICTED_COMPLIANCE_TOKENS as $token) {
+                if (
+                    $lower === $token
+                    || str_starts_with($lower, $token . '_')
+                    || str_ends_with($lower, '_' . $token)
+                    || str_contains($lower, '_' . $token . '_')
+                ) {
                     unset($fields[$key]);
                     break;
                 }

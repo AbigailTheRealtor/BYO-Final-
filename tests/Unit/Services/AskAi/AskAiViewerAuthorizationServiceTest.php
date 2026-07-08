@@ -38,6 +38,117 @@ class AskAiViewerAuthorizationServiceTest extends TestCase
         ];
     }
 
+    /**
+     * A listing block mixing C2s compliance-restricted fields (with the aliases the
+     * context builder actually emits) and known-safe public fields, incl. two
+     * false-positive guards ('current_use', 'rental_purpose') that must NOT be caught
+     * by the segment matcher despite containing the 'rent' token as a substring.
+     */
+    private function restrictedListingContext(): array
+    {
+        return [
+            'listing' => [
+                // Restricted (must be stripped for every non-owner scope):
+                'flood_zone_code'                => 'AE',
+                'is_in_flood_zone'               => true,
+                'security_deposit_amount'        => 5000,
+                'hoa_fee'                        => 250,
+                'max_hoa_fee'                    => 400,
+                'annual_cdd_fee'                 => 1200,
+                'max_rent'                       => 3000,
+                'min_rent'                       => 2000,
+                'rent_amount'                    => 2500,
+                'income_requirement'             => 7500,
+                'seller_financing_interest_rate' => 6.5,
+                // Safe public fields (must always survive):
+                'bedrooms'                       => 3,
+                'bathrooms'                      => 2,
+                'city'                           => 'Tampa',
+                'current_use'                    => 'residential',
+                'rental_purpose'                 => 'primary residence',
+            ],
+            'faq_answers' => [],
+        ];
+    }
+
+    /** @return string[] The restricted keys expected to be stripped for non-owners. */
+    private function restrictedKeys(): array
+    {
+        return [
+            'flood_zone_code', 'is_in_flood_zone', 'security_deposit_amount',
+            'hoa_fee', 'max_hoa_fee', 'annual_cdd_fee',
+            'max_rent', 'min_rent', 'rent_amount',
+            'income_requirement', 'seller_financing_interest_rate',
+        ];
+    }
+
+    /** @return string[] Known-safe public keys that must survive redaction. */
+    private function safeKeys(): array
+    {
+        return ['bedrooms', 'bathrooms', 'city', 'current_use', 'rental_purpose'];
+    }
+
+    /**
+     * @dataProvider nonOwnerScopeAndRoleProvider
+     */
+    public function test_restricted_compliance_fields_stripped_for_non_owner(string $role, string $scope): void
+    {
+        $out = $this->svc->redactContext($this->restrictedListingContext(), $role, $scope);
+
+        foreach ($this->restrictedKeys() as $key) {
+            $this->assertArrayNotHasKey(
+                $key,
+                $out['listing'],
+                "Restricted key '{$key}' must be stripped for role={$role} scope={$scope}"
+            );
+        }
+
+        // Safe public fields must survive for non-owners.
+        foreach ($this->safeKeys() as $key) {
+            $this->assertArrayHasKey(
+                $key,
+                $out['listing'],
+                "Safe key '{$key}' must survive for role={$role} scope={$scope}"
+            );
+        }
+    }
+
+    public static function nonOwnerScopeAndRoleProvider(): array
+    {
+        $cases = [];
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $role) {
+            foreach ([
+                AskAiViewerAuthorizationService::SCOPE_PUBLIC,
+                AskAiViewerAuthorizationService::SCOPE_AUTHORIZED,
+            ] as $scope) {
+                $cases["{$role}/{$scope}"] = [$role, $scope];
+            }
+        }
+        return $cases;
+    }
+
+    /**
+     * @dataProvider ownerRoleProvider
+     */
+    public function test_owner_scope_keeps_restricted_compliance_fields(string $role): void
+    {
+        $ctx = $this->restrictedListingContext();
+        $out = $this->svc->redactContext($ctx, $role, AskAiViewerAuthorizationService::SCOPE_OWNER);
+
+        // Owner sees everything, restricted and safe alike — nothing is stripped.
+        $this->assertSame($ctx, $out, "Owner scope must not strip anything for role={$role}");
+    }
+
+    public static function ownerRoleProvider(): array
+    {
+        return [
+            'seller'   => ['seller'],
+            'buyer'    => ['buyer'],
+            'landlord' => ['landlord'],
+            'tenant'   => ['tenant'],
+        ];
+    }
+
     public function test_guest_with_no_user_resolves_to_public(): void
     {
         $this->assertSame(
