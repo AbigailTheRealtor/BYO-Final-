@@ -863,8 +863,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/agent/seller/bid/add/{auctionId}', SellerAgentAuctionBid::class)->name('add_seller_agent_bid');
 
         // Landlord's Agent routes
-        Route::get('/agent/landlord/bid/add/{id}', [LandlordAgentAuctionBidController::class, 'add_bid'])->name('landlord.agent.auction.bid.add');
-        Route::post('/agent/landlord/bid/save', [LandlordAgentAuctionBidController::class, 'save_bid'])->name('landlord.agent.auction.bid.save');
+        // Legacy controller-based add/save bid routes retired (Option A) — superseded by
+        // the Livewire route `agent.landlord.agent.auction.bid` (web.php ~792). The
+        // `add_bid`/`save_bid` controller methods and `hire_landlord_agent/add-bid.blade.php`
+        // view are intentionally left for a post-launch dead-code pass.
 
         // Buyer's Agent routes
         Route::prefix('buyer-agent')->name('buyer_agent.')->group(function () {
