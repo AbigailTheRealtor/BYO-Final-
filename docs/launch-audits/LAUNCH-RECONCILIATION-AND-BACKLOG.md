@@ -42,14 +42,14 @@ All 8 declared baseline commits exist and are ancestors of `HEAD` (`launch-audit
 | CRIT-5 | `destroyCounter` hard-delete IDOR | Fixed | ✅ CLOSED | `SellerCounterBidController.php:68-71` party guard (owner OR bidding agent) |
 | CRIT-6 | Notification "View" 500 (view-counter routes) | **Remaining (Phase 2)** | ✅ **CLOSED** (reconciled) | All 5 `*.view-counter` route names now resolve (`route:list`); `NotificationController.php:68-84` references resolve. **Docs were stale.** |
 | HIGH-1 | Inverted `AgentAuth` role gate | Fixed | ✅ CLOSED | `AgentAuth.php` allowlists `user_type==='agent'`, else redirect |
-| HIGH-5 | Legacy `*CounteredTermsController` IDOR (6 controllers) | "Hardened" (all) | 🟧 **PARTIAL** | Seller/Buyer/Landlord/Tenant + `CounteredTerms.php` controller guarded ✅; **`AgentCounteredTermsController.php` store@28 / update@50 still UNGUARDED** 🔴 — remediation incomplete |
+| HIGH-5 | Legacy `*CounteredTermsController` IDOR (6 controllers) | "Hardened" (all) | ✅ **CLOSED** | Seller/Buyer/Landlord/Tenant + `CounteredTerms.php` guarded ✅; **`AgentCounteredTermsController.php` store@28 / update@50 now party-guarded** (fixed by `e18b55046`, N1) ✅ — all 6 controllers complete |
 | HIGH-7 | Unauth `renew_save` date tampering | Fixed (3 live)/↩︎(1 dead) | ✅ CLOSED | routes `web.php:310-316` `auth`; owner guards `PropertyAuctionController.php:1708`, `BuyerCriteriaAuctionBidController.php:445`, `TenantCriteriaAuctionController.php:726` |
 | HIGH-2 | No "can't bid on own listing" guard (4 roles) | Open | 🔴 OPEN | No `user_id`/`Auth::id()` compare in mount/submit: Buyer `:364/:1022`, Seller `:209/:980`, Tenant `:581/~1292`, Landlord `:667` |
 | HIGH-3 | Duplicate bids allowed (Buyer/Seller/Tenant) | Open | 🔴 OPEN | Unconditional insert Buyer `:1054`, Seller `:991`, Tenant `:1310`; only Landlord `:1458` guards; **no unique index** on `*_agent_auction_bids` |
 | HIGH-4 | Agent Highlights show stale `AgentDefaultProfile` | Open | 🔴 OPEN | `partials/bid_detail_body/buyer.blade.php:301`, `seller.blade.php:249`, `landlord.blade.php:286` read `AgentDefaultProfile`, not bid meta |
 | HIGH-6 | Submitted offers never auto-expire | Open | 🔴 OPEN | `ExpireOffersCommand.php:19` filters native `expires_at`; submit writes meta only (`OfferController.php:1257`); native NULL after draft |
 | HIGH-8/9/10 | Dual create/edit components → parity drift | Open | 🔴 OPEN | Dedicated `*AgentAuctionEdit` orphaned; every edit route resolves to `TenantAgentAuctionEdit` (`web.php:608,651,677`) |
-| HIGH-11 | `BuyerCounteredTermsController@update` writes non-existent `tenant_auction_id` | Open | 🔴 OPEN | `BuyerCounteredTermsController.php:96` still passes `tenant_auction_id`; table FK is `buyer_agent_auction_id` |
+| HIGH-11 | `BuyerCounteredTermsController@update` writes non-existent `tenant_auction_id` | Open | ↩︎ RECLASSIFIED — dead/unreachable | Buggy line still at `BuyerCounteredTermsController.php:96`, **but `@update` is unrouted** — `route:list` maps `buyer/update-counter-terms` → `CounteredTerms@update` (only this controller's `@add`/`@edit` view-renderers are routed). Live `CounteredTerms@update:76-87` writes only valid columns + HIGH-5 party guard. Not user-reachable → **not a launch blocker** (analogous to CRIT-3/4). Optional dead-code cleanup only |
 | HIGH-12 | Accepted-summary PDF cache never invalidated | Open (mitigated) | 🔴 OPEN (not re-verified; mitigated by terms-freeze) | `AcceptedBidSummaryService.php:344-361` regenerate has no caller |
 | HIGH-13 | "Counter Rejected" fires no notification | Open | 🔴 OPEN | `CounterBidRejectedNotification` class exists but 0 dispatch sites |
 | HIGH-14 | "Listing Published/Approved" notification missing (4 roles) | Open | 🔴 OPEN | All 4 approve methods set flag + redirect, no `notify()` |
@@ -67,7 +67,7 @@ All 8 declared baseline commits exist and are ancestors of `HEAD` (`launch-audit
 | ID | Title | Doc status | **Verified status** | Evidence (current code) |
 |---|---|---|---|---|
 | C1 | Offer-listing IDOR (edit+create, 4 roles) | Fixed | ✅ CLOSED | `Concerns/ResolvesOwnedAuction.php:38-74` owner-scoped + 403; wired into all 4 edit (mount+hydrate) + all 4 create; hydrate guard covers all write paths |
-| C2 | Unauth IDOR + restricted leak on `/ask-ai/listing-question` | Mostly | 🟧 PARTIAL | route `web.php:265` `['auth','throttle:ask-ai-api']` ✅; controller `ownsListing()` 403 ✅; **RESTRICTED-key stripping at context assembly NOT wired** (`SnapshotFactVisibility` unused by runner) → runtime probe needed |
+| C2 | Unauth IDOR + restricted leak on `/ask-ai/listing-question` | Mostly | ✅ CLOSED (stripping sub-part) | route `web.php:265` `['auth','throttle:ask-ai-api']` ✅; controller `ownsListing()` 403 ✅; **restricted-field stripping now wired** — `AskAiViewerAuthorizationService::redactContext()` strips the `SnapshotFactVisibility` 'restricted' tier for all non-owner scopes across all 4 roles (fixed by `13a26e1a6`, BYO-C2s) ✅. *(Consumer `*_offer` alias 403 is a separate finding — see WF-1, still open.)* |
 | C3 | Ask-AI widget non-functional (field contract) | Fixed | ✅ CLOSED | `matchmaker-ask-ai.blade.php:40-41` posts `listing_type`/`listing_id`; `detail.blade.php:192-196` passes context; JS fail-safe (M15) at `:95-102` |
 | C4 | Seller Create drops Broker Compensation | Open | 🔴 OPEN (narrowed) | `commission_structure_type` validated `required` (`SellerOfferListing.php:4292`) but **never saved** in create `saveAllMetadata()`; Edit saves it (`SellerOfferListingEdit.php:3677`). Other financing/lease fields ARE saved on create — residual gap is the broker-comp group |
 | H1 | Edit submit validation ≪ Create (4 roles) | Open | 🔴 OPEN | Seller Edit `:3990` validates 1 field; Buyer `:2785` 2-3; Landlord `:3824` thin; Tenant `:3103` manual ~8 |
@@ -110,10 +110,10 @@ All 8 declared baseline commits exist and are ancestors of `HEAD` (`launch-audit
 
 | New ID | Finding | Severity | Why it matters |
 |---|---|---|---|
-| **N1** | `AgentCounteredTermsController` store/update unguarded — HIGH-5 remediation incomplete (6th controller missed) | High | Same IDOR class as the 5 that were fixed; an agent can write/update counter terms on any agent auction |
+| **N1** | `AgentCounteredTermsController` store/update unguarded — HIGH-5 remediation incomplete (6th controller missed) | High | Same IDOR class as the 5 that were fixed; an agent can write/update counter terms on any agent auction. **✅ FIXED by `e18b55046`** (party guard mirrored from Buyer; test `AgentCounteredTermsAuthorizationTest`) |
 | **N2** | CRIT-6 reconciled to CLOSED (docs had it open) | — | Removes an item from the Phase-2 blocker list |
 | **N3** | C4 scope narrowed to the broker-commission group only | — | Reduces effort; other ~financing fields already persist on create |
-| **N4** | C2 restricted-key stripping not wired (route/owner/throttle done) | Medium-High | KB-miss path may still emit restricted keys; needs runtime probe before GA |
+| **N4** | C2 restricted-key stripping not wired (route/owner/throttle done) | Medium-High | KB-miss path may still emit restricted keys; needs runtime probe before GA. **✅ FIXED by `13a26e1a6`** — runtime probe confirmed reachable; strip wired in `redactContext()` for all non-owner scopes; 18 unit tests green |
 
 ---
 
@@ -123,15 +123,15 @@ Only **unresolved** items. Status reflects implementation only (🟩 requires im
 
 | ID | Source | Title | Sev | Status | Launch Blocker | Req. before V1 | Effort | Regression risk | Dependencies |
 |---|---|---|---|---|---|---|---|---|---|
-| N1 | BYA Audit (HIGH-5) | Party-guard `AgentCounteredTermsController` store/update | High | ⬜ | **Yes** | **Yes** | S | Low (mirror existing guard) | none |
+| N1 | BYA Audit (HIGH-5) | Party-guard `AgentCounteredTermsController` store/update | High | 🟩 | ~~Yes~~ **DONE (`e18b55046`)** | — | S | Low (mirror existing guard) | none |
 | BYA-H2 | BYA Audit | Self-bid guard (all 4 roles) | High | ⬜ | Yes | Yes | S | Low | none |
 | BYA-H3 | BYA Audit | Duplicate-bid prevention + unique index (Buyer/Seller/Tenant) | High | ⬜ | Yes | Yes | M | Med (data migration / existing dups) | DB check for existing duplicates |
 | BYA-H4 | BYA Audit | Agent Highlights → read submitted bid meta | High | ⬜ | Yes | Yes | M | Med (display contract) | bid-meta keys present |
 | BYA-H6 | BYA Audit | Mirror offer deadline to native `expires_at` on submit | High | ⬜ | Yes | Yes | S | Low | none |
-| BYA-H11 | BYA Audit | Remove/repair `BuyerCounteredTermsController` non-existent column | High | ⬜ | Yes | Yes | S | Low | overlaps N1 file |
+| BYA-H11 | BYA Audit | Remove/repair `BuyerCounteredTermsController` non-existent column | High | ↩︎ | ~~Yes~~ **No — reclassified dead code** | No | S | Low | `@update` unrouted (dead); live path is `CounteredTerms@update` (clean) |
 | BYA-H8/9/10 | BYA Audit | Create/Edit field+validation parity (consolidate or align) | High | ⬜ | No* | Yes (align), No (consolidate) | M (align) / L (consolidate) | Med | frozen `initializeLimitedService()` untouched |
 | BYO-C4 | BYO Audit | Persist Seller broker-comp (`commission_structure_type` group) on Create | Crit | 🟩 | ~~Yes~~ **DONE (Phase B)** | — | S–M | Low | 6 fields added to Create save/load/draft; round-trip tests green |
-| BYO-C2s | BYO Audit (N4) | Strip RESTRICTED keys at Ask-AI context assembly + runtime probe | High | 🟦 | Yes | Yes | S | Low | runtime/browser probe |
+| BYO-C2s | BYO Audit (N4) | Strip RESTRICTED keys at Ask-AI context assembly + runtime probe | High | 🟩 | ~~Yes~~ **DONE (`13a26e1a6`)** | — | S | Low | probe done; strip wired in `redactContext()` |
 | BYO-H1 | BYO Audit | Edit submit validation parity with Create (4 roles) | High | 🟩 | ~~Yes~~ **DONE (Phase B)** | — | M | Med (draft path kept lenient) | shared {Seller,Landlord}PublishValidation concerns; create==edit verified identical |
 | BYO-H2 | BYO Audit | Declare+save+load waterfront props in Seller/Landlord Edit | High | 🟩 | ~~Yes~~ **DONE (Phase B)** | — | S | Low | Seller via eb2eed4f3; Landlord Edit 4 layers added |
 | BYO-H3 | BYO Audit | Buyer multiselect submit persistence | High | ⬜ | Yes (if confirmed) | Verify | M | Med | runtime verify |
@@ -151,13 +151,13 @@ Only **unresolved** items. Status reflects implementation only (🟩 requires im
 ## 8. Launch-blocker shortlist (verified, Critical+High, security/data-integrity)
 
 1. ~~**BYO-C4** — Seller create broker-comp data loss *(Critical, data integrity)*~~ **✅ CLOSED (Phase B)**
-2. **N1** — `AgentCounteredTermsController` IDOR *(High, access control)*
+2. ~~**N1** — `AgentCounteredTermsController` IDOR *(High, access control)*~~ **✅ CLOSED (`e18b55046`)**
 3. **BYA-H6** — offers never expire *(High, core negotiation workflow)*
 4. **BYA-H2 / BYA-H3** — self-bid + duplicate-bid marketplace integrity *(High)*
 5. **BYA-H4** — consumers shown wrong agent data *(High, product promise)*
-6. **BYO-C2s** — Ask-AI restricted-field stripping *(High, privacy) — In QA*
+6. ~~**BYO-C2s** — Ask-AI restricted-field stripping *(High, privacy)*~~ **✅ CLOSED (`13a26e1a6`)**
 7. ~~**BYO-H1 / BYO-H2** — edit-flow publish-with-blank-required + waterfront edit error *(High, data integrity)*~~ **✅ BOTH CLOSED (Phase B)**
-8. **BYA-H11** — Buyer counter-terms SQL-error path *(High)*
+8. ~~**BYA-H11** — Buyer counter-terms SQL-error path *(High)*~~ **↩︎ RECLASSIFIED — dead/unreachable code (`@update` unrouted), not a launch blocker**
 
 All confirmed **CLOSED** Criticals (CRIT-1/2/5/6, C1, C3) and the reclassified dead-code items are **not** on this list.
 
@@ -202,7 +202,7 @@ Read-only static trace of every workflow across the lifecycle stages. ✅ wired 
 | Bid edit — notify | 🔴 Seller none / Buyer wrong type; ✅ Landlord/Tenant | HIGH-15 |
 | Bid withdraw | 🔴 Tenant-only, no notify | HIGH-18 |
 | Counter — modern (Offer engine) | ✅ party-checked + state machine | `OfferPermissionService:63`, `OfferStateMachineService:32` |
-| Counter — legacy AgentCounteredTerms | 🔴 **unguarded** | N1 |
+| Counter — legacy AgentCounteredTerms | ✅ party-guarded (`e18b55046`, N1) | store@28/update@50 owner-or-bidder guard |
 | Accept | ✅ party-checked; ✅ AcceptedBidSummary created | `OfferController:210`; summary services |
 | Reject/decline | ✅ party-checked; 🔴 no `CounterBidRejectedNotification` | HIGH-13 |
 | **Expiration** | 🔴 **offers NEVER expire** | HIGH-6 — `OfferController:1257` meta-only; `ExpireOffersCommand:17` filters native NULL |
@@ -248,7 +248,7 @@ Read-only static trace of every workflow across the lifecycle stages. ✅ wired 
 ### Updated launch-blocker shortlist (supersedes §8 — security + data-integrity + broken core workflows)
 
 1. ~~**BYO-C4** — Seller create broker-comp data loss *(Critical)*~~ **✅ CLOSED (Phase B)**
-2. **N1** — `AgentCounteredTermsController` IDOR *(High)*
+2. ~~**N1** — `AgentCounteredTermsController` IDOR *(High)*~~ **✅ CLOSED (`e18b55046`)**
 3. ~~**WF-3** — unscoped `deleteDraft` cross-user data destruction *(High, security — NEW)*~~ **✅ CLOSED (Pass M-B)**
 4. **BYA-H6** — offers never expire (breaks whole negotiation loop) *(High)*
 5. **WF-1** — Ask AI 403 for all consumers (closed-but-broken) *(High — NEW)*
@@ -257,8 +257,8 @@ Read-only static trace of every workflow across the lifecycle stages. ✅ wired 
 8. **BYA-H4** — consumers shown wrong agent data *(High)*
 9. ~~**BYO-H1 / BYO-H2** — edit publishes blank required fields / waterfront edit crash *(High)*~~ **✅ BOTH CLOSED (Phase B)**
 10. **BYO-H4** — tenant rentals-vs-sales (Tenant scope confirmed live) *(High)*
-11. **BYA-H11** — Buyer counter-terms SQL-error path *(High)*
-12. **BYO-C2s** — Ask-AI restricted-field stripping *(High — In QA)*
+11. ~~**BYA-H11** — Buyer counter-terms SQL-error path *(High)*~~ **↩︎ RECLASSIFIED — dead/unreachable (`@update` unrouted), not a launch blocker**
+12. ~~**BYO-C2s** — Ask-AI restricted-field stripping *(High)*~~ **✅ CLOSED (`13a26e1a6`)**
 13. ~~**WF-4 / WF-6** — draft view leak + legacy-route IDOR *(Med-High, security — verify)*~~ **✅ BOTH CLOSED** (WF-6 Pass M-A, WF-4 Pass M-B)
 
 ---
@@ -270,3 +270,4 @@ Read-only static trace of every workflow across the lifecycle stages. ✅ wired 
 - **2026-06-28 (1)** — **WF-3 🟩 and WF-2 🟩 CLOSED (Pass M-B, owner-approved).** WF-3: ownership gate on all 8 `deleteDraft()` + BYA Buyer wrong-table fix (DB-backed test passes). WF-2: owner-scoped reversible archive/republish (`is_archived`) made archive-aware across **every public surface** — 9 discovery gates, all 8 by-ID/detail/view actions (owner-aware `abort(404)`), and the tenant author/profile multi-tab; owner retains visibility (My Listings + own detail); bids/summaries/history preserved. §10 + §11 shortlist updated. **Required remaining: 12** (was 15 — WF-6/WF-3/WF-2 closed). Readiness: **BYA ≈64%, BYO ≈61%.** See Master Roadmap change log 2026-06-28 (1) for the full file-level detail.
 - **2026-06-28 (2)** — **WF-4 🟩 CLOSED — doc reconciled to code (recovery audit).** A recovery audit of an interrupted session found the WF-4 draft/pending view-leak guard was already implemented and tested in code but still tracked open here. The owner-only guard (`abort(404)` when `!is_approved`/`is_draft` and viewer ≠ owner) ships on **all 8** by-ID detail actions (bundled with the WF-2 archive guard), with CI-ready test `test_wf4_…`. Updated the §10 WF-4 row and the §11 shortlist. **Required remaining: 11** (WF-6/WF-3/WF-2/WF-4 closed); Phase A (security close-out) complete. Documentation only — no application code modified.
 - **2026-06-29 (1)** — **Phase B 🟩 COMPLETE — BYO-C4 + BYO-H2 + BYO-H1 (Seller/Landlord UI parity).** **BYO-C4:** Seller Create now persists the 6 `commission_structure_type*` broker-comp fields (save/load/draft), mirroring Edit — closes the silent broker-comp drop. **BYO-H2:** Landlord Edit `water_frontage`/`waterfront_feet` added across all 4 layers (Seller Edit was already fixed by `eb2eed4f3`). **BYO-H1:** create/edit publish-validation parity via shared `OfferListing/Concerns/{Seller,Landlord}PublishValidation` (single source — create==edit rule sets verified byte-identical); Edit publish enforces required fields, drafts stay lenient. Frozen `initializeLimitedService()` untouched; no duplicate validators. **Tests:** `CreateEditParityRegressionTest` 41/41 green (fixtures updated to seed required fields); full Offers+ListingImport = 53 failed/415 passed vs 58/410 baseline (net −5 failures), **zero** failures in the offer-listing domain (remaining are pre-existing offer-negotiation/env). **Required remaining: 8** (7/15 closed); Phases A + B complete. See Master Roadmap change log 2026-06-29 (1) for file-level detail.
+- **2026-07-08 (1)** — **N1 🟩 + BYO-C2s 🟩 CLOSED; BYA-H11 ↩︎ RECLASSIFIED (docs reconciled to code).** **N1:** `AgentCounteredTermsController` store/update now carry the owner-or-bidding-agent party guard (mirrors Buyer/HIGH-5), fixed by **`e18b55046`**; focused test `AgentCounteredTermsAuthorizationTest` added. This also completes **HIGH-5** (all 6 legacy CounteredTerms controllers now guarded). **BYO-C2s:** a runtime probe confirmed the `SnapshotFactVisibility` 'restricted' tier reached the assembled Ask-AI context for non-owner viewers (`redactContext()` did not strip it); fixed by **`13a26e1a6`** — `redactContext()` now strips restricted compliance fields (flood/HOA/CDD/deposit/rent/income-requirement/seller-financing) for every non-owner scope across all 4 roles, via whole-segment token matching; owner scope unchanged; 18 unit tests green, no regressions vs baseline (+12/−0). **BYA-H11:** reclassified **dead/unreachable** — the buggy `tenant_auction_id` write is in `BuyerCounteredTermsController@update`, which is **unrouted** (`route:list`: `buyer/update-counter-terms` → `CounteredTerms@update`, which writes only valid columns + party guard). Not user-reachable → **removed from the launch-blocker list** (optional dead-code cleanup only). **Verified launch blockers remaining: 6** — BYA-H6, WF-1, BYA-H2, BYA-H3, BYA-H4, BYO-H4. Documentation only — no application code modified in this pass (the N1/C2s code changes were committed separately in `e18b55046` / `13a26e1a6`).
