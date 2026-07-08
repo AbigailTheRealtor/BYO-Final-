@@ -30,8 +30,9 @@ use Illuminate\View\View;
  *   disambiguation re-submit) listing_key modes; the Buyer/Tenant intent is auto-selected
  *   inside the orchestrator, so there is deliberately no Seller/Landlord variant of this
  *   surface (owner §7.5). Free-text address lookup uses the orchestrator's baseline
- *   whole-string match for now; robust, locality-preserving address resolution (C1) is
- *   deferred to its own slice (git-C14.2) — see the TODO on lookup().
+ *   whole-string match for now; robust, locality-preserving address resolution (C1) is a
+ *   DELIBERATE POST-LAUNCH deferral (git-C14.2), not a pending pre-launch task — see the TODO
+ *   on lookup() and docs/match-check-phase4-git-c14.2-address-resolution-provider-eval.md.
  */
 class MatchCheckController extends Controller
 {
@@ -63,14 +64,21 @@ class MatchCheckController extends Controller
         $data = $request->validated();
         $user = $request->user();
 
-        // TODO (git-C14.2 — DEFERRED): free-text address lookup passes the whole string to the
-        // orchestrator's forgiving substring match. That is SAFE — an address that does not match a
-        // stored record yields NOT_FOUND — but it misses real listings whose stored address differs
-        // in its city/state/ZIP tail (the original C1 gap). Proper address resolution
+        // TODO (git-C14.2 — DEFERRED POST-LAUNCH): free-text address lookup passes the whole string
+        // to the orchestrator's forgiving substring match. That is SAFE — an address that does not
+        // match a stored record yields NOT_FOUND — but it misses real listings whose stored address
+        // differs in its city/state/ZIP tail (the original C1 gap). Proper address resolution
         // (parsing/geocoding with a LOCALITY-PRESERVING lookup, so a street match can never silently
         // score a wrong-city listing) needs its own slice. The heuristic street-term parser explored
         // for C1 was reverted here: dropping city/state risked a confident wrong-city SCORED result,
         // a worse failure mode than the baseline NOT_FOUND.
+        //
+        // DECISION (2026-07-08, owner-signed): this is a deliberate post-launch enhancement, not a
+        // pending pre-launch task. For launch we add NO Google Geocoding here, use NO public
+        // Nominatim in production, and keep this safe NOT_FOUND baseline. Provider evaluation and
+        // future options (paid OSM-backed geocoder e.g. LocationIQ/Geoapify, libpostal, or a full
+        // Nominatim/Photon/Leaflet stack) are recorded in
+        // docs/match-check-phase4-git-c14.2-address-resolution-provider-eval.md.
         $analysis = match ($data['mode']) {
             'mls'         => $orchestrator->analyzeByMlsNumber($data['mls_number'], $user),
             'listing_key' => $orchestrator->analyzeByListingKey($data['listing_key'], $user),
