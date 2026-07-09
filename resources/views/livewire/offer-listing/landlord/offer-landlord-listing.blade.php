@@ -2854,9 +2854,9 @@
                 const wrapper = input.closest('.input-cover');
                 if (!wrapper) return;
                 if (input.type === 'file') return;
-                if (wrapper.querySelector('.data-icon-rendered')) return;
+                if (wrapper.querySelector('.input-icon')) return;
                 const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass} data-icon-rendered`;
+                icon.className = `input-icon ${iconClass}`;
                 wrapper.insertBefore(icon, wrapper.firstChild);
             });
         }
@@ -2867,6 +2867,7 @@
             var _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
 
             addIconsToInputs();
+            setTimeout(addIconsToInputs, 200);
 
             let newServiceType = 'full_service';
 

@@ -2591,9 +2591,9 @@ $tenantPays = [
                 const wrapper = input.closest('.input-cover');
                 if (!wrapper) return;
                 if (input.type === 'file') return;
-                if (wrapper.querySelector('.data-icon-rendered')) return;
+                if (wrapper.querySelector('.input-icon')) return;
                 const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass} data-icon-rendered`;
+                icon.className = `input-icon ${iconClass}`;
                 wrapper.insertBefore(icon, wrapper.firstChild);
             });
         }
@@ -2624,6 +2624,7 @@ $tenantPays = [
             var _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
 
             addIconsToInputs();
+            setTimeout(addIconsToInputs, 200);
 
             // Bypass throttle when #non_negotiable_amenities was freshly recreated by wire:key
             // (wire:key re-creates the element when property_type changes; it will have no select2-hidden-accessible)

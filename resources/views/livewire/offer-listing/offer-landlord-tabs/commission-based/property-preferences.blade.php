@@ -17,6 +17,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-map-pin"></i>
         <input type="text" id="landlord-offer-street-address" wire:model="address"
             class="form-control has-icon" data-icon="fa-solid fa-map-pin"
             placeholder="Enter street address (e.g., 123 Main Street)" required
@@ -32,6 +33,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-door-open"></i>
         <input type="text" wire:model="unit_address"
             class="form-control has-icon" data-icon="fa-solid fa-door-open"
             placeholder="e.g., Apt 4B, Suite 200 (optional)"
@@ -56,6 +58,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover position-relative">
+        <i class="input-icon fa-solid fa-city"></i>
         <input type="text" wire:model.live.debounce.300ms="property_city"
             wire:keydown.enter.prevent="selectPropertyCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementPropertyCityHighlight()"
@@ -95,6 +98,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-flag-usa"></i>
         <input type="text" wire:model="property_state" 
             class="form-control has-icon @error('property_state') is-invalid @enderror" 
             data-icon="fa-solid fa-flag-usa"
@@ -114,6 +118,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-map-pin"></i>
         <input type="text" wire:model="property_zip" 
             class="form-control has-icon @error('property_zip') is-invalid @enderror" 
             data-icon="fa-solid fa-map-pin"
@@ -134,6 +139,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-map"></i>
         <input type="text" wire:model="property_county" 
             class="form-control has-icon @error('property_county') is-invalid @enderror" 
             data-icon="fa-solid fa-map"
@@ -154,6 +160,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover position-relative">
+            <i class="input-icon fa-solid fa-flag-usa"></i>
             <input type="text" wire:model="state" class="form-control has-icon" data-icon="fa-solid fa-flag-usa"
                 required wire:keydown.arrow-up="decrementHighlight('state')"
                 wire:keydown.arrow-down="incrementHighlight('state')"
@@ -187,6 +194,7 @@
         </span>
 
         <div class="input-cover position-relative">
+            <i class="input-icon fa-solid fa-map-pin"></i>
             <input type="text" wire:model="zip_code" wire:keydown.enter.prevent="selectZipCodeSuggestion()"
                 wire:keydown.arrow-up.prevent="decrementHighlight('ZipCode')"
                 wire:keydown.arrow-down.prevent="incrementHighlight('ZipCode')"
@@ -240,6 +248,7 @@
     </span>
 
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-building"></i>
         <select wire:model="property_type" id="property_type" class="form-control has-icon"
             data-icon="fa-solid fa-building" required>
             <option value="">Select</option>
@@ -260,6 +269,7 @@
     </span>
 
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-home"></i>
 
         <select wire:model="property_items" class="form-control has-icon" data-icon="fa-solid fa-home"
             @if (!$property_type) disabled @endif required>
@@ -308,6 +318,7 @@
     </span>
 
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-screwdriver-wrench"></i>
         <select wire:model="condition_prop" id="condition_prop" class="form-control has-icon"
             data-icon="fa-solid fa-screwdriver-wrench" required>
             <option value="">Select</option>
@@ -323,6 +334,7 @@
 {{-- <div class="form-group other_property_condition d-none">
     <label class="fw-bold">Other Property Condition:</label>
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-home"></i>
         <input type="text" wire:model="other_property_condition" class="form-control has-icon"
             data-icon="fa-solid fa-home">
     </div>
@@ -340,6 +352,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-bed"></i>
             <select wire:model="bedrooms" id="bedrooms" class="form-control has-icon" data-icon="fa-solid fa-bed"
                 required>
                 <option value="">Select</option>
@@ -356,6 +369,7 @@
     <div class="form-group">
         {{-- <label class="fw-bold">Minimum Bedrooms Needed:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-bed"></i>
             <input type="number" wire:model="other_bedrooms" class="form-control has-icon"
                 data-icon="fa-solid fa-bed" placeholder="Enter number of bedrooms (e.g., 11)">
         </div>
@@ -378,6 +392,7 @@
         </span>
 
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-bath"></i>
             <select wire:model="bathrooms" id="bathrooms" class="form-control has-icon" data-icon="fa-solid fa-bath"
                 required>
                 <option value="">Select</option>
@@ -392,6 +407,7 @@
     <!-- Other Bathrooms Input -->
     <div class="form-group other_bathrooms">
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-bath"></i>
             <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
                 data-icon="fa-solid fa-bath" placeholder="Enter number of bathrooms (e.g., 11)">
         </div>
@@ -410,6 +426,7 @@
         </span>
 
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-ruler"></i>
             <input type="text" wire:model="minimum_heated_square" class="form-control has-icon"
                 data-icon="fa-solid fa-ruler" placeholder="Enter heated square footage (e.g., 1000)" required
                 data-error-id="minimum_heated_square_error" oninput="validateInput(this)"
@@ -429,6 +446,7 @@
         </span>
 
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-ruler"></i>
             <input type="text" wire:model="minimum_leaseable" class="form-control has-icon"
                 data-icon="fa-solid fa-ruler" placeholder="Enter net leasable square footage (e.g., 1500)" required
                 data-error-id="minimum_leaseable_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
@@ -447,6 +465,7 @@
     </span>
 
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-ruler"></i>
         <input type="text" wire:model="total_square_feet" class="form-control has-icon"
             data-icon="fa-solid fa-ruler" placeholder="Enter total square footage (e.g., 2000)"
             data-error-id="total_square_feet_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
@@ -462,6 +481,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-ruler"></i>
         <select wire:model="sqft_heated_source" class="form-control has-icon" data-icon="fa-solid fa-ruler">
             <option value="">Select</option>
             <option value="Appraisal">Appraisal</option>
@@ -483,6 +503,7 @@
     </span>
 
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-ruler-combined"></i>
         <select wire:model="total_acreage" id="total_acreage" class="form-control has-icon"
             data-icon="fa-solid fa-ruler-combined">
             <option value="">Select</option>
@@ -516,6 +537,7 @@
 <div class="form-group" id="other_appliances"
     style="display: {{ (is_array($this->appliances) && in_array('Other', $this->appliances)) ? 'block' : 'none' }}">
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-plug"></i>
         <input type="text" wire:model="other_appliances" class="form-control has-icon"
             data-icon="fa-solid fa-plug"
             placeholder="Enter appliances (e.g., Air fryer oven, Induction cooktop, Double oven)"
@@ -534,6 +556,7 @@
         </span>
 
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-couch"></i>
             <select wire:model="tenant_require" id="tenant_require" class="form-control has-icon"
                 data-icon="fa-solid fa-couch">
                 <option value="">Select</option>
@@ -557,6 +580,7 @@
         </span>
 
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-warehouse"></i>
             <select wire:model="carport_needed" id="carport-needed" class="form-control has-icon"
                 data-icon="fa-solid fa-warehouse">
                 <option value="">Select</option>
@@ -571,6 +595,7 @@
     <div class="form-group" id="other-carport-needed">
         <label class="fw-bold">Number of Carport Spaces:</label>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-warehouse"></i>
             <input type="number" min="1" wire:model="other_carport_needed" class="form-control has-icon"
                 data-icon="fa-solid fa-warehouse" placeholder="Enter number of carport spaces (e.g., 1) ">
         </div>
@@ -590,6 +615,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-warehouse"></i>
             <select wire:model="garage_needed" class="form-control has-icon" data-icon="fa-solid fa-warehouse">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
@@ -602,6 +628,7 @@
         <div class="form-group" id="other-garage-needed">
             <label class="fw-bold">Number of Garage Spaces:</label>
             <div class="input-cover">
+                <i class="input-icon fa-solid fa-warehouse"></i>
                 <input type="number" min="1" wire:model="other_garage_needed" class="form-control has-icon"
                     data-icon="fa-solid fa-warehouse" placeholder="Enter number of garage spaces (e.g., 2)">
             </div>
@@ -635,6 +662,7 @@
         style="{{ collect($garage_parking_spaces_option)->contains('Other') ? '' : 'display: none;' }}">
         {{-- <label class="fw-bold">Other Garage/Parking Features:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-warehouse"></i>
             <input type="text" wire:model="other_parking_space_wrapper" class="form-control has-icon"
                 data-icon="fa-solid fa-warehouse"
                 placeholder="Enter garage/parking features (e.g., Tandem parking, Gated entry, Shared driveway)">
@@ -651,6 +679,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-car"></i>
         <textarea wire:model="parking_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-car"
             placeholder="Enter parking terms (e.g., 1 assigned covered space included, 2 guest spaces available)"></textarea>
@@ -665,6 +694,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-water"></i>
         <select wire:model="waterfront" id="waterfront" class="form-control has-icon"
             data-icon="fa-solid fa-water">
             <option value="">Select</option>
@@ -693,6 +723,7 @@
 
 <div class="form-group" style="display: {{ (is_array($water_access ?? []) && in_array('Other', $water_access ?? [])) ? 'block' : 'none' }};" id="other_water_access_wrapper">
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-water"></i>
         <input type="text" wire:model="other_water_access" class="form-control has-icon"
             data-icon="fa-solid fa-water" placeholder="Enter title (e.g., example)">
     </div>
@@ -716,6 +747,7 @@
 </div>
 <div class="form-group" style="display: {{ (is_array($water_view ?? []) && in_array('Other', $water_view ?? [])) ? 'block' : 'none' }};" id="other_water_view_wrapper">
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-binoculars"></i>
         <input type="text" wire:model="other_water_view" class="form-control has-icon"
             data-icon="fa-solid fa-binoculars" placeholder="Enter title (e.g., example)">
     </div>
@@ -729,6 +761,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-water"></i>
         <input type="text" wire:model="water_frontage" class="form-control has-icon"
             data-icon="fa-solid fa-water"
             placeholder="Enter Water Frontage (e.g., Intracoastal Waterway, Gulf/Ocean, Lake)">
@@ -743,6 +776,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-ruler-horizontal"></i>
         <input type="number" wire:model="waterfront_feet" class="form-control has-icon"
             data-icon="fa-solid fa-ruler-horizontal"
             placeholder="Enter Waterfront Feet (e.g., 75)" min="0">
@@ -767,6 +801,7 @@
 </div>
 <div class="form-group" style="display: {{ (is_array($interior_features ?? []) && in_array('Other', $interior_features ?? [])) ? 'block' : 'none' }};" id="other_interior_features_wrapper">
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-house"></i>
         <input type="text" wire:model="other_interior_features" class="form-control has-icon"
             data-icon="fa-solid fa-house" placeholder="Enter title (e.g., example)">
     </div>
@@ -784,6 +819,7 @@
         </span>
 
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-water"></i>
             <select wire:model="pool_needed" id="pool_needed" class="form-control has-icon"
                 data-icon="fa-solid fa-water">
                 <option value="">Select</option>
@@ -834,6 +870,7 @@
 <!-- Other Preferences Input (Hidden or Visible based on Livewire state) -->
 <div class="form-group" id="other_preferences" style="display: {{ is_array($view_preference ?? []) && in_array('Other', $view_preference ?? []) ? 'block' : 'none' }}">
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-tree"></i>
         <input type="text" wire:model="other_preferences" class="form-control has-icon"
             data-icon="fa-solid fa-tree" placeholder="Enter view (e.g., Lake, Desert, Courtyard)">
     </div>
@@ -851,6 +888,7 @@
         </span>
 
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-users"></i>
             <select wire:model="leasing_55_plus" id="purchasing_props" class="form-control has-icon"
                 data-icon="fa-solid fa-users">
                 <option value="">Select</option>
@@ -899,6 +937,7 @@
 
     {{-- <label class="fw-bold">Non-Negotiable Amenities and Property Features:</label> --}}
     <div class="input-cover">
+        <i class="input-icon fa-solid fa-lock"></i>
         <input type="text" wire:model="other_non_negotiable_amenities" class="form-control has-icon"
             data-icon="fa-solid fa-lock"
             @if ($property_type === 'Residential Property') placeholder="Enter amenities or property features (e.g., Sauna, EV charger, Outdoor kitchen)"
@@ -920,6 +959,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-calendar"></i>
             <input type="number" wire:model="year_built" class="form-control has-icon"
                 data-icon="fa-solid fa-calendar" placeholder="Enter year built (e.g., 1998)" min="1800" max="{{ date('Y') }}">
         </div>
@@ -934,6 +974,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-ruler"></i>
             <input type="text" wire:model.defer="lot_dimensions" class="form-control has-icon"
                 data-icon="fa-solid fa-ruler" placeholder="Enter lot dimensions (e.g., 100x200)">
         </div>
@@ -959,6 +1000,7 @@
     </div>
     <div class="form-group" id="other_roof_type_landlord_res_wrapper" style="{{ is_array($roof_type) && in_array('Other', $roof_type) ? '' : 'display:none;' }}">
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-pen"></i>
             <input type="text" wire:model.defer="other_roof_type" class="form-control has-icon"
                 data-icon="fa-solid fa-pen" placeholder="Enter roof type (e.g., Foam, TPO)">
         </div>
@@ -983,6 +1025,7 @@
     </div>
     <div class="form-group" id="other_exterior_construction_landlord_res_wrapper" style="{{ is_array($exterior_construction) && in_array('Other', $exterior_construction) ? '' : 'display:none;' }}">
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-pen"></i>
             <input type="text" wire:model.defer="other_exterior_construction" class="form-control has-icon"
                 data-icon="fa-solid fa-pen" placeholder="Enter exterior construction (e.g., Fiber cement, SIPs)">
         </div>
@@ -1007,6 +1050,7 @@
     </div>
     <div class="form-group" id="other_foundation_landlord_res_wrapper" style="{{ is_array($foundation) && in_array('Other', $foundation) ? '' : 'display:none;' }}">
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-pen"></i>
             <input type="text" wire:model.defer="other_foundation" class="form-control has-icon"
                 data-icon="fa-solid fa-pen" placeholder="Enter foundation type (e.g., Helical pier, Pressure-treated wood)">
         </div>
@@ -1032,6 +1076,7 @@
     <div class="form-group" style="display: {{ (is_array($heating_fuel ?? []) && in_array('Other', $heating_fuel ?? [])) ? 'block' : 'none' }};" id="other_heating_fuel_wrapper">
         {{-- <label class="fw-bold">Other Heating / Fuel:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-fire"></i>
             <input type="text" wire:model="other_heating_fuel" class="form-control has-icon"
                 data-icon="fa-solid fa-fire" placeholder="Enter heating/fuel type (e.g., Wood pellet, Geothermal)">
         </div>
@@ -1057,6 +1102,7 @@
     <div class="form-group" style="display: {{ (is_array($air_conditioning ?? []) && in_array('Other', $air_conditioning ?? [])) ? 'block' : 'none' }};" id="other_air_conditioning_wrapper">
         {{-- <label class="fw-bold">Other Air Conditioning:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-snowflake"></i>
             <input type="text" wire:model="other_air_conditioning" class="form-control has-icon"
                 data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Evaporative cooler, Geo-thermal)">
         </div>
@@ -1081,6 +1127,7 @@
     </div>
     <div class="form-group" style="display: {{ (is_array($water ?? []) && in_array('Other', $water ?? [])) ? 'block' : 'none' }};" id="other_water_wrapper">
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-droplet"></i>
             <input type="text" wire:model="other_water" class="form-control has-icon"
                 data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater collection, Shared well)">
         </div>
@@ -1106,6 +1153,7 @@
     <div class="form-group" style="display: {{ (is_array($sewer ?? []) && in_array('Other', $sewer ?? [])) ? 'block' : 'none' }};" id="other_sewer_wrapper">
         {{-- <label class="fw-bold">Other Sewer:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-water"></i>
             <input type="text" wire:model="other_sewer" class="form-control has-icon"
                 data-icon="fa-solid fa-water" placeholder="Enter sewer type (e.g., Cesspool, Composting)">
         </div>
@@ -1131,6 +1179,7 @@
     <div class="form-group" style="display: {{ (is_array($property_utilities ?? []) && in_array('Other', $property_utilities ?? [])) ? 'block' : 'none' }};" id="other_property_utilities_wrapper">
         {{-- <label class="fw-bold">Other Utilities:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-bolt"></i>
             <input type="text" wire:model="other_property_utilities" class="form-control has-icon"
                 data-icon="fa-solid fa-bolt" placeholder="Enter utilities (e.g., Fiber internet, Solar power, Generator hookup)">
         </div>
@@ -1156,6 +1205,7 @@
     <div class="form-group" style="display: {{ (is_array($laundry_features ?? []) && in_array('Other', $laundry_features ?? [])) ? 'block' : 'none' }};" id="other_laundry_features_wrapper">
         {{-- <label class="fw-bold">Other Laundry Features:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-shirt"></i>
             <input type="text" wire:model="other_laundry_features" class="form-control has-icon"
                 data-icon="fa-solid fa-shirt" placeholder="Enter laundry features (e.g., In-unit, Coin laundry, Laundry room)">
         </div>
@@ -1181,6 +1231,7 @@
     <div class="form-group" style="display: {{ (is_array($floor_covering ?? []) && in_array('Other', $floor_covering ?? [])) ? 'block' : 'none' }};" id="other_floor_covering_wrapper">
         {{-- <label class="fw-bold">Other Floor Covering:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-layer-group"></i>
             <input type="text" wire:model="other_floor_covering" class="form-control has-icon"
                 data-icon="fa-solid fa-layer-group" placeholder="Enter floor covering (e.g., Hardwood, Tile, Vinyl plank)">
         </div>
@@ -1205,6 +1256,7 @@
     </div>
     <div class="form-group" style="display: {{ (is_array($security_features ?? []) && in_array('Other', $security_features ?? [])) ? 'block' : 'none' }};" id="other_security_features_wrapper">
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-shield-halved"></i>
             <input type="text" wire:model="other_security_features" class="form-control has-icon"
                 data-icon="fa-solid fa-shield-halved" placeholder="Enter security features (e.g., Deadbolt, Security camera, Intercom)">
         </div>
@@ -1223,6 +1275,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-calendar"></i>
             <input type="number" wire:model="year_built" class="form-control has-icon"
                 data-icon="fa-solid fa-calendar" placeholder="Enter year built (e.g., 1998)" min="1800" max="{{ date('Y') }}">
         </div>
@@ -1237,6 +1290,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-map"></i>
             <input type="text" wire:model="zoning" class="form-control has-icon"
                 data-icon="fa-solid fa-map" placeholder="Enter zoning code (e.g., C-1, B-2)">
         </div>
@@ -1251,6 +1305,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-building"></i>
             <input type="number" wire:model="total_buildings" class="form-control has-icon"
                 data-icon="fa-solid fa-building" placeholder="Enter total number of buildings (e.g., 3)" min="0">
         </div>
@@ -1265,6 +1320,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-hashtag"></i>
             <input type="number" wire:model="total_units_on_property" class="form-control has-icon"
                 data-icon="fa-solid fa-hashtag" placeholder="Enter total units on property (e.g., 24)" min="0">
         </div>
@@ -1279,6 +1335,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-ruler-combined"></i>
             <input type="number" wire:model="office_retail_sqft" class="form-control has-icon"
                 data-icon="fa-solid fa-ruler-combined" placeholder="Enter office or retail space sqft (e.g., 5000)" min="0">
         </div>
@@ -1293,6 +1350,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-ruler-combined"></i>
             <input type="number" wire:model="flex_space_sqft" class="form-control has-icon"
                 data-icon="fa-solid fa-ruler-combined" placeholder="Enter flex space sqft (e.g., 2500)" min="0">
         </div>
@@ -1319,6 +1377,7 @@
     <div class="form-group" style="display: {{ (is_array($road_surface_type ?? []) && in_array('Other', $road_surface_type ?? [])) ? 'block' : 'none' }};" id="other_road_surface_type_wrapper">
         {{-- <label class="fw-bold">Other Road Surface Type:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-road"></i>
             <input type="text" wire:model="other_road_surface_type" class="form-control has-icon"
                 data-icon="fa-solid fa-road" placeholder="Enter road surface type (e.g., Cobblestone, Shell)">
         </div>
@@ -1344,6 +1403,7 @@
     <div class="form-group" style="display: {{ (is_array($property_utilities ?? []) && in_array('Other', $property_utilities ?? [])) ? 'block' : 'none' }};" id="other_property_utilities_wrapper">
         {{-- <label class="fw-bold">Other Utilities:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-bolt"></i>
             <input type="text" wire:model="other_property_utilities" class="form-control has-icon"
                 data-icon="fa-solid fa-bolt" placeholder="Enter utilities (e.g., Fiber internet, Solar power, Generator hookup)">
         </div>
@@ -1368,6 +1428,7 @@
     </div>
     <div class="form-group" style="display: {{ (is_array($water ?? []) && in_array('Other', $water ?? [])) ? 'block' : 'none' }};" id="other_water_wrapper">
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-droplet"></i>
             <input type="text" wire:model="other_water" class="form-control has-icon"
                 data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater collection, Shared well)">
         </div>
@@ -1393,6 +1454,7 @@
     <div class="form-group" style="display: {{ (is_array($sewer ?? []) && in_array('Other', $sewer ?? [])) ? 'block' : 'none' }};" id="other_sewer_wrapper">
         {{-- <label class="fw-bold">Other Sewer:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-water"></i>
             <input type="text" wire:model="other_sewer" class="form-control has-icon"
                 data-icon="fa-solid fa-water" placeholder="Enter sewer type (e.g., Cesspool, Composting)">
         </div>
@@ -1418,6 +1480,7 @@
     <div class="form-group" style="display: {{ (is_array($heating_fuel ?? []) && in_array('Other', $heating_fuel ?? [])) ? 'block' : 'none' }};" id="other_heating_fuel_wrapper">
         {{-- <label class="fw-bold">Other Heating / Fuel:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-fire"></i>
             <input type="text" wire:model="other_heating_fuel" class="form-control has-icon"
                 data-icon="fa-solid fa-fire" placeholder="Enter heating/fuel type (e.g., Wood pellet, Geothermal)">
         </div>
@@ -1443,6 +1506,7 @@
     <div class="form-group" style="display: {{ (is_array($air_conditioning ?? []) && in_array('Other', $air_conditioning ?? [])) ? 'block' : 'none' }};" id="other_air_conditioning_wrapper">
         {{-- <label class="fw-bold">Other Air Conditioning:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-snowflake"></i>
             <input type="text" wire:model="other_air_conditioning" class="form-control has-icon"
                 data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Evaporative cooler, Geo-thermal)">
         </div>
@@ -1468,6 +1532,7 @@
     <div class="form-group" style="display: {{ (is_array($electrical_service ?? []) && in_array('Other', $electrical_service ?? [])) ? 'block' : 'none' }};" id="other_electrical_service_wrapper">
         {{-- <label class="fw-bold">Other Electrical Service:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-plug"></i>
             <input type="text" wire:model="other_electrical_service" class="form-control has-icon"
                 data-icon="fa-solid fa-plug" placeholder="Enter electrical service (e.g., 600 volts, DC power)">
         </div>
@@ -1481,6 +1546,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-arrows-up-down"></i>
             <select wire:model="ceiling_height" class="form-control has-icon" data-icon="fa-solid fa-arrows-up-down">
                 <option value="">Select</option>
                 @foreach (['8 to 9 Feet', '10 to 15 Feet', '16 to 22 Feet', '23+ Feet', 'Varied'] as $opt)
@@ -1511,6 +1577,7 @@
     <div class="form-group" style="display: {{ (is_array($building_features ?? []) && in_array('Other', $building_features ?? [])) ? 'block' : 'none' }};" id="other_building_features_wrapper">
         {{-- <label class="fw-bold">Other Building Features:</label> --}}
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-building"></i>
             <input type="text" wire:model="other_building_features" class="form-control has-icon"
                 data-icon="fa-solid fa-building" placeholder="Enter building features (e.g., Skylight, Automated gate)">
         </div>
@@ -1524,6 +1591,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-bolt"></i>
             <input type="number" wire:model="number_electric_meters" class="form-control has-icon"
                 data-icon="fa-solid fa-bolt" placeholder="Enter number of electric meters (e.g., 4)" min="0">
         </div>
@@ -1538,6 +1606,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-droplet"></i>
             <input type="number" wire:model="number_water_meters" class="form-control has-icon"
                 data-icon="fa-solid fa-droplet" placeholder="Enter number of water meters (e.g., 4)" min="0">
         </div>
@@ -1552,6 +1621,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-fire"></i>
             <input type="number" wire:model="number_gas_meters" class="form-control has-icon"
                 data-icon="fa-solid fa-fire" placeholder="Enter number of gas meters (e.g., 1)" min="0">
         </div>
@@ -1602,6 +1672,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-restroom"></i>
             <input type="number" wire:model="number_of_restrooms" class="form-control has-icon"
                 data-icon="fa-solid fa-restroom" placeholder="Enter number of restrooms (e.g., 4)" min="0">
         </div>
@@ -1616,6 +1687,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-door-open"></i>
             <input type="number" wire:model="number_of_offices" class="form-control has-icon"
                 data-icon="fa-solid fa-door-open" placeholder="Enter number of offices (e.g., 10)" min="0">
         </div>
@@ -1630,6 +1702,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-people-group"></i>
             <input type="number" wire:model="number_of_conference_rooms" class="form-control has-icon"
                 data-icon="fa-solid fa-people-group" placeholder="Enter number of conference or meeting rooms (e.g., 2)" min="0">
         </div>
@@ -1650,6 +1723,7 @@
         </span>
 
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-paw"></i>
             <select wire:model="pets" id="pets" class="form-control has-icon" data-icon="fa-solid fa-paw">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
@@ -1668,6 +1742,7 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
+                    <i class="input-icon fa-solid fa-hashtag"></i>
                     <input type="text" wire:model="number_of_pets" class="form-control has-icon"
                         data-icon="fa-solid fa-hashtag" placeholder="Enter number of pets allowed (e.g., 2)">
                 </div>
@@ -1682,6 +1757,7 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
+                    <i class="input-icon fa-solid fa-cat"></i>
                     <input type="text" wire:model="type_of_pets" class="form-control has-icon"
                         data-icon="fa-solid fa-cat" placeholder="Enter acceptable pet types (e.g., Dog, Cat)">
                 </div>
@@ -1692,6 +1768,7 @@
             {{-- <div class="form-group">
             <label class="fw-bold">Breed of Pet(s):</label>
             <div class="input-cover">
+                <i class="input-icon fa-solid fa-dog"></i>
                 <input type="text" wire:model="breed_of_pets" class="form-control has-icon"
                     data-icon="fa-solid fa-dog" placeholder="Enter breed(s) of pets (e.g., Labrador, Siamese)">
             </div>
@@ -1702,6 +1779,7 @@
             {{-- <div class="form-group">
             <label class="fw-bold">Breed Restrictions:</label>
             <div class="input-cover">
+                <i class="input-icon fa-solid fa-ban"></i>
                 <select wire:model="has_breed_restrictions" class="form-control has-icon"
                     data-icon="fa-solid fa-ban">
                     <option value="">Select</option>
@@ -1714,6 +1792,7 @@
         @if ($has_breed_restrictions === 'Yes')
             <div class="form-group">
                 <div class="input-cover">
+                    <i class="input-icon fa-solid fa-shield-dog"></i>
                     <input type="text" wire:model="breed_restrictions" class="form-control has-icon"
                         data-icon="fa-solid fa-shield-dog"
                         placeholder="Enter breed restrictions (e.g., No pit bulls)">
@@ -1730,6 +1809,7 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
+                    <i class="input-icon fa-solid fa-weight"></i>
                     <input type="text" wire:model="weight_of_pets" class="form-control has-icon"
                         data-icon="fa-solid fa-weight" placeholder="Enter maximum weight per pet (e.g., 45)">
                 </div>
@@ -1742,6 +1822,7 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
+                    <i class="input-icon fa-solid fa-shield-dog"></i>
                     <input type="text" wire:model="breed_restrictions" class="form-control has-icon"
                         data-icon="fa-solid fa-shield-dog" placeholder="Enter pet restrictions (e.g., No pit bulls)">
                 </div>
@@ -1751,6 +1832,7 @@
             {{-- <div class="form-group">
             <label class="fw-bold">Service Animal:</label>
             <div class="input-cover">
+                <i class="input-icon fa-solid fa-dog"></i>
                 <select wire:model="service_animal" class="form-control has-icon" data-icon="fa-solid fa-dog">
                     <option value="">Select</option>
                     <option value="Yes">Yes</option>
@@ -1764,6 +1846,7 @@
         <div class="form-group">
             <label class="fw-bold">Emotional Support Animal:</label>
             <div class="input-cover">
+                <i class="input-icon fa-solid fa-heart"></i>
                 <select wire:model="support_animal" class="form-control has-icon" data-icon="fa-solid fa-heart">
                     <option value="">Select</option>
                     <option value="Yes">Yes</option>
