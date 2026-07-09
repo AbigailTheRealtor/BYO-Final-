@@ -1709,7 +1709,10 @@ class TenantOfferListingEdit extends Component
 
     private function getAddressDetailsFromApi($address)
     {
-        $client = new \GuzzleHttp\Client();
+        // Phase 0 / S1b: resolve from the container so the call is observable by
+        // GoogleOutboundTelemetryMiddleware and interceptable in tests. request('GET', …)
+        // rather than get(), which is Guzzle __call magic absent from ClientInterface.
+        $client = app(\GuzzleHttp\ClientInterface::class);
 
         $query = [
             'address' => $address,
@@ -1717,7 +1720,7 @@ class TenantOfferListingEdit extends Component
         ];
 
         try {
-            $response = $client->get('https://maps.googleapis.com/maps/api/geocode/json', [
+            $response = $client->request('GET', 'https://maps.googleapis.com/maps/api/geocode/json', [
                 'query' => $query
             ]);
 
@@ -1880,7 +1883,8 @@ class TenantOfferListingEdit extends Component
 
     protected function getPlaceSuggestionsFromApi($input, $type = null)
     {
-        $client = new \GuzzleHttp\Client();
+        // Phase 0 / S1b: see getAddressDetailsFromApi.
+        $client = app(\GuzzleHttp\ClientInterface::class);
 
         $query = [
             'input' => $input,
@@ -1895,7 +1899,7 @@ class TenantOfferListingEdit extends Component
         }
 
         try {
-            $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+            $response = $client->request('GET', 'https://maps.googleapis.com/maps/api/place/autocomplete/json', [
                 'query' => $query
             ]);
 

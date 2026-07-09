@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 
 class GeocodeSelleryLandlordListings extends Command
 {
@@ -124,15 +123,28 @@ class GeocodeSelleryLandlordListings extends Command
     private function geocode(string $address, string $apiKey): ?array
     {
         try {
-            $response = Http::timeout(8)->get('https://maps.googleapis.com/maps/api/geocode/json', [
-                'address'    => $address,
-                'components' => 'country:US',
-                'key'        => $apiKey,
+            // Phase 0 / erratum E-40: this was the one Google caller reaching the network
+            // through the Http facade, which builds its own Guzzle client and never
+            // consults the container — invisible to both GoogleOutboundTelemetryMiddleware
+            // and the test-suite guards. Routed through the container binding instead.
+            //
+            // http_errors => false preserves the facade's semantics: Http::get() returns a
+            // Response on 4xx/5xx rather than throwing, and this method answers null.
+            $client = app(\GuzzleHttp\ClientInterface::class);
+
+            $response = $client->request('GET', 'https://maps.googleapis.com/maps/api/geocode/json', [
+                'query' => [
+                    'address'    => $address,
+                    'components' => 'country:US',
+                    'key'        => $apiKey,
+                ],
+                'timeout'     => 8,
+                'http_errors' => false,
             ]);
 
-            if (!$response->ok()) return null;
+            if ($response->getStatusCode() !== 200) return null;
 
-            $data = $response->json();
+            $data = json_decode((string) $response->getBody(), true) ?: [];
             if (($data['status'] ?? '') !== 'OK' || empty($data['results'])) return null;
 
             $result = $data['results'][0];

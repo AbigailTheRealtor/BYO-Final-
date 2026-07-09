@@ -18,11 +18,13 @@ use App\Models\PropertyLocationDna;
 use App\Models\SellerAgentAuction;
 use App\Models\SellerAgentAuctionMeta;
 use App\Models\User;
+use GuzzleHttp\ClientInterface;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use ReflectionClass;
+use Tests\Support\AnswersGooglePlacesWithRequestDenied;
 use Tests\TestCase;
 
 /**
@@ -48,6 +50,25 @@ use Tests\TestCase;
 class CreateEditParityRegressionTest extends TestCase
 {
     use DatabaseTransactions;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The Seller/Landlord/Buyer edit components run address autocomplete during the
+        // Livewire update hooks these tests drive. Until Batch 3 those methods built a
+        // bare Guzzle client and issued a REAL request to maps.googleapis.com on every
+        // run of this file — no guard could see it, because BlocksGooglePlacesHttpClient
+        // only intercepts the container binding. The tests passed because Google answers
+        // a blank key with REQUEST_DENIED and an empty predictions array.
+        //
+        // Batch 3 routed those call sites through the container, so the blocking client
+        // now (correctly) refuses them. Bind a double that returns the exact response
+        // those tests were unknowingly relying on, with nothing leaving the process.
+        // The autocomplete methods have no try/catch — pre-existing, preserved — so a
+        // throwing client would surface as a test error rather than an empty list.
+        $this->app->instance(ClientInterface::class, AnswersGooglePlacesWithRequestDenied::make());
+    }
 
     // ─── Shared helpers ───────────────────────────────────────────────────────
 

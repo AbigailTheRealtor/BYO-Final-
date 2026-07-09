@@ -1378,8 +1378,10 @@ class SellerOfferListingEdit extends Component
             }
             return $results;
         } elseif ($type === 'address') {
-            $client = new \GuzzleHttp\Client();
-            $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+            // Phase 0 / S1b: container-resolved so the call is observable and mockable.
+            // No try/catch here; that is pre-existing behaviour, preserved as found.
+            $client = app(\GuzzleHttp\ClientInterface::class);
+            $response = $client->request('GET', 'https://maps.googleapis.com/maps/api/place/autocomplete/json', [
                 'query' => [
                     'input' => $input,
                     'components' => 'country:us',

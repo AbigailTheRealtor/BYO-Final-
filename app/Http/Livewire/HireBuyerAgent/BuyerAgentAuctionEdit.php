@@ -942,7 +942,12 @@ class BuyerAgentAuctionEdit extends Component
 
     protected function getPlaceSuggestions($input, $type = null)
     {
-        $client = new \GuzzleHttp\Client();
+        // Phase 0 / S1b: resolve from the container so the call is observable by
+        // GoogleOutboundTelemetryMiddleware and interceptable in tests. request('GET', …)
+        // rather than get(), which is Guzzle __call magic absent from ClientInterface.
+        // NOTE: this method has no try/catch. That is pre-existing behaviour and is
+        // deliberately preserved here — a transport error still propagates as before.
+        $client = app(\GuzzleHttp\ClientInterface::class);
 
         $query = [
             'input' => $input,
@@ -962,7 +967,7 @@ class BuyerAgentAuctionEdit extends Component
         }
 
 
-        $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+        $response = $client->request('GET', 'https://maps.googleapis.com/maps/api/place/autocomplete/json', [
             'query' => $query
         ]);
 

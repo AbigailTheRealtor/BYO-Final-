@@ -1043,7 +1043,10 @@ class BuyerAgentAuction extends Component
 
     protected function getPlaceSuggestionsFromApi($input, $type = null)
     {
-        $client = new \GuzzleHttp\Client();
+        // Phase 0 / S1b: resolve from the container so the call is observable by
+        // GoogleOutboundTelemetryMiddleware and interceptable in tests. request('GET', …)
+        // rather than get(), which is Guzzle __call magic absent from ClientInterface.
+        $client = app(\GuzzleHttp\ClientInterface::class);
 
         $query = [
             'input' => $input,
@@ -1056,7 +1059,7 @@ class BuyerAgentAuction extends Component
         }
 
         try {
-            $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+            $response = $client->request('GET', 'https://maps.googleapis.com/maps/api/place/autocomplete/json', [
                 'query' => $query
             ]);
 
