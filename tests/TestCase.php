@@ -2,11 +2,17 @@
 
 namespace Tests;
 
+use App\Contracts\CommuteTimeAdapterInterface;
+use App\Contracts\PoiLookupAdapterInterface;
+use App\Services\LocationDna\CommuteTimeStubAdapter;
+use App\Services\LocationDna\StubPoiLookupAdapter;
 use GuzzleHttp\ClientInterface;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use RuntimeException;
 use Tests\Support\BlocksGooglePlacesHttpClient;
+use Tests\Support\Http\StrayRequestGuardFactory;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -55,6 +61,31 @@ abstract class TestCase extends BaseTestCase
         $this->guardAgainstLiveGooglePlacesKey();
         config(['services.google.places_key' => null]);
         $this->app->instance(ClientInterface::class, new BlocksGooglePlacesHttpClient());
+
+        // ── Phase 0 / S1c: default the provider adapters to their stubs ──────
+        //    The AppServiceProvider binding already degrades to StubPoiLookupAdapter
+        //    when the Places key is blank, which it always is above. Binding the stub
+        //    explicitly means test isolation no longer *depends* on that config
+        //    coincidence: no reachable configuration resolves a live provider adapter.
+        //
+        //    Registered with instance() rather than bind() deliberately. Tests that
+        //    assert the production binding itself (PoiLookupAdapterBindingTest) call
+        //    $this->app->forgetInstance(...) first, which drops these instances and
+        //    falls through to the provider's closure. bind() would shadow it instead.
+        $this->app->instance(PoiLookupAdapterInterface::class, new StubPoiLookupAdapter());
+        $this->app->instance(CommuteTimeAdapterInterface::class, new CommuteTimeStubAdapter());
+
+        // ── Phase 0 / S1d: stray-request guard for the Http facade ───────────
+        //    BlocksGooglePlacesHttpClient only guards the container-bound Guzzle
+        //    ClientInterface. The Http facade constructs its own Guzzle client and
+        //    never touches the container, so every Http::get() in app/ — Bridge,
+        //    FEMA, Census, MLS import, and GeocodeSelleryLandlordListings' *Google
+        //    geocode call* — could reach the live network from a test.
+        //
+        //    Laravel 9's Http::preventStrayRequests() would close this. This app runs
+        //    Laravel 8.83, which has no such method (erratum E-39), so we bind a
+        //    backported factory that throws on any unstubbed request.
+        $this->app->instance(HttpFactory::class, new StrayRequestGuardFactory($this->app['events']));
 
         // ── Rule 1 / Rule 3: one-time schema setup for SQLite :memory: ───────
         //    Run BEFORE parent::setUpTraits() so migrations execute OUTSIDE the
