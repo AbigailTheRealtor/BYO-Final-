@@ -4,7 +4,6 @@ namespace App\Services\LocationDna;
 
 use App\Models\PropertyLocationDna;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Client;
 use Throwable;
 
 /**
@@ -195,7 +194,10 @@ class LocationDnaGeocodeService
                 ? $fullAddressOverride
                 : "{$address}, {$city}, {$state}" . ($zip ? " {$zip}" : '');
 
-            $client = $this->httpClient ?? new Client();
+            // Phase 0 / S1b: resolve from the container. A bare `new Client()` cannot be
+            // intercepted by Http::fake() or by the container binding, and it bypasses
+            // GoogleOutboundTelemetryMiddleware entirely.
+            $client = $this->httpClient ?? app(ClientInterface::class);
 
             $response = $client->request('GET', self::GEOCODE_API_URL, [
                 'query' => [

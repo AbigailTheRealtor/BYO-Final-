@@ -4,7 +4,6 @@ namespace App\Services\LocationDna;
 
 use App\Contracts\PoiLookupAdapterInterface;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Client;
 use Throwable;
 
 class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface
@@ -50,14 +49,16 @@ class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface
 
     /**
      * Resolve the outbound HTTP client from the service container so tests can
-     * bind a fake/blocking client. Falls back to a bare Guzzle client only when
-     * the container binding is unexpectedly absent (e.g. non-Laravel context).
+     * bind a fake/blocking client.
+     *
+     * Phase 0 / S1b: the former `new Client()` fallback is removed. A bare client
+     * cannot be intercepted by Http::fake() or by the container binding, which is
+     * how the test suite reached live Google. If the binding is absent we now fail
+     * loudly rather than silently opening a socket.
      */
     private function resolveHttpClient(): ClientInterface
     {
-        return app()->bound(ClientInterface::class)
-            ? app(ClientInterface::class)
-            : new Client();
+        return app(ClientInterface::class);
     }
 
     /**
@@ -73,6 +74,13 @@ class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface
             return [];
         }
 
+        // Phase 0 / S2 — master kill switch. Short-circuits before any HTTP call.
+        // Fail-safe default is DISABLED (config/google_places.php). Until this
+        // commit the switch was referenced by zero application code.
+        if (! config('google_places.enabled', false)) {
+            return [];
+        }
+
         $apiKey = config('services.google.places_key');
         if (blank($apiKey)) {
             return [];
@@ -80,8 +88,7 @@ class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface
 
         try {
             // Resolve from the container (bound in AppServiceProvider) so tests can
-            // inject a fake/blocking client. Falls back to a bare client only if the
-            // binding is somehow absent. See Google-Places-Root-Cause-Analysis.md.
+            // inject a fake/blocking client. There is no bare-client fallback.
             $client = $this->httpClient ?? $this->resolveHttpClient();
             $timeout = (int) config('location_dna.poi.timeout', 5);
             $radiusMeters = (int) round($radiusMiles * self::METERS_PER_MILE);

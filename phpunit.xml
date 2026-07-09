@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true"
 >
     <testsuites>
@@ -28,11 +28,18 @@
         <server name="QUEUE_CONNECTION" value="sync"/>
         <server name="SESSION_DRIVER" value="array"/>
         <server name="TELESCOPE_ENABLED" value="false"/>
-        <!-- Google Places safeguards: blank key + kill switch off so no test can
-             make a live NearbySearch call. tests/TestCase.php enforces this. -->
-        <server name="GOOGLE_PLACES_API_KEY" value=""/>
-        <server name="GOOGLE_PLACES_ENABLED" value="false"/>
-        <server name="GOOGLE_PLACES_DAILY_LIMIT" value="100"/>
-        <server name="GOOGLE_PLACES_HOURLY_LIMIT" value="25"/>
+        <!-- Google Places safeguards (Phase 0 / S1a).
+             force="true" is load-bearing: without it PHPUnit will NOT overwrite a
+             GOOGLE_PLACES_API_KEY already present in the process environment, which
+             is precisely how the 2026-07-05 incident reached live Google from the
+             test suite (38,236 requests / ~$1,223 in six days). See
+             docs/investigations/Google-Places-Root-Cause-Analysis.md and
+             docs/architecture/SPATIAL-INTELLIGENCE-PLATFORM.md erratum E-20.
+
+             Asserted by tests/Feature/Security/GooglePlacesCredentialGuardTest.php. -->
+        <server name="GOOGLE_PLACES_API_KEY" value="" force="true"/>
+        <server name="GOOGLE_PLACES_ENABLED" value="false" force="true"/>
+        <server name="GOOGLE_PLACES_DAILY_LIMIT" value="100" force="true"/>
+        <server name="GOOGLE_PLACES_HOURLY_LIMIT" value="25" force="true"/>
     </php>
 </phpunit>

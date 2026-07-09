@@ -61,8 +61,10 @@ use App\Services\Dna\Relevance\CandidateSourceInterface;
 use App\Services\Dna\Relevance\ScoredEntityCandidateSource;
 use App\Services\Dna\Relevance\CandidateAttributeResolverInterface;
 use App\Services\Dna\Relevance\OnPlatformCandidateAttributeResolver;
+use App\Support\Telemetry\GoogleOutboundTelemetryMiddleware;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\HandlerStack;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -114,14 +116,24 @@ class AppServiceProvider extends ServiceProvider
             return new CommuteTimeLookupService($app->make(CommuteTimeAdapterInterface::class));
         });
 
-        // Outbound Guzzle client for the Google Places NearbySearch callers.
-        // Both LocationDnaPoiDistanceService (Path A) and GooglePlacesPoiAdapter
-        // (Path B) resolve their HTTP client from the container instead of doing a
-        // bare `new Client()`, so tests can bind a fake/blocking client and no
-        // live NearbySearch call can slip through unmocked. In production this
-        // returns a plain Guzzle client — behaviourally identical to before.
+        // Outbound Guzzle client for every server-side Google caller.
+        // LocationDnaPoiDistanceService (Path A), GooglePlacesPoiAdapter (Path B),
+        // and LocationDnaGeocodeService all resolve their HTTP client from this
+        // binding — no bare `new Client()` remains in any of them — so tests can
+        // bind a fake/blocking client and no live call can slip through unmocked.
         // (See docs/investigations/Google-Places-Root-Cause-Analysis.md.)
-        $this->app->bind(ClientInterface::class, fn () => new Client());
+        //
+        // Phase 0 / S3a: the handler stack carries GoogleOutboundTelemetryMiddleware,
+        // which records endpoint, HTTP status, and Google's in-body `status` for every
+        // request to maps.googleapis.com. Google answers an invalid or revoked key with
+        // HTTP 200 + {"status":"REQUEST_DENIED"}, so the body — not the HTTP status — is
+        // what reveals the credential's true state (SIA-D32: telemetry, never a probe).
+        $this->app->bind(ClientInterface::class, function () {
+            $stack = HandlerStack::create();
+            $stack->push(GoogleOutboundTelemetryMiddleware::make(), 'byo_google_outbound_telemetry');
+
+            return new Client(['handler' => $stack]);
+        });
 
         // POI Distance Lookup — Buyer/Tenant search-area geometry (Phase 3C)
         // Stage E: the active POI adapter is now selected via the provider registry

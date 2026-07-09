@@ -31,6 +31,31 @@
             $src .= '&callback=' . $callback;
         }
     @endphp
+    {{-- Phase 0 / S3b — browser credential telemetry.
+         Google Maps JS invokes window.gm_authFailure() when the key is invalid, revoked,
+         expired, or unauthorised for this referrer. Defined BEFORE the SDK loads so the
+         callback exists when the SDK looks for it. Server telemetry cannot observe the
+         browser's direct calls to Google; this is how we learn the browser key's true
+         state without a billed probe (SIA-D32). Diagnostic only — no behaviour change. --}}
+    <script>
+    (function () {
+        if (typeof window.gm_authFailure === 'function') { return; }
+
+        window.gm_authFailure = function () {
+            console.error('[BYO Maps] Google rejected the Maps API key (gm_authFailure).');
+            try {
+                fetch(@json(route('telemetry.maps-auth-failure')), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ page: window.location.pathname }),
+                    keepalive: true,
+                    credentials: 'same-origin',
+                }).catch(function () { /* telemetry must never break the page */ });
+            } catch (e) { /* telemetry must never break the page */ }
+        };
+    })();
+    </script>
+
     <script async defer src="{{ $src }}"></script>
     {{-- Self-diagnosing warning: if the Maps API fails to load (e.g. RefererNotAllowedMapError),
          a clear console.error fires after 5 s explaining what the developer must do in Google Cloud

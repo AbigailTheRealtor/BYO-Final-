@@ -1333,3 +1333,17 @@ if (app()->environment('local', 'development')) {
 
 
 
+
+// ===========================================================================
+// Phase 0 / S3b — browser-side Google Maps credential telemetry.
+// Google Maps JS calls window.gm_authFailure() when the key is invalid, revoked,
+// or unauthorised for the referrer. The 49 browser Autocomplete sites and 8 map
+// loaders call Google directly, so no server metric can observe them. This
+// endpoint is how we learn the browser key's state without a billed probe
+// (SIA-D32). CSRF is skipped: the payload carries no state and no identity, and
+// the report must survive pages that render before a session token exists.
+// ===========================================================================
+Route::post('/_telemetry/maps-auth-failure', \App\Http\Controllers\Telemetry\MapsAuthFailureController::class)
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
+    ->middleware('throttle:20,1')
+    ->name('telemetry.maps-auth-failure');

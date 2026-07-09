@@ -5,8 +5,8 @@ namespace App\Services\LocationDna;
 use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
 use App\Services\LocationDna\LocationDnaRankingEngine;
+use App\Support\Telemetry\OutboundCallContext;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Client;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -439,14 +439,16 @@ class LocationDnaPoiDistanceService
 
     /**
      * Resolve the outbound HTTP client from the service container so tests can
-     * bind a fake/blocking client. Falls back to a bare Guzzle client only when
-     * the container binding is unexpectedly absent (e.g. non-Laravel context).
+     * bind a fake/blocking client.
+     *
+     * Phase 0 / S1b: the former `new Client()` fallback is removed. A bare client
+     * cannot be intercepted by Http::fake() or by the container binding, which is
+     * how the test suite reached live Google. If the binding is absent we now fail
+     * loudly rather than silently opening a socket.
      */
     private function resolveHttpClient(): ClientInterface
     {
-        return app()->bound(ClientInterface::class)
-            ? app(ClientInterface::class)
-            : new Client();
+        return app(ClientInterface::class);
     }
 
     /**
@@ -485,6 +487,10 @@ class LocationDnaPoiDistanceService
      */
     public function calculateForListing(string $listingType, int $listingId): array
     {
+        // Phase 0 / S3a: attribute any outbound Google request made during this run
+        // to the listing that provoked it. Read only by telemetry; never by behaviour.
+        OutboundCallContext::for($listingType, $listingId);
+
         // Reset per-run counters
         $this->tileCacheHits     = 0;
         $this->tileCacheMisses   = 0;
@@ -651,6 +657,23 @@ class LocationDnaPoiDistanceService
                 }
             }
 
+            // (e0) Phase 0 / S2 — master kill switch. Short-circuits before any HTTP
+            // call, and after the cache-return paths above so cached rows still serve.
+            // Fail-safe default is DISABLED (config/google_places.php). Until this
+            // commit the switch was referenced by zero application code.
+            if (! config('google_places.enabled', false)) {
+                $output = $this->failedOutput(
+                    $listingType,
+                    $listingId,
+                    $sourceLat,
+                    $sourceLng,
+                    'google_places_disabled',
+                );
+                $this->audit($listingType, $listingId, $output);
+                $this->setLastRunStats($listingType, $listingId, null);
+                return $output;
+            }
+
             // (e) API key guard
             $apiKey = config('services.google.places_key');
             if (blank($apiKey)) {
@@ -667,8 +690,7 @@ class LocationDnaPoiDistanceService
             }
 
             // Resolve from the container (bound in AppServiceProvider) so tests can
-            // inject a fake/blocking client; no bare `new Client()` that faking
-            // cannot intercept. See Google-Places-Root-Cause-Analysis.md.
+            // inject a fake/blocking client. There is no bare-client fallback.
             $client  = $this->httpClient ?? $this->resolveHttpClient();
             $results = [];
 

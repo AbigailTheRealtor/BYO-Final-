@@ -41,6 +41,11 @@ class LocationDnaPoiVersioningTest extends TestCase
         parent::setUp();
         $this->mockClient = $this->createMock(ClientInterface::class);
         config([
+            // Phase 0 / S2: this class is a provider-mocked test that deliberately
+            // exercises the Google Nearby Search path. config/google_places.php keeps
+            // the kill switch OFF everywhere by default; such tests must opt in
+            // explicitly. Every other test in the suite stays behind the switch.
+            'google_places.enabled'           => true,
             'services.google.places_key'      => 'test-poi-api-key',
             'location_dna.poi.tile_precision' => null,
             'cache.default'                   => 'array',
