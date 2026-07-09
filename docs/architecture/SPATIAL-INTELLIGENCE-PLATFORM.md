@@ -4,7 +4,7 @@
 **Status:** ✅ **APPROVED — 2026-07-09, by Abigail (product owner).** This document is the **single source of truth** for geographic intelligence across BidYourAgent and BidYourOffer. Implementation proceeds from this document only. Amendments require an entry in the Decision Register (Appendix A) or the Errata (Appendix B) — never a silent edit.
 **Date:** 2026-07-09
 **Owner:** Platform Architecture · Product owner: Abigail
-**Approval scope:** Architecture, phases, gates, invariants, and the parallelization plan. **Implementation has not begun.** Phase 0 remains blocked on Q1 (hosting target) for items 3–5; items 1, 2, 6, and 7 are unblocked.
+**Approval scope:** Architecture, phases, gates, invariants, and the parallelization plan. **Implementation is underway:** Phase 0 Batch 1 landed in `3fdc4a714`, with a follow-up in `f3dab6f24`; it produced errata **E-37** and **E-38** and open question **Q11**. Phase 0 remains blocked on Q1 (hosting target) for items 3–5; items 1, 2, 6, and 7 are unblocked.
 **Scope:** BidYourOffer and BidYourAgent. Every geographic, mapping, routing, Location DNA, Property DNA, Buyer/Tenant DNA, Target Market Intelligence, matching, and spatial-analysis feature.
 
 **Supersedes and consolidates:**
@@ -14,7 +14,7 @@
 
 **Retains, unamended and binding:** `LOCATION_DNA_PHASE_A_GOVERNANCE_AND_DATA_SOURCE_PLAN.md` §3 (Allowed Inputs), §4 (Prohibited Inputs), §7 (Allowed Outputs), §8 (Prohibited Outputs), §9 (Fair Housing Safeguards). Only its §6 (Data Source Plan) is superseded.
 
-**Untouched by this programme:** `initializeLimitedService()`, the `TenantAgentAuction` Livewire component, and `LOCKED_BidComparison` scoring. See INV-8.
+**Untouched by this programme:** `initializeLimitedService()`, the `TenantAgentAuction` Livewire component, and `LOCKED_BidComparison` scoring. See INV-8. **`TenantAgentAuction` contains three direct Google calls that this freeze prevents us from instrumenting — a known exception to INV-11, recorded in E-38 and blocking on Q11.**
 
 ---
 
@@ -1239,7 +1239,7 @@ Gate 6 may therefore be passed **before** the Phase 5 cutover. Routing has no Go
 | **INV-8** | Frozen code untouched: `initializeLimitedService()`, `TenantAgentAuction`, `LOCKED_BidComparison` | Diff review |
 | **INV-9** | Every derived artifact carries `corpus_version` / `scoring_version` / `routing_version` | Version-stamp tests |
 | **INV-10** | **Adding a POI category, dataset, or score requires no engine change** (SIP-P14) | Add a throwaway category in a test; assert no `app/Services/LocationDna/*` diff |
-| **INV-11** | **No test depends on a Google credential.** The suite passes with `GOOGLE_PLACES_API_KEY` unset | Guard test; CI runs with the key absent |
+| **INV-11** | **No test depends on a Google credential.** The suite passes with `GOOGLE_PLACES_API_KEY` unset. ⚠️ **Enforced in tests via `tests/bootstrap.php` (E-37). Production telemetry coverage is incomplete until Q11 closes — see E-38.** | Guard test; CI runs with the key absent |
 | **INV-12** | **Every surface still backed by a third-party credential degrades honestly when it is absent** (SIP-P15) | Render tests with the key unset |
 
 ### What keeps operating throughout
@@ -1429,7 +1429,7 @@ Errata are recorded against the superseded documents. This appendix is **self-co
 | **E-17** | Available-but-uninstalled extensions include **`btree_gist` 1.7, `pg_trgm` 1.6, `h3` 4.2.3, `pgrouting` 3.8.0, `postgis_raster` 3.5.3** — not merely `postgis` and `vector`. `h3` makes the hex commute index far cheaper than the prior "future work" framing assumed. | `pg_available_extensions` |
 | **E-18** | Three incompatible phase numbering schemes existed, plus two incompatible V1 scopes and two incompatible geocoding fallbacks. **One scheme, §17.** | Cross-document diff |
 | **E-19** | **Valhalla belongs in V1.** The prior deferral rested on "nothing depends on it," which is circular. `CommuteTimeAdapterInterface` is already a matrix contract; `travel_time_minutes` already exists and is unwritten; `CommuteTimeStubAdapter` is a one-class swap. The buyer-side matcher replacement is the expensive part, and it separates cleanly. | §13.3 |
-| **E-20** | Test-isolation status is **partly ahead** of the prior documents: `phpunit.xml:33-36` already blanks the key — **but without `force="true"`**, so it cannot override a system env var, which is the incident mechanism. Its comment claims `tests/TestCase.php` enforces this; **it does not.** Both POI callers already accept an injected client but fall back to `new Client()`. | `phpunit.xml`; `tests/TestCase.php` |
+| **E-20** *(corrected by E-37)* | Test-isolation status is **partly ahead** of the prior documents: `phpunit.xml:33-36` already blanks the key — **but without `force="true"`**, so it cannot override a system env var, which is the incident mechanism. ~~Its comment claims `tests/TestCase.php` enforces this; **it does not.**~~ **Correction:** `tests/TestCase.php` did carry **partial** protections — it binds `Tests\Support\BlocksGooglePlacesHttpClient` into the container and calls `guardAgainstLiveGooglePlacesKey()`. What it lacked was `Http::preventStrayRequests()` and a `PoiLookupAdapterInterface` stub binding. Both POI callers already accept an injected client but fall back to `new Client()`. **See E-37: adding `force="true"` is by itself insufficient.** | `phpunit.xml`; `tests/TestCase.php:40-57` |
 | **E-21** | The "43 Location DNA test files" figure is unverified. `find` returns 29 on `*LocationDna*`/`*Ldna*` and 47 on a broader pattern. **Re-baseline before using it as a Definition-of-Done criterion.** | `find tests -type f` |
 
 ### New in v3.0
@@ -1452,6 +1452,36 @@ Errata are recorded against the superseded documents. This appendix is **self-co
 | **E-35** | **The Google credential is not only an enrichment dependency.** It backs 8 map/embed files, 49 browser Autocomplete instantiations, 12 Livewire proxies, and 6 geocoding call sites. Removing it without replacements takes down address entry on every listing form. **This is why Phases 4 and 5 move into V1.** | grep of `resources/views/` |
 | **E-36** | **A live dual-run against Google (old Gate 3) is impossible under SIA-D25.** Replaced by a baseline diff against 1,090 frozen rows plus human adjudication. This is weaker, covers 13 listings, and is the accepted cost of the decision. | §18 G3 |
 
+### New in v3.1 — discovered during Phase 0 Batch 1 implementation
+
+Recorded 2026-07-09 against commits `3fdc4a714` (Batch 1) and `f3dab6f24`. Both errata are **implementation findings that contradict an approved step**; neither was applied as a silent edit.
+
+| # | Erratum | Evidence |
+|---|---|---|
+| **E-37** | **The approved S1a fix does not work on its own.** `phpunit.xml`'s `<server name="…" force="true"/>` writes `$_SERVER` and **never `getenv()`**. This host (Replit) injects `GOOGLE_PLACES_API_KEY` as a real **process environment variable**, so `getenv()` kept returning the live key, `tests/TestCase::detectLiveGooglePlacesKey()` kept finding it, and the suite refused to run: **2,194 failed / 3,416 passed at baseline**, with 3,996 occurrences of the guard message. Verified pre-existing via `git stash` — not introduced by Batch 1. **`tests/bootstrap.php` is hereby the approved test-safety mechanism** (`phpunit.xml bootstrap="tests/bootstrap.php"`): it blanks the credential across `getenv()` / `$_ENV` / `$_SERVER` *before Laravel boots*, setting it to an **empty string** rather than unsetting it, because phpdotenv's immutable repository would otherwise let `.env` repopulate it. `force="true"` is retained as defence in depth; the `TestCase` guard is retained as a fail-closed backstop. Result: **212 failed / 5,403 passed**, the residual failures being pre-existing order-dependent flakes unrelated to Google. **This erratum also corrects E-20**, which wrongly asserted `tests/TestCase.php` had no protections. | `phpunit.xml`; `tests/bootstrap.php`; baseline vs. post-Batch-1 `--testsuite=Unit` runs |
+| **E-38** | **The bare-Guzzle census in E-35 and in the Batch 1 report was undercounted.** Both audits grepped for `new Client(` and therefore missed every **fully-qualified** `new \GuzzleHttp\Client()`. The true count of bare clients issuing requests to `maps.googleapis.com` outside `app/Services/LocationDna/` was **18, across 12 files** — not 4. Every one bypasses `GoogleOutboundTelemetryMiddleware`, so **INV-11's "zero outbound attempts" cannot be asserted from telemetry until they are routed through the container.** Three were fixed in `TenantOfferListing.php` (`f3dab6f24`), leaving **15**. **Three of those are in `TenantAgentAuction.php` (lines 2214, 2330, 2440), which is frozen under INV-8 and was not touched.** The other twelve sit in non-frozen files that are outside any approved batch. The role-symmetric spread (Seller / Buyer / Landlord / Tenant × Auction / OfferListing × Create / Edit) is exactly what `CLAUDE.md`'s quadruplication rule predicts. The correct detection pattern is `grep -rnE 'new\s+\\?(GuzzleHttp\\)?Client\s*\('`. See **Q11**. | `grep -rnE` census, 2026-07-09 |
+
+**E-38 — full census.** Frozen rows are blocked on Q11; the rest await batch scoping.
+
+| File | Google clients | Status |
+|---|---|---|
+| `app/Http/Livewire/TenantAgentAuction.php` | 3 | 🔒 **Frozen (INV-8) — known exception, see Q11** |
+| `app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php` | 3 | ✅ Fixed in `f3dab6f24` |
+| `app/Http/Livewire/TenantAgentAuctionEdit.php` | 2 | ⬜ Not frozen by name; **INV-8 scope ambiguous — see Q11** |
+| `app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php` | 2 | ⬜ Pending |
+| `app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php` | 1 | ⬜ Pending |
+| `app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php` | 1 | ⬜ Pending |
+| `app/Http/Livewire/HireSellerAgent/SellerAgentAuctionEdit.php` | 1 | ⬜ Pending |
+| `app/Http/Livewire/HireLandLordAgent/LandLordAgentAuctionEdit.php` | 1 | ⬜ Pending |
+| `app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php` | 1 | ⬜ Pending |
+| `app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php` | 1 | ⬜ Pending |
+| `app/Http/Livewire/OfferListing/Seller/SellerOfferListingEdit.php` | 1 | ⬜ Pending |
+| `app/Http/Livewire/OfferListing/Landlord/LandlordOfferListingEdit.php` | 1 | ⬜ Pending |
+
+*(`ChatController.php`, `OpenAiClientService.php`, and `AgentAiOpenAiOrchestrator.php` also construct bare clients but never call a Google host; they are out of scope for INV-11.)*
+
+**Known exception — the frozen `TenantAgentAuction` Google calls.** `TenantAgentAuction.php:2214` (geocode), `:2330` (geocode), and `:2440` (Places Autocomplete) construct bare Guzzle clients and call Google directly. INV-8 declares the component frozen and this programme does not modify it. **Consequence, recorded explicitly:** until Q11 is resolved, the platform **cannot claim full zero-outbound telemetry coverage**, and INV-11's Phase 0 Definition-of-Done clause — *"zero outbound attempts"* — is satisfiable only by the test-environment guards (`tests/bootstrap.php`, `BlocksGooglePlacesHttpClient`), **not** by production telemetry. This is a known, accepted, and time-boxed gap, not an oversight. It must be closed before **Gate 7 / V1 launch certification**.
+
 ---
 
 ## Appendix C — Open questions
@@ -1468,6 +1498,7 @@ Errata are recorded against the superseded documents. This appendix is **self-co
 | Q8 | Do we promote *assigned school* to a product claim? If yes, ATTOM is required | Phase 9 | Product + Legal |
 | Q9 | Do NAD / OpenAddresses cover Puerto Rico adequately, or does PR need Census-only geocoding? | Phase 4 | Engineering — measure |
 | **Q10** | ~~Is the Google credential live?~~ | — | **Withdrawn.** Phase 0 telemetry answers it (SIA-D32). No paid probe. |
+| **Q11** | **How do we close the three frozen Google calls in `TenantAgentAuction.php` (INV-8) so INV-11 can be asserted from production telemetry?** Options: (a) grant a narrow, reviewed INV-8 exemption limited to swapping `new Client()` → `app(ClientInterface::class)` with no other change; (b) intercept below the component by making the frozen calls unreachable when `google_places.enabled=false`; (c) accept the gap until Phase 7 deletes the Google code path wholesale. **Sub-question:** does INV-8's freeze on "the `TenantAgentAuction` Livewire component" extend to `TenantAgentAuctionEdit.php` (2 more clients)? | **Gate 7 / V1 launch certification**; full INV-11 telemetry coverage | **Product owner** |
 
 ---
 
@@ -1497,13 +1528,23 @@ grep -rn "google_places\." app/
 # 7. Runtime proof — no outbound call from the enrichment path
 php artisan test --filter=NetworkGuard
 
-# 8. INV-11 — the suite passes with no credential
+# 8. INV-11 — the suite passes with no credential.
+#    Since E-37 the env prefix is redundant: tests/bootstrap.php blanks the key
+#    unconditionally. Keep the prefix as a belt-and-braces check that it still holds.
 GOOGLE_PLACES_API_KEY= php artisan test
 
 # 9. Production proof — outbound_google_requests_total == 0, sustained 7 days
+
+# 10. Bare Guzzle clients that bypass GoogleOutboundTelemetryMiddleware (E-38).
+#     Note the \\? — a `new \GuzzleHttp\Client()` is invisible to a `new Client(` grep,
+#     which is exactly how the first census undercounted 16 call sites as 4.
+#     Expected at Phase 7: no Google-calling bare client remains — only the container
+#     binding in AppServiceProvider, plus the three non-Google clients noted below.
+#     As of f3dab6f24: 15 Google-calling bare clients remain (3 frozen under INV-8, pending Q11).
+grep -rnE 'new\s+\\?(GuzzleHttp\\)?Client\s*\(' app/ --include=*.php
 ```
 
-**Out-of-scope greps that will correctly still return hits:** `fonts.googleapis.com` (12 files, a static font CDN), and `GOOGLE_CLIENT_ID` / `SocialAuth.php` (OAuth — an identity provider, not Maps Platform).
+**Out-of-scope greps that will correctly still return hits:** `fonts.googleapis.com` (12 files, a static font CDN), and `GOOGLE_CLIENT_ID` / `SocialAuth.php` (OAuth — an identity provider, not Maps Platform). For command 10, `ChatController.php`, `OpenAiClientService.php`, and `AgentAiOpenAiOrchestrator.php` will return hits but call no Google host.
 
 ---
 
