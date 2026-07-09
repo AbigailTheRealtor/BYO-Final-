@@ -1477,6 +1477,11 @@
         };
 
         function initialize() {
+        // Phase 0 item 1 (INV-12): the Maps SDK may never have loaded — no credential,
+        // a rejected key, or a blocked referrer. Degrade silently instead of throwing
+        // ReferenceError: google is not defined, which would break the rest of this handler.
+        if (typeof google === 'undefined' || !google.maps) { return; }
+
             var inputField = document.getElementsByClassName('search_places');
 
             for (var i = 0; i < inputField.length; i++) {

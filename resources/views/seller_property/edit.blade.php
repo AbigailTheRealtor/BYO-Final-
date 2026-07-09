@@ -1119,6 +1119,11 @@
 </script>
 <script>
     function initializeMap() {
+        // Phase 0 item 1 (INV-12): the Maps SDK may never have loaded — no credential,
+        // a rejected key, or a blocked referrer. Degrade silently instead of throwing
+        // ReferenceError: google is not defined, which would break the rest of this handler.
+        if (typeof google === 'undefined' || !google.maps) { return; }
+
       var inputField = document.getElementsByClassName('search_places');
 
       for (var i = 0; i < inputField.length; i++) {
@@ -1715,22 +1720,5 @@
 
     // $('select').trigger('change');
 </script>
-@php $mapsKey = config('services.google.places_key', ''); @endphp
-@if($mapsKey !== '' && $mapsKey !== null)
-<script>
-  function loadGoogleMapsScript() {
-      var script = document.createElement('script');
-      let googlePlacesApiKey = "{{ $mapsKey }}";
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${googlePlacesApiKey}&libraries=places&callback=initializeMap`;
-      script.async = true;
-      script.defer = true;
-
-      document.body.appendChild(script);
-  }
-</script>
-@else
-<div style="border: 2px solid #f59e0b; background-color: #fffbeb; color: #92400e; padding: 8px 12px; border-radius: 4px; font-size: 13px; margin: 4px 0;">
-    &#9888; Google Maps is not configured for this environment &mdash; address autocomplete is unavailable.
-</div>
-@endif
+    <x-google-maps-deferred-loader callback="initializeMap" />
 @endpush

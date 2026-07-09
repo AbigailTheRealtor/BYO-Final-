@@ -225,6 +225,11 @@
     (function() {
       var pinData = @json($propertyPin);
       function initPropertyPinMap() {
+        // Phase 0 item 1: never touch `google` unless the SDK actually loaded. A present
+        // but rejected key renders the script tag yet defines no `google`, so the
+        // server-side credential check alone is not sufficient.
+        if (typeof google === 'undefined' || !google.maps) { return; }
+
         var map = new google.maps.Map(document.getElementById('{{ $componentId }}-pin'), {
           center: { lat: pinData.lat, lng: pinData.lng },
           zoom: 15,
@@ -784,6 +789,11 @@
 @if($hasMapData && ($tier === 'polygons' || $tier === 'radii' || $useBoundaryMap) && $mapsKey !== '')
 @once
 @push('scripts')
+{{-- Phase 0 / Batch 5: the gm_authFailure callback must exist before this injector can
+     append the SDK. This component keeps its own injector rather than adopting
+     <x-google-maps-script>, because the dedupe below (typeof google + existing-script
+     check) is load-bearing: several location-dna-map instances can share one page. --}}
+<x-google-maps-auth-telemetry />
 <script>
 (function () {
   if (typeof google !== 'undefined' && google.maps) return;
@@ -791,7 +801,7 @@
   if (existing) return; /* already loading */
   var s = document.createElement('script');
   s.async = true; s.defer = true;
-  s.src = 'https://maps.googleapis.com/maps/api/js?key={{ $mapsKey }}&libraries=places';
+  s.src = {{ Illuminate\Support\Js::from('https://maps.googleapis.com/maps/api/js?key=' . $mapsKey . '&libraries=places') }};
   document.head.appendChild(s);
 })();
 </script>
