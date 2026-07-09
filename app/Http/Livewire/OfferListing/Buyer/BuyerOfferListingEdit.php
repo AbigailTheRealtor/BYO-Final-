@@ -998,6 +998,11 @@ class BuyerOfferListingEdit extends Component
             }
             return $results;
         } elseif ($type === 'address') {
+            // Phase 0 item 1: no credential -> no suggestions, and no outbound attempt.
+            if (\App\Support\Google\GoogleCredential::absent()) {
+                return [];
+            }
+
             // Phase 0 / S1b: container-resolved so the call is observable and mockable.
             // No try/catch here; that is pre-existing behaviour, preserved as found.
             $client = app(\GuzzleHttp\ClientInterface::class);

@@ -47,13 +47,24 @@ class GeocodeSelleryLandlordListings extends Command
                 continue;
             }
 
-            $result = $this->geocode($address, $apiKey);
-            if (!$result) {
-                $this->warn("  FAILED [{$row->role}] #{$row->listing_id}: {$address}");
+            $outcome = $this->geocode($address, $apiKey);
+            if ($outcome['status'] !== 'ok') {
+                // Phase 0 item 1: an honest reason, never a silent null. "Address not on
+                // the map" and "Google rejected our credential" are different facts and
+                // must never be reported as the same FAILED line.
+                $this->warn("  {$outcome['status']} [{$row->role}] #{$row->listing_id}: {$address}");
                 $failed++;
+
+                if ($outcome['status'] === 'credential_rejected') {
+                    $this->error('  Google rejected the API key. Aborting: every remaining row would fail identically.');
+
+                    return Command::FAILURE;
+                }
+
                 continue;
             }
 
+            $result = $outcome['data'];
             $this->saveMeta($row->meta_table, $row->listing_id, $result);
             $this->line("  OK [{$row->role}] #{$row->listing_id}: {$result['formatted_address']}");
             $updated++;
@@ -120,7 +131,18 @@ class GeocodeSelleryLandlordListings extends Command
         return $rows;
     }
 
-    private function geocode(string $address, string $apiKey): ?array
+    /**
+     * Geocode one address.
+     *
+     * Phase 0 item 1 — "an honest NOT_FOUND, never a silent null". This previously
+     * answered `null` for four unrelated outcomes: address genuinely unknown, HTTP
+     * error, malformed body, and a rejected credential. The operator saw one FAILED
+     * line for all of them, which is precisely how a dead key looks like a bad address.
+     *
+     * @return array{status: string, data?: array}
+     *         status is one of: ok · not_found · credential_rejected · http_error · transport_error
+     */
+    private function geocode(string $address, string $apiKey): array
     {
         try {
             // Phase 0 / erratum E-40: this was the one Google caller reaching the network
@@ -129,7 +151,7 @@ class GeocodeSelleryLandlordListings extends Command
             // and the test-suite guards. Routed through the container binding instead.
             //
             // http_errors => false preserves the facade's semantics: Http::get() returns a
-            // Response on 4xx/5xx rather than throwing, and this method answers null.
+            // Response on 4xx/5xx rather than throwing.
             $client = app(\GuzzleHttp\ClientInterface::class);
 
             $response = $client->request('GET', 'https://maps.googleapis.com/maps/api/geocode/json', [
@@ -142,20 +164,36 @@ class GeocodeSelleryLandlordListings extends Command
                 'http_errors' => false,
             ]);
 
-            if ($response->getStatusCode() !== 200) return null;
+            if ($response->getStatusCode() !== 200) return ['status' => 'http_error'];
 
             $data = json_decode((string) $response->getBody(), true) ?: [];
-            if (($data['status'] ?? '') !== 'OK' || empty($data['results'])) return null;
+
+            // Google answers a blank, invalid, or revoked key with HTTP 200 and
+            // REQUEST_DENIED. Status alone cannot distinguish it from a healthy miss.
+            $googleStatus = $data['status'] ?? '';
+            if (in_array($googleStatus, ['REQUEST_DENIED', 'OVER_QUERY_LIMIT'], true)) {
+                return ['status' => 'credential_rejected'];
+            }
+
+            if ($googleStatus === 'ZERO_RESULTS' || empty($data['results'])) {
+                return ['status' => 'not_found'];
+            }
+
+            if ($googleStatus !== 'OK') return ['status' => 'http_error'];
 
             $result = $data['results'][0];
+
             return [
-                'property_lat'      => (string) ($result['geometry']['location']['lat'] ?? ''),
-                'property_lng'      => (string) ($result['geometry']['location']['lng'] ?? ''),
-                'google_place_id'   => $result['place_id'] ?? '',
-                'formatted_address' => $result['formatted_address'] ?? '',
+                'status' => 'ok',
+                'data'   => [
+                    'property_lat'      => (string) ($result['geometry']['location']['lat'] ?? ''),
+                    'property_lng'      => (string) ($result['geometry']['location']['lng'] ?? ''),
+                    'google_place_id'   => $result['place_id'] ?? '',
+                    'formatted_address' => $result['formatted_address'] ?? '',
+                ],
             ];
         } catch (\Throwable $e) {
-            return null;
+            return ['status' => 'transport_error'];
         }
     }
 

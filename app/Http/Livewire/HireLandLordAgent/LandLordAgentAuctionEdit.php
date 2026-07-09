@@ -1180,6 +1180,11 @@ class LandLordAgentAuctionEdit extends Component
 
     protected function getPlaceSuggestions($input, $type = null)
     {
+        // Phase 0 item 1: no credential -> no suggestions, and no outbound attempt.
+        if (\App\Support\Google\GoogleCredential::absent()) {
+            return [];
+        }
+
         // Phase 0 / S1b: resolve from the container so the call is observable by
         // GoogleOutboundTelemetryMiddleware and interceptable in tests. request('GET', …)
         // rather than get(), which is Guzzle __call magic absent from ClientInterface.

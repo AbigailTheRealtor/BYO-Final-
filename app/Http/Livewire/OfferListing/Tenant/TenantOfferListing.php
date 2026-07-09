@@ -21,6 +21,7 @@ use App\Models\UsState;
 use App\Models\UsCounty;
 use App\Models\UsCity;
 use App\Support\TenantServicesCatalog;
+use App\Support\Google\GoogleCredential;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
 use App\Services\WizardEventService;
@@ -2009,6 +2010,12 @@ class TenantOfferListing extends Component
 
     private function getAddressDetailsFromApi($address)
     {
+        // Phase 0 item 1: no credential → degrade, never call. Returning early leaves
+        // $this->city/state/zipCode untouched, exactly as a REQUEST_DENIED response did.
+        if (GoogleCredential::absent()) {
+            return;
+        }
+
         // Phase 0 / S1b: resolve from the container so the call is observable by
         // GoogleOutboundTelemetryMiddleware and interceptable in tests.
         $client = app(ClientInterface::class);
@@ -2126,6 +2133,14 @@ class TenantOfferListing extends Component
     // Alternative method using Google Places API for more accuracy
     private function extractStateFromCountyUsingAPI($county)
     {
+        // Phase 0 item 1: no credential → use the string-parsing fallback directly,
+        // which is precisely what the catch block below does on failure.
+        if (GoogleCredential::absent()) {
+            $this->extractStateFromCounty($county);
+
+            return;
+        }
+
         try {
             // Phase 0 / S1b: resolve from the container (see getAddressDetailsFromApi).
             $client = app(ClientInterface::class);
@@ -2260,6 +2275,12 @@ class TenantOfferListing extends Component
 
     protected function getPlaceSuggestionsFromApi($input, $type = null)
     {
+        // Phase 0 item 1: no credential → no suggestions, and no outbound attempt.
+        // Identical to what a REQUEST_DENIED response yielded, minus the request.
+        if (GoogleCredential::absent()) {
+            return [];
+        }
+
         // Phase 0 / S1b: resolve from the container (see getAddressDetailsFromApi).
         $client = app(ClientInterface::class);
 
