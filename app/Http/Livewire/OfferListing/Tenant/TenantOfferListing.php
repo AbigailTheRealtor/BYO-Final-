@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use Livewire\Features\SupportRedirects\Redirector;
-use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use App\Models\UsState;
 use App\Models\UsCounty;
 use App\Models\UsCity;
@@ -2009,7 +2009,9 @@ class TenantOfferListing extends Component
 
     private function getAddressDetailsFromApi($address)
     {
-        $client = new \GuzzleHttp\Client();
+        // Phase 0 / S1b: resolve from the container so the call is observable by
+        // GoogleOutboundTelemetryMiddleware and interceptable in tests.
+        $client = app(ClientInterface::class);
 
         $query = [
             'address' => $address,
@@ -2017,7 +2019,7 @@ class TenantOfferListing extends Component
         ];
 
         try {
-            $response = $client->get('https://maps.googleapis.com/maps/api/geocode/json', [
+            $response = $client->request('GET', 'https://maps.googleapis.com/maps/api/geocode/json', [
                 'query' => $query
             ]);
 
@@ -2125,9 +2127,10 @@ class TenantOfferListing extends Component
     private function extractStateFromCountyUsingAPI($county)
     {
         try {
-            $client = new Client();
+            // Phase 0 / S1b: resolve from the container (see getAddressDetailsFromApi).
+            $client = app(ClientInterface::class);
 
-            $response = $client->get('https://maps.googleapis.com/maps/api/geocode/json', [
+            $response = $client->request('GET', 'https://maps.googleapis.com/maps/api/geocode/json', [
                 'query' => [
                     'address' => $county,
                     'key' => config('services.google.places_key', '')
@@ -2257,7 +2260,8 @@ class TenantOfferListing extends Component
 
     protected function getPlaceSuggestionsFromApi($input, $type = null)
     {
-        $client = new Client();
+        // Phase 0 / S1b: resolve from the container (see getAddressDetailsFromApi).
+        $client = app(ClientInterface::class);
 
         $query = [
             'input' => $input,
@@ -2272,7 +2276,7 @@ class TenantOfferListing extends Component
         }
 
         try {
-            $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+            $response = $client->request('GET', 'https://maps.googleapis.com/maps/api/place/autocomplete/json', [
                 'query' => $query
             ]);
 
