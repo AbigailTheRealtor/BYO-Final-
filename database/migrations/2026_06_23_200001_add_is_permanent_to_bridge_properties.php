@@ -13,9 +13,6 @@ class AddIsPermanentToBridgeProperties extends Migration
      */
     public $withinTransaction = false;
 
-    /** Shared between the pgsql statement and the SQLite fallback so they cannot drift. */
-    private const INDEX_NAME = 'bridge_properties_is_permanent_status_idx';
-
     public function up()
     {
         Schema::table('bridge_properties', function (Blueprint $table) {
@@ -35,16 +32,14 @@ class AddIsPermanentToBridgeProperties extends Migration
         // Composite index supports fast "active permanent" queries:
         // WHERE is_permanent = true AND standard_status = 'Active'
         //
-        // Driver-aware, per 2026_07_05_000001_add_lookup_indexes_to_bridge_properties: the
-        // COLUMN above is created on every driver — that is what the schema and the model
-        // depend on — while CREATE INDEX CONCURRENTLY, which SQLite has no syntax for,
-        // falls back to the standard Schema builder. This index carries no WHERE predicate,
-        // so the fallback is an exact equivalent rather than an approximation.
+        // PostgreSQL-only: CREATE INDEX CONCURRENTLY has no SQLite equivalent.
+        //
+        // The COLUMN above is created on every driver — that is what the schema and the
+        // model depend on. Only the INDEX is skipped on SQLite. An index changes the plan
+        // the planner picks, never the rows a query returns, so nothing loses coverage.
+        // No SQLite fallback index is created, by project decision; see
+        // 2026_06_16_000002_add_phase1_indexes_to_bridge_properties for the full rationale.
         if (! $this->isPostgres()) {
-            Schema::table('bridge_properties', function (Blueprint $table) {
-                $table->index(['is_permanent', 'standard_status'], self::INDEX_NAME);
-            });
-
             return;
         }
 
@@ -54,14 +49,11 @@ class AddIsPermanentToBridgeProperties extends Migration
 
     public function down()
     {
-        // Symmetric guard on the index only. The column drop must still happen on every
-        // driver, so it sits outside the guard.
+        // Symmetric guard on the index only: on SQLite up() created no index, so there is
+        // nothing to drop. The COLUMN drop must still happen on every driver, so it sits
+        // outside the guard.
         if ($this->isPostgres()) {
             DB::statement('DROP INDEX CONCURRENTLY IF EXISTS bridge_properties_is_permanent_status_idx');
-        } else {
-            Schema::table('bridge_properties', function (Blueprint $table) {
-                $table->dropIndex(self::INDEX_NAME);
-            });
         }
 
         Schema::table('bridge_properties', function (Blueprint $table) {
