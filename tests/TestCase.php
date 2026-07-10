@@ -11,6 +11,7 @@ use Illuminate\Database\ConfigurationUrlParser;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Client\Factory as HttpFactory;
+use PDO;
 use RuntimeException;
 use Tests\Support\BlocksGooglePlacesHttpClient;
 use Tests\Support\Http\StrayRequestGuardFactory;
@@ -20,10 +21,40 @@ abstract class TestCase extends BaseTestCase
     use CreatesApplication;
 
     /**
-     * Tracks whether the in-memory SQLite schema has been built during this
-     * PHP process.  Static so it persists across all test class instances.
+     * The live PDO handle for each migrated in-memory SQLite connection, keyed by
+     * connection name. Static so it outlives the Application that created it.
+     *
+     * WHY THIS EXISTS
+     * ---------------
+     * A SQLite `:memory:` database is owned by its PDO handle and is destroyed when that
+     * handle is garbage-collected. PHPUnit builds a fresh Application — and therefore a
+     * fresh PDO — for every single test. So "migrate once per process" and "`:memory:`"
+     * are in direct conflict unless the HANDLE itself is carried across Applications.
+     *
+     * This used to be a `private static bool $sqliteSchemaBuilt`. That flag was only ever
+     * correct because the suite was secretly running against heliumdb, which persisted
+     * between tests. The moment isolation became real, test #1 migrated, set the flag, and
+     * test #2 received an empty database while being told the schema already existed.
+     *
+     * Holding the PDO here keeps the database alive for the life of the PHP process. This
+     * is the mechanism Laravel 9 later shipped as `RefreshDatabaseState::$inMemoryConnections`;
+     * this application is on Laravel 8.83 (erratum E-39), which has no equivalent.
+     *
+     * @var array<string, \PDO>
      */
-    private static bool $sqliteSchemaBuilt = false;
+    private static array $inMemoryPdo = [];
+
+    /**
+     * How many times `migrate` has been invoked in this PHP process. Exposed so a test can
+     * assert the invariant — migrations run exactly once — rather than us assuming it.
+     */
+    private static int $migrationRuns = 0;
+
+    /** @see \Tests\Feature\Safeguards\InMemorySchemaReuseTest */
+    public static function migrationRunCount(): int
+    {
+        return static::$migrationRuns;
+    }
 
     /**
      * Called by BaseTestCase::setUp() after the application is created but
@@ -132,14 +163,61 @@ abstract class TestCase extends BaseTestCase
         if (
             isset($uses[DatabaseTransactions::class]) &&
             $resolved['driver'] === 'sqlite' &&
-            $resolved['database'] === ':memory:' &&
-            ! static::$sqliteSchemaBuilt
+            $resolved['database'] === ':memory:'
         ) {
-            $this->artisan('migrate', ['--force' => true]);
-            static::$sqliteSchemaBuilt = true;
+            $this->reuseOrBuildInMemorySchema($resolved['name']);
         }
 
         return parent::setUpTraits();
+    }
+
+    /**
+     * Migrate the in-memory schema once per process, then hand the SAME PDO handle to every
+     * later Application so the database it owns stays alive.
+     *
+     * Called only for DatabaseTransactions tests, and only once the resolved connection has
+     * been proven to be SQLite `:memory:`. Runs BEFORE parent::setUpTraits(), so the handle
+     * is in place before DatabaseTransactions opens its wrapping transaction, and the initial
+     * migration's DDL commits outside that transaction.
+     *
+     * DELIBERATELY NOT APPLIED TO RefreshDatabase
+     * ------------------------------------------
+     * `RefreshDatabase` relies on each in-memory test receiving a brand-new, empty database;
+     * Laravel 8's `refreshInMemoryDatabase()` migrates and never opens a transaction, so it
+     * has no rollback of its own. Injecting a shared, already-populated handle would leak one
+     * RefreshDatabase test's rows into the next. Those tests are left to build and discard
+     * their own handle per test, exactly as before. DatabaseTransactions tests are safe to
+     * share because every one of them is wrapped in a transaction that is rolled back.
+     */
+    private function reuseOrBuildInMemorySchema(string $connection): void
+    {
+        $db = $this->app->make('db')->connection($connection);
+
+        if (isset(static::$inMemoryPdo[$connection])) {
+            // Re-attach the surviving handle. Both the write and read handles must be set:
+            // Connection::getReadPdo() falls back to a separately-resolved handle otherwise,
+            // and every SELECT would run against a second, empty :memory: database.
+            $db->setPdo(static::$inMemoryPdo[$connection]);
+            $db->setReadPdo(static::$inMemoryPdo[$connection]);
+
+            return;
+        }
+
+        // First DatabaseTransactions test in this process: build the schema, then capture the
+        // handle that owns it. getPdo() returns the connection Laravel opened during migrate.
+        $this->artisan('migrate', ['--force' => true]);
+        static::$migrationRuns++;
+
+        $pdo = $db->getPdo();
+
+        if (! $pdo instanceof PDO) {
+            throw new RuntimeException(
+                'Expected a live PDO handle after migrating the in-memory schema, got '
+                . get_debug_type($pdo) . '. Without it the :memory: database dies with this test.'
+            );
+        }
+
+        static::$inMemoryPdo[$connection] = $pdo;
     }
 
     /**
