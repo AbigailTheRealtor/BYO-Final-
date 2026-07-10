@@ -34,12 +34,55 @@ $byoBlankedCredentials = [
     'GOOGLE_PLACES_ENABLED' => 'false',
 ];
 
-foreach ($byoBlankedCredentials as $name => $value) {
+/**
+ * DATABASE ISOLATION — the suite must never reach the dev database.
+ * ------------------------------------------------------------------
+ * Same host problem as the Google credential above, different blast radius.
+ *
+ * `config/database.php` declares the `sqlite` connection with `'url' => env('DATABASE_URL')`,
+ * and this host injects `DATABASE_URL=postgresql://.../heliumdb` as a process env var.
+ * Laravel's `ConfigurationUrlParser` gives `url` **precedence over both `driver` and
+ * `database`**, so the connection *named* `sqlite` resolved to PostgreSQL against
+ * `heliumdb` — the live dev database (3,079 users; 529 seller_agent_auctions).
+ *
+ * `TestCase::assertSafeTestDatabase()` did not catch it: that guard reads
+ * `config('database.default')` and `config(...sqlite.database)`, which are precisely the
+ * two keys `url` overrides. Configuration said SQLite; the connection was Postgres.
+ *
+ * Blanking `DATABASE_URL` is sufficient and is the *safe* form of the fix.
+ * `ConfigurationUrlParser::parseConfiguration()` does `$url = Arr::pull($config, 'url');
+ * if (! $url) { return $config; }` — an empty string is falsy, so URL parsing is bypassed
+ * entirely and the declared `driver`/`database` win. Unsetting the variable instead would
+ * let `.env` repopulate it, exactly as for the Google key above.
+ *
+ * `DB_CONNECTION` and `DB_DATABASE` are forced alongside it. `config/database.php:18` reads
+ * `env('DATABASE_URL') ? 'pgsql' : env('DB_CONNECTION', 'mysql')`, so with the URL blanked
+ * the default falls through to `DB_CONNECTION` — which this host sets to `pgsql`.
+ * Both must be forced, or the fix is only half applied.
+ *
+ * ⚠️  DO NOT "fix" this by repairing the `database` config key while leaving `url` in place.
+ *     `RefreshDatabase::usingInMemoryDatabase()` reads that same overridden key; seeing
+ *     `':memory:'` is the only reason it takes the non-destructive `migrate` branch rather
+ *     than `migrate:fresh`. Neutralise `url`, or five test files begin dropping every table
+ *     in `heliumdb` on the next run.
+ *
+ * Asserted by tests/Feature/Safeguards/TestDatabaseIdentityTest.php, which inspects the
+ * **resolved connection object** rather than the config values this defect falsifies.
+ *
+ * @see docs/certification/TRACK-F-CHECKPOINT.md
+ */
+$byoIsolatedTestDatabase = [
+    'DATABASE_URL'  => '',
+    'DB_CONNECTION' => 'sqlite',
+    'DB_DATABASE'   => ':memory:',
+];
+
+foreach ($byoBlankedCredentials + $byoIsolatedTestDatabase as $name => $value) {
     putenv("{$name}={$value}");
     $_ENV[$name]    = $value;
     $_SERVER[$name] = $value;
 }
 
-unset($byoBlankedCredentials, $name, $value);
+unset($byoBlankedCredentials, $byoIsolatedTestDatabase, $name, $value);
 
 require __DIR__ . '/../vendor/autoload.php';

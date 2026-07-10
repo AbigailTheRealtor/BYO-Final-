@@ -22,8 +22,26 @@
         <server name="APP_ENV" value="testing"/>
         <server name="BCRYPT_ROUNDS" value="4"/>
         <server name="CACHE_DRIVER" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <!-- Database isolation. force="true" is load-bearing, for the same reason it is on
+             GOOGLE_PLACES_API_KEY below: without it PHPUnit will NOT overwrite a variable
+             already present in the process environment, and this host injects
+             DB_CONNECTION=pgsql / DB_DATABASE=heliumdb / DATABASE_URL=postgresql://...
+
+             DATABASE_URL is the decisive one. config/database.php declares the `sqlite`
+             connection with 'url' => env('DATABASE_URL'), and Laravel's
+             ConfigurationUrlParser gives `url` precedence over BOTH `driver` and `database`
+             — so the connection named `sqlite` resolved to PostgreSQL against the live dev
+             database. Blanking it (empty string is falsy, so URL parsing is skipped) lets
+             the declared driver/database win.
+
+             tests/bootstrap.php sets all three before Laravel boots; these entries restate
+             them at the PHPUnit layer so neither surface can drift from the other.
+
+             Asserted by tests/Feature/Safeguards/TestDatabaseIdentityTest.php.
+             See docs/certification/TRACK-F-CHECKPOINT.md. -->
+        <env name="DATABASE_URL" value="" force="true"/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
         <server name="MAIL_MAILER" value="array"/>
         <server name="QUEUE_CONNECTION" value="sync"/>
         <server name="SESSION_DRIVER" value="array"/>
