@@ -32,6 +32,39 @@
 $byoBlankedCredentials = [
     'GOOGLE_PLACES_API_KEY' => '',
     'GOOGLE_PLACES_ENABLED' => 'false',
+
+    // ── TEST DATABASE IDENTITY ───────────────────────────────────────────────
+    //
+    // `DATABASE_URL` is the whole ballgame, and it is why every previous attempt
+    // to force SQLite failed. Two lines of `config/database.php` conspire:
+    //
+    //     'default' => env('DATABASE_URL') ? 'pgsql' : env('DB_CONNECTION', 'mysql'),
+    //     'sqlite'  => [ 'driver' => 'sqlite', 'url' => env('DATABASE_URL'), ... ],
+    //
+    // The first makes a present `DATABASE_URL` override `DB_CONNECTION=sqlite`
+    // outright. The second is the trap: Laravel's `ConfigurationUrlParser` lets a
+    // connection's `url` override its own `driver` and `database`, so the connection
+    // *named* `sqlite` resolves to `pgsql` against `heliumdb`. Forcing
+    // `database.default = sqlite` at runtime therefore protects nothing, and a guard
+    // that reads `config('database.connections.sqlite.database')` reads back the
+    // `:memory:` it just wrote while the real PDO handle points at the shared
+    // PostgreSQL dev database.
+    //
+    // Replit injects `DATABASE_URL`, `DB_CONNECTION=pgsql`, and `DB_DATABASE=heliumdb`
+    // as SYSTEM environment variables. phpdotenv's ImmutableStringRepository refuses to
+    // overwrite anything already set, so neither `.env.testing` nor phpunit.xml's
+    // `<env>` (without `force`) can win. This file runs before the autoloader, before
+    // Dotenv, and before Laravel — it is the only place that can.
+    //
+    // Blanked to '' rather than unset: an unset variable would simply be repopulated
+    // from `.env`. An empty string is falsy to `env()`, so `default` falls through to
+    // `DB_CONNECTION`, and `ConfigurationUrlParser` skips an empty `url` entirely.
+    //
+    // Asserted by tests/Feature/Safeguards/TestDatabaseIdentityTest.php, which inspects
+    // the RESOLVED connection rather than the values written here.
+    'DATABASE_URL'  => '',
+    'DB_CONNECTION' => 'sqlite',
+    'DB_DATABASE'   => ':memory:',
 ];
 
 foreach ($byoBlankedCredentials as $name => $value) {

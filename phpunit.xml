@@ -22,8 +22,23 @@
         <server name="APP_ENV" value="testing"/>
         <server name="BCRYPT_ROUNDS" value="4"/>
         <server name="CACHE_DRIVER" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <!-- Test database identity — defense in depth behind tests/bootstrap.php.
+             force="true" is load-bearing on all three, for the same reason it is on the
+             Google keys below: without it PHPUnit will NOT overwrite a variable already
+             present in the process environment, and Replit injects all three
+             (DATABASE_URL, DB_CONNECTION=pgsql, DB_DATABASE=heliumdb) as system vars.
+
+             DATABASE_URL must be blanked, not merely ignored: config/database.php reads
+             `'default' => env('DATABASE_URL') ? 'pgsql' : env('DB_CONNECTION', 'mysql')`
+             and gives the sqlite connection `'url' => env('DATABASE_URL')`. A non-empty
+             url overrides that connection's driver AND database via
+             Illuminate\Database\ConfigurationUrlParser, so the connection named "sqlite"
+             would resolve to pgsql/heliumdb.
+
+             Asserted by tests/Feature/Safeguards/TestDatabaseIdentityTest.php. -->
+        <env name="DATABASE_URL" value="" force="true"/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
         <server name="MAIL_MAILER" value="array"/>
         <server name="QUEUE_CONNECTION" value="sync"/>
         <server name="SESSION_DRIVER" value="array"/>
