@@ -19,6 +19,9 @@ class ComputeLocationDna implements ShouldQueue
     public int $tries = 3;
     public int $timeout = 120;
 
+    /** Escalating retry backoff in seconds; ComputeLocationDna is the only queued job with an outbound network surface. */
+    public array $backoff = [10, 60, 300];
+
     public string $listingType;
     public int $listingId;
 
@@ -26,6 +29,9 @@ class ComputeLocationDna implements ShouldQueue
     {
         $this->listingType = $listingType;
         $this->listingId   = $listingId;
+
+        // Queueable owns $queue; redeclaring it as a property with a default fatals on PHP 8.2.
+        $this->queue = 'location-dna';
     }
 
     public function handle(LocationDnaPipelineRunner $runner, CanonicalListingResolver $resolver): void

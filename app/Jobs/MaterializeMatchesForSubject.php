@@ -33,6 +33,8 @@ class MaterializeMatchesForSubject implements ShouldQueue
         public readonly int $subjectId,
         public readonly ?int $cap = null,
     ) {
+        // Queueable owns $queue; redeclaring it as a property with a default fatals on PHP 8.2.
+        $this->queue = 'matching';
     }
 
     public function handle(MatchingV2Service $engine, MatchResultPersister $persister): void

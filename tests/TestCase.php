@@ -384,9 +384,16 @@ abstract class TestCase extends BaseTestCase
      * from a passing one in CI output, and this is the assertion standing between the suite
      * and `migrate:fresh` on the shared development database.
      *
+     * Protected, not private, so DatabaseGuardPoisoningTest can invoke the abort path directly
+     * and prove it fails closed under each poisoning vector. A non-vacuous enumerator
+     * (databaseSafetyViolations()) does not by itself prove the abort built on top of it aborts;
+     * this branch is about to add `jobs` — the first DDL — and DatabaseTransactions cannot roll
+     * DDL back, so the seatbelt must be exercised, not assumed.
+     *
+     * @see \Tests\Feature\Safeguards\DatabaseGuardPoisoningTest
      * @throws \PHPUnit\Framework\AssertionFailedError
      */
-    private function assertSafeTestDatabase(): void
+    protected function assertSafeTestDatabase(): void
     {
         $violations = static::databaseSafetyViolations();
 

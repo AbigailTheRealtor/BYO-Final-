@@ -38,6 +38,9 @@ class ComputeDnaScores implements ShouldQueue
         $this->listingType = $listingType;
         $this->listingId   = $listingId;
         $this->generatedBy = $generatedBy;
+
+        // Queueable owns $queue; redeclaring it as a property with a default fatals on PHP 8.2.
+        $this->queue = 'dna';
     }
 
     public function handle(DnaScoreGenerationService $service): void

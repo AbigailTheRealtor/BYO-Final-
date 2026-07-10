@@ -82,6 +82,9 @@ class ComputeCompatibilityScore implements ShouldQueue
         $this->demandListingId   = $demandListingId;
         $this->supplyListingType = $supplyListingType;
         $this->supplyListingId   = $supplyListingId;
+
+        // Queueable owns $queue; redeclaring it as a property with a default fatals on PHP 8.2.
+        $this->queue = 'matching';
     }
 
     public function handle(CompatibilityEngine $engine): void

@@ -25,6 +25,9 @@ class ComputePropertyDnaProfile implements ShouldQueue
     {
         $this->listingType = $listingType;
         $this->listingId   = $listingId;
+
+        // Queueable owns $queue; redeclaring it as a property with a default fatals on PHP 8.2.
+        $this->queue = 'dna';
     }
 
     public function handle(PropertyDnaGenerator $generator): void
