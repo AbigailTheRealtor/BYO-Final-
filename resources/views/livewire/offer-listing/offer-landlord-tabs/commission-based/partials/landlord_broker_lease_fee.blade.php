@@ -4,7 +4,7 @@
         <label class="fw-bold d-flex align-items-center">
             Landlord’s Broker Lease Fee:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Choose how the Landlord’s Broker will be compensated if the property is leased. Options include: a percentage of the rent due each rental period, a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or "Other" to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
+                title="Choose how the Landlord’s Broker will be compensated if the property is leased. Options include: a percentage of the rent due each rental period, a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or &quot;Other&quot; to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
