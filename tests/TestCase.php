@@ -7,9 +7,12 @@ use App\Contracts\PoiLookupAdapterInterface;
 use App\Services\LocationDna\CommuteTimeStubAdapter;
 use App\Services\LocationDna\StubPoiLookupAdapter;
 use GuzzleHttp\ClientInterface;
+use Illuminate\Database\MySqlConnection;
+use Illuminate\Database\PostgresConnection;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Http\Client\Factory as HttpFactory;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Tests\Support\BlocksGooglePlacesHttpClient;
 use Tests\Support\Http\StrayRequestGuardFactory;
@@ -47,6 +50,12 @@ abstract class TestCase extends BaseTestCase
         ]);
 
         // ── Rule 4: pre-test safety guard ────────────────────────────────────
+        //
+        // Runs BEFORE parent::setUpTraits(), which is where the framework invokes
+        // RefreshDatabase::refreshDatabase() (potentially `migrate:fresh`) and
+        // DatabaseTransactions::beginDatabaseTransaction(). It also runs before this
+        // method's own `artisan migrate` below. Nothing may touch a database until the
+        // resolved connection has been proven isolated.
         $this->assertSafeTestDatabase();
 
         // ── Google Places hard block (2026-07-05 NearbySearch incident) ──────
@@ -91,12 +100,18 @@ abstract class TestCase extends BaseTestCase
         //    Run BEFORE parent::setUpTraits() so migrations execute OUTSIDE the
         //    DatabaseTransactions wrapping transaction (DDL in SQLite is
         //    transactional; committing outside keeps the schema between tests).
+        //    The gate below asks the RESOLVED CONNECTION whether it is isolated, not the
+        //    config values this very method just assigned. Reading back your own writes
+        //    proves nothing: `config(...sqlite.database) === ':memory:'` was true
+        //    throughout the period when the connection was PostgreSQL against `heliumdb`,
+        //    because `url` overrode it. `migrate --force` is DDL, and DDL is the one thing
+        //    DatabaseTransactions cannot roll back. It must never run against a database
+        //    whose identity has not been established.
         $uses = array_flip(class_uses_recursive(static::class));
 
         if (
             isset($uses[DatabaseTransactions::class]) &&
-            config('database.default') === 'sqlite' &&
-            config('database.connections.sqlite.database') === ':memory:' &&
+            $this->resolvedConnectionIsIsolatedSqlite() &&
             ! static::$sqliteSchemaBuilt
         ) {
             $this->artisan('migrate', ['--force' => true]);
@@ -159,46 +174,160 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Abort immediately if the test suite is aimed at the live dev database.
+     * The one database identity this suite may ever run against.
+     */
+    private const REQUIRED_DRIVER   = 'sqlite';
+    private const REQUIRED_DATABASE = ':memory:';
+
+    /** Substring that unambiguously names the live dev database, wherever it appears. */
+    private const FORBIDDEN_DATABASE_NAME = 'heliumdb';
+
+    /**
+     * Abort immediately unless the RESOLVED CONNECTION is an isolated SQLite `:memory:`
+     * database.
      *
-     * Safe configurations:
-     *   - SQLite :memory:                       (isolated, ephemeral)
-     *   - Any DB whose name contains "test"     (explicit test database)
+     * WHY THIS INSPECTS THE CONNECTION AND NOT THE CONFIG
+     * ---------------------------------------------------
+     * The previous implementation read `config('database.default')` and
+     * `config("database.connections.{$default}.database")` — values `setUpTraits()` had
+     * assigned moments earlier. It therefore verified that this class can write to an
+     * array, and nothing else.
      *
-     * Everything else is assumed to be the dev/production database and will
-     * cause an immediate failure rather than silently destroying data.
+     * Those two keys were `sqlite` and `:memory:` throughout the entire period in which
+     * the suite was in fact connected to PostgreSQL against `heliumdb`, the live dev
+     * database. `config/database.php` declares the `sqlite` connection with
+     * `'url' => env('DATABASE_URL')`, and Laravel's `ConfigurationUrlParser` gives `url`
+     * precedence over BOTH `driver` and `database`. **A guard that reads the keys an
+     * override replaces cannot detect the override.** This guard passed for the whole
+     * incident. See `tests/Feature/Safeguards/TestDatabaseIdentityTest.php`.
+     *
+     * So: resolve the connection, then interrogate the object. Its class is chosen from
+     * the post-override driver; its `getDatabaseName()` and `getConfig()` reflect parsed,
+     * post-override configuration. Resolution costs nothing — `createPdoResolver()` returns
+     * a closure, so no socket opens and no query runs.
+     *
+     * THE `test`-IN-THE-NAME ESCAPE HATCH IS GONE
+     * -------------------------------------------
+     * It previously accepted any database whose name contained the substring `test`. That
+     * admits `heliumdb_test`, `latest_backup`, `contest`, and a MySQL or Postgres server on
+     * any host — none of which is isolated, and all of which persist DDL that
+     * `DatabaseTransactions` cannot roll back. There is exactly one safe configuration and
+     * it is named above. Do not reintroduce a substring match.
      *
      * @throws \PHPUnit\Framework\AssertionFailedError
      */
-    private function assertSafeTestDatabase(): void
+    protected function assertSafeTestDatabase(): void
     {
-        $connection = config('database.default');
-        $database   = config("database.connections.{$connection}.database");
+        $violations = $this->databaseIsolationViolations();
 
-        // SQLite in-memory is always safe
-        if ($connection === 'sqlite' && $database === ':memory:') {
+        if ($violations === []) {
             return;
         }
 
-        // A database whose name explicitly contains "test" is safe
-        if (str_contains((string) $database, 'test')) {
-            return;
-        }
-
-        // Anything else is the dev/production database — refuse to run
         $this->fail(
             "\n\n" .
             "  ╔══════════════════════════════════════════════════════════╗\n" .
-            "  ║          SAFETY ABORT — DEV DATABASE DETECTED           ║\n" .
+            "  ║      SAFETY ABORT — NON-ISOLATED DATABASE DETECTED        ║\n" .
             "  ╚══════════════════════════════════════════════════════════╝\n\n" .
-            "  Connection : {$connection}\n" .
-            "  Database   : {$database}\n" .
-            "  APP_ENV    : " . config('app.env') . "\n\n" .
-            "  Tests must not run against the development database.\n" .
-            "  phpunit.xml must configure:\n" .
-            "    <server name=\"DB_CONNECTION\" value=\"sqlite\"/>\n" .
-            "    <server name=\"DB_DATABASE\"   value=\":memory:\"/>\n" .
-            "  Or point DB_DATABASE to a name containing 'test'.\n"
+            '  ' . implode("\n  ", $violations) . "\n\n" .
+            "  APP_ENV : " . config('app.env') . "\n\n" .
+            "  Tests must run against an isolated SQLite :memory: database.\n" .
+            "  This is enforced in tests/bootstrap.php, which blanks DATABASE_URL and\n" .
+            "  forces DB_CONNECTION=sqlite / DB_DATABASE=:memory: before Laravel boots.\n\n" .
+            "  Do NOT relax this guard. A `url` key silently overrides both `driver` and\n" .
+            "  `database`, which is how the suite came to run against the dev database.\n" .
+            "  See docs/certification/TRACK-F-CHECKPOINT.md.\n"
         );
+    }
+
+    /**
+     * True when the resolved connection is a genuinely isolated SQLite `:memory:` database.
+     *
+     * Used to gate `migrate --force`, which emits DDL that no transaction can undo.
+     */
+    protected function resolvedConnectionIsIsolatedSqlite(): bool
+    {
+        return $this->databaseIsolationViolations() === [];
+    }
+
+    /**
+     * Every reason the resolved connection is unsafe. Empty array means safe.
+     *
+     * Issues no query: only the resolved object's class, driver, database name, and parsed
+     * config array are read.
+     *
+     * @return list<string>
+     */
+    protected function databaseIsolationViolations(): array
+    {
+        $connection = DB::connection();
+
+        $driver     = (string) $connection->getDriverName();
+        $database   = (string) $connection->getDatabaseName();
+        $config     = $connection->getConfig();
+        $violations = [];
+
+        if ($driver !== self::REQUIRED_DRIVER) {
+            $violations[] = "Resolved driver is '{$driver}', expected '" . self::REQUIRED_DRIVER . "'.";
+        }
+
+        if ($database !== self::REQUIRED_DATABASE) {
+            $violations[] = "Resolved database is '{$database}', expected '" . self::REQUIRED_DATABASE . "'.";
+        }
+
+        // Assert against the concrete class, not merely the driver string: the class is what
+        // the framework selected after the url override was applied.
+        if ($connection instanceof PostgresConnection) {
+            $violations[] = 'Resolved a PostgresConnection. The suite is pointed at PostgreSQL.';
+        }
+
+        if ($connection instanceof MySqlConnection) {
+            $violations[] = 'Resolved a MySqlConnection. The suite is pointed at MySQL.';
+        }
+
+        // A `url` is the carrier of the override that caused the incident, so any non-empty
+        // value is disqualifying — an isolated SQLite connection has no use for one.
+        //
+        // It must be read from the RAW config, not from `$connection->getConfig()`.
+        // `ConfigurationUrlParser::parseConfiguration()` does `Arr::pull($config, 'url')`,
+        // which *removes* the key once it has been applied. A resolved connection therefore
+        // never carries a `url`, and a check against the resolved config would be dead code
+        // in exactly the case it exists to catch. (Discovered by
+        // DatabaseGuardPoisoningTest::the_guard_never_leaks_the_database_password... — the
+        // poisoning test finding a real hole in the guard, which is what it is for.)
+        //
+        // Reading raw config here is safe in a way the OLD guard's config reads were not:
+        // this can only ADD a violation. Safety is still granted solely by the resolved
+        // connection above. A config check may never be the reason we proceed.
+        $rawUrl = (string) (config('database.connections.' . config('database.default') . '.url')
+            ?? $config['url'] ?? '');
+
+        if (trim($rawUrl) !== '') {
+            $violations[] = 'Connection carries a non-empty `url` (' . $this->maskCredentials($rawUrl)
+                . '). ConfigurationUrlParser gives it precedence over `driver` and `database`.';
+        }
+
+        // An in-memory SQLite database has no host. A host means a server, and a server
+        // means shared, persistent state.
+        if (trim((string) ($config['host'] ?? '')) !== '') {
+            $violations[] = "Connection has a host ('" . $config['host'] . "'). An isolated SQLite database has none.";
+        }
+
+        // Belt and braces: the dev database's name must not appear anywhere in the resolved
+        // config, whatever key smuggled it in.
+        foreach ($config as $key => $value) {
+            if (is_scalar($value) && stripos((string) $value, self::FORBIDDEN_DATABASE_NAME) !== false) {
+                $violations[] = "Config key '{$key}' names the live dev database ('"
+                    . self::FORBIDDEN_DATABASE_NAME . "'): " . $this->maskCredentials((string) $value);
+            }
+        }
+
+        return $violations;
+    }
+
+    /** Never let a password reach a failure message or CI log. */
+    private function maskCredentials(string $value): string
+    {
+        return (string) preg_replace('#://[^@/]*@#', '://***@', $value);
     }
 }
