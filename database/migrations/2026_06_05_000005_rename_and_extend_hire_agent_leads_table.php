@@ -9,13 +9,26 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('hire_agent_leads', function (Blueprint $table) {
-            // ── Rename to required contract field names ──────────────────────
-            $table->renameColumn('listing_type', 'source_listing_type');
-            $table->renameColumn('listing_id',   'source_listing_id');
-            $table->renameColumn('rep_type',      'representation_type');
-            $table->renameColumn('property_type', 'selected_property_type');
-        });
+        // ── Rename to required contract field names ──────────────────────────
+        //
+        // One Schema::table() call per rename. SQLite's Blueprint refuses more than one
+        // renameColumn per modification (Blueprint::ensureCommandsAreValid), because each
+        // rename is emulated by rebuilding the table. This is a Laravel/SQLite limitation,
+        // not a PostgreSQL construct: PostgreSQL emits exactly the same four
+        // `ALTER TABLE … RENAME COLUMN` statements either way, so no behaviour changes on
+        // any driver and no driver guard is warranted.
+        $renames = [
+            'listing_type'  => 'source_listing_type',
+            'listing_id'    => 'source_listing_id',
+            'rep_type'      => 'representation_type',
+            'property_type' => 'selected_property_type',
+        ];
+
+        foreach ($renames as $from => $to) {
+            Schema::table('hire_agent_leads', function (Blueprint $table) use ($from, $to) {
+                $table->renameColumn($from, $to);
+            });
+        }
 
         Schema::table('hire_agent_leads', function (Blueprint $table) {
             // ── New attribution fields ────────────────────────────────────────
@@ -37,15 +50,23 @@ return new class extends Migration
 
     public function down(): void
     {
+        // A single dropColumn() call carrying several columns is ONE command, which SQLite
+        // accepts. It is repeated renameColumn calls that it rejects, so only those are split.
         Schema::table('hire_agent_leads', function (Blueprint $table) {
             $table->dropColumn(['source_listing_role', 'source_property_type', 'lead_source']);
         });
 
-        Schema::table('hire_agent_leads', function (Blueprint $table) {
-            $table->renameColumn('source_listing_type',   'listing_type');
-            $table->renameColumn('source_listing_id',     'listing_id');
-            $table->renameColumn('representation_type',   'rep_type');
-            $table->renameColumn('selected_property_type','property_type');
-        });
+        $renames = [
+            'source_listing_type'    => 'listing_type',
+            'source_listing_id'      => 'listing_id',
+            'representation_type'    => 'rep_type',
+            'selected_property_type' => 'property_type',
+        ];
+
+        foreach ($renames as $from => $to) {
+            Schema::table('hire_agent_leads', function (Blueprint $table) use ($from, $to) {
+                $table->renameColumn($from, $to);
+            });
+        }
     }
 };

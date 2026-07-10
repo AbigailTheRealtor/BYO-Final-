@@ -45,6 +45,28 @@ class CreateMarketingReportAuditsTable extends Migration
                   ->onDelete('restrict');
         });
 
+        // ── PostgreSQL-only: ALTER TABLE … ADD CONSTRAINT … CHECK ────────────
+        //
+        // See 2026_05_31_000002_create_marketing_reports_table for the full rationale.
+        //
+        // INTENTIONAL SQLITE INTEGRITY GAP
+        // --------------------------------
+        // Under the SQLite test harness, `event_type` is NOT constrained at the database
+        // level. Application-level validation is the only guard there. Do NOT write a
+        // test asserting the database rejects an invalid event_type.
+        //
+        // This table already carries a SECOND, larger SQLite gap: the append-only trigger
+        // below is likewise PostgreSQL-only, so on SQLite this table accepts UPDATE and
+        // DELETE freely. Both gaps are properties of the test harness, not of production.
+        //
+        // PostgreSQL is unchanged: the statement below is byte-for-byte as it shipped.
+        // This migration predates database/schema/pgsql-schema.dump (which contains the
+        // marketing_report_audits table), so a fresh pgsql database restores it from the
+        // dump rather than re-running this migration.
+        if (Schema::getConnection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement("
             ALTER TABLE marketing_report_audits
             ADD CONSTRAINT marketing_report_audits_event_type_check

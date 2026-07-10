@@ -48,6 +48,28 @@ class CreateMarketingReportsTable extends Migration
                   ->onDelete('restrict');
         });
 
+        // ── PostgreSQL-only: ALTER TABLE … ADD CONSTRAINT … CHECK ────────────
+        //
+        // SQLite accepts CHECK only inline at CREATE TABLE, never via ALTER TABLE, and
+        // Blueprint has no check() to express it. Emulating this would mean the 12-step
+        // SQLite table-rebuild dance, which would build the test schema with different
+        // code than production's — a worse outcome than the gap.
+        //
+        // INTENTIONAL SQLITE INTEGRITY GAP
+        // --------------------------------
+        // Under the SQLite test harness, `status` is NOT constrained at the database
+        // level: a row with status = 'nonsense' inserts cleanly. Application-level
+        // validation is the only guard there. Do NOT write a test asserting the database
+        // rejects an invalid status — on SQLite it would pass vacuously.
+        //
+        // PostgreSQL is unchanged: the statement below is byte-for-byte as it shipped.
+        // It is also already applied in production and captured in
+        // database/schema/pgsql-schema.dump, so on a fresh pgsql database `migrate`
+        // loads the dump and never re-runs this migration at all.
+        if (Schema::getConnection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement("
             ALTER TABLE marketing_reports
             ADD CONSTRAINT marketing_reports_status_check
@@ -64,6 +86,7 @@ class CreateMarketingReportsTable extends Migration
 
     public function down()
     {
+        // No driver guard needed: dropping the table drops its CHECK constraint with it.
         Schema::dropIfExists('marketing_reports');
     }
 }
