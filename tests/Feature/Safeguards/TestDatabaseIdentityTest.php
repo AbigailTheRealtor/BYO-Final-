@@ -199,6 +199,46 @@ class TestDatabaseIdentityTest extends TestCase
     }
 
     /** @test */
+    public function the_safety_guard_detects_a_bootstrap_regression_independently_of_config(): void
+    {
+        // Layer independence, asserted directly.
+        //
+        // TestCase::setUpTraits() no longer overwrites database.default / sqlite.database /
+        // sqlite.url before the guard reads them, because a guard that validates values it
+        // just wrote proves nothing. This test poisons ONLY the process environment — config()
+        // is left exactly as the bootstrap produced it — and requires the guard to notice.
+        //
+        // If someone reinstates the config() forcing block in setUpTraits(), this test still
+        // passes (config is untouched here) while the DATABASE_URL surface check fires. If
+        // someone instead deletes the surface check, the poisoned-url test above still covers
+        // layer 2. Neither layer can vouch for the other.
+        $originalServer = $_SERVER['DATABASE_URL'] ?? null;
+
+        try {
+            $_SERVER['DATABASE_URL'] = 'postgresql://user:pw@helium/heliumdb?sslmode=disable';
+
+            $violations = static::databaseSafetyViolations();
+
+            $this->assertNotEmpty($violations, 'A live DATABASE_URL in $_SERVER was not detected.');
+            $this->assertStringContainsString(
+                'did not neutralise DATABASE_URL',
+                implode(' | ', $violations),
+                'The guard did not attribute the failure to the bootstrap layer.',
+            );
+        } finally {
+            if ($originalServer === null) {
+                unset($_SERVER['DATABASE_URL']);
+            } else {
+                $_SERVER['DATABASE_URL'] = $originalServer;
+            }
+        }
+
+        // Restored. A safety test that leaks an unsafe environment into the rest of the
+        // process would be worse than no test at all.
+        $this->assertSame([], static::databaseSafetyViolations());
+    }
+
+    /** @test */
     public function no_connection_has_been_opened_against_a_networked_database(): void
     {
         // getDriverName()/getDatabaseName() read the resolved connection config; neither

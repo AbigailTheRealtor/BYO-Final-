@@ -35,25 +35,40 @@ abstract class TestCase extends BaseTestCase
      */
     protected function setUpTraits(): array
     {
-        // ── Force SQLite :memory: regardless of system env vars ───────────────
+        // ── The database is NOT forced here. That is deliberate ──────────────
         //
-        // Replit injects DB_CONNECTION=pgsql / DB_DATABASE=heliumdb as system-
-        // level environment variables that phpdotenv's ImmutableStringRepository
-        // will not override, so phpunit.xml <env> and .env.testing cannot win.
+        // This method used to open with:
         //
-        // `sqlite.url` is the third line here and the one that used to be missing.
-        // config/database.php gives EVERY connection `'url' => env('DATABASE_URL')`,
-        // and Illuminate\Database\ConfigurationUrlParser lets that url override the
-        // connection's own driver and database. So a connection named `sqlite`,
-        // carrying a postgres DSN, resolves to pgsql/heliumdb — and the two lines
-        // above would have "forced" nothing. tests/bootstrap.php already blanks
-        // DATABASE_URL before Dotenv boots; this nulls the derived config value too,
-        // so the guard below cannot be satisfied by a stale url.
-        config([
-            'database.default'                     => 'sqlite',
-            'database.connections.sqlite.database' => ':memory:',
-            'database.connections.sqlite.url'      => null,
-        ]);
+        //     config([
+        //         'database.default'                     => 'sqlite',
+        //         'database.connections.sqlite.database' => ':memory:',
+        //         'database.connections.sqlite.url'      => null,
+        //     ]);
+        //
+        // and then call assertSafeTestDatabase(), which reads those exact three keys
+        // back. The guard was therefore validating values it had itself written one
+        // line earlier. It would have passed on a machine where tests/bootstrap.php
+        // had silently stopped neutralising DATABASE_URL — reporting an isolation it
+        // never established. That is the same shape as the original bug, one layer up,
+        // and the same anti-vacuous-test principle as erratum E-41.
+        //
+        // Isolation is established in exactly one place: tests/bootstrap.php blanks
+        // DATABASE_URL and pins DB_CONNECTION/DB_DATABASE across putenv(), $_ENV and
+        // $_SERVER before the autoloader — and therefore before Dotenv, before
+        // config/database.php is evaluated, and before any connection can resolve.
+        // phpunit.xml repeats them with force="true" as defence in depth.
+        //
+        // With that in place, config/database.php derives the safe values on its own:
+        //
+        //     'default' => env('DATABASE_URL') ? 'pgsql' : env('DB_CONNECTION', 'mysql')
+        //               -> '' is falsy -> 'sqlite'
+        //     'sqlite'  => ['url' => env('DATABASE_URL'), 'database' => env('DB_DATABASE', ...)]
+        //               -> url '' (ConfigurationUrlParser skips it), database ':memory:'
+        //
+        // So the overrides were redundant when the bootstrap worked, and actively
+        // harmful when it did not. Removing them makes the guard below read config
+        // that was derived from the process environment rather than from this method,
+        // which is what lets a regression in EITHER layer be detected.
 
         // ── Rule 4: pre-test safety guard ────────────────────────────────────
         //    Runs before parent::setUpTraits(), so it fires ahead of both
@@ -230,6 +245,30 @@ abstract class TestCase extends BaseTestCase
         $database   = (string) $resolved['database'];
         $violations = [];
 
+        // ── Layer 1: the process environment, read directly ───────────────────
+        //
+        // Checked BEFORE anything derived from config(), and independently of it. A live
+        // DATABASE_URL is the single input that turns the connection named `sqlite` into
+        // pgsql/heliumdb, so if tests/bootstrap.php ever stops neutralising it this fires
+        // even in the hypothetical where some later code has already patched config() to
+        // look safe. Layer 2 (below) can no longer vouch for layer 1 on its own.
+        //
+        // getenv() returns false when a variable is absent; (string) false === '', which is
+        // the safe state, so absence is correctly treated as clean.
+        $urlSurfaces = [
+            "getenv('DATABASE_URL')"  => (string) getenv('DATABASE_URL'),
+            '$_ENV[DATABASE_URL]'     => (string) ($_ENV['DATABASE_URL'] ?? ''),
+            '$_SERVER[DATABASE_URL]'  => (string) ($_SERVER['DATABASE_URL'] ?? ''),
+        ];
+
+        foreach ($urlSurfaces as $surface => $value) {
+            if (trim($value) !== '') {
+                $violations[] = "{$surface} is not blank. tests/bootstrap.php did not neutralise DATABASE_URL "
+                    . 'before Dotenv booted, so the sqlite connection can be overridden by its DSN.';
+            }
+        }
+
+        // ── Layer 2: the connection config would actually resolve to ─────────
         if ($driver !== 'sqlite') {
             $violations[] = "Resolved driver is '{$driver}', expected 'sqlite'.";
         }
