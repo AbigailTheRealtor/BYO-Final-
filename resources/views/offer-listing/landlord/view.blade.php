@@ -850,6 +850,9 @@
             || $str('type_of_pets') || $str('breed_of_pets') || $str('weight_of_pets')
             || $str('pet_max_weight_lbs') || $str('pet_deposit_fee_rent')
             || $str('pet_deposit_amount') || $str('pet_monthly_fee')
+            || $str('pet_rent') || $str('pet_fee')
+            // #2 Part B — canonical pet fee also opens the Pets section.
+            || $str('pet_fee_type') || $str('pet_fee_amount') || $str('pet_fee_other')
             || count($arr('pet_species_allowed')) > 0;
 
         /* Contact */
@@ -1633,17 +1636,30 @@
          PETS & OCCUPANCY
          ============================================================== --}}
     @php
+        /* #2 Part B — pet fee is resolved through the canonical normalizer: new records
+           use pet_fee_type, legacy records derive from their stored fee fields. Every
+           historical value survives (multi-amount records collapse to "Other" with all
+           amounts preserved in the text). Nothing in storage is mutated by this read. */
+        $petFee = (new \App\Services\Pets\PetFeeNormalizer())->normalize([
+            'pet_fee_type'         => $str('pet_fee_type'),
+            'pet_fee_amount'       => $str('pet_fee_amount'),
+            'pet_fee_other'        => $str('pet_fee_other'),
+            'pet_deposit_amount'   => $str('pet_deposit_amount'),
+            'pet_monthly_fee'      => $str('pet_monthly_fee'),
+            'pet_rent'             => $str('pet_rent'),
+            'pet_fee'              => $str('pet_fee'),
+            'pet_deposit_fee_rent' => $str('pet_deposit_fee_rent'),
+        ]);
+
         $petFields = array_filter([
             ['Pets Allowed', $yesNo($str('pets') ?: $str('pet_policy'))],
             ['Number of Pets Allowed', $str('number_of_pets')],
             ['Type of Pets', $str('type_of_pets')],
             ['Breed of Pets', $str('breed_of_pets')],
             ['Max Pet Weight (lbs)', $str('weight_of_pets') ?: $str('pet_max_weight_lbs')],
-            ['Pet Deposit / Fee on Rent', $str('pet_deposit_fee_rent')],
-            ['Pet Deposit Amount', $fmtMoney($str('pet_deposit_amount'))],
-            ['Pet Monthly Fee', $fmtMoney($str('pet_monthly_fee'))],
-            ['Pet Rent', $fmtMoney($str('pet_rent'))],
-            ['Pet Fee', $fmtMoney($str('pet_fee'))],
+            ['Pet Fee Type', $petFee['type']],
+            ['Pet Fee Amount', $petFee['amount'] !== null ? $fmtMoney((string) $petFee['amount']) : null],
+            ['Pet Fee Details', $petFee['other_text']],
         ], fn($f) => !empty($f[1]));
         $petSpecies = $arr('pet_species_allowed');
         $hasPets = count($petFields) || count($petSpecies);

@@ -2,6 +2,8 @@
 
 namespace App\Http\Livewire\OfferListing\Concerns;
 
+use App\Services\Pets\PetFeeNormalizer;
+
 /**
  * BYO-H1 — Shared Landlord Offer-Listing publish validation.
  *
@@ -45,6 +47,16 @@ trait LandlordPublishValidation
             $rules['auction_time'] = 'required|string';
         }
 
+        // #2 Part B — canonical pet fee. The type itself stays optional (a landlord may
+        // simply not answer), but "Other" is meaningless without its explanation, so the
+        // text is required there. The amount is optional under "Other" and numeric
+        // elsewhere. "No Pet Fee" carries neither.
+        $rules['pet_fee_type']   = 'nullable|string|in:' . implode(',', PetFeeNormalizer::TYPES);
+        $rules['pet_fee_amount'] = 'nullable|numeric|min:0';
+        $rules['pet_fee_other']  = $this->pet_fee_type === PetFeeNormalizer::TYPE_OTHER
+            ? 'required|string|max:255'
+            : 'nullable|string|max:255';
+
         return $rules;
     }
 
@@ -62,6 +74,8 @@ trait LandlordPublishValidation
             'desired_lease_length.required' => 'Desired Lease Term is required.',
             'desired_lease_length.min'      => 'Please select at least one Desired Lease Term.',
             'auction_time.required'         => 'Bidding Period Length is required for Bidding Period listings.',
+            'pet_fee_other.required'        => 'Please describe the pet fee arrangement.',
+            'pet_fee_amount.numeric'        => 'Pet Fee Amount must be a number.',
         ];
     }
 }

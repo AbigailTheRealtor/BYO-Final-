@@ -471,6 +471,24 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/livewire/buyer-agent-auction-bid-tabs/commission-based/agent-info.blade.php',
             'resources/views/livewire/landlord-agent-auction-bid-tabs/commission-based/agent-info.blade.php',
             'resources/views/livewire/tenant-agent-auction-bid-tabs/commission-based/agent-info.blade.php',
+            // Browser QA #2 Part B — Landlord Pet Policy redesign. One canonical pet fee
+            //   (pet_fee_type / pet_fee_amount / pet_fee_other) replaces the five retired
+            //   legacy fee fields in the UI and the write path. The legacy EAV keys are
+            //   never written, blanked or deleted; readers resolve them through the new
+            //   PetFeeNormalizer precedence. ByoListingAdapter + PetFriendlinessScoreService
+            //   carry the narrow DNA compatibility repair that keeps has_pet_fees true and
+            //   preserves the recurring-vs-one-time distinction for the new schema (an
+            //   "Other" fee is detected but deliberately NOT classified). The Landlord
+            //   create/edit components, LandlordPublishValidation, the Lease Terms partial,
+            //   the landlord detail view and AskAiContextBuilderService are already
+            //   allow-listed above.
+            'app/Services/Pets/PetFeeNormalizer.php',
+            'app/Http/Livewire/OfferListing/Concerns/HasCanonicalPetFee.php',
+            'app/Services/Canonical/Adapters/ByoListingAdapter.php',
+            'app/Services/Dna/Scores/PetFriendlinessScoreService.php',
+            'app/Services/AgentAi/Loaders/LandlordListingLoader.php',
+            'app/Http/Controllers/AgentController.php',
+            'resources/views/agent/offer-listing-view.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

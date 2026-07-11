@@ -502,11 +502,25 @@
     @php $ofv::badge('Last Month Rent Required', $fmtBool($d['last_month_rent_required'])); @endphp
     @php $ofv::row('Total Move-In Funds Required', $d['total_move_in_funds_required'] ? '$' . number_format((float)str_replace(',', '', $d['total_move_in_funds_required'])) : null); @endphp
     @php $ofv::row('Pet Policy', $fmt($d['pet_policy'])); @endphp
-    @php $ofv::row('Pet Deposit / Fee', $fmt($d['pet_deposit_fee_rent'])); @endphp
-    @php $ofv::row('Pet Deposit Amount', $fmtMoney($getMeta('pet_deposit_amount'))); @endphp
-    @php $ofv::row('Pet Monthly Fee', $fmtMoney($getMeta('pet_monthly_fee'))); @endphp
-    @php $ofv::row('Pet Rent', $fmtMoney($getMeta('pet_rent'))); @endphp
-    @php $ofv::row('Pet Fee', $fmtMoney($getMeta('pet_fee'))); @endphp
+    {{-- #2 Part B — pet fee resolved through the canonical normalizer. New records use
+         pet_fee_type; legacy records derive from their stored fee fields, with every
+         historical amount preserved (multi-amount records render as "Other" carrying all
+         of them). Stored EAV values are not mutated by this read. --}}
+    @php
+        $petFee = (new \App\Services\Pets\PetFeeNormalizer())->normalize([
+            'pet_fee_type'         => $getMeta('pet_fee_type'),
+            'pet_fee_amount'       => $getMeta('pet_fee_amount'),
+            'pet_fee_other'        => $getMeta('pet_fee_other'),
+            'pet_deposit_amount'   => $getMeta('pet_deposit_amount'),
+            'pet_monthly_fee'      => $getMeta('pet_monthly_fee'),
+            'pet_rent'             => $getMeta('pet_rent'),
+            'pet_fee'              => $getMeta('pet_fee'),
+            'pet_deposit_fee_rent' => $d['pet_deposit_fee_rent'] ?? null,
+        ]);
+    @endphp
+    @php $ofv::row('Pet Fee Type', $fmt($petFee['type'])); @endphp
+    @php $ofv::row('Pet Fee Amount', $petFee['amount'] !== null ? $fmtMoney((string) $petFee['amount']) : null); @endphp
+    @php $ofv::row('Pet Fee Details', $fmt($petFee['other_text'])); @endphp
     @php $ofv::row('Pet Information', $fmt($d['pet_information'])); @endphp
     @php $ofv::badge('Guests Allowed', $fmtBool($d['guests_allowed'])); @endphp
     @php $ofv::row('Max Occupants Allowed', $fmt($d['number_of_occupants_allowed'])); @endphp

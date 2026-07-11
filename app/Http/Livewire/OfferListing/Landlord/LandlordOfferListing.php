@@ -17,12 +17,14 @@ use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 use App\Http\Livewire\OfferListing\Concerns\LandlordPublishValidation;
+use App\Http\Livewire\OfferListing\Concerns\HasCanonicalPetFee;
 
 class LandlordOfferListing extends Component
 {
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
+    use HasCanonicalPetFee;        // #2 Part B: canonical pet fee (create + edit)
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
@@ -335,10 +337,18 @@ class LandlordOfferListing extends Component
     public $available_date = '';
     public $pet_max_weight_lbs = '';
     public $pet_species_allowed = [];
+    // #2 Part B — the five RETIRED legacy pet-fee fields. They are kept as properties so
+    // existing records still hydrate and normalize, but they are no longer written from
+    // this component and no longer have inputs. Their stored EAV values are preserved.
     public $pet_deposit_amount = '';
     public $pet_monthly_fee = '';
     public $pet_rent = '';
     public $pet_fee = '';
+    // #2 Part B — canonical pet fee. Replaces the four legacy amount inputs above and the
+    // obsolete combined pet_deposit_fee_rent representation in the UI and write path.
+    public $pet_fee_type = '';
+    public $pet_fee_amount = '';
+    public $pet_fee_other = '';
     public $number_of_occupants_allowed = '';
     public $parking_terms = '';
     public $ll_maintenance_responsibility = '';
@@ -2156,6 +2166,11 @@ class LandlordOfferListing extends Component
             'total_move_in_funds_required'    => $this->stripCommas($this->total_move_in_funds_required),
             'pet_policy'                      => $this->pet_policy,
             'pet_deposit_fee_rent'            => $this->pet_deposit_fee_rent,
+            // #2 Part B — canonical pet fee participates in draft dirty-detection.
+            // (buildDraftPayload feeds a hash only; it is not a persistence path.)
+            'pet_fee_type'                    => $this->pet_fee_type,
+            'pet_fee_amount'                  => $this->pet_fee_amount,
+            'pet_fee_other'                   => $this->pet_fee_other,
             'number_of_occupants_allowed'     => $this->number_of_occupants_allowed,
             'parking_terms'                   => $this->parking_terms,
             'll_maintenance_responsibility'   => $this->ll_maintenance_responsibility,
@@ -2909,6 +2924,9 @@ class LandlordOfferListing extends Component
             $this->pet_monthly_fee = $auction->get->pet_monthly_fee ?? '';
             $this->pet_rent = $auction->get->pet_rent ?? '';
             $this->pet_fee = $auction->get->pet_fee ?? '';
+            // #2 Part B — must run AFTER the legacy fields above: a legacy-only record
+            // derives its canonical view from them so the form never opens blank.
+            $this->hydrateCanonicalPetFee($auction);
             $this->number_of_occupants_allowed = $auction->get->number_of_occupants_allowed ?? '';
             $this->parking_terms = $auction->get->parking_terms ?? '';
             $this->ll_maintenance_responsibility = $auction->get->ll_maintenance_responsibility ?? '';
@@ -3602,15 +3620,19 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('last_month_rent_required', $this->last_month_rent_required);
         $auction->saveMeta('total_move_in_funds_required', $this->stripCommas($this->total_move_in_funds_required));
         $auction->saveMeta('pet_policy', $this->pet_policy);
-        $auction->saveMeta('pet_deposit_fee_rent', $this->pet_deposit_fee_rent);
         // Phase B Landlord Tier 1 EAV keys
         $auction->saveMeta('available_date', $this->available_date);
         $auction->saveMeta('pet_max_weight_lbs', $this->pet_max_weight_lbs);
         $auction->saveMeta('pet_species_allowed', json_encode($this->ensureArray($this->pet_species_allowed)));
-        $auction->saveMeta('pet_deposit_amount', $this->pet_deposit_amount);
-        $auction->saveMeta('pet_monthly_fee', $this->pet_monthly_fee);
-        $auction->saveMeta('pet_rent', $this->pet_rent);
-        $auction->saveMeta('pet_fee', $this->pet_fee);
+        // #2 Part B — canonical pet fee is the ONLY pet-fee write from this component.
+        // The four legacy amount keys and pet_deposit_fee_rent are deliberately NOT
+        // written: saveMeta() is an upsert, so omitting them leaves every historical
+        // value intact instead of blanking it. Readers resolve legacy records through
+        // PetFeeNormalizer's precedence rather than a dual write.
+        [$petFeeAmount, $petFeeOther] = $this->canonicalPetFeeValues();
+        $auction->saveMeta('pet_fee_type', $this->pet_fee_type);
+        $auction->saveMeta('pet_fee_amount', $petFeeAmount);
+        $auction->saveMeta('pet_fee_other', $petFeeOther);
         $auction->saveMeta('number_of_occupants_allowed', $this->number_of_occupants_allowed);
         $auction->saveMeta('parking_terms', $this->parking_terms);
         $auction->saveMeta('ll_maintenance_responsibility', $this->ll_maintenance_responsibility);

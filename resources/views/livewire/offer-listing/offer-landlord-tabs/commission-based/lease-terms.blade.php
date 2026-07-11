@@ -1254,65 +1254,72 @@
     </div>
 </div>
 
-{{-- Pet Deposit Amount (financial pet field, always visible) --}}
+{{-- #2 Part B — Pet Fee.
+     Replaces the four retired Lease Terms inputs (Pet Deposit Amount / Pet Monthly Fee /
+     Pet Rent / Pet Fee) and the obsolete combined pet_deposit_fee_rent representation.
+     One fee type, one conditional amount, and an "Other" free-text path for arrangements
+     the fixed options cannot express (e.g. a refundable deposit AND a non-refundable fee).
+     Reveals are driven by Livewire state, so no client JS is involved.
+     Pet POLICY and RESTRICTION fields (weight, species, breed) are separate and untouched. --}}
 <div class="form-group">
-    <label class="fw-bold">Pet Deposit Amount:</label>
+    <label class="fw-bold">Pet Fee Type:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the one-time pet deposit amount required (e.g., 300). Leave blank if no pet deposit is required.">
+        title="Select how pets are charged for this property. Choose <b>Other</b> to describe an arrangement the options do not cover, such as a refundable deposit combined with a non-refundable fee.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="pet_deposit_amount" class="form-control"
-            placeholder="Enter pet deposit amount (e.g., 300)"
-            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        <select wire:model="pet_fee_type" id="pet_fee_type" class="form-control has-icon"
+            data-icon="fa-solid fa-paw">
+            <option value="">Select</option>
+            <option value="One Time Fee Refundable">One Time Fee Refundable</option>
+            <option value="Non Refundable">Non Refundable</option>
+            <option value="Monthly Pet Fee">Monthly Pet Fee</option>
+            <option value="No Pet Fee">No Pet Fee</option>
+            <option value="Other">Other</option>
+        </select>
     </div>
+    @error('pet_fee_type')<span class="error mt-2">{{ $message }}</span>@enderror
 </div>
 
-{{-- Pet Monthly Fee (financial pet field, always visible) --}}
-<div class="form-group">
-    <label class="fw-bold">Pet Monthly Fee:</label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the monthly recurring pet fee amount (e.g., 50). Leave blank if no monthly pet fee is required.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="pet_monthly_fee" class="form-control"
-            placeholder="Enter monthly pet fee (e.g., 50)"
-            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+{{-- Amount: revealed for every fee type that carries one. Optional under "Other";
+     "No Pet Fee" carries no amount at all. --}}
+@if (in_array($pet_fee_type, ['One Time Fee Refundable', 'Non Refundable', 'Monthly Pet Fee', 'Other']))
+    <div class="form-group" id="pet_fee_amount_wrapper">
+        <label class="fw-bold">
+            Pet Fee Amount:
+            @if ($pet_fee_type === 'Other')<span class="text-muted fw-normal">(optional)</span>@endif
+        </label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the amount for the selected pet fee type (e.g., 300).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <span class="input-group-text-seller">$</span>
+            <input type="text" wire:model="pet_fee_amount" id="pet_fee_amount" class="form-control"
+                placeholder="Enter pet fee amount (e.g., 300)"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        </div>
+        @error('pet_fee_amount')<span class="error mt-2">{{ $message }}</span>@enderror
     </div>
-</div>
+@endif
 
-{{-- Pet Rent (financial pet field, always visible) --}}
-<div class="form-group">
-    <label class="fw-bold">Pet Rent:</label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the additional monthly pet rent amount (e.g., 75). Leave blank if not applicable.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="pet_rent" class="form-control"
-            placeholder="Enter pet rent (e.g., 75)"
-            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+{{-- "Other": required explanatory text. The placeholder shows a FEE arrangement —
+     never a breed/species restriction, which is separate policy data. --}}
+@if ($pet_fee_type === 'Other')
+    <div class="form-group" id="pet_fee_other_wrapper">
+        <label class="fw-bold">Describe the Pet Fee Arrangement:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe the pet charges in your own words, for example: <b>$100 refundable deposit and $200 non-refundable fee</b>, <b>Pet fee determined based on number of pets</b>, or <b>One-time cleaning fee plus monthly pet rent</b>.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model="pet_fee_other" id="pet_fee_other" class="form-control has-icon"
+                data-icon="fa-solid fa-paw"
+                placeholder="e.g., $100 refundable deposit and $200 non-refundable fee">
+        </div>
+        @error('pet_fee_other')<span class="error mt-2">{{ $message }}</span>@enderror
     </div>
-</div>
-
-{{-- Pet Fee (financial pet field, always visible) --}}
-<div class="form-group">
-    <label class="fw-bold">Pet Fee:</label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the one-time non-refundable pet fee (e.g., 150). Leave blank if not applicable.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="pet_fee" class="form-control"
-            placeholder="Enter pet fee (e.g., 150)"
-            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-    </div>
-</div>
+@endif
 
 {{-- Number of Occupants Allowed moved to Applicant Requirements tab --}}
 {{-- Parking Terms moved to Property Details tab (after Garage/Carport fields) --}}

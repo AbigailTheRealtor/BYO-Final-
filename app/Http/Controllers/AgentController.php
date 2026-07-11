@@ -862,6 +862,11 @@ class AgentController extends Controller
             'total_move_in_funds_required' => $meta['total_move_in_funds_required'] ?? '',
             'pet_policy'                  => $meta['pet_policy']                  ?? '',
             'pet_deposit_fee_rent'        => $meta['pet_deposit_fee_rent']        ?? '',
+            // #2 Part B — canonical pet fee for the agent-facing listing view. The legacy
+            // key above is retained (read-only) so historical records still resolve.
+            'pet_fee_type'                => $meta['pet_fee_type']                ?? '',
+            'pet_fee_amount'              => $meta['pet_fee_amount']              ?? '',
+            'pet_fee_other'               => $meta['pet_fee_other']               ?? '',
             'number_of_occupants_allowed' => $meta['number_of_occupants_allowed'] ?? '',
             'parking_terms'               => $meta['parking_terms']               ?? '',
             'utility_responsibility'      => $meta['utility_responsibility']      ?? '',
