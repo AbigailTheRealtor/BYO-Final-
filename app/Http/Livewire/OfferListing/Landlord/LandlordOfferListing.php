@@ -2310,9 +2310,10 @@ class LandlordOfferListing extends Component
                 try {
                     \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
-                    \Log::warning('[LANDLORD DRAFT] ComputeLocationDna dispatch skipped', [
+                    \Log::warning('[LANDLORD DRAFT] ComputeLocationDna dispatch or inline execution failed', [
                         'listing_id' => $this->listingId,
                         'reason'     => $dnaEx->getMessage(),
+                        'exception'  => get_class($dnaEx),
                     ]);
                 }
             }
@@ -4096,9 +4097,10 @@ class LandlordOfferListing extends Component
                 try {
                     \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
-                    \Log::warning('[LANDLORD STORE] ComputeLocationDna dispatch skipped', [
+                    \Log::warning('[LANDLORD STORE] ComputeLocationDna dispatch or inline execution failed', [
                         'listing_id' => $this->listingId,
                         'reason'     => $dnaEx->getMessage(),
+                        'exception'  => get_class($dnaEx),
                     ]);
                 }
             }

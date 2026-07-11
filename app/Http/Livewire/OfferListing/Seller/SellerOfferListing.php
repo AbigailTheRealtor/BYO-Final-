@@ -4268,9 +4268,10 @@ class SellerOfferListing extends Component
                 try {
                     \App\Jobs\ComputeLocationDna::dispatch('seller_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
-                    \Log::warning('[SELLER STORE] ComputeLocationDna dispatch skipped', [
+                    \Log::warning('[SELLER STORE] ComputeLocationDna dispatch or inline execution failed', [
                         'listing_id' => $this->listingId,
                         'reason'     => $dnaEx->getMessage(),
+                        'exception'  => get_class($dnaEx),
                     ]);
                 }
             }

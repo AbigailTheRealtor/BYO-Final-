@@ -2208,9 +2208,10 @@ class SellerOfferListingEdit extends Component
                 try {
                     \App\Jobs\ComputeLocationDna::dispatch('seller_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
-                    \Log::warning('[SELLER DRAFT-EDIT] ComputeLocationDna dispatch skipped', [
+                    \Log::warning('[SELLER DRAFT-EDIT] ComputeLocationDna dispatch or inline execution failed', [
                         'listing_id' => $this->listingId,
                         'reason'     => $dnaEx->getMessage(),
+                        'exception'  => get_class($dnaEx),
                     ]);
                 }
             }
@@ -2281,9 +2282,10 @@ class SellerOfferListingEdit extends Component
                 try {
                     \App\Jobs\ComputeLocationDna::dispatch('seller_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
-                    \Log::warning('[SELLER DRAFT] ComputeLocationDna dispatch skipped', [
+                    \Log::warning('[SELLER DRAFT] ComputeLocationDna dispatch or inline execution failed', [
                         'listing_id' => $this->listingId,
                         'reason'     => $dnaEx->getMessage(),
+                        'exception'  => get_class($dnaEx),
                     ]);
                 }
             }
@@ -4054,9 +4056,10 @@ class SellerOfferListingEdit extends Component
                 try {
                     \App\Jobs\ComputeLocationDna::dispatch('seller_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
-                    \Log::warning('[SELLER EDIT] ComputeLocationDna dispatch skipped', [
+                    \Log::warning('[SELLER EDIT] ComputeLocationDna dispatch or inline execution failed', [
                         'listing_id' => $this->listingId,
                         'reason'     => $dnaEx->getMessage(),
+                        'exception'  => get_class($dnaEx),
                     ]);
                 }
             }

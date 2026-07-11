@@ -2257,9 +2257,10 @@ class LandlordOfferListingEdit extends Component
                 try {
                     \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
-                    \Log::warning('[LANDLORD DRAFT-EDIT] ComputeLocationDna dispatch skipped', [
+                    \Log::warning('[LANDLORD DRAFT-EDIT] ComputeLocationDna dispatch or inline execution failed', [
                         'listing_id' => $this->listingId,
                         'reason'     => $dnaEx->getMessage(),
+                        'exception'  => get_class($dnaEx),
                     ]);
                 }
             }
@@ -2322,9 +2323,10 @@ class LandlordOfferListingEdit extends Component
                 try {
                     \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
-                    \Log::warning('[LANDLORD DRAFT] ComputeLocationDna dispatch skipped', [
+                    \Log::warning('[LANDLORD DRAFT] ComputeLocationDna dispatch or inline execution failed', [
                         'listing_id' => $this->listingId,
                         'reason'     => $dnaEx->getMessage(),
+                        'exception'  => get_class($dnaEx),
                     ]);
                 }
             }
@@ -3870,9 +3872,10 @@ class LandlordOfferListingEdit extends Component
                 try {
                     \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
-                    \Log::warning('[LANDLORD EDIT] ComputeLocationDna dispatch skipped', [
+                    \Log::warning('[LANDLORD EDIT] ComputeLocationDna dispatch or inline execution failed', [
                         'listing_id' => $this->listingId,
                         'reason'     => $dnaEx->getMessage(),
+                        'exception'  => get_class($dnaEx),
                     ]);
                 }
             }
