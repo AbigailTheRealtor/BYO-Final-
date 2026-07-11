@@ -41,6 +41,11 @@ use Tests\TestCase;
  *  §12 — Panel partial: renders POI names when POI records exist
  *  §13 — Landlord listing not found returns 404
  *  §14 — Landlord listing with complete address dispatches job correctly
+ *
+ * The dispatch tests below Bus::fake(), so the job never runs and no pipeline outcome
+ * exists — they assert the dispatch contract (authorization, listing_type, listing_id)
+ * only. The flash/error semantics of the response are covered under a real inline run
+ * in AgentLocationDnaOutcomeTest.
  */
 class AgentLocationDnaPanelTest extends TestCase
 {
@@ -264,7 +269,6 @@ class AgentLocationDnaPanelTest extends TestCase
             ->post($this->generateRoute('seller_agent', $listingId));
 
         $response->assertRedirect(route('dashboard'));
-        $response->assertSessionHas('dna_success');
         Bus::assertDispatched(ComputeLocationDna::class);
     }
 
@@ -308,7 +312,6 @@ class AgentLocationDnaPanelTest extends TestCase
             ->post($this->generateRoute('seller_agent', $listingId));
 
         $response->assertRedirect(route('dashboard'));
-        $response->assertSessionHas('dna_success');
         Bus::assertDispatched(ComputeLocationDna::class, function ($job) use ($listingId) {
             return $job->listingType === 'seller_agent' && $job->listingId === $listingId;
         });
@@ -454,7 +457,6 @@ class AgentLocationDnaPanelTest extends TestCase
             ->post($this->generateRoute('landlord_agent', $listingId));
 
         $response->assertRedirect(route('dashboard'));
-        $response->assertSessionHas('dna_success');
         Bus::assertDispatched(ComputeLocationDna::class, function ($job) use ($listingId) {
             return $job->listingType === 'landlord_agent' && $job->listingId === $listingId;
         });
