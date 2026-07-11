@@ -18,28 +18,27 @@
         </span>
     </label>
 
-    {{-- Hidden native file input — fully functional, triggered by the dropzone label below --}}
-    <input type="file" wire:model="newPropertyPhotos" id="property-photos-input-seller"
-        accept=".jpg,.jpeg,.png,.webp" multiple
-        style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;"
-        tabindex="-1"
-        wire:loading.attr="disabled" wire:target="newPropertyPhotos"
-        @if(count($propertyPhotos ?? []) >= 50) disabled title="Photo limit reached (50/50)" @endif>
-
     {{-- Batch C (launch-audit #6/#7): if the browser/PHP rejects an oversize upload
          (a single photo over 50 MB, or a whole selection larger than the server POST limit),
          Livewire fires a bubbling `livewire-upload-error` event. Surface a clear message
-         instead of the upload silently doing nothing. --}}
-    <div x-data="{ uploadErr: '' }"
-        x-on:livewire-upload-start.window="uploadErr = ''"
-        x-on:livewire-upload-error.window="uploadErr = 'Upload failed — a photo may be larger than 50 MB, or the whole selection is too large to send at once. Please add fewer or smaller photos and try again.'">
-        <template x-if="uploadErr">
-            <div class="alert alert-danger d-flex align-items-center gap-2 mb-3" role="alert">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <span x-text="uploadErr"></span>
-            </div>
-        </template>
-    </div>
+         instead of the upload silently doing nothing.
+
+         #7 follow-up: this listener used to be bound with `.window`, which caught the error
+         from EVERY file input on the page — including the personal-photo input on the
+         Seller Info tab. The alert then rendered inside this Photos pane while the user was
+         looking at a different one, so the failure was still invisible. The boundary now
+         WRAPS this input and relies on the event bubbling, so it fires only for these
+         photos, in the pane the user is actually on. --}}
+    <x-upload-error-boundary
+        message="Upload failed — a photo may be larger than 50 MB, or the whole selection is too large to send at once. Please add fewer or smaller photos and try again.">
+        {{-- Hidden native file input — fully functional, triggered by the dropzone label below --}}
+        <input type="file" wire:model="newPropertyPhotos" id="property-photos-input-seller"
+            accept=".jpg,.jpeg,.png,.webp" multiple
+            style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;"
+            tabindex="-1"
+            wire:loading.attr="disabled" wire:target="newPropertyPhotos"
+            @if(count($propertyPhotos ?? []) >= 50) disabled title="Photo limit reached (50/50)" @endif>
+    </x-upload-error-boundary>
 
     {{-- Dropzone Upload Card --}}
     @if(count($propertyPhotos ?? []) < 50)

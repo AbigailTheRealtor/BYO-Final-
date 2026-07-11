@@ -489,6 +489,24 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/AgentAi/Loaders/LandlordListingLoader.php',
             'app/Http/Controllers/AgentController.php',
             'resources/views/agent/offer-listing-view.blade.php',
+            // Browser QA Batch 3 (#7) — friendly oversize upload error. A rejected upload was a
+            //   SILENT no-op on three surfaces: the personal-photo input in all four *-info tabs
+            //   had no listener at all; the Alpine-driven document rows discarded the failure in
+            //   their @this.upload() error callback; and the two photo tabs bound
+            //   `livewire-upload-error.window`, which caught errors from OTHER tabs' inputs and
+            //   rendered the alert inside a hidden .tab-pane. The new shared
+            //   <x-upload-error-boundary> wraps each input and listens on the wrapper (the
+            //   Livewire event bubbles up from the input), so every alert is scoped to its own
+            //   surface. The two documents-disclosures blades are already allow-listed above.
+            //   #6 needed no code change — deploy/php/uploads.ini + PHP_INI_SCAN_DIR already
+            //   raise the worker limits; only runtime/edge-proxy verification remains.
+            'resources/views/components/upload-error-boundary.blade.php',
+            'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/seller-info.blade.php',
+            'resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/buyer-info.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/landlord-info.blade.php',
+            'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/tenant-info.blade.php',
+            'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/photos-tours-documents.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/photos-tours-documents.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

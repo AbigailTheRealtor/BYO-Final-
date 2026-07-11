@@ -59,12 +59,17 @@
 
             </span>
         </label>
-        <div class="input-cover" wire:key="photo-input-stable">
-            <div class="input-group">
-                <input type="file" wire:model="photo" id="photo-input" class="form-control has-icon"
-                    data-icon="fa-solid fa-camera" accept="image/*">
+        {{-- #7: a photo the browser or PHP rejects must say so here, not silently do nothing.
+             The boundary is scoped to this input, so the alert cannot land in another tab. --}}
+        <x-upload-error-boundary
+            message="Upload failed — the photo may be larger than 50 MB. Please choose a smaller image and try again.">
+            <div class="input-cover" wire:key="photo-input-stable">
+                <div class="input-group">
+                    <input type="file" wire:model="photo" id="photo-input" class="form-control has-icon"
+                        data-icon="fa-solid fa-camera" accept="image/*">
+                </div>
             </div>
-        </div>
+        </x-upload-error-boundary>
         <span id="photo-error" class="text-danger" style="display: none;"></span>
     </div>
 
