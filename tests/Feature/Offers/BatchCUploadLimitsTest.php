@@ -106,7 +106,17 @@ class BatchCUploadLimitsTest extends TestCase
         }
     }
 
-    /** #7: both photo blades surface a clear error when the browser/PHP rejects an oversize upload. */
+    /**
+     * #7: both photo blades surface a clear error when the browser/PHP rejects an oversize upload.
+     *
+     * UPDATED (Batch 3): the original assertion required `livewire-upload-error.window`. That
+     * binding was itself the bug — `.window` catches the error from EVERY file input on the
+     * page, so a failure on the Info tab's personal-photo input lit up this alert inside the
+     * Photos pane, which is not `show active` at the time. The user still saw nothing. The
+     * blades now wrap their input in <x-upload-error-boundary>, which listens on the wrapper
+     * and relies on the event bubbling from the input, scoping the alert to its own surface.
+     * The assertion is inverted accordingly and now guards against `.window` returning.
+     */
     public function test_photo_blades_surface_oversize_upload_error(): void
     {
         foreach ([
@@ -114,8 +124,13 @@ class BatchCUploadLimitsTest extends TestCase
             'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/photos-tours-documents.blade.php',
         ] as $blade) {
             $markup = file_get_contents($this->repoPath($blade));
-            $this->assertStringContainsString('livewire-upload-error.window', $markup, "$blade must listen for upload errors.");
+            $this->assertStringContainsString('<x-upload-error-boundary', $markup, "$blade must wrap its file input in the scoped upload-error boundary.");
             $this->assertStringContainsString('too large to send at once', $markup, "$blade must show a friendly oversize message.");
+            $this->assertStringNotContainsString(
+                'livewire-upload-error.window',
+                $markup,
+                "$blade must NOT bind the upload-error listener to .window — that is what rendered the alert in a hidden tab pane."
+            );
         }
     }
 

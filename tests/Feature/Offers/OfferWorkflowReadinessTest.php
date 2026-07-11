@@ -471,6 +471,68 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/livewire/buyer-agent-auction-bid-tabs/commission-based/agent-info.blade.php',
             'resources/views/livewire/landlord-agent-auction-bid-tabs/commission-based/agent-info.blade.php',
             'resources/views/livewire/tenant-agent-auction-bid-tabs/commission-based/agent-info.blade.php',
+            // Browser QA #2 Part B — Landlord Pet Policy redesign. One canonical pet fee
+            //   (pet_fee_type / pet_fee_amount / pet_fee_other) replaces the five retired
+            //   legacy fee fields in the UI and the write path. The legacy EAV keys are
+            //   never written, blanked or deleted; readers resolve them through the new
+            //   PetFeeNormalizer precedence. ByoListingAdapter + PetFriendlinessScoreService
+            //   carry the narrow DNA compatibility repair that keeps has_pet_fees true and
+            //   preserves the recurring-vs-one-time distinction for the new schema (an
+            //   "Other" fee is detected but deliberately NOT classified). The Landlord
+            //   create/edit components, LandlordPublishValidation, the Lease Terms partial,
+            //   the landlord detail view and AskAiContextBuilderService are already
+            //   allow-listed above.
+            'app/Services/Pets/PetFeeNormalizer.php',
+            'app/Http/Livewire/OfferListing/Concerns/HasCanonicalPetFee.php',
+            'app/Services/Canonical/Adapters/ByoListingAdapter.php',
+            'app/Services/Dna/Scores/PetFriendlinessScoreService.php',
+            'app/Services/AgentAi/Loaders/LandlordListingLoader.php',
+            'app/Http/Controllers/AgentController.php',
+            'resources/views/agent/offer-listing-view.blade.php',
+            // Browser QA Batch 3 (#7) — friendly oversize upload error. A rejected upload was a
+            //   SILENT no-op on three surfaces: the personal-photo input in all four *-info tabs
+            //   had no listener at all; the Alpine-driven document rows discarded the failure in
+            //   their @this.upload() error callback; and the two photo tabs bound
+            //   `livewire-upload-error.window`, which caught errors from OTHER tabs' inputs and
+            //   rendered the alert inside a hidden .tab-pane. The new shared
+            //   <x-upload-error-boundary> wraps each input and listens on the wrapper (the
+            //   Livewire event bubbles up from the input), so every alert is scoped to its own
+            //   surface. The two documents-disclosures blades are already allow-listed above.
+            //   #6 needed no code change — deploy/php/uploads.ini + PHP_INI_SCAN_DIR already
+            //   raise the worker limits; only runtime/edge-proxy verification remains.
+            'resources/views/components/upload-error-boundary.blade.php',
+            'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/seller-info.blade.php',
+            'resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/buyer-info.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/landlord-info.blade.php',
+            'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/tenant-info.blade.php',
+            'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/photos-tours-documents.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/photos-tours-documents.blade.php',
+            // Browser QA Batch 4 (#26) — Agent Credentials placeholder capitalization. Three of the
+            //   partial's seven placeholders were Title Case ("Enter Phone Number" / "Enter License
+            //   Number" / "Enter NAR Member ID") while the other four were already sentence case.
+            //   Text-only: three placeholder strings in the ONE shared partial, which fans out to 19
+            //   include statements across the 8 Create + 8 Hire blades. No include site overrides or
+            //   copies these strings, so the single edit is the whole fix — and
+            //   BatchFourAgentCredentialsPlaceholderTest guards against a future copy. No validation,
+            //   persistence, behavior or JS change.
+            'resources/views/livewire/partials/agent-credentials.blade.php',
+            // Browser QA Batch 5 (#1) — Landlord Commercial Broker Compensation. The Landlord's Broker
+            //   Lease Fee partial was Residential-only, so Create/Edit Landlord + Commercial rendered no
+            //   lease-fee control at all — even though all ten commercial props were already declared,
+            //   persisted and hydrated in both components (bound in 0 create/edit blades vs 4 Hire/Bid
+            //   blades). Restoring the Commercial branch is therefore MARKUP-ONLY: no new EAV keys, no
+            //   renames, no migration. Option values are byte-identical to the Hire Landlord source and
+            //   config/agent_preset_compensation.php — "Percentage of Month’s Rent" keeps its CURLY
+            //   apostrophe (U+2019) and tenant_broker_fee_structure keeps its legacy lowercase 'Flat fee'.
+            //   The two reader fixes are display-only: CompensationFormatter::tenantBrokerFee() had no
+            //   branch for the Commercial options (amount silently dropped), and the accepted-bid PDF read
+            //   purchase_fee_gross_rent for the Rent-Due-Each-Rental-Period option (wrong key AND label)
+            //   while omitting the Gross Rent and Month's Rent rows entirely. LandlordPublishValidation and
+            //   LandlordOfferListingEdit are already allow-listed above.
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/partials/landlord_broker_lease_fee.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/broker-compensation.blade.php',
+            'app/Support/CompensationFormatter.php',
+            'app/Services/LandlordAcceptedBidSummaryService.php',
         ];
 
         $unexpected = array_values(array_filter(

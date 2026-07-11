@@ -2354,6 +2354,7 @@
                 { sel: '#offered_financing', prop: 'offered_financing' },
                 { sel: '#property_items', prop: 'property_items' },
                 { sel: '#appliances', prop: 'appliances' },
+                { sel: '#flood_zone_tolerance', prop: 'flood_zone_tolerance' },
                 { sel: '#garage_parking_spaces_option', prop: 'garage_parking_spaces_option' },
                 { sel: '#garage_parking_spaces_option_landlord', prop: 'garage_parking_spaces_option' },
                 { sel: '.tenant_pays', prop: 'tenant_pays' },
@@ -3190,6 +3191,27 @@
 
             // Initial initialization
             initializeAppliancesSelect2();
+
+            // #18: Flood Zone Preference select2 -> Livewire sync + "Other" reveal (buyer live path)
+            if ($('#flood_zone_tolerance').length && !$('#flood_zone_tolerance').hasClass('select2-hidden-accessible')) {
+                $('#flood_zone_tolerance').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    closeOnSelect: false,
+                });
+                $('#flood_zone_tolerance').on('change', function() {
+                    let selectedValues = $(this).val() || [];
+                    var fztOther = document.querySelector('.flood_zone_tolerance_other_wrapper');
+                    if (fztOther) {
+                        fztOther.classList.toggle('d-none', !selectedValues.includes('Other'));
+                    }
+                    if (!selectedValues.includes('Other')) {
+                        debouncedSet('flood_zone_tolerance_other', null);
+                    }
+                    debouncedSet('flood_zone_tolerance', selectedValues);
+                });
+            }
+            rehydrateSelect2FromLivewire('#flood_zone_tolerance', 'flood_zone_tolerance');
 
             // End Preference
 

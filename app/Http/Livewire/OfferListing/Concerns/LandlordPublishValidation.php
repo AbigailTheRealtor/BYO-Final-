@@ -2,6 +2,8 @@
 
 namespace App\Http\Livewire\OfferListing\Concerns;
 
+use App\Services\Pets\PetFeeNormalizer;
+
 /**
  * BYO-H1 — Shared Landlord Offer-Listing publish validation.
  *
@@ -45,6 +47,58 @@ trait LandlordPublishValidation
             $rules['auction_time'] = 'required|string';
         }
 
+        // #2 Part B — canonical pet fee. The type itself stays optional (a landlord may
+        // simply not answer), but "Other" is meaningless without its explanation, so the
+        // text is required there. The amount is optional under "Other" and numeric
+        // elsewhere. "No Pet Fee" carries neither.
+        $rules['pet_fee_type']   = 'nullable|string|in:' . implode(',', PetFeeNormalizer::TYPES);
+        $rules['pet_fee_amount'] = 'nullable|numeric|min:0';
+        $rules['pet_fee_other']  = $this->pet_fee_type === PetFeeNormalizer::TYPE_OTHER
+            ? 'required|string|max:255'
+            : 'nullable|string|max:255';
+
+        // Browser QA #1 (Batch 5) — Landlord's Broker Lease Fee, COMMERCIAL only.
+        //
+        // Scope: rules exist only for the fields the restored Commercial branch actually renders.
+        // Residential keeps its existing (absent) rules, and no rule is added for a structure the
+        // form cannot select.
+        //
+        // Deliberately NOT required: the amount fields. The tab's own banner tells the landlord
+        // "All fields are optional. If left blank, Agents may propose terms as part of their bid",
+        // and six existing Commercial listings already store purchase_fee_type = 'Percentage of
+        // Month’s Rent' with NO amount (the amount was uncollectable until this batch restored the
+        // markup). A `required` rule would lock those listings out of re-publishing — the exact
+        // orphaning this remediation must avoid. So amounts are format-checked, not demanded.
+        //
+        // The one exception mirrors the approved pet-fee pattern: "Other" is meaningless without its
+        // description, so that text is required when — and only when — "Other" is the selection.
+        if ($this->property_type === 'Commercial Property') {
+            $rules['purchase_fee_type'] = ['nullable', 'string', \Illuminate\Validation\Rule::in([
+                'Percentage of the Net Aggregate Rent',
+                'Percentage of the Gross Rent',
+                'Percentage of Month’s Rent', // curly U+2019 — the stored canonical spelling
+                'Flat Fee',
+                'other',
+            ])];
+
+            $rules['purchase_fee_net_aggregate']      = 'nullable|numeric|min:0|max:100';
+            $rules['purchase_fee_gross_rent']         = 'nullable|numeric|min:0|max:100';
+            $rules['purchase_fee_monthly_percentage'] = 'nullable|numeric|min:0';
+            $rules['purchase_fee_months']             = 'nullable|numeric|min:0';
+
+            // Currency text input: the user may type "3,000" and the component only strips commas at
+            // persist time, so a `numeric` rule here would reject a perfectly valid entry.
+            $rules['purchase_fee_flat_commercial'] = 'nullable|regex:/^[0-9,]+(\.[0-9]{1,2})?$/';
+
+            $rules['sales_tax_option_gross']   = 'nullable|in:including,excluding';
+            $rules['sales_tax_option_monthly'] = 'nullable|in:including,excluding';
+            $rules['sales_tax_option_flat']    = 'nullable|in:including,excluding';
+
+            $rules['purchase_fee_other_commercial'] = $this->purchase_fee_type === 'other'
+                ? 'required|string|max:255'
+                : 'nullable|string|max:255';
+        }
+
         return $rules;
     }
 
@@ -62,6 +116,18 @@ trait LandlordPublishValidation
             'desired_lease_length.required' => 'Desired Lease Term is required.',
             'desired_lease_length.min'      => 'Please select at least one Desired Lease Term.',
             'auction_time.required'         => 'Bidding Period Length is required for Bidding Period listings.',
+            'pet_fee_other.required'        => 'Please describe the pet fee arrangement.',
+            'pet_fee_amount.numeric'        => 'Pet Fee Amount must be a number.',
+
+            // Browser QA #1 (Batch 5) — Commercial Landlord's Broker Lease Fee.
+            'purchase_fee_other_commercial.required'  => "Please describe the Landlord's Broker Lease Fee arrangement.",
+            'purchase_fee_net_aggregate.numeric'      => 'Percentage of the Net Aggregate Rent must be a number.',
+            'purchase_fee_net_aggregate.max'          => 'Percentage of the Net Aggregate Rent cannot exceed 100%.',
+            'purchase_fee_gross_rent.numeric'         => 'Percentage of the Gross Rent must be a number.',
+            'purchase_fee_gross_rent.max'             => 'Percentage of the Gross Rent cannot exceed 100%.',
+            'purchase_fee_monthly_percentage.numeric' => "Percentage of Month's Rent must be a number.",
+            'purchase_fee_months.numeric'             => 'Number of Months must be a number.',
+            'purchase_fee_flat_commercial.regex'      => 'Flat Fee amount must be a valid dollar amount.',
         ];
     }
 }

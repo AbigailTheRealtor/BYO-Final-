@@ -3,6 +3,7 @@
 namespace App\Services\AgentAi\Loaders;
 
 use App\Models\LandlordAgentAuction;
+use App\Services\Pets\PetFeeNormalizer;
 
 /**
  * LandlordListingLoader
@@ -106,6 +107,14 @@ class LandlordListingLoader
             'pet_species_allowed'       => self::decodeJsonField($infoGet('pet_species_allowed')),
             'pet_deposit_amount'        => $infoGet('pet_deposit_amount'),
             'pet_monthly_fee'           => $infoGet('pet_monthly_fee'),
+            // #2 Part B — canonical pet fee. The legacy keys above are retained so nothing
+            // an existing record stored disappears from AI context; pet_fee_summary is the
+            // NORMALIZED view (canonical when present, derived from legacy otherwise) and
+            // is what the model should reason over.
+            'pet_fee_type'              => $infoGet('pet_fee_type'),
+            'pet_fee_amount'            => $infoGet('pet_fee_amount'),
+            'pet_fee_other'             => $infoGet('pet_fee_other'),
+            'pet_fee_summary'           => self::normalizedPetFee($infoGet),
             'parking_terms'             => $infoGet('parking_terms'),
             'utilities'                 => self::decodeJsonField($infoGet('property_utilities')) ?? $infoGet('utilities'),
             'smoking_policy'            => $infoGet('smoking_policy'),
@@ -176,5 +185,31 @@ class LandlordListingLoader
             'disclosure_flags'          => 'flood_zone:true',
             'listing_status'            => $infoGet('listing_status'),
         ];
+    }
+
+    /**
+     * #2 Part B — the NORMALIZED pet-fee summary handed to the model.
+     *
+     * Canonical pet_fee_type wins; a legacy record derives its summary from the retired
+     * fee fields, with every stored amount preserved. Returns null when the listing
+     * carries no pet-fee information at all, so the model is never told about a fee that
+     * does not exist.
+     *
+     * @param callable $infoGet
+     */
+    private static function normalizedPetFee(callable $infoGet): ?string
+    {
+        $normalized = (new PetFeeNormalizer())->normalize([
+            'pet_fee_type'         => $infoGet('pet_fee_type'),
+            'pet_fee_amount'       => $infoGet('pet_fee_amount'),
+            'pet_fee_other'        => $infoGet('pet_fee_other'),
+            'pet_deposit_amount'   => $infoGet('pet_deposit_amount'),
+            'pet_monthly_fee'      => $infoGet('pet_monthly_fee'),
+            'pet_rent'             => $infoGet('pet_rent'),
+            'pet_fee'              => $infoGet('pet_fee'),
+            'pet_deposit_fee_rent' => $infoGet('pet_deposit_fee_rent'),
+        ]);
+
+        return $normalized['display'] !== '' ? $normalized['display'] : null;
     }
 }

@@ -105,6 +105,18 @@ class PetFriendlinessScoreService implements SymmetricScoreService
             }
         }
 
+        // #2 Part B — an "Other" pet fee is a real charge whose recurring-vs-one-time
+        // nature is NOT knowable from the stored text, so ByoListingAdapter deliberately
+        // refuses to file it under a legacy amount key. Detect its existence here (fee
+        // DETECTION only) so has_pet_fees and data-completeness stay correct. Without
+        // this branch the chain below would fall through to "no pet fees" and assert the
+        // opposite of the truth for a listing that plainly charges for pets.
+        $unclassifiedFee = false;
+        if (!$feePresent && $listing->get('pet.policy.has_fee') === true) {
+            $feePresent      = true;
+            $unclassifiedFee = true;
+        }
+
         // ── data completeness ────────────────────────────────────────────────
         $completeness = 0;
         if ($listing->present('pet.policy.pets_allowed'))           $completeness += self::PROPERTY_WEIGHTS['pet.policy.pets_allowed'];
@@ -188,6 +200,13 @@ class PetFriendlinessScoreService implements SymmetricScoreService
         } elseif ($oneTimeFee) {
             $value += 3;
             $clauses[] = 'one-time pet fee';
+        } elseif ($unclassifiedFee) {
+            // #2 Part B — a fee exists but its cadence is unknown. Scored at the same
+            // neutral +3 as "fees unknown" so ranking is unchanged, while the clause
+            // avoids claiming either a cadence we do not know or a "no pet fees" that
+            // would be flatly false. No existing weight, threshold or label is altered.
+            $value += 3;
+            $clauses[] = 'pet fee applies';
         } elseif ($feePresent) {
             $value += 5;
             $clauses[] = 'no pet fees';

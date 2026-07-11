@@ -317,7 +317,8 @@
 - **Page/tab:** The Agent Credentials / contact section
 - **Steps:**
   1. On at least one Create form and one Hire form, read the Phone, License #, and NAR/NRDS ID placeholders.
-- **Expected:** Placeholders are just `Enter Phone Number`, `Enter License Number`, `Enter NAR Member ID` — no example text.
+- **Expected:** Agent Credentials placeholders use sentence case and contain no example text: `Enter phone number`, `Enter license number`, and `Enter NAR member ID`.
+  - *Corrected 2026-07-11 (Batch 4).* This line previously read "Placeholders are just `Enter Phone Number`, `Enter License Number`, `Enter NAR Member ID` — no example text," which contradicted the remediation checkpoint's lowercase wording. The substantive requirement (drop the `(e.g., …)` examples) was always correct; the Title Case spelling was stale copy and did not match the project's sentence-case placeholder convention or the partial's own other four fields. Owner decision: sentence case wins.
 - **Edge cases:** Single shared partial → 19 sites; one Create + one Hire spot-check is sufficient.
 - **Result:** ☐ PASS ☐ FAIL ☐ N/A — **Notes:**
 

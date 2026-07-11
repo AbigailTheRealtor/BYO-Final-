@@ -3057,10 +3057,13 @@ $lease_types = [
             let otherInputWrapper = document.getElementById('other_parking_space_wrapper');
             let garageOptions = document.getElementById('garage_parking_spaces_option');
 
-            // Always hide both wrappers when property_type is not Commercial
+            // Always hide both wrappers when property_type is not Commercial.
+            // The vocabulary differs by role: tenant/landlord use 'Commercial Property',
+            // while buyer/seller use 'Commercial'/'Business'. Matching only the tenant
+            // spelling left the buyer and seller garage reveals permanently dead.
             var currentPropType = '';
             try { currentPropType = @this.get('property_type') || ''; } catch(e) {}
-            var isCommercial = currentPropType === 'Commercial Property';
+            var isCommercial = ['Commercial Property', 'Commercial', 'Business'].indexOf(currentPropType) !== -1;
 
             if (!isCommercial) {
                 if (optionsWrapper) optionsWrapper.classList.add('d-none');
@@ -3256,6 +3259,32 @@ $lease_types = [
         initializeAppliancesSelect2();
         Livewire.hook('message.processed', () => { initializeAppliancesSelect2(); });
         // End Preference
+
+        // #18: Flood Zone Preference select2 -> Livewire sync + "Other" reveal (buyer live path)
+        function initializeFloodZoneSelect2() {
+            var $fz = $('#flood_zone_tolerance');
+            if (!$fz.length) return;
+            if ($fz.hasClass('select2-hidden-accessible')) {
+                return;
+            }
+            window.initFullServiceSelect2Multiple($fz);
+            $fz.off('change.fztSync').on('change.fztSync', function() {
+                let selectedValues = $fz.val() || [];
+                selectedValues = [...new Set(selectedValues)];
+                var fztOther = document.querySelector('.flood_zone_tolerance_other_wrapper');
+                if (fztOther) {
+                    fztOther.classList.toggle('d-none', !selectedValues.includes('Other'));
+                }
+                if (!selectedValues.includes('Other')) {
+                    debouncedSet('flood_zone_tolerance_other', null);
+                }
+                debouncedSet('flood_zone_tolerance', selectedValues);
+            });
+            rehydrateSelect2FromLivewire('#flood_zone_tolerance', 'flood_zone_tolerance');
+        }
+
+        initializeFloodZoneSelect2();
+        Livewire.hook('message.processed', () => { initializeFloodZoneSelect2(); });
 
 
 

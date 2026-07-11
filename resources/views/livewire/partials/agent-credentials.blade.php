@@ -33,7 +33,7 @@
     <label class="fw-bold">Phone Number:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model.defer="phone_number" class="form-control has-icon" data-icon="fa-solid fa-phone"
-            placeholder="Enter Phone Number" id="agent_cred_phone" inputmode="numeric" autocomplete="tel" maxlength="14"
+            placeholder="Enter phone number" id="agent_cred_phone" inputmode="numeric" autocomplete="tel" maxlength="14"
             oninput="formatAgentCredPhone(this)" required>
     </div>
     @error('phone_number') <span class="text-danger">{{ $message }}</span> @enderror
@@ -64,7 +64,7 @@
     <label class="fw-bold">Real Estate License #:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model="agent_license_number" class="form-control has-icon" data-icon="fa-solid fa-certificate"
-            placeholder="Enter License Number" required>
+            placeholder="Enter license number" required>
     </div>
     @error('agent_license_number') <span class="text-danger">{{ $message }}</span> @enderror
 </div>
@@ -80,7 +80,7 @@
     </label>
     <div class="input-cover">
         <input type="text" wire:model="agent_nar_member_id" class="form-control has-icon" data-icon="fa-solid fa-id-card"
-            placeholder="Enter NAR Member ID">
+            placeholder="Enter NAR member ID">
     </div>
     @error('agent_nar_member_id') <span class="text-danger">{{ $message }}</span> @enderror
 </div>

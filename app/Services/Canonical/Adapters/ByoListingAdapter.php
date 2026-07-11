@@ -3,6 +3,7 @@
 namespace App\Services\Canonical\Adapters;
 
 use App\Services\Canonical\CanonicalListing;
+use App\Services\Pets\PetFeeNormalizer;
 
 /**
  * ByoListingAdapter — maps a first-party Bid Your Offer role listing (with its
@@ -34,6 +35,21 @@ class ByoListingAdapter
      * tenant/buyer. Both sides use overlapping BYO meta keys but with different
      * semantics, which is exactly why the canonical layer exists.
      */
+    /** #2 Part B — the legacy amount keys the canonical pet fee supersedes. */
+    private const LEGACY_PET_FEE_KEYS = [
+        'pet.policy.deposit_amount',
+        'pet.policy.monthly_fee',
+        'pet.policy.rent',
+        'pet.policy.fee',
+    ];
+
+    /** #2 Part B — canonical keys derived (not mapped 1:1 from a meta key). */
+    private const DERIVED_PET_FEE_KEYS = [
+        'pet.policy.has_fee',
+        'pet.policy.fee_other_amount',
+        'pet.policy.fee_other_text',
+    ];
+
     private const MAP = [
         // ── Property side (landlord/seller describe a real property) ──────────
         'landlord_agent' => self::PROPERTY_FIELDS + [
@@ -46,6 +62,12 @@ class ByoListingAdapter
             'pet.policy.monthly_fee'             => ['pet_monthly_fee', 'number'],
             'pet.policy.rent'                    => ['pet_rent', 'number'],
             'pet.policy.fee'                     => ['pet_fee', 'number'],
+            // #2 Part B — canonical pet fee. Mapped raw here; applyPetFeePrecedence()
+            // then rewrites the four legacy amount keys above from it so the existing
+            // pet.policy.* contract keeps working for every downstream consumer.
+            'pet.policy.fee_type'                => ['pet_fee_type', 'string'],
+            'pet.policy.fee_amount'              => ['pet_fee_amount', 'number'],
+            'pet.policy.fee_other'               => ['pet_fee_other', 'string'],
         ],
         'seller_agent' => self::PROPERTY_FIELDS + [
             'pet.policy.pets_allowed'            => ['pets', 'bool'],
@@ -131,13 +153,108 @@ class ByoListingAdapter
             ];
         }
 
+        $this->applyPetFeePrecedence($fields, $meta, $listingType, $freshness);
+
         return new CanonicalListing($listingType, $listingId, $fields, $meta);
+    }
+
+    /**
+     * #2 Part B — canonical pet fee wins over the retired legacy amount keys.
+     *
+     * A record that has been saved through the redesigned Landlord form carries
+     * pet_fee_type. Its legacy rows are still in storage (deliberately never deleted), so
+     * without this the stale legacy amounts would keep populating pet.policy.* and the
+     * new value would be ignored. When pet_fee_type is present we therefore REPLACE the
+     * four legacy amount keys with values derived from it, preserving the existing
+     * contract — and crucially the recurring-vs-one-time distinction — for every
+     * downstream consumer (PetFriendlinessScoreService above all).
+     *
+     * When pet_fee_type is absent the legacy mapping is left exactly as it was, so legacy
+     * records score and display precisely as they did before this change.
+     *
+     * @param array<string,mixed> $fields
+     * @param array<string,array> $meta
+     */
+    private function applyPetFeePrecedence(array &$fields, array &$meta, string $listingType, ?string $freshness): void
+    {
+        $type = $fields['pet.policy.fee_type'] ?? null;
+        if ($listingType !== 'landlord_agent' || !is_string($type) || $type === '') {
+            return; // legacy path — untouched
+        }
+
+        $amount    = $fields['pet.policy.fee_amount'] ?? null;
+        $otherText = $fields['pet.policy.fee_other'] ?? null;
+
+        // Stale legacy rows must not outrank the canonical answer.
+        foreach (self::LEGACY_PET_FEE_KEYS as $legacyKey) {
+            unset($fields[$legacyKey], $meta[$legacyKey]);
+        }
+
+        $stamp = function (string $key, $value) use (&$fields, &$meta, $listingType, $freshness): void {
+            $fields[$key] = $value;
+            $meta[$key]   = [
+                'source'             => 'byo:' . $listingType,
+                'source_field'       => PetFeeNormalizer::KEY_TYPE,
+                'source_reliability' => self::SOURCE_RELIABILITY,
+                'freshness'          => $freshness,
+            ];
+        };
+
+        $hasAmount = is_numeric($amount) && (float) $amount > 0;
+
+        switch ($type) {
+            case PetFeeNormalizer::TYPE_ONE_TIME_REFUNDABLE:
+                if ($hasAmount) {
+                    $stamp('pet.policy.deposit_amount', (float) $amount); // one-time
+                }
+                break;
+
+            case PetFeeNormalizer::TYPE_NON_REFUNDABLE:
+                if ($hasAmount) {
+                    $stamp('pet.policy.fee', (float) $amount);            // one-time
+                }
+                break;
+
+            case PetFeeNormalizer::TYPE_MONTHLY:
+                if ($hasAmount) {
+                    // Monthly maps to monthly_fee ONLY. It is deliberately not duplicated
+                    // into pet.policy.rent, which would double-count the same charge.
+                    $stamp('pet.policy.monthly_fee', (float) $amount);    // recurring
+                }
+                break;
+
+            case PetFeeNormalizer::TYPE_NONE:
+                // No amount keys populated at all, and has_fee stays false.
+                break;
+
+            case PetFeeNormalizer::TYPE_OTHER:
+                // The charge is real but its recurring/one-time nature is NOT knowable
+                // from the stored text. We refuse to guess, so it is deliberately NOT
+                // placed into a legacy bucket — it is preserved in dedicated keys and
+                // flagged via has_fee so fee DETECTION still works.
+                if ($hasAmount) {
+                    $stamp('pet.policy.fee_other_amount', (float) $amount);
+                }
+                if (is_string($otherText) && $otherText !== '') {
+                    $stamp('pet.policy.fee_other_text', $otherText);
+                }
+                break;
+        }
+
+        $stamp('pet.policy.has_fee', $type !== PetFeeNormalizer::TYPE_NONE
+            && ($hasAmount || (is_string($otherText) && $otherText !== '')));
     }
 
     /** @return list<string> canonical keys this adapter can populate for a type. */
     public function canonicalKeysFor(string $listingType): array
     {
-        return array_keys(self::MAP[$listingType] ?? []);
+        $keys = array_keys(self::MAP[$listingType] ?? []);
+
+        if ($listingType === 'landlord_agent') {
+            $keys = array_merge($keys, self::DERIVED_PET_FEE_KEYS);
+        }
+
+        return $keys;
     }
 
     /** @param mixed $raw @return mixed normalized value or null */

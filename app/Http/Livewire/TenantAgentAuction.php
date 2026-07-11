@@ -148,6 +148,15 @@ class TenantAgentAuction extends Component
     public $pool_type = [];
     public $view_preference = [];
     public $other_preferences = '';
+    // #17/#18/#19: B5.8 buyer Property Preferences fields ported to the live Hire flow
+    // (Purchase Purpose, HOA Acceptance + Max Fee, Flood Zone). Declared here so the
+    // buyer-case @included partial's live wire:model bindings don't 500 on interaction.
+    public $purchase_purpose = '';
+    public $purchase_purpose_other = '';
+    public $hoa_acceptance = '';
+    public $hoa_max_monthly_fee = '';
+    public $flood_zone_tolerance = [];
+    public $flood_zone_tolerance_other = '';
     public $prepayment_penalty = '';
     public $prepayment_penalty_amount = '';
     public $balloon_payment = '';
@@ -3198,6 +3207,15 @@ class TenantAgentAuction extends Component
 
             $this->other_preferences = $auction->get->other_preferences ?? '';
 
+            // #17/#18/#19: hydrate B5.8 buyer Property Preferences fields from EAV meta
+            $this->purchase_purpose = $auction->get->purchase_purpose ?? '';
+            $this->purchase_purpose_other = $auction->get->purchase_purpose_other ?? '';
+            $this->hoa_acceptance = $auction->get->hoa_acceptance ?? '';
+            $this->hoa_max_monthly_fee = $auction->get->hoa_max_monthly_fee ?? '';
+            $floodRaw = $auction->get->flood_zone_tolerance ?? null;
+            $this->flood_zone_tolerance = $floodRaw ? (is_array($floodRaw) ? $floodRaw : (is_string($floodRaw) ? json_decode($floodRaw, true) ?? [] : [])) : [];
+            $this->flood_zone_tolerance_other = $auction->get->flood_zone_tolerance_other ?? '';
+
             $this->appliances = is_string($auction->get->appliances ?? null) ? json_decode($auction->get->appliances, true) ?? [] : (array)($auction->get->appliances ?? []);
 
 
@@ -4389,6 +4407,13 @@ class TenantAgentAuction extends Component
         }
         $auction->saveMeta('view_preference', json_encode($this->view_preference));
         $auction->saveMeta('other_preferences', $this->other_preferences);
+        // #17/#18/#19: persist B5.8 buyer Property Preferences fields (EAV meta, no migration)
+        $auction->saveMeta('purchase_purpose', $this->purchase_purpose);
+        $auction->saveMeta('purchase_purpose_other', $this->purchase_purpose_other);
+        $auction->saveMeta('hoa_acceptance', $this->hoa_acceptance);
+        $auction->saveMeta('hoa_max_monthly_fee', $this->stripCommas($this->hoa_max_monthly_fee));
+        $auction->saveMeta('flood_zone_tolerance', json_encode($this->flood_zone_tolerance ?? []));
+        $auction->saveMeta('flood_zone_tolerance_other', $this->flood_zone_tolerance_other ?? '');
         $auction->saveMeta('appliances', json_encode($this->appliances));
         $auction->saveMeta('other_appliances', $this->other_appliances);
         $auction->saveMeta('leasing_55_plus', $this->leasing_55_plus);

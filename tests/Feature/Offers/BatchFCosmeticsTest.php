@@ -38,18 +38,32 @@ class BatchFCosmeticsTest extends TestCase
         return (string) file_get_contents($full);
     }
 
-    /** #26 — Agent Credentials: remove the "(e.g., …)" example text from the 3 placeholders (one shared partial → all 19 sites). */
+    /**
+     * #26 — Agent Credentials: remove the "(e.g., …)" example text from the 3 placeholders
+     * (one shared partial → all 19 sites).
+     *
+     * UPDATED (Browser QA Batch 4, 2026-07-11): the three placeholders were re-cased from Title
+     * Case to sentence case, matching the partial's own other four fields and the project's
+     * placeholder convention. This test previously pinned the Title Case spelling, which came
+     * from a stale line in BROWSER-QA-CHECKLIST.md and contradicted the remediation checkpoint.
+     * Owner decision: sentence case. The substantive requirement this test exists for — no
+     * "(e.g., …)" example text — is unchanged, and the negative assertions below now use the
+     * live wording (against the old Title Case prefixes they could never fail again).
+     *
+     * BatchFourAgentCredentialsPlaceholderTest is the dedicated guard for the new wording and
+     * additionally proves no include site copies these strings out of the shared partial.
+     */
     public function test_issue_26_agent_credentials_placeholders_have_no_examples(): void
     {
         $src = $this->source(self::AGENT_CREDENTIALS);
 
-        $this->assertStringContainsString('placeholder="Enter Phone Number"', $src);
-        $this->assertStringContainsString('placeholder="Enter License Number"', $src);
-        $this->assertStringContainsString('placeholder="Enter NAR Member ID"', $src);
+        $this->assertStringContainsString('placeholder="Enter phone number"', $src);
+        $this->assertStringContainsString('placeholder="Enter license number"', $src);
+        $this->assertStringContainsString('placeholder="Enter NAR member ID"', $src);
 
-        $this->assertStringNotContainsString('Enter Phone Number (e.g.', $src);
-        $this->assertStringNotContainsString('Enter License Number (e.g.', $src);
-        $this->assertStringNotContainsString('Enter NAR Member ID (e.g.', $src);
+        $this->assertStringNotContainsString('Enter phone number (e.g.', $src);
+        $this->assertStringNotContainsString('Enter license number (e.g.', $src);
+        $this->assertStringNotContainsString('Enter NAR member ID (e.g.', $src);
     }
 
     /** #23 — Hire address tooltips: "<br>" replaced with a space to match the Create continuous-sentence format. */

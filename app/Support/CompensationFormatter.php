@@ -637,6 +637,20 @@ class CompensationFormatter
             $p = $g('tenant_broker_first_month_rent');
             return $p ? Format::percentage($p) . " of First Month's Rent" : $tbs;
         }
+        // Commercial option set. The Commercial branch of the tenant-broker form reuses the same two
+        // amount props as Residential but under different meanings: 'Percentage of the Net Aggregate
+        // Rent' stores into tenant_broker_percentage, and 'Percentage of the Gross Rent' into
+        // tenant_broker_gross_lease. Without these branches both fell through to the bare label, so a
+        // Commercial listing displayed its fee STRUCTURE with the amount silently dropped.
+        // Checked after 'gross lease' above — "gross rent" and "gross lease" do not collide.
+        if (str_contains($tbsL, 'net aggregate')) {
+            $p = $g('tenant_broker_percentage');
+            return $p ? Format::percentage($p) . ' of Net Aggregate Rent' : $tbs;
+        }
+        if (str_contains($tbsL, 'gross rent')) {
+            $p = $g('tenant_broker_gross_lease');
+            return $p ? Format::percentage($p) . ' of Gross Rent' : $tbs;
+        }
         // Handles both 'Flat fee' (legacy stored value) and 'Flat Fee' (normalised)
         if ($tbsL === 'flat fee') {
             $flat = $g('tenant_broker_flat_fee');

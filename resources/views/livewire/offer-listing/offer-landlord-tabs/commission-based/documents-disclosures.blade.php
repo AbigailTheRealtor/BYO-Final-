@@ -63,10 +63,15 @@
                     rows: {{ json_encode($initialLandlordDocRows) }},
                     typeOptions: {{ json_encode($landlordDocTypeOptions) }},
                     uploading: [],
+                    // #7: per-row upload error. This input has no wire:model, so Livewire's
+                    // `livewire-upload-error` DOM event never fires for it — the only signal is
+                    // @this.upload()'s error callback, which previously discarded the failure.
+                    uploadErrors: [],
                     _offFileStored: null,
                     _offFileRemoved: null,
                     init() {
                         this.uploading = this.rows.map(() => false);
+                        this.uploadErrors = this.rows.map(() => '');
                         if (window.Livewire) {
                             this._offFileStored = Livewire.on('landlordDocFileStored', (index, path, originalName) => {
                                 if (this.rows[index] !== undefined) {
@@ -92,12 +97,14 @@
                     addRow() {
                         this.rows.push({ type: '', custom_type: '', description: '', stored_path: '', original_name: '' });
                         this.uploading.push(false);
+                        this.uploadErrors.push('');
                         this.$nextTick(() => this.sync());
                     },
                     removeRow(index) {
                         if (this.rows.length <= 1) return;
                         this.rows.splice(index, 1);
                         this.uploading.splice(index, 1);
+                        this.uploadErrors.splice(index, 1);
                         this.sync();
                     },
                     sync() {
@@ -106,11 +113,17 @@
                     uploadFile(index, event) {
                         const file = event.target.files[0];
                         if (!file) return;
-                        this.uploading[index] = true;
+                        this.uploading[index]    = true;
+                        this.uploadErrors[index] = '';
                         @this.set('landlordDocFileIndex', index).then(() => {
                             @this.upload('landlordDocFileUpload', file,
                                 () => {},
-                                () => { this.uploading[index] = false; },
+                                // #7: the error callback used to only stop the spinner, so an
+                                // oversize document was a SILENT no-op. Surface it on the row.
+                                () => {
+                                    this.uploading[index]    = false;
+                                    this.uploadErrors[index] = 'Upload failed — the document may be larger than 50 MB, or too large to send. Please try a smaller file.';
+                                },
                                 () => {}
                             );
                         });
@@ -183,6 +196,14 @@
                                 >
                                 <div x-show="uploading[index]" class="text-muted small mt-1">
                                     <i class="fa-solid fa-spinner fa-spin me-1"></i>Uploading…
+                                </div>
+                                {{-- #7: the oversize/failure message renders ON THE ROW that failed,
+                                     inside this tab — never in a hidden pane the user cannot see. --}}
+                                <div x-show="uploadErrors[index]"
+                                    class="alert alert-danger d-flex align-items-center gap-2 mt-2 mb-0 py-2"
+                                    role="alert">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <span class="small" x-text="uploadErrors[index]"></span>
                                 </div>
                             </div>
                             <div x-show="row.stored_path" class="d-flex align-items-center gap-2 flex-wrap">

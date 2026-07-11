@@ -78,8 +78,10 @@ trait SellerPublishValidation
         $rules['electrical_service']    = 'nullable|array';
         $rules['electrical_service.*']  = 'string|in:1 Phase (3-Wire),3 Phase,110 Volts,220 Volts,440 Volts,Separate Meter,None,Other';
 
-        $rules['ceiling_height']    = 'nullable|array';
-        $rules['ceiling_height.*']  = 'string|in:Under 8 Feet,8-10 Feet,11-14 Feet,15-18 Feet,19-22 Feet,Over 22 Feet';
+        // #4: ceiling_height is a single-value <select> bound to a string prop, not a
+        // multi-select. Validating it as an array made every Commercial listing that
+        // picked a ceiling height fail submit. Rule matches the actual single-string UI.
+        $rules['ceiling_height']    = 'nullable|string|in:Under 8 Feet,8-10 Feet,11-14 Feet,15-18 Feet,19-22 Feet,Over 22 Feet';
 
         $rules['building_features']    = 'nullable|array';
         $rules['building_features.*']  = 'string|in:Bathrooms,Clear Span,Columns,Common Lighting,Drive-Through,Dumpsters,Elevator,Elevator – None,Extra Storage,Fencing,Fiber Optic,Freight Elevator,Furnished,High Bays,Janitorial Services,Kitchen Facility,Lit Sign on Site,Loading Dock,Loft,Medical Disposal,On Site Shower,Outside Storage,Overhead Doors,Pool/Spa,Ramp,Reception,Seating,Service Stations,Solid Surface Counter,Stone Counter,Trash Removal,Truck Doors,Truck Well,Waiting Room,Other';

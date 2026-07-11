@@ -348,6 +348,11 @@ class AskAiContextBuilderService
             'pet_deposit_fee_rent'           => 'pet_deposit_fee_rent',
             'pet_max_weight_lbs'             => 'pet_max_weight_lbs',
             'pet_species_allowed'            => 'pet_species_allowed',
+            // #2 Part B — canonical pet fee. The retired legacy keys stay mapped so an
+            // existing record loses nothing from AI context; new records answer here.
+            'pet_fee_type'                   => 'pet_fee_type',
+            'pet_fee_amount'                 => 'pet_fee_amount',
+            'pet_fee_other'                  => 'pet_fee_other',
             // ── Utilities / Terms ─────────────────────────────────────────────
             'parking_terms'                  => 'parking_terms',
             // 'utilities' declared first (UI-view key) for conflict-detection reference;
@@ -450,6 +455,10 @@ class AskAiContextBuilderService
             'landlord_approval_conditions'   => 'landlord_approval_conditions',
             'pet_deposit_amount'             => 'pet_deposit_amount',
             'pet_monthly_fee'                => 'pet_monthly_fee',
+            // #2 Part B — the remaining retired legacy fee fields, mapped so historical
+            // records keep surfacing every amount they stored.
+            'pet_rent'                       => 'pet_rent',
+            'pet_fee'                        => 'pet_fee',
             'number_of_occupants_allowed'    => 'number_of_occupants_allowed',
             // ── Applicant Screening ───────────────────────────────────────────
             'min_credit_score'               => 'min_credit_score',
