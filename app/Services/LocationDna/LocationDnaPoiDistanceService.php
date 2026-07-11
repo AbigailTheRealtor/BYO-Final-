@@ -395,7 +395,12 @@ class LocationDnaPoiDistanceService
                 ];
             }
 
-            $ranked = $engine->rankCandidates($category, $candidates, $sourceLat, $sourceLng);
+            $ranked = $engine->rankCandidates(
+                $category,
+                PoiCandidate::fromGooglePlaces($candidates),
+                $sourceLat,
+                $sourceLng,
+            );
 
             $rank = 1;
             foreach ($ranked as $rankedCandidate) {
@@ -1165,7 +1170,12 @@ class LocationDnaPoiDistanceService
             // rankCandidates() returns them sorted by ranking_score descending
             // so rank 1 = highest consumer-relevance score, not nearest distance.
             $engine = $this->rankingEngine ?? new LocationDnaRankingEngine();
-            $rankedCandidates = $engine->rankCandidates($category, $validCandidates, $sourceLat, $sourceLng);
+            $rankedCandidates = $engine->rankCandidates(
+                $category,
+                PoiCandidate::fromGooglePlaces($validCandidates),
+                $sourceLat,
+                $sourceLng,
+            );
 
             // Hospital allowlist enforcement: any candidate that carries a legitimate
             // acute-care type (hospital, emergency_room, medical_center, urgent_care,
@@ -1315,7 +1325,7 @@ class LocationDnaPoiDistanceService
         $engine = $this->rankingEngine ?? new LocationDnaRankingEngine();
         $rankedQualified = $engine->rankCandidates(
             'top_rated_dining',
-            array_values($qualified),
+            PoiCandidate::fromGooglePlaces(array_values($qualified)),
             $sourceLat,
             $sourceLng,
         );

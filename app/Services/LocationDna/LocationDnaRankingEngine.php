@@ -19,6 +19,11 @@ namespace App\Services\LocationDna;
  * Candidates are returned sorted by ranking_score descending (rank 1 = highest scoring).
  *
  * This class performs no I/O, no DB access, and no API calls. Pure computation only.
+ *
+ * It is also provider-agnostic: it consumes `PoiCandidate` and holds no knowledge of any
+ * vendor's payload shape. Swapping the POI provider changes `PoiCandidate::from*()`, not this
+ * file. Scoring reads six signals and nothing else — a field absent from `PoiCandidate` cannot
+ * influence a score.
  */
 class LocationDnaRankingEngine
 {
@@ -26,11 +31,26 @@ class LocationDnaRankingEngine
      * Score the given candidates for the category and return them sorted
      * by ranking_score descending with scores and reasons attached.
      *
-     * @param  string $category     Canonical category key (e.g. 'grocery_store')
-     * @param  array  $candidates   Array of raw Google Places result objects
-     * @param  float  $sourceLat    Source property latitude
-     * @param  float  $sourceLng    Source property longitude
-     * @return array                Candidates with score fields attached, sorted by ranking_score desc
+     * INPUT is `PoiCandidate`, not a provider payload. The engine scores on six signals —
+     * name, latitude, longitude, types, rating, reviewCount — and knows nothing about how any
+     * provider spells them. `PoiCandidate::fromGooglePlace()` is the only place that does.
+     *
+     * OUTPUT is deliberately still an array, and it is a SUPERSET of the provider payload:
+     * `array_merge($candidate->raw(), ['_ranking' => ...])`. All three production call sites
+     * read non-scoring keys back off this merged output — `_row_id` to re-associate a scored
+     * result with its database row, `vicinity` to persist the address — so the passthrough is
+     * load-bearing, not incidental. Projecting through `PoiCandidate::toRankingArray()` instead
+     * would score identically and silently persist NULL addresses against unmatched rows.
+     *
+     * @param  string             $category    Canonical category key (e.g. 'grocery_store')
+     * @param  list<PoiCandidate> $candidates  Provider-agnostic candidates, order preserved
+     * @param  float              $sourceLat   Source property latitude
+     * @param  float              $sourceLng   Source property longitude
+     * @return list<array<string, mixed>>      Each candidate's raw payload + `_ranking`, sorted
+     *                                         by ranking_score descending
+     *
+     * @see PoiCandidate::raw()  — why the payload rides through untouched
+     * @see \Tests\Unit\Services\LocationDna\RankingEnginePersistencePassthroughTest
      */
     public function rankCandidates(
         string $category,
@@ -46,21 +66,24 @@ class LocationDnaRankingEngine
 
         // Compute distances for all candidates (needed for normalized distance score)
         $distances = [];
-        foreach ($candidates as $i => $place) {
-            $lat = (float) ($place['geometry']['location']['lat'] ?? 0);
-            $lng = (float) ($place['geometry']['location']['lng'] ?? 0);
-            $distances[$i] = $this->haversineDistanceMiles($sourceLat, $sourceLng, $lat, $lng);
+        foreach ($candidates as $i => $candidate) {
+            $distances[$i] = $this->haversineDistanceMiles(
+                $sourceLat,
+                $sourceLng,
+                $candidate->latitude(),
+                $candidate->longitude(),
+            );
         }
 
         $maxDistance = max($distances) ?: 1.0;
 
         $scored = [];
-        foreach ($candidates as $i => $place) {
-            $types           = $place['types'] ?? [];
-            $rating          = isset($place['rating']) ? (float) $place['rating'] : null;
-            $reviewCount     = (int) ($place['user_ratings_total'] ?? 0);
+        foreach ($candidates as $i => $candidate) {
+            $types           = $candidate->types();
+            $rating          = $candidate->rating();
+            $reviewCount     = $candidate->reviewCount();
             $distanceMiles   = $distances[$i];
-            $name            = $place['name'] ?? '';
+            $name            = $candidate->name();
 
             $reasons = [];
 
@@ -103,7 +126,9 @@ class LocationDnaRankingEngine
                 + $distanceScore   * $profile['distance_weight']
             ) / $totalWeight;
 
-            $scored[$i] = array_merge($place, [
+            // The provider payload rides through untouched. See the method docblock: the
+            // persistence layer reads `_row_id` and `vicinity` back off this merge.
+            $scored[$i] = array_merge($candidate->raw(), [
                 '_ranking' => [
                     'category_match_score'     => round($matchScore, 2),
                     'review_confidence_score'  => round($confidenceScore, 2),

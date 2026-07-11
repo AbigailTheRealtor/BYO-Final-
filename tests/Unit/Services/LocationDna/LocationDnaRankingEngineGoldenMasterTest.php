@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\LocationDna;
 
 use App\Services\LocationDna\LocationDnaRankingEngine;
+use App\Services\LocationDna\PoiCandidate;
 use Tests\TestCase;
 
 /**
@@ -140,7 +141,7 @@ class LocationDnaRankingEngineGoldenMasterTest extends TestCase
         foreach ($this->fixture['groups'] as $group) {
             $actual = $this->shape($engine->rankCandidates(
                 $group['category'],
-                $group['candidates'],
+                PoiCandidate::fromGooglePlaces($group['candidates']),
                 $group['source_lat'],
                 $group['source_lng'],
             ));
@@ -174,7 +175,7 @@ class LocationDnaRankingEngineGoldenMasterTest extends TestCase
         foreach ($this->fixture['groups'] as $group) {
             $all[] = $this->shape($engine->rankCandidates(
                 $group['category'],
-                $group['candidates'],
+                PoiCandidate::fromGooglePlaces($group['candidates']),
                 $group['source_lat'],
                 $group['source_lng'],
             ));
@@ -219,8 +220,8 @@ class LocationDnaRankingEngineGoldenMasterTest extends TestCase
 
         $this->assertNotNull($group, 'Expected at least one group with 4+ candidates.');
 
-        $full      = $engine->rankCandidates($group['category'], $group['candidates'], $group['source_lat'], $group['source_lng']);
-        $truncated = $engine->rankCandidates($group['category'], array_slice($group['candidates'], 0, 3), $group['source_lat'], $group['source_lng']);
+        $full      = $engine->rankCandidates($group['category'], PoiCandidate::fromGooglePlaces($group['candidates']), $group['source_lat'], $group['source_lng']);
+        $truncated = $engine->rankCandidates($group['category'], PoiCandidate::fromGooglePlaces(array_slice($group['candidates'], 0, 3)), $group['source_lat'], $group['source_lng']);
 
         $fullByName = [];
         foreach ($full as $candidate) {

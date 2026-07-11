@@ -3,6 +3,7 @@
 namespace Tests\Unit\LocationDna;
 
 use App\Services\LocationDna\LocationDnaRankingEngine;
+use App\Services\LocationDna\PoiCandidate;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -86,7 +87,7 @@ class LocationDnaRankingProfileValidationTest extends TestCase
     {
         $ranked = $this->engine->rankCandidates(
             $category,
-            $candidates,
+            PoiCandidate::fromGooglePlaces($candidates),
             self::SOURCE_LAT,
             self::SOURCE_LNG
         );
@@ -703,7 +704,7 @@ class LocationDnaRankingProfileValidationTest extends TestCase
             'user_ratings_total' => 800,
         ]);
 
-        $ranked = $this->engine->rankCandidates('grocery_store', [$near, $far], self::SOURCE_LAT, self::SOURCE_LNG);
+        $ranked = $this->engine->rankCandidates('grocery_store', PoiCandidate::fromGooglePlaces([$near, $far]), self::SOURCE_LAT, self::SOURCE_LNG);
 
         $top     = $ranked[0];
         $reasons = $top['_ranking']['ranking_reasons_json'] ?? [];
@@ -740,7 +741,7 @@ class LocationDnaRankingProfileValidationTest extends TestCase
             'user_ratings_total' => 950,
         ]);
 
-        $ranked = $this->engine->rankCandidates('coffee_shop', [$near, $far], self::SOURCE_LAT, self::SOURCE_LNG);
+        $ranked = $this->engine->rankCandidates('coffee_shop', PoiCandidate::fromGooglePlaces([$near, $far]), self::SOURCE_LAT, self::SOURCE_LNG);
 
         $top    = $ranked[0];
         $bottom = $ranked[1];
@@ -787,7 +788,7 @@ class LocationDnaRankingProfileValidationTest extends TestCase
             'user_ratings_total' => 75,
         ]);
 
-        $ranked = $this->engine->rankCandidates('pharmacy', [$candidate], self::SOURCE_LAT, self::SOURCE_LNG);
+        $ranked = $this->engine->rankCandidates('pharmacy', PoiCandidate::fromGooglePlaces([$candidate]), self::SOURCE_LAT, self::SOURCE_LNG);
 
         $this->assertCount(1, $ranked);
         $this->assertArrayHasKey('_ranking', $ranked[0]);

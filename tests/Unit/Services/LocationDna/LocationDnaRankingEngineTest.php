@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\LocationDna;
 use App\Services\LocationDna\LocationDnaPoiDistanceService;
 use App\Services\LocationDna\LocationDnaRankingEngine;
 use App\Services\LocationDna\LocationDnaRankingProfileService;
+use App\Services\LocationDna\PoiCandidate;
 use Tests\TestCase;
 
 /**
@@ -43,7 +44,7 @@ class LocationDnaRankingEngineTest extends TestCase
         array  $types,
         ?float $rating,
         int    $reviewCount,
-    ): array {
+    ): PoiCandidate {
         $result = [
             'name'     => $name,
             'vicinity' => '123 Test Ave',
@@ -58,7 +59,10 @@ class LocationDnaRankingEngineTest extends TestCase
             $result['user_ratings_total']  = $reviewCount;
         }
 
-        return $result;
+        // The engine consumes PoiCandidate, not provider arrays. The Google-shaped array above
+        // is retained verbatim as the adapter's input, so these fixtures still exercise the
+        // exact coercions production hits (absent rating => null, absent count => 0).
+        return PoiCandidate::fromGooglePlace($result);
     }
 
     // =========================================================================

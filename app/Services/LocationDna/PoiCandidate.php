@@ -16,14 +16,17 @@ namespace App\Services\LocationDna;
  * and `fromGooglePlace()` is the only place in the codebase that has to know Google spells
  * a coordinate `geometry.location.lat`.
  *
- * SCOPE OF THIS CHANGE — read before wiring
- * -----------------------------------------
- * NOTHING routes through this class yet. It is constructed, adapted, and tested; the
- * production path (`LocationDnaPoiDistanceService`) still hands raw arrays to the engine.
- * Introducing the type and rewiring the 1,584-LOC production file are deliberately
- * separate batches, so that a ranking regression can only ever be attributable to one of
- * them. `PoiCandidateGoldenMasterParityTest` proves the adaptation is lossless *before*
- * anything depends on it: the five accessors alone reproduce all 995 frozen rows.
+ * WHAT ROUTES THROUGH IT
+ * ----------------------
+ * `LocationDnaRankingEngine::rankCandidates()` now consumes this type exclusively, and all
+ * three production call sites in `LocationDnaPoiDistanceService` adapt through
+ * `fromGooglePlaces()` before ranking. The engine holds no provider-shape knowledge.
+ *
+ * What has NOT happened: the production *lookup* path still calls Google inline via raw Guzzle
+ * rather than through `PoiLookupAdapterInterface`. Routing it is a separate batch, kept apart
+ * so that a ranking regression can only ever be attributable to one of the two.
+ * `PoiCandidateGoldenMasterParityTest` proved the adaptation lossless before anything depended
+ * on it: the five scoring accessors alone reproduce all 995 frozen rows.
  *
  * COERCION IS COPIED, NOT INVENTED
  * --------------------------------
@@ -36,10 +39,11 @@ namespace App\Services\LocationDna;
  *     missing key both yield `null`. 151 of the 995 frozen candidates have no rating key.
  *   - `user_ratings_total` collapses absent AND null to `0`, because `(int) null === 0`.
  *
- * The one place this object is deliberately MORE tolerant than the engine: a non-array
- * `types` becomes `[]` here, where the engine would raise a TypeError passing it to
- * `in_array()`. No provider has ever sent one. When the engine is normalised onto this
- * type, that hardening ships with it — call it out in review rather than discovering it.
+ * The one place this object is deliberately MORE tolerant than the engine was: a non-array
+ * `types` becomes `[]` here, where the engine used to raise a TypeError passing it to
+ * `in_array()`. No provider has ever sent one. The engine is now normalised onto this type, so
+ * that normalisation has shipped: a malformed `types` scores as "no types" rather than
+ * throwing. Accepted as a narrow consequence of adopting the value object.
  *
  * ADDRESS IS NOT AN ENGINE SIGNAL
  * -------------------------------
@@ -149,11 +153,16 @@ final class PoiCandidate
     /**
      * The untouched provider payload.
      *
-     * TRANSITIONAL. The production path merges non-provider keys into the candidate array
-     * before ranking (`_row_id`, used to re-associate scored results with their database
-     * rows) and reads `vicinity` back off the engine's `array_merge` output. Those callers
-     * need the original array until they are normalised onto the accessors above. New code
-     * must not reach through this — reach for a named accessor, or add one.
+     * LOAD-BEARING, not incidental. `rankCandidates()` returns
+     * `array_merge($candidate->raw(), ['_ranking' => ...])`, and the persistence layer reads
+     * non-scoring keys back off that merge: `_row_id` to re-associate a scored result with its
+     * database row, `vicinity` to persist the POI's address. Narrowing this to the scoring
+     * signals would leave ranking byte-identical and silently corrupt persistence — rows
+     * skipped, addresses written NULL. `RankingEnginePersistencePassthroughTest` and
+     * `RecomputeRankingsFromCacheTest` both fail if it is narrowed.
+     *
+     * New code must not reach through this to read a scoring signal — reach for a named
+     * accessor, or add one.
      *
      * @return array<string, mixed>
      */
@@ -163,17 +172,20 @@ final class PoiCandidate
     }
 
     /**
-     * Reproject onto the exact Google-shaped array the engine reads today.
+     * Reproject onto the five scoring signals, and nothing else — no `vicinity`, no `_row_id`,
+     * no `place_id`.
      *
-     * TRANSITIONAL BRIDGE, and a narrow one. This emits the five scoring keys and nothing
-     * else — no `vicinity`, no `_row_id`, no `place_id`. It exists so the parity harness can
-     * prove those five accessors are *jointly sufficient* to reproduce every frozen ranking
-     * row, which is the precondition for normalising the engine onto this type.
+     * TEST-ONLY, and deliberately retained. It exists so `PoiCandidateGoldenMasterParityTest`
+     * can prove those five accessors are *jointly sufficient* to reproduce every frozen ranking
+     * row: it round-trips each candidate through this projection, re-adapts it, and asserts the
+     * corpus digest is unmoved. If the engine ever scored on a sixth signal, that digest would
+     * change. Deleting this method would delete that proof.
      *
-     * It is therefore NOT a drop-in replacement for the raw array at the production call
-     * sites: `LocationDnaPoiDistanceService` reads `_row_id` and `vicinity` back off the
-     * engine's merged output and would silently persist NULL addresses against unmatched
-     * rows. Delete this method once the engine accepts `PoiCandidate` directly.
+     * It is NOT a substitute for `raw()` in production. Feeding a reprojection to the engine
+     * scores identically while stripping `_row_id` and `vicinity`, which makes
+     * `recomputeRankingsFromCache()` skip every row and the nearby-search path persist NULL
+     * addresses — silently, with the golden master still green. Both persistence tests exist to
+     * catch exactly that substitution.
      *
      * @return array<string, mixed>
      */

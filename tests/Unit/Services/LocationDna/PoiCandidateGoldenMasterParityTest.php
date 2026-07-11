@@ -96,10 +96,12 @@ class PoiCandidateGoldenMasterParityTest extends TestCase
         foreach ($this->fixture['groups'] as $group) {
             $candidates = PoiCandidate::fromGooglePlaces(array_map($decorate, $group['candidates']));
 
-            $input = array_map(
+            // Round-trip through toRankingArray(): it emits ONLY the five scoring signals, so
+            // re-adapting that stripped projection proves nothing outside them reaches a score.
+            $input = PoiCandidate::fromGooglePlaces(array_map(
                 static fn (PoiCandidate $candidate): array => $candidate->toRankingArray(),
                 $candidates,
-            );
+            ));
 
             $all[] = $this->shape($engine->rankCandidates(
                 $group['category'],
@@ -134,10 +136,10 @@ class PoiCandidateGoldenMasterParityTest extends TestCase
         $divergent = [];
 
         foreach ($this->fixture['groups'] as $group) {
-            $input = array_map(
+            $input = PoiCandidate::fromGooglePlaces(array_map(
                 static fn (PoiCandidate $candidate): array => $candidate->toRankingArray(),
                 PoiCandidate::fromGooglePlaces($group['candidates']),
-            );
+            ));
 
             $actual = $this->shape($engine->rankCandidates(
                 $group['category'],
