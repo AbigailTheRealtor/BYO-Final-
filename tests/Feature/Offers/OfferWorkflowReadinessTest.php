@@ -507,6 +507,15 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/tenant-info.blade.php',
             'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/photos-tours-documents.blade.php',
             'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/photos-tours-documents.blade.php',
+            // Browser QA Batch 4 (#26) — Agent Credentials placeholder capitalization. Three of the
+            //   partial's seven placeholders were Title Case ("Enter Phone Number" / "Enter License
+            //   Number" / "Enter NAR Member ID") while the other four were already sentence case.
+            //   Text-only: three placeholder strings in the ONE shared partial, which fans out to 19
+            //   include statements across the 8 Create + 8 Hire blades. No include site overrides or
+            //   copies these strings, so the single edit is the whole fix — and
+            //   BatchFourAgentCredentialsPlaceholderTest guards against a future copy. No validation,
+            //   persistence, behavior or JS change.
+            'resources/views/livewire/partials/agent-credentials.blade.php',
         ];
 
         $unexpected = array_values(array_filter(
