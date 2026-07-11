@@ -2079,6 +2079,20 @@
             });
         }
 
+        // Vacant Land "Property Style" → reveal the custom "Other" input (#14).
+        // property_style_select is a Select2 single-select whose synthetic change events a
+        // native document.addEventListener('change') misses, so this delegated jQuery
+        // handler catches them and toggles the .other_property_items_seller wrapper.
+        // Delegated on document so it survives Livewire re-renders; guarded so it
+        // registers only once. Persistence of property_items stays with change.pss.
+        if (!document._sellerEditPropertyStyleOtherDelegateAdded) {
+            document._sellerEditPropertyStyleOtherDelegateAdded = true;
+            $(document).on('change', '#property_style_select', function() {
+                var val = $(this).val();
+                $('.other_property_items_seller').toggleClass('d-none', val !== 'Other');
+            });
+        }
+
         if (window.Livewire && typeof window.Livewire.hook === 'function') {
         Livewire.hook('message.processed', () => {
             addIconsToInputs();

@@ -3057,10 +3057,13 @@ $lease_types = [
             let otherInputWrapper = document.getElementById('other_parking_space_wrapper');
             let garageOptions = document.getElementById('garage_parking_spaces_option');
 
-            // Always hide both wrappers when property_type is not Commercial
+            // Always hide both wrappers when property_type is not Commercial.
+            // The vocabulary differs by role: tenant/landlord use 'Commercial Property',
+            // while buyer/seller use 'Commercial'/'Business'. Matching only the tenant
+            // spelling left the buyer and seller garage reveals permanently dead.
             var currentPropType = '';
             try { currentPropType = @this.get('property_type') || ''; } catch(e) {}
-            var isCommercial = currentPropType === 'Commercial Property';
+            var isCommercial = ['Commercial Property', 'Commercial', 'Business'].indexOf(currentPropType) !== -1;
 
             if (!isCommercial) {
                 if (optionsWrapper) optionsWrapper.classList.add('d-none');
