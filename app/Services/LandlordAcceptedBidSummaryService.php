@@ -544,16 +544,39 @@ class LandlordAcceptedBidSummaryService
         $money   = fn($v) => $v ? '$' . number_format((float) str_replace(',', '', (string) $v), 0) : null;
         $percent = fn($v) => $v ? rtrim(rtrim(number_format((float) $v, 2), '0'), '.') . '%' : null;
 
-        $type = (string) ($g('purchase_fee_type') ?? '');
+        // Fold curly apostrophes (U+2018/U+2019) to straight ones for COMPARISON only. The stored
+        // value is never rewritten — 'Percentage of Month’s Rent' keeps its curly apostrophe in the
+        // database, which is the spelling the form writes and ~55 exact-match reader sites expect.
+        $type = str_replace(["\u{2018}", "\u{2019}"], "'", (string) ($g('purchase_fee_type') ?? ''));
 
         if ($type === 'Flat Fee') {
             return $money($g('purchase_fee_flat') ?: $g('purchase_fee_flat_commercial'));
         }
+        // Was reading purchase_fee_gross_rent and labelling it "of Gross Rent" — the wrong key AND the
+        // wrong label for this option. Every other reader resolves this option to purchase_fee_rental_period.
         if ($type === 'Percentage of the Rent Due Each Rental Period') {
-            return $g('purchase_fee_gross_rent') ? ($percent($g('purchase_fee_gross_rent')) . ' of Gross Rent') : null;
+            return $g('purchase_fee_rental_period')
+                ? ($percent($g('purchase_fee_rental_period')) . ' of Rent Due Each Rental Period')
+                : null;
         }
         if ($type === 'Percentage of the Net Aggregate Rent') {
             return $g('purchase_fee_net_aggregate') ? ($percent($g('purchase_fee_net_aggregate')) . ' of Net Aggregate Rent') : null;
+        }
+        // Commercial options that had no branch at all, so the row was silently omitted from the PDF.
+        if ($type === 'Percentage of the Gross Rent') {
+            return $g('purchase_fee_gross_rent') ? ($percent($g('purchase_fee_gross_rent')) . ' of Gross Rent') : null;
+        }
+        if ($type === "Percentage of Month's Rent") {
+            $pct    = $g('purchase_fee_monthly_percentage');
+            $months = $g('purchase_fee_months');
+            if (!$pct) {
+                return null;
+            }
+            $display = $percent($pct) . " of Month's Rent";
+            if ($months) {
+                $display .= ' x ' . $months . ' Months';
+            }
+            return $display;
         }
         if ($type === "First Month's Rent") {
             return "First Month's Rent";

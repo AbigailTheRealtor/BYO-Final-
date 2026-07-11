@@ -516,6 +516,23 @@ class OfferWorkflowReadinessTest extends TestCase
             //   BatchFourAgentCredentialsPlaceholderTest guards against a future copy. No validation,
             //   persistence, behavior or JS change.
             'resources/views/livewire/partials/agent-credentials.blade.php',
+            // Browser QA Batch 5 (#1) — Landlord Commercial Broker Compensation. The Landlord's Broker
+            //   Lease Fee partial was Residential-only, so Create/Edit Landlord + Commercial rendered no
+            //   lease-fee control at all — even though all ten commercial props were already declared,
+            //   persisted and hydrated in both components (bound in 0 create/edit blades vs 4 Hire/Bid
+            //   blades). Restoring the Commercial branch is therefore MARKUP-ONLY: no new EAV keys, no
+            //   renames, no migration. Option values are byte-identical to the Hire Landlord source and
+            //   config/agent_preset_compensation.php — "Percentage of Month’s Rent" keeps its CURLY
+            //   apostrophe (U+2019) and tenant_broker_fee_structure keeps its legacy lowercase 'Flat fee'.
+            //   The two reader fixes are display-only: CompensationFormatter::tenantBrokerFee() had no
+            //   branch for the Commercial options (amount silently dropped), and the accepted-bid PDF read
+            //   purchase_fee_gross_rent for the Rent-Due-Each-Rental-Period option (wrong key AND label)
+            //   while omitting the Gross Rent and Month's Rent rows entirely. LandlordPublishValidation and
+            //   LandlordOfferListingEdit are already allow-listed above.
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/partials/landlord_broker_lease_fee.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/broker-compensation.blade.php',
+            'app/Support/CompensationFormatter.php',
+            'app/Services/LandlordAcceptedBidSummaryService.php',
         ];
 
         $unexpected = array_values(array_filter(

@@ -3528,7 +3528,11 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('purchase_fee_monthly_percentage', $this->purchase_fee_monthly_percentage);
         $auction->saveMeta('purchase_fee_months', $this->purchase_fee_months);
         $auction->saveMeta('sales_tax_option_monthly', $this->sales_tax_option_monthly);
-        $auction->saveMeta('purchase_fee_flat_commercial', $this->purchase_fee_flat_commercial);
+        // Browser QA #1 (Batch 5): create strips commas here, edit did not — so an edit-screen entry of
+        // "3,000" persisted with its comma while the same entry on create stored "3000". The field was
+        // never rendered on either screen before this batch, so the divergence was dormant; restoring
+        // the Commercial branch activates it. Bring edit to parity with create.
+        $auction->saveMeta('purchase_fee_flat_commercial', $this->stripCommas($this->purchase_fee_flat_commercial));
         $auction->saveMeta('sales_tax_option_flat', $this->sales_tax_option_flat);
         $auction->saveMeta('purchase_fee_purchase_price', $this->purchase_fee_purchase_price);
         $auction->saveMeta('purchase_fee_other_commercial', $this->purchase_fee_other_commercial);

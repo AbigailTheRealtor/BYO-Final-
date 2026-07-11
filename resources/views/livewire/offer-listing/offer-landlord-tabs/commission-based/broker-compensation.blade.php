@@ -48,7 +48,7 @@ $safeKey = function(...$parts) {
     </div>
 </div>
 
-<!-- Landlord's Broker Lease Fee (self-gates to Residential) -->
+<!-- Landlord's Broker Lease Fee (self-gates: Residential and Commercial branches) -->
 @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.landlord_broker_lease_fee')
 
 {{-- Agency Agreement Terms — the previously-orphaned partials, ordered to mirror the Hire
