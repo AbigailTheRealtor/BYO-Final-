@@ -3257,6 +3257,32 @@ $lease_types = [
         Livewire.hook('message.processed', () => { initializeAppliancesSelect2(); });
         // End Preference
 
+        // #18: Flood Zone Preference select2 -> Livewire sync + "Other" reveal (buyer live path)
+        function initializeFloodZoneSelect2() {
+            var $fz = $('#flood_zone_tolerance');
+            if (!$fz.length) return;
+            if ($fz.hasClass('select2-hidden-accessible')) {
+                return;
+            }
+            window.initFullServiceSelect2Multiple($fz);
+            $fz.off('change.fztSync').on('change.fztSync', function() {
+                let selectedValues = $fz.val() || [];
+                selectedValues = [...new Set(selectedValues)];
+                var fztOther = document.querySelector('.flood_zone_tolerance_other_wrapper');
+                if (fztOther) {
+                    fztOther.classList.toggle('d-none', !selectedValues.includes('Other'));
+                }
+                if (!selectedValues.includes('Other')) {
+                    debouncedSet('flood_zone_tolerance_other', null);
+                }
+                debouncedSet('flood_zone_tolerance', selectedValues);
+            });
+            rehydrateSelect2FromLivewire('#flood_zone_tolerance', 'flood_zone_tolerance');
+        }
+
+        initializeFloodZoneSelect2();
+        Livewire.hook('message.processed', () => { initializeFloodZoneSelect2(); });
+
 
 
 

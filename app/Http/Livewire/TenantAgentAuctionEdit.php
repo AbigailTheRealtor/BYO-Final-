@@ -151,6 +151,15 @@ class TenantAgentAuctionEdit extends Component
     public $pool_type = [];
     public $view_preference = [];
     public $other_preferences = '';
+    // #17/#18/#19: B5.8 buyer Property Preferences fields ported to the live Hire flow
+    // (Purchase Purpose, HOA Acceptance + Max Fee, Flood Zone). Declared here so the
+    // buyer-case @included partial's live wire:model bindings don't 500 on interaction.
+    public $purchase_purpose = '';
+    public $purchase_purpose_other = '';
+    public $hoa_acceptance = '';
+    public $hoa_max_monthly_fee = '';
+    public $flood_zone_tolerance = [];
+    public $flood_zone_tolerance_other = '';
     public $prepayment_penalty = '';
     public $prepayment_penalty_amount = '';
     public $balloon_payment = '';
@@ -2758,6 +2767,13 @@ class TenantAgentAuctionEdit extends Component
         $this->pool_type = json_decode($auction->info('pool_type'), true) ?? [];
         $this->view_preference = json_decode($auction->info('view_preference'), true) ?? [];
         $this->other_preferences = $auction->info('other_preferences');
+        // #17/#18/#19: hydrate B5.8 buyer Property Preferences fields from EAV meta
+        $this->purchase_purpose = $auction->info('purchase_purpose') ?: '';
+        $this->purchase_purpose_other = $auction->info('purchase_purpose_other') ?: '';
+        $this->hoa_acceptance = $auction->info('hoa_acceptance') ?: '';
+        $this->hoa_max_monthly_fee = $auction->info('hoa_max_monthly_fee') ?: '';
+        $this->flood_zone_tolerance = json_decode($auction->info('flood_zone_tolerance'), true) ?? [];
+        $this->flood_zone_tolerance_other = $auction->info('flood_zone_tolerance_other') ?: '';
         $this->appliances = json_decode($auction->info('appliances'), true) ?? [];
         $this->other_appliances = $auction->info('other_appliances');
         $this->showOtherAppliances = is_array($this->appliances) && in_array('Other', $this->appliances);
@@ -3380,9 +3396,6 @@ class TenantAgentAuctionEdit extends Component
                 }
             }
 
-            // dump($this->services);
-            // dd($this->other_services);
-
             DB::beginTransaction();
 
             // Fetch the auction to update
@@ -3548,6 +3561,13 @@ class TenantAgentAuctionEdit extends Component
             }
             $auction->saveMeta('view_preference', json_encode($this->view_preference));
             $auction->saveMeta('other_preferences', $this->other_preferences);
+            // #17/#18/#19: persist B5.8 buyer Property Preferences fields (EAV meta, no migration)
+            $auction->saveMeta('purchase_purpose', $this->purchase_purpose);
+            $auction->saveMeta('purchase_purpose_other', $this->purchase_purpose_other);
+            $auction->saveMeta('hoa_acceptance', $this->hoa_acceptance);
+            $auction->saveMeta('hoa_max_monthly_fee', $this->stripCommas($this->hoa_max_monthly_fee));
+            $auction->saveMeta('flood_zone_tolerance', json_encode($this->flood_zone_tolerance ?? []));
+            $auction->saveMeta('flood_zone_tolerance_other', $this->flood_zone_tolerance_other ?? '');
             $auction->saveMeta('appliances', json_encode($this->appliances));
             $auction->saveMeta('other_appliances', $this->other_appliances);
             $auction->saveMeta('leasing_55_plus', $this->leasing_55_plus);
