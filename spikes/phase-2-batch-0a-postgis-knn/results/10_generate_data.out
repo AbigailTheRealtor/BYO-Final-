@@ -1,0 +1,8 @@
+ setseed 
+---------
+ 
+(1 row)
+
+INSERT 0 176560
+INSERT 0 176560
+10_generate_data.sql complete: corpus loaded into both tables
