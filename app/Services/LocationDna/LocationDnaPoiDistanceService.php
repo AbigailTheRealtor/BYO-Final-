@@ -6,6 +6,8 @@ use App\Contracts\NearbyPoiFetcherInterface;
 use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
 use App\Services\LocationDna\LocationDnaRankingEngine;
+use App\Services\LocationDna\Providers\CanonicalPoiAssembler;
+use App\Services\LocationDna\Providers\NearbyPoiFetcherFactory;
 use App\Support\Telemetry\OutboundCallContext;
 use GuzzleHttp\ClientInterface;
 use Illuminate\Support\Facades\DB;
@@ -680,12 +682,13 @@ class LocationDnaPoiDistanceService
                 return $output;
             }
 
-            // Phase 1 Batch 1: the raw provider fetch now routes through
-            // NearbyPoiFetcherInterface. The default GooglePlacesPoiAdapter is handed
-            // $this->httpClient so an injected fake/blocking client still flows through to
-            // the outbound call (it resolves the container binding when null). There is no
-            // bare-client fallback.
-            $fetcher = $this->nearbyFetcher ?? new GooglePlacesPoiAdapter($this->httpClient);
+            // Phase 1 Batch 2: the raw provider fetch is resolved through the
+            // registry-backed NearbyPoiFetcherFactory (LocationProviderRegistry is now the
+            // single authority for which provider fetches). Batch 1 sub-option 1a is
+            // preserved: $this->httpClient is forwarded so an injected fake/blocking client
+            // still flows through to the outbound call (null → the container binding). An
+            // explicitly injected $nearbyFetcher still wins for tests.
+            $fetcher = $this->nearbyFetcher ?? app(NearbyPoiFetcherFactory::class)->make($this->httpClient);
             $results = [];
 
             // Capture restaurant raw candidates for Top Rated Dining derivation.
@@ -1043,10 +1046,16 @@ class LocationDnaPoiDistanceService
                 ->where('poi_category', $category)
                 ->delete();
 
-            // Use preloaded candidates (grouped) or fetch fresh from API/tile cache
+            // Use preloaded candidates (grouped) or fetch fresh from API/tile cache.
+            // Phase 1 Batch 2: fresh candidates pass through CanonicalPoiAssembler, which
+            // runs each through CanonicalLocationMerger (single-provider passthrough today,
+            // byte-identical). The preloaded/grouped branch is already assembled by its
+            // primary category, so it is NOT re-assembled here (no double-merge).
             $rawCandidates = ($preloadedRawCandidates !== null)
                 ? $preloadedRawCandidates
-                : $this->fetchRawCandidates($fetcher, $meta, $sourceLat, $sourceLng);
+                : app(CanonicalPoiAssembler::class)->assemble(
+                    $this->fetchRawCandidates($fetcher, $meta, $sourceLat, $sourceLng)
+                );
 
             if (empty($rawCandidates)) {
                 $row = $this->createPoiRow(
