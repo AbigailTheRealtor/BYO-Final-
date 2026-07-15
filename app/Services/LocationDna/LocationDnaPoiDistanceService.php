@@ -2,6 +2,7 @@
 
 namespace App\Services\LocationDna;
 
+use App\Contracts\NearbyPoiFetcherInterface;
 use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
 use App\Services\LocationDna\LocationDnaRankingEngine;
@@ -47,8 +48,6 @@ use Throwable;
  */
 class LocationDnaPoiDistanceService
 {
-    private const NEARBY_API_URL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json';
-
     private const EARTH_RADIUS_MILES = 3958.8;
 
     /**
@@ -440,21 +439,8 @@ class LocationDnaPoiDistanceService
         private readonly ?LocationDnaRankingEngine $rankingEngine = null,
         private readonly ?LocationDnaPoiTileCache $tileCache = null,
         private readonly ?LocationDnaVersionService $versionService = null,
+        private readonly ?NearbyPoiFetcherInterface $nearbyFetcher = null,
     ) {}
-
-    /**
-     * Resolve the outbound HTTP client from the service container so tests can
-     * bind a fake/blocking client.
-     *
-     * Phase 0 / S1b: the former `new Client()` fallback is removed. A bare client
-     * cannot be intercepted by Http::fake() or by the container binding, which is
-     * how the test suite reached live Google. If the binding is absent we now fail
-     * loudly rather than silently opening a socket.
-     */
-    private function resolveHttpClient(): ClientInterface
-    {
-        return app(ClientInterface::class);
-    }
 
     /**
      * Calculate and persist POI distances for a listing.
@@ -694,9 +680,12 @@ class LocationDnaPoiDistanceService
                 return $output;
             }
 
-            // Resolve from the container (bound in AppServiceProvider) so tests can
-            // inject a fake/blocking client. There is no bare-client fallback.
-            $client  = $this->httpClient ?? $this->resolveHttpClient();
+            // Phase 1 Batch 1: the raw provider fetch now routes through
+            // NearbyPoiFetcherInterface. The default GooglePlacesPoiAdapter is handed
+            // $this->httpClient so an injected fake/blocking client still flows through to
+            // the outbound call (it resolves the container binding when null). There is no
+            // bare-client fallback.
+            $fetcher = $this->nearbyFetcher ?? new GooglePlacesPoiAdapter($this->httpClient);
             $results = [];
 
             // Capture restaurant raw candidates for Top Rated Dining derivation.
@@ -738,8 +727,7 @@ class LocationDnaPoiDistanceService
                 }
 
                 [$categoryRows, $rawCandidates] = $this->fetchAndPersistCategoryMulti(
-                    client:                $client,
-                    apiKey:                $apiKey,
+                    fetcher:               $fetcher,
                     listingType:           $listingType,
                     listingId:             $listingId,
                     category:              $category,
@@ -916,11 +904,10 @@ class LocationDnaPoiDistanceService
      * @return array  Raw Google Places results array (up to 20 entries).
      */
     private function fetchRawCandidates(
-        ClientInterface $client,
-        string          $apiKey,
-        array           $meta,
-        float           $sourceLat,
-        float           $sourceLng,
+        NearbyPoiFetcherInterface $fetcher,
+        array                     $meta,
+        float                     $sourceLat,
+        float                     $sourceLng,
     ): array {
         // Resolve tile cache (use injected or create on demand)
         $tileCache = $this->tileCache ?? new LocationDnaPoiTileCache();
@@ -936,28 +923,13 @@ class LocationDnaPoiDistanceService
             }
         }
 
-        // ── Google Places Nearby Search call ──────────────────────────────────
-        $queryParams = [
-            'location' => "{$sourceLat},{$sourceLng}",
-            'rankby'   => 'distance',
-            'key'      => $apiKey,
-        ];
-
-        if (! empty($meta['google_type'])) {
-            $queryParams['type'] = $meta['google_type'];
-        }
-
-        if (! empty($meta['keyword'])) {
-            $queryParams['keyword'] = $meta['keyword'];
-        }
-
-        $response = $client->request('GET', self::NEARBY_API_URL, [
-            'query' => $queryParams,
-        ]);
-
-        $body = json_decode((string) $response->getBody(), true);
-
-        $results = $body['results'] ?? [];
+        // ── Provider fetch (Phase 1 Batch 1) ──────────────────────────────────
+        // Delegated to the injected NearbyPoiFetcher. Returns raw, provider-native
+        // `results` rows — the same shape this method returned when it called Google
+        // inline — so exclusion, ranking, and persistence downstream are unchanged.
+        // Exceptions propagate to fetchAndPersistCategoryMulti's catch (status='error');
+        // an empty array remains status='not_found'.
+        $results = $fetcher->fetchNearby($sourceLat, $sourceLng, $meta);
 
         // ── Store in tile cache ───────────────────────────────────────────────
         if ($tileCache->isEnabled()) {
@@ -1055,8 +1027,7 @@ class LocationDnaPoiDistanceService
      * Never throws — errors are stored as status='error' on rank-1 row.
      */
     private function fetchAndPersistCategoryMulti(
-        ClientInterface $client,
-        string          $apiKey,
+        NearbyPoiFetcherInterface $fetcher,
         string          $listingType,
         int             $listingId,
         string          $category,
@@ -1075,7 +1046,7 @@ class LocationDnaPoiDistanceService
             // Use preloaded candidates (grouped) or fetch fresh from API/tile cache
             $rawCandidates = ($preloadedRawCandidates !== null)
                 ? $preloadedRawCandidates
-                : $this->fetchRawCandidates($client, $apiKey, $meta, $sourceLat, $sourceLng);
+                : $this->fetchRawCandidates($fetcher, $meta, $sourceLat, $sourceLng);
 
             if (empty($rawCandidates)) {
                 $row = $this->createPoiRow(
