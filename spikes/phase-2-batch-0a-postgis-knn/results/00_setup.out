@@ -1,0 +1,12 @@
+CREATE EXTENSION
+CREATE EXTENSION
+CREATE EXTENSION
+psql:/home/runner/workspace/spikes/phase-2-batch-0a-postgis-knn/sql/00_setup.sql:17: NOTICE:  table "places_spike" does not exist, skipping
+DROP TABLE
+psql:/home/runner/workspace/spikes/phase-2-batch-0a-postgis-knn/sql/00_setup.sql:18: NOTICE:  table "places_spike_part" does not exist, skipping
+DROP TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+00_setup.sql complete: extensions ready, places_spike + places_spike_part created
