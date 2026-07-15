@@ -2,11 +2,12 @@
 
 namespace App\Services\LocationDna;
 
+use App\Contracts\NearbyPoiFetcherInterface;
 use App\Contracts\PoiLookupAdapterInterface;
 use GuzzleHttp\ClientInterface;
 use Throwable;
 
-class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface
+class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFetcherInterface
 {
     private const NEARBY_API_URL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json';
 
@@ -152,6 +153,59 @@ class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface
         } catch (Throwable) {
             return [];
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Raw Google Places Nearby Search for the production Location DNA path. Returns the
+     * provider-native `results` rows unchanged — the caller's exclusion rules, transit
+     * dedup, ranking (`PoiCandidate::fromGooglePlaces()`), and persistence read that shape.
+     *
+     * This mirrors the query the service issued inline before Phase 1 Batch 1: `rankby=distance`
+     * with the category's `google_type`/`keyword`, and NO `timeout` option — byte-identical to
+     * the former `LocationDnaPoiDistanceService::fetchRawCandidates()` request.
+     *
+     * Unlike {@see search()}, this method does NOT catch exceptions: per
+     * {@see \App\Contracts\NearbyPoiFetcherInterface} they must propagate so the caller can
+     * persist `status = 'error'` rather than `status = 'not_found'`. The kill-switch and
+     * blank-key guards below are defence-in-depth for standalone/registry use; in the
+     * production flow the service's whole-run guards short-circuit before this is reached.
+     */
+    public function fetchNearby(float $lat, float $lng, array $meta): array
+    {
+        if (! config('google_places.enabled', false)) {
+            return [];
+        }
+
+        $apiKey = config('services.google.places_key');
+        if (blank($apiKey)) {
+            return [];
+        }
+
+        $client = $this->httpClient ?? $this->resolveHttpClient();
+
+        $queryParams = [
+            'location' => "{$lat},{$lng}",
+            'rankby'   => 'distance',
+            'key'      => $apiKey,
+        ];
+
+        if (! empty($meta['google_type'])) {
+            $queryParams['type'] = $meta['google_type'];
+        }
+
+        if (! empty($meta['keyword'])) {
+            $queryParams['keyword'] = $meta['keyword'];
+        }
+
+        $response = $client->request('GET', self::NEARBY_API_URL, [
+            'query' => $queryParams,
+        ]);
+
+        $body = json_decode((string) $response->getBody(), true);
+
+        return $body['results'] ?? [];
     }
 
     /**

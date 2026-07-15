@@ -39,6 +39,7 @@ use App\Services\AskAi\AskAiKnowledgeSearchService;
 use App\Contracts\BoundaryAdapterInterface;
 use App\Contracts\FloodZoneAdapterInterface;
 use App\Contracts\CommuteTimeAdapterInterface;
+use App\Contracts\NearbyPoiFetcherInterface;
 use App\Contracts\PoiLookupAdapterInterface;
 use App\Contracts\SchoolDistrictAdapterInterface;
 use App\Services\LocationDna\CensusTigerBoundaryAdapter;
@@ -46,6 +47,7 @@ use App\Services\LocationDna\FemaFloodZoneAdapter;
 use App\Services\LocationDna\CommuteTimeStubAdapter;
 use App\Services\LocationDna\CensusSchoolDistrictAdapter;
 use App\Services\LocationDna\GooglePlacesPoiAdapter;
+use App\Services\LocationDna\StubNearbyPoiFetcher;
 use App\Services\LocationDna\StubPoiLookupAdapter;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
@@ -155,6 +157,27 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return new StubPoiLookupAdapter();
+        });
+
+        // Raw nearby POI fetch — production Location DNA path (Phase 1 Batch 1).
+        // Selected via the same provider registry as PoiLookupAdapterInterface above: with
+        // the current config only google_places is enabled, so this resolves to
+        // GooglePlacesPoiAdapter when the Places key is present, else StubNearbyPoiFetcher.
+        // LocationDnaPoiDistanceService defaults to GooglePlacesPoiAdapter directly (so an
+        // injected mock client still flows through); this binding registers the interface
+        // for explicit injection and the Phase 3a CorpusPoiAdapter swap.
+        $this->app->bind(NearbyPoiFetcherInterface::class, function ($app) {
+            $registry = new LocationProviderRegistry((array) config('location_providers', []));
+            $base     = $registry->effectiveBase('poi.default');
+
+            if (
+                ($base['provider'] ?? null) === 'google_places'
+                && !blank(config('services.google.places_key'))
+            ) {
+                return new GooglePlacesPoiAdapter();
+            }
+
+            return new StubNearbyPoiFetcher();
         });
 
         $this->app->bind(PoiDistanceLookupService::class, function ($app) {
