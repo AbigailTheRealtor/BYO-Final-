@@ -6,7 +6,10 @@ use App\Contracts\NearbyPoiFetcherInterface;
 use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
 use App\Services\LocationDna\LocationDnaRankingEngine;
+use App\Services\LocationDna\PoiConfidenceScorer;
+use App\Services\LocationDna\Providers\CanonicalField;
 use App\Services\LocationDna\Providers\CanonicalPoiAssembler;
+use App\Services\LocationDna\Providers\LocationProviderRegistry;
 use App\Services\LocationDna\Providers\NearbyPoiFetcherFactory;
 use App\Support\Telemetry\OutboundCallContext;
 use GuzzleHttp\ClientInterface;
@@ -340,6 +343,19 @@ class LocationDnaPoiDistanceService
     private string $currentScoringVersion = '';
 
     /**
+     * Canonical-envelope run context (Batch 3; docs/canonical-field-mapping-spec.md §1,§3,§4).
+     * Resolved ONCE at the top of calculateForListing() and written by the single POI writer
+     * (createPoiRow) onto every row of the run, so all rows of one run share a single
+     * last_refreshed instant and one provider provenance base. Provenance carries no Place
+     * content — only provider/method/raw_ref(place_id)/license/contributors (spec §8).
+     */
+    private ?\Illuminate\Support\Carbon $currentRunTimestamp = null;
+    private string $currentProvenanceProvider = 'google_places';
+    private string $currentProvenanceLicense  = 'unknown';
+    /** @var list<string> */
+    private array $currentProvenanceContributors = ['google_places'];
+
+    /**
      * Read-only view of the inputs that define the SCORING version
      * (docs/canonical-field-mapping-spec.md §7; Stage E0). These are the rules
      * and constants that change how already-fetched candidates are filtered and
@@ -442,6 +458,7 @@ class LocationDnaPoiDistanceService
         private readonly ?LocationDnaPoiTileCache $tileCache = null,
         private readonly ?LocationDnaVersionService $versionService = null,
         private readonly ?NearbyPoiFetcherInterface $nearbyFetcher = null,
+        private readonly ?PoiConfidenceScorer $confidenceScorer = null,
     ) {}
 
     /**
@@ -495,6 +512,11 @@ class LocationDnaPoiDistanceService
         $versionService = $this->versionService ?? new LocationDnaVersionService();
         $this->currentFetchVersion   = $versionService->fetchVersion();
         $this->currentScoringVersion = $versionService->scoringVersion();
+
+        // Canonical-envelope run context (Batch 3). One timestamp and one provenance base
+        // for every row this run writes (docs/canonical-field-mapping-spec.md §1,§3,§4).
+        $this->currentRunTimestamp = now();
+        $this->resolveProvenanceBase();
 
         try {
             // (a) Validate: Phase B record must exist
@@ -895,6 +917,26 @@ class LocationDnaPoiDistanceService
     }
 
     /**
+     * Resolve the POI provenance base for this run from the provider registry — the SAME
+     * base CanonicalPoiAssembler resolves (poi.default effective base), so the persisted
+     * provenance and the assembled candidate agree on their origin. With only google_places
+     * enabled today this is provider=google_places, license=google-tos,
+     * contributors=[google_places]. Never puts Place content in provenance (spec §8): a row
+     * carries provider/method/raw_ref(place_id)/license/contributors only.
+     */
+    private function resolveProvenanceBase(): void
+    {
+        $registry = new LocationProviderRegistry((array) config('location_providers', []));
+        $base     = $registry->effectiveBase('poi.default');
+
+        $provider = $base['provider'] ?? 'google_places';
+
+        $this->currentProvenanceProvider     = $provider;
+        $this->currentProvenanceLicense      = $base['descriptor']['license'] ?? 'unknown';
+        $this->currentProvenanceContributors = [$provider];
+    }
+
+    /**
      * Fetch raw candidates from the Google Places Nearby Search API.
      *
      * Checks the spatial tile cache before making an HTTP call.
@@ -1199,6 +1241,7 @@ class LocationDnaPoiDistanceService
                     reviewConfidence:     $scoring['review_confidence_score'] ?? null,
                     rankingScore:         $scoring['ranking_score'] ?? null,
                     rankingReasons:       $scoring['ranking_reasons_json'] ?? null,
+                    rawRef:               $place['place_id'] ?? null,
                 );
 
                 $persistedRows[] = $row->toArray();
@@ -1343,6 +1386,7 @@ class LocationDnaPoiDistanceService
                 reviewConfidence:    $scoring['review_confidence_score'] ?? null,
                 rankingScore:        $scoring['ranking_score'] ?? null,
                 rankingReasons:      $scoring['ranking_reasons_json'] ?? null,
+                rawRef:              $place['place_id'] ?? null,
             );
 
             $rows[] = $row->toArray();
@@ -1380,7 +1424,24 @@ class LocationDnaPoiDistanceService
         ?float  $reviewConfidence    = null,
         ?float  $rankingScore        = null,
         ?array  $rankingReasons      = null,
+        ?string $rawRef              = null,
     ): PropertyLocationPoi {
+        // Canonical-field envelope (Batch 3; docs/canonical-field-mapping-spec.md §1–§4).
+        // Confidence is a FOUND-row signal only: not_found / error rows persist a null
+        // confidence alongside full provenance (owner decision). raw_ref carries the opaque
+        // place_id for found rows and null otherwise — never any Place content (spec §8).
+        $confidence = $status === 'found'
+            ? ($this->confidenceScorer ?? new PoiConfidenceScorer())->score($rating, $userRatingsTotal ?? 0)
+            : null;
+
+        $provenance = CanonicalField::provenance(
+            provider:     $this->currentProvenanceProvider,
+            method:       CanonicalField::METHOD_API,
+            license:      $this->currentProvenanceLicense,
+            rawRef:       $status === 'found' ? $rawRef : null,
+            contributors: $this->currentProvenanceContributors,
+        );
+
         return PropertyLocationPoi::create([
             'listing_type'             => $listingType,
             'listing_id'               => $listingId,
@@ -1407,6 +1468,10 @@ class LocationDnaPoiDistanceService
             // Stage E0: stamp the versions this row was fetched/scored under.
             'pois_fetch_version'       => $this->currentFetchVersion !== '' ? $this->currentFetchVersion : null,
             'pois_scoring_version'     => $this->currentScoringVersion !== '' ? $this->currentScoringVersion : null,
+            // Canonical-field envelope metadata (Batch 3). One shared last_refreshed per run.
+            'confidence'               => $confidence,
+            'provenance_json'          => $provenance,
+            'last_refreshed'           => $this->currentRunTimestamp,
             'status'                   => $status,
             'error'                    => $error,
             'calculated_at'            => now(),
