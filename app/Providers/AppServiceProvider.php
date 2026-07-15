@@ -47,7 +47,6 @@ use App\Services\LocationDna\FemaFloodZoneAdapter;
 use App\Services\LocationDna\CommuteTimeStubAdapter;
 use App\Services\LocationDna\CensusSchoolDistrictAdapter;
 use App\Services\LocationDna\GooglePlacesPoiAdapter;
-use App\Services\LocationDna\StubNearbyPoiFetcher;
 use App\Services\LocationDna\StubPoiLookupAdapter;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
@@ -57,7 +56,9 @@ use App\Services\LocationDna\LocationIntelligenceComposer;
 use App\Services\LocationDna\LocationIntelligenceSummaryService;
 use App\Services\LocationDna\LocationPreferenceAnalyzer;
 use App\Services\LocationDna\PoiDistanceLookupService;
+use App\Services\LocationDna\Providers\CanonicalPoiAssembler;
 use App\Services\LocationDna\Providers\LocationProviderRegistry;
+use App\Services\LocationDna\Providers\NearbyPoiFetcherFactory;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 use App\Services\Dna\Relevance\CandidateSourceInterface;
 use App\Services\Dna\Relevance\ScoredEntityCandidateSource;
@@ -159,25 +160,21 @@ class AppServiceProvider extends ServiceProvider
             return new StubPoiLookupAdapter();
         });
 
-        // Raw nearby POI fetch — production Location DNA path (Phase 1 Batch 1).
-        // Selected via the same provider registry as PoiLookupAdapterInterface above: with
-        // the current config only google_places is enabled, so this resolves to
-        // GooglePlacesPoiAdapter when the Places key is present, else StubNearbyPoiFetcher.
-        // LocationDnaPoiDistanceService defaults to GooglePlacesPoiAdapter directly (so an
-        // injected mock client still flows through); this binding registers the interface
-        // for explicit injection and the Phase 3a CorpusPoiAdapter swap.
+        // Raw nearby POI fetch — production Location DNA path (Phase 1 Batch 2).
+        // NearbyPoiFetcherFactory is the SINGLE, registry-backed construction site for the
+        // production fetcher; both this binding and LocationDnaPoiDistanceService resolve
+        // through it, so LocationProviderRegistry is now the authority for which provider
+        // fetches. CanonicalPoiAssembler is the runtime path for CanonicalLocationMerger.
+        $this->app->bind(NearbyPoiFetcherFactory::class, function ($app) {
+            return new NearbyPoiFetcherFactory((array) config('location_providers', []));
+        });
+
+        $this->app->bind(CanonicalPoiAssembler::class, function ($app) {
+            return new CanonicalPoiAssembler((array) config('location_providers', []));
+        });
+
         $this->app->bind(NearbyPoiFetcherInterface::class, function ($app) {
-            $registry = new LocationProviderRegistry((array) config('location_providers', []));
-            $base     = $registry->effectiveBase('poi.default');
-
-            if (
-                ($base['provider'] ?? null) === 'google_places'
-                && !blank(config('services.google.places_key'))
-            ) {
-                return new GooglePlacesPoiAdapter();
-            }
-
-            return new StubNearbyPoiFetcher();
+            return $app->make(NearbyPoiFetcherFactory::class)->make();
         });
 
         $this->app->bind(PoiDistanceLookupService::class, function ($app) {
