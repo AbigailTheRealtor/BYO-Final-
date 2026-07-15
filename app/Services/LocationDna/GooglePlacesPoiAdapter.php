@@ -16,19 +16,6 @@ class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFetc
     private const METERS_PER_MILE = 1609.34;
 
     /**
-     * Confidence model for a rated commercial POI provider
-     * (docs/canonical-field-mapping-spec.md §2). A rated place scores from
-     * CONFIDENCE_RATED_BASE up toward CONFIDENCE_RATED_BASE + CONFIDENCE_RATED_SPAN
-     * as review volume rises, saturating at REVIEW_SATURATION reviews. A place
-     * Google returned but did not rate carries CONFIDENCE_STRUCTURAL (existence
-     * only — no quality signal is fabricated).
-     */
-    private const CONFIDENCE_STRUCTURAL  = 0.5;
-    private const CONFIDENCE_RATED_BASE  = 0.6;
-    private const CONFIDENCE_RATED_SPAN  = 0.3;
-    private const REVIEW_SATURATION      = 200;
-
-    /**
      * Maps canonical category slugs to Google Places API parameters.
      *
      * 'type'    — Google Places type string (null for keyword-only searches)
@@ -44,9 +31,17 @@ class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFetc
         'downtown'  => ['type' => null,             'keyword' => 'downtown'],
     ];
 
+    private readonly PoiConfidenceScorer $confidenceScorer;
+
     public function __construct(
         private readonly ?ClientInterface $httpClient = null,
-    ) {}
+        ?PoiConfidenceScorer $confidenceScorer = null,
+    ) {
+        // Batch 3: the confidence formula now lives in one place and is reused by the
+        // persistence path (LocationDnaPoiDistanceService's single writer). Injectable
+        // so a test can prove delegation; production defaults to a fresh scorer.
+        $this->confidenceScorer = $confidenceScorer ?? new PoiConfidenceScorer();
+    }
 
     /**
      * Resolve the outbound HTTP client from the service container so tests can
@@ -143,7 +138,7 @@ class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFetc
                     'longitude'      => $poiLng,
                     'distance_miles' => $this->haversineDistanceMiles($lat, $lng, $poiLat, $poiLng),
                     'source'         => 'google_places',
-                    'confidence'     => $this->deriveConfidence($rating, $reviewCount),
+                    'confidence'     => $this->confidenceScorer->score($rating, $reviewCount),
                     'last_refreshed' => $fetchedAt,
                 ];
             }
@@ -206,25 +201,6 @@ class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFetc
         $body = json_decode((string) $response->getBody(), true);
 
         return $body['results'] ?? [];
-    }
-
-    /**
-     * Derive a 0.0–1.0 confidence for a POI item from its rating signal
-     * (docs/canonical-field-mapping-spec.md §2). Unrated → structural existence
-     * confidence; rated → base scaled toward the cap by review volume.
-     */
-    private function deriveConfidence(?float $rating, int $reviewCount): float
-    {
-        if ($rating === null) {
-            return self::CONFIDENCE_STRUCTURAL;
-        }
-
-        $reviewFactor = min(1.0, max(0, $reviewCount) / self::REVIEW_SATURATION);
-
-        return round(
-            self::CONFIDENCE_RATED_BASE + (self::CONFIDENCE_RATED_SPAN * $reviewFactor),
-            3
-        );
     }
 
     private function haversineDistanceMiles(float $lat1, float $lng1, float $lat2, float $lng2): float
