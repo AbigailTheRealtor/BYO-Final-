@@ -1,0 +1,372 @@
+{
+    "_meta": {
+        "purpose": "Phase 1 DoD8 — frozen byte-stability baseline for summary_json and lifestyle_json (docs/architecture/MASTER-SPATIAL-INTELLIGENCE-EXECUTION-ROADMAP.md, Phase 1). The seed below is deterministic; the two JSON documents are captured from the post-Batch-4 output and frozen. Any refactor that changes a byte fails LocationDnaJsonSnapshotParityTest.",
+        "seeded_by": "LocationDnaJsonSnapshotParityTest and Phase1CertificationTest read the `seed` block below.",
+        "regenerate": "Only when the JSON contract intentionally changes: run the parity test with UPDATE_LDNA_SNAPSHOTS=1 and say so in the commit message. A regenerated snapshot is a silenced alarm, not a passing test.",
+        "canonical_flags": "JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE",
+        "summary_sha256": "9f1fd12fe544937437f450cd24acf273a88076748e64606f01922a08003cef89",
+        "lifestyle_sha256": "955dae1ca000adcc684e0eeb3f5a80be864d8bbb01b063018c29df436e2cf976"
+    },
+    "seed": {
+        "dna": {
+            "source_address": "123 Deterministic Way",
+            "source_city": "Tampa",
+            "source_state": "FL",
+            "geocoded_lat": 27.9506,
+            "geocoded_lng": -82.4572,
+            "geocode_source": "google",
+            "geocode_status": "geocoded",
+            "geocoded_at": "2026-01-01T00:00:00+00:00"
+        },
+        "pois": [
+            {
+                "poi_category": "beach",
+                "poi_subtype": "Beach",
+                "poi_name": "Ballast Point Beach",
+                "distance_miles": 2.5,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 85
+            },
+            {
+                "poi_category": "beach_access",
+                "poi_subtype": "Beach Access",
+                "poi_name": "Bayshore Access",
+                "distance_miles": 3,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 70
+            },
+            {
+                "poi_category": "boat_ramp",
+                "poi_subtype": "Boat Ramp",
+                "poi_name": "Ballast Point Ramp",
+                "distance_miles": 4,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 60
+            },
+            {
+                "poi_category": "marina",
+                "poi_subtype": "Marina",
+                "poi_name": "Tampa Marina",
+                "distance_miles": 1.5,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 72
+            },
+            {
+                "poi_category": "grocery_store",
+                "poi_subtype": "Grocery Store",
+                "poi_name": "Publix Super Market",
+                "distance_miles": 0.8,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 91
+            },
+            {
+                "poi_category": "pharmacy",
+                "poi_subtype": "Pharmacy",
+                "poi_name": "Walgreens",
+                "distance_miles": 1.2,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 80
+            },
+            {
+                "poi_category": "coffee_shop",
+                "poi_subtype": "Coffee Shop",
+                "poi_name": "Buddy Brew Coffee",
+                "distance_miles": 0.5,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 88
+            },
+            {
+                "poi_category": "restaurant",
+                "poi_subtype": "Restaurant",
+                "poi_name": "Ulele",
+                "distance_miles": 0.6,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 90
+            },
+            {
+                "poi_category": "top_rated_dining",
+                "poi_subtype": "Top Rated Dining",
+                "poi_name": "Bern's Steak House",
+                "distance_miles": 0.9,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 95
+            },
+            {
+                "poi_category": "park",
+                "poi_subtype": "Park",
+                "poi_name": "Ballast Point Park",
+                "distance_miles": 1,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 84
+            },
+            {
+                "poi_category": "dog_park",
+                "poi_subtype": "Dog Park",
+                "poi_name": "Curtis Hixon Dog Park",
+                "distance_miles": 2,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 66
+            },
+            {
+                "poi_category": "golf_course",
+                "poi_subtype": "Golf Course",
+                "poi_name": "Rocky Point Golf",
+                "distance_miles": 5,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 55
+            },
+            {
+                "poi_category": "waterfront_park",
+                "poi_subtype": "Waterfront Park",
+                "poi_name": "Bayshore Linear Park",
+                "distance_miles": 1.8,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 74
+            },
+            {
+                "poi_category": "transit_station",
+                "poi_subtype": "Transit Station",
+                "poi_name": "Marion Transit Center",
+                "distance_miles": 0.7,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 68
+            },
+            {
+                "poi_category": "gas_station",
+                "poi_subtype": "Gas Station",
+                "poi_name": "Wawa",
+                "distance_miles": 0.4,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 77
+            },
+            {
+                "poi_category": "school",
+                "poi_subtype": "School",
+                "poi_name": "Roosevelt Elementary",
+                "distance_miles": 1.1,
+                "rank": 1,
+                "status": "found",
+                "data_source": "google_places",
+                "ranking_score": 82
+            },
+            {
+                "poi_category": "hospital",
+                "poi_subtype": "Hospital",
+                "poi_name": null,
+                "distance_miles": null,
+                "rank": 1,
+                "status": "not_found",
+                "data_source": "google_places",
+                "ranking_score": null
+            }
+        ]
+    },
+    "summary_json": {
+        "geocode": {
+            "lat": 27.9506,
+            "lng": -82.4572,
+            "source": "google",
+            "geocoded_at": "2026-01-01T00:00:00+00:00"
+        },
+        "nearest_by_category": {
+            "beach": {
+                "label": "Beach",
+                "name": "Ballast Point Beach",
+                "distance_miles": 2.5,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "beach_access": {
+                "label": "Beach Access",
+                "name": "Bayshore Access",
+                "distance_miles": 3,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "boat_ramp": {
+                "label": "Boat Ramp",
+                "name": "Ballast Point Ramp",
+                "distance_miles": 4,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "coffee_shop": {
+                "label": "Coffee Shop",
+                "name": "Buddy Brew Coffee",
+                "distance_miles": 0.5,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "dog_park": {
+                "label": "Dog Park",
+                "name": "Curtis Hixon Dog Park",
+                "distance_miles": 2,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "gas_station": {
+                "label": "Gas Station",
+                "name": "Wawa",
+                "distance_miles": 0.4,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "golf_course": {
+                "label": "Golf Course",
+                "name": "Rocky Point Golf",
+                "distance_miles": 5,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "grocery_store": {
+                "label": "Grocery Store",
+                "name": "Publix Super Market",
+                "distance_miles": 0.8,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "hospital": {
+                "label": "Hospital",
+                "name": null,
+                "distance_miles": null,
+                "status": "not_found",
+                "data_source": "google_places"
+            },
+            "marina": {
+                "label": "Marina",
+                "name": "Tampa Marina",
+                "distance_miles": 1.5,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "park": {
+                "label": "Park",
+                "name": "Ballast Point Park",
+                "distance_miles": 1,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "pharmacy": {
+                "label": "Pharmacy",
+                "name": "Walgreens",
+                "distance_miles": 1.2,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "restaurant": {
+                "label": "Restaurant",
+                "name": "Ulele",
+                "distance_miles": 0.6,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "school": {
+                "label": "School",
+                "name": "Roosevelt Elementary",
+                "distance_miles": 1.1,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "top_rated_dining": {
+                "label": "Top Rated Dining",
+                "name": "Bern's Steak House",
+                "distance_miles": 0.9,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "transit_station": {
+                "label": "Transit Station",
+                "name": "Marion Transit Center",
+                "distance_miles": 0.7,
+                "status": "found",
+                "data_source": "google_places"
+            },
+            "waterfront_park": {
+                "label": "Waterfront Park",
+                "name": "Bayshore Linear Park",
+                "distance_miles": 1.8,
+                "status": "found",
+                "data_source": "google_places"
+            }
+        },
+        "category_counts": {
+            "total_categories": 17,
+            "found": 16,
+            "not_found": 1,
+            "error": 0
+        },
+        "coastal": {
+            "nearest_beach_miles": 2.5,
+            "nearest_beach_access_miles": 3,
+            "nearest_boat_ramp_miles": 4,
+            "nearest_marina_miles": 1.5
+        },
+        "daily_convenience": {
+            "nearest_grocery_miles": 0.8,
+            "nearest_pharmacy_miles": 1.2,
+            "nearest_coffee_miles": 0.5,
+            "nearest_restaurant_miles": 0.6,
+            "nearest_top_rated_dining_miles": 0.9
+        },
+        "outdoor_recreation": {
+            "nearest_park_miles": 1,
+            "nearest_dog_park_miles": 2,
+            "nearest_golf_course_miles": 5,
+            "nearest_waterfront_park_miles": 1.8
+        },
+        "transportation": {
+            "nearest_transit_miles": 0.7,
+            "nearest_gas_station_miles": 0.4
+        },
+        "missing_categories": [
+            "hospital"
+        ],
+        "error_categories": []
+    },
+    "lifestyle_json": {
+        "version": "LDNA_LIFESTYLE_V1",
+        "coastal_score": 57,
+        "walkability_score": 83,
+        "convenience_score": 80,
+        "commuter_score": 91,
+        "family_score": 69,
+        "lifestyle_categories": [
+            "Commuters",
+            "Convenience Seekers",
+            "Families",
+            "Remote Workers",
+            "Retirees"
+        ],
+        "location_narrative": "This location offers reasonable proximity to coastal amenities, excellent daily conveniences including groceries and pharmacies within easy reach, a highly walkable environment with dining, shopping, and services close by, strong commuter infrastructure including transit and fuel access, and family-friendly surroundings with parks and recreational options nearby."
+    }
+}
