@@ -1,0 +1,28 @@
+        object        |  heap  | indexes |  total  | bytes_per_row 
+----------------------+--------+---------+---------+---------------
+ places_fixture_tier2 | 922 MB | 1225 MB | 2146 MB |         450.1
+(1 row)
+
+                           index                           |  size  
+-----------------------------------------------------------+--------
+ places_fixture_tier2_pkey                                 | 237 MB
+ places_fixture_tier2_corpus_version_source_source_ref_key | 538 MB
+ places_fixture_tier2_category_key_geom_idx                | 449 MB
+(3 rows)
+
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Limit
+   ->  Index Scan using places_fixture_tier2_category_key_geom_idx on places_fixture_tier2 p
+         Index Cond: (category_key = 'airport'::text)
+         Order By: (geom <-> '0101000020E61000000000000000C057C00000000000004340'::geography)
+         Filter: (corpus_version = 'fixture-tier2-v1'::text)
+(5 rows)
+
+           QUERY PLAN           
+--------------------------------
+ Aggregate
+   ->  Result
+         One-Time Filter: false
+(3 rows)
+

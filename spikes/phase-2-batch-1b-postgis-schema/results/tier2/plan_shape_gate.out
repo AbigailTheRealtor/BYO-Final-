@@ -1,0 +1,7 @@
+airport      FAIL  (failed: composite_index_used, index_cond_on_category, index_cond_expected_category, knn_order_by_in_scan)
+boat_ramp    FAIL  (failed: composite_index_used, index_cond_on_category, index_cond_expected_category, knn_order_by_in_scan)
+marina       FAIL  (failed: composite_index_used, index_cond_on_category, index_cond_expected_category, knn_order_by_in_scan)
+urgent_care  FAIL  (failed: composite_index_used, index_cond_on_category, index_cond_expected_category, knn_order_by_in_scan)
+park         FAIL  (failed: composite_index_used, index_cond_on_category, index_cond_expected_category, knn_order_by_in_scan)
+
+[B1.2] PLAN-SHAPE GATE: FAIL — inspect plans; SSOT fallback is KNN against `centroid` (geography(Point)).

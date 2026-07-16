@@ -1,0 +1,25 @@
+BEGIN
+INSERT 0 0
+CREATE TABLE
+INSERT 0 2265000
+INSERT 0 1700000
+INSERT 0 566000
+INSERT 0 25500
+INSERT 0 8500
+INSERT 0 425000
+INSERT 0 4000
+INSERT 0 6200
+COMMIT
+ANALYZE
+ category_key |  rows   
+--------------+---------
+ restaurant   | 2265000
+ retail_store | 1700000
+ school       |  566000
+ park         |  425000
+ urgent_care  |   25500
+ marina       |    8500
+ boat_ramp    |    6200
+ airport      |    4000
+(8 rows)
+
