@@ -11,6 +11,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 
 class RegisteredUserController extends Controller
@@ -44,10 +45,14 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'phone_number' =>  ['required'],
             'password' => ['required', 'string', Rules\Password::defaults()],
-            'user_type' => ['required', 'string', 'max:255'],
+            // Whitelist self-registerable roles. 'admin' (and internal roles
+            // like seller_agent/buyer_agent) must never be assignable from a
+            // public registration request — admin gating trusts user_type.
+            'user_type' => ['required', 'string', Rule::in(['seller', 'buyer', 'landlord', 'tenant', 'agent'])],
             'terms' => ['required'],
         ], [
-            'terms.required' => 'Please accept terms and conditions!'
+            'terms.required' => 'Please accept terms and conditions!',
+            'user_type.in' => 'Please choose a valid account type.',
         ]);
 
         // dd($request->user_name);

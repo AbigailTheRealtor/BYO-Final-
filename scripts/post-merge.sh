@@ -17,7 +17,13 @@ done
 
 composer install --no-interaction --no-ansi 2>/dev/null || true
 php artisan migrate --force --no-interaction
-php artisan db:seed --class=UserSeeder --force --no-interaction || true
+# Only seed shared-credential dev/test accounts outside production. The seeder
+# itself also refuses to run in production (see database/seeders/UserSeeder.php).
+if [ "${APP_ENV:-local}" != "production" ]; then
+    php artisan db:seed --class=UserSeeder --force --no-interaction || true
+else
+    echo "post-merge: skipping UserSeeder (production environment)."
+fi
 php artisan config:clear
 php artisan view:clear
 npm install --silent 2>/dev/null || true
