@@ -1,0 +1,6 @@
+=== corrected bytes/row + 150GB extrapolation (read-only; numeric arithmetic) ===
+  rows  | composite_idx_bytes | composite_bytes_per_row | heap_bytes_per_row | projected_rows_at_150gb_heap | projected_composite_idx_at_150gb 
+--------+---------------------+-------------------------+--------------------+------------------------------+----------------------------------
+ 176560 |            18391040 |                  104.16 |              98.78 |                   1630488890 | 158 GB
+(1 row)
+
