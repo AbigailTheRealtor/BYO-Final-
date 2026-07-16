@@ -1,10 +1,11 @@
 # Spatial Intelligence Platform — Master Architecture
 
-**Version:** 3.1 — *Google-free by design; parallelized execution*
+**Version:** 3.2 — *Google-free by design; parallelized execution; Phase 2 provider + KNN contract pinned*
 **Status:** ✅ **APPROVED — 2026-07-09, by Abigail (product owner).** This document is the **single source of truth** for geographic intelligence across BidYourAgent and BidYourOffer. Implementation proceeds from this document only. Amendments require an entry in the Decision Register (Appendix A) or the Errata (Appendix B) — never a silent edit.
 **Date:** 2026-07-09
+**Amended:** 2026-07-16 — product owner (Abigail) approved the Phase 2 database provider and hardened the spatial KNN contract following the Batch 0a KNN spike and Stage 0b provider validation. Appended to the registers: decisions **SIA-D38**–**SIA-D41** and corrections **E-49**–**E-50**; open question **Q1**'s managed-PostgreSQL/PostGIS target is resolved (Crunchy Bridge). This amendment is **documentation-only** — no infrastructure, migration, import, or application code changed.
 **Owner:** Platform Architecture · Product owner: Abigail
-**Approval scope:** Architecture, phases, gates, invariants, and the parallelization plan. **Implementation is underway:** Phase 0 Batch 1 landed in `3fdc4a714`, with a follow-up in `f3dab6f24`; Batch 2 landed in `009898269`; Batch 3 in `841147d9f`; Batch 4 in `31457f36f`; Batch 5 in `8d576abd2`. Together they produced errata **E-37**–**E-48**, decisions **SIA-D34**–**SIA-D37**, and open question **Q12**. **Phase 0 status:** items 1, 2, 6, 7 **complete**; items 3–5 blocked on **Q1**; items 8–9 downstream of those. Phase 0 cannot be declared complete until Q1 is answered, and INV-11 holds in tests only until **Q12** closes. Phase 0 remains blocked on Q1 (hosting target) for items 3–5; items 1, 2, 6, and 7 are unblocked.
+**Approval scope:** Architecture, phases, gates, invariants, and the parallelization plan. **Implementation is underway:** Phase 0 Batch 1 landed in `3fdc4a714`, with a follow-up in `f3dab6f24`; Batch 2 landed in `009898269`; Batch 3 in `841147d9f`; Batch 4 in `31457f36f`; Batch 5 in `8d576abd2`. Together they produced errata **E-37**–**E-48**, decisions **SIA-D34**–**SIA-D37**, and open question **Q12**. **Phase 0 status:** items 1, 2, 6, 7 **complete**; items 3–5 blocked on **Q1**; items 8–9 downstream of those. Phase 0 cannot be declared complete until Q1 is answered, and INV-11 holds in tests only until **Q12** closes. Phase 0 remains blocked on Q1 (hosting target) for items 3–5; items 1, 2, 6, and 7 are unblocked. **[Amended 2026-07-16: Q1's managed-PostgreSQL/PostGIS target is resolved — Crunchy Bridge (SIA-D38); the Q1-blocked language in this line is historical. Items 3–5 now await the product-owner-deferred cluster provisioning, not the provider decision. Q1's app-server / Redis / Valhalla-VM hosting targets remain open.]**
 **Scope:** BidYourOffer and BidYourAgent. Every geographic, mapping, routing, Location DNA, Property DNA, Buyer/Tenant DNA, Target Market Intelligence, matching, and spatial-analysis feature.
 
 **Supersedes and consolidates:**
@@ -296,9 +297,9 @@ Today it makes 16 Google Nearby Search calls plus up to one Geocoding call. Unde
 ### 7.1 Extensions
 
 ```sql
-CREATE EXTENSION postgis;      -- 3.5.3 available, not installed
-CREATE EXTENSION btree_gist;   -- 1.7   available — REQUIRED, see §7.3
-CREATE EXTENSION pg_trgm;      -- 1.6   available — address typeahead, Phase 4
+CREATE EXTENSION postgis;      -- ▲ E-49/SIA-D39: pinned 3.6.3 on the selected provider (PostgreSQL 16.14, Crunchy Bridge). Verified installed in Stage 0b.
+CREATE EXTENSION btree_gist;   -- 1.7   REQUIRED for gist(category_key, geom), see §7.3 — verified installed (Stage 0b)
+CREATE EXTENSION pg_trgm;      -- 1.6   REQUIRED — address typeahead, Phase 4 — verified installed (Stage 0b)
 -- Deferred, available when needed, no new infrastructure:
 -- h3 4.2.3    (hex commute index, post-launch scale)
 -- vector 0.8.0 (semantic retrieval, post-launch)
@@ -462,21 +463,39 @@ With `gist(category_key, geom)` via `btree_gist`, the KNN operates *within* the 
 ### 7.5 Canonical queries
 
 ```sql
--- Nearest places per enabled category, for one listing. Replaces 16 Google calls.
+-- Nearest K places per enabled category, for one listing. Replaces 16 Google calls.
 -- ▲ E-23: corpus_version is bound from PHP. No session GUC — a GUC is fragile
 --   under pooled connections and queue workers.
-SELECT c.category_key, p.name,
-       ST_Distance(l.geom, p.geom) / 1609.344 AS miles
-FROM   place_categories c
-CROSS JOIN listing_locations l
-CROSS JOIN LATERAL (
-  SELECT p.* FROM places p
-  WHERE  p.category_key = c.category_key
-    AND  p.corpus_version = :corpus_version
-  ORDER BY p.geom <-> l.geom          -- index-assisted by gist(category_key, geom)
-  LIMIT  3                             -- top-3. The table holds top-10 today.
-) p
-WHERE l.listing_type = :type AND l.listing_id = :id AND c.enabled;
+-- ▲ SIA-D40 / E-50: EXACT-KNN contract. geography `<->` orders by SPHERE distance
+--   (== ST_Distance(...,false)); ST_Distance defaults to SPHEROID. The two disagree
+--   by ~0.1–0.5% and reorder near-equidistant neighbours (observed at 5M scale in
+--   Stage 0b). So OVER-FETCH via the composite GiST, then RE-RANK by exact spheroidal
+--   ST_Distance and slice the final top-K. The neighbour SET is exact from the index;
+--   only the ORDER needs the second pass.
+WITH overfetch AS (
+  SELECT c.category_key, p.place_id, p.name, p.geom, l.geom AS ref_geom
+  FROM   place_categories c
+  CROSS JOIN listing_locations l
+  CROSS JOIN LATERAL (
+    SELECT p.* FROM places p
+    WHERE  p.category_key   = c.category_key
+      AND  p.corpus_version = :corpus_version
+    ORDER BY p.geom <-> l.geom        -- composite-GiST KNN; sphere-ordered candidates
+    LIMIT  :overfetch                  -- K × factor (K=3 today; factor ≥ 2, floor ≥ 20) — SIA-D40
+  ) p
+  WHERE l.listing_type = :type AND l.listing_id = :id AND c.enabled
+),
+reranked AS (
+  SELECT category_key, name,
+         ST_Distance(ref_geom, geom, true) AS meters,          -- exact spheroid
+         row_number() OVER (PARTITION BY category_key
+                            ORDER BY ST_Distance(ref_geom, geom, true)) AS rn
+  FROM overfetch
+)
+SELECT category_key, name, meters / 1609.344 AS miles
+FROM   reranked
+WHERE  rn <= 3                                                   -- final top-K after spheroid re-rank
+ORDER BY category_key, meters;
 
 -- "Listings within a 30-minute drive of my office" → ONE routing call, then containment.
 SELECT ll.listing_type, ll.listing_id
@@ -487,10 +506,11 @@ WHERE  ST_Covers(i.geom, ll.geom);     -- ▲ ST_Covers, not ST_Contains.
                                        --   ST_Contains does not accept geography.
 ```
 
-Three standing rules:
+Four standing rules:
 - Always `ST_DWithin(a, b, meters)`; **never** `ST_Distance(a,b) < x`. Only the former is index-assisted.
 - Never mix `geography` and `geometry` on the same axis. A cast discards the index.
 - `ST_Subdivide` runs at **import** time, on `geometry`, never at query time.
+- **Exact nearest-K (SIA-D40 / E-50): never trust a single-pass `ORDER BY geom <-> ref LIMIT k` for ordering.** `<->` on `geography` ranks by sphere; over-fetch K× via the composite GiST, then re-rank by spheroidal `ST_Distance(a, b, true)` and slice the top-K. The set is exact from the index; only the order needs the second pass.
 
 ---
 
@@ -1403,6 +1423,10 @@ Valhalla graph builds and Overture ingests run on spot instances: realistically 
 | **SIA-D35** | **INV-11 asserts the weaker claim until the bare clients are resolved.** `Inv11ZeroOutboundGoogleTest` asserts *zero outbound Google requests from instrumented / test-controlled paths*, not zero outbound requests absolutely, and carries a `@todo` naming E-38 and Q12. Rationale: the stronger assertion cannot pass while 15 uninstrumented clients exist, five of them frozen, so it would sit red for reasons no engineer is permitted to fix — and a permanently-red invariant test teaches the team to ignore it. **The qualifier must be struck, and the assertion tightened, before Gate 7.** | **Approved** |
 | **SIA-D36** | **Phase 1 proceeds while Q1 remains open.** Provider abstraction and the golden-master harness depend only on Phase 0's test isolation (item 6, complete). They require no Redis, no PostGIS deployment, and no production infrastructure. Waiting on the hosting decision would idle the critical path for no engineering reason. Phase 0 items 3–5 remain blocked and are picked up when Q1 is answered. | **Approved** |
 | **SIA-D37** | **Manual browser QA is a product-owner validation track, not an engineering gate.** It runs in parallel and **must complete before production rollout**, but does not block Phase 1 implementation. Scope: the four consolidated deferred loaders (Landlord Auction add/edit, Seller Property edit, Hire Landlord Agent edit), any public listing page rendering `location-dna-map`, and the Batch 4 degradation paths. | **Approved** |
+| **SIA-D38** | **Production database provider = Crunchy Bridge** (managed PostgreSQL 16 / PostGIS), selected via Stage 0b provider validation. **Procurement-approved subject to final production sizing (Q2).** DigitalOcean / Neon / RDS validation not pursued. **No permanent production cluster is provisioned yet** — provisioning is intentionally deferred by the product owner. Resolves the **managed-PostgreSQL/PostGIS target of Q1**; Q1's app-server, Redis, and Valhalla-VM hosting targets remain open. | **Approved — product owner, 2026-07-16** |
+| **SIA-D39** | **Version pins.** The production spatial baseline is **PostgreSQL 16.14 · PostGIS 3.6.3 · btree_gist 1.7 · pg_trgm 1.6**, verified installed on the selected provider in Stage 0b. Supersedes the "3.5.3 available, not installed" placeholder in §7.1; PostGIS 3.6.3 exceeds the ≥ 3.5 requirement and the composite-GiST plan shape is identical to the 3.5.2 spike baseline. See E-49. | **Approved — product owner, 2026-07-16** |
+| **SIA-D40** | **Exact-KNN query contract.** Nearest-neighbour workflows MUST (a) retrieve candidates via the composite GiST `gist(category_key, geom)`, (b) apply a controlled **over-fetch** (K × factor; K = 3, factor ≥ 2, floor ≥ 20), and (c) **re-rank by exact spheroidal `ST_Distance(a, b, true)`**, taking the final top-K. The geography `<->` sphere-vs-spheroid ordering behaviour is **accepted** — it is a PostGIS characteristic to encode in the retrieval pattern, not a provider or index defect. Corrects §7.5; see E-50. | **Approved — product owner, 2026-07-16** |
+| **SIA-D41** | **Phase 2 day-one KNN spike (the SIA-D17 gate) PASSED; provider validation complete (Batch 0a/0b).** Composite `gist(category_key, geom)` on `geography` yields a category `Index Cond` + in-scan `<->` KNN with zero filter-walk, no top-level sort, and no seq scan, on both unpartitioned and `corpus_version`-partitioned layouts, at Tier 1 (176,560 rows) and Tier 2 (5,000,200 rows); the neighbour **set** is exact for every sparse category. **Retires risk R5.** The 23-per-category partial-index fallback is held in reserve, unused. | **Approved — product owner, 2026-07-16** |
 
 ---
 
@@ -1502,14 +1526,23 @@ Recorded 2026-07-09 against commits `3fdc4a714` (Batch 1) and `f3dab6f24`. Both 
 
 **Known exception — the frozen `TenantAgentAuction` Google calls.** `TenantAgentAuction.php:2214` (geocode), `:2330` (geocode), and `:2440` (Places Autocomplete) construct bare Guzzle clients and call Google directly. `TenantAgentAuctionEdit.php:1910` and `:2061` add two more under SIA-D34 — **five in total.** INV-8 declares these components frozen and this programme does not modify them. **Consequence, recorded explicitly:** until Q12 is resolved, the platform **cannot claim full zero-outbound telemetry coverage**, and INV-11's Phase 0 Definition-of-Done clause — *"zero outbound attempts"* — is satisfiable only by the test-environment guards (`tests/bootstrap.php`, `BlocksGooglePlacesHttpClient`, `StrayRequestGuardFactory`), **not** by production telemetry. `Inv11ZeroOutboundGoogleTest` therefore asserts the weaker claim by decision SIA-D35. This is a known, accepted, and time-boxed gap, not an oversight. It must be closed before **Gate 7 / V1 launch certification**.
 
+### New in v3.2 — Phase 2 Batch 0a/0b (spatial provider validation)
+
+Recorded 2026-07-16 from the Batch 0a PostGIS/KNN spike and Stage 0b provider validation. Both errata are **evidence findings that correct an approved step**; neither was applied as a silent edit.
+
+| # | Erratum | Evidence |
+|---|---|---|
+| **E-49** | **§7.1's "3.5.3 available, not installed" is superseded by a measured baseline.** The selected provider (SIA-D38, Crunchy Bridge) runs **PostgreSQL 16.14 / PostGIS 3.6.3**, with **btree_gist 1.7** and **pg_trgm 1.6** installed and verified in Stage 0b. PostGIS 3.6.3 exceeds the ≥ 3.5 requirement, and the composite-GiST plan shape is byte-for-byte identical to the 3.5.2 spike baseline. §7.1's extension comments are corrected accordingly. | Stage 0b `results/crunchy/RESULT.md`; SIA-D39 |
+| **E-50** | **§7.5's single-pass `ORDER BY p.geom <-> l.geom LIMIT 3` is not exact for `geography`.** The `<->` operator ranks by **sphere** distance (`== ST_Distance(...,use_spheroid=false)`), whereas the projected `ST_Distance` defaults to **spheroid**; the two disagree by ~0.1–0.5 % and reorder **near-equidistant** neighbours. Observed at Tier-2 (5,000,200-row) scale: the `airport` category returned the exact nearest **set** but with one adjacent order swap; Tier-1's sparser data did not expose it. The neighbour **set** is exact — only the **order** needs correcting. §7.5 is corrected to over-fetch via the composite GiST then re-rank by spheroidal `ST_Distance(a, b, true)` (SIA-D40). *Caveat carried forward: the spike proved this on `geography(Point)`; production `places.geom` is `geography(Geometry,4326)` (mixed) — confirm the identical KNN plan with one `EXPLAIN` during the schema batch, or run KNN against `centroid`.* | Stage 0b `tier2/knn_ordering_diagnosis.out`; SIA-D40 |
+
 ---
 
 ## Appendix C — Open questions
 
 | # | Question | Blocks | Owner |
 |---|---|---|---|
-| **Q1** | **Hosting target** for app server + queue worker + Redis + managed PostGIS + Valhalla VM | **Phase 0 — the only true blocker** | **Product owner** |
-| Q2 | Row count and on-disk size of an Overture Places extract for US + territories at `confidence ≥ 0.90` | Phase 2 sizing | Engineering — measure |
+| **Q1** | **Hosting target** for app server + queue worker + Redis + managed PostGIS + Valhalla VM | **Phase 0** | **Product owner** — *partially resolved 2026-07-16:* the **managed PostgreSQL/PostGIS** target is decided — **Crunchy Bridge** (SIA-D38), procurement-approved subject to final sizing (Q2), cluster provisioning deferred. **App-server, queue-worker/Redis, and Valhalla-VM hosting remain open.** |
+| Q2 | Row count and on-disk size of an Overture Places extract for US + territories at `confidence ≥ 0.90` | Phase 2 sizing; **gates final provider sizing (SIA-D38)** | Engineering — measure. *2026-07-16: Stage 0b provides an extrapolation basis — composite index ≈ **104.61 bytes/row**; a 150 GB heap ≈ **1.58 B rows** ≈ **154 GB** composite index — but the actual US + territories row-count is still unmeasured.* |
 | Q3 | Valhalla build/serve RAM for a US + PR graph (published figures are planet-scale) | Phase 6 sizing | Engineering — benchmark one state first |
 | Q4 | FEMA NFHL national import size and refresh mechanics | Phase 2 sizing | Engineering — measure |
 | Q5 | Per-feed GTFS licensing — no blanket commercial-use grant exists | Phase 2 | Engineering + Legal |
