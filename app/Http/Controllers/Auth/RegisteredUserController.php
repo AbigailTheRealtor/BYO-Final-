@@ -55,7 +55,6 @@ class RegisteredUserController extends Controller
             'user_type.in' => 'Please choose a valid account type.',
         ]);
 
-        // dd($request->user_name);
 
         // $names = explode(" ", $request->name);
         // $first_name = current($names);
@@ -110,7 +109,6 @@ class RegisteredUserController extends Controller
         // Phase 5 — persist referral attribution if session contains one.
         ReferralLinkService::persistSignup($user->id);
 
-        // dd($user);
         // event(new Registered($user));
         Auth::login($user);
         return redirect(RouteServiceProvider::HOME);
