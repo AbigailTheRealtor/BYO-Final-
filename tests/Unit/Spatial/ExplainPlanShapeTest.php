@@ -58,6 +58,47 @@ class ExplainPlanShapeTest extends TestCase
     }
 
     /** @test */
+    public function a_partition_local_child_index_passes(): void
+    {
+        // A real scan of the partitioned `places` names the partition-local child
+        // index, never the parent `places_cat_geom`. The gate must accept it.
+        $plan = [[
+            'Plan' => [
+                'Node Type' => 'Limit',
+                'Plans' => [[
+                    'Node Type' => 'Index Scan',
+                    'Index Name' => 'places_fixture_tier2_category_key_geom_idx',
+                    'Index Cond' => "(category_key = 'airport'::text)",
+                    'Order By' => '(geom <-> \'...\'::geography)',
+                    'Rows Removed by Filter' => 0,
+                ]],
+            ],
+        ]];
+
+        $result = (new ExplainPlanShape())->evaluate($plan, 'airport');
+        $this->assertTrue($result['pass'], 'partition-local child index must pass; failures: ' . implode(',', $result['failures']));
+        $this->assertTrue($result['checks']['composite_index_used']);
+        $this->assertTrue($result['checks']['knn_order_by_in_scan']);
+    }
+
+    /** @test */
+    public function a_partition_local_geom_only_child_is_not_the_composite_index(): void
+    {
+        // A geom-only child (`<partition>_geom_idx`) is NOT the composite index:
+        // its suffix differs, so composite_index_used must fail.
+        $plan = [['Plan' => [
+            'Node Type' => 'Index Scan',
+            'Index Name' => 'places_fixture_tier2_geom_idx',
+            'Order By' => '(geom <-> \'...\'::geography)',
+            'Rows Removed by Filter' => 8826,
+        ]]];
+
+        $result = (new ExplainPlanShape())->evaluate($plan, 'boat_ramp');
+        $this->assertFalse($result['pass']);
+        $this->assertContains('composite_index_used', $result['failures']);
+    }
+
+    /** @test */
     public function a_seq_scan_fails_the_gate(): void
     {
         $plan = [['Plan' => ['Node Type' => 'Seq Scan', 'Rows Removed by Filter' => 0]]];

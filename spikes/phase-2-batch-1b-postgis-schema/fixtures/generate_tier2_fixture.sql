@@ -48,34 +48,64 @@ CREATE TABLE IF NOT EXISTS places_fixture_tier2
   PARTITION OF places FOR VALUES IN ('fixture-tier2-v1');
 
 -- Bounding box ~ US + territories longitudes/latitudes, for plausible spread.
--- lon = -125 + random()*58   (-125 .. -67)
--- lat =   24 + random()*25   (  24 ..  49)
+-- lon = -125 + 58 * h1(g)   (-125 .. -67)
+-- lat =   24 + 25 * h2(g)   (  24 ..  49)
+--
+-- COORDINATES VARY PER ROW and are DETERMINISTIC in the series index g. Two
+-- multiplicative-hash streams h1(g)/h2(g) give a decorrelated, well-spread
+-- pseudo-random pair per row. This deliberately replaces an earlier
+-- `random()`-in-an-uncorrelated-LATERAL form, which PostgreSQL evaluated ONCE
+-- per INSERT and reused for every row — collapsing each category to a single
+-- point (mass distance ties) and defeating the KNN gate. Referencing g inside
+-- the coordinate subquery makes it correlated, so it is re-evaluated per row.
+-- Both hash constants are odd and coprime to their modulus, so h1 is a bijection
+-- over g for every category count (all < 1e7) — one distinct location per row.
 
 -- 3a. POINT categories -------------------------------------------------------
 INSERT INTO places (corpus_version, source, source_ref, geom, centroid, category_key, name, confidence)
 SELECT 'fixture-tier2-v1', 'fixture', 'restaurant-'||g, q.pt::geography, q.pt::geography, 'restaurant', 'restaurant #'||g, 0.95
 FROM generate_series(1, 2265000) g
-CROSS JOIN LATERAL (SELECT ST_SetSRID(ST_MakePoint(-125+random()*58, 24+random()*25), 4326) AS pt) q;
+CROSS JOIN LATERAL (
+  SELECT ST_SetSRID(ST_MakePoint(c.lon, c.lat), 4326) AS pt
+  FROM (SELECT -125 + 58 * (mod(g * 2654435761, 10000000)::numeric / 10000000.0) AS lon,
+               24  + 25 * (mod(g * 2246822519, 10000019)::numeric / 10000019.0) AS lat) c
+) q;
 
 INSERT INTO places (corpus_version, source, source_ref, geom, centroid, category_key, name, confidence)
 SELECT 'fixture-tier2-v1', 'fixture', 'retail_store-'||g, q.pt::geography, q.pt::geography, 'retail_store', 'retail_store #'||g, 0.95
 FROM generate_series(1, 1700000) g
-CROSS JOIN LATERAL (SELECT ST_SetSRID(ST_MakePoint(-125+random()*58, 24+random()*25), 4326) AS pt) q;
+CROSS JOIN LATERAL (
+  SELECT ST_SetSRID(ST_MakePoint(c.lon, c.lat), 4326) AS pt
+  FROM (SELECT -125 + 58 * (mod(g * 2654435761, 10000000)::numeric / 10000000.0) AS lon,
+               24  + 25 * (mod(g * 2246822519, 10000019)::numeric / 10000019.0) AS lat) c
+) q;
 
 INSERT INTO places (corpus_version, source, source_ref, geom, centroid, category_key, name, confidence)
 SELECT 'fixture-tier2-v1', 'fixture', 'school-'||g, q.pt::geography, q.pt::geography, 'school', 'school #'||g, 0.95
 FROM generate_series(1, 566000) g
-CROSS JOIN LATERAL (SELECT ST_SetSRID(ST_MakePoint(-125+random()*58, 24+random()*25), 4326) AS pt) q;
+CROSS JOIN LATERAL (
+  SELECT ST_SetSRID(ST_MakePoint(c.lon, c.lat), 4326) AS pt
+  FROM (SELECT -125 + 58 * (mod(g * 2654435761, 10000000)::numeric / 10000000.0) AS lon,
+               24  + 25 * (mod(g * 2246822519, 10000019)::numeric / 10000019.0) AS lat) c
+) q;
 
 INSERT INTO places (corpus_version, source, source_ref, geom, centroid, category_key, name, confidence)
 SELECT 'fixture-tier2-v1', 'fixture', 'urgent_care-'||g, q.pt::geography, q.pt::geography, 'urgent_care', 'urgent_care #'||g, 0.95
 FROM generate_series(1, 25500) g
-CROSS JOIN LATERAL (SELECT ST_SetSRID(ST_MakePoint(-125+random()*58, 24+random()*25), 4326) AS pt) q;
+CROSS JOIN LATERAL (
+  SELECT ST_SetSRID(ST_MakePoint(c.lon, c.lat), 4326) AS pt
+  FROM (SELECT -125 + 58 * (mod(g * 2654435761, 10000000)::numeric / 10000000.0) AS lon,
+               24  + 25 * (mod(g * 2246822519, 10000019)::numeric / 10000019.0) AS lat) c
+) q;
 
 INSERT INTO places (corpus_version, source, source_ref, geom, centroid, category_key, name, confidence)
 SELECT 'fixture-tier2-v1', 'fixture', 'marina-'||g, q.pt::geography, q.pt::geography, 'marina', 'marina #'||g, 0.95
 FROM generate_series(1, 8500) g
-CROSS JOIN LATERAL (SELECT ST_SetSRID(ST_MakePoint(-125+random()*58, 24+random()*25), 4326) AS pt) q;
+CROSS JOIN LATERAL (
+  SELECT ST_SetSRID(ST_MakePoint(c.lon, c.lat), 4326) AS pt
+  FROM (SELECT -125 + 58 * (mod(g * 2654435761, 10000000)::numeric / 10000000.0) AS lon,
+               24  + 25 * (mod(g * 2246822519, 10000019)::numeric / 10000019.0) AS lat) c
+) q;
 
 -- 3b. POLYGON categories (areas — SSOT §7.4) --------------------------------
 INSERT INTO places (corpus_version, source, source_ref, geom, centroid, category_key, name, confidence)
@@ -83,7 +113,8 @@ SELECT 'fixture-tier2-v1', 'fixture', 'park-'||g, q.poly::geography, ST_Centroid
 FROM generate_series(1, 425000) g
 CROSS JOIN LATERAL (
   SELECT ST_MakeEnvelope(c.lon, c.lat, c.lon+0.02, c.lat+0.02, 4326) AS poly
-  FROM (SELECT -125+random()*58 AS lon, 24+random()*25 AS lat) c
+  FROM (SELECT -125 + 58 * (mod(g * 2654435761, 10000000)::numeric / 10000000.0) AS lon,
+               24  + 25 * (mod(g * 2246822519, 10000019)::numeric / 10000019.0) AS lat) c
 ) q;
 
 INSERT INTO places (corpus_version, source, source_ref, geom, centroid, category_key, name, confidence)
@@ -91,7 +122,8 @@ SELECT 'fixture-tier2-v1', 'fixture', 'airport-'||g, q.poly::geography, ST_Centr
 FROM generate_series(1, 4000) g
 CROSS JOIN LATERAL (
   SELECT ST_MakeEnvelope(c.lon, c.lat, c.lon+0.03, c.lat+0.03, 4326) AS poly
-  FROM (SELECT -125+random()*58 AS lon, 24+random()*25 AS lat) c
+  FROM (SELECT -125 + 58 * (mod(g * 2654435761, 10000000)::numeric / 10000000.0) AS lon,
+               24  + 25 * (mod(g * 2246822519, 10000019)::numeric / 10000019.0) AS lat) c
 ) q;
 
 -- 3c. LINESTRING category ----------------------------------------------------
@@ -100,7 +132,8 @@ SELECT 'fixture-tier2-v1', 'fixture', 'boat_ramp-'||g, q.ln::geography, ST_Centr
 FROM generate_series(1, 6200) g
 CROSS JOIN LATERAL (
   SELECT ST_SetSRID(ST_MakeLine(ST_MakePoint(c.lon, c.lat), ST_MakePoint(c.lon+0.01, c.lat+0.01)), 4326) AS ln
-  FROM (SELECT -125+random()*58 AS lon, 24+random()*25 AS lat) c
+  FROM (SELECT -125 + 58 * (mod(g * 2654435761, 10000000)::numeric / 10000000.0) AS lon,
+               24  + 25 * (mod(g * 2246822519, 10000019)::numeric / 10000019.0) AS lat) c
 ) q;
 
 COMMIT;

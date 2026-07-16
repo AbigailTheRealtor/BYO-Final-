@@ -13,7 +13,8 @@ namespace Tests\Support\Spatial;
  * cluster, and is fed through this same engine.
  *
  * Required shape (all must hold):
- *   1. an Index Scan using `places_cat_geom`
+ *   1. an Index Scan using the composite GiST index — the parent
+ *      `places_cat_geom` OR one of its partition-local children
  *   2. its Index Cond filters on `category_key`
  *   3. its Order By is the KNN operator `<->` (index-provided ordering)
  *   4. NO Seq Scan anywhere
@@ -21,11 +22,25 @@ namespace Tests\Support\Spatial;
  *   6. NO node reports "Rows Removed by Filter" > 0 (zero filter-walk)
  *
  * A partitioned `places` scans under an Append of per-partition Index Scans, so
- * the whole plan tree is traversed, not just the root.
+ * the whole plan tree is traversed, not just the root. Crucially, each scanned
+ * node names the PARTITION-LOCAL child index (PostgreSQL synthesises the name
+ * from the indexed columns, e.g. `places_fixture_tier2_category_key_geom_idx`) —
+ * never the parent partitioned-index name. The parent `places_cat_geom` is a
+ * template and never appears as a scan node, so an exact parent-name match would
+ * fail on every real partitioned plan. `isCompositeIndex()` accepts both.
  */
 final class ExplainPlanShape
 {
     public const COMPOSITE_INDEX = 'places_cat_geom';
+
+    /**
+     * Suffix of the auto-generated partition-local child index. PostgreSQL names
+     * a partition's copy of the composite `(category_key, geom)` index
+     * `<partition>_category_key_geom_idx`. This suffix uniquely identifies that
+     * composite child — a geom-only child would be `<partition>_geom_idx`, a
+     * category-only child `<partition>_category_key_idx`.
+     */
+    public const COMPOSITE_CHILD_SUFFIX = '_category_key_geom_idx';
 
     /**
      * @param  array|string  $explain  Decoded EXPLAIN JSON (array) or the raw JSON string.
@@ -38,10 +53,10 @@ final class ExplainPlanShape
         $nodes = [];
         $this->flatten($root, $nodes);
 
-        // The composite-index KNN scan node(s).
+        // The composite-index KNN scan node(s) — parent name or partition child.
         $knnScans = array_filter($nodes, function (array $n): bool {
             return ($n['Node Type'] ?? null) === 'Index Scan'
-                && ($n['Index Name'] ?? null) === self::COMPOSITE_INDEX;
+                && $this->isCompositeIndex($n['Index Name'] ?? null);
         });
 
         $checks = [];
@@ -92,6 +107,22 @@ final class ExplainPlanShape
             'failures' => $failures,
             'checks' => $checks,
         ];
+    }
+
+    /**
+     * True when an Index Scan's index is the composite `(category_key, geom)`
+     * GiST index — either the parent partitioned index by name, or a
+     * partition-local child by its synthesised suffix. Partition-aware: a scan of
+     * the partitioned `places` always reports the child, never the parent.
+     */
+    private function isCompositeIndex(?string $indexName): bool
+    {
+        if ($indexName === null) {
+            return false;
+        }
+
+        return $indexName === self::COMPOSITE_INDEX
+            || str_ends_with($indexName, self::COMPOSITE_CHILD_SUFFIX);
     }
 
     /** Extract the root Plan node from FORMAT JSON output (array or string). */
