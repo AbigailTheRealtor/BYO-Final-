@@ -34,11 +34,55 @@ Non-secret evidence only. Captured `.out` files under `tier1/`. No credential,
 > (cast to numeric/bigint) on a separate scaffolding branch — not on this results
 > branch.
 
-## Verdict
-- [x] **PASS (composite)** — Tier 1. Procurement-eligibility gate met for Tier 1;
-  Tier 2 (scale) still pending.
-- Anomalies: only the `70_measurements.sql` pretty-print bug above (cosmetic; does
-  not affect the PASS determination).
+## Tier 2 (~5,000,200 rows) — scale / plan stability
+- **Runtime:** 4 m 51 s (full 8-step run; corrected `70_measurements.sql`, clean exit).
+- **Dataset:** 5,000,200 rows — restaurant 2,265,000 · retail_store 1,700,000 · school 566,000 · park 425,000 · urgent_care 25,500 · marina 8,500 · boat_ramp 6,200 · airport 4,000. Partition v1 1,992,738 / v2 3,007,462; unpartitioned == partitioned (parity `t`). Sparse categories stay < 0.6% each.
+- **Composite (A) — PASS at scale.** All four sparse categories → `Index Scan using places_cat_geom` · `Index Cond: category_key='<cat>'` · `Order By: geom <-> ref` in-scan · **0** rows removed · **0** sort (verified: no Sort node anywhere in the plan) · **0** seq scan. No cost-model crossover to seq-scan/sort at 5 M. Composite sparse KNN actual time 0.12–5.34 ms.
+- **Partitioned @v2 — PASS.** Prunes to `places_spike_part_v2`, uses local composite `places_spike_part_v2_category_key_geom_idx`, same Index Cond + in-scan KNN.
+- **Geography-only control (B) — degrades as designed.** Rows Removed by Filter: boat_ramp 6,081 · airport 12,445 · marina 8,622 · urgent_care 2,339.
+- **Partial fallback (C) — PASS.** `Index Scan using places_geom_<cat>` per category; no rows removed, no sort, no seq scan.
+- **KNN correctness — SET exact; ORDER caveat (see below).** `same_set = t` for all four categories. `exact_order_match`: boat_ramp/marina/urgent_care `t`; **airport `f`** — two adjacent, near-equidistant ids (4997005 ↔ 4998663) swapped.
+
+## KNN ordering caveat — sphere (`<->`) vs spheroid (`ST_Distance`)
+Root cause (evidence: `tier2/knn_ordering_diagnosis.out`): the geography KNN
+operator `geom <-> ref` ranks by the **sphere** distance and is bit-for-bit equal
+to `ST_Distance(geom, ref, use_spheroid => false)`, whereas the correctness
+check's `ST_Distance(geom, ref)` defaults to the **spheroid**. The two differ
+~0.1–0.5%; at 5 M density neighbors are close enough that this reorders (and, at
+the K-boundary, could in principle include/exclude) near-equidistant points.
+Tier 1's sparser corpus did not expose it (all `t`).
+
+For the airport pair: `<->` / sphere = 98,138.463 vs 98,362.171 (→ 4997005 first);
+spheroid = 98,039.060 vs 98,004.895 (→ 4998663 first).
+
+**Mitigation (proven, evidence in the same file):** over-fetch top-K×2 by `<->`
+then re-rank by exact `ST_Distance` and take top-K → matches brute-force spheroid
+top-10 **exactly** (`t`). The production query pattern must over-fetch + re-rank
+(or accept sphere ordering) — a single-pass `ORDER BY geom <-> ref LIMIT k` is not
+guaranteed to equal exact spheroidal nearest-K for near-equidistant neighbors.
+
+## Storage / index measurements (Tier 2)
+- `places_spike`: 1,092 MB total (486 MB heap, 606 MB indexes).
+- Composite `places_cat_geom`: **499 MB** (523,091,968 bytes) = **104.61 bytes/row**; heap 101.94 bytes/row; pkey 107 MB.
+- Partitions: v1 254 MB, v2 383 MB.
+- **150 GB heap extrapolation** (corrected helper, clean): ~1.58 B rows; projected composite index ≈ **154 GB**.
+
+## Environment (Tier 2, re-confirmed)
+PostgreSQL 16.14 · PostGIS 3.6.3 · btree_gist 1.7 · pg_trgm 1.6 · direct `:5432` session. No errors/warnings in the run.
+
+## Final verdict — **CAVEATED**
+- [x] **PASS (composite plan + set correctness)** at both tiers: composite GiST on
+  `geography` gives category `Index Cond` + in-scan `<->` KNN, zero filter-walk,
+  no sort, no seq scan, on unpartitioned and partitioned layouts; control degrades;
+  partial fallback passes; neighbor **set** exact for all four categories at 5 M.
+- [ ] **Caveat:** geography `<->` orders by sphere, not spheroid, so single-pass
+  KNN ordering is not guaranteed exact for near-equidistant neighbors at scale
+  (observed: airport, same set, one adjacent swap). **Mitigation proven**
+  (over-fetch + re-rank by `ST_Distance`). This is a query-pattern requirement, not
+  a provider or index defect — it applies to PostGIS geography KNN on any host.
+- **Crunchy Bridge is procurement-eligible (CAVEATED):** the caveat is a shared
+  PostGIS characteristic to encode in the app's retrieval pattern, not a reason to
+  reject the provider.
 
 ## Cleanup confirmation (pending — cluster still running)
 - [ ] spike objects dropped  [ ] cluster destroyed  [ ] storage/snapshots deleted

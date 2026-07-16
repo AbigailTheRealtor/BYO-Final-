@@ -1,0 +1,18 @@
+Tier 2 KNN ordering diagnosis — airport category, sphere(<->) vs spheroid(ST_Distance)
+Reference point: ST_MakePoint(-80.19, 25.76)::geography
+
+-- The two ids swapped between knn_ids and brute_ids in 50_knn_correctness.out --
+   id    | knn_op_lt_gt | st_distance_sphere | st_distance_spheroid_default 
+---------+--------------+--------------------+------------------------------
+ 4997005 |    98138.463 |          98138.463 |                    98039.060
+ 4998663 |    98362.171 |          98362.171 |                    98004.895
+(2 rows)
+
+-- Root cause: geography <-> == ST_Distance(...,use_spheroid=false) [sphere]; default ST_Distance is spheroid.
+
+-- Mitigation: over-fetch top-20 by <-> then re-rank by exact ST_Distance -> top-10, vs pure brute top-10 --
+ overfetch_rerank_matches_exact_spheroid 
+-----------------------------------------
+ t
+(1 row)
+

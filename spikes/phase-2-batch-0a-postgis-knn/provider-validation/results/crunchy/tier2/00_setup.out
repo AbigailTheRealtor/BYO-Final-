@@ -1,0 +1,13 @@
+psql:/home/runner/workspace/spikes/phase-2-batch-0a-postgis-knn/sql/00_setup.sql:13: NOTICE:  extension "postgis" already exists, skipping
+CREATE EXTENSION
+psql:/home/runner/workspace/spikes/phase-2-batch-0a-postgis-knn/sql/00_setup.sql:14: NOTICE:  extension "btree_gist" already exists, skipping
+CREATE EXTENSION
+psql:/home/runner/workspace/spikes/phase-2-batch-0a-postgis-knn/sql/00_setup.sql:15: NOTICE:  extension "pg_trgm" already exists, skipping
+CREATE EXTENSION
+DROP TABLE
+DROP TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+00_setup.sql complete: extensions ready, places_spike + places_spike_part created

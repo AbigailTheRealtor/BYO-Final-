@@ -1,0 +1,8 @@
+ setseed 
+---------
+ 
+(1 row)
+
+INSERT 0 5000200
+INSERT 0 5000200
+10_generate_data_tier2.sql complete: ~5,000,200-row scaled corpus loaded
