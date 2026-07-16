@@ -1,0 +1,15 @@
+# Provider-validation — local, per-operator secrets. NEVER commit these.
+# The wrapper reads the password ONLY from ~/.pgpass (psql handles it); nothing
+# here should ever contain a real credential.
+.env.local
+.env.*.local
+*.pgpass
+.pgpass
+pg_service.conf
+.pg_service.conf
+secrets/
+
+# Local scratch captures (real run evidence is committed deliberately, and is not
+# matched by these patterns).
+*.local.out
+*.scratch

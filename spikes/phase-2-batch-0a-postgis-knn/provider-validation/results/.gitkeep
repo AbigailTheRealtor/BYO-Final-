@@ -1,0 +1,3 @@
+# Results tree — per-run evidence lands here as results/<provider>/tier<N>/*.out
+# Created at Stage 0b run time (on a separate run branch), not in the scaffolding.
+# This .gitkeep only establishes the directory + convention.
