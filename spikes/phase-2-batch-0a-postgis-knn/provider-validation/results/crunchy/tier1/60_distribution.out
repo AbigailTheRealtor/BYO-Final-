@@ -1,0 +1,53 @@
+--- total rows ---
+ total_rows 
+------------
+     176560
+(1 row)
+
+--- rows per category (with sparse/dense class) ---
+ category_key |   n   | class  
+--------------+-------+--------
+ restaurant   | 80000 | dense
+ retail_store | 60000 | dense
+ school       | 20000 | dense
+ park         | 15000 | dense
+ urgent_care  |   900 | sparse
+ marina       |   300 | sparse
+ boat_ramp    |   220 | sparse
+ airport      |   140 | sparse
+(8 rows)
+
+--- rows per category x corpus_version ---
+ category_key | corpus_version |   n   
+--------------+----------------+-------
+ airport      | v1             |    24
+ airport      | v2             |   116
+ boat_ramp    | v1             |    51
+ boat_ramp    | v2             |   169
+ marina       | v1             |    57
+ marina       | v2             |   243
+ park         | v1             |  6039
+ park         | v2             |  8961
+ restaurant   | v1             | 31922
+ restaurant   | v2             | 48078
+ retail_store | v1             | 23942
+ retail_store | v2             | 36058
+ school       | v1             |  8175
+ school       | v2             | 11825
+ urgent_care  | v1             |   185
+ urgent_care  | v2             |   715
+(16 rows)
+
+--- partitioned table row counts per partition ---
+ partition | count  
+-----------+--------
+ v1        |  70395
+ v2        | 106165
+(2 rows)
+
+--- parity check: unpartitioned vs partitioned total ---
+ unpartitioned | partitioned | equal 
+---------------+-------------+-------
+        176560 |      176560 | t
+(1 row)
+

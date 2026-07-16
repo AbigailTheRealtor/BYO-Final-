@@ -1,0 +1,87 @@
+SET
+SET
+DROP INDEX
+DROP INDEX
+psql:/home/runner/workspace/spikes/phase-2-batch-0a-postgis-knn/sql/30_strategy_b_geography_only.sql:22: NOTICE:  index "places_geom_boat_ramp" does not exist, skipping
+DROP INDEX
+psql:/home/runner/workspace/spikes/phase-2-batch-0a-postgis-knn/sql/30_strategy_b_geography_only.sql:23: NOTICE:  index "places_geom_airport" does not exist, skipping
+DROP INDEX
+psql:/home/runner/workspace/spikes/phase-2-batch-0a-postgis-knn/sql/30_strategy_b_geography_only.sql:24: NOTICE:  index "places_geom_marina" does not exist, skipping
+DROP INDEX
+psql:/home/runner/workspace/spikes/phase-2-batch-0a-postgis-knn/sql/30_strategy_b_geography_only.sql:25: NOTICE:  index "places_geom_urgent_care" does not exist, skipping
+DROP INDEX
+psql:/home/runner/workspace/spikes/phase-2-batch-0a-postgis-knn/sql/30_strategy_b_geography_only.sql:26: NOTICE:  index "places_geom_only" does not exist, skipping
+DROP INDEX
+CREATE INDEX
+ANALYZE
+=== STRATEGY B / geography-only gist(geom), category as post-filter ===
+--- B: boat_ramp ---
+                                                                                               QUERY PLAN                                                                                               
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.28..467.47 rows=10 width=34) (actual time=8.800..18.050 rows=10 loops=1)
+   Output: id, category_key, (st_distance(geom, '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography, true)), ((geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography))
+   Buffers: shared hit=9113
+   ->  Index Scan using places_geom_only on public.places_spike  (cost=0.28..10465.18 rows=224 width=34) (actual time=8.799..18.048 rows=10 loops=1)
+         Output: id, category_key, st_distance(geom, '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography, true), (geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography)
+         Order By: (places_spike.geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography)
+         Filter: (places_spike.category_key = 'boat_ramp'::text)
+         Rows Removed by Filter: 8826
+         Buffers: shared hit=9113
+ Query Identifier: -6946244570569237131
+ Planning:
+   Buffers: shared hit=58
+ Planning Time: 0.304 ms
+ Execution Time: 18.143 ms
+(14 rows)
+
+--- B: airport ---
+                                                                                               QUERY PLAN                                                                                               
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.28..606.33 rows=10 width=34) (actual time=3.533..17.690 rows=10 loops=1)
+   Output: id, category_key, (st_distance(geom, '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography, true)), ((geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography))
+   Buffers: shared hit=14575
+   ->  Index Scan using places_geom_only on public.places_spike  (cost=0.28..9636.43 rows=159 width=34) (actual time=3.533..17.688 rows=10 loops=1)
+         Output: id, category_key, st_distance(geom, '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography, true), (geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography)
+         Order By: (places_spike.geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography)
+         Filter: (places_spike.category_key = 'airport'::text)
+         Rows Removed by Filter: 14347
+         Buffers: shared hit=14575
+ Query Identifier: -6946244570569237131
+ Planning Time: 0.247 ms
+ Execution Time: 17.774 ms
+(12 rows)
+
+--- B: marina ---
+                                                                                               QUERY PLAN                                                                                               
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.28..376.44 rows=10 width=34) (actual time=4.530..11.659 rows=10 loops=1)
+   Output: id, category_key, (st_distance(geom, '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography, true)), ((geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography))
+   Buffers: shared hit=9412
+   ->  Index Scan using places_geom_only on public.places_spike  (cost=0.28..11510.68 rows=306 width=34) (actual time=4.529..11.657 rows=10 loops=1)
+         Output: id, category_key, st_distance(geom, '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography, true), (geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography)
+         Order By: (places_spike.geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography)
+         Filter: (places_spike.category_key = 'marina'::text)
+         Rows Removed by Filter: 9243
+         Buffers: shared hit=9412
+ Query Identifier: -6946244570569237131
+ Planning Time: 0.182 ms
+ Execution Time: 11.732 ms
+(12 rows)
+
+--- B: urgent_care ---
+                                                                                               QUERY PLAN                                                                                               
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.28..210.67 rows=10 width=34) (actual time=0.306..2.074 rows=10 loops=1)
+   Output: id, category_key, (st_distance(geom, '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography, true)), ((geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography))
+   Buffers: shared hit=1343
+   ->  Index Scan using places_geom_only on public.places_spike  (cost=0.28..19313.68 rows=918 width=34) (actual time=0.305..2.072 rows=10 loops=1)
+         Output: id, category_key, st_distance(geom, '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography, true), (geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography)
+         Order By: (places_spike.geom <-> '0101000020E61000005C8FC2F5280C54C0C3F5285C8FC23940'::geography)
+         Filter: (places_spike.category_key = 'urgent_care'::text)
+         Rows Removed by Filter: 1280
+         Buffers: shared hit=1343
+ Query Identifier: -6946244570569237131
+ Planning Time: 0.178 ms
+ Execution Time: 2.144 ms
+(12 rows)
+
