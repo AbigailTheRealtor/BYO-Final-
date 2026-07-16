@@ -101,6 +101,16 @@ class UserSeeder extends Seeder
 
     public function run(): void
     {
+        // Safety gate: these are shared-credential dev/test accounts (password
+        // 12345678, including an admin@exp.com admin). They must never be
+        // provisioned in production, regardless of how the seeder is invoked.
+        if (app()->environment('production')) {
+            if ($this->command) {
+                $this->command->warn('UserSeeder skipped: dev/test accounts are not seeded in production.');
+            }
+            return;
+        }
+
         $now = Carbon::now()->toDateTimeString();
 
         foreach ($this->accounts as $acct) {
