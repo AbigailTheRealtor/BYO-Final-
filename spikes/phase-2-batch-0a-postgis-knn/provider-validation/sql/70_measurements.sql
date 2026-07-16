@@ -52,21 +52,33 @@ WHERE c.relname = 'places_spike'
 ORDER BY 1;
 
 \echo '--- composite-index bytes/row + 150 GB extrapolation ---'
+-- All arithmetic is explicit numeric; the 150 GB constant is numeric (150 * 2^30)
+-- so it cannot overflow int4, and pg_size_pretty() receives a bigint.
 WITH m AS (
     SELECT
-        (SELECT count(*)                          FROM places_spike) AS rows,
-        (SELECT pg_relation_size('places_cat_geom'))                 AS composite_idx_bytes,
-        (SELECT pg_relation_size('places_spike'))                    AS heap_bytes
+        (SELECT count(*)                     FROM places_spike)::numeric AS rows,
+        (SELECT pg_relation_size('places_cat_geom'))::numeric            AS composite_idx_bytes,
+        (SELECT pg_relation_size('places_spike'))::numeric               AS heap_bytes
+),
+d AS (
+    SELECT
+        rows,
+        composite_idx_bytes,
+        heap_bytes,
+        composite_idx_bytes / NULLIF(rows, 0) AS composite_bytes_per_row,
+        heap_bytes          / NULLIF(rows, 0) AS heap_bytes_per_row,
+        (150::numeric * 1073741824)           AS bytes_150gb   -- 150 GiB in bytes, numeric
+    FROM m
 )
 SELECT
-    rows,
-    composite_idx_bytes,
-    round(composite_idx_bytes::numeric / NULLIF(rows,0), 2)  AS composite_idx_bytes_per_row,
-    round(heap_bytes::numeric        / NULLIF(rows,0), 2)    AS heap_bytes_per_row,
-    floor( 150 * 2^30 / NULLIF(heap_bytes::numeric / NULLIF(rows,0), 0) )
+    rows::bigint                                             AS rows,
+    composite_idx_bytes::bigint                              AS composite_idx_bytes,
+    round(composite_bytes_per_row, 2)                        AS composite_idx_bytes_per_row,
+    round(heap_bytes_per_row, 2)                             AS heap_bytes_per_row,
+    floor(bytes_150gb / NULLIF(heap_bytes_per_row, 0))::bigint
                                                              AS projected_rows_at_150gb_heap,
     pg_size_pretty(
-        ( composite_idx_bytes::numeric / NULLIF(rows,0) )
-        * floor( 150 * 2^30 / NULLIF(heap_bytes::numeric / NULLIF(rows,0), 0) )
+        floor(composite_bytes_per_row
+              * floor(bytes_150gb / NULLIF(heap_bytes_per_row, 0)))::bigint
     )                                                        AS projected_composite_idx_at_150gb
-FROM m;
+FROM d;
