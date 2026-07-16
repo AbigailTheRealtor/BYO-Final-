@@ -43,6 +43,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Developer Auto-Login Switch
+    |--------------------------------------------------------------------------
+    |
+    | Enables the local-only /dev-login/{id} convenience route. Defaults to
+    | false so the route is never registered unless a developer explicitly
+    | opts in on their machine. The route additionally requires a
+    | non-production environment (see routes/web.php).
+    |
+    */
+
+    'dev_login_enabled' => (bool) env('DEV_LOGIN_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |

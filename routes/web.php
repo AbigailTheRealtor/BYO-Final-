@@ -1115,14 +1115,18 @@ Route::middleware('auth')->group(function () {
 require __DIR__ . '/auth.php';
 
 
-// TEMP DEV ONLY - auto-login by user ID for screenshot testing
-if (app()->environment('local', 'development')) {
+// LOCAL DEVELOPER AUTO-LOGIN — screenshot/QA convenience only.
+// Double-gated so it can NEVER be reachable in a real deployment, even if
+// APP_ENV is misconfigured to 'local' in production:
+//   1. must NOT be the production environment, AND
+//   2. must be explicitly opted in via DEV_LOGIN_ENABLED (config default: false).
+// To use locally: set DEV_LOGIN_ENABLED=true in your .env.
+if (! app()->environment('production') && config('app.dev_login_enabled')) {
     Route::get('/dev-login/{id}', function ($id) {
         Auth::loginUsingId($id);
         $to = request('to', '/dashboard');
         return redirect($to);
     })->name('dev.login');
-
 }
 
 // Public (no auth required) Offer Listing detail view routes
