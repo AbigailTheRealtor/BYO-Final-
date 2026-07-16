@@ -1,0 +1,7 @@
+airport      PASS
+boat_ramp    PASS
+marina       PASS
+urgent_care  PASS
+park         PASS
+
+[B1.2] PLAN-SHAPE GATE: PASS — composite-GiST KNN holds on mixed geography(Geometry).

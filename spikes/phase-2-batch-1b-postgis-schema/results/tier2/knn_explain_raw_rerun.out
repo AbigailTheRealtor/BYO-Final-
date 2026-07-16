@@ -1,0 +1,478 @@
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
+ [                                                                                                  +
+   {                                                                                                +
+     "Plan": {                                                                                      +
+       "Node Type": "Limit",                                                                        +
+       "Parallel Aware": false,                                                                     +
+       "Async Capable": false,                                                                      +
+       "Startup Cost": 0.41,                                                                        +
+       "Total Cost": 27.59,                                                                         +
+       "Plan Rows": 20,                                                                             +
+       "Plan Width": 35,                                                                            +
+       "Actual Startup Time": 6.016,                                                                +
+       "Actual Total Time": 6.168,                                                                  +
+       "Actual Rows": 20,                                                                           +
+       "Actual Loops": 1,                                                                           +
+       "Shared Hit Blocks": 225,                                                                    +
+       "Shared Read Blocks": 0,                                                                     +
+       "Shared Dirtied Blocks": 0,                                                                  +
+       "Shared Written Blocks": 0,                                                                  +
+       "Local Hit Blocks": 0,                                                                       +
+       "Local Read Blocks": 0,                                                                      +
+       "Local Dirtied Blocks": 0,                                                                   +
+       "Local Written Blocks": 0,                                                                   +
+       "Temp Read Blocks": 0,                                                                       +
+       "Temp Written Blocks": 0,                                                                    +
+       "I/O Read Time": 0.000,                                                                      +
+       "I/O Write Time": 0.000,                                                                     +
+       "Temp I/O Read Time": 0.000,                                                                 +
+       "Temp I/O Write Time": 0.000,                                                                +
+       "Plans": [                                                                                   +
+         {                                                                                          +
+           "Node Type": "Index Scan",                                                               +
+           "Parent Relationship": "Outer",                                                          +
+           "Parallel Aware": false,                                                                 +
+           "Async Capable": false,                                                                  +
+           "Scan Direction": "Forward",                                                             +
+           "Index Name": "places_fixture_tier2_category_key_geom_idx",                              +
+           "Relation Name": "places_fixture_tier2",                                                 +
+           "Alias": "p",                                                                            +
+           "Startup Cost": 0.41,                                                                    +
+           "Total Cost": 7928.38,                                                                   +
+           "Plan Rows": 5834,                                                                       +
+           "Plan Width": 35,                                                                        +
+           "Actual Startup Time": 6.015,                                                            +
+           "Actual Total Time": 6.165,                                                              +
+           "Actual Rows": 20,                                                                       +
+           "Actual Loops": 1,                                                                       +
+           "Index Cond": "(category_key = 'airport'::text)",                                        +
+           "Rows Removed by Index Recheck": 0,                                                      +
+           "Order By": "(geom <-> '0101000020E61000000000000000C057C00000000000004340'::geography)",+
+           "Filter": "(corpus_version = 'fixture-tier2-v1'::text)",                                 +
+           "Rows Removed by Filter": 0,                                                             +
+           "Shared Hit Blocks": 225,                                                                +
+           "Shared Read Blocks": 0,                                                                 +
+           "Shared Dirtied Blocks": 0,                                                              +
+           "Shared Written Blocks": 0,                                                              +
+           "Local Hit Blocks": 0,                                                                   +
+           "Local Read Blocks": 0,                                                                  +
+           "Local Dirtied Blocks": 0,                                                               +
+           "Local Written Blocks": 0,                                                               +
+           "Temp Read Blocks": 0,                                                                   +
+           "Temp Written Blocks": 0,                                                                +
+           "I/O Read Time": 0.000,                                                                  +
+           "I/O Write Time": 0.000,                                                                 +
+           "Temp I/O Read Time": 0.000,                                                             +
+           "Temp I/O Write Time": 0.000                                                             +
+         }                                                                                          +
+       ]                                                                                            +
+     },                                                                                             +
+     "Planning": {                                                                                  +
+       "Shared Hit Blocks": 292,                                                                    +
+       "Shared Read Blocks": 0,                                                                     +
+       "Shared Dirtied Blocks": 0,                                                                  +
+       "Shared Written Blocks": 0,                                                                  +
+       "Local Hit Blocks": 0,                                                                       +
+       "Local Read Blocks": 0,                                                                      +
+       "Local Dirtied Blocks": 0,                                                                   +
+       "Local Written Blocks": 0,                                                                   +
+       "Temp Read Blocks": 0,                                                                       +
+       "Temp Written Blocks": 0,                                                                    +
+       "I/O Read Time": 0.000,                                                                      +
+       "I/O Write Time": 0.000,                                                                     +
+       "Temp I/O Read Time": 0.000,                                                                 +
+       "Temp I/O Write Time": 0.000                                                                 +
+     },                                                                                             +
+     "Planning Time": 12.190,                                                                       +
+     "Triggers": [                                                                                  +
+     ],                                                                                             +
+     "Execution Time": 6.791                                                                        +
+   }                                                                                                +
+ ]
+(1 row)
+
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
+ [                                                                                                  +
+   {                                                                                                +
+     "Plan": {                                                                                      +
+       "Node Type": "Limit",                                                                        +
+       "Parallel Aware": false,                                                                     +
+       "Async Capable": false,                                                                      +
+       "Startup Cost": 0.41,                                                                        +
+       "Total Cost": 27.42,                                                                         +
+       "Plan Rows": 20,                                                                             +
+       "Plan Width": 35,                                                                            +
+       "Actual Startup Time": 0.128,                                                                +
+       "Actual Total Time": 0.230,                                                                  +
+       "Actual Rows": 20,                                                                           +
+       "Actual Loops": 1,                                                                           +
+       "Shared Hit Blocks": 33,                                                                     +
+       "Shared Read Blocks": 0,                                                                     +
+       "Shared Dirtied Blocks": 0,                                                                  +
+       "Shared Written Blocks": 0,                                                                  +
+       "Local Hit Blocks": 0,                                                                       +
+       "Local Read Blocks": 0,                                                                      +
+       "Local Dirtied Blocks": 0,                                                                   +
+       "Local Written Blocks": 0,                                                                   +
+       "Temp Read Blocks": 0,                                                                       +
+       "Temp Written Blocks": 0,                                                                    +
+       "I/O Read Time": 0.000,                                                                      +
+       "I/O Write Time": 0.000,                                                                     +
+       "Temp I/O Read Time": 0.000,                                                                 +
+       "Temp I/O Write Time": 0.000,                                                                +
+       "Plans": [                                                                                   +
+         {                                                                                          +
+           "Node Type": "Index Scan",                                                               +
+           "Parent Relationship": "Outer",                                                          +
+           "Parallel Aware": false,                                                                 +
+           "Async Capable": false,                                                                  +
+           "Scan Direction": "Forward",                                                             +
+           "Index Name": "places_fixture_tier2_category_key_geom_idx",                              +
+           "Relation Name": "places_fixture_tier2",                                                 +
+           "Alias": "p",                                                                            +
+           "Startup Cost": 0.41,                                                                    +
+           "Total Cost": 10576.58,                                                                  +
+           "Plan Rows": 7834,                                                                       +
+           "Plan Width": 35,                                                                        +
+           "Actual Startup Time": 0.127,                                                            +
+           "Actual Total Time": 0.228,                                                              +
+           "Actual Rows": 20,                                                                       +
+           "Actual Loops": 1,                                                                       +
+           "Index Cond": "(category_key = 'boat_ramp'::text)",                                      +
+           "Rows Removed by Index Recheck": 0,                                                      +
+           "Order By": "(geom <-> '0101000020E61000000000000000C057C00000000000004340'::geography)",+
+           "Filter": "(corpus_version = 'fixture-tier2-v1'::text)",                                 +
+           "Rows Removed by Filter": 0,                                                             +
+           "Shared Hit Blocks": 33,                                                                 +
+           "Shared Read Blocks": 0,                                                                 +
+           "Shared Dirtied Blocks": 0,                                                              +
+           "Shared Written Blocks": 0,                                                              +
+           "Local Hit Blocks": 0,                                                                   +
+           "Local Read Blocks": 0,                                                                  +
+           "Local Dirtied Blocks": 0,                                                               +
+           "Local Written Blocks": 0,                                                               +
+           "Temp Read Blocks": 0,                                                                   +
+           "Temp Written Blocks": 0,                                                                +
+           "I/O Read Time": 0.000,                                                                  +
+           "I/O Write Time": 0.000,                                                                 +
+           "Temp I/O Read Time": 0.000,                                                             +
+           "Temp I/O Write Time": 0.000                                                             +
+         }                                                                                          +
+       ]                                                                                            +
+     },                                                                                             +
+     "Planning": {                                                                                  +
+       "Shared Hit Blocks": 0,                                                                      +
+       "Shared Read Blocks": 0,                                                                     +
+       "Shared Dirtied Blocks": 0,                                                                  +
+       "Shared Written Blocks": 0,                                                                  +
+       "Local Hit Blocks": 0,                                                                       +
+       "Local Read Blocks": 0,                                                                      +
+       "Local Dirtied Blocks": 0,                                                                   +
+       "Local Written Blocks": 0,                                                                   +
+       "Temp Read Blocks": 0,                                                                       +
+       "Temp Written Blocks": 0,                                                                    +
+       "I/O Read Time": 0.000,                                                                      +
+       "I/O Write Time": 0.000,                                                                     +
+       "Temp I/O Read Time": 0.000,                                                                 +
+       "Temp I/O Write Time": 0.000                                                                 +
+     },                                                                                             +
+     "Planning Time": 0.706,                                                                        +
+     "Triggers": [                                                                                  +
+     ],                                                                                             +
+     "Execution Time": 0.799                                                                        +
+   }                                                                                                +
+ ]
+(1 row)
+
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
+ [                                                                                                  +
+   {                                                                                                +
+     "Plan": {                                                                                      +
+       "Node Type": "Limit",                                                                        +
+       "Parallel Aware": false,                                                                     +
+       "Async Capable": false,                                                                      +
+       "Startup Cost": 0.41,                                                                        +
+       "Total Cost": 27.56,                                                                         +
+       "Plan Rows": 20,                                                                             +
+       "Plan Width": 35,                                                                            +
+       "Actual Startup Time": 0.199,                                                                +
+       "Actual Total Time": 0.350,                                                                  +
+       "Actual Rows": 20,                                                                           +
+       "Actual Loops": 1,                                                                           +
+       "Shared Hit Blocks": 56,                                                                     +
+       "Shared Read Blocks": 0,                                                                     +
+       "Shared Dirtied Blocks": 0,                                                                  +
+       "Shared Written Blocks": 0,                                                                  +
+       "Local Hit Blocks": 0,                                                                       +
+       "Local Read Blocks": 0,                                                                      +
+       "Local Dirtied Blocks": 0,                                                                   +
+       "Local Written Blocks": 0,                                                                   +
+       "Temp Read Blocks": 0,                                                                       +
+       "Temp Written Blocks": 0,                                                                    +
+       "I/O Read Time": 0.000,                                                                      +
+       "I/O Write Time": 0.000,                                                                     +
+       "Temp I/O Read Time": 0.000,                                                                 +
+       "Temp I/O Write Time": 0.000,                                                                +
+       "Plans": [                                                                                   +
+         {                                                                                          +
+           "Node Type": "Index Scan",                                                               +
+           "Parent Relationship": "Outer",                                                          +
+           "Parallel Aware": false,                                                                 +
+           "Async Capable": false,                                                                  +
+           "Scan Direction": "Forward",                                                             +
+           "Index Name": "places_fixture_tier2_category_key_geom_idx",                              +
+           "Relation Name": "places_fixture_tier2",                                                 +
+           "Alias": "p",                                                                            +
+           "Startup Cost": 0.41,                                                                    +
+           "Total Cost": 8370.02,                                                                   +
+           "Plan Rows": 6167,                                                                       +
+           "Plan Width": 35,                                                                        +
+           "Actual Startup Time": 0.198,                                                            +
+           "Actual Total Time": 0.348,                                                              +
+           "Actual Rows": 20,                                                                       +
+           "Actual Loops": 1,                                                                       +
+           "Index Cond": "(category_key = 'marina'::text)",                                         +
+           "Rows Removed by Index Recheck": 0,                                                      +
+           "Order By": "(geom <-> '0101000020E61000000000000000C057C00000000000004340'::geography)",+
+           "Filter": "(corpus_version = 'fixture-tier2-v1'::text)",                                 +
+           "Rows Removed by Filter": 0,                                                             +
+           "Shared Hit Blocks": 56,                                                                 +
+           "Shared Read Blocks": 0,                                                                 +
+           "Shared Dirtied Blocks": 0,                                                              +
+           "Shared Written Blocks": 0,                                                              +
+           "Local Hit Blocks": 0,                                                                   +
+           "Local Read Blocks": 0,                                                                  +
+           "Local Dirtied Blocks": 0,                                                               +
+           "Local Written Blocks": 0,                                                               +
+           "Temp Read Blocks": 0,                                                                   +
+           "Temp Written Blocks": 0,                                                                +
+           "I/O Read Time": 0.000,                                                                  +
+           "I/O Write Time": 0.000,                                                                 +
+           "Temp I/O Read Time": 0.000,                                                             +
+           "Temp I/O Write Time": 0.000                                                             +
+         }                                                                                          +
+       ]                                                                                            +
+     },                                                                                             +
+     "Planning": {                                                                                  +
+       "Shared Hit Blocks": 0,                                                                      +
+       "Shared Read Blocks": 0,                                                                     +
+       "Shared Dirtied Blocks": 0,                                                                  +
+       "Shared Written Blocks": 0,                                                                  +
+       "Local Hit Blocks": 0,                                                                       +
+       "Local Read Blocks": 0,                                                                      +
+       "Local Dirtied Blocks": 0,                                                                   +
+       "Local Written Blocks": 0,                                                                   +
+       "Temp Read Blocks": 0,                                                                       +
+       "Temp Written Blocks": 0,                                                                    +
+       "I/O Read Time": 0.000,                                                                      +
+       "I/O Write Time": 0.000,                                                                     +
+       "Temp I/O Read Time": 0.000,                                                                 +
+       "Temp I/O Write Time": 0.000                                                                 +
+     },                                                                                             +
+     "Planning Time": 0.732,                                                                        +
+     "Triggers": [                                                                                  +
+     ],                                                                                             +
+     "Execution Time": 0.925                                                                        +
+   }                                                                                                +
+ ]
+(1 row)
+
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
+ [                                                                                                  +
+   {                                                                                                +
+     "Plan": {                                                                                      +
+       "Node Type": "Limit",                                                                        +
+       "Parallel Aware": false,                                                                     +
+       "Async Capable": false,                                                                      +
+       "Startup Cost": 0.41,                                                                        +
+       "Total Cost": 25.85,                                                                         +
+       "Plan Rows": 20,                                                                             +
+       "Plan Width": 35,                                                                            +
+       "Actual Startup Time": 0.202,                                                                +
+       "Actual Total Time": 0.269,                                                                  +
+       "Actual Rows": 20,                                                                           +
+       "Actual Loops": 1,                                                                           +
+       "Shared Hit Blocks": 32,                                                                     +
+       "Shared Read Blocks": 0,                                                                     +
+       "Shared Dirtied Blocks": 0,                                                                  +
+       "Shared Written Blocks": 0,                                                                  +
+       "Local Hit Blocks": 0,                                                                       +
+       "Local Read Blocks": 0,                                                                      +
+       "Local Dirtied Blocks": 0,                                                                   +
+       "Local Written Blocks": 0,                                                                   +
+       "Temp Read Blocks": 0,                                                                       +
+       "Temp Written Blocks": 0,                                                                    +
+       "I/O Read Time": 0.000,                                                                      +
+       "I/O Write Time": 0.000,                                                                     +
+       "Temp I/O Read Time": 0.000,                                                                 +
+       "Temp I/O Write Time": 0.000,                                                                +
+       "Plans": [                                                                                   +
+         {                                                                                          +
+           "Node Type": "Index Scan",                                                               +
+           "Parent Relationship": "Outer",                                                          +
+           "Parallel Aware": false,                                                                 +
+           "Async Capable": false,                                                                  +
+           "Scan Direction": "Forward",                                                             +
+           "Index Name": "places_fixture_tier2_category_key_geom_idx",                              +
+           "Relation Name": "places_fixture_tier2",                                                 +
+           "Alias": "p",                                                                            +
+           "Startup Cost": 0.41,                                                                    +
+           "Total Cost": 34547.29,                                                                  +
+           "Plan Rows": 27168,                                                                      +
+           "Plan Width": 35,                                                                        +
+           "Actual Startup Time": 0.201,                                                            +
+           "Actual Total Time": 0.267,                                                              +
+           "Actual Rows": 20,                                                                       +
+           "Actual Loops": 1,                                                                       +
+           "Index Cond": "(category_key = 'urgent_care'::text)",                                    +
+           "Rows Removed by Index Recheck": 0,                                                      +
+           "Order By": "(geom <-> '0101000020E61000000000000000C057C00000000000004340'::geography)",+
+           "Filter": "(corpus_version = 'fixture-tier2-v1'::text)",                                 +
+           "Rows Removed by Filter": 0,                                                             +
+           "Shared Hit Blocks": 32,                                                                 +
+           "Shared Read Blocks": 0,                                                                 +
+           "Shared Dirtied Blocks": 0,                                                              +
+           "Shared Written Blocks": 0,                                                              +
+           "Local Hit Blocks": 0,                                                                   +
+           "Local Read Blocks": 0,                                                                  +
+           "Local Dirtied Blocks": 0,                                                               +
+           "Local Written Blocks": 0,                                                               +
+           "Temp Read Blocks": 0,                                                                   +
+           "Temp Written Blocks": 0,                                                                +
+           "I/O Read Time": 0.000,                                                                  +
+           "I/O Write Time": 0.000,                                                                 +
+           "Temp I/O Read Time": 0.000,                                                             +
+           "Temp I/O Write Time": 0.000                                                             +
+         }                                                                                          +
+       ]                                                                                            +
+     },                                                                                             +
+     "Planning": {                                                                                  +
+       "Shared Hit Blocks": 0,                                                                      +
+       "Shared Read Blocks": 0,                                                                     +
+       "Shared Dirtied Blocks": 0,                                                                  +
+       "Shared Written Blocks": 0,                                                                  +
+       "Local Hit Blocks": 0,                                                                       +
+       "Local Read Blocks": 0,                                                                      +
+       "Local Dirtied Blocks": 0,                                                                   +
+       "Local Written Blocks": 0,                                                                   +
+       "Temp Read Blocks": 0,                                                                       +
+       "Temp Written Blocks": 0,                                                                    +
+       "I/O Read Time": 0.000,                                                                      +
+       "I/O Write Time": 0.000,                                                                     +
+       "Temp I/O Read Time": 0.000,                                                                 +
+       "Temp I/O Write Time": 0.000                                                                 +
+     },                                                                                             +
+     "Planning Time": 9.906,                                                                        +
+     "Triggers": [                                                                                  +
+     ],                                                                                             +
+     "Execution Time": 0.851                                                                        +
+   }                                                                                                +
+ ]
+(1 row)
+
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
+ [                                                                                                  +
+   {                                                                                                +
+     "Plan": {                                                                                      +
+       "Node Type": "Limit",                                                                        +
+       "Parallel Aware": false,                                                                     +
+       "Async Capable": false,                                                                      +
+       "Startup Cost": 0.41,                                                                        +
+       "Total Cost": 12.23,                                                                         +
+       "Plan Rows": 20,                                                                             +
+       "Plan Width": 35,                                                                            +
+       "Actual Startup Time": 0.751,                                                                +
+       "Actual Total Time": 0.992,                                                                  +
+       "Actual Rows": 20,                                                                           +
+       "Actual Loops": 1,                                                                           +
+       "Shared Hit Blocks": 65,                                                                     +
+       "Shared Read Blocks": 0,                                                                     +
+       "Shared Dirtied Blocks": 0,                                                                  +
+       "Shared Written Blocks": 0,                                                                  +
+       "Local Hit Blocks": 0,                                                                       +
+       "Local Read Blocks": 0,                                                                      +
+       "Local Dirtied Blocks": 0,                                                                   +
+       "Local Written Blocks": 0,                                                                   +
+       "Temp Read Blocks": 0,                                                                       +
+       "Temp Written Blocks": 0,                                                                    +
+       "I/O Read Time": 0.000,                                                                      +
+       "I/O Write Time": 0.000,                                                                     +
+       "Temp I/O Read Time": 0.000,                                                                 +
+       "Temp I/O Write Time": 0.000,                                                                +
+       "Plans": [                                                                                   +
+         {                                                                                          +
+           "Node Type": "Index Scan",                                                               +
+           "Parent Relationship": "Outer",                                                          +
+           "Parallel Aware": false,                                                                 +
+           "Async Capable": false,                                                                  +
+           "Scan Direction": "Forward",                                                             +
+           "Index Name": "places_fixture_tier2_category_key_geom_idx",                              +
+           "Relation Name": "places_fixture_tier2",                                                 +
+           "Alias": "p",                                                                            +
+           "Startup Cost": 0.41,                                                                    +
+           "Total Cost": 250802.00,                                                                 +
+           "Plan Rows": 424517,                                                                     +
+           "Plan Width": 35,                                                                        +
+           "Actual Startup Time": 0.751,                                                            +
+           "Actual Total Time": 0.989,                                                              +
+           "Actual Rows": 20,                                                                       +
+           "Actual Loops": 1,                                                                       +
+           "Index Cond": "(category_key = 'park'::text)",                                           +
+           "Rows Removed by Index Recheck": 0,                                                      +
+           "Order By": "(geom <-> '0101000020E61000000000000000C057C00000000000004340'::geography)",+
+           "Filter": "(corpus_version = 'fixture-tier2-v1'::text)",                                 +
+           "Rows Removed by Filter": 0,                                                             +
+           "Shared Hit Blocks": 65,                                                                 +
+           "Shared Read Blocks": 0,                                                                 +
+           "Shared Dirtied Blocks": 0,                                                              +
+           "Shared Written Blocks": 0,                                                              +
+           "Local Hit Blocks": 0,                                                                   +
+           "Local Read Blocks": 0,                                                                  +
+           "Local Dirtied Blocks": 0,                                                               +
+           "Local Written Blocks": 0,                                                               +
+           "Temp Read Blocks": 0,                                                                   +
+           "Temp Written Blocks": 0,                                                                +
+           "I/O Read Time": 0.000,                                                                  +
+           "I/O Write Time": 0.000,                                                                 +
+           "Temp I/O Read Time": 0.000,                                                             +
+           "Temp I/O Write Time": 0.000                                                             +
+         }                                                                                          +
+       ]                                                                                            +
+     },                                                                                             +
+     "Planning": {                                                                                  +
+       "Shared Hit Blocks": 0,                                                                      +
+       "Shared Read Blocks": 0,                                                                     +
+       "Shared Dirtied Blocks": 0,                                                                  +
+       "Shared Written Blocks": 0,                                                                  +
+       "Local Hit Blocks": 0,                                                                       +
+       "Local Read Blocks": 0,                                                                      +
+       "Local Dirtied Blocks": 0,                                                                   +
+       "Local Written Blocks": 0,                                                                   +
+       "Temp Read Blocks": 0,                                                                       +
+       "Temp Written Blocks": 0,                                                                    +
+       "I/O Read Time": 0.000,                                                                      +
+       "I/O Write Time": 0.000,                                                                     +
+       "Temp I/O Read Time": 0.000,                                                                 +
+       "Temp I/O Write Time": 0.000                                                                 +
+     },                                                                                             +
+     "Planning Time": 0.207,                                                                        +
+     "Triggers": [                                                                                  +
+     ],                                                                                             +
+     "Execution Time": 1.053                                                                        +
+   }                                                                                                +
+ ]
+(1 row)
+
+ category_key | same_set | exact_order_after_rerank 
+--------------+----------+--------------------------
+ airport      | t        | t
+ boat_ramp    | t        | t
+ marina       | t        | t
+ urgent_care  | t        | t
+(4 rows)
+

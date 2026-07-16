@@ -83,6 +83,38 @@ return [
             'sslmode' => 'disable',
         ],
 
+        // ─────────────────────────────────────────────────────────────────────
+        // Spatial Intelligence Platform — Phase 2 Batch 1b (B1.2).
+        // Dedicated managed-PostGIS connection (Crunchy Bridge, SIA-D38).
+        //
+        // Deliberately isolated from the app database:
+        //   • Reads ONLY dedicated SPATIAL_* env vars — NO fallback to DB_HOST /
+        //     DB_DATABASE / DATABASE_URL. It therefore cannot accidentally resolve
+        //     to the application database, and its absence is detectable (all null).
+        //   • Never the default connection. The B1.2 migrations live in
+        //     database/migrations/spatial/ and run ONLY via:
+        //       php artisan migrate --path=database/migrations/spatial --database=pgsql_spatial
+        //   • sslmode defaults to 'require' (Crunchy Bridge mandates TLS).
+        //
+        // No production cluster is provisioned yet (SIA-D38 deferral); with the
+        // SPATIAL_* vars unset this connection is inert and the spatial migrations
+        // fail closed. See docs/spatial/B1.2-postgis-schema-migrations.md.
+        // ─────────────────────────────────────────────────────────────────────
+        'pgsql_spatial' => [
+            'driver' => 'pgsql',
+            'url' => env('SPATIAL_DATABASE_URL'),
+            'host' => env('SPATIAL_PGHOST'),
+            'port' => env('SPATIAL_PGPORT', '5432'),
+            'database' => env('SPATIAL_PGDATABASE'),
+            'username' => env('SPATIAL_PGUSER'),
+            'password' => env('SPATIAL_PGPASSWORD'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'schema' => 'public',
+            'sslmode' => env('SPATIAL_PGSSLMODE', 'require'),
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

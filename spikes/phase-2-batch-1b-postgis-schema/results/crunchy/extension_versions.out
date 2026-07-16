@@ -1,0 +1,38 @@
+B1.2 — Step 1 pinned-version evidence
+STATUS: **FAILED — HARD STOP (privilege)**. Extensions were NOT created; versions NOT verified.
+Cluster: PostgreSQL 16.14 (Crunchy Bridge), direct endpoint :5432, SSL=on.
+
+--- migrate --pretend (Step 1.2) ---
+Pretend-mode artifact (expected): migration 01 does CREATE EXTENSION then reads pg_extension
+back to assert the version; --pretend suppresses the CREATE statement() but not the readback
+select(), so postgis reads [absent]. NOT a real mismatch. (The empty `migrations` repository
+table was created as a side effect.)
+
+--- migrate --force (Step 1.3) — AUTHORITATIVE GATE ---
+Migrating: 2026_07_16_000001_spatial_core_enable_extensions
+SQLSTATE[42501]: Insufficient privilege: 7 ERROR: permission denied to create extension "postgis"
+HINT: Must be superuser to create this extension. (SQL: CREATE EXTENSION IF NOT EXISTS postgis)
+Migration 01 threw before any table DDL; transaction rolled back; migration NOT recorded.
+
+--- Read-only cluster state at stop ---
+role=application | superuser=false | createdb=false | createrole=false
+installed spatial extensions: (none installed)
+pg_available_extensions (installable): postgis -> 3.6.3, btree_gist -> 1.7, pg_trgm -> 1.6
+migrations table: present, rows=0
+spatial tables: (none)
+
+--- Diagnosis ---
+The cluster is the correct image: the catalog offers EXACTLY the SIA-D39/E-49 pins
+(postgis 3.6.3, btree_gist 1.7, pg_trgm 1.6). The ONLY blocker is that the connecting role
+SPATIAL_PGUSER=`application` lacks privilege to CREATE EXTENSION. No migration, architecture,
+or version problem. Awaiting operator decision on credentials/privilege before re-running Step 1.
+
+=== ADDENDUM — Option 2 admin-prep attempt (post-"repoint") ===
+STATUS: **FAILED — repoint did NOT take effect in this session.**
+- current_user='application' (connected_role_is_application=true)
+- $SPATIAL_PGUSER still == 'application'  (env value unchanged in this process)
+- role attrs: super=false createrole=false createdb=false; member of: crunchy_write
+- CREATE EXTENSION IF NOT EXISTS postgis  ->  ERROR 42501 permission denied (Must be superuser)
+- extensions still: (none installed); pinned versions still installable from catalog (3.6.3 / 1.7 / 1.6)
+Conclusion: SPATIAL_PGUSER/SPATIAL_PGPASSWORD must actually be updated in the running session's
+environment (not just a restart) before admin-prep or Step 1 can proceed. No workaround attempted.

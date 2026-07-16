@@ -1,0 +1,26 @@
+B1.2 Step 3 — plan-shape / set-exactness gate FAILED. Diagnosis captured e05f3d4d3.
+
+### Finding 1 — FIXTURE DATA DEFECT (root cause of Part B set-exactness FALSE)
+random() in generate_tier2_fixture.sql is evaluated ONCE per category, not per row.
+distinct_locations per category (expected ~= row count; actual = 1):
+ category_key |  rows   | distinct_locations 
+--------------+---------+--------------------
+ restaurant   | 2265000 |                  1
+ retail_store | 1700000 |                  1
+ school       |  566000 |                  1
+ park         |  425000 |                  1
+ urgent_care  |   25500 |                  1
+ marina       |    8500 |                  1
+ boat_ramp    |    6200 |                  1
+ airport      |    4000 |                  1
+(8 rows)
+
+=> 8 distinct points total. Massive distance ties => same_set/exact_order FALSE (arbitrary tie-break).
+
+### Finding 2 — HARNESS ASSERTION DEFECT (root cause of Part A plan-shape FAIL)
+ExplainPlanShape::COMPOSITE_INDEX = 'places_cat_geom' (parent partitioned-index name).
+A single-partition scan of 'places' uses the PARTITION-LOCAL child index:
+  Index Scan using places_fixture_tier2_category_key_geom_idx  (Index Cond: category_key='airport', Order By: geom <-> ref, 0 recheck, 0 filter-removed, no Sort, no Seq Scan)
+The parent name never appears as a scan node => the exact-name match can never pass for partitioned places.
+
+### Not implicated: migrations / schema / index architecture are correct and in use.

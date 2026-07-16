@@ -1,0 +1,17 @@
+ category_key |  rows   | distinct_locations 
+--------------+---------+--------------------
+ restaurant   | 2265000 |            2265000
+ retail_store | 1700000 |            1700000
+ school       |  566000 |             566000
+ park         |  425000 |             425000
+ urgent_care  |   25500 |              25500
+ marina       |    8500 |               8500
+ boat_ramp    |    6200 |               6200
+ airport      |    4000 |               4000
+(8 rows)
+
+ total_rows 
+------------
+    5000200
+(1 row)
+
