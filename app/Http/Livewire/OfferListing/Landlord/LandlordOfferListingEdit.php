@@ -1107,31 +1107,20 @@ class LandlordOfferListingEdit extends Component
         $this->calculateTotals();
     }
 
+    use \App\Http\Livewire\Concerns\CalculatesServiceFeeTotals;
+
     public function calculateTotals()
     {
-        // Calculate custom services totals
-        $this->total_flat_fee = collect($this->custom_services)
-            ->sum(function ($service) {
-                return isset($service['fee']) ? (float) $service['fee'] : 0;
-            });
+        // B1.3 Money Precision: normalise commas/currency symbols and accumulate
+        // in integer cents to eliminate float drift. See CalculatesServiceFeeTotals.
+        $totals = $this->calculateServiceFeeTotals(
+            (array) $this->custom_services,
+            (array) $this->fees,
+            (array) $this->enable
+        );
 
-        $this->total_marketing_fee = collect($this->custom_services)
-            ->sum(function ($service) {
-                return isset($service['marketing_fee']) ? (float) $service['marketing_fee'] : 0;
-            });
-
-        // Calculate fees from the fee structure
-        $enabledFeeTotal = 0;
-
-        foreach ($this->fees as $feeKey => $feeValue) {
-            // Check if this fee is enabled (exists in $enable array and is true)
-            if (isset($this->enable[$feeKey]) && $this->enable[$feeKey] && $feeValue !== null) {
-                $enabledFeeTotal += (float) $feeValue;
-            }
-        }
-
-        // Add the enabled fees to the total flat fee
-        $this->total_flat_fee += $enabledFeeTotal;
+        $this->total_flat_fee = $totals['total_flat_fee'];
+        $this->total_marketing_fee = $totals['total_marketing_fee'];
     }
 
     public function updatedCustomServices()
