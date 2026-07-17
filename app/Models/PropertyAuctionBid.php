@@ -13,6 +13,12 @@ class PropertyAuctionBid extends Model
     protected $fillable = ['price', 'accepted', 'accepted_date'];
     protected $with = ['meta'];
 
+    // B1.3 Money Precision: native money columns cast to fixed-scale decimals.
+    protected $casts = [
+        'price' => 'decimal:2',
+        'escrow_amount' => 'decimal:2',
+    ];
+
     /**
      * Get the user that owns the PropertyAuctionBid
      *

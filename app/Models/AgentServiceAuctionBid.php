@@ -12,6 +12,11 @@ class AgentServiceAuctionBid extends Model
     protected $appends = ["get"];
     protected $with = ['meta'];
 
+    // B1.3 Money Precision: native money column cast to fixed-scale decimal.
+    protected $casts = [
+        'price' => 'decimal:2',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

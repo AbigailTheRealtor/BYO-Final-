@@ -545,6 +545,30 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Console/Kernel.php',
             'app/Console/Commands/ExpireOffersCommand.php',
             'app/Services/Offers/Concerns/EnforcesRequestTimeExpiry.php',
+            // Phase 1 — Batch B1.3 (Money Precision):
+            //   Part 1 — convert the actively-written native float/double money
+            //     columns on the bid/service auction tables to DECIMAL(15,2)
+            //     (percentages to DECIMAL(5,2)) and add matching model `decimal:2`
+            //     casts, so stored money is exact to the cent. One migration + the
+            //     six affected bid/auction models.
+            //   Part 2 — precision-safe Landlord/Tenant service-fee totals: the
+            //     shared CalculatesServiceFeeTotals concern (comma/symbol
+            //     normalisation + integer-cent accumulation, eliminating the
+            //     truncation + float-drift defects) wired into the eight live
+            //     Landlord/Tenant calculateTotals() sites. The six OfferListing/
+            //     TenantAgentAuction Landlord/Tenant components are already
+            //     allow-listed above; the two Hire-Landlord components and the new
+            //     concern are added here.
+            'database/migrations/2026_07_17_000001_convert_active_money_columns_to_decimal.php',
+            'app/Models/PropertyAuctionBid.php',
+            'app/Models/SellerAgentAuctionBid.php',
+            'app/Models/BuyerAgentAuctionBid.php',
+            'app/Models/AgentServiceAuctionBid.php',
+            'app/Models/SellerServiceAuction.php',
+            'app/Models/SellerServiceAuctionBid.php',
+            'app/Http/Livewire/Concerns/CalculatesServiceFeeTotals.php',
+            'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuction.php',
+            'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuctionEdit.php',
         ];
 
         $unexpected = array_values(array_filter(

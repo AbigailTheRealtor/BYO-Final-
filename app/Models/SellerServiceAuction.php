@@ -13,6 +13,11 @@ class SellerServiceAuction extends Model
         'is_approved' => true,
     ];
 
+    // B1.3 Money Precision: native money column cast to fixed-scale decimal.
+    protected $casts = [
+        'price' => 'decimal:2',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

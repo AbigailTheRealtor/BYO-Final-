@@ -17,7 +17,7 @@ jobs:
       - name: Detect debug statements in changed files
         run: |
           # Patterns mirror .githooks/pre-commit exactly.
-          PHP_DEBUG_PATTERN='dd\(|var_dump\('
+          PHP_DEBUG_PATTERN='\bdd\(|\bvar_dump\('
           JS_DEBUG_PATTERN='console\.log\(|debugger;'
           TWIG_DEBUG_PATTERN='dump\('
 

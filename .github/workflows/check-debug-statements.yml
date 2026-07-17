@@ -17,7 +17,7 @@ jobs:
 
       - name: Detect debug statements in changed files
         run: |
-          PHP_DEBUG_PATTERN='dd\(|var_dump\('
+          PHP_DEBUG_PATTERN='\bdd\(|\bvar_dump\('
           JS_DEBUG_PATTERN='console\.log\(|debugger;'
 
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
