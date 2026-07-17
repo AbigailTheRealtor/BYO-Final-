@@ -38,6 +38,21 @@ class OvertureExtractSqlManifestTest extends TestCase
     }
 
     /** @test */
+    public function the_extract_sql_reads_native_geometry_not_wkb(): void
+    {
+        // Drift guard (Batch 2B): with `LOAD spatial`, read_parquet returns the
+        // GeoParquet geometry as native GEOMETRY, so coordinates must be read via
+        // ST_X(geometry)/ST_Y(geometry). ST_GeomFromWKB(GEOMETRY) is a type error
+        // and must never come back. Proven by the live Pinellas smoke run.
+        $sql = $this->read('sql/extract_places.sql');
+        $this->assertStringContainsString('LOAD spatial', $sql, 'spatial must stay loaded');
+        $this->assertStringContainsString('ST_X(geometry)', $sql, 'lon must read native geometry');
+        $this->assertStringContainsString('ST_Y(geometry)', $sql, 'lat must read native geometry');
+        $this->assertStringNotContainsStringIgnoringCase('ST_GeomFromWKB', $sql,
+            'ST_GeomFromWKB is incompatible with native GEOMETRY under LOAD spatial');
+    }
+
+    /** @test */
     public function every_q2_count_sql_filters_the_first_slice_and_is_count_only(): void
     {
         foreach (['count_pinellas.sql', 'count_florida.sql', 'count_conus.sql'] as $file) {

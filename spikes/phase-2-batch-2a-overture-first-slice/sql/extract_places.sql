@@ -51,8 +51,12 @@ COPY (
         names.primary                        AS name,
         brand.names.primary                  AS brand,
         length(sources)                      AS source_count,
-        ST_X(ST_GeomFromWKB(geometry))       AS lon,
-        ST_Y(ST_GeomFromWKB(geometry))       AS lat
+        -- With `LOAD spatial` active, read_parquet auto-decodes the GeoParquet
+        -- geometry column to native GEOMETRY (not a WKB blob), so ST_X/ST_Y read
+        -- it directly — wrapping it in a WKB-blob decoder would be a type error.
+        -- Verified by the live Pinellas smoke run (Batch 2B): 1,675 rows, valid lon/lat.
+        ST_X(geometry)                       AS lon,
+        ST_Y(geometry)                       AS lat
     FROM read_parquet(
         's3://overturemaps-us-west-2/release/' || getvariable('release')
         || '/theme=places/type=place/*.parquet',

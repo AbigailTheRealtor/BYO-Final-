@@ -114,9 +114,12 @@ dropped (<0.90) = **317,769 (39.88%)**. The 0.90 floor removes ~2 in 5 candidate
    `ST_X(geometry)` / `ST_Y(geometry)`. This affects the smoke-extract ONLY — the
    Q2 count/histogram SQL never touches geometry (bbox struct), so they ran
    unchanged. See `sql/smoke_extract_pinellas.sql` for the adapted recipe.
-   **Recommended follow-up (not done here):** apply the same one-line change to the
-   committed `extract_places.sql`, or drop `LOAD spatial` from it and keep
-   `ST_GeomFromWKB` — either is valid; deferred to the owner.
+   **FIXED (Batch 2B, second commit):** the committed 2A `extract_places.sql` now
+   reads `ST_X(geometry)`/`ST_Y(geometry)` directly (spatial kept loaded). Re-run
+   from the corrected committed SQL: 1,675 Pinellas rows, deterministic (identical
+   sorted-content hash across two runs), 0 invalid lat/lon. A drift guard
+   (`OvertureExtractSqlManifestTest::the_extract_sql_reads_native_geometry_not_wkb`)
+   now fails if `ST_GeomFromWKB` ever returns. Q2 counts re-confirmed unchanged.
 
 3. Sizing proxies (450 / 94 B per row) are unchanged planning constants — live Q2
    replaced only the row counts, via `App\Services\Spatial\CorpusSizingProjector`.
