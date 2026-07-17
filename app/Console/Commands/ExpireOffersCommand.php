@@ -6,6 +6,7 @@ use App\Models\Offer;
 use App\Notifications\Offers\OfferExpiredNotification;
 use App\Services\Offers\OfferWorkflowFacade;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class ExpireOffersCommand extends Command
 {
@@ -22,11 +23,37 @@ class ExpireOffersCommand extends Command
         $count = 0;
 
         foreach ($offers as $offer) {
-            $result = $facade->expire($offer, null, 'system', ['source' => 'scheduled_command'], null);
+            // Each expiry is its own atomic, row-locked unit (BLK-06): the offer is
+            // re-read under lockForUpdate and re-validated against committed state
+            // before the transition, so a concurrent accept/withdraw already in
+            // flight is respected. Notifications are dispatched only after commit,
+            // never while the row lock is held.
+            $expired = DB::transaction(function () use ($facade, $offer) {
+                $locked = Offer::query()->whereKey($offer->getKey())->lockForUpdate()->first();
 
-            if ($result['allowed'] === true) {
+                if ($locked === null) {
+                    return null;
+                }
+
+                // Re-check eligibility after acquiring the lock — the offer may have
+                // been accepted, rejected, withdrawn, or had its deadline extended
+                // between the initial query and this lock.
+                if (! in_array($locked->status, ['submitted', 'countered'], true)) {
+                    return null;
+                }
+
+                if ($locked->expires_at === null || now()->lessThan($locked->expires_at)) {
+                    return null;
+                }
+
+                $result = $facade->expire($locked, null, 'system', ['source' => 'scheduled_command'], null);
+
+                return ($result['allowed'] ?? false) === true ? $locked : null;
+            });
+
+            if ($expired !== null) {
                 $count++;
-                $offer->user->notify(new OfferExpiredNotification($offer));
+                $expired->user->notify(new OfferExpiredNotification($expired));
             }
         }
 

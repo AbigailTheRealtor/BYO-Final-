@@ -533,6 +533,18 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/broker-compensation.blade.php',
             'app/Support/CompensationFormatter.php',
             'app/Services/LandlordAcceptedBidSummaryService.php',
+            // Phase 1 — Batch B1.2 (Offer Safety):
+            //   BLK-04 — production scheduler: withoutOverlapping() guard on the
+            //     offers:expire-pending schedule (Kernel) + per-offer atomic, locked,
+            //     re-checked expiry sweep in the command. (deploy/scheduler.sh +
+            //     deploy/SCHEDULER.md live outside the checked production dirs.)
+            //   BLK-05/BLK-06 — atomic, row-locked offer transitions with request-time
+            //     expiry and competing-offer close. OfferController.php,
+            //     OfferDecisionService.php and OfferCounterService.php are already
+            //     allow-listed above; the new files are added here.
+            'app/Console/Kernel.php',
+            'app/Console/Commands/ExpireOffersCommand.php',
+            'app/Services/Offers/Concerns/EnforcesRequestTimeExpiry.php',
         ];
 
         $unexpected = array_values(array_filter(

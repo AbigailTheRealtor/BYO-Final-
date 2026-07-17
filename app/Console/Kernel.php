@@ -36,7 +36,14 @@ class Kernel extends ConsoleKernel
         // $schedule->command('seller:autocounter')->everyMinute();
         // $schedule->command('buyer:autocounter')->everyMinute();
 
-        $schedule->command('offers:expire-pending')->everyMinute();
+        // BLK-04: run every minute, but never let two runs overlap. withoutOverlapping()
+        // takes an atomic cache lock so a slow run (or an accidentally duplicated
+        // scheduler process) cannot double-process the same offers. The 5-minute TTL
+        // auto-releases the lock if a run is killed mid-flight. Request-time expiry
+        // (BLK-06) remains the safety net whenever this scheduler is delayed or down.
+        $schedule->command('offers:expire-pending')
+            ->everyMinute()
+            ->withoutOverlapping(5);
     }
 
     /**
