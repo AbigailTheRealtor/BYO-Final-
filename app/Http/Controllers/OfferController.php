@@ -242,6 +242,19 @@ class OfferController extends Controller
             Log::error('OfferAcceptedNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
         }
 
+        // BLK-05: notify the owners of every competing offer that was auto-closed
+        // by this acceptance. Dispatched only after the accept transaction has
+        // committed, and only for offers the service actually closed — competitors
+        // never receive an acceptance notification, only a rejection one.
+        foreach (($result['closed_competing_offers'] ?? []) as $closedOffer) {
+            try {
+                $closedOffer->loadMissing('user');
+                $closedOffer->user?->notify(new OfferRejectedNotification($closedOffer));
+            } catch (\Throwable $e) {
+                Log::error('Competing OfferRejectedNotification failed', ['offer_id' => $closedOffer->id, 'error' => $e->getMessage()]);
+            }
+        }
+
         if (!$request->expectsJson()) {
             return redirect()->route('offers.show', $offer)
                 ->with('success', 'Offer accepted successfully.');

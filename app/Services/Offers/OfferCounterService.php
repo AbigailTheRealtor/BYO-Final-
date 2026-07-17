@@ -3,14 +3,30 @@
 namespace App\Services\Offers;
 
 use App\Models\Offer;
+use App\Models\OfferAuction;
 use App\Models\OfferEventLog;
+use App\Services\Offers\Concerns\EnforcesRequestTimeExpiry;
+use Illuminate\Support\Facades\DB;
 
 class OfferCounterService
 {
+    use EnforcesRequestTimeExpiry;
+
+    private OfferStateMachineService $stateMachine;
+    private OfferEventLogService $eventLogger;
+    private OfferExpirationService $expirationService;
+
     public function __construct(
-        private readonly OfferStateMachineService $stateMachine,
-        private readonly OfferEventLogService $eventLogger,
-    ) {}
+        OfferStateMachineService $stateMachine,
+        OfferEventLogService $eventLogger,
+        ?OfferExpirationService $expirationService = null,
+    ) {
+        $this->stateMachine = $stateMachine;
+        $this->eventLogger  = $eventLogger;
+        // Defaulted so existing positional two-arg construction (unit tests) keeps
+        // working; the container injects the real singleton in production.
+        $this->expirationService = $expirationService ?? new OfferExpirationService($stateMachine, $eventLogger);
+    }
 
     /**
      * Transition the parent offer to 'countered', create a child offer, and log the event.
@@ -48,11 +64,53 @@ class OfferCounterService
         array $metadata = [],
         ?string $ipAddress = null,
     ): array {
-        $fromStatus = $parent->status;
+        return DB::transaction(function () use ($parent, $actorId, $actorRole, $overrides, $metadata, $ipAddress) {
+            // Lock the parent auction, then the parent offer row, and re-read the
+            // authoritative status/expiry under lock before deciding (BLK-06).
+            if ($parent->offer_auction_id !== null) {
+                OfferAuction::query()->whereKey($parent->offer_auction_id)->lockForUpdate()->first();
+            }
 
-        $validation = $this->stateMachine->validateTransition($fromStatus, 'countered');
+            $locked = Offer::query()->whereKey($parent->getKey())->lockForUpdate()->first();
+            if ($locked !== null) {
+                $parent->setRawAttributes($locked->getAttributes(), true);
+            }
 
-        if (! $validation['allowed']) {
+            $fromStatus = $parent->status;
+
+            // Request-time expiry: an expired parent can no longer be countered.
+            if ($this->shouldExpireAtRequestTime($parent, $this->stateMachine)) {
+                $this->expirationService->expire(
+                    $parent,
+                    $actorId,
+                    'system',
+                    array_merge($metadata, ['source' => 'request_time_expiry', 'blocked_action' => 'offer_countered']),
+                    $ipAddress,
+                );
+
+                return [
+                    'allowed'       => false,
+                    'parent_offer'  => $parent,
+                    'counter_offer' => null,
+                    'from_status'   => $fromStatus,
+                    'to_status'     => 'countered',
+                    'reason'        => 'This offer has expired and can no longer be countered.',
+                    'event_log'     => $this->eventLogger->log(
+                        offer: $parent,
+                        actorId: $actorId,
+                        actorRole: $actorRole,
+                        eventType: 'forbidden_transition_attempt',
+                        fromStatus: $fromStatus,
+                        toStatus: 'countered',
+                        metadata: array_merge($metadata, ['blocked_reason' => 'expired']),
+                        ipAddress: $ipAddress,
+                    ),
+                ];
+            }
+
+            $validation = $this->stateMachine->validateTransition($fromStatus, 'countered');
+
+            if (! $validation['allowed']) {
             $log = $this->eventLogger->log(
                 offer: $parent,
                 actorId: $actorId,
@@ -105,14 +163,15 @@ class OfferCounterService
             ipAddress: $ipAddress,
         );
 
-        return [
-            'allowed'       => true,
-            'parent_offer'  => $parent,
-            'counter_offer' => $child,
-            'from_status'   => $fromStatus,
-            'to_status'     => 'countered',
-            'reason'        => '',
-            'event_log'     => $log,
-        ];
+            return [
+                'allowed'       => true,
+                'parent_offer'  => $parent,
+                'counter_offer' => $child,
+                'from_status'   => $fromStatus,
+                'to_status'     => 'countered',
+                'reason'        => '',
+                'event_log'     => $log,
+            ];
+        });
     }
 }

@@ -3,8 +3,10 @@
 namespace Tests\Feature\Offers;
 
 use App\Models\Offer;
+use App\Notifications\Offers\OfferExpiredNotification;
 use App\Services\Offers\OfferWorkflowFacade;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Notification;
 use Mockery;
 use Tests\TestCase;
 
@@ -174,5 +176,45 @@ class ExpireOffersCommandTest extends TestCase
         $this->assertSame('system', $capturedArgs['actorRole']);
         $this->assertSame(['source' => 'scheduled_command'], $capturedArgs['metadata']);
         $this->assertNull($capturedArgs['ipAddress']);
+    }
+
+    // ── Test 9 (L3): a throwing offer does not stop remaining eligible offers ─
+
+    public function test_one_throwing_offer_does_not_stop_remaining_eligible_offers(): void
+    {
+        Notification::fake();
+
+        Offer::factory()->submitted()->create(['expires_at' => now()->subHour()]);
+        Offer::factory()->submitted()->create(['expires_at' => now()->subHour()]);
+
+        $callCount = 0;
+
+        $mock = Mockery::mock(OfferWorkflowFacade::class);
+        $mock->shouldReceive('expire')
+            ->twice()
+            ->andReturnUsing(function () use (&$callCount) {
+                $callCount++;
+                if ($callCount === 1) {
+                    // The first offer blows up mid-expiry (e.g. a downstream error).
+                    throw new \RuntimeException('simulated expiry failure');
+                }
+                return [
+                    'allowed'     => true,
+                    'from_status' => 'submitted',
+                    'to_status'   => 'expired',
+                    'reason'      => '',
+                    'event_log'   => null,
+                ];
+            });
+        $this->app->instance(OfferWorkflowFacade::class, $mock);
+
+        // The command survives the first failure, processes the second, and exits 0.
+        $this->artisan('offers:expire-pending')
+            ->expectsOutput('Expired 1 offer(s).')
+            ->assertExitCode(0);
+
+        $this->assertSame(2, $callCount, 'Both offers must be attempted despite the first throwing.');
+        // Only the committed (second) offer notifies; the failed one does not.
+        Notification::assertSentTimes(OfferExpiredNotification::class, 1);
     }
 }
