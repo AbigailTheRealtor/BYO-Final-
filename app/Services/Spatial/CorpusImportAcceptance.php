@@ -15,6 +15,9 @@ namespace App\Services\Spatial;
  *   • non_empty            — the corpus staged at least one row
  *   • source_uniform       — every row carries the expected source tag
  *   • identity_present     — source_ref present (half of the natural key)
+ *   • identity_unique      — no duplicate (source, source_ref) — mirrors the
+ *                            places UNIQUE (corpus_version, source, source_ref)
+ *                            so a dup fails offline, not on the live COPY
  *   • category_registered  — every category_key is a registered canonical
  *   • confidence_floor     — every confidence is present and ≥ the floor
  *   • coordinates_valid    — lon∈[-180,180], lat∈[-90,90], finite
@@ -50,6 +53,8 @@ final class CorpusImportAcceptance
         $unregistered = [];
         $lowConfidence = [];
         $badCoords = [];
+        $identitySeen = [];
+        $duplicateId = [];
 
         foreach ($records as $r) {
             if ($r->source !== $this->expectedSource) {
@@ -57,6 +62,15 @@ final class CorpusImportAcceptance
             }
             if (trim((string) $r->source_ref) === '') {
                 $missingId[] = $r->category_key;
+            }
+
+            // Natural key (source, source_ref) must be unique — the places table
+            // enforces it; catch it here before the live COPY fails on it.
+            $identity = $r->source . "\x1f" . $r->source_ref;
+            if (isset($identitySeen[$identity])) {
+                $duplicateId[] = "{$r->source}:{$r->source_ref}";
+            } else {
+                $identitySeen[$identity] = true;
             }
             if (!isset($registered[$r->category_key])) {
                 $unregistered[] = $r->category_key;
@@ -73,6 +87,7 @@ final class CorpusImportAcceptance
         $checks[] = $this->check('non_empty', $count > 0, $count > 0 ? "{$count} rows" : 'no rows staged');
         $checks[] = $this->check('source_uniform', $badSource === [], $this->offenders($badSource, "expected source [{$this->expectedSource}]"));
         $checks[] = $this->check('identity_present', $missingId === [], $this->offenders($missingId, 'rows missing source_ref'));
+        $checks[] = $this->check('identity_unique', $duplicateId === [], $this->offenders(array_values(array_unique($duplicateId)), 'duplicate (source, source_ref)'));
         $checks[] = $this->check('category_registered', $unregistered === [], $this->offenders(array_values(array_unique($unregistered)), 'unregistered category_key'));
         $checks[] = $this->check('confidence_floor', $lowConfidence === [], $this->offenders($lowConfidence, sprintf('below floor %.2f', $this->confidenceMin)));
         $checks[] = $this->check('coordinates_valid', $badCoords === [], $this->offenders($badCoords, 'out-of-range coordinates'));

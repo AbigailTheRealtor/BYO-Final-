@@ -98,6 +98,49 @@ class CorpusImportAcceptanceTest extends TestCase
     }
 
     /** @test */
+    public function a_duplicate_source_ref_fails_identity_unique(): void
+    {
+        // Same (source, source_ref) twice — the places UNIQUE constraint would
+        // reject this on COPY; the gate must catch it offline first (M2).
+        $verdict = $this->gate->evaluate([
+            $this->rec(['source_ref' => 'dup-1', 'category_key' => 'gym']),
+            $this->rec(['source_ref' => 'dup-1', 'category_key' => 'restaurant']),
+        ]);
+
+        $this->assertFalse($verdict['passed']);
+        $this->assertContains('identity_unique', $this->failed($verdict));
+
+        $check = array_values(array_filter($verdict['checks'], fn ($c) => $c['name'] === 'identity_unique'))[0];
+        $this->assertStringContainsString('dup-1', $check['detail']);
+    }
+
+    /** @test */
+    public function a_unique_identity_set_passes_identity_unique(): void
+    {
+        $verdict = $this->gate->evaluate([
+            $this->rec(['source_ref' => 'a']),
+            $this->rec(['source_ref' => 'b']),
+            $this->rec(['source_ref' => 'c']),
+        ]);
+
+        $this->assertTrue($verdict['passed']);
+        $this->assertNotContains('identity_unique', $this->failed($verdict));
+    }
+
+    /** @test */
+    public function the_same_source_ref_under_a_different_source_is_not_a_duplicate(): void
+    {
+        // Uniqueness is on the (source, source_ref) pair, not source_ref alone.
+        // (source_uniform will still flag the foreign source — that is separate.)
+        $verdict = $this->gate->evaluate([
+            $this->rec(['source' => 'overture', 'source_ref' => 'x']),
+            $this->rec(['source' => 'osm', 'source_ref' => 'x']),
+        ]);
+
+        $this->assertNotContains('identity_unique', $this->failed($verdict));
+    }
+
+    /** @test */
     public function the_row_count_reconciliation_is_only_checked_when_supplied(): void
     {
         $records = [$this->rec(['source_ref' => 'a']), $this->rec(['source_ref' => 'b'])];

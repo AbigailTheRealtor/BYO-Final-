@@ -138,16 +138,16 @@ class CorpusImportOverture extends Command
         $copyStatement = $loader->copyStatement($partition);
         $psqlCopy = $loader->psqlCopyStatement($partition, $payloadPath);
 
-        // ── Author the partition DDL (create staging → check → attach). ────────
+        // ── Author the staging DDL (create staging + COPY ONLY). ───────────────
+        // The CHECK + ATTACH + ledger flip belong exclusively to activate.sql so
+        // the two artifacts never both attach (matches the spike recipe split:
+        // create_partition.sql / load_copy.sql vs attach_activate.sql).
         $ddl = implode("\n", [
             '-- 1. staging table off the parent',
             $partitions->createStagingTableSql($corpusVersion) . ';',
             '-- 2. COPY the corpus in (payload: ' . $payloadPath . ')',
             $psqlCopy,
-            '-- 3. pin CHECK so ATTACH is an O(1) metadata flip',
-            $partitions->addCheckConstraintSql($corpusVersion) . ';',
-            '-- 4. attach as a live partition',
-            $partitions->attachPartitionSql($corpusVersion) . ';',
+            '-- next: run acceptance_checks, then activate.sql (owns CHECK + ATTACH + ledger).',
         ]) . "\n";
         $this->writeArtifact($outDir, 'partition_load.sql', $ddl);
 

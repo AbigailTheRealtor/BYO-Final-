@@ -64,11 +64,13 @@ class CorpusImportOvertureCommandTest extends TestCase
             $this->assertStringStartsWith('overture-2026-06-17.0-pinellas', $line, 'corpus_version leads each row');
         }
 
-        // 2) Partition DDL — staging + attach for this corpus_version.
+        // 2) Staging DDL — create staging + COPY ONLY (no CHECK, no ATTACH).
         $ddl = file_get_contents($this->outDir . '/partition_load.sql');
         $this->assertStringContainsString($this->partition, $ddl);
         $this->assertStringContainsString('LIKE places', $ddl);
-        $this->assertStringContainsString('ATTACH PARTITION', $ddl);
+        $this->assertStringContainsString('\copy', $ddl, 'staging DDL must include the COPY load');
+        $this->assertStringNotContainsString('ATTACH PARTITION', $ddl, 'attach belongs only to activate.sql (M1)');
+        $this->assertStringNotContainsString('ADD CONSTRAINT', $ddl, 'CHECK belongs only to activate.sql (M1)');
 
         // 3) Ledger — a single staging provenance row.
         $ledger = json_decode(file_get_contents($this->outDir . '/ledger.json'), true);
@@ -80,6 +82,45 @@ class CorpusImportOvertureCommandTest extends TestCase
 
         // 4) Activation plan.
         $activate = file_get_contents($this->outDir . '/activate.sql');
+        $this->assertStringContainsString('ATTACH PARTITION', $activate);
+        $this->assertStringContainsString("status = 'active'", $activate);
+    }
+
+    /** @test */
+    public function attach_partition_appears_in_exactly_one_generated_artifact(): void
+    {
+        // M1: the staging artifact and the activation artifact must not both
+        // attach — a double ATTACH would fail on the second run. The split must
+        // mirror the spike recipes (create_partition/load_copy vs attach_activate).
+        $this->artisan('corpus:import-overture', [
+            '--input' => $this->fixture,
+            '--out-dir' => $this->outDir,
+        ])->assertExitCode(0);
+
+        $generatedSql = ['partition_load.sql', 'activate.sql'];
+        $withAttach = [];
+        $withCheck = [];
+        foreach ($generatedSql as $file) {
+            $sql = file_get_contents($this->outDir . '/' . $file);
+            if (str_contains($sql, 'ATTACH PARTITION')) {
+                $withAttach[] = $file;
+            }
+            if (str_contains($sql, 'ADD CONSTRAINT')) {
+                $withCheck[] = $file;
+            }
+        }
+
+        $this->assertSame(['activate.sql'], $withAttach, 'ATTACH PARTITION must appear in exactly one artifact — activate.sql');
+        $this->assertSame(['activate.sql'], $withCheck, 'the CHECK constraint must appear only in activate.sql');
+
+        // partition_load.sql owns create + copy only (spike split).
+        $staging = file_get_contents($this->outDir . '/partition_load.sql');
+        $this->assertStringContainsString('CREATE TABLE IF NOT EXISTS', $staging);
+        $this->assertStringContainsString('\copy', $staging);
+
+        // activate.sql owns CHECK + ATTACH + ledger activation.
+        $activate = file_get_contents($this->outDir . '/activate.sql');
+        $this->assertStringContainsString('ADD CONSTRAINT', $activate);
         $this->assertStringContainsString('ATTACH PARTITION', $activate);
         $this->assertStringContainsString("status = 'active'", $activate);
     }
