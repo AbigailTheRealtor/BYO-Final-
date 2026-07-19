@@ -103,7 +103,7 @@ They are **not yet production-ready** because the workflow certification proved 
 | BYA-H13 | "Counter Rejected" notification never dispatched | Med-High | S | Rejected party not told; negotiation stalls (UI still shows status) |
 | BYA-H14 | No "listing published/approved" notification (4 roles, both products) | Med | S | User unsure listing went live; cosmetic |
 | BYA-H15 | Bid-Updated notification: Seller none / Buyer wrong type | Med | S | Owner mis/under-notified on bid edits |
-| BYA-H16 | Offer-Withdrawn notifies the withdrawer (self) not owner | Med | S | Counterparty unaware of withdrawal |
+| BYA-H16 ✅ FIXED (B2.1A) | Offer-Withdrawn notifies the withdrawer (self) not owner | Med | S | RESOLVED — withdrawal now notifies the listing owner |
 | BYA-H17 | Duplicate notification on Offer Counter | Med | XS | Minor noise (two notifications) |
 | BYA-H18 | Agent-bid Withdraw only Tenant, no notification | Med | S | Other roles' agents cannot withdraw |
 | WF-5 | Seller/Buyer compatibility prefs uneditable after create | Med-High | M | Users can't revise compatibility answers (data preserved, just not editable) |
