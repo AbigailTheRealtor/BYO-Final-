@@ -11,8 +11,16 @@ namespace App\Services\Spatial;
  * same shape at scale.
  *
  * Filtering contract (owner decision):
- *   • PRIMARY category only. `categories.primary` is mapped via
- *     OvertureCategoryMap; `categories.alternate` is NEVER inspected.
+ *   • PRIMARY category only. The primary token is resolved with precedence
+ *     `categories.primary` → `taxonomy.primary` → `basic_category` (Batch 2D,
+ *     Overture schema v1.17.0); each fallback fires ONLY when the higher-
+ *     precedence field is ABSENT, never when it is merely unmapped.
+ *     `categories.alternate` and `taxonomy.alternates` / `taxonomy.hierarchy`
+ *     are NEVER inspected.
+ *   • No crosswalk is invented: the resolved token is mapped via
+ *     OvertureCategoryMap and unknown tokens (including the new `basic_category`
+ *     and `taxonomy` vocabularies, for which no crosswalk yet exists) stay
+ *     unmapped and are TALLIED. No category is ever inferred.
  *   • confidence floor: rows with confidence < confidence_min (or null) are
  *     dropped and COUNTED.
  *   • Unmapped primary categories are dropped and TALLIED — never lost.
@@ -53,8 +61,13 @@ final class OverturePlaceNormalizer
                 continue;
             }
 
-            // 2) PRIMARY category only. Alternate categories are ignored.
-            $primary = $this->primaryCategory($raw);
+            // 2) PRIMARY category only. Alternate categories are ignored — both the
+            //    legacy `categories.alternate` and the v1.17.0 `taxonomy.alternates`
+            //    / `taxonomy.hierarchy`. The primary TOKEN is resolved with the
+            //    Batch 2D precedence (categories.primary → taxonomy.primary →
+            //    basic_category) and mapped through the SAME OvertureCategoryMap;
+            //    unknown tokens stay null → tallied. No token is ever inferred.
+            $primary = $this->resolvePrimaryToken($raw);
             $categoryKey = $this->map->mapPrimary($primary);
             if ($categoryKey === null) {
                 $rejUnmapped++;
@@ -95,8 +108,39 @@ final class OverturePlaceNormalizer
         );
     }
 
-    /** Overture PRIMARY category token, or null. Alternate is never read. */
-    private function primaryCategory(array $raw): ?string
+    /**
+     * Resolve the Overture PRIMARY category token with the Batch 2D precedence:
+     *   1. `categories.primary`  (authoritative for the pinned 2026-06-17.0 release)
+     *   2. `taxonomy.primary`    (only when categories.primary is ABSENT/empty)
+     *   3. `basic_category`      (only when both above are ABSENT/empty)
+     *
+     * Precedence is on FIELD PRESENCE, not mappability: a present-but-unmapped
+     * `categories.primary` (e.g. "hotel") is returned as-is so it is tallied — a
+     * lower-precedence field never overrides it. For the pinned release every row
+     * carries `categories.primary`, so Batch 2A/2C behavior is byte-for-byte
+     * unchanged; the fallbacks exist only for the ≥ 2026-09 releases that remove
+     * the `categories` property.
+     *
+     * `taxonomy.hierarchy` and `taxonomy.alternates` are NEVER consulted — the
+     * primary-only contract that ignores `categories.alternate` extends to them.
+     */
+    private function resolvePrimaryToken(array $raw): ?string
+    {
+        $primary = $this->categoriesPrimary($raw);
+        if ($primary !== null) {
+            return $primary;
+        }
+
+        $taxonomyPrimary = $this->taxonomyPrimary($raw);
+        if ($taxonomyPrimary !== null) {
+            return $taxonomyPrimary;
+        }
+
+        return $this->basicCategory($raw);
+    }
+
+    /** Legacy `categories.primary` token, or null. `categories.alternate` is never read. */
+    private function categoriesPrimary(array $raw): ?string
     {
         $categories = $raw['categories'] ?? null;
         if (is_array($categories)) {
@@ -104,6 +148,26 @@ final class OverturePlaceNormalizer
         }
 
         return null;
+    }
+
+    /**
+     * v1.17.0 `taxonomy.primary` token, or null. `taxonomy.hierarchy` and
+     * `taxonomy.alternates` are intentionally ignored (primary-only contract).
+     */
+    private function taxonomyPrimary(array $raw): ?string
+    {
+        $taxonomy = $raw['taxonomy'] ?? null;
+        if (is_array($taxonomy)) {
+            return $this->str($taxonomy['primary'] ?? null);
+        }
+
+        return null;
+    }
+
+    /** v1.17.0 `basic_category` scalar token, or null. */
+    private function basicCategory(array $raw): ?string
+    {
+        return $this->str($raw['basic_category'] ?? null);
     }
 
     private function confidence(array $raw): ?float

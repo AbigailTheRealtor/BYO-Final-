@@ -30,6 +30,17 @@ final class OvertureCategoryMap
     /**
      * Overture primary category → canonical category_key. Exactly 8 entries.
      * Keys are Overture's lowercase snake_case primary-category tokens.
+     *
+     * SCHEMA NOTE (Batch 2D / Overture schema v1.17.0): these keys are
+     * `categories.primary` tokens. The v1.17.0 `basic_category` field uses a
+     * SEPARATE ~280-label vocabulary (e.g. `casual_eatery`) and `taxonomy.primary`
+     * carries the most-specific label; NEITHER is mapped here. The
+     * `basic_category`/`taxonomy` → canonical crosswalk (Overture
+     * `overture_categories.csv`) is DEFERRED and must not be guessed.
+     * `mapPrimary()` returns null for any token absent from this map, so
+     * new-vocabulary values reaching it via the normalizer's precedence fallback
+     * stay unmapped and are tallied — never inferred. No functional change in
+     * Batch 2D; the map remains the `categories.primary` first-slice map.
      */
     private const MAP = [
         'grocery_store'   => 'grocery_store',

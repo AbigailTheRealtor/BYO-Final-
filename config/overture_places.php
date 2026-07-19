@@ -34,6 +34,32 @@ return [
     */
     'release' => env('OVERTURE_RELEASE', '2026-06-17.0'),
 
+    /*
+    | Overture SCHEMA version shipped with the pinned data release above.
+    | METADATA ONLY — nothing reads this key at runtime; it documents the schema
+    | contract the offline normalizer is written against. Release 2026-06-17.0
+    | ships schema v1.17.0.
+    */
+    'schema_version' => 'v1.17.0',
+
+    /*
+    | Category representations available in schema v1.17.0. DOCUMENTATION ONLY —
+    | inert metadata, consumed nowhere, changes no runtime behavior. In v1.17.0
+    | all three representations coexist; the legacy `categories` property is
+    | scheduled for REMOVAL in the 2026-09 release. The normalizer resolves the
+    | primary token with the precedence below and never inspects the `ignored`
+    | fields. The basic_category / taxonomy → canonical crosswalk is DEFERRED
+    | (not yet authored; must not be guessed).
+    */
+    'category_fields' => [
+        'authoritative'   => 'categories.primary',
+        'fallback_order'  => ['categories.primary', 'taxonomy.primary', 'basic_category'],
+        'ignored'         => ['categories.alternate', 'taxonomy.alternates', 'taxonomy.hierarchy'],
+        'deprecated'      => ['categories'],
+        'removal_release' => '2026-09',
+        'crosswalk_status' => 'deferred',
+    ],
+
     // Overture theme/type this slice reads. Places only.
     'theme' => 'places',
     'type'  => 'place',
