@@ -212,7 +212,7 @@ Full register with licence, cadence, and phase: **Appendix C**. Summary:
 | Reused | Why it survives |
 |---|---|
 | `LocationDnaRankingEngine` | Pure computation, no I/O. **Requires input-shape normalisation** — it currently consumes raw Google JSON (`$place['geometry']['location']['lat']`, `$place['types']`). |
-| `LocationDnaRankingProfileService` | Per-category weights survive; re-tuned for the prominence prior. |
+| `LocationDnaRankingProfileService` | Per-category weights survive; re-tuned for authority-first ranking (SSOT §9.2). |
 | `LocationDnaSummaryService` | Reads persisted rows, provider-agnostic. |
 | `LocationDnaLifestyleScoreService` | **Pure distance tiers. Zero rating dependence.** Untouched except the beach narrative gate. |
 | `LocationDnaPipelineRunner` | Stage orchestration and graceful-degradation contract preserved. |
@@ -496,7 +496,7 @@ Pure code revert. No schema change, no data change, no config semantics change. 
 
 **Boundaries**
 - Census TIGER (ZCTA, place, county, school district). `CensusTigerBoundaryAdapter` and `CensusSchoolDistrictAdapter` already work — this materialises their data locally for `ST_Contains` instead of per-listing HTTP.
-- USGS PAD-US 4.1 (protected areas, with **acreage** — the prominence signal for parks).
+- USGS PAD-US 4.1 (protected areas, with **acreage** — the authority signal (`authority_metric`) for parks, SSOT §9.2).
 - **FEMA NFHL stays a live API.** `FemaFloodZoneAdapter` is correct, free, and authoritative. Do not import; do not change.
 
 **Places authority overlays**
@@ -510,7 +510,15 @@ Pure code revert. No schema change, no data change, no config semantics change. 
 - Generate/host Protomaps PMTiles for the CONUS basemap. **Do not render it anywhere yet** — doing so would void the right to use Google Places (SIA-D10).
 
 **Validation (the point of this phase)**
-- **Gate 1 — Prominence prior.** Build the prior (authority membership, brand, corpus confidence, source agreement, geometry significance, notability) and score it against the **1,090 existing POI rows already labelled with Google ratings**. Pass = embarrassment rate ≤3%. Baselines from the audit: **19%** with no quality signal, **1%** with true review counts. **Zero API spend.**
+
+> **Reconciled 2026-07-19 to the governing SSOT (`SPATIAL-INTELLIGENCE-PLATFORM.md` §9).** The six-term *prominence prior* is **retired** (**E-12**; amended **SIA-D4** → authority-first ranking + confidence floor + distance) and must **not** be implemented or revived without a formal architecture decision that defines numeric weights. Gate 1's ground truth is **844 rated rows across 13 listings**, not "1,090" (**E-10**). The Foursquare Places Premium contingency is **withdrawn** (**E-13**).
+
+- **Gate 1 — Authority-first ranking sanity check** (SSOT §9.2/§9.3). Validate the corpus's **authority-first** ranking — *not* a prominence prior:
+  - **Authority categories** — rank by `authority_metric`, then deterministic distance ordering.
+  - **Commercial categories** (~6, no registry) — require `confidence ≥ 0.90`, apply the documented `brand IS NOT NULL OR source_count ≥ 2` tie-break, then deterministic distance ordering.
+  - **OSM categories** — apply the documented tag-completeness rule, then deterministic distance ordering.
+
+  The gate compares the corpus **nearest-3** per listing × category pair against the **frozen Google-labelled ground truth** (844 rated rows / 13 listings), computes the **embarrassment rate**, and **passes only at ≤3%**. **Zero API spend.** On failure, remediate through **category mappings and explicitly-defined exclusion rules (§8.2)** — never invented ratings or prominence weights.
 - **Gate 2 — Corpus coverage.** Per-category coverage vs the Google baseline across the Florida footprint. Rural sparsity is the known risk.
 
 ### Files / systems affected
@@ -525,7 +533,7 @@ Phase 0 (PostGIS, infra). Phase 1 (the canonical category registry defines what 
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| **Gate 1 fails** — the open prominence prior cannot match review-count quality | **High** | This is the programme's pivotal unknown. Brand chains separate only 1.6× (616 vs 390 mean reviews) and cover just 36.5% of commercial POIs. **Contingency: Foursquare Places Premium, keyed by POI not listing, commercial categories only** (SIA-D14). The gate is cheap and early *precisely so this is discovered now.* |
+| **Gate 1 fails** — authority-first ranking cannot match Google's tail quality on the ~6 commercial categories that have no authority registry | **High** | The programme's pivotal unknown, isolated to commercial categories (authority categories are decided by CMS/PAD-US/NCES/USGS/FAA/GTFS). **Remediation: iterate category mappings and the §8.2 exclusion rules until the diff is explainable.** The Foursquare Places Premium contingency is **withdrawn** (E-13). The gate is cheap and early *precisely so this is discovered now.* |
 | Overture CONUS coverage is thin in rural Florida | Medium | Gate 2. Supplement with OSM + FSQ open set. Degrade `data_completeness` honestly (SIP-P12) rather than fabricate. |
 | Valhalla CONUS RAM exceeds budget | Medium | Florida-first. Serve RAM is low (mmap tiles); build RAM is the constraint and is a one-time batch cost. |
 | Corpus import is a new operational surface | Medium | Staging-swap keyed on GERS ID; `corpus_imports` ledger; a stale corpus degrades gracefully and never blocks a request. |
@@ -549,7 +557,7 @@ Drop the new tables and decommission the routing VM. **Google is untouched; no e
 - [ ] All Phase-2 tables exist with GiST indexes; `EXPLAIN` confirms index usage.
 - [ ] `listing_locations` backfilled for 100% of Bridge rows and all geocoded listings.
 - [ ] Corpus imported; row count and size **measured and recorded** in `corpus_imports`.
-- [ ] **Gate 1 passed** (≤3% embarrassment) — or the Foursquare contingency formally triggered.
+- [ ] **Gate 1 passed** — authority-first ranking (SSOT §9.2/§9.3): corpus nearest-3 vs frozen Google over 13 listings / 844 rated rows, embarrassment rate ≤3%.
 - [ ] **Gate 2 passed** (per-category coverage accepted by product owner).
 - [ ] Valhalla serving Florida; `/isochrone` returns a valid polygon.
 - [ ] PMTiles archive built and hosted, **not rendered**.
@@ -958,7 +966,7 @@ Maps and autocomplete are **swapped within Phase 5, never absent** — and they 
 - [ ] **Infrastructure:** queue worker, scheduler, Redis, PostGIS, real app server. `offers:expire-pending` verified.
 - [ ] **Cost protection:** kill switch wired and proven; daily/hourly caps enforced; budget alert; key restricted and segregated.
 - [ ] **Test isolation:** all four RCA remediations shipped; suite makes zero outbound calls.
-- [ ] **Gate 1** — prominence prior ≤3% embarrassment, **or** the Foursquare contingency formally triggered and budgeted.
+- [ ] **Gate 1** — authority-first ranking (SSOT §9.2/§9.3), corpus nearest-3 vs frozen Google, embarrassment rate ≤3%.
 - [ ] **Gate 2** — corpus coverage accepted per category.
 - [ ] **Gate 3** — dual-run diff reviewed and signed off.
 - [ ] **INV-1** — `ComputeLocationDna` makes zero outbound calls, metric-verified in production.
@@ -1006,7 +1014,7 @@ Maps and autocomplete are **swapped within Phase 5, never absent** — and they 
 |---|---|---|
 | `LocationDnaRankingEngine` | Input shape normalised off raw Google JSON | 1 |
 | `LocationDnaPoiDistanceService` | Network layer removed; delegates to the adapter | 1→3 |
-| `LocationDnaRankingProfileService` | Weights re-tuned for the prominence prior | 3 |
+| `LocationDnaRankingProfileService` | Weights re-tuned for authority-first ranking (SSOT §9.2) | 3 |
 | `LocationDnaSummaryService` | Two new thematic blocks (additive) | 3 |
 | `LocationDnaLifestyleScoreService` | Beach narrative gate re-sourced | 3 |
 | `LocationDnaPipelineRunner` | Stage contract preserved; sources swapped | 3 |
@@ -1193,7 +1201,7 @@ Two things are worth restating, because they determine whether this plan is exec
 
 **First: Phase 0 is not preparation. It is a prerequisite for correctness.** The platform cannot presently execute a background job. `ComputeLocationDna` runs inline in the user's web request, `offers:expire-pending` has never run, and the test suite reaches live Google. None of this is caused by Google, and none of it is fixed by leaving Google. It must be fixed regardless of whether this architecture is ever approved.
 
-**Second: Gate 1 is the cheapest decision-grade experiment available, and it is now on the critical path to launch.** It costs days, no API spend, and uses 1,090 labelled POI rows already sitting in the production database. It determines whether the entire programme needs a paid provider. **Run it before approving the budget for anything else.**
+**Second: Gate 1 is the cheapest decision-grade experiment available, and it is now on the critical path to launch.** It costs days, no API spend, and uses the **844 rated POI rows across 13 listings** already sitting in the production database (E-10). It determines whether the entire programme needs a paid provider. **Run it before approving the budget for anything else.**
 
 The evidence assembled in the governing document indicates it will pass. But the plan is arranged so that if it does not, the discovery happens in Phase 2 — before a single consumer-facing behaviour has changed, and before Google has been removed from anything.
 

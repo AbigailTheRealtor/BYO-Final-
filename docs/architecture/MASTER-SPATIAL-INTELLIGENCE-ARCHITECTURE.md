@@ -477,6 +477,8 @@ Categories carry a **base source** (authority-first), a **prominence strategy**,
 
 ### 7.3 The prominence prior (replaces business-review ranking)
 
+> **⛔ RETIRED — do not implement.** The six-term prominence prior described in this section is **superseded by authority-first ranking** (governing SSOT `SPATIAL-INTELLIGENCE-PLATFORM.md` §9.2/§9.3; **E-12**; amended **SIA-D4**). It is retained here for rationale only. Its weights `w_a…w_f` were never assigned numeric values; reviving it would require a formal architecture decision that defines them. The validation gate below (Gate 1) now scores **authority-first ranking** against **844 rated rows across 13 listings** (**E-10**), not "1,090."
+
 `LocationDnaRankingEngine` currently computes `consumer_relevance_score` and `review_confidence_score` from Google `rating` and `user_ratings_total`. These are removed and replaced by a **prominence prior**, `P ∈ [0,1]`, composed from openly-licensed signals:
 
 ```
@@ -929,7 +931,7 @@ Phase 6  Scores · TMI · Matching V2
 
 | Gate | Blocks | Test |
 |---|---|---|
-| **Gate 1 — Prominence prior** | Phase 2 | Score the open prominence prior against the **1,090 existing POI rows already labeled with Google ratings**. Pass = embarrassment rate ≤3% (baseline: 19% with no signal, 1% with true review counts). **Zero API spend. This is the pivotal experiment.** |
+| **Gate 1 — Authority-first ranking** *(supersedes "prominence prior")* | Phase 2 | **Superseded to authority-first ranking (SSOT §9.2/§9.3; E-12).** Score the corpus nearest-3 per listing × category pair vs the frozen Google ground truth — **844 rated rows across 13 listings** (E-10), not 1,090. Pass = embarrassment rate ≤3% (baseline: 19% with no signal, 1% with true review counts). **Zero API spend. This is the pivotal experiment.** |
 | **Gate 2 — Corpus coverage** | Phase 2 | Per-category coverage of the owned corpus vs the Google baseline across the Florida footprint. Rural sparsity is the risk. |
 | **Gate 3 — Dual-run diff** | Phase 2 | Shadow-compute Location DNA from the corpus alongside Google for enriched listings; diff rank-1 selections. Adopts the dual-run pattern from `location-dna-architecture-review.md` §3. |
 | **Gate 4 — Routing parity** | Phase 3 | Valhalla drive times vs known ground truth on a sample corridor set. |
