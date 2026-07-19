@@ -334,7 +334,15 @@ class OfferController extends Controller
         }
 
         try {
-            $offer->user->notify(new OfferWithdrawnNotification($offer));
+            // HIGH-16: a withdrawal must notify the LISTING OWNER (the counterparty
+            // who was awaiting a decision), not the submitter who just withdrew.
+            // Mirrors the submit path; OfferWithdrawnNotification renders owner-facing
+            // copy once the recipient is resolved as the listing owner.
+            $offer->load('offerAuction.user');
+            $recipient = $offer->offerAuction?->user;
+            if ($recipient) {
+                $recipient->notify(new OfferWithdrawnNotification($offer));
+            }
         } catch (\Throwable $e) {
             Log::error('OfferWithdrawnNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
         }

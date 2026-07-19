@@ -54,7 +54,7 @@ All 8 declared baseline commits exist and are ancestors of `HEAD` (`launch-audit
 | HIGH-13 | "Counter Rejected" fires no notification | Open | 🔴 OPEN | `CounterBidRejectedNotification` class exists but 0 dispatch sites |
 | HIGH-14 | "Listing Published/Approved" notification missing (4 roles) | Open | 🔴 OPEN | All 4 approve methods set flag + redirect, no `notify()` |
 | HIGH-15 | "Bid Updated" notification inconsistent | Open | 🔴 OPEN (per cert; not re-verified this pass) | Seller none on edit; Buyer wrong type |
-| HIGH-16 | Offer Withdrawn notifies self not owner | Open | 🔴 OPEN (per cert) | `OfferController.php:324` |
+| HIGH-16 | Offer Withdrawn notifies self not owner | Closed | ✅ FIXED (B2.1A) — withdrawal now notifies the listing owner (counterparty) | `OfferController.php:336-345` (was cited `:324`, stale post-B1.4) |
 | HIGH-17 | Duplicate notification on Offer Counter | Open | 🔴 OPEN (per cert) | `OfferController.php:720,730` |
 | HIGH-18 | Agent-bid Withdraw only Tenant, no notification | Open | 🔴 OPEN (per cert) | `TenantAgentAuctionBidController.php:582` |
 
@@ -211,7 +211,7 @@ Read-only static trace of every workflow across the lifecycle stages. ✅ wired 
 | Reject/decline | ✅ party-checked; 🔴 no `CounterBidRejectedNotification` | HIGH-13 |
 | **Expiration** | 🔴 **offers NEVER expire** | HIGH-6 — `OfferController:1257` meta-only; `ExpireOffersCommand:17` filters native NULL |
 | Accepted summary + PDF + both-party sign gate | ✅ wired; 🟦 PDF cache invalidation latent (HIGH-12) | `AcceptedBidSummaryController:174` |
-| Notification recipients | 🔴 withdraw notifies self (HIGH-16); 🔴 duplicate offer-counter (HIGH-17) | `OfferController:324,720,730` |
+| Notification recipients | ✅ withdraw notifies owner (HIGH-16 fixed, B2.1A); 🔴 duplicate offer-counter (HIGH-17) | `OfferController:336-345` (withdraw), `:720,730` (counter) |
 
 ### 9.4 Consumer discovery — Search/Match → View → Location DNA → Property DNA → Ask AI
 

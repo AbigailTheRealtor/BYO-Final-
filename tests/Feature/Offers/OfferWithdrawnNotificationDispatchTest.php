@@ -3,6 +3,7 @@
 namespace Tests\Feature\Offers;
 
 use App\Models\Offer;
+use App\Models\OfferAuction;
 use App\Models\User;
 use App\Notifications\Offers\OfferWithdrawnNotification;
 use App\Services\Offers\OfferAvailableActionsService;
@@ -16,16 +17,21 @@ class OfferWithdrawnNotificationDispatchTest extends TestCase
     use DatabaseTransactions;
 
     private User $user;
+    private User $listingOwner;
     private Offer $submittedOffer;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->user = User::factory()->create(['user_type' => 'seller']);
+        $this->user         = User::factory()->create(['user_type' => 'seller']);
+        $this->listingOwner = User::factory()->create(['user_type' => 'seller']);
+
+        $auction = OfferAuction::factory()->create(['user_id' => $this->listingOwner->id]);
 
         $this->submittedOffer = Offer::factory()->submitted()->create([
-            'user_id' => $this->user->id,
+            'user_id'          => $this->user->id,
+            'offer_auction_id' => $auction->id,
         ]);
     }
 
@@ -84,7 +90,10 @@ class OfferWithdrawnNotificationDispatchTest extends TestCase
             ->postJson(route('offers.withdraw', $this->submittedOffer))
             ->assertOk();
 
-        Notification::assertSentTo($this->submittedOffer->user, OfferWithdrawnNotification::class);
+        // HIGH-16: the listing owner (counterparty) is notified of the withdrawal,
+        // not the submitter who performed it.
+        Notification::assertSentTo($this->listingOwner, OfferWithdrawnNotification::class);
+        Notification::assertNotSentTo($this->submittedOffer->user, OfferWithdrawnNotification::class);
     }
 
     public function test_permission_denial_does_not_dispatch(): void
