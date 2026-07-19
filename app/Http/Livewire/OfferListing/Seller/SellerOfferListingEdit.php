@@ -3185,6 +3185,9 @@ class SellerOfferListingEdit extends Component
     public function deleteListingDocument()
     {
         if ($this->listingDocuments && is_string($this->listingDocuments)) {
+            // HI-05 — new documents live on the private disk; also clear any
+            // legacy public copy when the owner replaces their own document.
+            Storage::disk('private')->delete('auction/documents/' . $this->listingDocuments);
             Storage::disk('public')->delete('auction/documents/' . $this->listingDocuments);
             if ($this->listingId) {
                 $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
@@ -3267,8 +3270,9 @@ class SellerOfferListingEdit extends Component
         $fileName = $uuid . '.' . $ext;
         $dir      = 'seller-doc-uploads/' . ($this->listingId ?? 'draft');
 
-        Storage::disk('public')->makeDirectory($dir);
-        $this->docFileUpload->storeAs($dir, $fileName, 'public');
+        // HI-05 — additional documents are private; delivered via the authorized route.
+        Storage::disk('private')->makeDirectory($dir);
+        $this->docFileUpload->storeAs($dir, $fileName, 'private');
         $storedPath = $dir . '/' . $fileName;
 
         $rows = $this->doc_rows;
@@ -3981,8 +3985,9 @@ class SellerOfferListingEdit extends Component
                 $uuid     = (string) Str::uuid();
                 $fileName = $uuid . '.' . $ext;
                 $dir      = 'seller-disclosures/' . $auction->id . '/' . $item['dir'];
-                Storage::disk('public')->makeDirectory($dir);
-                $fileVal->storeAs($dir, $fileName, 'public');
+                // HI-05 — disclosures/contracts are sensitive: private disk only.
+                Storage::disk('private')->makeDirectory($dir);
+                $fileVal->storeAs($dir, $fileName, 'private');
                 $storedPath           = $dir . '/' . $fileName;
                 $this->{$pathProp}    = $storedPath;
                 $auction->saveMeta($pathProp, $storedPath);
@@ -4006,8 +4011,9 @@ class SellerOfferListingEdit extends Component
                 $ext = $this->listingDocuments->getClientOriginalExtension();
                 $uuid = (string) Str::uuid();
                 $fileName = $uuid . '.' . $ext;
-                Storage::disk('public')->makeDirectory('auction/documents');
-                $this->listingDocuments->storeAs('auction/documents', $fileName, 'public');
+                // HI-05 — listing documents served only via the authorized route.
+                Storage::disk('private')->makeDirectory('auction/documents');
+                $this->listingDocuments->storeAs('auction/documents', $fileName, 'private');
                 $auction->saveMeta('listing_documents', $fileName);
             }
         } elseif ($this->listingDocuments && is_string($this->listingDocuments)) {

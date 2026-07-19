@@ -4,6 +4,7 @@ namespace App\Http\Livewire\HireSellerAgent;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Http\Livewire\Concerns\ValidatesMediaUploads;
 use App\Models\SellerAgentAuction as SellerAgentAuctionModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 class SellerAgentAuction extends Component
 {
     use WithFileUploads;
+    use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
@@ -2795,6 +2797,9 @@ class SellerAgentAuction extends Component
         }
         $auction->saveMeta('current_status', $this->current_status);
         $auction->saveMeta('video_link', $this->video_link);
+
+        // HI-04 — validate photo/video content and size before any disk write.
+        $this->validateMediaUploads();
 
         // Save photo - process new uploads; preserve existing saved filename on re-save
         if ($this->photo && !is_string($this->photo)) {

@@ -111,8 +111,18 @@ class ListingDownloadController extends Controller
 
     protected function authorizeView($auction)
     {
+        // HI-01 — Listing-download IDOR. Authentication alone is NOT sufficient:
+        // the snapshot packet contains the listing's private terms, so only the
+        // listing owner may download it. Ownership is derived from the resolved
+        // listing model (auction.user_id), never from any request-supplied id.
+        // Guests are still refused (the route also carries `auth`, so in practice
+        // they are redirected to login before reaching here).
         if (!auth()->check()) {
             abort(403, 'You must be logged in to download listings.');
+        }
+
+        if ((int) ($auction->user_id ?? 0) !== (int) auth()->id()) {
+            abort(403, 'You are not authorized to download this listing.');
         }
     }
 

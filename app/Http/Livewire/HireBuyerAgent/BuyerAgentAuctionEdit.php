@@ -4,6 +4,7 @@ namespace App\Http\Livewire\HireBuyerAgent;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Http\Livewire\Concerns\ValidatesMediaUploads;
 use App\Models\BuyerAgentAuction as HireBuyerAgentAuction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 class BuyerAgentAuctionEdit extends Component
 {
     use WithFileUploads;
+    use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows
 
@@ -2143,6 +2145,9 @@ class BuyerAgentAuctionEdit extends Component
             $auction->saveMeta('agent_nar_member_id', $this->agent_nar_member_id);
         }
         $auction->saveMeta('video_link', $this->video_link);
+
+        // HI-04 — validate photo/video content and size before any disk write.
+        $this->validateMediaUploads();
 
         // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
         if ($this->photo && !is_string($this->photo)) {

@@ -4,6 +4,7 @@ namespace App\Http\Livewire;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Http\Livewire\Concerns\ValidatesMediaUploads;
 use App\Models\TenantAgentAuction as HireTenantAgentAuction;
 use App\Models\BuyerAgentAuction as HireBuyerAgentAuction;
 use App\Models\LandlordAgentAuction as HireLandLordAgentAuction;
@@ -26,6 +27,7 @@ use App\Support\TenantServicesCatalog;
 class TenantAgentAuction extends Component
 {
     use WithFileUploads;
+    use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
@@ -4961,6 +4963,9 @@ class TenantAgentAuction extends Component
         }
         $auction->saveMeta('current_status', $this->current_status);
         $auction->saveMeta('video_link', $this->video_link);
+
+        // HI-04 — validate photo/video content and size before any disk write.
+        $this->validateMediaUploads();
 
         // Save photo - handle new uploads, existing paths, and deletions
         if ($this->photoDeleted) {
