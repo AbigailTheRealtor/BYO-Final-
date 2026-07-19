@@ -16,12 +16,14 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\Concerns\ValidatesMediaUploads;
 use App\Http\Livewire\OfferListing\Concerns\SellerPublishValidation;
 
 class SellerOfferListingEdit extends Component
 {
     use WithFileUploads;
     use ResolvesOwnedAuction;
+    use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
     use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
 
     protected $listeners = [
@@ -3185,6 +3187,9 @@ class SellerOfferListingEdit extends Component
     public function deleteListingDocument()
     {
         if ($this->listingDocuments && is_string($this->listingDocuments)) {
+            // HI-05 — new documents live on the private disk; also clear any
+            // legacy public copy when the owner replaces their own document.
+            Storage::disk('private')->delete('auction/documents/' . $this->listingDocuments);
             Storage::disk('public')->delete('auction/documents/' . $this->listingDocuments);
             if ($this->listingId) {
                 $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
@@ -3267,8 +3272,9 @@ class SellerOfferListingEdit extends Component
         $fileName = $uuid . '.' . $ext;
         $dir      = 'seller-doc-uploads/' . ($this->listingId ?? 'draft');
 
-        Storage::disk('public')->makeDirectory($dir);
-        $this->docFileUpload->storeAs($dir, $fileName, 'public');
+        // HI-05 — additional documents are private; delivered via the authorized route.
+        Storage::disk('private')->makeDirectory($dir);
+        $this->docFileUpload->storeAs($dir, $fileName, 'private');
         $storedPath = $dir . '/' . $fileName;
 
         $rows = $this->doc_rows;
@@ -3925,6 +3931,9 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('video_link', $this->video_link);
         $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
 
+        // HI-04 (M1) — validate photo/video content and size before any public-disk write.
+        $this->validateMediaUploads();
+
         // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
         if ($this->photo && !is_string($this->photo)) {
             $extensionPhoto = $this->photo->getClientOriginalExtension(); // Get file extension
@@ -3981,8 +3990,9 @@ class SellerOfferListingEdit extends Component
                 $uuid     = (string) Str::uuid();
                 $fileName = $uuid . '.' . $ext;
                 $dir      = 'seller-disclosures/' . $auction->id . '/' . $item['dir'];
-                Storage::disk('public')->makeDirectory($dir);
-                $fileVal->storeAs($dir, $fileName, 'public');
+                // HI-05 — disclosures/contracts are sensitive: private disk only.
+                Storage::disk('private')->makeDirectory($dir);
+                $fileVal->storeAs($dir, $fileName, 'private');
                 $storedPath           = $dir . '/' . $fileName;
                 $this->{$pathProp}    = $storedPath;
                 $auction->saveMeta($pathProp, $storedPath);
@@ -4006,8 +4016,9 @@ class SellerOfferListingEdit extends Component
                 $ext = $this->listingDocuments->getClientOriginalExtension();
                 $uuid = (string) Str::uuid();
                 $fileName = $uuid . '.' . $ext;
-                Storage::disk('public')->makeDirectory('auction/documents');
-                $this->listingDocuments->storeAs('auction/documents', $fileName, 'public');
+                // HI-05 — listing documents served only via the authorized route.
+                Storage::disk('private')->makeDirectory('auction/documents');
+                $this->listingDocuments->storeAs('auction/documents', $fileName, 'private');
                 $auction->saveMeta('listing_documents', $fileName);
             }
         } elseif ($this->listingDocuments && is_string($this->listingDocuments)) {

@@ -4,6 +4,7 @@ namespace App\Http\Livewire\HireLandLordAgent;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Http\Livewire\Concerns\ValidatesMediaUploads;
 use App\Models\LandlordAgentAuction as HirelandLordAgentAuction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 class LandLordAgentAuctionEdit extends Component
 {
     use WithFileUploads;
+    use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
@@ -2471,6 +2473,9 @@ class LandLordAgentAuctionEdit extends Component
         }
         $auction->saveMeta('video_link', $this->video_link);
         $auction->saveMeta('current_status', $this->current_status);
+
+        // HI-04 — validate photo/video content and size before any disk write.
+        $this->validateMediaUploads();
 
         // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
         if ($this->photo && !is_string($this->photo)) {

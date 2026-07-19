@@ -2348,7 +2348,7 @@
                     <span class="sol-doc-badge">{{ $str($d[1]) }}</span>
                 @endif
                 @if($str($d[2]))
-                    <a href="{{ asset('storage/' . $str($d[2])) }}" target="_blank" class="sol-doc-download">
+                    <a href="{{ route('listing.document.show', ['listingType' => 'seller', 'listingId' => $auction->id, 'documentKey' => \Illuminate\Support\Str::beforeLast($d[2], '_path')]) }}" target="_blank" class="sol-doc-download">
                         <i class="fa-solid fa-download"></i>Download
                     </a>
                 @endif
@@ -2372,12 +2372,12 @@
             <hr>
             <h6 class="fw-semibold mt-3 mb-2" style="letter-spacing:0">Additional Documents</h6>
             <ul class="list-unstyled mb-0">
-                @foreach($docRows as $dr)
+                @foreach($docRows as $idx => $dr)
                 <li class="mb-2 d-flex align-items-center gap-2 flex-wrap">
                     <i class="fa-solid fa-file text-muted"></i>
                     <span class="field-value">{{ $dr['type'] ?? $dr['label'] ?? 'Document' }}</span>
                     @if(!empty($dr['file_path']))
-                        <a href="{{ asset('storage/' . $dr['file_path']) }}" target="_blank" class="sol-doc-download">
+                        <a href="{{ route('listing.document.additional', ['listingType' => 'seller', 'listingId' => $auction->id, 'index' => $idx]) }}" target="_blank" class="sol-doc-download">
                             <i class="fa-solid fa-download"></i>Download
                         </a>
                     @endif

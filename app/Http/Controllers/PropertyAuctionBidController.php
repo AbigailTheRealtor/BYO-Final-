@@ -9,6 +9,7 @@ use App\Models\PropertyAuctionMeta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use \Carbon\Carbon;
 use DateTime;
@@ -26,7 +27,6 @@ class PropertyAuctionBidController extends Controller
 
     public function savePABid(Request $request)
     {
-        // dd($request->all());
         try {
             $data = PropertyAuction::with('meta')->find($request->auction_id);
             // if ($request->price >= $data->get->buy_now_price || $request->price >= $data->get->reserve_price) {
@@ -213,7 +213,13 @@ class PropertyAuctionBidController extends Controller
             // }
         } catch (\Exception $e) {
             DB::rollBack();
-            return $e->getMessage();
+            // m1 — never return the raw exception (stack traces, SQL, file paths)
+            // to the client. Log internally with context; show a generic message.
+            Log::error('savePABid failed', [
+                'auction_id' => $request->auction_id,
+                'user_id'    => Auth::id(),
+                'error'      => $e->getMessage(),
+            ]);
             return redirect()->back()->with('error', 'Unable to add bid');
         }
     }
@@ -221,8 +227,19 @@ class PropertyAuctionBidController extends Controller
     {
         $counterPrice = $request->counterPrice;
         $pab = PropertyAuctionBid::whereId($request->bid_id)->first();
-        $counterBidmax = PropertyAuctionBid::where('property_auction_id', $request->auction_id)->max('price');
         $pa = PropertyAuction::whereId($request->auction_id)->first();
+
+        // HI-02 — accept-bid IDOR. Only the auction OWNER may accept a bid, and
+        // the bid must belong to the auction named in the request. Authorization
+        // is derived from the persisted models, not the request-supplied ids.
+        if (!$pa || !$pab || (int) $pab->property_auction_id !== (int) $pa->id) {
+            abort(404);
+        }
+        if ((int) $pa->user_id !== (int) Auth::id()) {
+            abort(403, 'You are not authorized to act on this bid.');
+        }
+
+        $counterBidmax = PropertyAuctionBid::where('property_auction_id', $request->auction_id)->max('price');
         $propAuction = PropertyAuction::with('meta')->find($request->auction_id);
         if ($counterPrice >= $pa->get->starting_price && $counterPrice ?: $pa->get->starting_price >= $counterBidmax) {
             // $pab->accepted = true;
@@ -246,18 +263,45 @@ class PropertyAuctionBidController extends Controller
     }
     public function rejectPABid(Request $request)
     {
-
         $pab = PropertyAuctionBid::whereId($request->bid_id)->first();
+        $pa = PropertyAuction::whereId($request->auction_id)->first();
+
+        // HI-02 — reject-bid IDOR. Only the auction OWNER may reject a bid, and
+        // the bid must belong to the named auction.
+        if (!$pa || !$pab || (int) $pab->property_auction_id !== (int) $pa->id) {
+            abort(404);
+        }
+        if ((int) $pa->user_id !== (int) Auth::id()) {
+            abort(403, 'You are not authorized to act on this bid.');
+        }
+
         try {
             $pab->update(['accepted' => 'rejected', 'accepted_date' => date('Y-m-d H:i:s')]);
             return redirect()->back()->with('error', 'Your Bid Has Been Rejected!');
         } catch (\Exception $e) {
-            dd($e->getMessage());
+            // HI-02 — no debug termination (dd) in a live request path.
+            Log::error('rejectPABid failed', [
+                'bid_id' => $request->bid_id,
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()->back()->with('error', 'Unable to reject the bid.');
         }
     }
     public function destroy($id)
     {
         $counterBid = PropertyAuctionBid::findOrFail($id);
+        $auction = PropertyAuction::find($counterBid->property_auction_id);
+
+        // HI-02 — counter-bid delete IDOR. Party guard: only the auction owner
+        // or the bid's own author may reject/delete this counter bid. Derived
+        // from the persisted models, never from the route id alone.
+        $userId  = (int) Auth::id();
+        $isOwner = $auction && (int) $auction->user_id === $userId;
+        $isBidder = (int) $counterBid->user_id === $userId;
+        if (!$isOwner && !$isBidder) {
+            abort(403, 'You are not authorized to reject this counter bid.');
+        }
+
         $counterBid->delete();
         return redirect()->back()->with('success', 'Counter Bid Has Been Rejected!');
     }

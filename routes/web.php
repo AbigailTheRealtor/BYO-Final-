@@ -470,6 +470,18 @@ Route::get('/buyer/listings/{id}/download', [\App\Http\Controllers\ListingDownlo
 Route::get('/landlord/listings/{id}/download', [\App\Http\Controllers\ListingDownloadController::class, 'landlord'])->name('landlord.listings.download')->middleware('auth');
 Route::get('/tenant/listings/{id}/download', [\App\Http\Controllers\ListingDownloadController::class, 'tenant'])->name('tenant.listings.download')->middleware('auth');
 
+// HI-05 — authenticated, authorization-checked delivery of private listing
+// documents. No public URL exists for these files; access is re-checked on
+// every request by ListingDocumentController via ListingDocumentAccessService.
+Route::get('/listings/{listingType}/{listingId}/document/{documentKey}', [\App\Http\Controllers\ListingDocumentController::class, 'show'])
+    ->where(['listingType' => 'seller', 'listingId' => '[0-9]+'])
+    ->name('listing.document.show')
+    ->middleware('auth');
+Route::get('/listings/{listingType}/{listingId}/additional-document/{index}', [\App\Http\Controllers\ListingDocumentController::class, 'additional'])
+    ->where(['listingType' => 'seller', 'listingId' => '[0-9]+', 'index' => '[0-9]+'])
+    ->name('listing.document.additional')
+    ->middleware('auth');
+
 Route::get('/seller/agent/auction/view/{id}', [SellerAgentAuctionController::class, 'viewDetail'])->name('seller.agent.auction.detail');
 Route::get('/buyer/agent/auction/view/{id}', [BuyerAgentAuctionController::class, 'viewAuctionDetails'])->name('buyer.view-auction');
 Route::get('/seller/agent/bid/{bid_id}', [SellerAgentAuctionController::class, 'bidDetail'])->name('seller.agent.bid.detail')->middleware('auth');

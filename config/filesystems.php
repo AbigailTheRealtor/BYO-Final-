@@ -42,6 +42,15 @@ return [
             'visibility' => 'public',
         ],
 
+        // HI-05 — private disk for sensitive listing documents (disclosures,
+        // contracts, due-diligence). Deliberately has NO 'url': files here can
+        // only be reached through the authenticated ListingDocumentController.
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'visibility' => 'private',
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

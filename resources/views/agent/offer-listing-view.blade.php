@@ -894,16 +894,18 @@
         'Lead-Based Paint'     => $d['lead_based_paint_disclosure'],
         'Environmental Report' => $d['environmental_report_available'],
     ];
+    // HI-05 — keyed by document key so links resolve through the authenticated
+    // ListingDocumentController route (no public Storage::url()).
     $docFiles = [
-        'Seller Disclosure'    => $d['seller_disclosure_file_path'],
-        'Survey'               => $d['survey_file_path'],
-        'Inspection Report'    => $d['inspection_report_file_path'],
-        'HOA / Condo Docs'     => $d['hoa_condo_docs_file_path'],
-        'Flood Disclosure'     => $d['flood_disclosure_file_path'],
-        'Lead-Based Paint'     => $d['lead_based_paint_file_path'],
-        'Environmental Report' => $d['environmental_report_file_path'],
+        'seller_disclosure_file'    => ['Seller Disclosure', $d['seller_disclosure_file_path']],
+        'survey_file'               => ['Survey', $d['survey_file_path']],
+        'inspection_report_file'    => ['Inspection Report', $d['inspection_report_file_path']],
+        'hoa_condo_docs_file'       => ['HOA / Condo Docs', $d['hoa_condo_docs_file_path']],
+        'flood_disclosure_file'     => ['Flood Disclosure', $d['flood_disclosure_file_path']],
+        'lead_based_paint_file'     => ['Lead-Based Paint', $d['lead_based_paint_file_path']],
+        'environmental_report_file' => ['Environmental Report', $d['environmental_report_file_path']],
     ];
-    $hasAnyFile = array_filter($docFiles);
+    $hasAnyFile = !empty(array_filter($docFiles, fn($info) => !empty($info[1])));
     $hasDisclosureSection = !empty(array_filter($disclosures, fn($v) => $v !== '' && $v !== null))
                          || $hasAnyFile
                          || !empty($d['additional_documents']);
@@ -927,10 +929,10 @@
         @if($hasAnyFile)
         <div class="text-muted small mb-1">Download Uploaded Documents</div>
         <div class="d-flex flex-wrap gap-2">
-            @foreach($docFiles as $dname => $dpath)
-            @if($dpath)
-            <a href="{{ Storage::url($dpath) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                <i class="fa-solid fa-file-arrow-down me-1"></i>{{ $dname }}
+            @foreach($docFiles as $dkey => $dinfo)
+            @if(!empty($dinfo[1]))
+            <a href="{{ route('listing.document.show', ['listingType' => 'seller', 'listingId' => $d['id'], 'documentKey' => $dkey]) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="fa-solid fa-file-arrow-down me-1"></i>{{ $dinfo[0] }}
             </a>
             @endif
             @endforeach
@@ -1085,7 +1087,7 @@
     @if($d['listing_documents'])
     <div class="col-md-6">
         <div class="text-muted small mb-1">Listing Documents</div>
-        <a href="{{ Storage::url('auction/documents/' . $d['listing_documents']) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+        <a href="{{ route('listing.document.show', ['listingType' => 'seller', 'listingId' => $d['id'], 'documentKey' => 'listing_documents']) }}" target="_blank" class="btn btn-sm btn-outline-primary">
             <i class="fa-solid fa-file-arrow-down me-1"></i>Download Listing Documents
         </a>
     </div>
