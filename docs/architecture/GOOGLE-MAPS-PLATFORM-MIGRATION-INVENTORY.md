@@ -143,9 +143,9 @@ Phase 6b   Credential + schema teardown               (GMP-12, GMP-13, GMP-14, G
 | **Purpose** | Location DNA POI discovery: 19 categories (16 API calls after `CATEGORY_GROUPS` sharing) per listing. Sole driver of Google spend. |
 | **Files / components** | `app/Services/LocationDna/LocationDnaPoiDistanceService.php:50` (production path — raw Guzzle, **bypasses the adapter seam**)<br>`app/Services/LocationDna/GooglePlacesPoiAdapter.php:12` (buyer/tenant path, behind `PoiLookupAdapterInterface`) |
 | **Call sites** | **2** endpoint constants; 16 requests per listing enrichment; 7 per buyer/tenant area lookup |
-| **Recommended replacement** | **Overture Places** (CDLA-Permissive) in PostGIS + authority overlays (CMS, PAD-US, USGS, NCES, FAA, GTFS/NTD), queried by LATERAL KNN. Ranking switches from Google star ratings to an open **prominence prior**. |
+| **Recommended replacement** | **Overture Places** (CDLA-Permissive) in PostGIS + authority overlays (CMS, PAD-US, USGS, NCES, FAA, GTFS/NTD), queried by LATERAL KNN. Ranking switches from Google star ratings to **authority-first ranking** (SSOT §9.2; the six-term prominence prior is retired — E-12). |
 | **Complexity** | **High** — `LocationDnaPoiDistanceService` is 1,584 LOC; `LocationDnaRankingEngine` consumes raw Google JSON (`$place['geometry']['location']['lat']`, `$place['types']`) and must be normalised first. |
-| **Dependencies** | Phase 0 (queue, test isolation) · Phase 1 (adapter seam, engine normalisation) · Phase 2 (corpus, **Gate 1** prominence-prior validation, **Gate 2** coverage) |
+| **Dependencies** | Phase 0 (queue, test isolation) · Phase 1 (adapter seam, engine normalisation) · Phase 2 (corpus, **Gate 1** authority-first ranking validation, **Gate 2** coverage) |
 | **Testing requirements** | Golden-master: `ranking_score`/`rank`/`ranking_reasons_json` byte-identical across the Phase-1 refactor for all 1,090 persisted POI rows · **Gate 3** dual-run diff of rank-1 selection, product-owner signed off · Contract tests: `summary_json`/`lifestyle_json` keys are a superset · Per-role matrix (`seller`, `landlord`, `seller_agent`, `landlord_agent`, `bridge`) · **Network guard: `ComputeLocationDna` makes zero outbound calls** |
 | **Rollback strategy** | Config flip: `capabilities['poi.default']` base → `google_places`, `enabled => true`, re-enable key. `fetch_version` mismatch triggers refetch (~$628 at current volume). **No schema revert required.** Window closes at Phase 6b. |
 | **Effort** | **4–6 wks** (1–2 seam + engine normalisation; 2–3 corpus adapter + taxonomy; 1 validation) |
@@ -404,10 +404,10 @@ Phase 6b   Credential + schema teardown               (GMP-12, GMP-13, GMP-14, G
 | **Purpose** | Feed `LocationDnaRankingEngine`'s `review_confidence_score` and `consumer_relevance_score`. Rendered as stars in **agent/admin views only** — never to a consumer. |
 | **Files / components** | Written: `LocationDnaPoiDistanceService.php:1385-1386` · Model: `PropertyLocationPoi.php:24-25` · Rendered: `admin/dna/partials/location-dna-card.blade.php:168-176, 271-284`, `partials/location-dna-agent-panel.blade.php:148-151` · Schema: migration `2026_06_22_000001` |
 | **Call sites** | 2 write sites; 4 render sites |
-| **Recommended replacement** | Derived **prominence** + **confidence** (authority membership, brand, corpus confidence, source agreement, geometry). The `confidence` / `provenance_json` columns already exist (migration `2026_07_05_000001`) and have **never been written**. |
+| **Recommended replacement** | Derived **prominence** + **confidence** signals, composed under **authority-first ranking** (SSOT §9.2; the six-term prominence-prior formula is retired — E-12): authority membership, brand, corpus confidence, source agreement, geometry. The `confidence` / `provenance_json` columns already exist (migration `2026_07_05_000001`) and have **never been written**. |
 | **Complexity** | **Medium** — the ranking weights re-tune; **Gate 1** validates. |
 | **Dependencies** | GMP-01 · Gate 1 |
-| **Testing requirements** | Gate 1 (≤3% embarrassment rate against the 1,090 labelled rows) · Gate 3 dual-run diff · admin/agent views render prominence instead of stars |
+| **Testing requirements** | Gate 1 (≤3% embarrassment rate; authority-first ranking vs the **844** rated rows across 13 listings — E-10) · Gate 3 dual-run diff · admin/agent views render prominence instead of stars |
 | **Rollback strategy** | Columns stop being **written** in Phase 3 and hold stale, ignored data until dropped in 6b. Dropping early would foreclose the GMP-01 rollback. |
 | **Effort** | Included in GMP-01 |
 | **Phase** | **3** (stop writing) → **6b** (drop columns) |
@@ -550,7 +550,7 @@ php artisan test --filter=NetworkGuard                   # expect: pass, 0 attem
 |---|---|---:|---|
 | **0** — Infrastructure | GMP-12 (segregate), GMP-13 (wire), GMP-18 | 1.5–2 wks | Suite makes zero outbound calls |
 | **1** — Provider abstraction | GMP-01 (seam + engine normalisation) | 2–3 wks | Golden-master ranking parity, 1,090/1,090 rows |
-| **2** — Spatial foundation | *(corpus; no Google removal)* | 3–4 wks | **Gate 1** prominence prior · **Gate 2** coverage |
+| **2** — Spatial foundation | *(corpus; no Google removal)* | 3–4 wks | **Gate 1** authority-first ranking · **Gate 2** coverage |
 | **3** — Location DNA | GMP-01 (removal), GMP-14 (stop writing), GMP-A6, GMP-A7 | 2–3 wks | **Gate 3** dual-run diff · zero outbound calls |
 | **5a** — Geocoding | GMP-04, GMP-16, GMP-17 | 1–2 wks | Fallback chain coverage · pin-confirmation live |
 | **5b** — Address entry | GMP-02, GMP-03, GMP-05, GMP-A1, GMP-A3 | 3–5 wks | **Zero Google Maps Content in the system** |
