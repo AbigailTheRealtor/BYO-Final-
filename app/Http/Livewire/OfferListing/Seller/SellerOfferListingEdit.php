@@ -16,12 +16,14 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\Concerns\ValidatesMediaUploads;
 use App\Http\Livewire\OfferListing\Concerns\SellerPublishValidation;
 
 class SellerOfferListingEdit extends Component
 {
     use WithFileUploads;
     use ResolvesOwnedAuction;
+    use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
     use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
 
     protected $listeners = [
@@ -3928,6 +3930,9 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('current_status', $this->current_status);
         $auction->saveMeta('video_link', $this->video_link);
         $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
+
+        // HI-04 (M1) — validate photo/video content and size before any public-disk write.
+        $this->validateMediaUploads();
 
         // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
         if ($this->photo && !is_string($this->photo)) {

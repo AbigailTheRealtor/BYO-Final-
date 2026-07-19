@@ -213,7 +213,13 @@ class PropertyAuctionBidController extends Controller
             // }
         } catch (\Exception $e) {
             DB::rollBack();
-            return $e->getMessage();
+            // m1 — never return the raw exception (stack traces, SQL, file paths)
+            // to the client. Log internally with context; show a generic message.
+            Log::error('savePABid failed', [
+                'auction_id' => $request->auction_id,
+                'user_id'    => Auth::id(),
+                'error'      => $e->getMessage(),
+            ]);
             return redirect()->back()->with('error', 'Unable to add bid');
         }
     }

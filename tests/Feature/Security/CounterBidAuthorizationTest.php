@@ -211,4 +211,49 @@ class CounterBidAuthorizationTest extends TestCase
             $this->assertDoesNotMatchRegularExpression('/\bvar_dump\s*\(/', $line, 'live var_dump on line ' . ($i + 1));
         }
     }
+
+    // ── m1: raw exception disclosure ────────────────────────────────────
+    public function test_save_pa_bid_does_not_return_raw_exception_to_client(): void
+    {
+        // An unparseable expiration_date makes the handler's `new DateTime(...)`
+        // throw, driving savePABid() deterministically into its catch block.
+        // Before m1 the catch did `return $e->getMessage();`, echoing the raw
+        // exception (DateTime parse error, SQL, file paths) as a 200 body. It
+        // must now be a generic redirect that leaks no internals.
+        $owner   = User::factory()->create();
+        $bidder  = User::factory()->create();
+        $auction = $this->makeAuction($owner->id);
+        $auction->saveMeta('expiration_date', 'not-a-valid-date');
+
+        $response = $this->actingAs($bidder)
+            ->from('/property/listing/view/' . $auction->id)
+            ->post('/property/listing/save-pa-bid', [
+                'auction_id' => $auction->id,
+                'price'      => 100000,
+            ]);
+
+        // Fixed behaviour: a 302 redirect. Before m1 the handler returned the raw
+        // exception STRING, which Laravel wraps as a 200 response body — so a
+        // redirect (never 200) is the definitive regression signal.
+        $response->assertRedirect();
+        $this->assertNotSame(200, $response->getStatusCode());
+
+        // The failure path was actually exercised: the transaction rolled back,
+        // so no bid persisted.
+        $this->assertSame(0, PropertyAuctionBid::count());
+
+        // The raw exception text (DateTime parse error, SQL, file paths, stack
+        // frames) must never reach the client body.
+        $body = $response->getContent();
+        foreach (['DateTime', 'Failed to parse', 'SQLSTATE', 'Attempt to read property', 'Stack trace', '/home/runner', 'vendor/'] as $needle) {
+            $this->assertStringNotContainsString($needle, $body, "Response leaked internal detail: {$needle}");
+        }
+    }
+
+    public function test_save_pa_bid_source_has_no_raw_exception_return(): void
+    {
+        // Guard against re-introduction of `return $e->getMessage();`.
+        $source = file_get_contents(app_path('Http/Controllers/PropertyAuctionBidController.php'));
+        $this->assertDoesNotMatchRegularExpression('/return\s+\$e->getMessage\(\)\s*;/', $source);
+    }
 }
