@@ -569,6 +569,14 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Http/Livewire/Concerns/CalculatesServiceFeeTotals.php',
             'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuction.php',
             'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuctionEdit.php',
+            // Phase 2 — Batch B2.1B (Accepted → Cancelled administrative flow):
+            //   new cancel() surface reusing the B1.2 locked transition + event log.
+            //   OfferController.php, OfferDecisionService.php and OfferPermissionService.php
+            //   are already allow-listed above; the remaining touched files are added here.
+            'app/Services/Offers/OfferWorkflowFacade.php',
+            'app/Services/Offers/OfferAvailableActionsService.php',
+            'app/Notifications/Offers/OfferCancelledNotification.php',
+            'routes/web.php',
         ];
 
         $unexpected = array_values(array_filter(

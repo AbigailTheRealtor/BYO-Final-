@@ -62,6 +62,27 @@ class OfferDecisionService
     }
 
     /**
+     * B2.1B — administrative cancellation of an accepted offer (accepted → cancelled).
+     *
+     * Routes through the same atomic, row-locked transition() as accept/reject/
+     * withdraw, so the B1.2 locking, request-time-expiry safety net, and immutable
+     * event-log write are reused unchanged. Because $toStatus is neither 'accepted'
+     * nor an active status, the competing-offer close and snapshot capture never
+     * fire — previously-rejected competitors stay rejected and the accepted-terms
+     * snapshot is preserved. The cancelled branch inside transition() then resets
+     * the parent listing to Active under the same lock.
+     */
+    public function cancel(
+        Offer $offer,
+        ?int $actorId,
+        string $actorRole,
+        array $metadata = [],
+        ?string $ipAddress = null
+    ): array {
+        return $this->transition($offer, 'cancelled', 'offer_cancelled', $actorId, $actorRole, $metadata, $ipAddress);
+    }
+
+    /**
      * Atomic, row-locked offer transition (BLK-06).
      *
      * The whole operation runs inside a database transaction. The parent auction
@@ -157,6 +178,14 @@ class OfferDecisionService
 
                 if ($toStatus === 'accepted') {
                     $this->captureAcceptedTermsSnapshot($offer);
+                }
+
+                // B2.1B — on administrative cancellation of an accepted offer, reset
+                // the parent listing to Active under the same lock (idempotent safety
+                // reset). Competing offers are intentionally NOT touched here, so any
+                // previously-rejected competitors remain rejected.
+                if ($toStatus === 'cancelled') {
+                    $this->reactivateListing($offer);
                 }
 
                 $log = $this->eventLog->log(
@@ -275,6 +304,29 @@ class OfferDecisionService
         }
 
         return $closed;
+    }
+
+    /**
+     * B2.1B — idempotent "return to Active" reset for the parent listing when an
+     * accepted offer is cancelled (requirement #7). The parent auction row is
+     * already locked by the enclosing transition() transaction, so this write is
+     * atomic with the status change. Clears the sold flag and forces the
+     * listing_status meta back to 'Active'; a no-op in effect when already active.
+     */
+    private function reactivateListing(Offer $offer): void
+    {
+        if ($offer->offer_auction_id === null) {
+            return;
+        }
+
+        $auction = OfferAuction::query()->whereKey($offer->offer_auction_id)->first();
+        if ($auction === null) {
+            return;
+        }
+
+        $auction->is_sold = false;
+        $auction->save();
+        $auction->saveMeta('listing_status', 'Active');
     }
 
     /**

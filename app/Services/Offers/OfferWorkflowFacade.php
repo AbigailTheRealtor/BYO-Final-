@@ -75,6 +75,16 @@ class OfferWorkflowFacade
         return $this->expirationService->expire($offer, $actorId, $actorRole, $metadata, $ipAddress);
     }
 
+    public function cancel(
+        Offer $offer,
+        ?int $actorId,
+        string $actorRole,
+        array $metadata = [],
+        ?string $ipAddress = null,
+    ): array {
+        return $this->decisionService->cancel($offer, $actorId, $actorRole, $metadata, $ipAddress);
+    }
+
     public function timeline(Offer $offer): array
     {
         return $this->timelineBuilder->buildForOffer($offer);

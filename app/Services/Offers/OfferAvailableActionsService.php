@@ -17,6 +17,7 @@ class OfferAvailableActionsService
         $accept      = $this->permissions->canAccept($offer, $actorId, $actorRole);
         $reject      = $this->permissions->canReject($offer, $actorId, $actorRole);
         $withdraw    = $this->permissions->canWithdraw($offer, $actorId, $actorRole);
+        $cancel      = $this->permissions->canCancel($offer, $actorId, $actorRole);
         $expire      = $this->permissions->canExpire($offer, $actorId, $actorRole);
         $viewTimeline = $this->permissions->canViewTimeline($offer, $actorId, $actorRole);
 
@@ -26,6 +27,7 @@ class OfferAvailableActionsService
             'can_accept'        => (bool) $accept['allowed'],
             'can_reject'        => (bool) $reject['allowed'],
             'can_withdraw'      => (bool) $withdraw['allowed'],
+            'can_cancel'        => (bool) $cancel['allowed'],
             'can_expire'        => (bool) $expire['allowed'],
             'can_view_timeline' => (bool) $viewTimeline['allowed'],
             'reasons'           => [
@@ -34,6 +36,7 @@ class OfferAvailableActionsService
                 'accept'        => (string) $accept['reason'],
                 'reject'        => (string) $reject['reason'],
                 'withdraw'      => (string) $withdraw['reason'],
+                'cancel'        => (string) $cancel['reason'],
                 'expire'        => (string) $expire['reason'],
                 'view_timeline' => (string) $viewTimeline['reason'],
             ],

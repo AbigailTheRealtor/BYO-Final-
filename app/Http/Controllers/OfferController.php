@@ -7,6 +7,7 @@ use App\Models\Offer;
 use App\Models\OfferAuction;
 use App\Models\TenantAgentAuction;
 use App\Notifications\Offers\OfferAcceptedNotification;
+use App\Notifications\Offers\OfferCancelledNotification;
 use App\Notifications\Offers\OfferCounteredNotification;
 use App\Notifications\Offers\OfferRejectedNotification;
 use App\Notifications\Offers\OfferSubmittedNotification;
@@ -354,6 +355,85 @@ class OfferController extends Controller
 
         return response()->json([
             'message' => 'Offer withdrawn.',
+            'result'  => $result,
+        ]);
+    }
+
+    /**
+     * B2.1B — administrative cancellation of an accepted offer (accepted → cancelled).
+     * Only the listing owner or a platform admin may cancel; the submitter may not.
+     * A reason is required (trimmed, capped at 1000 chars) and recorded in the event
+     * log. Both parties are notified after commit. Authorization and the atomic,
+     * row-locked transition are delegated to the actions/permission layer and the
+     * B1.2 decision service — this method adds no direct state mutation.
+     */
+    public function cancel(Request $request, Offer $offer): JsonResponse|RedirectResponse
+    {
+        $actorId   = Auth::id();
+        $actorRole = Auth::user()->role ?? Auth::user()->user_type ?? 'buyer';
+
+        // Reason is required; trim whitespace and enforce a 1000-char maximum.
+        $request->validate([
+            'reason' => 'required|string',
+        ]);
+        $reason = mb_substr(trim((string) $request->input('reason')), 0, 1000);
+
+        if ($reason === '') {
+            $message = 'A cancellation reason is required.';
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)->with('error', $message);
+            }
+            return response()->json(['message' => $message], 422);
+        }
+
+        $actions = $this->actionsService->forOffer($offer, $actorId, $actorRole);
+
+        if (!$actions['can_cancel']) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $actions['reasons']['cancel']);
+            }
+            return response()->json(['message' => $actions['reasons']['cancel']], 422);
+        }
+
+        $result = $this->facade->cancel(
+            $offer,
+            $actorId,
+            $actorRole,
+            ['reason' => $reason, 'cancelled_by' => $actorId, 'cancelled_by_role' => $actorRole],
+            $request->ip(),
+        );
+
+        if ($result['allowed'] === false) {
+            if (!$request->expectsJson()) {
+                return redirect()->route('offers.show', $offer)
+                    ->with('error', $result['reason']);
+            }
+            return response()->json(['message' => $result['reason']], 422);
+        }
+
+        try {
+            // Notify BOTH parties: the listing owner and the offer submitter.
+            // Rejected competing offers are intentionally never notified.
+            $offer->load('offerAuction.user', 'user');
+            $recipients = collect([$offer->offerAuction?->user, $offer->user])
+                ->filter()
+                ->unique(fn ($u) => $u->id);
+
+            foreach ($recipients as $recipient) {
+                $recipient->notify(new OfferCancelledNotification($offer, $reason));
+            }
+        } catch (\Throwable $e) {
+            Log::error('OfferCancelledNotification failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
+        }
+
+        if (!$request->expectsJson()) {
+            return redirect()->route('offers.show', $offer)
+                ->with('success', 'Offer cancelled successfully.');
+        }
+
+        return response()->json([
+            'message' => 'Offer cancelled.',
             'result'  => $result,
         ]);
     }
