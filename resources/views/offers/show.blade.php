@@ -729,6 +729,32 @@
                             </div>
                         @endforeach
 
+                        {{-- B2.1B — Cancel accepted offer: owner/admin only (can_cancel is never
+                             true for the submitter); reveals a required-reason form on click. --}}
+                        @if(!empty($actions['can_cancel']))
+                            <div class="d-flex flex-column align-items-start" style="min-width: 130px;">
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="cancel-offer-action-btn"
+                                    onclick="document.getElementById('cancel-form-panel').style.display='block';this.style.display='none';">Cancel Accepted Offer</button>
+                            </div>
+                            <div id="cancel-form-panel" class="w-100 mt-3" style="display:none;">
+                                <div class="card border-danger">
+                                    <div class="card-header bg-danger bg-opacity-10 fw-semibold">Cancel Accepted Offer</div>
+                                    <div class="card-body">
+                                        <form method="POST" action="{{ route('offers.cancel', $offer) }}">
+                                            @csrf
+                                            <label for="cancel-reason" class="form-label">Reason for cancellation <span class="text-danger">*</span></label>
+                                            <textarea id="cancel-reason" name="reason" class="form-control mb-2" rows="3" maxlength="1000" required
+                                                placeholder="Explain why this accepted offer is being cancelled (required)."></textarea>
+                                            @error('reason')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
+                                            <button type="submit" class="btn btn-danger btn-sm">Confirm Cancellation</button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                onclick="document.getElementById('cancel-form-panel').style.display='none';document.getElementById('cancel-offer-action-btn').style.display='inline-block';">Dismiss</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                         {{-- Counter: hidden entirely for the submitter. --}}
                         @if(!$actorIsSubmitter)
                             @if(!empty($actions['can_counter']))

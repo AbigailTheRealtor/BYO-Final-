@@ -163,6 +163,43 @@ class OfferPermissionService
         return ['allowed' => true, 'action' => $action, 'reason' => ''];
     }
 
+    /**
+     * B2.1B — administrative cancellation of an ACCEPTED offer.
+     *
+     * Only an accepted offer may be cancelled. Authorized actors are the platform
+     * ('system'/'admin') and the listing owner (offerAuction.user_id). The offer
+     * submitter (buyer/tenant) may NOT directly cancel an accepted offer, so — unlike
+     * accept/reject — the root submitter is deliberately excluded from the allow-set.
+     * $actorRole is derived server-side from the authenticated user, never from
+     * request input, so the 'admin' bypass is not client-spoofable.
+     */
+    public function canCancel(Offer $offer, ?int $actorId, string $actorRole): array
+    {
+        $action = 'cancel';
+        $status = $offer->status;
+
+        if ($status !== 'accepted') {
+            return ['allowed' => false, 'action' => $action, 'reason' => "Cannot cancel: offer status is '{$status}', expected 'accepted'."];
+        }
+
+        // Platform oversight roles may always cancel (mirrors canView's admin gate).
+        if (in_array($actorRole, ['system', 'admin'], true)) {
+            return ['allowed' => true, 'action' => $action, 'reason' => ''];
+        }
+
+        if ($actorId === null) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot cancel: actor must be authenticated.'];
+        }
+
+        // Only the listing owner may cancel; the offer submitter may not.
+        $listingOwnerId = $offer->offerAuction?->user_id;
+        if ($listingOwnerId !== null && $actorId === $listingOwnerId) {
+            return ['allowed' => true, 'action' => $action, 'reason' => ''];
+        }
+
+        return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot cancel: only the listing owner or a platform admin may cancel an accepted offer.'];
+    }
+
     public function canWithdraw(Offer $offer, ?int $actorId, string $actorRole): array
     {
         $action = 'withdraw';
