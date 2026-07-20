@@ -1,0 +1,98 @@
+{
+    "_meta": {
+        "purpose": "Hybrid Gate 1 synthetic benchmark (Option D). License-clean, deterministic, CI-safe rank-sanity scenarios for LocationDnaRankingEngine. Every name, type, rating, and review count is SYNTHETIC — nothing here is derived from Google Places content.",
+        "batch": "phase-2-batch-2d-part-b",
+        "ground_truth": "per-candidate `legitimate` label (true = a defensible result for the scenario's category; false = an embarrassment such as a gas station queried as a grocery store).",
+        "pass_rule": "SSOT §9.3 — embarrassment rate over the top-N window must be <= 0.03.",
+        "scope_and_limits": "This set validates the Gate 1 HARNESS pipeline (Option E) and the pure ranking engine's TYPE discrimination on well-separated cases. It does NOT certify corpus quality and does NOT exercise CATEGORY_EXCLUSION_RULES or a real corpus — those, and adversarial distance-dominated tail cases, are deferred to the Class-2 phase (owner decision).",
+        "rating_coverage": "Ratings and review counts here deliberately vary (high / mid / low / absent) so the engine's review_confidence and consumer_relevance branches stay exercised after the golden master was de-Googled.",
+        "scenarios": 7
+    },
+    "scenarios": [
+        {
+            "key": "grocery-clean-1",
+            "category": "grocery_store",
+            "source_lat": 27.9500,
+            "source_lng": -82.4600,
+            "candidates": [
+                { "name": "Synthetic Market Alpha",   "lat": 27.9520, "lng": -82.4600, "types": ["supermarket", "grocery_or_supermarket"], "rating": 4.5, "user_ratings_total": 420, "legitimate": true },
+                { "name": "Synthetic Market Bravo",   "lat": 27.9530, "lng": -82.4600, "types": ["supermarket", "grocery_or_supermarket"], "rating": 4.2, "user_ratings_total": 300, "legitimate": true },
+                { "name": "Synthetic Market Charlie", "lat": 27.9540, "lng": -82.4600, "types": ["grocery_or_supermarket", "store"], "rating": 4.0, "user_ratings_total": 150, "legitimate": true },
+                { "name": "Synthetic Fuel Mart Delta", "lat": 27.9700, "lng": -82.4600, "types": ["gas_station", "convenience_store"], "rating": 3.4, "user_ratings_total": 60, "legitimate": false, "true_category": "gas_station" },
+                { "name": "Synthetic Corner Store Echo", "lat": 27.9800, "lng": -82.4600, "types": ["convenience_store", "store"], "rating": 2.8, "user_ratings_total": 25, "legitimate": false, "true_category": "convenience_store" }
+            ]
+        },
+        {
+            "key": "hospital-clean-1",
+            "category": "hospital",
+            "source_lat": 27.9000,
+            "source_lng": -82.5000,
+            "candidates": [
+                { "name": "Synthetic Regional Hospital Alpha", "lat": 27.9020, "lng": -82.5000, "types": ["hospital", "health"], "rating": 4.1, "user_ratings_total": 300, "legitimate": true },
+                { "name": "Synthetic Emergency Center Bravo",  "lat": 27.9030, "lng": -82.5000, "types": ["hospital", "emergency_room", "health"], "rating": 3.9, "user_ratings_total": 210, "legitimate": true },
+                { "name": "Synthetic Medical Center Charlie",  "lat": 27.9040, "lng": -82.5000, "types": ["medical_center", "doctor", "health"], "rating": 4.3, "user_ratings_total": 95, "legitimate": true },
+                { "name": "Synthetic Day Spa Delta",           "lat": 27.9200, "lng": -82.5000, "types": ["beauty_salon", "spa"], "rating": 4.8, "user_ratings_total": 500, "legitimate": false, "true_category": "spa" }
+            ]
+        },
+        {
+            "key": "restaurant-clean-1",
+            "category": "restaurant",
+            "source_lat": 28.0000,
+            "source_lng": -82.4000,
+            "candidates": [
+                { "name": "Synthetic Bistro Alpha",   "lat": 28.0020, "lng": -82.4000, "types": ["restaurant"], "rating": 4.6, "user_ratings_total": 800, "legitimate": true },
+                { "name": "Synthetic Grill Bravo",     "lat": 28.0030, "lng": -82.4000, "types": ["restaurant", "meal_takeaway"], "rating": 4.3, "user_ratings_total": 350, "legitimate": true },
+                { "name": "Synthetic Kitchen Charlie", "lat": 28.0040, "lng": -82.4000, "types": ["restaurant"], "rating": 4.1, "user_ratings_total": 120, "legitimate": true },
+                { "name": "Synthetic Nightclub Delta", "lat": 28.0200, "lng": -82.4000, "types": ["bar", "night_club"], "rating": 4.4, "user_ratings_total": 600, "legitimate": false, "true_category": "night_club" }
+            ]
+        },
+        {
+            "key": "school-clean-1",
+            "category": "school",
+            "source_lat": 27.8000,
+            "source_lng": -82.7000,
+            "candidates": [
+                { "name": "Synthetic Academy Alpha",      "lat": 27.8020, "lng": -82.7000, "types": ["school", "point_of_interest"], "legitimate": true },
+                { "name": "Synthetic Primary School Bravo", "lat": 27.8030, "lng": -82.7000, "types": ["primary_school", "school"], "rating": 4.2, "user_ratings_total": 40, "legitimate": true },
+                { "name": "Synthetic High School Charlie", "lat": 27.8040, "lng": -82.7000, "types": ["secondary_school", "school"], "rating": 3.8, "user_ratings_total": 22, "legitimate": true },
+                { "name": "Synthetic Fitness Studio Delta", "lat": 27.8200, "lng": -82.7000, "types": ["gym", "health"], "rating": 4.9, "user_ratings_total": 300, "legitimate": false, "true_category": "gym" }
+            ]
+        },
+        {
+            "key": "coffee-clean-1",
+            "category": "coffee_shop",
+            "source_lat": 27.9700,
+            "source_lng": -82.4500,
+            "candidates": [
+                { "name": "Synthetic Cafe Alpha",   "lat": 27.9720, "lng": -82.4500, "types": ["cafe", "coffee_shop"], "rating": 4.5, "user_ratings_total": 500, "legitimate": true },
+                { "name": "Synthetic Coffee Bravo", "lat": 27.9730, "lng": -82.4500, "types": ["cafe"], "rating": 4.2, "user_ratings_total": 210, "legitimate": true },
+                { "name": "Synthetic Roasters Charlie", "lat": 27.9740, "lng": -82.4500, "types": ["coffee_shop", "cafe"], "rating": 4.0, "user_ratings_total": 90, "legitimate": true },
+                { "name": "Synthetic Drive-Thru Delta", "lat": 27.9900, "lng": -82.4500, "types": ["fast_food", "meal_takeaway"], "rating": 3.9, "user_ratings_total": 400, "legitimate": false, "true_category": "fast_food" }
+            ]
+        },
+        {
+            "key": "pharmacy-clean-1",
+            "category": "pharmacy",
+            "source_lat": 27.8500,
+            "source_lng": -82.6500,
+            "candidates": [
+                { "name": "Synthetic Pharmacy Alpha",   "lat": 27.8520, "lng": -82.6500, "types": ["pharmacy", "drugstore"], "rating": 4.1, "user_ratings_total": 120, "legitimate": true },
+                { "name": "Synthetic Drugstore Bravo",  "lat": 27.8530, "lng": -82.6500, "types": ["pharmacy"], "rating": 3.9, "user_ratings_total": 80, "legitimate": true },
+                { "name": "Synthetic Pharmacy Charlie", "lat": 27.8540, "lng": -82.6500, "types": ["pharmacy", "drugstore", "store"], "rating": 4.4, "user_ratings_total": 60, "legitimate": true },
+                { "name": "Synthetic Vet Clinic Delta", "lat": 27.8700, "lng": -82.6500, "types": ["veterinary_care"], "rating": 4.7, "user_ratings_total": 200, "legitimate": false, "true_category": "veterinary_care" }
+            ]
+        },
+        {
+            "key": "park-clean-1",
+            "category": "park",
+            "source_lat": 28.0500,
+            "source_lng": -82.4200,
+            "candidates": [
+                { "name": "Synthetic City Park Alpha",   "lat": 28.0520, "lng": -82.4200, "types": ["park", "point_of_interest"], "rating": 4.6, "user_ratings_total": 900, "legitimate": true },
+                { "name": "Synthetic County Park Bravo", "lat": 28.0530, "lng": -82.4200, "types": ["park"], "rating": 4.3, "user_ratings_total": 400, "legitimate": true },
+                { "name": "Synthetic Rec Park Charlie",  "lat": 28.0540, "lng": -82.4200, "types": ["park", "point_of_interest"], "rating": 4.1, "user_ratings_total": 150, "legitimate": true },
+                { "name": "Synthetic Wetland Tract Delta", "lat": 28.0700, "lng": -82.4200, "types": ["natural_feature", "locality"], "rating": 4.0, "user_ratings_total": 50, "legitimate": false, "true_category": "natural_feature" }
+            ]
+        }
+    ]
+}
