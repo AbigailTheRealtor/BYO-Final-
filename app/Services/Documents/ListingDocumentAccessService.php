@@ -31,7 +31,8 @@ class ListingDocumentAccessService
 {
     /** listingType => AcceptedBidSummary.listing_type values that assign an agent to it. */
     private const AGENT_ASSIGNMENT_TYPES = [
-        'seller' => ['seller', 'seller_agent'],
+        'seller'   => ['seller', 'seller_agent'],
+        'landlord' => ['landlord', 'landlord_agent'],
     ];
 
     public function resolveListing(string $listingType, int $listingId): ?Model

@@ -474,11 +474,11 @@ Route::get('/tenant/listings/{id}/download', [\App\Http\Controllers\ListingDownl
 // documents. No public URL exists for these files; access is re-checked on
 // every request by ListingDocumentController via ListingDocumentAccessService.
 Route::get('/listings/{listingType}/{listingId}/document/{documentKey}', [\App\Http\Controllers\ListingDocumentController::class, 'show'])
-    ->where(['listingType' => 'seller', 'listingId' => '[0-9]+'])
+    ->where(['listingType' => 'seller|landlord', 'listingId' => '[0-9]+'])
     ->name('listing.document.show')
     ->middleware('auth');
 Route::get('/listings/{listingType}/{listingId}/additional-document/{index}', [\App\Http\Controllers\ListingDocumentController::class, 'additional'])
-    ->where(['listingType' => 'seller', 'listingId' => '[0-9]+', 'index' => '[0-9]+'])
+    ->where(['listingType' => 'seller|landlord', 'listingId' => '[0-9]+', 'index' => '[0-9]+'])
     ->name('listing.document.additional')
     ->middleware('auth');
 

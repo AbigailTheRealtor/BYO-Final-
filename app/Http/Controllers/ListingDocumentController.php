@@ -34,6 +34,19 @@ class ListingDocumentController extends Controller
     {
     }
 
+    /**
+     * listingType => [doc-rows meta key, per-row path field].
+     *
+     * Server-trusted: the meta key and path field are selected here BY LISTING TYPE
+     * and are never taken from request input. Seller doc-rows are stored under
+     * `doc_rows` with a `file_path` field; landlord doc-rows under `landlord_doc_rows`
+     * with a `stored_path` field.
+     */
+    private const DOC_ROW_SOURCES = [
+        'seller'   => ['doc_rows', 'file_path'],
+        'landlord' => ['landlord_doc_rows', 'stored_path'],
+    ];
+
     public function show(string $listingType, int $listingId, string $documentKey)
     {
         if (! ListingDocumentCatalog::supportsListingType($listingType) || ! ListingDocumentCatalog::has($documentKey)) {
@@ -84,9 +97,15 @@ class ListingDocumentController extends Controller
             abort(404);
         }
 
-        $rowsRaw = data_get($listing->get, 'doc_rows');
+        $source = self::DOC_ROW_SOURCES[$listingType] ?? null;
+        if ($source === null) {
+            abort(404);
+        }
+        [$metaKey, $pathField] = $source;
+
+        $rowsRaw = data_get($listing->get, $metaKey);
         $rows    = is_string($rowsRaw) ? (json_decode($rowsRaw, true) ?: []) : (is_array($rowsRaw) ? $rowsRaw : []);
-        $relative = trim((string) ($rows[$index]['file_path'] ?? ''));
+        $relative = trim((string) ($rows[$index][$pathField] ?? ''));
 
         if ($relative === '' || str_contains($relative, '..') || str_starts_with($relative, '/')) {
             abort(404, 'Document not found.');

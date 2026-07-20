@@ -3785,8 +3785,9 @@ class LandlordOfferListingEdit extends Component
                 $uuid     = (string) Str::uuid();
                 $fileName = $uuid . '.' . $ext;
                 $dir      = 'landlord-disclosures/' . $auction->id . '/' . $item['dir'];
-                Storage::disk('public')->makeDirectory($dir);
-                $fileVal->storeAs($dir, $fileName, 'public');
+                // HI-05A — disclosures are private; delivered only via the authorized route.
+                Storage::disk('private')->makeDirectory($dir);
+                $fileVal->storeAs($dir, $fileName, 'private');
                 $storedPath        = $dir . '/' . $fileName;
                 $this->{$pathProp} = $storedPath;
                 $auction->saveMeta($pathProp, $storedPath);
@@ -3807,8 +3808,9 @@ class LandlordOfferListingEdit extends Component
                 $ext = $this->listingDocuments->getClientOriginalExtension();
                 $uuid = (string) Str::uuid();
                 $fileName = $uuid . '.' . $ext;
-                Storage::disk('public')->makeDirectory('auction/documents');
-                $this->listingDocuments->storeAs('auction/documents', $fileName, 'public');
+                // HI-05A — listing documents are private; delivered only via the authorized route.
+                Storage::disk('private')->makeDirectory('auction/documents');
+                $this->listingDocuments->storeAs('auction/documents', $fileName, 'private');
                 $auction->saveMeta('listing_documents', $fileName);
             }
         } elseif ($this->listingDocuments && is_string($this->listingDocuments)) {
@@ -3967,8 +3969,9 @@ class LandlordOfferListingEdit extends Component
         $fileName     = $uuid . '.' . $ext;
         $dir          = 'landlord-disclosures/' . ($this->listingId ?? 'draft');
 
-        Storage::disk('public')->makeDirectory($dir);
-        $this->landlordDocFileUpload->storeAs($dir, $fileName, 'public');
+        // HI-05A — additional document rows are private; delivered only via the authorized route.
+        Storage::disk('private')->makeDirectory($dir);
+        $this->landlordDocFileUpload->storeAs($dir, $fileName, 'private');
         $storedPath = $dir . '/' . $fileName;
 
         $rows = $this->landlord_doc_rows;
