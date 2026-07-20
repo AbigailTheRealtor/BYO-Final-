@@ -208,13 +208,19 @@
                             </div>
                             <div x-show="row.stored_path" class="d-flex align-items-center gap-2 flex-wrap">
                                 <span class="small text-muted" x-text="row.original_name"></span>
+                                {{-- HI-05A: private documents are served only through the authorized
+                                     ListingDocumentController route (no public /storage/ URL). The link
+                                     is available once the listing is saved (a persisted doc-row index
+                                     exists); a freshly uploaded, unsaved row has no authorized URL yet. --}}
+                                @if($listingId)
                                 <a
-                                    :href="'/storage/' + row.stored_path"
+                                    :href="'/listings/landlord/{{ $listingId }}/additional-document/' + index"
                                     target="_blank"
                                     class="btn btn-sm btn-outline-secondary"
                                 >
                                     <i class="fa-solid fa-file me-1"></i>View Current File
                                 </a>
+                                @endif
                                 <button
                                     type="button"
                                     class="btn btn-sm btn-outline-danger"

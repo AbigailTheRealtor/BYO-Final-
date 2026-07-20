@@ -2,6 +2,7 @@
 
 namespace App\Services\Documents;
 
+use App\Models\LandlordAgentAuction;
 use App\Models\SellerAgentAuction;
 
 /**
@@ -29,7 +30,8 @@ final class ListingDocumentCatalog
 {
     /** listingType => auction model class. Seller Offer Listings live in seller_agent_auctions. */
     private const LISTING_MODELS = [
-        'seller' => SellerAgentAuction::class,
+        'seller'   => SellerAgentAuction::class,
+        'landlord' => LandlordAgentAuction::class,
     ];
 
     /**
@@ -42,6 +44,15 @@ final class ListingDocumentCatalog
             'path' => 'seller_disclosure_file_path', 'dir' => 'seller-disclosures',
             'pathIncludesDir' => true, 'classification' => DocumentClassification::AI_READABLE,
             'label' => 'Seller Disclosure',
+        ],
+        // Landlord disclosure is a distinct key (landlord uses landlord_disclosure_file_path,
+        // stored as a full relative path under landlord-disclosures/). The remaining six
+        // disclosure keys + listing_documents are shared with seller by meta-key name and
+        // resolve against the landlord-resolved model, so they need no separate entry.
+        'landlord_disclosure_file' => [
+            'path' => 'landlord_disclosure_file_path', 'dir' => 'landlord-disclosures',
+            'pathIncludesDir' => true, 'classification' => DocumentClassification::AI_READABLE,
+            'label' => 'Landlord Disclosure',
         ],
         'flood_disclosure_file' => [
             'path' => 'flood_disclosure_file_path', 'dir' => 'seller-disclosures',
