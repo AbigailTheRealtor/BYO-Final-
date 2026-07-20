@@ -27,7 +27,11 @@ class PoiBaselineDiffHarnessTest extends TestCase
     use DatabaseTransactions;
 
     private const FIXTURE = 'tests/Fixtures/LocationDna/ranking-golden-master.json';
-    private const FROZEN_DIGEST = 'cfc0c05c9e172cc8af6dec55cdf3ee198a0fea6257fecdb247e4ec9f01753df9';
+    // Re-baselined by Batch 2D Part B after the golden master was fully de-Googled
+    // (business names/ratings/reviews/coordinates/listing-ids replaced with deterministic
+    // synthetic content; expected + digest regenerated). See ldna:remediate-golden-master
+    // and RankingGoldenMasterRemediationTest.
+    private const FROZEN_DIGEST = '498b683c83c5de538dd3f057318f8c6c8e20f2a7620e9a4fac2df3c79b068fc4';
 
     private const SOURCE_LAT = 27.9506;
     private const SOURCE_LNG = -82.4572;
