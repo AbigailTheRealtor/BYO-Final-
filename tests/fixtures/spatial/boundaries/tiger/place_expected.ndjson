@@ -1,0 +1,2 @@
+{"kind":"place","external_ref":"1200001","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.5,27.7],[-82.5,27.71],[-82.49,27.71],[-82.49,27.7],[-82.5,27.7]]]]},"attrs":{"name":"Synthetic Town town","basename":"Synthetic Town","state_fips":"12","source":"census_tiger"}}
+{"kind":"place","external_ref":"1200002","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.6,27.8],[-82.6,27.81],[-82.59,27.81],[-82.59,27.8],[-82.6,27.8]]]]},"attrs":{"name":"Synthetic City city","basename":"Synthetic City","state_fips":"12","source":"census_tiger"}}

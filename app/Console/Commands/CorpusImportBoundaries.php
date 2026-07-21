@@ -10,9 +10,11 @@ use App\Services\Spatial\BoundarySource;
 use Illuminate\Console\Command;
 
 /**
- * Spatial Intelligence Platform — Phase 2 Batch 2D Part C3a (PAD-US boundary import authoring).
+ * Spatial Intelligence Platform — Phase 2 Batch 2D Part C3 (boundary import authoring).
  *
- * OFFLINE boundary import DRY-RUN / plan author. Reads a raw boundary NDJSON, normalizes it through
+ * Source-agnostic OFFLINE boundary import DRY-RUN / plan author, shared by every registered boundary
+ * source (PAD-US = C3a, Census TIGER county/place/ZCTA/school-district = C3b, …).
+ * Reads a raw boundary NDJSON, normalizes it through
  * the registered {@see BoundarySource} adapter, gates the result with {@see BoundaryImportAcceptance},
  * and writes the artifacts an operator would use at Class-2:
  *   • boundaries.ndjson — the canonical BoundaryRecord rows (the staging/load input)
@@ -24,8 +26,7 @@ use Illuminate\Console\Command;
  *   • REFUSES to run in production. There is NO execute path against a cluster.
  *   • Opens NO pgsql_spatial connection and reads NO SPATIAL_* secret — it reads one local NDJSON
  *     file and writes plan artifacts to local disk. Live staging + load (COPY into boundaries, then
- *     ST_Subdivide into boundaries_parts) is the Class-2 recipe in
- *     spikes/phase-2-batch-2d-part-c3a-padus-boundary-import/sql/.
+ *     ST_Subdivide into boundaries_parts) is the Class-2 recipe in the per-slice spikes under spikes/.
  */
 class CorpusImportBoundaries extends Command
 {
@@ -39,7 +40,7 @@ class CorpusImportBoundaries extends Command
     public function handle(): int
     {
         if (app()->environment('production')) {
-            $this->error('[Batch 2D Part C3a] corpus:import-boundaries is an OFFLINE authoring tool and REFUSES to run in production.');
+            $this->error('[corpus:import-boundaries] corpus:import-boundaries is an OFFLINE authoring tool and REFUSES to run in production.');
             $this->line('Live boundary staging + load (ST_Subdivide into boundaries_parts) is deferred to the Class-2 phase.');
 
             return self::FAILURE;
@@ -74,7 +75,7 @@ class CorpusImportBoundaries extends Command
         $acceptance = new BoundaryImportAcceptance(null, [$source->kind()]);
         $verdict = $acceptance->evaluate($result->records);
 
-        $this->info('[Batch 2D Part C3a] Boundary import — DRY RUN (no PostGIS, nothing executed)');
+        $this->info('[corpus:import-boundaries] Boundary import — DRY RUN (no PostGIS, nothing executed)');
         $this->line("  source   : {$key} ({$cfg['label']})");
         $this->line("  kind     : {$source->kind()}");
         $this->line("  input    : {$inPath} (" . $result->totalInput . ' raw rows)');
@@ -92,7 +93,7 @@ class CorpusImportBoundaries extends Command
 
         if (!$verdict['passed']) {
             $this->newLine();
-            $this->error('[Batch 2D Part C3a] Acceptance FAILED: ' . implode(', ', $verdict['failures']));
+            $this->error('[corpus:import-boundaries] Acceptance FAILED: ' . implode(', ', $verdict['failures']));
             $this->line('No boundary artifacts written.');
             $this->writeArtifact($outDir, 'rejects.json', $this->json($this->rejects($result, $verdict)));
 
@@ -100,7 +101,9 @@ class CorpusImportBoundaries extends Command
         }
 
         $materializer = new BoundaryRowMaterializer();
-        $corpusVersion = 'padus-authoring-fixture';
+        // Derived from the source key (D-C3b-2) — an offline placeholder tag; the real
+        // corpus_version is assigned at Class-2 load time.
+        $corpusVersion = "{$key}-authoring-fixture";
         $staging = [
             'columns'        => BoundaryRowMaterializer::COLUMNS,
             'corpus_version' => $corpusVersion,
@@ -125,7 +128,7 @@ class CorpusImportBoundaries extends Command
             $this->line('    - ' . rtrim($outDir, '/') . '/' . $f);
         }
         $this->newLine();
-        $this->info('[Batch 2D Part C3a] boundary plan authored. Live load + ST_Subdivide is a Class-2 concern.');
+        $this->info('[corpus:import-boundaries] boundary plan authored. Live load + ST_Subdivide is a Class-2 concern.');
 
         return self::SUCCESS;
     }
