@@ -62,6 +62,42 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
         ],
 
+        // R2-A (HI-05A) — object-storage disks for listing media/documents.
+        // DEFINED BUT INERT: nothing is routed here until a later phase flips
+        // the LISTING_*_DISK selectors (see config/listing_storage.php). Both
+        // disks share one bucket, separated by the 'root' key prefix.
+        's3_public' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_BUCKET'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'url' => env('AWS_URL'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'root' => 'public',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
+        // Private listing documents. Deliberately has NO 'url' key. NOTE: on an
+        // S3 disk, ->url() can still COMPUTE a URL even without this key; privacy
+        // is therefore enforced by (a) never calling ->url() on this disk — the
+        // controller streams via ->response()/->get() — and (b) bucket-level
+        // Block Public Access / private object ACL so any computed URL 403s.
+        's3_private' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_BUCKET'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'root' => 'private',
+            'visibility' => 'private',
+            'throw' => false,
+        ],
+
     ],
 
     /*
