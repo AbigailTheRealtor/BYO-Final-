@@ -41,4 +41,27 @@ return [
 
     'public_secondary_disk' => env('LISTING_PUBLIC_SECONDARY_DISK', 's3_public'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Migration (R2-C, HI-05A) — used only by `listing-storage:migrate`
+    |--------------------------------------------------------------------------
+    |
+    | Non-destructive copy of existing local listing storage to the paired
+    | object-storage secondary disks, preserving exact relative keys. These keys
+    | are excluded from migration by default: operational metadata and the
+    | tracked .gitignore placeholders. Prefix match is applied to the relative
+    | key on each disk.
+    |
+    */
+
+    'migration' => [
+        'exclude_prefixes' => [
+            '_backfill-manifests',
+            '_migration-manifests',
+        ],
+        'exclude_basenames' => [
+            '.gitignore',
+        ],
+    ],
+
 ];
