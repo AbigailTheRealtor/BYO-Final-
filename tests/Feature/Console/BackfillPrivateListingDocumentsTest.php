@@ -235,4 +235,172 @@ class BackfillPrivateListingDocumentsTest extends TestCase
         $this->assertSame($rel, $manifest['records'][0]['relative_path']);
         $this->assertTrue($manifest['records'][0]['verified']);
     }
+
+    // ---------------------------------------------------------------------
+    // PR-A3 — listing-type-aware doc-row path field.
+    //
+    // Seller doc rows carry the path in `file_path`; landlord doc rows carry it
+    // in `stored_path`. The field is resolved from a fixed server-side map keyed
+    // by listing type (never from command input). These tests prove landlord
+    // coverage AND that seller behavior is preserved exactly.
+    // ---------------------------------------------------------------------
+
+    /** Landlord meta rows FK to landlord_agent_auctions, so a parent row is required. */
+    private function landlordListingId(): int
+    {
+        return LandlordAgentAuction::forceCreate(['user_id' => 1])->id;
+    }
+
+    public function test_seller_doc_rows_use_file_path_field_only(): void
+    {
+        // Seller preservation guard: a seller row keys off `file_path`. A landlord-style
+        // `stored_path` on a SELLER row must be ignored even though its file exists.
+        $rel     = 'seller-doc-uploads/31/s.pdf';
+        $ignored = 'seller-doc-uploads/31/ignored-stored-path.pdf';
+        Storage::disk('public')->put($rel, 'SROW');
+        Storage::disk('public')->put($ignored, 'NOPE');
+        $this->sellerMeta(31, 'doc_rows', json_encode([
+            ['type' => 'Addendum', 'file_path' => $rel],
+            ['type' => 'WrongField', 'stored_path' => $ignored],
+        ]));
+
+        $this->artisan('documents:backfill-private', ['--delete-public' => true])->assertSuccessful();
+
+        Storage::disk('private')->assertExists($rel);
+        Storage::disk('public')->assertMissing($rel);
+        // The stored_path-only seller row was never discovered.
+        Storage::disk('private')->assertMissing($ignored);
+        Storage::disk('public')->assertExists($ignored);
+    }
+
+    public function test_landlord_doc_rows_use_stored_path_and_copy_public_to_private(): void
+    {
+        $id      = $this->landlordListingId();
+        $rel     = 'landlord-doc-uploads/' . $id . '/l.pdf';
+        $ignored = 'landlord-doc-uploads/' . $id . '/ignored-file-path.pdf';
+        Storage::disk('public')->put($rel, 'LROW');
+        Storage::disk('public')->put($ignored, 'NOPE');
+        // Landlord rows key off `stored_path`; a seller-style `file_path` must be ignored.
+        $this->landlordMeta($id, 'landlord_doc_rows', json_encode([
+            ['type' => 'Lease', 'stored_path' => $rel],
+            ['type' => 'WrongField', 'file_path' => $ignored],
+        ]));
+
+        // Copy-only (no --delete-public): public retained, private created.
+        $this->artisan('documents:backfill-private', ['--listing-type' => 'landlord'])
+            ->assertSuccessful();
+
+        Storage::disk('private')->assertExists($rel);
+        Storage::disk('public')->assertExists($rel); // copy-only
+        $this->assertSame('LROW', Storage::disk('private')->get($rel));
+        // The file_path-only landlord row was never discovered.
+        Storage::disk('private')->assertMissing($ignored);
+    }
+
+    public function test_landlord_doc_rows_delete_public_only_after_verified_private_copy(): void
+    {
+        $id  = $this->landlordListingId();
+        $rel = 'landlord-doc-uploads/' . $id . '/l.pdf';
+        Storage::disk('public')->put($rel, 'LROW');
+        $this->landlordMeta($id, 'landlord_doc_rows', json_encode([['stored_path' => $rel]]));
+
+        $this->artisan('documents:backfill-private', ['--listing-type' => 'landlord', '--delete-public' => true])
+            ->assertSuccessful();
+
+        Storage::disk('private')->assertExists($rel);       // verified copy present
+        Storage::disk('public')->assertMissing($rel);       // removed only after verification
+        $this->assertSame('LROW', Storage::disk('private')->get($rel));
+    }
+
+    public function test_landlord_doc_rows_dry_run_makes_no_changes(): void
+    {
+        $id  = $this->landlordListingId();
+        $rel = 'landlord-doc-uploads/' . $id . '/l.pdf';
+        Storage::disk('public')->put($rel, 'LROW');
+        $this->landlordMeta($id, 'landlord_doc_rows', json_encode([['stored_path' => $rel]]));
+
+        $this->artisan('documents:backfill-private', [
+            '--listing-type'  => 'landlord',
+            '--dry-run'       => true,
+            '--delete-public' => true,
+        ])->assertSuccessful();
+
+        Storage::disk('public')->assertExists($rel);
+        Storage::disk('private')->assertMissing($rel);
+        $this->assertEmpty(Storage::disk('private')->allFiles('_backfill-manifests'));
+    }
+
+    public function test_landlord_doc_rows_reject_traversal_and_absolute_paths(): void
+    {
+        $id = $this->landlordListingId();
+        Storage::disk('public')->put('safe/keep.pdf', 'X');
+        $this->landlordMeta($id, 'landlord_doc_rows', json_encode([
+            ['stored_path' => '../../etc/passwd'],
+            ['stored_path' => '/etc/passwd'],
+        ]));
+
+        $this->artisan('documents:backfill-private', ['--listing-type' => 'landlord', '--delete-public' => true])
+            ->assertSuccessful();
+
+        // Nothing traversed; no private writes for the malicious paths.
+        $this->assertEmpty(array_filter(
+            Storage::disk('private')->allFiles(),
+            fn ($f) => ! str_starts_with($f, '_backfill-manifests')
+        ));
+    }
+
+    public function test_landlord_doc_rows_never_touch_photos_or_videos(): void
+    {
+        $id    = $this->landlordListingId();
+        $image = 'auction/images/ll-photo.jpg';
+        $video = 'auction/videos/ll-tour.mp4';
+        Storage::disk('public')->put($image, 'IMG');
+        Storage::disk('public')->put($video, 'VID');
+        $this->landlordMeta($id, 'landlord_doc_rows', json_encode([
+            ['stored_path' => $image],
+            ['stored_path' => $video],
+        ]));
+
+        $this->artisan('documents:backfill-private', ['--listing-type' => 'landlord', '--delete-public' => true])
+            ->assertSuccessful();
+
+        Storage::disk('public')->assertExists($image);   // retained
+        Storage::disk('public')->assertExists($video);   // retained
+        Storage::disk('private')->assertMissing($image); // never copied
+        Storage::disk('private')->assertMissing($video); // never copied
+    }
+
+    public function test_landlord_doc_rows_are_idempotent_on_second_run(): void
+    {
+        $id  = $this->landlordListingId();
+        $rel = 'landlord-doc-uploads/' . $id . '/l.pdf';
+        Storage::disk('public')->put($rel, 'LROW');
+        $this->landlordMeta($id, 'landlord_doc_rows', json_encode([['stored_path' => $rel]]));
+
+        $this->artisan('documents:backfill-private', ['--listing-type' => 'landlord', '--delete-public' => true])->assertSuccessful();
+        // Second run: private present, public gone → no error, no change.
+        $this->artisan('documents:backfill-private', ['--listing-type' => 'landlord', '--delete-public' => true])->assertSuccessful();
+
+        Storage::disk('private')->assertExists($rel);
+        Storage::disk('public')->assertMissing($rel);
+        $this->assertSame('LROW', Storage::disk('private')->get($rel));
+    }
+
+    public function test_landlord_doc_rows_malformed_or_missing_json_is_safely_skipped(): void
+    {
+        // Non-JSON blob.
+        $id1 = $this->landlordListingId();
+        $this->landlordMeta($id1, 'landlord_doc_rows', 'not-json{');
+        // Valid JSON but scalar rows / rows missing stored_path.
+        $id2 = $this->landlordListingId();
+        $this->landlordMeta($id2, 'landlord_doc_rows', json_encode(['scalar-not-a-row', ['type' => 'NoPath'], ['stored_path' => '']]));
+
+        $this->artisan('documents:backfill-private', ['--listing-type' => 'landlord', '--delete-public' => true])
+            ->assertSuccessful();
+
+        $this->assertEmpty(array_filter(
+            Storage::disk('private')->allFiles(),
+            fn ($f) => ! str_starts_with($f, '_backfill-manifests')
+        ));
+    }
 }

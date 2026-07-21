@@ -55,18 +55,26 @@ class BackfillPrivateListingDocuments extends Command
     /**
      * Physical-layout descriptor per listing type.
      *
-     * @var array<string, array{metas_table:string, fk:string, doc_rows_key:string}>
+     * `doc_rows_key` is the EAV meta key whose value is a JSON array of doc rows;
+     * `doc_rows_path_field` is the field WITHIN each row that holds the file path.
+     * Seller and landlord diverge on both — seller rows carry `file_path`, landlord
+     * rows carry `stored_path`. Both are resolved ONLY from this fixed server-side
+     * map, never from command input.
+     *
+     * @var array<string, array{metas_table:string, fk:string, doc_rows_key:string, doc_rows_path_field:string}>
      */
     private const TYPES = [
         'seller' => [
-            'metas_table'  => 'seller_agent_auction_metas',
-            'fk'           => 'seller_agent_auction_id',
-            'doc_rows_key' => 'doc_rows',
+            'metas_table'         => 'seller_agent_auction_metas',
+            'fk'                  => 'seller_agent_auction_id',
+            'doc_rows_key'        => 'doc_rows',
+            'doc_rows_path_field' => 'file_path',
         ],
         'landlord' => [
-            'metas_table'  => 'landlord_agent_auction_metas',
-            'fk'           => 'landlord_agent_auction_id',
-            'doc_rows_key' => 'landlord_doc_rows',
+            'metas_table'         => 'landlord_agent_auction_metas',
+            'fk'                  => 'landlord_agent_auction_id',
+            'doc_rows_key'        => 'landlord_doc_rows',
+            'doc_rows_path_field' => 'stored_path',
         ],
     ];
 
@@ -157,7 +165,7 @@ class BackfillPrivateListingDocuments extends Command
             $value     = (string) ($row->meta_value ?? '');
 
             if ($row->meta_key === $config['doc_rows_key']) {
-                foreach ($this->docRowPaths($value) as $index => $relative) {
+                foreach ($this->docRowPaths($value, $config['doc_rows_path_field']) as $index => $relative) {
                     $records[] = $this->record($type, $listingId, $row->meta_key . "[{$index}]", $relative);
                 }
                 continue;
@@ -185,11 +193,15 @@ class BackfillPrivateListingDocuments extends Command
     }
 
     /**
-     * Extract the `file_path` of every row in a doc_rows / landlord_doc_rows JSON blob.
+     * Extract the path field of every row in a doc_rows / landlord_doc_rows JSON blob.
+     *
+     * $pathField is the per-type field name from self::TYPES (`file_path` for seller,
+     * `stored_path` for landlord) — always a fixed server-side constant, never input.
+     * Malformed input (non-array JSON, non-array rows, missing/blank field) is skipped.
      *
      * @return array<int, string>
      */
-    private function docRowPaths(string $json): array
+    private function docRowPaths(string $json, string $pathField): array
     {
         $json = trim($json);
         if ($json === '') {
@@ -203,8 +215,8 @@ class BackfillPrivateListingDocuments extends Command
 
         $paths = [];
         foreach ($rows as $index => $row) {
-            if (is_array($row) && isset($row['file_path']) && trim((string) $row['file_path']) !== '') {
-                $paths[$index] = trim((string) $row['file_path']);
+            if (is_array($row) && isset($row[$pathField]) && trim((string) $row[$pathField]) !== '') {
+                $paths[$index] = trim((string) $row[$pathField]);
             }
         }
 
