@@ -1,0 +1,5 @@
+{"source":"overture","source_ref":"P1","gers_id":null,"category_key":"hospital","name":"Synthetic Regional Hospital","brand":null,"confidence":0.95,"source_count":2,"lon":-90.0,"lat":30.000449,"geometry_type":"Point"}
+{"source":"overture","source_ref":"P5","gers_id":null,"category_key":"hospital","name":"Synthetic Regional Hospital","brand":null,"confidence":0.95,"source_count":1,"lon":-90.0,"lat":30.01,"geometry_type":"Point"}
+{"source":"overture","source_ref":"P2","gers_id":null,"category_key":"gas_station","name":"Grandview Medical Plaza","brand":null,"confidence":0.95,"source_count":1,"lon":-90.0,"lat":31.000449,"geometry_type":"Point"}
+{"source":"overture","source_ref":"P3","gers_id":null,"category_key":"shopping_center","name":"Synthetic Twin Center","brand":null,"confidence":0.95,"source_count":2,"lon":-90.0,"lat":32.000359,"geometry_type":"Point"}
+{"source":"overture","source_ref":"P4","gers_id":null,"category_key":"shopping_center","name":"Synthetic Twin Center","brand":null,"confidence":0.95,"source_count":1,"lon":-90.0,"lat":32.000539,"geometry_type":"Point"}
