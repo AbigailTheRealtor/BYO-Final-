@@ -3844,7 +3844,7 @@ class SellerOfferListing extends Component
             $photoName = $uuid . '.' . $extensionPhoto; // Create a unique file name
 
             // Save file to public/auction/images using Livewire's store method
-            $photoPath = $this->photo->storeAs('auction/images', $photoName, 'public');
+            $photoPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublic($this->photo, 'auction/images', $photoName);
 
             // Save file name to database
             $auction->saveMeta('photo', $photoName);
@@ -3859,7 +3859,7 @@ class SellerOfferListing extends Component
             $videoName = $uuid . '.' . $extensionVideo; // Create a unique file name
 
             // Save file to public/auction/videos using Livewire's store method
-            $videoPath = $this->video->storeAs('auction/videos', $videoName, 'public');
+            $videoPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublic($this->video, 'auction/videos', $videoName);
 
             // Save file name to database
             $auction->saveMeta('video', $videoName);
@@ -3915,7 +3915,7 @@ class SellerOfferListing extends Component
                 $ext = $photo->getClientOriginalExtension();
                 $uuid = (string) Str::uuid();
                 $fileName = $uuid . '.' . $ext;
-                $photo->storeAs('auction/images', $fileName, 'public');
+                app(\App\Support\Storage\ListingStorageWriter::class)->storePublic($photo, 'auction/images', $fileName);
                 $this->propertyPhotos[] = $fileName;
             }
         }
@@ -4067,7 +4067,7 @@ class SellerOfferListing extends Component
     {
         if (isset($this->propertyPhotos[$index])) {
             $filename = $this->propertyPhotos[$index];
-            Storage::disk('public')->delete('auction/images/' . $filename);
+            app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $filename);
             array_splice($this->propertyPhotos, $index, 1);
             if ($this->listingId) {
                 $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
@@ -4130,7 +4130,7 @@ class SellerOfferListing extends Component
     public function deleteListingDocument()
     {
         if ($this->listingDocuments && is_string($this->listingDocuments)) {
-            Storage::disk('public')->delete('auction/documents/' . $this->listingDocuments);
+            app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/documents/' . $this->listingDocuments);
             if ($this->listingId) {
                 $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
                 $auction->deleteMeta('listing_documents');

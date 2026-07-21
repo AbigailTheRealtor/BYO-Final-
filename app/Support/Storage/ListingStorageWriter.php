@@ -9,22 +9,30 @@ use RuntimeException;
 use Throwable;
 
 /**
- * R2-B.1 (HI-05A) — centralized write path for listing documents/media.
+ * R2-B.1 / R2-B.2a (HI-05A) — centralized write path for listing documents/media.
  *
  * Routes uploads and deletes through the ListingStorageDisks resolver and adds
  * OPTIONAL, temporary dual-write mirroring to object storage. Local remains the
  * authoritative primary; the secondary is best-effort.
  *
+ * R2-B.1 covers PRIVATE listing documents; R2-B.2a adds the PUBLIC listing media
+ * path (photos/videos/public documents) used by the eight OfferListing Livewire
+ * components.
+ *
  * Invariants:
  *   - With STORAGE_DUAL_WRITE=false (default) this is byte-for-byte equivalent to
- *     the previous `$file->storeAs($dir, $name, 'private')` / `disk('private')
- *     ->delete($path)` calls (the private selector defaults to the local 'private'
- *     disk).
+ *     the previous `$file->storeAs($dir, $name, 'private'|'public')` /
+ *     `disk('private'|'public')->delete($path)` calls (the selectors default to
+ *     the local 'private' / 'public' disks).
  *   - PRIMARY write/delete failures propagate (hard fail) exactly as before.
  *   - SECONDARY (object-storage) write/delete failures NEVER fail the user
  *     request — they are logged and swallowed.
  *   - A private file is only ever mirrored to the PRIVATE secondary disk, never a
  *     public one; and never to a secondary that advertises a public URL.
+ *   - A public file is only ever mirrored to the PUBLIC secondary disk. If the
+ *     public secondary selector has been pointed at a private disk, the mirror
+ *     (write AND delete) is refused rather than executed — public media must
+ *     never write to, or delete from, s3_private.
  *
  * This class performs NO migration of existing files and reads nothing back for
  * delivery — reads are unchanged (dual-read is a later phase).
@@ -50,6 +58,27 @@ class ListingStorageWriter
     public function deletePrivate(string $path): void
     {
         $this->delete($path, true);
+    }
+
+    /**
+     * Store a PUBLIC listing media file (photo/video/public document) to the
+     * primary disk (+ optional mirror). Returns the stored relative path,
+     * identical to what `$file->storeAs($dir, $name, 'public')` returned.
+     *
+     * Callers generate the filename (UUID + original extension) and persist that
+     * bare filename to meta — this method does not alter naming in any way.
+     */
+    public function storePublic(UploadedFile $file, string $dir, string $name): string
+    {
+        return $this->store($file, $dir, $name, false);
+    }
+
+    /**
+     * Delete a PUBLIC listing media file from the primary disk (+ optional mirror).
+     */
+    public function deletePublic(string $path): void
+    {
+        $this->delete($path, false);
     }
 
     /**
@@ -82,16 +111,30 @@ class ListingStorageWriter
         // Primary delete — authoritative, same semantics as before.
         Storage::disk($primaryName)->delete($path);
 
-        if ($this->dualWriteEnabled()) {
-            try {
-                Storage::disk($this->secondaryName($private))->delete($path);
-            } catch (Throwable $e) {
-                // Soft fail: never break the user action on a secondary miss.
-                Log::warning('listing-storage dual-delete secondary failed', [
-                    'path' => $path,
-                    'disk' => $this->secondaryName($private),
-                ]);
-            }
+        if (! $this->dualWriteEnabled()) {
+            return;
+        }
+
+        $secondaryName = $this->secondaryName($private);
+
+        // Isolation guard: a public delete must never reach a private disk, or a
+        // misconfigured selector would delete private documents.
+        if (! $private && ! $this->publicSecondaryAllowed($secondaryName)) {
+            Log::warning('listing-storage dual-delete skipped: public secondary points at a private disk', [
+                'disk' => $secondaryName,
+            ]);
+
+            return;
+        }
+
+        try {
+            Storage::disk($secondaryName)->delete($path);
+        } catch (Throwable $e) {
+            // Soft fail: never break the user action on a secondary miss.
+            Log::warning('listing-storage dual-delete secondary failed', [
+                'path' => $path,
+                'disk' => $secondaryName,
+            ]);
         }
     }
 
@@ -105,6 +148,16 @@ class ListingStorageWriter
         // a public URL (a misconfiguration that could expose disclosures).
         if ($private && ! empty(config("filesystems.disks.{$secondaryName}.url"))) {
             Log::warning('listing-storage dual-write skipped: private secondary advertises a public url', [
+                'disk' => $secondaryName,
+            ]);
+
+            return;
+        }
+
+        // Isolation guard: public media may only ever be mirrored to the public
+        // secondary — never into the private bucket.
+        if (! $private && ! $this->publicSecondaryAllowed($secondaryName)) {
+            Log::warning('listing-storage dual-write skipped: public secondary points at a private disk', [
                 'disk' => $secondaryName,
             ]);
 
@@ -130,6 +183,27 @@ class ListingStorageWriter
                 'disk' => $secondaryName,
             ]);
         }
+    }
+
+    /**
+     * True when the resolved PUBLIC secondary is safe to touch with public media.
+     *
+     * Fails closed: if the public secondary selector names the private secondary
+     * or the resolved private disk (a misconfiguration), mirroring is refused so
+     * public photos are never written into — nor deleted out of — private storage.
+     */
+    private function publicSecondaryAllowed(string $secondaryName): bool
+    {
+        $forbidden = [(string) config('listing_storage.private_secondary_disk', 's3_private')];
+
+        try {
+            $forbidden[] = $this->disks->privateDiskName();
+        } catch (Throwable $e) {
+            // An unresolvable private selector must not hard-fail a public write;
+            // the config-level name above still covers the dangerous case.
+        }
+
+        return ! in_array($secondaryName, $forbidden, true);
     }
 
     private function dualWriteEnabled(): bool

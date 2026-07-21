@@ -3793,7 +3793,7 @@ class LandlordOfferListing extends Component
             $photoName = $uuid . '.' . $extensionPhoto; // Create a unique file name
 
             // Save file to public/auction/images using Livewire's store method
-            $photoPath = $this->photo->storeAs('auction/images', $photoName, 'public');
+            $photoPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublic($this->photo, 'auction/images', $photoName);
 
             // Save file name to database
             $auction->saveMeta('photo', $photoName);
@@ -3808,7 +3808,7 @@ class LandlordOfferListing extends Component
             $videoName = $uuid . '.' . $extensionVideo; // Create a unique file name
 
             // Save file to public/auction/videos using Livewire's store method
-            $videoPath = $this->video->storeAs('auction/videos', $videoName, 'public');
+            $videoPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublic($this->video, 'auction/videos', $videoName);
 
             // Save file name to database
             $auction->saveMeta('video', $videoName);
@@ -3852,7 +3852,7 @@ class LandlordOfferListing extends Component
                 $ext = $photo->getClientOriginalExtension();
                 $uuid = (string) Str::uuid();
                 $fileName = $uuid . '.' . $ext;
-                $photo->storeAs('auction/images', $fileName, 'public');
+                app(\App\Support\Storage\ListingStorageWriter::class)->storePublic($photo, 'auction/images', $fileName);
                 $this->propertyPhotos[] = $fileName;
             }
         }
@@ -4007,7 +4007,7 @@ class LandlordOfferListing extends Component
     {
         if (isset($this->propertyPhotos[$index])) {
             $filename = $this->propertyPhotos[$index];
-            Storage::disk('public')->delete('auction/images/' . $filename);
+            app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $filename);
             array_splice($this->propertyPhotos, $index, 1);
             if ($this->listingId) {
                 $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
@@ -4072,7 +4072,7 @@ class LandlordOfferListing extends Component
         if ($this->listingDocuments && is_string($this->listingDocuments)) {
             // HI-05A — transitional: new uploads are private; legacy copies may still be public.
             app(\App\Support\Storage\ListingStorageWriter::class)->deletePrivate('auction/documents/' . $this->listingDocuments);
-            Storage::disk('public')->delete('auction/documents/' . $this->listingDocuments);
+            app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/documents/' . $this->listingDocuments);
             if ($this->listingId) {
                 $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
                 $auction->deleteMeta('listing_documents');
@@ -4278,7 +4278,7 @@ class LandlordOfferListing extends Component
                 $auction = HirelandLordAgentAuction::find($this->listingId);
                 if ($auction) {
                     if ($this->photo && is_string($this->photo)) {
-                        Storage::disk('public')->delete('auction/images/' . $this->photo);
+                        app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $this->photo);
                     }
                     $auction->deleteMeta('photo');
                 }
