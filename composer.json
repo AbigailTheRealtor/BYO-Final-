@@ -14,6 +14,7 @@
         "laravel/sanctum": "^2.11",
         "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.5",
+        "league/flysystem-aws-s3-v3": "^1.0",
         "livewire/livewire": "^2.12",
         "merujan99/laravel-video-embed": "dev-master",
         "openai-php/client": "^0.19.2",
