@@ -3763,7 +3763,7 @@ class LandlordOfferListing extends Component
                 $dir      = 'landlord-disclosures/' . $auction->id . '/' . $item['dir'];
                 // HI-05A — disclosures are private; delivered only via the authorized route.
                 Storage::disk('private')->makeDirectory($dir);
-                $fileVal->storeAs($dir, $fileName, 'private');
+                app(\App\Support\Storage\ListingStorageWriter::class)->storePrivate($fileVal, $dir, $fileName);
                 $storedPath        = $dir . '/' . $fileName;
                 $this->{$pathProp} = $storedPath;
                 $auction->saveMeta($pathProp, $storedPath);
@@ -3831,7 +3831,7 @@ class LandlordOfferListing extends Component
                 $fileName = $uuid . '.' . $ext;
                 // HI-05A — listing documents are private; delivered only via the authorized route.
                 Storage::disk('private')->makeDirectory('auction/documents');
-                $this->listingDocuments->storeAs('auction/documents', $fileName, 'private');
+                app(\App\Support\Storage\ListingStorageWriter::class)->storePrivate($this->listingDocuments, 'auction/documents', $fileName);
                 $auction->saveMeta('listing_documents', $fileName);
             }
         } elseif ($this->listingDocuments && is_string($this->listingDocuments)) {
@@ -3976,7 +3976,7 @@ class LandlordOfferListing extends Component
 
         // HI-05A — additional document rows are private; delivered only via the authorized route.
         Storage::disk('private')->makeDirectory($dir);
-        $this->landlordDocFileUpload->storeAs($dir, $fileName, 'private');
+        app(\App\Support\Storage\ListingStorageWriter::class)->storePrivate($this->landlordDocFileUpload, $dir, $fileName);
         $storedPath = $dir . '/' . $fileName;
 
         $rows = $this->landlord_doc_rows;
@@ -4071,7 +4071,7 @@ class LandlordOfferListing extends Component
     {
         if ($this->listingDocuments && is_string($this->listingDocuments)) {
             // HI-05A — transitional: new uploads are private; legacy copies may still be public.
-            Storage::disk('private')->delete('auction/documents/' . $this->listingDocuments);
+            app(\App\Support\Storage\ListingStorageWriter::class)->deletePrivate('auction/documents/' . $this->listingDocuments);
             Storage::disk('public')->delete('auction/documents/' . $this->listingDocuments);
             if ($this->listingId) {
                 $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
