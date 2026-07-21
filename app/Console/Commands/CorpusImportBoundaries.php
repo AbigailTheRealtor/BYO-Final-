@@ -13,8 +13,8 @@ use Illuminate\Console\Command;
  * Spatial Intelligence Platform — Phase 2 Batch 2D Part C3 (boundary import authoring).
  *
  * Source-agnostic OFFLINE boundary import DRY-RUN / plan author, shared by every registered boundary
- * source (PAD-US = C3a, Census TIGER county/place/ZCTA/school-district = C3b, …).
- * Reads a raw boundary NDJSON, normalizes it through
+ * source (PAD-US = C3a, Census TIGER county/place/ZCTA/school-district = C3b, FEMA NFHL
+ * flood-zone/flood-coverage = C3c, …). Reads a raw boundary NDJSON, normalizes it through
  * the registered {@see BoundarySource} adapter, gates the result with {@see BoundaryImportAcceptance},
  * and writes the artifacts an operator would use at Class-2:
  *   • boundaries.ndjson — the canonical BoundaryRecord rows (the staging/load input)
