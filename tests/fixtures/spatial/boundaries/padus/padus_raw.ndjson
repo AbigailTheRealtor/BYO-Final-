@@ -1,0 +1,5 @@
+{"unit_id":"PADUS-0004","unit_nm":"Synthetic Preserve","gis_acres":"N/A","geometry":{"type":"Polygon","coordinates":[[[-84.0,29.0],[-84.0,29.01],[-83.99,29.01],[-83.99,29.0],[-84.0,29.0]]]}}
+{"unit_id":"PADUS-0002","unit_nm":"Synthetic Wildlife Refuge","gis_acres":340.0,"geometry":{"type":"MultiPolygon","coordinates":[[[[-83.0,28.0],[-83.0,28.01],[-82.99,28.01],[-82.99,28.0],[-83.0,28.0]]],[[[-83.5,28.5],[-83.5,28.51],[-83.49,28.51],[-83.49,28.5],[-83.5,28.5]]]]}}
+{"unit_id":"PADUS-0001","unit_nm":"Synthetic State Park","gis_acres":1200.5,"geometry":{"type":"Polygon","coordinates":[[[-82.0,27.0],[-82.0,27.01],[-81.99,27.01],[-81.99,27.0],[-82.0,27.0]]]}}
+{"unit_id":"PADUS-0003","unit_nm":"Unclosed Tract","gis_acres":10.0,"geometry":{"type":"Polygon","coordinates":[[[-85.0,30.0],[-85.0,30.01],[-84.99,30.01],[-84.99,30.0]]]}}
+{"unit_nm":"No-ID Tract","gis_acres":50.0,"geometry":{"type":"Polygon","coordinates":[[[-86.0,31.0],[-86.0,31.01],[-85.99,31.01],[-85.99,31.0],[-86.0,31.0]]]}}
