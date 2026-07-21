@@ -1,0 +1,4 @@
+{"geoid":"12103","name":"Pinellas County","namelsad":"Pinellas County","statefp":"12","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.7,27.9],[-82.7,27.91],[-82.69,27.91],[-82.69,27.9],[-82.7,27.9]]]]}}
+{"geoid":"12057","name":"Hillsborough County","namelsad":"Hillsborough County","statefp":"12","geometry":{"type":"Polygon","coordinates":[[[-82.4,27.9],[-82.4,27.91],[-82.39,27.91],[-82.39,27.9],[-82.4,27.9]]]}}
+{"geoid":"12086","name":"Unclosed County","namelsad":"Unclosed County","statefp":"12","geometry":{"type":"Polygon","coordinates":[[[-80.3,25.7],[-80.3,25.71],[-80.29,25.71],[-80.29,25.7]]]}}
+{"name":"No-GEOID County","namelsad":"No-GEOID County","statefp":"12","geometry":{"type":"Polygon","coordinates":[[[-81.0,28.0],[-81.0,28.01],[-80.99,28.01],[-80.99,28.0],[-81.0,28.0]]]}}

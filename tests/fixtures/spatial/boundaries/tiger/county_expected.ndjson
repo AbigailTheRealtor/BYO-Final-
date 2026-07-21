@@ -1,0 +1,2 @@
+{"kind":"county","external_ref":"12057","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.4,27.9],[-82.4,27.91],[-82.39,27.91],[-82.39,27.9],[-82.4,27.9]]]]},"attrs":{"name":"Hillsborough County","namelsad":"Hillsborough County","state_fips":"12","source":"census_tiger"}}
+{"kind":"county","external_ref":"12103","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.7,27.9],[-82.7,27.91],[-82.69,27.91],[-82.69,27.9],[-82.7,27.9]]]]},"attrs":{"name":"Pinellas County","namelsad":"Pinellas County","state_fips":"12","source":"census_tiger"}}

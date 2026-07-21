@@ -1,0 +1,2 @@
+{"kind":"school_district","external_ref":"1200030","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.45,27.65],[-82.45,27.66],[-82.44,27.66],[-82.44,27.65],[-82.45,27.65]]]]},"attrs":{"name":"Synthetic County Schools","state_fips":"12","source":"census_tiger"}}
+{"kind":"school_district","external_ref":"1200060","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.55,27.95],[-82.55,27.96],[-82.54,27.96],[-82.54,27.95],[-82.55,27.95]]]]},"attrs":{"name":"Synthetic Unified School District","state_fips":"12","source":"census_tiger"}}

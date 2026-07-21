@@ -1,0 +1,4 @@
+{"geoid":"1200002","name":"Synthetic City city","basename":"Synthetic City","statefp":"12","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.6,27.8],[-82.6,27.81],[-82.59,27.81],[-82.59,27.8],[-82.6,27.8]]]]}}
+{"geoid":"1200001","name":"Synthetic Town town","basename":"Synthetic Town","statefp":"12","geometry":{"type":"Polygon","coordinates":[[[-82.5,27.7],[-82.5,27.71],[-82.49,27.71],[-82.49,27.7],[-82.5,27.7]]]}}
+{"geoid":"1200086","name":"Unclosed Place","basename":"Unclosed","statefp":"12","geometry":{"type":"Polygon","coordinates":[[[-80.2,25.6],[-80.2,25.61],[-80.19,25.61],[-80.19,25.6]]]}}
+{"name":"No-GEOID Place","basename":"No-GEOID","statefp":"12","geometry":{"type":"Polygon","coordinates":[[[-81.1,28.1],[-81.1,28.11],[-81.09,28.11],[-81.09,28.1],[-81.1,28.1]]]}}

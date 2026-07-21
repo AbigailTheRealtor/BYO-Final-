@@ -1,0 +1,4 @@
+{"geoid":"1200060","name":"Synthetic Unified School District","statefp":"12","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.55,27.95],[-82.55,27.96],[-82.54,27.96],[-82.54,27.95],[-82.55,27.95]]]]}}
+{"geoid":"1200030","name":"Synthetic County Schools","statefp":"12","geometry":{"type":"Polygon","coordinates":[[[-82.45,27.65],[-82.45,27.66],[-82.44,27.66],[-82.44,27.65],[-82.45,27.65]]]}}
+{"geoid":"1200099","name":"Unclosed District","statefp":"12","geometry":{"type":"Polygon","coordinates":[[[-80.1,25.5],[-80.1,25.51],[-80.09,25.51],[-80.09,25.5]]]}}
+{"name":"No-GEOID District","statefp":"12","geometry":{"type":"Polygon","coordinates":[[[-81.3,28.3],[-81.3,28.31],[-81.29,28.31],[-81.29,28.3],[-81.3,28.3]]]}}
