@@ -4,6 +4,8 @@ use App\Services\Spatial\Boundary\CensusCountyBoundarySource;
 use App\Services\Spatial\Boundary\CensusPlaceBoundarySource;
 use App\Services\Spatial\Boundary\CensusSchoolDistrictBoundarySource;
 use App\Services\Spatial\Boundary\CensusZctaBoundarySource;
+use App\Services\Spatial\Boundary\FemaFloodCoverageBoundarySource;
+use App\Services\Spatial\Boundary\FemaFloodZoneBoundarySource;
 use App\Services\Spatial\Boundary\PadUsBoundarySource;
 
 return [
@@ -22,7 +24,8 @@ return [
     | deferred to the Class-2 phase — see the per-slice spikes under spikes/.
     |
     | Ships: PAD-US protected areas (C3a) + Census TIGER county/place/ZCTA/school
-    | district (C3b). Deferred to later slices: FEMA NFHL (C3c), Gate 2 (C3d).
+    | district (C3b) + FEMA NFHL flood hazard areas and effective FIRM panel
+    | coverage (C3c). Deferred to a later slice: Gate 2 (C3d).
     |
     */
 
@@ -68,6 +71,20 @@ return [
             'class'   => CensusSchoolDistrictBoundarySource::class,
             'kind'    => 'school_district',
             'fixture' => 'tests/fixtures/spatial/boundaries/tiger/school_district_raw.ndjson',
+        ],
+
+        'fema_flood_zone' => [
+            'label'   => 'FEMA NFHL flood hazard areas (S_FLD_HAZ_AR)',
+            'class'   => FemaFloodZoneBoundarySource::class,
+            'kind'    => 'flood_zone',
+            'fixture' => 'tests/fixtures/spatial/boundaries/fema/flood_zone_raw.ndjson',
+        ],
+
+        'fema_flood_coverage' => [
+            'label'   => 'FEMA NFHL effective FIRM panel coverage (S_FIRM_PAN)',
+            'class'   => FemaFloodCoverageBoundarySource::class,
+            'kind'    => 'flood_coverage',
+            'fixture' => 'tests/fixtures/spatial/boundaries/fema/flood_coverage_raw.ndjson',
         ],
 
     ],

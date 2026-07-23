@@ -1,0 +1,4 @@
+{"fld_ar_id":"12103C-0002","fld_zone":"X","zone_subty":"AREA OF MINIMAL FLOOD HAZARD","sfha_tf":"F","dfirm_id":"12103C","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.7,27.9],[-82.7,27.91],[-82.69,27.91],[-82.69,27.9],[-82.7,27.9]]]]}}
+{"fld_ar_id":"12103C-0001","fld_zone":"AE","zone_subty":null,"sfha_tf":"T","dfirm_id":"12103C","geometry":{"type":"Polygon","coordinates":[[[-82.4,27.9],[-82.4,27.91],[-82.39,27.91],[-82.39,27.9],[-82.4,27.9]]]}}
+{"fld_ar_id":"12103C-0003","fld_zone":"VE","zone_subty":null,"sfha_tf":"T","dfirm_id":"12103C","geometry":{"type":"Polygon","coordinates":[[[-80.3,25.7],[-80.3,25.71],[-80.29,25.71],[-80.29,25.7]]]}}
+{"fld_zone":"D","zone_subty":"AREA OF UNDETERMINED FLOOD HAZARD","sfha_tf":"F","dfirm_id":"12103C","geometry":{"type":"Polygon","coordinates":[[[-81.0,28.0],[-81.0,28.01],[-80.99,28.01],[-80.99,28.0],[-81.0,28.0]]]}}

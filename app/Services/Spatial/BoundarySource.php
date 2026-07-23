@@ -6,7 +6,7 @@ namespace App\Services\Spatial;
  * Spatial Intelligence Platform — Phase 2 Batch 2D Part C3a (PAD-US boundary import authoring).
  *
  * Source-agnostic seam for boundary importers (mirrors {@see AuthorityOverlaySource} from C2). Each
- * concrete source (PAD-US now; Census TIGER = C3b, FEMA NFHL = C3c later) transforms a raw extract
+ * concrete source (PAD-US = C3a, Census TIGER = C3b, FEMA NFHL = C3c) transforms a raw extract
  * into canonical {@see BoundaryRecord} rows for the `boundaries` table. Concretes stay `final` and
  * bespoke; polymorphism is by this contract + the shared normalization/verdict shapes.
  *

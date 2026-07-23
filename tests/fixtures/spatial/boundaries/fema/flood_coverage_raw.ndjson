@@ -1,0 +1,4 @@
+{"firm_pan":"12103C0002G","dfirm_id":"12103C","panel":"0002","suffix":"G","panel_typ":"FIRM","eff_date":"2021-09-27","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.7,27.9],[-82.7,27.92],[-82.68,27.92],[-82.68,27.9],[-82.7,27.9]]]]}}
+{"firm_pan":"12103C0001G","dfirm_id":"12103C","panel":"0001","suffix":"G","panel_typ":"FIRM","eff_date":"2021-09-27","geometry":{"type":"Polygon","coordinates":[[[-82.4,27.9],[-82.4,27.92],[-82.38,27.92],[-82.38,27.9],[-82.4,27.9]]]}}
+{"firm_pan":"12103C0003G","dfirm_id":"12103C","panel":"0003","suffix":"G","panel_typ":"FIRM","eff_date":"2021-09-27","geometry":{"type":"Polygon","coordinates":[[[-80.3,25.7],[-80.3,25.72],[-80.28,25.72],[-80.28,25.7]]]}}
+{"dfirm_id":"12103C","panel":"0004","suffix":"G","panel_typ":"NP","eff_date":"2021-09-27","geometry":{"type":"Polygon","coordinates":[[[-81.0,28.0],[-81.0,28.02],[-80.98,28.02],[-80.98,28.0],[-81.0,28.0]]]}}

@@ -1,0 +1,2 @@
+{"kind":"flood_zone","external_ref":"12103C-0001","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.4,27.9],[-82.4,27.91],[-82.39,27.91],[-82.39,27.9],[-82.4,27.9]]]]},"attrs":{"flood_zone":"AE","zone_subtype":null,"sfha":"T","dfirm_id":"12103C","source":"fema_nfhl"}}
+{"kind":"flood_zone","external_ref":"12103C-0002","geometry":{"type":"MultiPolygon","coordinates":[[[[-82.7,27.9],[-82.7,27.91],[-82.69,27.91],[-82.69,27.9],[-82.7,27.9]]]]},"attrs":{"flood_zone":"X","zone_subtype":"AREA OF MINIMAL FLOOD HAZARD","sfha":"F","dfirm_id":"12103C","source":"fema_nfhl"}}
