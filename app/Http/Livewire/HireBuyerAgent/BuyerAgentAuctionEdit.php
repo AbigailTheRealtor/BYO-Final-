@@ -2156,7 +2156,7 @@ class BuyerAgentAuctionEdit extends Component
             $photoName = $uuid . '.' . $extensionPhoto; // Create a unique file name
 
             // Save file to public/auction/images using Livewire's store method
-            $photoPath = $this->photo->storeAs('auction/images', $photoName, 'public');
+            $photoPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($this->photo, 'auction/images', $photoName);
 
             // Save file name to database
             $auction->saveMeta('photo', $photoName);
@@ -2169,7 +2169,7 @@ class BuyerAgentAuctionEdit extends Component
             $videoName = $uuid . '.' . $extensionVideo; // Create a unique file name
 
             // Save file to public/auction/videos using Livewire's store method
-            $videoPath = $this->video->storeAs('auction/videos', $videoName, 'public');
+            $videoPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($this->video, 'auction/videos', $videoName);
 
             // Save file name to database
             $auction->saveMeta('video', $videoName);

@@ -32,7 +32,6 @@ class TenantAgentAuctionBidController extends Controller
 
     public function save_bid(Request $request)
     {
-        // dd($request->all());
 
         // Backend guard: reject bid if listing is not Active
         $_listingGuard = TenantAgentAuction::find($request->auction_id);
@@ -113,7 +112,7 @@ class TenantAgentAuctionBidController extends Controller
                     if ($check) {
                         $uuid = (string) Str::uuid();
                         $fileName = $uuid . '.' . $extension;
-                        $file->storeAs('auction/images', $fileName, 'public');
+                        app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($file, 'auction/images', $fileName);
                         $bid->saveMeta('promo', 'auction/images/' . $fileName);
                     }
                 }

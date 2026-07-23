@@ -2484,7 +2484,7 @@ class TenantAgentAuctionEdit extends Component
         if ($auction) {
             // Delete the photo from storage if it exists
             if ($this->photo && is_string($this->photo)) {
-                Storage::disk('public')->delete('auction/images/' . $this->photo);
+                app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $this->photo);
             }
 
             // Remove the photo path from the database
@@ -2519,7 +2519,7 @@ class TenantAgentAuctionEdit extends Component
         if ($auction) {
             // Delete the photo from storage if it exists
             if ($this->video && is_string($this->video)) {
-                Storage::disk('public')->delete('auction/images/' . $this->video);
+                app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $this->video);
             }
 
             // Remove the video path from the database
@@ -4148,7 +4148,7 @@ class TenantAgentAuctionEdit extends Component
                 $uuid = (string) Str::uuid();
                 $photoName = $uuid . '.' . $extensionPhoto;
 
-                $photoPath = $this->photo->storeAs('auction/images', $photoName, 'public');
+                $photoPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($this->photo, 'auction/images', $photoName);
 
                 $auction->saveMeta('photo', $photoName);
                 $this->photo = $photoName;
@@ -4163,7 +4163,7 @@ class TenantAgentAuctionEdit extends Component
                 $videoName = $uuid . '.' . $extensionVideo; // Create a unique file name
 
                 // Save file to public/auction/videos using Livewire's store method
-                $videoPath = $this->video->storeAs('auction/videos', $videoName, 'public');
+                $videoPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($this->video, 'auction/videos', $videoName);
 
                 // Save file name to database
                 $auction->saveMeta('video', $videoName);

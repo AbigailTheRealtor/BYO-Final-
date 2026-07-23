@@ -961,7 +961,7 @@ class OfferController extends Controller
         if ($request->hasFile('prop_photos') && !$hasListingUrl) {
             $dir = 'offer-property-photos/' . $offer->id;
             foreach ($request->file('prop_photos') as $file) {
-                $path = $file->store($dir, 'public');
+                $path = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($file, $dir);
                 $existingPhotos[] = basename($path);
             }
         } elseif ($request->hasFile('prop_photos') && $hasListingUrl) {
