@@ -818,14 +818,14 @@ class SellerAgentAuctionBid extends Component
                 if (is_string($file) && !empty($file)) {
                     $storedPaths[] = $file;
                 } elseif (is_object($file) && method_exists($file, 'store')) {
-                    $path = $file->store('auction/documents', 'public');
+                    $path = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($file, 'auction/documents');
                     if ($path) $storedPaths[] = $path;
                 }
             }
             $this->promoMaterials[$i]['files'] = $storedPaths;
         }
         if ($this->business_card && is_object($this->business_card) && method_exists($this->business_card, 'store')) {
-            $path = $this->business_card->store('auction/documents', 'public');
+            $path = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($this->business_card, 'auction/documents');
             if ($path) $this->business_card_stored_path = $path;
         }
     }
@@ -1134,7 +1134,7 @@ class SellerAgentAuctionBid extends Component
 
             // Business card upload
             if ($this->business_card && is_object($this->business_card) && method_exists($this->business_card, 'store')) {
-                $cardPath = $this->business_card->store('auction/documents', 'public');
+                $cardPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($this->business_card, 'auction/documents');
                 $bid->saveMeta('business_card', $cardPath);
             } elseif (!empty($this->business_card_stored_path)) {
                 // No new file uploaded — persist the pre-saved / previously stored path
@@ -1156,7 +1156,7 @@ class SellerAgentAuctionBid extends Component
                         if (is_string($file) && !empty($file)) {
                             $entry['files'][] = $file;
                         } elseif (is_object($file) && method_exists($file, 'store')) {
-                            $path = $file->store('auction/documents', 'public');
+                            $path = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($file, 'auction/documents');
                             $entry['files'][] = $path;
                         }
                     }

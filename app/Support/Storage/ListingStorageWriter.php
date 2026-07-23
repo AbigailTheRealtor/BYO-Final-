@@ -82,6 +82,48 @@ class ListingStorageWriter
     }
 
     /**
+     * Store a PUBLIC listing media file with SOFT-FAIL semantics — the exact
+     * contract of the call sites migrated in R2-B.2b (auction/bid uploads,
+     * agent-preset uploads, offer property-photo uploads).
+     *
+     * Unlike storePublic(), this NEVER throws on a primary-write failure. It
+     * returns whatever the underlying Laravel store()/storeAs() returned — the
+     * stored relative path on success, or false on failure — so the callers'
+     * pre-existing `if ($path)` guards and result assignments behave
+     * byte-for-byte as they did before routing through the writer.
+     *
+     * Naming parity: with $name null the file is auto-named (Laravel hashed
+     * name), mirroring `$file->store($dir, 'public')`; with $name given it is
+     * stored under that name, mirroring `$file->storeAs($dir, $name, 'public')`.
+     * Directories and returned paths are unchanged.
+     *
+     * The optional object-storage mirror is attempted ONLY on a genuine success
+     * (a non-empty string primary path) and is best-effort: it reuses the same
+     * isolation guard as storePublic(), so public media is never mirrored into a
+     * private disk, and a mirror failure never affects the returned value.
+     *
+     * @param  string|null  $name  Explicit filename, or null to auto-generate.
+     * @return string|false  Stored relative path, or false on primary failure.
+     */
+    public function storePublicAuto(UploadedFile $file, string $dir, ?string $name = null): string|false
+    {
+        $primaryName = $this->disks->publicDiskName();
+
+        // Primary write — identical semantics to the literal store()/storeAs()
+        // call this replaced (soft-fail: returns false rather than throwing).
+        $path = $name === null
+            ? $file->store($dir, $primaryName)
+            : $file->storeAs($dir, $name, $primaryName);
+
+        // Mirror only a real success; a falsey primary result is returned as-is.
+        if (is_string($path) && $path !== '' && $this->dualWriteEnabled()) {
+            $this->mirrorWrite($primaryName, $this->secondaryName(false), $path, false);
+        }
+
+        return $path;
+    }
+
+    /**
      * Core store: primary (authoritative) then optional secondary mirror.
      */
     private function store(UploadedFile $file, string $dir, string $name, bool $private): string

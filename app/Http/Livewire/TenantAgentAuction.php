@@ -4975,7 +4975,7 @@ class TenantAgentAuction extends Component
             $extensionPhoto = $this->photo->getClientOriginalExtension();
             $uuid = (string) Str::uuid();
             $photoName = $uuid . '.' . $extensionPhoto;
-            $photoPath = $this->photo->storeAs('auction/images', $photoName, 'public');
+            $photoPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($this->photo, 'auction/images', $photoName);
             $auction->saveMeta('photo', $photoName);
             $this->photo = $photoName;
         } elseif ($this->photo && is_string($this->photo)) {
@@ -4990,7 +4990,7 @@ class TenantAgentAuction extends Component
             $extensionVideo = $this->video->getClientOriginalExtension();
             $uuid = (string) Str::uuid();
             $videoName = $uuid . '.' . $extensionVideo;
-            $videoPath = $this->video->storeAs('auction/videos', $videoName, 'public');
+            $videoPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($this->video, 'auction/videos', $videoName);
             $auction->saveMeta('video', $videoName);
             $this->video = $videoName;
         }
@@ -5254,7 +5254,7 @@ class TenantAgentAuction extends Component
                 $auction = $auctionClass::find($this->listingId);
                 if ($auction) {
                     if ($this->photo && is_string($this->photo)) {
-                        Storage::disk('public')->delete('auction/images/' . $this->photo);
+                        app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $this->photo);
                     }
                     $auction->deleteMeta('photo');
                 }
@@ -5283,7 +5283,7 @@ class TenantAgentAuction extends Component
                 $auction = $auctionClass::find($this->listingId);
                 if ($auction) {
                     if ($this->video && is_string($this->video)) {
-                        Storage::disk('public')->delete('auction/videos/' . $this->video);
+                        app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/videos/' . $this->video);
                     }
                     $auction->deleteMeta('video');
                 }

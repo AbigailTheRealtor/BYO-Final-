@@ -321,7 +321,7 @@ class AgentPresetController extends Controller
             $file = $request->file('presentation_upload');
             $dir  = 'agent-offer-presets/' . $userId;
             $name = 'presentation_' . \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
-            $presentationUploadPath = Storage::disk('public')->putFileAs($dir, $file, $name);
+            $presentationUploadPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($file, $dir, $name);
         }
 
         // Handle Business Card / Headshot Upload
@@ -330,7 +330,7 @@ class AgentPresetController extends Controller
             $file = $request->file('business_card_upload');
             $dir  = 'agent-offer-presets/' . $userId;
             $name = 'business_card_' . \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
-            $businessCardUploadPath = Storage::disk('public')->putFileAs($dir, $file, $name);
+            $businessCardUploadPath = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($file, $dir, $name);
         }
 
         $profileData = [

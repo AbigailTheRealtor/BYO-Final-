@@ -1079,14 +1079,14 @@ class TenantAgentAuctionBid extends Component
                 if (is_string($file) && !empty($file)) {
                     $storedPaths[] = $file;
                 } elseif (is_object($file) && method_exists($file, 'store')) {
-                    $path = $file->store('auction/promo-materials', 'public');
+                    $path = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($file, 'auction/promo-materials');
                     if ($path) $storedPaths[] = $path;
                 }
             }
             $this->promoMaterials[$i]['files'] = $storedPaths;
         }
         if ($this->business_card && is_object($this->business_card) && method_exists($this->business_card, 'store')) {
-            $path = $this->business_card->store('auction/documents', 'public');
+            $path = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($this->business_card, 'auction/documents');
             if ($path) $this->business_card_stored_path = $path;
         }
     }
@@ -1431,7 +1431,7 @@ class TenantAgentAuctionBid extends Component
                 if (in_array($extension, $allowedVideos)) {
                     $uuid = (string) Str::uuid();
                     $fileName = $uuid . '.' . $extension;
-                    $path = $this->video_upload->storeAs('auction/videos', $fileName, 'public');
+                    $path = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($this->video_upload, 'auction/videos', $fileName);
                     $bid->saveMeta('video_upload', $path);
                 }
             }
@@ -1446,13 +1446,13 @@ class TenantAgentAuctionBid extends Component
                         $existingBid = TenantAgentAuctionBidData::find($this->editBidId);
                         $oldPath = $existingBid ? $existingBid->info('business_card') : null;
                         if ($oldPath && is_string($oldPath) && strpos($oldPath, 'auction/documents/') === 0) {
-                            Storage::disk('public')->delete($oldPath);
+                            app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic($oldPath);
                         }
                     }
                     
                     $uuid = (string) Str::uuid();
                     $fileName = $uuid . '.' . $extension;
-                    $path = $this->business_card->storeAs('auction/documents', $fileName, 'public');
+                    $path = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($this->business_card, 'auction/documents', $fileName);
                     $bid->saveMeta('business_card', $path);
                 }
             } elseif ($this->deleteExistingBusinessCard && $this->isEditMode && $this->editBidId) {
@@ -1460,7 +1460,7 @@ class TenantAgentAuctionBid extends Component
                 $existingBid = TenantAgentAuctionBidData::find($this->editBidId);
                 $oldPath = $existingBid ? $existingBid->info('business_card') : null;
                 if ($oldPath && is_string($oldPath) && strpos($oldPath, 'auction/documents/') === 0) {
-                    Storage::disk('public')->delete($oldPath);
+                    app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic($oldPath);
                 }
                 $bid->saveMeta('business_card', null);
             }
@@ -1498,7 +1498,7 @@ class TenantAgentAuctionBid extends Component
                             if (!in_array($ext, $allowed, true)) continue;
 
                             $name = (string) Str::uuid() . '.' . $ext;
-                            $path = $file->storeAs('auction/promo-materials', $name, 'public');
+                            $path = app(\App\Support\Storage\ListingStorageWriter::class)->storePublicAuto($file, 'auction/promo-materials', $name);
                             if ($path) $stored[] = $path;
                         }
                     }
@@ -1553,7 +1553,7 @@ class TenantAgentAuctionBid extends Component
                         $isOwned = in_array($filePath, $ownedFiles, true);
                         
                         if ($isInAllowedDir && $hasNoTraversal && $isOwned) {
-                            Storage::disk('public')->delete($filePath);
+                            app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic($filePath);
                         } else {
                             Log::warning('Blocked unauthorized file deletion attempt', [
                                 'path' => $filePath, 
