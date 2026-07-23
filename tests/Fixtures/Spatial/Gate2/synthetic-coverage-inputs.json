@@ -1,0 +1,61 @@
+{
+    "_meta": {
+        "purpose": "Gate 2 corpus-coverage EVIDENCE SCHEMA synthetic inputs (Batch 2D Part C3d-a). Exercises the dataset x territory matrix pipeline with ILLUSTRATIVE observation counts. Every count here is SYNTHETIC — nothing is a real corpus measurement.",
+        "batch": "phase-2-batch-2d-part-c3d-a",
+        "not_a_metric": "This schema records observations only. It defines NO coverage numerator, denominator, percentage, threshold, or pass/fail. Whether a cell's status is acceptable is a product-owner decision deferred to C3d-b (SSOT: acceptance is per-category by the product owner).",
+        "honesty_rule": "A cell that was not measured is `measured:false` with a null count (rendered `unmeasured`). It is NEVER the same as a measured-zero cell (`absent`). Cells omitted from `observations` default to unmeasured — never a silent hole.",
+        "territories": "FL, PR, AK, rural_CONUS are reported SEPARATELY (SSOT §5 / E-32). PR and AK are never folded into CONUS.",
+        "pr_watch": "epa_walkability, usgs_boat_ramps, noaa_cusp, dot_nad are the four datasets E-32 says to verify explicitly for Puerto Rico; their PR cells are deliberately included.",
+        "scope_and_limits": "Validates the evidence-schema pipeline only. It does NOT certify corpus quality, does NOT measure a real corpus, and asserts no coverage. Real measurement is C3d-b (Class-2)."
+    },
+    "territories": ["FL", "PR", "AK", "rural_CONUS"],
+    "pr_watch_datasets": ["epa_walkability", "usgs_boat_ramps", "noaa_cusp", "dot_nad"],
+    "datasets": [
+        { "key": "overture_places", "categories": ["grocery_store", "restaurant"] },
+        { "key": "cms_health", "categories": ["hospital"] },
+        { "key": "nces_schools", "categories": ["public_school"] },
+        { "key": "epa_walkability", "categories": ["walkability_index"] },
+        { "key": "usgs_boat_ramps", "categories": ["boat_ramp"] },
+        { "key": "noaa_cusp", "categories": ["coastline"] },
+        { "key": "dot_nad", "categories": ["address_point"] }
+    ],
+    "observations": [
+        { "dataset": "overture_places", "category": "grocery_store", "territory": "FL", "measured": true, "present_count": 4200 },
+        { "dataset": "overture_places", "category": "grocery_store", "territory": "PR", "measured": true, "present_count": 180 },
+        { "dataset": "overture_places", "category": "grocery_store", "territory": "AK", "measured": true, "present_count": 95 },
+        { "dataset": "overture_places", "category": "grocery_store", "territory": "rural_CONUS", "measured": true, "present_count": 610 },
+
+        { "dataset": "overture_places", "category": "restaurant", "territory": "FL", "measured": true, "present_count": 9800 },
+        { "dataset": "overture_places", "category": "restaurant", "territory": "PR", "measured": true, "present_count": 430 },
+        { "dataset": "overture_places", "category": "restaurant", "territory": "AK", "measured": true, "present_count": 210 },
+        { "dataset": "overture_places", "category": "restaurant", "territory": "rural_CONUS", "measured": true, "present_count": 1550 },
+
+        { "dataset": "cms_health", "category": "hospital", "territory": "FL", "measured": true, "present_count": 310 },
+        { "dataset": "cms_health", "category": "hospital", "territory": "PR", "measured": true, "present_count": 62 },
+        { "dataset": "cms_health", "category": "hospital", "territory": "AK", "measured": true, "present_count": 24 },
+        { "dataset": "cms_health", "category": "hospital", "territory": "rural_CONUS", "measured": true, "present_count": 140 },
+
+        { "dataset": "nces_schools", "category": "public_school", "territory": "FL", "measured": true, "present_count": 4100 },
+        { "dataset": "nces_schools", "category": "public_school", "territory": "PR", "measured": true, "present_count": 850 },
+        { "dataset": "nces_schools", "category": "public_school", "territory": "AK", "measured": true, "present_count": 500 },
+
+        { "dataset": "epa_walkability", "category": "walkability_index", "territory": "FL", "measured": true, "present_count": 12000 },
+        { "dataset": "epa_walkability", "category": "walkability_index", "territory": "PR", "measured": true, "present_count": 0, "note": "E-32: EPA Walkability Index coverage for PR is suspect — verify against the real extract at C3d-b." },
+        { "dataset": "epa_walkability", "category": "walkability_index", "territory": "AK", "measured": true, "present_count": 300 },
+        { "dataset": "epa_walkability", "category": "walkability_index", "territory": "rural_CONUS", "measured": true, "present_count": 5400 },
+
+        { "dataset": "usgs_boat_ramps", "category": "boat_ramp", "territory": "FL", "measured": true, "present_count": 720 },
+        { "dataset": "usgs_boat_ramps", "category": "boat_ramp", "territory": "PR", "measured": true, "present_count": 0, "note": "E-32: USGS Boat Ramps for PR is suspect — verify against the real extract at C3d-b." },
+        { "dataset": "usgs_boat_ramps", "category": "boat_ramp", "territory": "AK", "measured": true, "present_count": 260 },
+        { "dataset": "usgs_boat_ramps", "category": "boat_ramp", "territory": "rural_CONUS", "measured": true, "present_count": 410 },
+
+        { "dataset": "noaa_cusp", "category": "coastline", "territory": "FL", "measured": true, "present_count": 1 },
+        { "dataset": "noaa_cusp", "category": "coastline", "territory": "PR", "measured": false, "note": "E-32: NOAA CUSP coverage for PR NOT YET MEASURED — unknown, not zero. Resolve at C3d-b." },
+        { "dataset": "noaa_cusp", "category": "coastline", "territory": "AK", "measured": true, "present_count": 1 },
+
+        { "dataset": "dot_nad", "category": "address_point", "territory": "FL", "measured": true, "present_count": 9500000 },
+        { "dataset": "dot_nad", "category": "address_point", "territory": "PR", "measured": true, "present_count": 0, "note": "E-32: DOT NAD address points for PR is suspect — verify against the real extract at C3d-b." },
+        { "dataset": "dot_nad", "category": "address_point", "territory": "AK", "measured": true, "present_count": 340000 },
+        { "dataset": "dot_nad", "category": "address_point", "territory": "rural_CONUS", "measured": true, "present_count": 18000000 }
+    ]
+}

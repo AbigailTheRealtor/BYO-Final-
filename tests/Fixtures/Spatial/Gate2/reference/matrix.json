@@ -1,0 +1,349 @@
+{
+    "territories": [
+        "FL",
+        "PR",
+        "AK",
+        "rural_CONUS"
+    ],
+    "datasets": [
+        {
+            "key": "overture_places",
+            "categories": [
+                "grocery_store",
+                "restaurant"
+            ]
+        },
+        {
+            "key": "cms_health",
+            "categories": [
+                "hospital"
+            ]
+        },
+        {
+            "key": "nces_schools",
+            "categories": [
+                "public_school"
+            ]
+        },
+        {
+            "key": "epa_walkability",
+            "categories": [
+                "walkability_index"
+            ]
+        },
+        {
+            "key": "usgs_boat_ramps",
+            "categories": [
+                "boat_ramp"
+            ]
+        },
+        {
+            "key": "noaa_cusp",
+            "categories": [
+                "coastline"
+            ]
+        },
+        {
+            "key": "dot_nad",
+            "categories": [
+                "address_point"
+            ]
+        }
+    ],
+    "pr_watch_datasets": [
+        "epa_walkability",
+        "usgs_boat_ramps",
+        "noaa_cusp",
+        "dot_nad"
+    ],
+    "cells": [
+        {
+            "dataset": "overture_places",
+            "category": "grocery_store",
+            "territory": "FL",
+            "measured": true,
+            "present_count": 4200,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "overture_places",
+            "category": "grocery_store",
+            "territory": "PR",
+            "measured": true,
+            "present_count": 180,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "overture_places",
+            "category": "grocery_store",
+            "territory": "AK",
+            "measured": true,
+            "present_count": 95,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "overture_places",
+            "category": "grocery_store",
+            "territory": "rural_CONUS",
+            "measured": true,
+            "present_count": 610,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "overture_places",
+            "category": "restaurant",
+            "territory": "FL",
+            "measured": true,
+            "present_count": 9800,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "overture_places",
+            "category": "restaurant",
+            "territory": "PR",
+            "measured": true,
+            "present_count": 430,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "overture_places",
+            "category": "restaurant",
+            "territory": "AK",
+            "measured": true,
+            "present_count": 210,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "overture_places",
+            "category": "restaurant",
+            "territory": "rural_CONUS",
+            "measured": true,
+            "present_count": 1550,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "cms_health",
+            "category": "hospital",
+            "territory": "FL",
+            "measured": true,
+            "present_count": 310,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "cms_health",
+            "category": "hospital",
+            "territory": "PR",
+            "measured": true,
+            "present_count": 62,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "cms_health",
+            "category": "hospital",
+            "territory": "AK",
+            "measured": true,
+            "present_count": 24,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "cms_health",
+            "category": "hospital",
+            "territory": "rural_CONUS",
+            "measured": true,
+            "present_count": 140,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "nces_schools",
+            "category": "public_school",
+            "territory": "FL",
+            "measured": true,
+            "present_count": 4100,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "nces_schools",
+            "category": "public_school",
+            "territory": "PR",
+            "measured": true,
+            "present_count": 850,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "nces_schools",
+            "category": "public_school",
+            "territory": "AK",
+            "measured": true,
+            "present_count": 500,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "nces_schools",
+            "category": "public_school",
+            "territory": "rural_CONUS",
+            "measured": false,
+            "present_count": null,
+            "status": "unmeasured",
+            "note": null
+        },
+        {
+            "dataset": "epa_walkability",
+            "category": "walkability_index",
+            "territory": "FL",
+            "measured": true,
+            "present_count": 12000,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "epa_walkability",
+            "category": "walkability_index",
+            "territory": "PR",
+            "measured": true,
+            "present_count": 0,
+            "status": "absent",
+            "note": "E-32: EPA Walkability Index coverage for PR is suspect — verify against the real extract at C3d-b."
+        },
+        {
+            "dataset": "epa_walkability",
+            "category": "walkability_index",
+            "territory": "AK",
+            "measured": true,
+            "present_count": 300,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "epa_walkability",
+            "category": "walkability_index",
+            "territory": "rural_CONUS",
+            "measured": true,
+            "present_count": 5400,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "usgs_boat_ramps",
+            "category": "boat_ramp",
+            "territory": "FL",
+            "measured": true,
+            "present_count": 720,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "usgs_boat_ramps",
+            "category": "boat_ramp",
+            "territory": "PR",
+            "measured": true,
+            "present_count": 0,
+            "status": "absent",
+            "note": "E-32: USGS Boat Ramps for PR is suspect — verify against the real extract at C3d-b."
+        },
+        {
+            "dataset": "usgs_boat_ramps",
+            "category": "boat_ramp",
+            "territory": "AK",
+            "measured": true,
+            "present_count": 260,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "usgs_boat_ramps",
+            "category": "boat_ramp",
+            "territory": "rural_CONUS",
+            "measured": true,
+            "present_count": 410,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "noaa_cusp",
+            "category": "coastline",
+            "territory": "FL",
+            "measured": true,
+            "present_count": 1,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "noaa_cusp",
+            "category": "coastline",
+            "territory": "PR",
+            "measured": false,
+            "present_count": null,
+            "status": "unmeasured",
+            "note": "E-32: NOAA CUSP coverage for PR NOT YET MEASURED — unknown, not zero. Resolve at C3d-b."
+        },
+        {
+            "dataset": "noaa_cusp",
+            "category": "coastline",
+            "territory": "AK",
+            "measured": true,
+            "present_count": 1,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "noaa_cusp",
+            "category": "coastline",
+            "territory": "rural_CONUS",
+            "measured": false,
+            "present_count": null,
+            "status": "unmeasured",
+            "note": null
+        },
+        {
+            "dataset": "dot_nad",
+            "category": "address_point",
+            "territory": "FL",
+            "measured": true,
+            "present_count": 9500000,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "dot_nad",
+            "category": "address_point",
+            "territory": "PR",
+            "measured": true,
+            "present_count": 0,
+            "status": "absent",
+            "note": "E-32: DOT NAD address points for PR is suspect — verify against the real extract at C3d-b."
+        },
+        {
+            "dataset": "dot_nad",
+            "category": "address_point",
+            "territory": "AK",
+            "measured": true,
+            "present_count": 340000,
+            "status": "present",
+            "note": null
+        },
+        {
+            "dataset": "dot_nad",
+            "category": "address_point",
+            "territory": "rural_CONUS",
+            "measured": true,
+            "present_count": 18000000,
+            "status": "present",
+            "note": null
+        }
+    ]
+}
