@@ -98,7 +98,25 @@ class ListingStorageReaderTest extends TestCase
     }
 
     /**
-     * (7) object_first + read_prefixes: a key OUTSIDE the scope is not read from
+     * (7b) object_first: an UNDEFINED/misconfigured secondary disk must degrade
+     * gracefully to the local chain — resolving the disk cannot 500 the request.
+     */
+    public function test_object_first_degrades_gracefully_when_secondary_undefined(): void
+    {
+        config([
+            'listing_storage.private_read' => 'object_first',
+            'listing_storage.private_secondary_disk' => 'no_such_disk_xyz',
+        ]);
+        Storage::disk('private')->put(self::DOC, '%PDF-1.4');
+
+        $resp = $this->reader()->privateResponse(self::DOC, 'a.pdf');
+
+        $this->assertNotNull($resp); // fell back to local private; did not throw
+        $this->assertSame(200, $resp->getStatusCode());
+    }
+
+    /**
+     * (8) object_first + read_prefixes: a key OUTSIDE the scope is not read from
      * the object secondary (only the local chain is consulted).
      */
     public function test_object_first_respects_prefix_scope(): void

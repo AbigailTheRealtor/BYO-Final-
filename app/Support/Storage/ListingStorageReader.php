@@ -44,17 +44,21 @@ class ListingStorageReader
     public function privateResponse(string $relative, string $downloadName, array $headers = []): ?Response
     {
         foreach ($this->privateReadChain($relative) as $diskName) {
-            $disk = Storage::disk($diskName);
-
             try {
+                // Resolving the disk is inside the try on purpose: an undefined or
+                // misconfigured secondary (Storage::disk() throws) must degrade to
+                // the local fallback, exactly like an unreachable object store.
+                $disk = Storage::disk($diskName);
+
                 if (! $disk->exists($relative)) {
                     continue;
                 }
 
                 return $disk->response($relative, $downloadName, $headers);
             } catch (Throwable $e) {
-                // A secondary that errors (e.g. object storage unreachable) must
-                // never fail the request while a local copy may still serve it.
+                // A secondary that errors — object storage unreachable, or an
+                // undefined/misconfigured secondary disk — must never fail the
+                // request while a local copy may still serve it.
                 continue;
             }
         }
