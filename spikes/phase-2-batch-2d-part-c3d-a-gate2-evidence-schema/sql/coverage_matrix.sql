@@ -1,0 +1,92 @@
+-- ============================================================================
+-- coverage_matrix.sql  —  AUTHORED, NOT RUN
+-- Spatial Intelligence Platform · Phase 2 Batch 2D Part C3d-a (Gate 2 evidence schema)
+-- Per (dataset × category × territory) owned-corpus feature COUNTS → matrix observations
+-- ============================================================================
+--
+-- This is the CLASS-2 (C3d-b) recipe. It requires the pgsql_spatial PostGIS
+-- cluster (SPATIAL_DATABASE_URL / SPATIAL_PGHOST), PostGIS, and a LOADED corpus
+-- (places, authority overlays, boundaries, addresses). It is NEVER executed
+-- offline. The offline counterpart is App\Services\Spatial\Gate2\* +
+-- `spatial:gate2-matrix`, which assembles the SAME matrix shape from synthetic
+-- observations so the evidence schema is proven before any corpus exists.
+--
+-- WHAT IT PRODUCES
+-- ----------------
+-- One row per (dataset, category, territory): a raw present_count. These rows are
+-- the `observations` the offline assembler already consumes — Class-1 fed them
+-- from a synthetic fixture; Class-2 feeds them from these SELECTs. The pipeline
+-- does not move.
+--
+-- WHAT IT DELIBERATELY DOES NOT DO
+-- --------------------------------
+--   • It computes NO coverage ratio, NO percentage, NO threshold, NO pass/fail.
+--     Gate 2 has no formula in the SSOT and acceptance is per-category by the
+--     PRODUCT OWNER. This recipe COUNTS; it does not judge.
+--   • It writes NOTHING. Every statement is a read-only SELECT. (Recording
+--     corpus_imports.territory_coverage from a real run is a separate, explicit
+--     Class-2 write decision, not smuggled in here.)
+--   • It never turns a not-measured cell into a zero. A cell this recipe does not
+--     SELECT stays `unmeasured` in the matrix — never `absent`.
+--
+-- OPEN CLASS-2 / PRODUCT DECISIONS (do NOT invent here)
+-- -----------------------------------------------------
+--   • The territory predicates below are TEMPLATES. The exact FL / PR / AK slices
+--     and — especially — the definition of "rural_CONUS" (which counties count as
+--     rural) are product/data decisions for C3d-b. The `:rural_conus_fips` param
+--     is a deliberate placeholder; this recipe does not fabricate a rural set.
+--   • The dataset→table/category mapping mirrors the Phase 2 import batch; confirm
+--     each table name and category token against the real loaded schema.
+--
+-- Run (later, Class-2): psql "$SPATIAL_DATABASE_URL" -f coverage_matrix.sql
+-- ----------------------------------------------------------------------------
+
+-- Territory predicate templates (Class-2 decisions — TEMPLATES, not final):
+--   FL          : b.state_fips = '12'
+--   PR          : b.state_fips = '72'          -- Puerto Rico is reported separately (§5)
+--   AK          : b.state_fips = '02'          -- antimeridian; never a bbox filter (§5)
+--   rural_CONUS : b.county_fips = ANY(:'rural_conus_fips')   -- PLACEHOLDER param, product decision
+
+-- ----------------------------------------------------------------------------
+-- Example: Overture places, per canonical category, per territory. One SELECT per
+-- (dataset, category, territory) cell that is actually MEASURED. Cells NOT selected
+-- here remain `unmeasured` in the assembled matrix (honest — not zero).
+-- ----------------------------------------------------------------------------
+-- SELECT 'overture_places' AS dataset, pc.category AS category, 'FL' AS territory,
+--        count(*) AS present_count
+-- FROM places p
+-- JOIN place_categories pc ON pc.id = p.place_category_id
+-- WHERE pc.category = 'grocery_store'
+--   AND p.state_fips = '12';
+
+-- ----------------------------------------------------------------------------
+-- Example: authority overlay (CMS health → hospital), per territory.
+-- ----------------------------------------------------------------------------
+-- SELECT 'cms_health' AS dataset, 'hospital' AS category, 'PR' AS territory,
+--        count(*) AS present_count
+-- FROM place_authorities a
+-- WHERE a.authority_source = 'cms'
+--   AND a.state_fips = '72';
+
+-- ----------------------------------------------------------------------------
+-- Example: boundaries (FEMA NFHL coverage footprint) present per territory.
+-- ----------------------------------------------------------------------------
+-- SELECT 'fema_nfhl' AS dataset, 'flood_coverage' AS category, 'AK' AS territory,
+--        count(*) AS present_count
+-- FROM boundaries b
+-- WHERE b.kind = 'flood_coverage'
+--   AND b.state_fips = '02';
+
+-- ----------------------------------------------------------------------------
+-- The four E-32 PR watch datasets MUST each be selected for PR explicitly, so a
+-- zero for Puerto Rico is a recorded `absent` (measured, zero) — never a silent
+-- omission that would read as `unmeasured`. If any returns zero, that is EVIDENCE
+-- for the product owner, not a failure this recipe decides:
+--   epa_walkability · usgs_boat_ramps · noaa_cusp · dot_nad   × territory = 'PR'
+-- ----------------------------------------------------------------------------
+-- SELECT 'epa_walkability' AS dataset, 'walkability_index' AS category, 'PR' AS territory,
+--        count(*) AS present_count
+-- FROM epa_walkability_blocks w
+-- WHERE w.state_fips = '72';
+
+-- End of AUTHORED-NOT-RUN recipe. No rows were written; no judgement was made.

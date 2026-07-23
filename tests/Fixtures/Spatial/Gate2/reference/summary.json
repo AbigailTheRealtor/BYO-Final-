@@ -1,0 +1,151 @@
+{
+    "batch": "phase-2-batch-2d-part-c3d-a",
+    "gate": "Gate 2 — corpus coverage (evidence schema)",
+    "scope": "C3d-a evidence schema only — no coverage metric, no threshold, no pass/fail, no real corpus.",
+    "territories": [
+        "FL",
+        "PR",
+        "AK",
+        "rural_CONUS"
+    ],
+    "pr_watch_datasets": [
+        "epa_walkability",
+        "usgs_boat_ramps",
+        "noaa_cusp",
+        "dot_nad"
+    ],
+    "cell_totals": {
+        "total": 32,
+        "measured": 29,
+        "present": 26,
+        "absent": 3,
+        "unmeasured": 3
+    },
+    "per_territory": {
+        "FL": {
+            "total": 8,
+            "present": 8,
+            "absent": 0,
+            "unmeasured": 0
+        },
+        "PR": {
+            "total": 8,
+            "present": 4,
+            "absent": 3,
+            "unmeasured": 1
+        },
+        "AK": {
+            "total": 8,
+            "present": 8,
+            "absent": 0,
+            "unmeasured": 0
+        },
+        "rural_CONUS": {
+            "total": 8,
+            "present": 6,
+            "absent": 0,
+            "unmeasured": 2
+        }
+    },
+    "pr_watch_verification": {
+        "epa_walkability": [
+            {
+                "category": "walkability_index",
+                "status": "absent",
+                "present_count": 0,
+                "note": "E-32: EPA Walkability Index coverage for PR is suspect — verify against the real extract at C3d-b."
+            }
+        ],
+        "usgs_boat_ramps": [
+            {
+                "category": "boat_ramp",
+                "status": "absent",
+                "present_count": 0,
+                "note": "E-32: USGS Boat Ramps for PR is suspect — verify against the real extract at C3d-b."
+            }
+        ],
+        "noaa_cusp": [
+            {
+                "category": "coastline",
+                "status": "unmeasured",
+                "present_count": null,
+                "note": "E-32: NOAA CUSP coverage for PR NOT YET MEASURED — unknown, not zero. Resolve at C3d-b."
+            }
+        ],
+        "dot_nad": [
+            {
+                "category": "address_point",
+                "status": "absent",
+                "present_count": 0,
+                "note": "E-32: DOT NAD address points for PR is suspect — verify against the real extract at C3d-b."
+            }
+        ]
+    },
+    "gaps": [
+        {
+            "dataset": "epa_walkability",
+            "category": "walkability_index",
+            "territory": "PR",
+            "measured": true,
+            "present_count": 0,
+            "status": "absent",
+            "note": "E-32: EPA Walkability Index coverage for PR is suspect — verify against the real extract at C3d-b."
+        },
+        {
+            "dataset": "usgs_boat_ramps",
+            "category": "boat_ramp",
+            "territory": "PR",
+            "measured": true,
+            "present_count": 0,
+            "status": "absent",
+            "note": "E-32: USGS Boat Ramps for PR is suspect — verify against the real extract at C3d-b."
+        },
+        {
+            "dataset": "dot_nad",
+            "category": "address_point",
+            "territory": "PR",
+            "measured": true,
+            "present_count": 0,
+            "status": "absent",
+            "note": "E-32: DOT NAD address points for PR is suspect — verify against the real extract at C3d-b."
+        }
+    ],
+    "unmeasured": [
+        {
+            "dataset": "nces_schools",
+            "category": "public_school",
+            "territory": "rural_CONUS",
+            "measured": false,
+            "present_count": null,
+            "status": "unmeasured",
+            "note": null
+        },
+        {
+            "dataset": "noaa_cusp",
+            "category": "coastline",
+            "territory": "PR",
+            "measured": false,
+            "present_count": null,
+            "status": "unmeasured",
+            "note": "E-32: NOAA CUSP coverage for PR NOT YET MEASURED — unknown, not zero. Resolve at C3d-b."
+        },
+        {
+            "dataset": "noaa_cusp",
+            "category": "coastline",
+            "territory": "rural_CONUS",
+            "measured": false,
+            "present_count": null,
+            "status": "unmeasured",
+            "note": null
+        }
+    ],
+    "acceptance": {
+        "coverage_metric_defined": false,
+        "numerator_defined": false,
+        "denominator_defined": false,
+        "threshold_defined": false,
+        "automated_pass_fail": false,
+        "product_owner_acceptance": "deferred to C3d-b (Class-2)",
+        "note": "C3d-a authors the Gate 2 evidence schema only. The SSOT defines no coverage formula and states acceptance is per-category by the product owner. Real corpus measurement and acceptance are C3d-b."
+    }
+}
