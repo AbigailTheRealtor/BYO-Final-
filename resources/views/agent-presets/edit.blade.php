@@ -613,7 +613,7 @@
                     <div class="form-hint">Upload a PDF, image, or document (max 10 MB). Accepted: pdf, jpg, png, webp, doc, docx, ppt, pptx.</div>
                     @if (!empty($data['presentation_upload_path']))
                         <div class="mt-1">
-                            <small>Current file: <a href="{{ Storage::disk('public')->url($data['presentation_upload_path']) }}" target="_blank" rel="noopener noreferrer">{{ basename($data['presentation_upload_path']) }}</a></small>
+                            <small>Current file: <a href="{{ \App\Support\Storage\ListingMediaUrl::get($data['presentation_upload_path']) }}" target="_blank" rel="noopener noreferrer">{{ basename($data['presentation_upload_path']) }}</a></small>
                         </div>
                     @endif
                 </div>
@@ -634,7 +634,7 @@
                     <div class="form-hint">Upload a PDF, image, or document (max 10 MB). Accepted: pdf, jpg, png, webp, doc, docx, ppt, pptx.</div>
                     @if (!empty($data['business_card_upload_path']))
                         <div class="mt-1">
-                            <small>Current file: <a href="{{ Storage::disk('public')->url($data['business_card_upload_path']) }}" target="_blank" rel="noopener noreferrer">{{ basename($data['business_card_upload_path']) }}</a></small>
+                            <small>Current file: <a href="{{ \App\Support\Storage\ListingMediaUrl::get($data['business_card_upload_path']) }}" target="_blank" rel="noopener noreferrer">{{ basename($data['business_card_upload_path']) }}</a></small>
                         </div>
                     @endif
                 </div>

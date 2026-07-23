@@ -16,7 +16,7 @@
         <div class="row mb-3">
             @foreach ($photos as $photo)
             <div class="col-6 col-md-4 mb-2">
-                <img src="{{ asset('storage/' . $photo) }}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover; width: 100%;" alt="Client Photo">
+                <img src="{{ \App\Support\Storage\ListingMediaUrl::get($photo) }}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover; width: 100%;" alt="Client Photo">
             </div>
             @endforeach
         </div>
@@ -24,7 +24,7 @@
         @if (!empty($videoUrl))
         <div class="mb-3">
             <video controls class="w-100 rounded" style="max-height: 300px;">
-                <source src="{{ asset('storage/' . $videoUrl) }}" type="video/mp4">
+                <source src="{{ \App\Support\Storage\ListingMediaUrl::get($videoUrl) }}" type="video/mp4">
             </video>
         </div>
         @endif

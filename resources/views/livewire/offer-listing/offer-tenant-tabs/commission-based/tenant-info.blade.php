@@ -81,7 +81,7 @@
             <span class="removeBold">
                 @if (is_string($photo))
                     <!-- Existing file from storage -->
-                    <img src="{{ asset('storage/auction/images/' . $photo) }}" style="width:100%;height:29vh;" />
+                    <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $photo) }}" style="width:100%;height:29vh;" />
                 @else
                     <!-- Newly uploaded file (temporary) -->
                     <img src="{{ $photo->temporaryUrl() }}" style="width:100%;height:29vh;" />

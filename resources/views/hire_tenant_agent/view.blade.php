@@ -1300,7 +1300,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <div class="col-md-6 col-6 pt-2 fw-bold">Video:
                                     <span class="removeBold">
                                         <video controls style="width:100%;height:29vh;">
-                                            <source src="{{ asset('storage/auction/videos/' . $auction->get->video) }}"
+                                            <source src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/videos/' . $auction->get->video) }}"
                     type="video/mp4">
                     Your browser does not support the video tag.
                     </video>
@@ -1312,7 +1312,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <div class="col-md-6 col-6 pt-2 fw-bold">Video:
                     <span class="removeBold">
                         <video autoplay muted loop playsinline controls style="width:100%; height:29vh;">
-                            <source src="{{ asset('storage/auction/videos/' . $auction->get->video) }}"
+                            <source src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/videos/' . $auction->get->video) }}"
                                 type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
@@ -1323,7 +1323,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @if (isset($auction->get->photo))
                 <div class="col-md-6 col-6 pt-2 fw-bold">Photo:
                     <span class="removeBold">
-                        <img src="{{ asset('storage/auction/images/' . $auction->get->photo) }}"
+                        <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $auction->get->photo) }}"
                             style="width:100%;height:29vh;" />
                     </span>
                 </div>
@@ -3445,7 +3445,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <video controls
                                                                     style="width: 100%; max-width: 400px; border-radius: 6px; background: #000;">
                                                                     <source
-                                                                        src="{{ asset('storage/' . data_get($bid, 'get.video_upload')) }}"
+                                                                        src="{{ \App\Support\Storage\ListingMediaUrl::get(data_get($bid, 'get.video_upload')) }}"
                                                                         type="video/mp4">
                                                                     Your browser does
                                                                     not support the
@@ -3501,7 +3501,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @php
                                                                     $businessCardPath = $normalizedBusinessCard;
                                                                     $businessCardExtension = pathinfo($businessCardPath, PATHINFO_EXTENSION);
-                                                                    $businessCardUrl = asset('storage/' . $businessCardPath);
+                                                                    $businessCardUrl = \App\Support\Storage\ListingMediaUrl::get($businessCardPath);
                                                                 @endphp
 
                                                                 @if (in_array(strtolower($businessCardExtension), ['jpg', 'jpeg', 'png', 'gif', 'webp']))
@@ -3623,7 +3623,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         @php
                                                                             $fileExtension = pathinfo($filePath, PATHINFO_EXTENSION);
                                                                             $fileName = basename($filePath);
-                                                                            $fileUrl = asset('storage/' . $filePath);
+                                                                            $fileUrl = \App\Support\Storage\ListingMediaUrl::get($filePath);
                                                                             $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
                                                                             $isImage = in_array(strtolower($fileExtension), $imageExtensions);
                                                                         @endphp

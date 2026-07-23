@@ -647,17 +647,17 @@
                     @if($hasPresentationUpload)
                         @php $presType = $fileType($pdPresentationUpload); @endphp
                         @if($presType === 'image')
-                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdPresentationUpload) }}"
+                            <a href="{{ \App\Support\Storage\ListingMediaUrl::get($pdPresentationUpload) }}"
                                target="_blank" rel="noopener noreferrer">
-                                <img src="{{ \Illuminate\Support\Facades\Storage::url($pdPresentationUpload) }}"
+                                <img src="{{ \App\Support\Storage\ListingMediaUrl::get($pdPresentationUpload) }}"
                                      alt="Presentation" class="preview-upload-thumb">
                             </a>
-                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdPresentationUpload) }}"
+                            <a href="{{ \App\Support\Storage\ListingMediaUrl::get($pdPresentationUpload) }}"
                                target="_blank" rel="noopener noreferrer" class="preview-link-pill">
                                 <i class="fa-solid fa-image me-1"></i>{{ basename($pdPresentationUpload) }}
                             </a>
                         @else
-                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdPresentationUpload) }}"
+                            <a href="{{ \App\Support\Storage\ListingMediaUrl::get($pdPresentationUpload) }}"
                                target="_blank" rel="noopener noreferrer" class="preview-link-pill">
                                 @if($presType === 'pdf')
                                     <i class="fa-solid fa-file-pdf me-1"></i>
@@ -680,17 +680,17 @@
                     @if($hasBusinessCardUpload)
                         @php $bcType = $fileType($pdBusinessCardUpload); @endphp
                         @if($bcType === 'image')
-                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdBusinessCardUpload) }}"
+                            <a href="{{ \App\Support\Storage\ListingMediaUrl::get($pdBusinessCardUpload) }}"
                                target="_blank" rel="noopener noreferrer">
-                                <img src="{{ \Illuminate\Support\Facades\Storage::url($pdBusinessCardUpload) }}"
+                                <img src="{{ \App\Support\Storage\ListingMediaUrl::get($pdBusinessCardUpload) }}"
                                      alt="Business Card / Headshot" class="preview-upload-thumb">
                             </a>
-                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdBusinessCardUpload) }}"
+                            <a href="{{ \App\Support\Storage\ListingMediaUrl::get($pdBusinessCardUpload) }}"
                                target="_blank" rel="noopener noreferrer" class="preview-link-pill">
                                 <i class="fa-solid fa-id-card me-1"></i>{{ basename($pdBusinessCardUpload) }}
                             </a>
                         @else
-                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdBusinessCardUpload) }}"
+                            <a href="{{ \App\Support\Storage\ListingMediaUrl::get($pdBusinessCardUpload) }}"
                                target="_blank" rel="noopener noreferrer" class="preview-link-pill">
                                 @if($bcType === 'pdf')
                                     <i class="fa-solid fa-file-pdf me-1"></i>
