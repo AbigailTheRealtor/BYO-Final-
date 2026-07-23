@@ -128,7 +128,7 @@
                     @else
                         <div style="height:22px;"></div>
                     @endif
-                    <img src="{{ asset('storage/auction/images/' . $photo) }}"
+                    <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $photo) }}"
                         style="width:100%;height:120px;object-fit:cover;border-radius:4px;" />
                     <div class="d-flex gap-1 mt-2">
                         <button type="button"

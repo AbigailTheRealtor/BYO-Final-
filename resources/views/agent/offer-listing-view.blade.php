@@ -1074,8 +1074,8 @@
             @foreach($d['property_photos'] as $photo)
             @if($photo)
             <div class="col-6 col-md-3">
-                <a href="{{ Storage::url($photo) }}" target="_blank">
-                    <img src="{{ Storage::url($photo) }}" alt="Property Photo" class="img-fluid rounded shadow-sm" style="width:100%;height:140px;object-fit:cover;">
+                <a href="{{ \App\Support\Storage\ListingMediaUrl::get($photo) }}" target="_blank">
+                    <img src="{{ \App\Support\Storage\ListingMediaUrl::get($photo) }}" alt="Property Photo" class="img-fluid rounded shadow-sm" style="width:100%;height:140px;object-fit:cover;">
                 </a>
             </div>
             @endif
@@ -1114,7 +1114,7 @@
     @if($d['agent_video'])
     <div class="col-md-6">
         <div class="text-muted small mb-1">Agent Video</div>
-        <a href="{{ Storage::url('auction/videos/' . $d['agent_video']) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+        <a href="{{ \App\Support\Storage\ListingMediaUrl::get('auction/videos/' . $d['agent_video']) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
             <i class="fa-solid fa-film me-1"></i>Watch Agent Video
         </a>
     </div>
@@ -1133,7 +1133,7 @@
             <div class="row g-3 align-items-start">
                 @if($d['agent_photo'])
                 <div class="col-auto">
-                    <img src="{{ Storage::url('auction/images/' . $d['agent_photo']) }}"
+                    <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $d['agent_photo']) }}"
                          alt="Agent Photo"
                          class="rounded-circle shadow-sm"
                          style="width:80px;height:80px;object-fit:cover;">

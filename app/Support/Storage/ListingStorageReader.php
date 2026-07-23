@@ -127,4 +127,61 @@ class ListingStorageReader
     {
         return (string) config('listing_storage.private_secondary_disk', 's3_private');
     }
+
+    /**
+     * Resolve the delivery URL for a PUBLIC listing media file (photo, video,
+     * public document). R2-D.2.
+     *
+     * Default (public_read='local') returns the local public disk URL — byte-
+     * equivalent to the previous asset('storage/…'), Storage::url() and
+     * disk('public')->url() output (all resolve to APP_URL.'/storage/'.$relative).
+     * When object-first public reads are opted in (and the key is in read scope),
+     * the configured PUBLIC secondary disk's URL is returned instead.
+     *
+     * Isolation (fail-closed): the secondary is used ONLY when it is a known-
+     * public disk. If it is misconfigured to a private disk, or is undefined /
+     * cannot produce a URL, this degrades to the local public URL — a private
+     * object URL is NEVER returned.
+     */
+    public function publicUrl(string $relative): string
+    {
+        if ($this->objectFirst('public_read', $relative)) {
+            $secondary = $this->publicSecondaryDisk();
+
+            if ($this->publicSecondaryAllowed($secondary)) {
+                try {
+                    return Storage::disk($secondary)->url($relative);
+                } catch (Throwable $e) {
+                    // Undefined disk, or a disk that cannot produce a URL → fall
+                    // through to the local public URL below.
+                }
+            }
+        }
+
+        return Storage::disk($this->disks->publicDiskName())->url($relative);
+    }
+
+    private function publicSecondaryDisk(): string
+    {
+        return (string) config('listing_storage.public_secondary_disk', 's3_public');
+    }
+
+    /**
+     * Fail-closed public isolation: never select the private secondary or the
+     * resolved private disk for a PUBLIC url, so a misconfigured selector can
+     * never surface a private object's URL.
+     */
+    private function publicSecondaryAllowed(string $diskName): bool
+    {
+        $forbidden = [(string) config('listing_storage.private_secondary_disk', 's3_private')];
+
+        try {
+            $forbidden[] = $this->disks->privateDiskName();
+        } catch (Throwable $e) {
+            // An unresolvable private selector must not hard-fail a public URL;
+            // the config-level name above still covers the dangerous case.
+        }
+
+        return ! in_array($diskName, $forbidden, true);
+    }
 }
