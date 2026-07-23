@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Documents\ListingDocumentAccessService;
 use App\Services\Documents\ListingDocumentCatalog;
-use Illuminate\Support\Facades\Storage;
+use App\Support\Storage\ListingStorageReader;
 
 /**
  * HI-05 — the ONLY way to reach an uploaded listing document.
@@ -30,8 +30,10 @@ use Illuminate\Support\Facades\Storage;
  */
 class ListingDocumentController extends Controller
 {
-    public function __construct(private ListingDocumentAccessService $access)
-    {
+    public function __construct(
+        private ListingDocumentAccessService $access,
+        private ListingStorageReader $reader,
+    ) {
     }
 
     /**
@@ -117,16 +119,17 @@ class ListingDocumentController extends Controller
         return $this->stream($relative, $downloadName, ['Content-Disposition' => 'inline; filename="' . $downloadName . '"']);
     }
 
-    /** New uploads live on the private disk; legacy files remain on public until backfill. */
+    /**
+     * New uploads live on the private disk; legacy files remain on public until
+     * backfill. Delivery is resolved through ListingStorageReader, which (with
+     * private_read='local', the default) tries the local private disk then the
+     * local public disk exactly as before, and — when object-first reads are
+     * opted in — tries the private object-storage secondary first with the same
+     * local chain as fallback.
+     */
     private function stream(string $relative, string $downloadName, array $headers)
     {
-        if (Storage::disk('private')->exists($relative)) {
-            return Storage::disk('private')->response($relative, $downloadName, $headers);
-        }
-        if (Storage::disk('public')->exists($relative)) {
-            return Storage::disk('public')->response($relative, $downloadName, $headers);
-        }
-
-        abort(404, 'Document not found.');
+        return $this->reader->privateResponse($relative, $downloadName, $headers)
+            ?? abort(404, 'Document not found.');
     }
 }
