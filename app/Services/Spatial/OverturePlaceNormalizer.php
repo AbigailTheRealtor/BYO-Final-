@@ -52,7 +52,18 @@ final class OverturePlaceNormalizer
         foreach ($rawRows as $raw) {
             $total++;
 
-            $gersId = $this->str($raw['id'] ?? null);
+            // Identity precedence: the nested Overture `id` is authoritative; the
+            // flat `gers_id` / `source_ref` aliases are the fallback shape emitted
+            // by the committed DuckDB extract (spikes/.../sql/extract_places.sql
+            // projects `id AS source_ref, id AS gers_id`). Each fallback fires
+            // ONLY when the higher-precedence key is absent, so nested rows are
+            // byte-for-byte unchanged.
+            $gersId = $this->str(
+                $raw['id']
+                ?? $raw['gers_id']
+                ?? $raw['source_ref']
+                ?? null
+            );
             [$lon, $lat] = $this->coordinates($raw);
 
             // 1) Structurally unusable rows are counted, not lost.
@@ -113,13 +124,21 @@ final class OverturePlaceNormalizer
      *   1. `categories.primary`  (authoritative for the pinned 2026-06-17.0 release)
      *   2. `taxonomy.primary`    (only when categories.primary is ABSENT/empty)
      *   3. `basic_category`      (only when both above are ABSENT/empty)
+     *   4. `primary_category`    (flat alias emitted by the committed DuckDB
+     *                             extract; only when ALL nested fields are absent)
      *
      * Precedence is on FIELD PRESENCE, not mappability: a present-but-unmapped
      * `categories.primary` (e.g. "hotel") is returned as-is so it is tallied — a
      * lower-precedence field never overrides it. For the pinned release every row
      * carries `categories.primary`, so Batch 2A/2C behavior is byte-for-byte
      * unchanged; the fallbacks exist only for the ≥ 2026-09 releases that remove
-     * the `categories` property.
+     * the `categories` property, and for the flat DuckDB-extract shape
+     * (`categories.primary AS primary_category`).
+     *
+     * The flat `primary_category` alias sits LAST so it can never override a
+     * present nested field. A flat extract row carries no nested category keys, so
+     * it falls straight through to `primary_category`; a nested row returns at step
+     * 1–3 and never consults it — preserving the present-but-unmapped semantics.
      *
      * `taxonomy.hierarchy` and `taxonomy.alternates` are NEVER consulted — the
      * primary-only contract that ignores `categories.alternate` extends to them.
@@ -136,7 +155,12 @@ final class OverturePlaceNormalizer
             return $taxonomyPrimary;
         }
 
-        return $this->basicCategory($raw);
+        $basicCategory = $this->basicCategory($raw);
+        if ($basicCategory !== null) {
+            return $basicCategory;
+        }
+
+        return $this->str($raw['primary_category'] ?? null);
     }
 
     /** Legacy `categories.primary` token, or null. `categories.alternate` is never read. */
@@ -180,25 +204,38 @@ final class OverturePlaceNormalizer
     }
 
     /**
-     * source_count = number of DISTINCT contributing datasets in `sources[]`
-     * (Overture multiplicity signal). Falls back to 1 when sources is absent —
-     * a place always has at least the Overture record itself.
+     * source_count = number of DISTINCT contributing datasets (Overture
+     * multiplicity signal). Precedence:
+     *   1. A present, non-empty nested `sources[]` array is AUTHORITATIVE — count
+     *      its distinct datasets (this is byte-for-byte the prior behavior).
+     *   2. Otherwise, accept the flat `source_count` scalar emitted by the
+     *      committed DuckDB extract (`length(sources) AS source_count`), preserving
+     *      real provenance for the flat shape.
+     * Missing / null / non-numeric / zero / negative flat values floor to 1 — a
+     * place always has at least the Overture record itself. Flat `source_count`
+     * never overrides a present nested `sources[]`.
      */
     private function sourceCount(array $raw): int
     {
         $sources = $raw['sources'] ?? null;
-        if (!is_array($sources) || $sources === []) {
-            return 1;
-        }
-
-        $datasets = [];
-        foreach ($sources as $s) {
-            if (is_array($s) && isset($s['dataset']) && $s['dataset'] !== '') {
-                $datasets[strtolower((string) $s['dataset'])] = true;
+        if (is_array($sources) && $sources !== []) {
+            $datasets = [];
+            foreach ($sources as $s) {
+                if (is_array($s) && isset($s['dataset']) && $s['dataset'] !== '') {
+                    $datasets[strtolower((string) $s['dataset'])] = true;
+                }
             }
+
+            return $datasets === [] ? 1 : count($datasets);
         }
 
-        return $datasets === [] ? 1 : count($datasets);
+        // Flat DuckDB-extract shape: no sources[] array, but a precomputed count.
+        $flat = $raw['source_count'] ?? null;
+        if (is_numeric($flat) && (int) $flat >= 1) {
+            return (int) $flat;
+        }
+
+        return 1;
     }
 
     /** @return array{0: float|null, 1: float|null} [lon, lat] */

@@ -52,6 +52,41 @@ class OvertureExtractSqlManifestTest extends TestCase
             'ST_GeomFromWKB is incompatible with native GEOMETRY under LOAD spatial');
     }
 
+    /**
+     * @test Drift guard — the committed extract SQL projects EXACTLY the flat
+     * aliases the normalizer's flat fallbacks consume, and the normalizer resolves
+     * each of them. This ties the two files together so the flat-extract ↔
+     * normalizer shape seam cannot silently reopen.
+     */
+    public function the_extract_sql_aliases_match_the_normalizer_flat_contract(): void
+    {
+        $sql = $this->read('sql/extract_places.sql');
+
+        // The nine flat output aliases the DuckDB COPY projection emits.
+        foreach (['source_ref', 'gers_id', 'primary_category', 'name', 'brand', 'confidence', 'source_count', 'lon', 'lat'] as $alias) {
+            $this->assertMatchesRegularExpression(
+                '/AS\s+' . preg_quote($alias, '/') . '\b/',
+                $sql,
+                "extract SQL must project the flat alias `{$alias}`"
+            );
+        }
+
+        // The normalizer must contain compatible flat resolution for the aliases
+        // that were previously unhandled (id + category tokens + source_count).
+        // Coordinates (lon/lat), name and brand already had flat fallbacks; these
+        // close the remaining gap.
+        $normalizer = (string) file_get_contents(
+            dirname(__DIR__, 3) . '/app/Services/Spatial/OverturePlaceNormalizer.php'
+        );
+        foreach (['gers_id', 'source_ref', 'primary_category', 'source_count'] as $flatKey) {
+            $this->assertStringContainsString(
+                "\$raw['{$flatKey}']",
+                $normalizer,
+                "normalizer must resolve the flat extract alias `{$flatKey}`"
+            );
+        }
+    }
+
     /** @test */
     public function every_q2_count_sql_filters_the_first_slice_and_is_count_only(): void
     {

@@ -67,6 +67,40 @@ class CorpusExtractOvertureCommandTest extends TestCase
         );
     }
 
+    /** @test It normalizes the FLAT DuckDB-extract shape directly — no adapter. */
+    public function it_normalizes_the_flat_extractor_shape_without_an_adapter(): void
+    {
+        // The committed DuckDB extract emits flat rows (source_ref / gers_id /
+        // primary_category / lon / lat). SPATIAL_* are unset in the test env, so
+        // this also proves the flat path needs neither DuckDB nor a cluster.
+        $flatFixture = base_path('tests/fixtures/spatial/overture/pinellas_raw_flat_places.ndjson');
+
+        $this->artisan('corpus:extract-overture', [
+            '--region' => 'pinellas',
+            '--input' => $flatFixture,
+            '--output' => $this->out,
+        ])->assertExitCode(0);
+
+        $this->assertFileExists($this->out, 'flat input must produce a normalized extract with no adapter step');
+
+        $records = (new NormalizedExtractIo())->readFile($this->out);
+        $this->assertCount(9, $records, 'expected 9 kept rows from the flat fixture (10 rows − 1 sub-floor)');
+
+        $byCategory = [];
+        foreach ($records as $r) {
+            $byCategory[$r->category_key] = ($byCategory[$r->category_key] ?? 0) + 1;
+            $this->assertSame('overture', $r->source);
+            $this->assertGreaterThanOrEqual(0.90, $r->confidence);
+        }
+
+        $this->assertSame(2, $byCategory['gym'], 'flat gym + fitness_center collapse to gym');
+        $this->assertEqualsCanonicalizing(
+            ['grocery_store', 'restaurant', 'pharmacy', 'shopping_center', 'coffee_shop', 'gym', 'gas_station'],
+            array_keys($byCategory),
+            'all seven canonical keys present from the flat shape'
+        );
+    }
+
     /** @test */
     public function it_rejects_an_unknown_region(): void
     {
