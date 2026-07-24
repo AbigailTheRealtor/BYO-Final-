@@ -802,7 +802,7 @@
                     <div class="field-label" style="color: #049399;">Uploaded Video:</div>
                     @if (is_string(data_get($bid, 'get.video_upload')))
                     <video controls style="width: 100%; max-width: 400px; border-radius: 6px; background: #000;">
-                        <source src="{{ asset('storage/' . data_get($bid, 'get.video_upload')) }}" type="video/mp4">
+                        <source src="{{ \App\Support\Storage\ListingMediaUrl::get(data_get($bid, 'get.video_upload')) }}" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                     @endif
@@ -828,7 +828,7 @@
                     @php
                         $businessCardPath = data_get($bid, 'get.business_card');
                         $businessCardExtension = pathinfo($businessCardPath, PATHINFO_EXTENSION);
-                        $businessCardUrl = asset('storage/' . $businessCardPath);
+                        $businessCardUrl = \App\Support\Storage\ListingMediaUrl::get($businessCardPath);
                         $isImage = in_array(strtolower($businessCardExtension), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
                     @endphp
                     <div class="mt-2">
@@ -897,7 +897,7 @@
                             @php
                                 $fileExtension = pathinfo($filePath, PATHINFO_EXTENSION);
                                 $fileName = basename($filePath);
-                                $fileUrl = asset('storage/' . $filePath);
+                                $fileUrl = \App\Support\Storage\ListingMediaUrl::get($filePath);
                                 $isImage = in_array(strtolower($fileExtension), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
                             @endphp
                             <div class="col-md-6 mb-2">

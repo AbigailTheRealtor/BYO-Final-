@@ -622,7 +622,7 @@
                                                     <div class="fw-medium mb-1" style="color: #049399;">Uploaded Video:</div>
                                                     @if (is_string(data_get($bid, 'get.video_upload')))
                                                     <video controls style="width: 100%; max-width: 400px; border-radius: 6px; background: #000;">
-                                                        <source src="{{ asset('storage/' . data_get($bid, 'get.video_upload')) }}" type="video/mp4">
+                                                        <source src="{{ \App\Support\Storage\ListingMediaUrl::get(data_get($bid, 'get.video_upload')) }}" type="video/mp4">
                                                         Your browser does not support the video tag.
                                                     </video>
                                                     @else
@@ -662,7 +662,7 @@
                                                     @php
                                                         $businessCardPath = $normalizedBusinessCard;
                                                         $businessCardExt  = strtolower(pathinfo($businessCardPath, PATHINFO_EXTENSION));
-                                                        $businessCardUrl  = asset('storage/' . $businessCardPath);
+                                                        $businessCardUrl  = \App\Support\Storage\ListingMediaUrl::get($businessCardPath);
                                                     @endphp
                                                     @if (in_array($businessCardExt, ['jpg', 'jpeg', 'png', 'gif', 'webp']))
                                                     <div class="business-card-preview mb-2">
@@ -748,7 +748,7 @@
                                                                 $mfPath = is_array($matFile) ? ($matFile['path'] ?? $matFile['file'] ?? $matFile['url'] ?? (reset($matFile) ?: '')) : (is_string($matFile) ? $matFile : '');
                                                                 $mfExt  = strtolower(pathinfo($mfPath, PATHINFO_EXTENSION));
                                                                 $mfName = basename($mfPath);
-                                                                $mfUrl  = $mfPath ? asset('storage/' . $mfPath) : '';
+                                                                $mfUrl  = $mfPath ? \App\Support\Storage\ListingMediaUrl::get($mfPath) : '';
                                                                 $mfIsImage = in_array($mfExt, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
                                                             @endphp
                                                             @if ($mfUrl)

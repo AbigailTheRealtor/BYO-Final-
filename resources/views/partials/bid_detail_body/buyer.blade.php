@@ -1062,7 +1062,7 @@
                                                                                                     <video controls
                                                                                                         style="width: 100%; max-width: 400px; border-radius: 6px; background: #000;">
                                                                                                         <source
-                                                                                                            src="{{ asset('storage/' . data_get($bid, 'get.video_upload')) }}"
+                                                                                                            src="{{ \App\Support\Storage\ListingMediaUrl::get(data_get($bid, 'get.video_upload')) }}"
                                                                                                             type="video/mp4">
                                                                                                         Your browser does
                                                                                                         not support the
@@ -1138,7 +1138,7 @@
                                                                                                     @php
                                                                                                         $businessCardPath = $normalizedBusinessCard;
                                                                                                         $businessCardExtension = pathinfo($businessCardPath, PATHINFO_EXTENSION);
-                                                                                                        $businessCardUrl = asset('storage/' . $businessCardPath);
+                                                                                                        $businessCardUrl = \App\Support\Storage\ListingMediaUrl::get($businessCardPath);
                                                                                                     @endphp
 
                                                                                                     @if (in_array(strtolower($businessCardExtension), ['jpg', 'jpeg', 'png', 'gif', 'webp']))
@@ -1302,7 +1302,7 @@
                                                                                                                             );
                                                                                                                         @endphp
 
-                                                                                                                        @php $fileUrl = asset('storage/' . $filePath); @endphp
+                                                                                                                        @php $fileUrl = \App\Support\Storage\ListingMediaUrl::get($filePath); @endphp
                                                                                                                         <div class="col-md-6 mb-2">
                                                                                                                             <div class="border rounded p-2 bg-white d-flex align-items-center">
                                                                                                                                 @if ($isImage)

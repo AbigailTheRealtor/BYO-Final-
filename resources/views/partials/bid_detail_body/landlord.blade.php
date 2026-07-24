@@ -987,7 +987,7 @@
                                                                 <video controls
                                                                     style="width: 100%; max-width: 400px; border-radius: 6px; background: #000;">
                                                                     <source
-                                                                        src="{{ asset('storage/' . data_get($bid, 'get.video_upload')) }}"
+                                                                        src="{{ \App\Support\Storage\ListingMediaUrl::get(data_get($bid, 'get.video_upload')) }}"
                                                                         type="video/mp4">
                                                                     Your browser does
                                                                     not support the
@@ -1068,18 +1068,18 @@
 
                                                                 @if (in_array(strtolower($businessCardExtension), ['jpg', 'jpeg', 'png', 'gif', 'webp']))
                                                                 <div class="business-card-preview mb-2">
-                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}" target="_blank" rel="noopener noreferrer" title="Click to view full size">
-                                                                        <img src="{{ asset('storage/' . $businessCardPath) }}"
+                                                                    <a href="{{ \App\Support\Storage\ListingMediaUrl::get($businessCardPath) }}" target="_blank" rel="noopener noreferrer" title="Click to view full size">
+                                                                        <img src="{{ \App\Support\Storage\ListingMediaUrl::get($businessCardPath) }}"
                                                                             style="max-width: 450px; width: 100%; height: auto; border-radius: 8px; border: 2px solid #e0e0e0; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
                                                                             alt="Business Card"
                                                                             class="img-fluid">
                                                                     </a>
                                                                 </div>
                                                                 <div class="d-flex gap-2 mt-2">
-                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
+                                                                    <a href="{{ \App\Support\Storage\ListingMediaUrl::get($businessCardPath) }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
                                                                         <i class="fa-solid fa-expand me-1"></i> View Full Size
                                                                     </a>
-                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}" download class="btn btn-outline-success btn-sm">
+                                                                    <a href="{{ \App\Support\Storage\ListingMediaUrl::get($businessCardPath) }}" download class="btn btn-outline-success btn-sm">
                                                                         <i class="fa-solid fa-download me-1"></i> Download
                                                                     </a>
                                                                 </div>
@@ -1090,7 +1090,7 @@
                                                                         <div class="fw-medium">Business Card File</div>
                                                                         <small class="text-muted">{{ strtoupper($businessCardExtension) }} file</small>
                                                                     </div>
-                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}" download class="btn btn-outline-primary btn-sm">
+                                                                    <a href="{{ \App\Support\Storage\ListingMediaUrl::get($businessCardPath) }}" download class="btn btn-outline-primary btn-sm">
                                                                         <i class="fa-solid fa-download me-1"></i> Download
                                                                     </a>
                                                                 </div>
@@ -1233,8 +1233,8 @@
                                                                             <div
                                                                                 class="border rounded p-2 d-flex align-items-center">
                                                                                 @if ($isImage)
-                                                                                <a href="{{ asset('storage/' . $filePath) }}" target="_blank" rel="noopener noreferrer">
-                                                                                    <img src="{{ asset('storage/' . $filePath) }}"
+                                                                                <a href="{{ \App\Support\Storage\ListingMediaUrl::get($filePath) }}" target="_blank" rel="noopener noreferrer">
+                                                                                    <img src="{{ \App\Support\Storage\ListingMediaUrl::get($filePath) }}"
                                                                                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 10px;"
                                                                                         alt="Marketing Material">
                                                                                 </a>
@@ -1249,14 +1249,14 @@
                                                                                     <small class="text-muted">{{ strtoupper($fileExtension) }} file</small>
                                                                                 </div>
                                                                                 <div class="d-flex gap-1 ms-2">
-                                                                                    <a href="{{ asset('storage/' . $filePath) }}"
+                                                                                    <a href="{{ \App\Support\Storage\ListingMediaUrl::get($filePath) }}"
                                                                                         target="_blank"
                                                                                         rel="noopener noreferrer"
                                                                                         class="btn btn-sm btn-outline-primary"
                                                                                         title="View">
                                                                                         <i class="fa-solid fa-eye"></i>
                                                                                     </a>
-                                                                                    <a href="{{ asset('storage/' . $filePath) }}"
+                                                                                    <a href="{{ \App\Support\Storage\ListingMediaUrl::get($filePath) }}"
                                                                                         download
                                                                                         class="btn btn-sm btn-outline-success"
                                                                                         title="Download">
