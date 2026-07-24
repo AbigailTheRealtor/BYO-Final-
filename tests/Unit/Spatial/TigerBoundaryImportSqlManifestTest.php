@@ -3,6 +3,7 @@
 namespace Tests\Unit\Spatial;
 
 use App\Services\Spatial\BoundaryRowMaterializer;
+use App\Services\Spatial\CorpusImportLedger;
 use Tests\TestCase;
 
 /**
@@ -94,5 +95,111 @@ class TigerBoundaryImportSqlManifestTest extends TestCase
     {
         $this->assertFileExists($this->spikeDir . '/README.md');
         $this->assertFileExists($this->spikeDir . '/RESULTS_TEMPLATE.md');
+    }
+
+    // ---- C3d-c: Florida county load recipe (G4 ledger, G6 verify, G5 runbook) ----
+
+    /** @test */
+    public function the_c3d_c_recipe_files_exist(): void
+    {
+        foreach ([
+            'sql/ledger_insert.sql',
+            'sql/ledger_activate.sql',
+            'sql/verify_boundaries.sql',
+            'bin/tiger_county_shp_to_ndjson.sh',
+            'bin/load_florida_counties.sh',
+            'RUNBOOK.md',
+        ] as $rel) {
+            $this->assertFileExists($this->spikeDir . '/' . $rel);
+        }
+    }
+
+    /** @test */
+    public function the_ledger_insert_is_authored_guarded_and_single_row_with_matching_columns(): void
+    {
+        $sql = $this->sql('ledger_insert.sql');
+
+        $this->assertStringContainsString('AUTHORED, NOT RUN', $sql);
+        $this->assertStringContainsString('SPATIAL_', $sql, 'must reference the (unset) spatial guard');
+
+        // Exactly one INSERT, targeting corpus_imports.
+        $this->assertSame(1, substr_count(strtoupper($sql), 'INSERT INTO CORPUS_IMPORTS'), 'exactly one ledger insert');
+
+        // Column list mirrors CorpusImportLedger::COLUMNS, in order.
+        $this->assertStringContainsString(implode(', ', CorpusImportLedger::COLUMNS), $sql,
+            'ledger insert column list must equal CorpusImportLedger::COLUMNS');
+
+        $this->assertStringContainsString("'census-tiger-county-fl'", $sql, 'fixed dataset name');
+        $this->assertStringContainsString("'staging'", $sql, 'inserted as staging status');
+        // Idempotent on (dataset, corpus_version) — never a second row for the same import.
+        $this->assertMatchesRegularExpression('/WHERE\s+NOT\s+EXISTS/i', $sql, 'insert must guard against a duplicate ledger row');
+    }
+
+    /** @test */
+    public function the_ledger_activate_is_tightly_scoped(): void
+    {
+        $sql = $this->sql('ledger_activate.sql');
+        $upper = strtoupper($sql);
+
+        $this->assertStringContainsString('AUTHORED, NOT RUN', $sql);
+        $this->assertSame(1, substr_count($upper, 'UPDATE CORPUS_IMPORTS'), 'exactly one update');
+        $this->assertStringContainsString("status = 'active'", $sql);
+        $this->assertStringContainsString('finished_at = now()', $sql);
+        // Scope: dataset + corpus_version + status = staging (never touches unrelated rows).
+        $this->assertStringContainsString("dataset = 'census-tiger-county-fl'", $sql);
+        $this->assertStringContainsString("corpus_version = :'corpus_version'", $sql);
+        $this->assertStringContainsString("status = 'staging'", $sql);
+        // Must not widen the blast radius.
+        foreach (['DELETE ', 'DROP ', 'TRUNCATE ', 'INSERT '] as $verb) {
+            $this->assertStringNotContainsString($verb, $upper, "activate must not {$verb}");
+        }
+    }
+
+    /** @test */
+    public function the_verify_sql_is_read_only_and_carries_every_proof(): void
+    {
+        $sql = $this->sql('verify_boundaries.sql');
+        $upper = strtoupper($sql);
+
+        $this->assertStringContainsString('AUTHORED, NOT RUN', $sql);
+        $this->assertStringContainsString('READ-ONLY', $upper);
+
+        // Strictly read-only — scan the EXECUTABLE SQL only (strip `--` comment lines so the
+        // read-only description in the header does not self-trip), for no mutating/DDL verb.
+        $executable = strtoupper(implode("\n", array_filter(
+            explode("\n", $sql),
+            static fn (string $line): bool => !str_starts_with(ltrim($line), '--'),
+        )));
+        foreach (['INSERT ', 'UPDATE ', 'DELETE ', 'DROP ', 'TRUNCATE ', 'ALTER ', 'CREATE ', 'ST_MAKEVALID'] as $verb) {
+            $this->assertStringNotContainsString($verb, $executable, "verify SQL must not contain {$verb}");
+        }
+
+        // Proofs present.
+        $this->assertStringContainsString('= 67', $sql, '67 county count proof');
+        $this->assertStringContainsString('>= 67', $sql, 'parts >= 67 proof');
+        $this->assertStringContainsString("'^12[0-9]{3}\$'", $sql, 'Florida GEOID regex proof');
+        $this->assertStringContainsString("attrs->>'state_fips'", $sql, 'state_fips = 12 proof');
+        $this->assertStringContainsString('ST_IsValid', $sql, 'geometry validity proof');
+        $this->assertStringContainsString('ST_NPoints', $sql, 'subdivision vertex proof');
+        $this->assertStringContainsString('256', $sql, 'ST_Subdivide 256-vertex cap proof');
+        $this->assertStringContainsString("status = 'active'", $sql, 'active ledger row proof');
+    }
+
+    /** @test */
+    public function the_runbook_references_every_committed_script_and_sql_file(): void
+    {
+        $runbook = (string) file_get_contents($this->spikeDir . '/RUNBOOK.md');
+
+        foreach ([
+            'bin/tiger_county_shp_to_ndjson.sh',
+            'bin/load_florida_counties.sh',
+            'sql/stage_boundaries.sql',
+            'sql/load_tiger_boundaries.sql',
+            'sql/ledger_insert.sql',
+            'sql/ledger_activate.sql',
+            'sql/verify_boundaries.sql',
+        ] as $ref) {
+            $this->assertStringContainsString($ref, $runbook, "RUNBOOK.md must reference {$ref}");
+        }
     }
 }
