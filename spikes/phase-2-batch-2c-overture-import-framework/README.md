@@ -74,3 +74,24 @@ php artisan corpus:import-overture  --region=pinellas --input=/tmp/pinellas.ndjs
 Schema note: release `2026-06-17.0` still ships the deprecated `categories`
 struct; any release `>= 2026-09` removes it — migrate the primary-category read
 to `basic_category` before adopting a newer release (see Batch 2A).
+
+## Florida load recipe (C3d-d — authored, not run)
+
+The end-to-end operator path for the Florida Overture places pilot. The 2C recipes
+above are pinellas-shaped `\set` templates; C3d-d adds the Florida-parameterized
+recipe. All authored; live execution stays Class-2.
+
+- `bin/load_florida_overture_places.sh` — **AUTHORED, NOT RUN.** Guarded operator
+  orchestrator (refuses production, requires `--i-understand-live`, never echoes the
+  secret). Consumes the offline `corpus:import-overture --region=florida` artifacts
+  and runs: seed taxonomy → create+COPY (`partition_load.sql`) → read-only acceptance
+  → ledger staging row → attach/activate → `verify_overture_fl.sql`. Downloads nothing.
+- `sql/verify_overture_fl.sql` — **AUTHORED, NOT RUN.** Strictly read-only post-load
+  proofs (7 categories + 8 mappings seeded, per-category counts, unregistered=0,
+  confidence floor, SRID 4326, Florida county attribution via `tiger-2024`, partition
+  attached, one active `overture-places` ledger row).
+- `RUNBOOK.md` — the exact ordered Class-2 Florida procedure (DuckDB extract →
+  normalize → import-plan → orchestrator → verify → scoped rollback).
+
+corpus_version = `overture-2026-06-17.0-fl`; partition = `places_p_overture_2026_06_17_0_fl`.
+`place_authority_links` is out of scope (authority overlays are a separate dataset).
