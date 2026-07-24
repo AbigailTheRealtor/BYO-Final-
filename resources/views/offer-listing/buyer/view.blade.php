@@ -489,7 +489,7 @@
         foreach ($bolPropertyPhotos as $_bolPh) {
             $_bolFn = is_array($_bolPh) ? ($_bolPh['filename'] ?? '') : $_bolPh;
             if (!$_bolFn) continue;
-            $bolHeroPhotoUrls[] = asset('storage/auction/images/' . $_bolFn);
+            $bolHeroPhotoUrls[] = \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $_bolFn);
             if (is_array($_bolPh) && !empty($_bolPh['is_cover'])) $bolCoverPhotoIdx = $_bolHIdx;
             $_bolHIdx++;
         }

@@ -504,14 +504,14 @@
         foreach ($tclPropertyPhotos as $_tclPh) {
             $_tclFn = is_array($_tclPh) ? ($_tclPh['filename'] ?? '') : $_tclPh;
             if (!$_tclFn) continue;
-            $tclHeroPhotoUrls[] = asset('storage/auction/images/' . $_tclFn);
+            $tclHeroPhotoUrls[] = \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $_tclFn);
             if (is_array($_tclPh) && !empty($_tclPh['is_cover'])) $tclCoverPhotoIdx = $_tclHIdx;
             $_tclHIdx++;
         }
         /* Fallback: single photo meta key */
         if (empty($tclHeroPhotoUrls)) {
             $_tclSingle = $str('photo');
-            if ($_tclSingle) $tclHeroPhotoUrls[] = asset('storage/' . $_tclSingle);
+            if ($_tclSingle) $tclHeroPhotoUrls[] = \App\Support\Storage\ListingMediaUrl::get($_tclSingle);
         }
     @endphp
     @php
@@ -1377,8 +1377,8 @@
                             <div class="field-label mb-1">Video</div>
                             <div class="ratio ratio-16x9" style="max-width:320px;border-radius:8px;overflow:hidden;">
                                 <video controls style="width:100%;background:#000;">
-                                    <source src="{{ asset('storage/' . $str('video')) }}">
-                                    <a href="{{ asset('storage/' . $str('video')) }}" target="_blank" rel="noopener">Download Video</a>
+                                    <source src="{{ \App\Support\Storage\ListingMediaUrl::get($str('video')) }}">
+                                    <a href="{{ \App\Support\Storage\ListingMediaUrl::get($str('video')) }}" target="_blank" rel="noopener">Download Video</a>
                                 </video>
                             </div>
                         </div>

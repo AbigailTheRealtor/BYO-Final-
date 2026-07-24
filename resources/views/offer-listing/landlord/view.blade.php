@@ -398,7 +398,7 @@
         foreach ($propertyPhotos as $_ph) {
             $_fn = is_array($_ph) ? ($_ph['filename'] ?? '') : $_ph;
             if (!$_fn) continue;
-            $heroPhotoUrls[] = asset('storage/auction/images/' . $_fn);
+            $heroPhotoUrls[] = \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $_fn);
             if (is_array($_ph) && !empty($_ph['is_cover'])) $coverPhotoIdx = $_hIdx;
             $_hIdx++;
         }
@@ -997,9 +997,9 @@
                 @if($_fn)
                 <div class="text-center">
                     <a href="#" data-bs-toggle="modal" data-bs-target="#lolPhotoModal"
-                       data-src="{{ asset('storage/auction/images/' . $_fn) }}"
+                       data-src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $_fn) }}"
                        data-index="{{ $_galIdx }}" style="display:block;">
-                        <img src="{{ asset('storage/auction/images/' . $_fn) }}"
+                        <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $_fn) }}"
                              alt="Photo {{ $_galIdx + 1 }}" class="photo-thumb"
                              onerror="this.style.display='none'">
                     </a>
