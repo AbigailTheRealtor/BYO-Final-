@@ -628,8 +628,6 @@ class PropertyAuctionController extends Controller
                     }
                 }
 
-                // dd($arrangedPhotoArr);
-
                 $photoLinks = []; // Array to hold photo links
                 foreach ($arrangedPhotoArr as $photo) {
                     $extension = $photo->getClientOriginalExtension();
@@ -642,7 +640,6 @@ class PropertyAuctionController extends Controller
                         $photoLinks[] = 'auction/images/' . $photoName; // Store each link
                     }
                 }
-                // dd($photoLinks);
 
                 // Save all links as JSON or a comma-separated string
                 $auction->saveMeta('photos', json_encode($photoLinks));
@@ -1277,7 +1274,6 @@ class PropertyAuctionController extends Controller
             //             $photoLinks[] = 'auction/images/' . $photoName; // Store each link
             //         }
             //     }
-            //     // dd($photoLinks);
 
             //     // Save all links as JSON or a comma-separated string
             //     $auction->saveMeta('photos', json_encode($photoLinks));
@@ -1303,8 +1299,6 @@ class PropertyAuctionController extends Controller
                     }
                 }
 
-                // dd($arrangedPhotoArr);
-
                 $photoLinks = []; // Array to hold photo links
                 foreach ($arrangedPhotoArr as $photo) {
                     $extension = $photo->getClientOriginalExtension();
@@ -1317,7 +1311,6 @@ class PropertyAuctionController extends Controller
                         $photoLinks[] = 'auction/images/' . $photoName; // Store each link
                     }
                 }
-                // dd($photoLinks);
 
                 // Save all links as JSON or a comma-separated string
                 $auction->saveMeta('photos', json_encode($photoLinks));
@@ -1624,7 +1617,12 @@ class PropertyAuctionController extends Controller
                     $photos = array_values(array_filter($decoded));
                 }
             }
-            $photoUrls = array_map(fn($p) => 'storage/auction/images/' . $p, $photos);
+            // R2-E0 (HI-05A): route public auction-image URLs through the storage seam
+            // so a public read-flip (LISTING_PUBLIC_READ=object_first) reaches this
+            // search surface. Default (local) output is byte-equivalent to the prior
+            // local path; the seller_property.search view already handles absolute
+            // URLs via url() without double-prefixing.
+            $photoUrls = array_map(fn($p) => \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $p), $photos);
 
             $priceRaw = $metaMap['maximum_budget'] ?? $metaMap['starting_price'] ?? null;
             $price    = $priceRaw ? preg_replace('/[^0-9.]/', '', str_replace(',', '', $priceRaw)) : null;

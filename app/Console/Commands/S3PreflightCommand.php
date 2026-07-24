@@ -16,9 +16,11 @@ use Throwable;
  * client or touching the network. It is never scheduled and never invoked by
  * tests' normal paths.
  *
- * Read-only only: HeadBucket, GetBucketLocation, and a HeadObject on a random
- * NON-EXISTENT key under the private prefix (to probe auth/authorization without
- * listing or writing). It never uploads, lists, or mutates anything.
+ * Read-only only: for EACH object-storage disk (s3_private and, R2-E0, s3_public)
+ * a HeadBucket plus a HeadObject on a random NON-EXISTENT key under that disk's
+ * own root prefix (to probe auth/authorization without listing or writing). It
+ * never uploads, lists, or mutates anything. Overall status is OK only when both
+ * buckets pass; otherwise the first failing status is returned.
  *
  * Output is REDACTED: it never prints bucket names, keys, secrets, endpoints,
  * account ids, regions, or object names — only a status enum.
@@ -66,18 +68,42 @@ class S3PreflightCommand extends Command
             return self::MISSING_ADAPTER;
         }
 
-        // (2) configuration present (checked without echoing values)?
-        $cfg = (array) config('filesystems.disks.s3_private', []);
-        foreach (['key', 'secret', 'region', 'bucket'] as $required) {
-            if (empty($cfg[$required])) {
-                return self::MISSING_CONFIG;
+        // (2) configuration present for BOTH object-storage disks (checked without
+        // echoing values). R2-E0: the public bucket is validated alongside the
+        // private one so a public read-flip is preceded by a public config check.
+        // Done for every disk BEFORE any network call, so an incomplete public
+        // config fails closed (MISSING_CONFIG) without probing the network.
+        foreach (['s3_private', 's3_public'] as $disk) {
+            $cfg = (array) config("filesystems.disks.{$disk}", []);
+            foreach (['key', 'secret', 'region', 'bucket'] as $required) {
+                if (empty($cfg[$required])) {
+                    return self::MISSING_CONFIG;
+                }
             }
         }
 
-        // (3) read-only network probes
+        // (3) read-only network probes — each disk under its own root prefix.
+        // OK only if every disk passes; otherwise the first failing status wins.
+        foreach (['s3_private' => 'private', 's3_public' => 'public'] as $disk => $rootPrefix) {
+            $status = $this->probeDisk($disk, $rootPrefix);
+            if ($status !== self::OK) {
+                return $status;
+            }
+        }
+
+        return self::OK;
+    }
+
+    /**
+     * Read-only probe of a single object-storage disk: HeadBucket + HeadObject on
+     * a random non-existent key under the disk's own root prefix. Never lists or
+     * mutates; catches everything and never rethrows credential/bucket detail.
+     */
+    private function probeDisk(string $diskName, string $rootPrefix): string
+    {
         try {
-            $client = Storage::disk('s3_private')->getAdapter()->getClient();
-            $bucket = $cfg['bucket'];
+            $client = Storage::disk($diskName)->getAdapter()->getClient();
+            $bucket = config("filesystems.disks.{$diskName}.bucket");
 
             // HeadBucket — existence + auth + region.
             $client->headBucket(['Bucket' => $bucket]);
@@ -87,7 +113,7 @@ class S3PreflightCommand extends Command
             try {
                 $client->headObject([
                     'Bucket' => $bucket,
-                    'Key' => 'private/__preflight_nonexistent_'.bin2hex(random_bytes(8)),
+                    'Key' => $rootPrefix.'/__preflight_nonexistent_'.bin2hex(random_bytes(8)),
                 ]);
             } catch (Throwable $e) {
                 $code = $this->awsCode($e);
