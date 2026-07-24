@@ -552,9 +552,15 @@ class AcceptedBidSummaryController extends Controller
         // ── Uploaded photos (stored as JSON filenames on the root offer) ────
         $uploadedPhotos = json_decode((string)($metas->get('prop_photos') ?? '[]'), true) ?: [];
         if ($offer && !empty($uploadedPhotos)) {
-            $baseUrl = rtrim(config('app.url'), '/');
             foreach ($uploadedPhotos as $idx => $filename) {
-                $assetUrl = $baseUrl . '/storage/offer-property-photos/' . $offer->id . '/' . e($filename);
+                // R2-E0 (HI-05A): route public offer-photo URLs through the storage
+                // seam so a public read-flip (LISTING_PUBLIC_READ=object_first) reaches
+                // this summary surface too. Default (local) output is byte-equivalent to
+                // the prior config('app.url').'/storage/...' URL. e() escapes the
+                // resolved URL for the HTML href/text context.
+                $assetUrl = e(\App\Support\Storage\ListingMediaUrl::get(
+                    'offer-property-photos/' . $offer->id . '/' . $filename
+                ));
                 $mediaRows[] = '<p style="margin:4px 0;"><strong>Uploaded Photo ' . ($idx + 1) . ':</strong> '
                     . '<a href="' . $assetUrl . '" style="color:#1a5fa8;">' . $assetUrl . '</a></p>';
             }
