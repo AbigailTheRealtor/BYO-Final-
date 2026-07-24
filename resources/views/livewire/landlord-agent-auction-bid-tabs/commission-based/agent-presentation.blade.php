@@ -231,7 +231,7 @@
                 <span class="removeBold">
                     @if (is_string($video_upload))
                         <video controls style="width:80%;height:29vh;">
-                            <source src="{{ asset('storage/auction/videos/' . $video_upload) }}" type="video/mp4">
+                            <source src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/videos/' . $video_upload) }}" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
                     @else
@@ -246,7 +246,7 @@
                 <span class="removeBold">
                     @if (is_string($video_upload))
                         <video controls style="width:80%;height:29vh;">
-                            <source src="{{ asset('storage/auction/videos/' . $video_upload) }}" type="video/mp4">
+                            <source src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/videos/' . $video_upload) }}" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
 
@@ -329,8 +329,8 @@
         <div class="col-md-6 col-6 pt-2 fw-bold" style="margin-left: 11px;">
             Saved Business Card/Photo:
             <span class="removeBold">
-                <img src="{{ asset('storage/' . $business_card_stored_path) }}" style="width:80%;height:29vh;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-                <a href="{{ asset('storage/' . $business_card_stored_path) }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1" style="display:none;">
+                <img src="{{ \App\Support\Storage\ListingMediaUrl::get($business_card_stored_path) }}" style="width:80%;height:29vh;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                <a href="{{ \App\Support\Storage\ListingMediaUrl::get($business_card_stored_path) }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1" style="display:none;">
                     <i class="fa-solid fa-file me-1"></i> View Saved File
                 </a>
             </span>
@@ -445,7 +445,7 @@
                             <small class="text-muted fw-bold"><i class="fa-solid fa-folder-open me-1"></i> Saved files from default profile:</small>
                             <ul class="list-unstyled mb-0 mt-1">
                                 @foreach ($storedFiles as $filePath)
-                                    <li><a href="{{ asset('storage/' . $filePath) }}" target="_blank" class="small text-primary"><i class="fa-solid fa-file me-1"></i>{{ basename($filePath) }}</a></li>
+                                    <li><a href="{{ \App\Support\Storage\ListingMediaUrl::get($filePath) }}" target="_blank" class="small text-primary"><i class="fa-solid fa-file me-1"></i>{{ basename($filePath) }}</a></li>
                                 @endforeach
                             </ul>
                             <small class="text-muted">Upload new file(s) above to add or replace these.</small>
