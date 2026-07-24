@@ -35,3 +35,36 @@ cluster. All values are PENDING until a cluster exists.
 
 ## Notes
 - GEOID zero-padding verified (county 5, place 7, ZCTA 5, district STATEFP+UNSDLEA): `PENDING`
+
+---
+
+## Florida county load (C3d-c) — operator record
+
+### Provenance
+- Source URL: `PENDING` (e.g. https://www2.census.gov/geo/tiger/TIGER2024/COUNTY/tl_2024_us_county.zip)
+- Retrieval date: `PENDING`
+- SHA-256 (`tl_<vintage>_us_county.zip`): `PENDING`
+- TIGER/Line vintage: `PENDING` (e.g. 2024)
+- corpus_version: `PENDING` (e.g. tiger-2024)
+
+### Convert + author
+- Converter row count (`county_fl_raw.ndjson`): `PENDING` (expected 67)
+- Acceptance result (`kept` / rejects): `PENDING` (expected kept 67, 0 rejects)
+- `boundaries_payload.txt` row count: `PENDING` (expected 67)
+- Payload corpus_version matches load `-v`: `PENDING`
+
+### Load outcome
+- `boundaries` rows (county, this corpus_version): `PENDING` (expected 67)
+- `boundaries_parts` rows: `PENDING` (expected ≥ 67)
+- Invalid geometry count (`ST_IsValid`): `PENDING` (expected 0)
+- Max part vertex count (`ST_NPoints`): `PENDING` (expected ≤ 256)
+
+### Proofs
+- No non-FL rows (`external_ref ~ ^12[0-9]{3}$`, `state_fips = 12`): `PENDING` (expected 0 offending)
+- Ledger row (`census-tiger-county-fl`, status `active`): `PENDING` (expected exactly 1)
+- Sibling table deltas (places/addresses/place_*/listing_locations/isochrone_cache): `PENDING` (expected 0)
+
+### Close-out
+- Staging table dropped: `PENDING`
+- Rollback status (if any): `PENDING`
+- Operator sign-off (name / date): `PENDING`
