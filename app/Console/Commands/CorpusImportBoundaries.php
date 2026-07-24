@@ -7,6 +7,7 @@ use App\Services\Spatial\BoundaryNormalizationResult;
 use App\Services\Spatial\BoundaryRecord;
 use App\Services\Spatial\BoundaryRowMaterializer;
 use App\Services\Spatial\BoundarySource;
+use App\Services\Spatial\CorpusCopyLoader;
 use Illuminate\Console\Command;
 
 /**
@@ -33,7 +34,8 @@ class CorpusImportBoundaries extends Command
     protected $signature = 'corpus:import-boundaries
         {--source= : Boundary source key from config/spatial_boundaries.php (e.g. padus)}
         {--in= : Raw source NDJSON (defaults to the committed synthetic fixture for the source)}
-        {--out-dir= : Directory for the dry-run artifacts}';
+        {--out-dir= : Directory for the dry-run artifacts}
+        {--corpus-version= : Real corpus_version stamped on staging rows + payload (e.g. tiger-2024); blank falls back to the offline "<source>-authoring-fixture" placeholder}';
 
     protected $description = 'OFFLINE: author a boundary import plan (raw source → BoundaryRecord staging) — no PostGIS, refuses production, never executes';
 
@@ -59,6 +61,12 @@ class CorpusImportBoundaries extends Command
         /** @var BoundarySource $source */
         $source = new $cfg['class']();
 
+        // Real corpus_version wins when supplied (Class-2 load tag, e.g. tiger-2024). Absent or blank,
+        // fall back to the source-derived offline placeholder (D-C3b-2) — the real version is otherwise
+        // assigned at Class-2 load time. BoundaryRowMaterializer rejects a blank version, so the
+        // trim() ?: guard preserves that invariant.
+        $corpusVersion = trim((string) $this->option('corpus-version')) ?: "{$key}-authoring-fixture";
+
         $inPath = (string) ($this->option('in') ?: base_path($cfg['fixture']));
         if (!is_file($inPath)) {
             $this->error("Raw source NDJSON not found: {$inPath}");
@@ -78,6 +86,7 @@ class CorpusImportBoundaries extends Command
         $this->info('[corpus:import-boundaries] Boundary import — DRY RUN (no PostGIS, nothing executed)');
         $this->line("  source   : {$key} ({$cfg['label']})");
         $this->line("  kind     : {$source->kind()}");
+        $this->line("  corpus_version : {$corpusVersion}");
         $this->line("  input    : {$inPath} (" . $result->totalInput . ' raw rows)');
         $this->newLine();
         $this->line('  normalization:');
@@ -101,30 +110,40 @@ class CorpusImportBoundaries extends Command
         }
 
         $materializer = new BoundaryRowMaterializer();
-        // Derived from the source key (D-C3b-2) — an offline placeholder tag; the real
-        // corpus_version is assigned at Class-2 load time.
-        $corpusVersion = "{$key}-authoring-fixture";
+
+        // Single source of truth for the ordered COPY rows — feeds BOTH staging.json and the
+        // boundaries_payload.txt COPY payload so the two can never diverge (no duplicated
+        // row-generation logic).
+        $rows = $materializer->toRows($result->records, $corpusVersion);
+
         $staging = [
             'columns'        => BoundaryRowMaterializer::COLUMNS,
             'corpus_version' => $corpusVersion,
-            'rows'           => $materializer->toRows($result->records, $corpusVersion),
+            'rows'           => $rows,
         ];
 
         $summary = [
-            'source'        => $key,
-            'kind'          => $source->kind(),
-            'normalization' => $result->summary(),
-            'acceptance'    => ['passed' => $verdict['passed'], 'checks' => $verdict['checks']],
+            'source'         => $key,
+            'kind'           => $source->kind(),
+            'corpus_version' => $corpusVersion,
+            'normalization'  => $result->summary(),
+            'acceptance'     => ['passed' => $verdict['passed'], 'checks' => $verdict['checks']],
         ];
+
+        // CorpusCopyLoader owns the PostgreSQL COPY text wire format (tab-delimited, \N NULL,
+        // backslash-escaped) that `\copy boundaries_staging … WITH (FORMAT text, NULL '\N')` consumes.
+        $copyLoader = new CorpusCopyLoader();
 
         $this->writeArtifact($outDir, 'boundaries.ndjson', BoundaryRecord::toNdjson($result->records));
         $this->writeArtifact($outDir, 'staging.json', $this->json($staging));
         $this->writeArtifact($outDir, 'summary.json', $this->json($summary));
         $this->writeArtifact($outDir, 'rejects.json', $this->json($this->rejects($result, $verdict)));
+        // COPY text payload for the Class-2 `\copy` — the same $rows as staging.json.
+        $this->writeArtifact($outDir, 'boundaries_payload.txt', $copyLoader->toCopyText($rows));
 
         $this->newLine();
         $this->line('  artifacts written (DRY RUN — nothing executed against a cluster):');
-        foreach (['boundaries.ndjson', 'staging.json', 'summary.json', 'rejects.json'] as $f) {
+        foreach (['boundaries.ndjson', 'staging.json', 'summary.json', 'rejects.json', 'boundaries_payload.txt'] as $f) {
             $this->line('    - ' . rtrim($outDir, '/') . '/' . $f);
         }
         $this->newLine();
