@@ -1,0 +1,10 @@
+{"source_ref":"flat-pinellas-0001","gers_id":"flat-pinellas-0001","primary_category":"coffee_shop","name":"Flat Bean Coffee","brand":"Flatbucks","confidence":0.97,"source_count":7,"lon":-82.64,"lat":27.77}
+{"source_ref":"flat-pinellas-0002","gers_id":"flat-pinellas-0002","primary_category":"gas_station","name":"Flat Fuel Stop","brand":null,"confidence":0.93,"source_count":2,"lon":-82.70,"lat":27.80}
+{"source_ref":"flat-pinellas-0003","gers_id":"flat-pinellas-0003","primary_category":"grocery_store","name":"Flat Market","brand":"FlatPublix","confidence":0.99,"source_count":4,"lon":-82.66,"lat":27.75}
+{"source_ref":"flat-pinellas-0004","gers_id":"flat-pinellas-0004","primary_category":"gym","name":"Flat Gym","brand":null,"confidence":0.95,"source_count":1,"lon":-82.60,"lat":27.90}
+{"source_ref":"flat-pinellas-0005","gers_id":"flat-pinellas-0005","primary_category":"fitness_center","name":"Flat Fitness Studio","brand":"FlatFit","confidence":0.96,"source_count":2,"lon":-82.58,"lat":27.88}
+{"source_ref":"flat-pinellas-0006","gers_id":"flat-pinellas-0006","primary_category":"pharmacy","name":"Flat Pharmacy","brand":"FlatRx","confidence":0.92,"source_count":3,"lon":-82.72,"lat":27.60}
+{"source_ref":"flat-pinellas-0007","gers_id":"flat-pinellas-0007","primary_category":"restaurant","name":"Flat Diner","brand":null,"confidence":0.98,"source_count":5,"lon":-82.55,"lat":28.10}
+{"source_ref":"flat-pinellas-0008","gers_id":"flat-pinellas-0008","primary_category":"shopping_center","name":"Flat Plaza","brand":null,"confidence":0.91,"source_count":1,"lon":-82.80,"lat":27.65}
+{"source_ref":"flat-pinellas-0009","gers_id":"flat-pinellas-0009","primary_category":"restaurant","name":"Flat Low-Confidence Grill","brand":null,"confidence":0.80,"source_count":2,"lon":-82.62,"lat":27.70}
+{"source_ref":"flat-pinellas-0010","primary_category":"coffee_shop","name":"Flat Source-Ref Cafe","brand":null,"confidence":0.94,"source_count":1,"lon":-82.68,"lat":27.72}

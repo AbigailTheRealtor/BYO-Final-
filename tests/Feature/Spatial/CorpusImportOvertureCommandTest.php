@@ -86,6 +86,72 @@ class CorpusImportOvertureCommandTest extends TestCase
         $this->assertStringContainsString("status = 'active'", $activate);
     }
 
+    /**
+     * @test End-to-end from the FLAT extractor shape: extract-overture normalizes
+     * the flat fixture directly (no adapter), and import-overture then authors a
+     * clean import plan — all acceptance gates pass, accepted == kept == payload
+     * rows, and every canonical category survives into the payload.
+     */
+    public function the_flat_extract_normalizes_and_authors_a_clean_import_plan(): void
+    {
+        $flatFixture = base_path('tests/fixtures/spatial/overture/pinellas_raw_flat_places.ndjson');
+        $normalized = $this->outDir . '/flat_normalized.ndjson';
+        @mkdir($this->outDir, 0777, true);
+
+        // 1) Normalize the flat extractor output directly — no adapter step.
+        $this->artisan('corpus:extract-overture', [
+            '--region' => 'pinellas',
+            '--input' => $flatFixture,
+            '--output' => $normalized,
+        ])->assertExitCode(0);
+        $this->assertFileExists($normalized);
+
+        $keptRows = array_values(array_filter(explode("\n", file_get_contents($normalized)), 'strlen'));
+        $this->assertCount(9, $keptRows, 'flat fixture normalizes to 9 kept rows');
+
+        // 2) Author the import plan from that normalized extract. Exit 0 means all
+        //    seven acceptance gates passed (non_empty, source_uniform,
+        //    identity_present, identity_unique, category_registered,
+        //    confidence_floor, coordinates_valid) — the command aborts non-zero
+        //    on any violation.
+        $this->artisan('corpus:import-overture', [
+            '--region' => 'pinellas',
+            '--input' => $normalized,
+            '--out-dir' => $this->outDir,
+        ])->assertExitCode(0);
+
+        // 3) Accepted count == normalized kept count == payload row count; 0 rejected.
+        $payload = $this->outDir . '/copy_payload.txt';
+        $this->assertFileExists($payload);
+        $payloadLines = array_values(array_filter(explode("\n", file_get_contents($payload)), 'strlen'));
+        $this->assertCount(9, $payloadLines, 'accepted count == 9 kept rows (0 rejected)');
+
+        // 4) All seven canonical categories appear in the payload (col 7 = category_key).
+        $categories = [];
+        foreach ($payloadLines as $line) {
+            $cols = explode("\t", $line);
+            $categories[$cols[6]] = true;
+        }
+        $this->assertEqualsCanonicalizing(
+            ['coffee_shop', 'gas_station', 'grocery_store', 'gym', 'pharmacy', 'restaurant', 'shopping_center'],
+            array_keys($categories),
+            'all seven canonical categories represented in the payload'
+        );
+
+        // 5) corpus_version + partition naming remain correct.
+        foreach ($payloadLines as $line) {
+            $this->assertStringStartsWith('overture-2026-06-17.0-pinellas', $line, 'corpus_version leads each row');
+        }
+        $ledger = json_decode(file_get_contents($this->outDir . '/ledger.json'), true);
+        $this->assertSame('overture-2026-06-17.0-pinellas', $ledger['row']['corpus_version']);
+        $this->assertSame(9, $ledger['row']['row_count']);
+        $this->assertStringContainsString(
+            $this->partition,
+            file_get_contents($this->outDir . '/partition_load.sql'),
+            'partition name remains places_p_overture_2026_06_17_0_pinellas'
+        );
+    }
+
     /** @test */
     public function attach_partition_appears_in_exactly_one_generated_artifact(): void
     {
