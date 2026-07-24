@@ -64,14 +64,19 @@ return [
 
         // R2-A (HI-05A) — object-storage disks for listing media/documents.
         // DEFINED BUT INERT: nothing is routed here until a later phase flips
-        // the LISTING_*_DISK selectors (see config/listing_storage.php). Both
-        // disks share one bucket, separated by the 'root' key prefix.
+        // the LISTING_*_DISK selectors (see config/listing_storage.php).
+        //
+        // R2-D.4 — public and private media use physically separate buckets so
+        // the private bucket can keep Block Public Access on while the public
+        // bucket is independently readable. 's3_public' targets the dedicated
+        // AWS_PUBLIC_BUCKET, falling back to AWS_BUCKET when it is unset so
+        // existing single-bucket installs keep their prior behavior.
         's3_public' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
             'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
+            'bucket' => env('AWS_PUBLIC_BUCKET', env('AWS_BUCKET')),
             'endpoint' => env('AWS_ENDPOINT'),
             'url' => env('AWS_URL'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
