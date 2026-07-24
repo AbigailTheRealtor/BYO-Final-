@@ -214,8 +214,8 @@
 <p class="fw-semibold text-secondary" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #dee2e6;padding-bottom:4px;margin:0 0 8px;">Photos</p>
 <div class="d-flex flex-wrap gap-2 mb-3">
     @foreach($propPhotos as $photo)
-    <a href="{{ asset('storage/offer-property-photos/' . $offer->id . '/' . $photo) }}" target="_blank" rel="noopener">
-        <img src="{{ asset('storage/offer-property-photos/' . $offer->id . '/' . $photo) }}"
+    <a href="{{ \App\Support\Storage\ListingMediaUrl::get('offer-property-photos/' . $offer->id . '/' . $photo) }}" target="_blank" rel="noopener">
+        <img src="{{ \App\Support\Storage\ListingMediaUrl::get('offer-property-photos/' . $offer->id . '/' . $photo) }}"
             alt="{{ $photo }}"
             style="width:100px;height:75px;object-fit:cover;border-radius:4px;border:1px solid #dee2e6;">
     </a>
