@@ -57,3 +57,44 @@ All four MUST be equal before `attach_activate.sql`.
 ## Findings / deviations
 
 _pending_
+
+---
+
+## Florida Overture places load (C3d-d) — operator record
+
+### Run context
+- Date (UTC): `PENDING`
+- Operator: `PENDING`
+- Overture release: `2026-06-17.0`
+- Region: `florida`
+- corpus_version: `overture-2026-06-17.0-fl`
+- Partition: `places_p_overture_2026_06_17_0_fl`
+- DuckDB version (temporary): `PENDING`
+
+### Extract → author
+- FL raw NDJSON row count: `PENDING` (2B live measurement ≈ 29,434)
+- Normalized extract rows: `PENDING`
+- `copy_payload.txt` lines: `PENDING`
+- All three equal before load: `PENDING`
+
+### Taxonomy seed
+- `place_categories` (7 Gate-2 keys): `PENDING`
+- `place_category_mappings` (8 Overture mappings): `PENDING`
+
+### Load / verify (`verify_overture_fl.sql`)
+- Staged partition rows: `PENDING`
+- Places loaded (corpus_version): `PENDING`
+- Per-category counts (coffee_shop / gas_station / grocery_store / gym / pharmacy / restaurant / shopping_center): `PENDING`
+- Unregistered category (check 05, expect 0): `PENDING`
+- Below confidence floor (check 06, expect 0): `PENDING`
+- SRID 4326 offending (check 07, expect 0): `PENDING`
+- Places in FL counties (check 08, informational): `PENDING`
+- Partition attached (check 09, expect 1): `PENDING`
+- Active ledger row (check 10, expect 1): `PENDING`
+
+### Gate 2 impact
+- FL `overture_places` cells present after load: `PENDING` (was 0 present / 7 absent)
+
+### Close-out
+- Rollback status (if any): `PENDING`
+- Operator sign-off (name / date): `PENDING`
