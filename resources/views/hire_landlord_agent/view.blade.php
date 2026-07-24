@@ -2049,7 +2049,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <div class="col-md-6 col-6 pt-2 fw-bold">Video:
                                     <span class="removeBold">
                                         <video controls style="width:100%;height:29vh;">
-                                            <source src="{{ asset('storage/auction/videos/' . $auction->get->video) }}"
+                                            <source src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/videos/' . $auction->get->video) }}"
             type="video/mp4">
             Your browser does not support the video tag.
             </video>
@@ -2061,7 +2061,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="col-md-6 col-6 pt-2 fw-bold">Video:
             <span class="removeBold">
                 <video autoplay muted loop playsinline controls style="width:100%; height:29vh;">
-                    <source src="{{ asset('storage/auction/videos/' . $auction->get->video) }}"
+                    <source src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/videos/' . $auction->get->video) }}"
                         type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
@@ -2072,7 +2072,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (isset($auction->get->photo))
         <div class="col-md-6 col-6 pt-2 fw-bold">Photo:
             <span class="removeBold">
-                <img src="{{ asset('storage/auction/images/' . $auction->get->photo) }}"
+                <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $auction->get->photo) }}"
                     style="width:100%;height:29vh;" />
             </span>
         </div>

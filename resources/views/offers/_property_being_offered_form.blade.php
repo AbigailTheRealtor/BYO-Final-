@@ -264,7 +264,7 @@
         <label class="form-label fw-semibold">Uploaded Photos</label>
         <div class="d-flex flex-wrap gap-2">
             @foreach($savedPhotos as $photo)
-            <img src="{{ asset('storage/offer-property-photos/' . $offer->id . '/' . $photo) }}"
+            <img src="{{ \App\Support\Storage\ListingMediaUrl::get('offer-property-photos/' . $offer->id . '/' . $photo) }}"
                 alt="{{ $photo }}"
                 style="width:80px;height:60px;object-fit:cover;border-radius:4px;border:1px solid #dee2e6;">
             @endforeach

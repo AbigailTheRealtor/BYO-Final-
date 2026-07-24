@@ -284,7 +284,7 @@
                     <div class="d-flex align-items-center justify-content-between border rounded p-2 bg-light">
                         <div class="d-flex align-items-center">
                             @if ($bcIsImage)
-                                <img src="{{ asset('storage/' . $existingBusinessCard) }}" 
+                                <img src="{{ \App\Support\Storage\ListingMediaUrl::get($existingBusinessCard) }}" 
                                     alt="{{ $bcFileName }}" 
                                     class="me-2" 
                                     style="max-width: 80px; max-height: 80px; object-fit: cover; border-radius: 4px;">
@@ -295,7 +295,7 @@
                                 <span class="text-truncate d-block" style="max-width: 200px;" title="{{ $bcFileName }}">
                                     {{ Str::limit($bcFileName, 25) }}
                                 </span>
-                                <a href="{{ asset('storage/' . $existingBusinessCard) }}" target="_blank" class="small text-primary">
+                                <a href="{{ \App\Support\Storage\ListingMediaUrl::get($existingBusinessCard) }}" target="_blank" class="small text-primary">
                                     <i class="fa-solid fa-arrow-up-right-from-square"></i> View
                                 </a>
                             </div>
@@ -347,8 +347,8 @@
         <div class="col-md-6 col-6 pt-2 fw-bold" style="margin-left: 11px;">
             Saved Business Card/Photo:
             <span class="removeBold">
-                <img src="{{ asset('storage/' . $business_card_stored_path) }}" style="width:80%;height:29vh;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-                <a href="{{ asset('storage/' . $business_card_stored_path) }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1" style="display:none;">
+                <img src="{{ \App\Support\Storage\ListingMediaUrl::get($business_card_stored_path) }}" style="width:80%;height:29vh;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                <a href="{{ \App\Support\Storage\ListingMediaUrl::get($business_card_stored_path) }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1" style="display:none;">
                     <i class="fa-solid fa-file me-1"></i> View Saved File
                 </a>
             </span>
@@ -457,7 +457,7 @@
                                     <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2 bg-light">
                                         <div class="d-flex align-items-center">
                                             @if ($isImage)
-                                                <img src="{{ asset('storage/' . $file) }}" 
+                                                <img src="{{ \App\Support\Storage\ListingMediaUrl::get($file) }}" 
                                                     alt="{{ $fileName }}" 
                                                     class="me-2" 
                                                     style="max-width: 50px; max-height: 50px; object-fit: cover; border-radius: 4px;">
@@ -468,7 +468,7 @@
                                                 <span class="text-truncate d-block" style="max-width: 200px;" title="{{ $fileName }}">
                                                     {{ Str::limit($fileName, 25) }}
                                                 </span>
-                                                <a href="{{ asset('storage/' . $file) }}" target="_blank" class="small text-primary">
+                                                <a href="{{ \App\Support\Storage\ListingMediaUrl::get($file) }}" target="_blank" class="small text-primary">
                                                     <i class="fa-solid fa-arrow-up-right-from-square"></i> View
                                                 </a>
                                             </div>

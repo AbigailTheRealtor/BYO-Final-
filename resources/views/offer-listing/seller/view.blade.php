@@ -876,7 +876,7 @@
         foreach ($propertyPhotos as $ph) {
             $fn = is_array($ph) ? ($ph['filename'] ?? '') : $ph;
             if (!$fn) continue;
-            $heroPhotoUrls[] = asset('storage/auction/images/' . $fn);
+            $heroPhotoUrls[] = \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $fn);
             if (is_array($ph) && !empty($ph['is_cover'])) {
                 $coverPhoto = $fn;
                 $coverPhotoIdx = $_hpTmpIdx;
@@ -1308,10 +1308,10 @@
                 @if($filename)
                 <div class="text-center">
                     <a href="#" data-bs-toggle="modal" data-bs-target="#photoModal"
-                       data-src="{{ asset('storage/auction/images/' . $filename) }}"
+                       data-src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $filename) }}"
                        data-index="{{ $galleryIdx }}"
                        style="display:block;">
-                        <img src="{{ asset('storage/auction/images/' . $filename) }}"
+                        <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $filename) }}"
                              alt="Property photo {{ $galleryIdx + 1 }}"
                              class="photo-thumb"
                              onerror="this.style.display='none'">

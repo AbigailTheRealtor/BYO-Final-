@@ -77,7 +77,7 @@
         </p>
         <div class="d-flex flex-wrap gap-2">
             @foreach ($viewPropertyPhotos as $photoFilename)
-                <img src="{{ asset('storage/auction/images/' . $photoFilename) }}"
+                <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $photoFilename) }}"
                      alt="Property Photo"
                      class="img-fluid rounded"
                      style="max-height: 260px; max-width: 100%; object-fit: cover;" />
@@ -120,6 +120,15 @@
     @if (!empty($viewListingDocument))
     <div class="col-12 mb-2">
         <p class="fw-bold mb-1"><i class="fa-solid fa-paperclip me-1 text-secondary"></i> Documents</p>
+        {{-- R2-E0b DEFERRED — do not convert this to ListingMediaUrl::get().
+             Since HI-05 the listing document is written to the PRIVATE disk
+             (SellerOfferListing.php:3885 / LandlordOfferListing.php:3834 call
+             storePrivate), so this public link is already wrong for new uploads
+             and still live for legacy files. The correct fix is
+             route('listing.document.show', …) via ListingDocumentController,
+             which re-checks authorization — an access-control change, not a URL
+             seam change. Tracked in the document track; BladePublicMediaSeamTest
+             carries the single allow-list entry for this line. --}}
         <a href="{{ asset('storage/auction/documents/' . $viewListingDocument) }}"
            target="_blank"
            rel="noopener noreferrer"
