@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\Concerns\HandlesGooglePlacesAddress;
 use App\Http\Livewire\Concerns\ValidatesPropertyAddress;
 use App\Http\Livewire\OfferListing\Concerns\LandlordPublishValidation;
 use App\Http\Livewire\OfferListing\Concerns\HasCanonicalPetFee;
@@ -25,8 +26,9 @@ class LandlordOfferListing extends Component
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
-    use ValidatesPropertyAddress;  // Phase 0: ZIP autofill + ZIP-in-street recovery
-    use HasCanonicalPetFee;        // #2 Part B: canonical pet fee (create + edit)
+    use ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
+    use HandlesGooglePlacesAddress; // Phase 1: the one fillFromGooglePlaces()
+    use HasCanonicalPetFee;         // #2 Part B: canonical pet fee (create + edit)
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
@@ -1301,28 +1303,8 @@ class LandlordOfferListing extends Component
             $this->stateSuggestions = [];
         }
     }
-    
-    public function fillFromGooglePlaces(
-        string $street,
-        string $city,
-        string $county,
-        string $state,
-        string $zip,
-        string $lat,
-        string $lng,
-        string $placeId
-    ): void {
-        $this->address         = $street;
-        $this->property_city   = $city;
-        $this->property_county = $county;
-        $this->property_state  = $state;
-        $this->property_zip    = $zip;
-        $this->property_lat    = $lat;
-        $this->property_lng    = $lng;
-        $this->google_place_id = $placeId;
-        $this->propertyCitySuggestions      = [];
-        $this->highlightedPropertyCityIndex = -1;
-    }
+
+    // fillFromGooglePlaces() now comes from HandlesGooglePlacesAddress (Phase 1).
 
     public function updatedPropertyCity($value)
     {

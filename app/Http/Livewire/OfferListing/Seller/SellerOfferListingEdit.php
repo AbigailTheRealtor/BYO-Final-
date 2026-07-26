@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 use App\Http\Livewire\Concerns\ValidatesMediaUploads;
+use App\Http\Livewire\Concerns\HandlesGooglePlacesAddress;
 use App\Http\Livewire\Concerns\ValidatesPropertyAddress;
 use App\Http\Livewire\OfferListing\Concerns\SellerPublishValidation;
 
@@ -27,6 +28,7 @@ class SellerOfferListingEdit extends Component
     use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
     use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
     use ValidatesPropertyAddress; // Phase 0: ZIP autofill + ZIP-in-street recovery
+    use HandlesGooglePlacesAddress; // Phase 1: the one fillFromGooglePlaces()
 
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
@@ -1234,26 +1236,9 @@ class SellerOfferListingEdit extends Component
         }
     }
 
-    public function fillFromGooglePlaces(
-        string $street,
-        string $city,
-        string $county,
-        string $state,
-        string $zip,
-        string $lat,
-        string $lng,
-        string $placeId
-    ): void {
-        $this->address                 = $street;
-        $this->property_city           = $city;
-        $this->property_county         = $county;
-        $this->property_state          = $state;
-        $this->property_zip            = $zip;
-        $this->property_lat            = $lat;
-        $this->property_lng            = $lng;
-        $this->google_place_id         = $placeId;
-        $this->propertyCitySuggestions = [];
-    }
+    // fillFromGooglePlaces() now comes from HandlesGooglePlacesAddress (Phase 1).
+    // The trait additionally resets highlightedPropertyCityIndex, which this copy
+    // omitted; see PropertyAddressGooglePlacesFillParityTest for why that is a fix.
 
     public function searchPropertyCity($value)
     {
