@@ -59,7 +59,7 @@
      the markup would change the Buyer/Tenant pages.
 
      GATED DELIBERATELY. Only LandlordOfferListing and LandlordOfferListingEdit
-     implement fillFromGooglePlaces(), and before Phase 1 only their two blades
+     implement fillFromResolvedAddress(), and before Phase 1 only their two blades
      carried this listener. Buyer, Seller and Tenant blades also render this
      partial (when $user_type === 'landlord') and never bound autocomplete to this
      input — emitting it for them would both change their behaviour and call a
@@ -74,7 +74,7 @@
             \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing::class,
             \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListingEdit::class,
         ], true)
-        && method_exists($this, 'fillFromGooglePlaces');
+        && method_exists($this, 'fillFromResolvedAddress');
 @endphp
 @if($byoLandlordAutocompleteHost)
     <x-byo-address-autocomplete

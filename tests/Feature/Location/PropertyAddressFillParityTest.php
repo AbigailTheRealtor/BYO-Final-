@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 /**
  * Phase 1 — the four Seller/Landlord offer-listing components share ONE
- * `fillFromGooglePlaces()`, and it is the trait's.
+ * `fillFromResolvedAddress()`, and it is the trait's.
  *
  * WHY THIS FILE EXISTS
  * --------------------
@@ -45,7 +45,7 @@ use Tests\TestCase;
  *
  * @see \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress
  */
-class PropertyAddressGooglePlacesFillParityTest extends TestCase
+class PropertyAddressFillParityTest extends TestCase
 {
     /**
      * The four components this phase consolidated.
@@ -88,8 +88,8 @@ class PropertyAddressGooglePlacesFillParityTest extends TestCase
 
         $this->assertSame(
             (new ReflectionClass(HandlesGooglePlacesAddress::class))->getFileName(),
-            (new ReflectionMethod($component, 'fillFromGooglePlaces'))->getFileName(),
-            "{$component} must not declare its own fillFromGooglePlaces()"
+            (new ReflectionMethod($component, 'fillFromResolvedAddress'))->getFileName(),
+            "{$component} must not declare its own fillFromResolvedAddress()"
         );
     }
 
@@ -103,7 +103,7 @@ class PropertyAddressGooglePlacesFillParityTest extends TestCase
     {
         $subject = new $component();
 
-        $subject->fillFromGooglePlaces(
+        $subject->fillFromResolvedAddress(
             '100 2nd Ave N',
             'Saint Petersburg',
             'Pinellas',
@@ -134,7 +134,7 @@ class PropertyAddressGooglePlacesFillParityTest extends TestCase
         $subject = new $component();
         $subject->propertyCitySuggestions = ['Saint Petersburg', 'Saint Cloud'];
 
-        $subject->fillFromGooglePlaces('100 2nd Ave N', 'Saint Petersburg', 'Pinellas', 'FL', '33701', '', '', '');
+        $subject->fillFromResolvedAddress('100 2nd Ave N', 'Saint Petersburg', 'Pinellas', 'FL', '33701', '', '', '');
 
         $this->assertSame([], $subject->propertyCitySuggestions);
     }
@@ -157,7 +157,7 @@ class PropertyAddressGooglePlacesFillParityTest extends TestCase
         $subject->propertyCitySuggestions      = ['Saint Petersburg', 'Saint Cloud'];
         $subject->highlightedPropertyCityIndex = 1;
 
-        $subject->fillFromGooglePlaces('100 2nd Ave N', 'Saint Petersburg', 'Pinellas', 'FL', '33701', '', '', '');
+        $subject->fillFromResolvedAddress('100 2nd Ave N', 'Saint Petersburg', 'Pinellas', 'FL', '33701', '', '', '');
 
         $this->assertSame(
             -1,
@@ -176,7 +176,7 @@ class PropertyAddressGooglePlacesFillParityTest extends TestCase
     {
         $subject = new SellerOfferListing();
 
-        $subject->fillFromGooglePlaces('100 2nd Ave N', 'Saint Petersburg', 'Pinellas', 'FL', '33701');
+        $subject->fillFromResolvedAddress('100 2nd Ave N', 'Saint Petersburg', 'Pinellas', 'FL', '33701');
 
         $this->assertSame('100 2nd Ave N', $subject->address);
         $this->assertSame('', $subject->property_lat);

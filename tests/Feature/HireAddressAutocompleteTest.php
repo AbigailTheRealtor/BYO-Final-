@@ -12,7 +12,7 @@ use Tests\TestCase;
  * A3.20–A3.25 — Hire Agent flows use the shared, map-integrated address
  * component (<x-byo-address-autocomplete>) for Seller + Landlord. The component
  * renders the Street Address autocomplete input + Unit/Apt/Suite field, and the
- * Google Places place_changed handler calls fillFromGooglePlaces() (provided by
+ * Google Places place_changed handler calls fillFromResolvedAddress() (provided by
  * the HandlesGooglePlacesAddress trait) to populate City / County / State / ZIP.
  *
  * The live Hire flow is served by TenantAgentAuction (user_type = seller|landlord).
@@ -45,14 +45,14 @@ class HireAddressAutocompleteTest extends TestCase
             ->assertSee('Unit / Apt / Suite');
     }
 
-    /** A3.23: fillFromGooglePlaces() auto-populates all address parts from a selected place. */
+    /** A3.23: fillFromResolvedAddress() auto-populates all address parts from a selected place. */
     public function test_fill_from_google_places_populates_address_parts(): void
     {
         $user = User::factory()->create(['user_type' => 'seller']);
 
         Livewire::actingAs($user)
             ->test(TenantAgentAuction::class, ['user_type' => 'seller'])
-            ->call('fillFromGooglePlaces', '123 Main Street', 'Miami', 'Miami-Dade', 'FL', '33101', '25.76', '-80.19', 'place_abc')
+            ->call('fillFromResolvedAddress', '123 Main Street', 'Miami', 'Miami-Dade', 'FL', '33101', '25.76', '-80.19', 'place_abc')
             ->assertSet('address', '123 Main Street')
             ->assertSet('property_city', 'Miami')
             ->assertSet('property_county', 'Miami-Dade')

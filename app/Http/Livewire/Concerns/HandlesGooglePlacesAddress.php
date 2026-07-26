@@ -8,10 +8,25 @@ namespace App\Http\Livewire\Concerns;
  * Shared server-side handler for the map-integrated address component
  * (resources/views/components/byo-address-autocomplete.blade.php).
  *
- * The Blade component's Google Places `place_changed` listener calls this
- * method with the resolved address parts, populating the standard address
- * properties that every Hire Agent / Create Offer component already declares
- * (address, property_city, property_county, property_state, property_zip).
+ * The Blade component's `place_changed` listener calls this method with the
+ * resolved address parts, populating the standard address properties that every
+ * Hire Agent / Create Offer component already declares (address, property_city,
+ * property_county, property_state, property_zip).
+ *
+ * WHY THE METHOD NAME IS PROVIDER-NEUTRAL (Phase 1)
+ * -------------------------------------------------
+ * `fillFromResolvedAddress()` describes what it receives — a resolved address —
+ * not who resolved it. Today the resolver is Google Places; Decision D1 will
+ * replace it (US Census Geocoder, then OpenAddresses/NAD). When that happens only
+ * the caller changes: the eight-argument contract, this method, and every consuming
+ * component stay exactly as they are. That is the whole point of the rename — the
+ * D1 swap becomes a one-file change instead of a rename across ten components.
+ *
+ * The rename is naming only. No signature, no behaviour, no payload handling
+ * changed with it. The trait itself is still called HandlesGooglePlacesAddress:
+ * renaming a trait used by ten components was outside the approved scope of that
+ * commit, so the Google-specific name survives one level up and is a known,
+ * deliberate leftover rather than an oversight.
  *
  * Geo + place-id properties (property_lat / property_lng / google_place_id) and
  * the server-side city-suggestion state (propertyCitySuggestions /
@@ -22,7 +37,7 @@ namespace App\Http\Livewire\Concerns;
  */
 trait HandlesGooglePlacesAddress
 {
-    public function fillFromGooglePlaces(
+    public function fillFromResolvedAddress(
         string $street,
         string $city,
         string $county,

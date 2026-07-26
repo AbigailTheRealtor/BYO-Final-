@@ -10,7 +10,7 @@ use App\Services\Location\ZipCodeLookupService;
  * Phase 0 — shared property-address behaviour for the Seller/Landlord surfaces.
  *
  * Three things, in one place, so the eight components cannot drift apart the way
- * their four copies of `fillFromGooglePlaces()` did:
+ * their four copies of `fillFromResolvedAddress()` did:
  *
  *   1. The canonical validation rules, delegated to {@see ValidStreetAddress}.
  *   2. ZIP-in-street-field recovery — the user typed `33708` where the street

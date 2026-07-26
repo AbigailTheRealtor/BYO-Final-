@@ -20,7 +20,7 @@ use Tests\TestCase;
  * THE GATE IS THE SAFETY PROPERTY
  * -------------------------------
  * BuyerOfferListing, BuyerOfferListingEdit, TenantOfferListing and
- * TenantOfferListingEdit do NOT implement fillFromGooglePlaces() — not their own,
+ * TenantOfferListingEdit do NOT implement fillFromResolvedAddress() — not their own,
  * not via HandlesGooglePlacesAddress. If the shared component were emitted on
  * their pages, selecting a Google suggestion would call a Livewire method that
  * does not exist. The partial therefore gates on an explicit class allowlist AND
@@ -206,13 +206,13 @@ class SharedAddressAutocompleteAdoptionTest extends TestCase
                 "{$host} must be listed in the gate"
             );
             $this->assertTrue(
-                method_exists($host, 'fillFromGooglePlaces'),
-                "{$host} is gated in but does not implement fillFromGooglePlaces()"
+                method_exists($host, 'fillFromResolvedAddress'),
+                "{$host} is gated in but does not implement fillFromResolvedAddress()"
             );
         }
 
         $this->assertStringContainsString(
-            "method_exists(\$this, 'fillFromGooglePlaces')",
+            "method_exists(\$this, 'fillFromResolvedAddress')",
             $source,
             'the gate must also assert the method exists at render time'
         );
@@ -251,8 +251,8 @@ class SharedAddressAutocompleteAdoptionTest extends TestCase
         }
 
         $this->assertFalse(
-            method_exists($host, 'fillFromGooglePlaces'),
-            "{$host} does not implement fillFromGooglePlaces(); the gate depends on that staying true"
+            method_exists($host, 'fillFromResolvedAddress'),
+            "{$host} does not implement fillFromResolvedAddress(); the gate depends on that staying true"
         );
     }
 
@@ -291,7 +291,7 @@ class SharedAddressAutocompleteAdoptionTest extends TestCase
 
         // The literal predicate from the partial, applied to a real instance.
         $gate = fn (object $host): bool => in_array(get_class($host), $allowlist, true)
-            && method_exists($host, 'fillFromGooglePlaces');
+            && method_exists($host, 'fillFromResolvedAddress');
 
         foreach ($expectedHosts as $host) {
             $this->assertTrue($gate(new $host()), "{$host} must be admitted by the gate");
@@ -310,7 +310,7 @@ class SharedAddressAutocompleteAdoptionTest extends TestCase
                 "{$host} must fail the allowlist clause"
             );
             $this->assertFalse(
-                method_exists($instance, 'fillFromGooglePlaces'),
+                method_exists($instance, 'fillFromResolvedAddress'),
                 "{$host} must fail the method_exists clause"
             );
         }

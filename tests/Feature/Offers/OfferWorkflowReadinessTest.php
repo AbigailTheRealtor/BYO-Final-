@@ -599,6 +599,13 @@ class OfferWorkflowReadinessTest extends TestCase
             // already allow-listed above; this is the only one no previous task
             // reached.
             'resources/views/livewire/offer-listing/landlord/offer-landlord-listing-edit.blade.php',
+            // Phase 1 (Shared Components) — provider-neutral rename of the shared
+            // fill method (fillFromGooglePlaces -> fillFromResolvedAddress) so the
+            // D1 geocoder swap becomes a one-file change. Naming only: no signature,
+            // behaviour or payload handling changed. The trait carries the method;
+            // ValidStreetAddress references it in a comment.
+            'app/Http/Livewire/Concerns/HandlesGooglePlacesAddress.php',
+            'app/Rules/ValidStreetAddress.php',
         ];
 
         $unexpected = array_values(array_filter(

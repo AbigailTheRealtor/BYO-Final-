@@ -47,7 +47,7 @@ class ValidStreetAddress implements Rule
      *
      * Every Seller/Landlord publish path calls this rather than restating the
      * rules, so the eight components cannot drift apart the way their four
-     * copies of `fillFromGooglePlaces()` did.
+     * copies of `fillFromResolvedAddress()` did.
      *
      * @return array<string,array<int,mixed>>
      */

@@ -27,7 +27,7 @@ class LandlordOfferListing extends Component
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
     use ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
-    use HandlesGooglePlacesAddress; // Phase 1: the one fillFromGooglePlaces()
+    use HandlesGooglePlacesAddress; // Phase 1: the one fillFromResolvedAddress()
     use HasCanonicalPetFee;         // #2 Part B: canonical pet fee (create + edit)
 
     // TODO: set to false before production launch
@@ -273,7 +273,7 @@ class LandlordOfferListing extends Component
     public $address = '';
     public $unit_address = '';
     // Hotfix #2851 — coordinates wired via Google Places autocomplete callback.
-    // Populated by fillFromGooglePlaces() Livewire method (single atomic call).
+    // Populated by fillFromResolvedAddress() Livewire method (single atomic call).
     // Persisted to landlord_agent_auction_metas EAV via saveMeta() and reloaded
     // in loadDraft().  Copied into accepted_bid_summaries at acceptance time by
     // LandlordAcceptedBidSummaryService::extractPropertyLocationData().
@@ -1304,7 +1304,7 @@ class LandlordOfferListing extends Component
         }
     }
 
-    // fillFromGooglePlaces() now comes from HandlesGooglePlacesAddress (Phase 1).
+    // fillFromResolvedAddress() now comes from HandlesGooglePlacesAddress (Phase 1).
 
     public function updatedPropertyCity($value)
     {
