@@ -607,6 +607,17 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php',
             'resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php',
             'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/property-preferences.blade.php',
+            // Create Offer Listing — submit-button publish gate.
+            // All four Seller/Landlord views disabled #save-button whenever ANY DOM
+            // [required] field was empty, and `#save-button.disabled` set
+            // `pointer-events: none`, so the click was swallowed before wire:submit
+            // could fire — Submit did nothing and no Livewire request was sent. The
+            // legacy gates are removed; completeness is decided on click against
+            // publishRequiredFieldNames(), and the two edit components gain the same
+            // guided-correction contract create already had.
+            // See tests/Feature/Offers/PublishSubmitGateTest.php.
+            'resources/views/livewire/offer-listing/landlord/offer-landlord-listing-edit.blade.php',
+            'resources/views/partials/offer-listing/publish-submit-gate.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

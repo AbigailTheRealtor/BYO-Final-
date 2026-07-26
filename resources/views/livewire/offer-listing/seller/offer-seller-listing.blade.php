@@ -128,11 +128,15 @@
             background-color: #f8f9fa;
         }
 
-        #save-button.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            pointer-events: none;
-            /* This prevents clicks */
+        /* Submit is never gated on form completeness. `pointer-events: none` used to
+           swallow the click before wire:submit could fire, so a publish failure was
+           silent and unexplainable. Completeness is now checked on click against the
+           server's own publish-required list, which navigates to the failing tab.
+           The only disabled state left is the attribute Livewire sets while a submit
+           is in flight (wire:loading.attr), which blocks duplicate clicks natively. */
+        #save-button:disabled {
+            opacity: 0.65;
+            cursor: progress;
         }
 
         .service-option-card {
@@ -2306,16 +2310,16 @@
                     }
                 });
 
-                // Enable/disable save button (both CSS class and attribute)
+                // Second legacy gate, removed with the first. This helper still reports
+                // per-tab validity for the Next button — that return value is unchanged —
+                // but it no longer disables Submit as a side effect. Gating Submit on
+                // every DOM [required] field is what made the click impossible on a
+                // part-filled wizard; completeness is decided by the publish gate on
+                // click, against the server's own required list.
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
-                    if (allValid) {
-                        saveButton.classList.remove('disabled');
-                        saveButton.removeAttribute('disabled');
-                    } else {
-                        saveButton.classList.add('disabled');
-                        saveButton.setAttribute('disabled', 'disabled');
-                    }
+                    saveButton.classList.remove('disabled');
+                    saveButton.removeAttribute('disabled');
                 }
 
                 return allValid;
@@ -2778,39 +2782,28 @@
                 return field.value?.toString().trim() !== '';
             }
 
-            function validateAllTabsStrictly() {
-                const requiredFields = getAllRequiredFields();
-                let invalidFields = [];
-
-                for (const field of requiredFields) {
-                    if (!isFieldValid(field)) {
-                        const tab = field.closest('.tab-pane');
-                        const tabIndex = [...document.querySelectorAll('.tab-pane')].indexOf(tab) + 1;
-                        invalidFields.push({
-                            tab: tabIndex,
-                            field: field.name || field.id,
-                            value: field.value
-                        });
-                    }
-                }
-
-                if (invalidFields.length > 0) {
-                    invalidFields.forEach(item => {});
-                    console.groupEnd();
-                    return false;
-                }
-                return true;
-            }
-
+            // LEGACY COMPLETENESS GATE REMOVED — this was the submit-button defect.
+            //
+            // `validateAllTabsStrictly()` scanned every DOM [required] field on the
+            // wizard (26 here, against ~7 the server actually requires) and
+            // `updateSaveButton()` applied `.disabled` when any one of them was empty.
+            // Together with `#save-button.disabled { pointer-events: none }` that
+            // swallowed the click outright: no submit event, no Livewire request, no
+            // error — Submit simply did nothing.
+            //
+            // Completeness is now decided on click by the form-submit handler below,
+            // scoped to SELLER_SERVER_REQUIRED — the server's own publish rules via
+            // GuidesPublishValidation::publishRequiredFieldNames(). That handler is the
+            // single source of truth for whether a publish may proceed; the server
+            // remains authoritative and re-checks everything.
+            //
+            // Retained as a named no-op that guarantees the button is enabled, because
+            // other scripts on this page still call window.updateSaveButton() after a
+            // draft loads.
             function updateSaveButton() {
-                const allValid = validateAllTabsStrictly();
-                if (allValid) {
-                    saveButton.classList.remove('disabled');
-                    saveButton.removeAttribute('disabled');
-                } else {
-                    saveButton.classList.add('disabled');
-                    saveButton.removeAttribute('disabled');
-                }
+                if (!saveButton) return;
+                saveButton.classList.remove('disabled');
+                saveButton.removeAttribute('disabled');
             }
             
             // Expose updateSaveButton globally for draftLoaded event

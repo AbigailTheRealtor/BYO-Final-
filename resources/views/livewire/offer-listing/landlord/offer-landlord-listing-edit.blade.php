@@ -128,11 +128,15 @@
             background-color: #f8f9fa;
         }
 
-        #save-button.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            pointer-events: none;
-            /* This prevents clicks */
+        /* Submit is never gated on form completeness. `pointer-events: none` used to
+           swallow the click before wire:submit could fire, so a publish failure was
+           silent and unexplainable. Completeness is now checked on click against the
+           server's own publish-required list, which navigates to the failing tab.
+           The only disabled state left is the attribute Livewire sets while a submit
+           is in flight (wire:loading.attr), which blocks duplicate clicks natively. */
+        #save-button:disabled {
+            opacity: 0.65;
+            cursor: progress;
         }
 
         .service-option-card {
@@ -950,7 +954,14 @@ $tenantPays = [
 
                 <div id="wizard-form-container" class="container pt-5 pb-5">
 
-                    <form wire:submit.prevent="update">
+                    <form id="edit-auction-form" wire:submit.prevent="update" novalidate>
+                        {{-- Publish gate banner. Populated either by the client gate
+                             before a round trip, or by the server's own rejection via
+                             the publish-validation-failed event. Parity with create. --}}
+                        <div id="submit-error-banner" class="alert alert-danger d-none" role="alert" style="position: sticky; top: 0; z-index: 1050;">
+                            <strong>Please complete the required fields before submitting.</strong>
+                            <ul id="submit-error-list" class="mb-0 mt-2"></ul>
+                        </div>
                         <!-- Tab Navigation -->
 
                         @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
@@ -1171,7 +1182,11 @@ $tenantPays = [
 
                                 <button type="button" class="btn btn-primary wizard-step-next" wire:loading.attr="disabled" wire:target="saveDraftOnly,update">Next</button>
 
-                                <button type="submit" class="btn btn-success wizard-step-finish disabled"
+                                {{-- No `disabled` class: form completeness is decided on
+                                     click by the publish gate, never by disabling. The
+                                     wire:loading.attr below is the only disabled state,
+                                     and exists solely to stop a double submit. --}}
+                                <button type="submit" class="btn btn-success wizard-step-finish"
                                     id="save-button" wire:loading.attr="disabled" wire:target="update"
                                     @if(!$isListingDraft) style="display:none;" @endif>
                                     <span wire:loading.remove wire:target="update">Submit</span>
@@ -2748,39 +2763,27 @@ $tenantPays = [
                 return field.value.trim() !== '';
             }
 
-            function validateAllTabsStrictly() {
-                const requiredFields = getAllRequiredFields();
-                let invalidFields = [];
-
-                requiredFields.forEach(field => {
-                    if (!isFieldValid(field)) {
-                        const tab = field.closest('.tab-pane');
-                        const tabIndex = [...document.querySelectorAll('.tab-pane')].indexOf(tab) + 1;
-                        invalidFields.push({
-                            tab: tabIndex,
-                            field: field.name || field.id,
-                            value: field.value
-                        });
-                    }
-                });
-
-                if (invalidFields.length > 0) {
-                    invalidFields.forEach(item => {});
-                    console.groupEnd();
-                    return false;
-                }
-                return true;
-            }
-
+            // LEGACY COMPLETENESS GATE REMOVED — this was the submit-button defect, and
+            // it bit hardest on a resumed draft, where fields are routinely part-filled.
+            //
+            // `validateAllTabsStrictly()` scanned every DOM [required] field on the
+            // wizard (20 here, against ~7 the server actually requires) and
+            // `updateSaveButton()` both applied `.disabled` AND set the disabled
+            // attribute when any one was empty. Either alone stops the click; together
+            // with `#save-button.disabled { pointer-events: none }` Submit was inert —
+            // no submit event, no Livewire request, no error message.
+            //
+            // Completeness is now decided on click by the publish gate partial included
+            // below, scoped to the server's own publish rules via
+            // GuidesPublishValidation::publishRequiredFieldNames(). The server remains
+            // authoritative and re-checks everything in update().
+            //
+            // Retained as a named no-op that guarantees the button is enabled, because
+            // setupGlobalListeners() and the Livewire hook still call it.
             function updateSaveButton() {
-                const allValid = validateAllTabsStrictly();
-                if (allValid) {
-                    saveButton.classList.remove('disabled');
-                    saveButton.removeAttribute('disabled');
-                } else {
-                    saveButton.classList.add('disabled');
-                    saveButton.setAttribute('disabled', 'disabled');
-                }
+                if (!saveButton) return;
+                saveButton.classList.remove('disabled');
+                saveButton.removeAttribute('disabled');
             }
 
             function setupGlobalListeners() {
@@ -3027,5 +3030,23 @@ $tenantPays = [
     });
     </script>
     <x-google-maps-script callback="byoInitLandlordOfferPlaces" />
+
+    {{-- Authoritative publish gate. The required list comes from the server's own
+         rules via LandlordPublishValidation -> publishRequiredFieldNames(), so create
+         and edit enforce one contract. --}}
+    @include('partials.offer-listing.publish-submit-gate', [
+        'gateFormId'   => 'edit-auction-form',
+        'gateRequired' => $this->publishRequiredFieldNames(),
+        'gateLabels'   => [
+            'listing_title'        => 'Listing Title',
+            'property_type'        => 'Property Type',
+            'address'              => 'Street Address',
+            'first_name'           => 'First Name',
+            'last_name'            => 'Last Name',
+            'phone_number'         => 'Phone Number',
+            'email'                => 'Email Address',
+            'desired_lease_length' => 'Desired Lease Term',
+        ],
+    ])
 @endpush
 
