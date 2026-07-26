@@ -584,6 +584,14 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Http/Livewire/Concerns/ValidatesPropertyAddress.php',
             'app/Http/Livewire/HireSellerAgent/SellerAgentAuction.php',
             'app/Http/Livewire/HireSellerAgent/SellerAgentAuctionEdit.php',
+            // Phase 0 presentation layer — surfacing the address error on the field
+            // at fault, the ZIP-moved notice, and honest map-unavailable messaging.
+            // The two seller/landlord tab partials this phase also touches are
+            // already allow-listed above.
+            'resources/views/components/address-assist-notice.blade.php',
+            'resources/views/components/byo-address-autocomplete.blade.php',
+            'resources/views/components/google-maps-auth-telemetry.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/property-preferences.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

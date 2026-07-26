@@ -19,10 +19,18 @@
     <div class="input-cover">
         <i class="input-icon fa-solid fa-map-pin"></i>
         <input type="text" id="landlord-offer-street-address" wire:model="address"
-            class="form-control has-icon" data-icon="fa-solid fa-map-pin"
+            class="form-control has-icon @error('address') is-invalid @enderror"
+            data-icon="fa-solid fa-map-pin"
             placeholder="Enter street address (e.g., 123 Main Street)" required
             autocomplete="off">
     </div>
+    {{-- Phase 0 (Spatial UI Integration): the street address is validated
+         server-side now. Without this block the rejection had nowhere to land —
+         submit simply failed with no visible reason on the field at fault. --}}
+    @error('address')
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
+    <x-address-assist-notice :notice="$addressAssistNotice ?? ''" />
 </div>
 
 <!-- Unit / Apt / Suite -->
@@ -35,10 +43,14 @@
     <div class="input-cover">
         <i class="input-icon fa-solid fa-door-open"></i>
         <input type="text" wire:model="unit_address"
-            class="form-control has-icon" data-icon="fa-solid fa-door-open"
+            class="form-control has-icon @error('unit_address') is-invalid @enderror"
+            data-icon="fa-solid fa-door-open"
             placeholder="e.g., Apt 4B, Suite 200 (optional)"
             autocomplete="off">
     </div>
+    @error('unit_address')
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
 </div>
 
 <input type="hidden" id="landlord-offer-property-lat" wire:model="property_lat">

@@ -47,10 +47,18 @@
     </span>
     <div class="input-cover">
         <input type="text" id="{{ $streetId }}" wire:model="{{ $streetModel }}"
-            class="form-control has-icon" data-icon="fa-solid fa-map-pin"
+            class="form-control has-icon @error($streetModel) is-invalid @enderror"
+            data-icon="fa-solid fa-map-pin"
             placeholder="Enter street address (e.g., 123 Main Street)"
             autocomplete="off" @if($streetRequired) required @endif>
     </div>
+    {{-- Phase 0 (Spatial UI Integration): the street address is validated
+         server-side now. Without this block the rejection had nowhere to land —
+         submit simply failed with no visible reason on the field at fault. --}}
+    @error($streetModel)
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
+    <x-address-assist-notice :notice="$addressAssistNotice ?? ''" />
 </div>
 
 @if($showUnit)
@@ -63,9 +71,13 @@
     </span>
     <div class="input-cover">
         <input type="text" wire:model="{{ $unitModel }}"
-            class="form-control has-icon" data-icon="fa-solid fa-door-open"
+            class="form-control has-icon @error($unitModel) is-invalid @enderror"
+            data-icon="fa-solid fa-door-open"
             placeholder="e.g., Apt 4B, Suite 200 (optional)" autocomplete="off">
     </div>
+    @error($unitModel)
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
 </div>
 @endif
 

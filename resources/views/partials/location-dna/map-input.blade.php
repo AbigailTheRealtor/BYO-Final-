@@ -1496,12 +1496,67 @@
     }
   }
 
+  /* ── Degraded state (Phase 0 — Spatial UI Integration) ───────────────────────
+     The retry below used to be unbounded: with no working Maps credential the
+     SDK never arrives, ldnaTryInit re-armed itself every 200ms forever, and the
+     panel sat on "Loading map…" for the life of the page. A spinner that never
+     resolves reads as "still working" — the user waits for something that is
+     never going to happen.
+
+     So the wait is bounded, and giving up says so. The tag inputs, draw-tool
+     state and saved JSON are untouched: everything on this partial except the
+     map itself works without Google, and the message says which is which.
+
+     Nothing here loads an alternative basemap. Google Maps Content may not be
+     displayed over a non-Google basemap, and a stop-gap renderer would have to
+     be written twice; that decision is deliberately deferred.               */
+  var LDNA_MAP_WAIT_MS = 15000;
+  var ldnaWaitStartedAt = null;
+  var ldnaMapGaveUp = false;
+
+  function ldnaShowMapUnavailable(reason) {
+    if (ldnaMapGaveUp || ldnaMapInitialized) return;
+    ldnaMapGaveUp = true;
+
+    var ph = document.getElementById('{{ $mapPanelId }}-placeholder');
+    if (!ph) return;
+
+    ph.style.display = 'flex';
+    ph.style.background = '#fffbeb';
+    ph.style.borderColor = '#f59e0b';
+    ph.style.color = '#92400e';
+    ph.setAttribute('role', 'status');
+
+    var detail = (reason === 'auth')
+      ? 'The map could not load because Google rejected this site’s Maps credential.'
+      : 'The map could not load.';
+
+    ph.innerHTML =
+      '<span><i class="fa-solid fa-triangle-exclamation me-2"></i>' + detail +
+      ' Everything else on this tab still works — the areas you add above are saved normally,' +
+      ' and you can keep adding cities, ZIP codes and counties by name.</span>';
+  }
+
+  /* An auth failure is terminal. Stop waiting the moment we hear about it,
+     and handle the case where it fired before this partial booted. */
+  document.addEventListener('byo:maps-auth-failed', function () {
+    ldnaShowMapUnavailable('auth');
+  });
+
   /* ── Visibility-aware init (for tabs/hidden panels) ──────────────────────── */
   function ldnaTryInit() {
-    if (ldnaMapInitialized) return;
+    if (ldnaMapInitialized || ldnaMapGaveUp) return;
+
+    if (window.byoMapsAuthFailed === true) { ldnaShowMapUnavailable('auth'); return; }
+
     /* Only need google.maps.Map — no DrawingManager dependency */
     if (typeof google === 'undefined' || !google.maps ||
         typeof google.maps.Map !== 'function') {
+      if (ldnaWaitStartedAt === null) { ldnaWaitStartedAt = Date.now(); }
+      if (Date.now() - ldnaWaitStartedAt > LDNA_MAP_WAIT_MS) {
+        ldnaShowMapUnavailable('timeout');
+        return;
+      }
       setTimeout(ldnaTryInit, 200);
       return;
     }
