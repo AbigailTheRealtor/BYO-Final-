@@ -107,7 +107,7 @@ None. Shipped ahead of both open decisions by design.
 | 1 | `5c24dde72` | `feat(location): add street-address shape validation and ZIP gazetteer lookup` |
 | 2 | `053b3876e` | `feat(location): enforce street-address validation across all Seller/Landlord flows` |
 | 3 | `caa51fb2a` | `feat(location): surface address errors and degrade the search-area map honestly` |
-| 4 | *(this commit — hash pending)* | `docs(spatial): close out Phase 1 and register the spatial documentation set` |
+| 4 | `f460dddd5` | `docs(spatial): close out Phase 1 and register the spatial documentation set` |
 
 > **Two notes on row 4.** First, it cannot carry its own hash: a commit's hash is computed from its content, so writing the hash inside the content it names is impossible. It is filled in by a follow-up amend or a subsequent commit, and until then this row is deliberately not a hash.
 >
@@ -229,7 +229,7 @@ The criteria below are reproduced **exactly as approved before implementation**.
 | 1 | `1ef63072a` | `refactor(location): consolidate Seller/Landlord Google Places fill onto the shared trait` |
 | 2 | `1de72215c` | `refactor(location): adopt shared address autocomplete component across Seller/Landlord listing flows` |
 | 3 | `495f36da8` | `refactor(location): rename shared address fill interface to provider-neutral terminology` |
-| 4 | *(this commit — hash pending)* | `docs(spatial): close out Phase 1 and register the spatial documentation set` |
+| 4 | `f460dddd5` | `docs(spatial): close out Phase 1 and register the spatial documentation set` |
 
 ### Known limitations carried forward
 
