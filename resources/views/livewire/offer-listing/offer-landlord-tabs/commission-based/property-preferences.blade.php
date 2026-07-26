@@ -53,6 +53,36 @@
     @enderror
 </div>
 
+{{-- Phase 1 (Shared Components) — the Google Places listener for the street input
+     above. Script-only: the inputs stay exactly where they are, because this
+     partial is included by six listing blades across all four roles and moving
+     the markup would change the Buyer/Tenant pages.
+
+     GATED DELIBERATELY. Only LandlordOfferListing and LandlordOfferListingEdit
+     implement fillFromGooglePlaces(), and before Phase 1 only their two blades
+     carried this listener. Buyer, Seller and Tenant blades also render this
+     partial (when $user_type === 'landlord') and never bound autocomplete to this
+     input — emitting it for them would both change their behaviour and call a
+     Livewire method they do not implement. The method_exists() clause is belt and
+     braces: it makes an unimplemented call structurally impossible, not merely
+     unlikely.
+
+     Asserted by tests/Feature/Location/SharedAddressAutocompleteAdoptionTest.php --}}
+@php
+    $byoLandlordAutocompleteHost = isset($this)
+        && in_array(get_class($this), [
+            \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing::class,
+            \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListingEdit::class,
+        ], true)
+        && method_exists($this, 'fillFromGooglePlaces');
+@endphp
+@if($byoLandlordAutocompleteHost)
+    <x-byo-address-autocomplete
+        street-id="landlord-offer-street-address"
+        callback="byoInitLandlordOfferPlaces"
+        :render-markup="false" />
+@endif
+
 <input type="hidden" id="landlord-offer-property-lat" wire:model="property_lat">
 <input type="hidden" id="landlord-offer-property-lng" wire:model="property_lng">
 <input type="hidden" id="landlord-offer-google-place-id" wire:model="google_place_id">

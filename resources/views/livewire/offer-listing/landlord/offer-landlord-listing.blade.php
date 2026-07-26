@@ -3519,69 +3519,7 @@
             }
         });
     </script>
-    <script>
-    var _landlordPlacesNode = null;
-    window.byoInitLandlordOfferPlaces = function() {
-        var input = document.getElementById('landlord-offer-street-address');
-        // Early-return when Maps API is not ready yet. _landlordPlacesNode is intentionally
-        // NOT assigned here — the assignment only happens after a successful Autocomplete
-        // construction below. This means the guard on the next line is safe: if we returned
-        // early on a previous call (API not ready), _landlordPlacesNode is still null, so the
-        // next call will try again. Do not move the assignment above this guard.
-        if (!input || !window.google || !window.google.maps || !window.google.maps.places) { return; }
-        if (input === _landlordPlacesNode) { return; }
-        _landlordPlacesNode = input;
-
-        var ac = new google.maps.places.Autocomplete(input, {
-            types: ['address'],
-            componentRestrictions: { country: 'us' },
-            fields: ['address_components', 'geometry', 'place_id']
-        });
-
-        google.maps.event.addDomListener(input, 'keydown', function(e) {
-            if (e.keyCode === 13) { e.preventDefault(); }
-        });
-
-        ac.addListener('place_changed', function() {
-            var place = ac.getPlace();
-            if (!place || !place.geometry || !place.geometry.location) { return; }
-
-            var lat = place.geometry.location.lat();
-            var lng = place.geometry.location.lng();
-            var placeId = place.place_id || '';
-
-            var streetNum = '', route = '', city = '', county = '', state = '', zip = '';
-
-            if (place.address_components) {
-                place.address_components.forEach(function(c) {
-                    var t = c.types;
-                    if (t.indexOf('street_number') !== -1)                 streetNum = c.long_name;
-                    if (t.indexOf('route') !== -1)                         route     = c.long_name;
-                    if (t.indexOf('locality') !== -1)                      city      = c.long_name;
-                    if (t.indexOf('sublocality_level_1') !== -1 && !city)  city      = c.long_name;
-                    if (t.indexOf('administrative_area_level_2') !== -1)   county    = c.long_name.replace(/ County$/, '');
-                    if (t.indexOf('administrative_area_level_1') !== -1)   state     = c.short_name;
-                    if (t.indexOf('postal_code') !== -1)                   zip       = c.long_name;
-                });
-            }
-
-            var street = streetNum ? (streetNum + ' ' + route).trim() : route;
-
-            @this.call('fillFromGooglePlaces', street, city, county, state, zip, String(lat), String(lng), placeId);
-        });
-    };
-
-    document.addEventListener('DOMContentLoaded', function () {
-        window.byoInitLandlordOfferPlaces && window.byoInitLandlordOfferPlaces();
-    });
-    document.addEventListener('livewire:load', function () {
-        window.byoInitLandlordOfferPlaces && window.byoInitLandlordOfferPlaces();
-        if (window.Livewire && typeof window.Livewire.hook === 'function') {
-            Livewire.hook('message.processed', function () {
-                window.byoInitLandlordOfferPlaces && window.byoInitLandlordOfferPlaces();
-            });
-        }
-    });
-    </script>
-    <x-google-maps-script callback="byoInitLandlordOfferPlaces" />
+    {{-- Phase 1: the Google Places listener moved to the shared
+         <x-byo-address-autocomplete> invoked from the property-preferences
+         partial that renders the street input. One copy, not five. --}}
 @endpush

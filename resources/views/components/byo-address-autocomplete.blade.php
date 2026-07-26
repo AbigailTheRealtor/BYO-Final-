@@ -23,6 +23,21 @@
   show-unit      (bool)   render the Unit field       (default true)
   street-required(bool)   mark street required        (default true)
   with-geo-fields(bool)   render hidden lat/lng/place_id (default false)
+  render-markup  (bool)   render Street/Unit inputs    (default true)
+
+  Script-only mode (render-markup="false") — Phase 1
+  --------------------------------------------------
+  Emits the autocomplete listener and the Maps loader WITHOUT the Street/Unit
+  inputs, for hosts that already render those inputs themselves. It exists so the
+  Seller/Landlord property-preference partials — each shared by six listing blades
+  across all four roles — can drop their duplicated listener JS without their
+  markup moving, which would have changed the Buyer/Tenant pages that include the
+  same partials.
+
+  `street-id` must name an input the host already renders; the listener binds to it
+  by id exactly as the full-markup mode does. Everything else (guards, parsing, the
+  Livewire resolution, the loader) is identical — there is deliberately only ONE
+  copy of this script in the codebase.
 --}}
 @props([
     'streetId',
@@ -36,7 +51,10 @@
     'latModel' => 'property_lat',
     'lngModel' => 'property_lng',
     'placeIdModel' => 'google_place_id',
+    'renderMarkup' => true,
 ])
+
+@if($renderMarkup)
 
 <!-- Street Address (Google Places autocomplete) -->
 <div class="form-group mb-3">
@@ -86,6 +104,8 @@
 <input type="hidden" id="{{ $streetId }}-lng" wire:model="{{ $lngModel }}">
 <input type="hidden" id="{{ $streetId }}-place-id" wire:model="{{ $placeIdModel }}">
 @endif
+
+@endif {{-- /renderMarkup --}}
 
 @push('scripts')
 <script>

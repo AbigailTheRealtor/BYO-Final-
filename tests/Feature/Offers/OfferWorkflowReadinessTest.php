@@ -592,6 +592,13 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/components/byo-address-autocomplete.blade.php',
             'resources/views/components/google-maps-auth-telemetry.blade.php',
             'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/property-preferences.blade.php',
+            // Phase 1 (Shared Components) — the four listing blades drop their
+            // duplicated Google Places listener in favour of the shared
+            // <x-byo-address-autocomplete>, invoked script-only from the two
+            // property-preference partials. Every other file this commit touches is
+            // already allow-listed above; this is the only one no previous task
+            // reached.
+            'resources/views/livewire/offer-listing/landlord/offer-landlord-listing-edit.blade.php',
         ];
 
         $unexpected = array_values(array_filter(
