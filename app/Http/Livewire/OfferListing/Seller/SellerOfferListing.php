@@ -26,6 +26,8 @@ class SellerOfferListing extends Component
     use ResolvesOwnedAuction;
     use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
     use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
+    use \App\Http\Livewire\Concerns\ValidatesPropertyAddress; // Phase 0: address rules + ZIP autofill
+    use \App\Http\Livewire\OfferListing\Concerns\GuidesPublishValidation; // cross-tab publish correction
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
@@ -4326,7 +4328,13 @@ class SellerOfferListing extends Component
             // Show specific error message to user
             $errorMessages = collect($e->errors())->flatten()->take(3)->implode(' | ');
             session()->flash('error', 'Missing/invalid: ' . $errorMessages);
-            
+
+            // Hand the failing fields to the browser so it can navigate to the tab
+            // that owns the first one instead of leaving the user on the submit tab
+            // with a banner naming a field they cannot see. Component state is not
+            // touched, so every entered value (including a resumed draft) survives.
+            $this->guidePublishValidationFailure($e);
+
             throw $e; // Re-throw to show field-level errors
         } catch (\Exception $e) {
             Log::error('Seller Agent Auction save error', [

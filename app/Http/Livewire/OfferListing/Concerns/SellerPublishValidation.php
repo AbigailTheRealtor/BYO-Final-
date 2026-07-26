@@ -17,11 +17,16 @@ trait SellerPublishValidation
      */
     protected function getConditionalRules()
     {
-        $rules = [
+        // Phase 0 (Spatial UI Integration) — the street address is validated
+        // server-side for the first time. It was previously absent from these
+        // rules entirely, so `43434` published as a whole property address.
+        // Rule pair defined once in ValidStreetAddress::rules().
+        $rules = \App\Rules\ValidStreetAddress::rules();
+
+        $rules += [
             'listing_title'  => 'required|string|max:255',
             'property_type'  => 'required|string',
             'state'          => 'nullable|string',
-            'unit_address'   => 'nullable|string|max:100',
             'first_name'     => 'required|string',
             'last_name'      => 'required|string',
             'phone_number'   => 'required|string',

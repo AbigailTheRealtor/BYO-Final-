@@ -2847,6 +2847,162 @@
                 });
             }
 
+            // ---- SELLER GUIDED CORRECTION ------------------------------------------------
+            // Seller had the same cross-tab defect as Landlord: candidates were collected
+            // with isFieldValid(), which treats anything on an inactive tab as valid, so a
+            // failing field on another tab was invisible to the client and only surfaced as
+            // an opaque server rejection. Phase 0 exposed this by adding `address` on the
+            // Property Details tab.
+
+            // Fields the SERVER actually requires, from SellerPublishValidation via
+            // GuidesPublishValidation::publishRequiredFieldNames(). The DOM marks ~22 fields
+            // `required`; the publish rules require a handful. Scoping to this list keeps
+            // the wizard from blocking on fields the server accepts empty.
+            var SELLER_SERVER_REQUIRED = @json($this->publishRequiredFieldNames());
+
+            var SELLER_FIELD_LABELS = {
+                'listing_title':  'Listing Title',
+                'property_type':  'Property Type',
+                'address':        'Street Address',
+                'auction_time':   'Bidding Period Length',
+                'first_name':     'First Name',
+                'last_name':      'Last Name',
+                'phone_number':   'Phone Number',
+                'email':          'Email Address',
+            };
+
+            function resolveSellerFieldKey(field) {
+                var wm = field.getAttribute('wire:model')
+                      || field.getAttribute('wire:model.defer')
+                      || field.getAttribute('wire:model.lazy')
+                      || field.getAttribute('wire:model.live')
+                      || field.getAttribute('wire:model.debounce.300ms');
+                if (wm) return wm.split('.')[0];
+                return field.id || field.name || 'field';
+            }
+
+            function resolveSellerFieldLabel(field, key) {
+                if (SELLER_FIELD_LABELS[key]) return SELLER_FIELD_LABELS[key];
+                var labelEl = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
+                return labelEl ? labelEl.textContent.replace(/[*:]/g, '').trim()
+                               : (field.getAttribute('placeholder') || field.name || field.id || 'Required field');
+            }
+
+            // True when a field is switched off by its OWN conditional markup — as opposed
+            // to merely sitting on an inactive tab. Only the former is genuinely not
+            // required; conflating the two is what hid cross-tab failures.
+            function isSellerFieldHiddenWithinTab(field) {
+                var tabPane = field.closest('.tab-pane');
+                if (!tabPane) return false;
+                var el = field.parentElement;
+                while (el && el !== tabPane) {
+                    if (el.classList && el.classList.contains('d-none')) return true;
+                    if (el.style && el.style.display === 'none') return true;
+                    el = el.parentElement;
+                }
+                return false;
+            }
+
+            // Missing publish-required Seller fields, across every tab.
+            function sellerGetInvalidItems() {
+                var items = [];
+                var seen  = new Set();
+
+                getAllRequiredFields().forEach(function(field) {
+                    if (field.disabled || field.type === 'hidden') return;
+
+                    var key = resolveSellerFieldKey(field);
+                    if (SELLER_SERVER_REQUIRED.indexOf(key) === -1) return;
+                    if (isSellerFieldHiddenWithinTab(field)) return;
+                    if (seen.has(key)) return;
+
+                    var isEmpty = (
+                        field.type === 'file'     ? !field.files || field.files.length === 0 :
+                        field.type === 'checkbox' ? !field.checked :
+                        field.type === 'radio'    ? !document.querySelector(`input[name="${field.name}"]:checked`) :
+                        !field.value?.toString().trim()
+                    );
+
+                    if (isEmpty) {
+                        seen.add(key);
+                        items.push({
+                            field:     field,
+                            tab:       field.closest('.tab-pane'),
+                            fieldName: resolveSellerFieldLabel(field, key),
+                            key:       key
+                        });
+                    }
+                });
+
+                return items;
+            }
+
+            function sellerNavigateToItem(item) {
+                if (!item) return;
+                if (item.tab) {
+                    var trigger = document.querySelector('[data-bs-target="#' + item.tab.id + '"], [href="#' + item.tab.id + '"]');
+                    if (trigger) {
+                        bootstrap.Tab.getOrCreateInstance(trigger).show();
+                        var idx = [...document.querySelectorAll('.tab-pane')].indexOf(item.tab);
+                        if (idx >= 0 && typeof Livewire !== 'undefined') {
+                            Livewire.emit('setActiveTab', idx);
+                        }
+                    }
+                }
+                setTimeout(function() {
+                    if (item.field && item.field.classList) {
+                        item.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if (typeof item.field.focus === 'function' && item.field.tagName !== 'DIV') {
+                            item.field.focus();
+                        }
+                        item.field.classList.add('is-invalid');
+                    }
+                }, 350);
+            }
+
+            function findSellerFieldElement(name) {
+                return document.querySelector('[wire\\:model="' + name + '"]')
+                    || document.querySelector('[wire\\:model\\.defer="' + name + '"]')
+                    || document.querySelector('[wire\\:model\\.lazy="' + name + '"]')
+                    || document.getElementById(name);
+            }
+
+            // The server is authoritative. When publish validation rejects — including a
+            // legacy draft whose stored address predates the Phase 0 rule — walk the user to
+            // the tab owning the first failing field and show the server's own message.
+            window.addEventListener('publish-validation-failed', function (ev) {
+                var detail   = ev.detail || {};
+                var fields   = detail.fields || [];
+                var messages = detail.messages || {};
+                if (!fields.length) return;
+
+                var banner    = document.getElementById('submit-error-banner');
+                var errorList = document.getElementById('submit-error-list');
+                if (banner && errorList) {
+                    errorList.innerHTML = '';
+                    fields.forEach(function (name) {
+                        var li = document.createElement('li');
+                        li.textContent = messages[name] || (SELLER_FIELD_LABELS[name] || name);
+                        errorList.appendChild(li);
+                    });
+                    var strong = banner.querySelector('strong');
+                    if (strong) strong.textContent = 'Please correct the following before submitting.';
+                    banner.classList.remove('d-none');
+                }
+
+                var el = findSellerFieldElement(fields[0]);
+                if (el) {
+                    sellerNavigateToItem({
+                        field:     el,
+                        tab:       el.closest('.tab-pane'),
+                        fieldName: SELLER_FIELD_LABELS[fields[0]] || fields[0],
+                        key:       fields[0]
+                    });
+                } else if (banner) {
+                    banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+
             // Form submit listener: block submission and show banner when required fields are missing
             const createForm = document.getElementById('create-auction-form');
             if (createForm) {
@@ -2857,18 +3013,10 @@
                     if (banner) banner.classList.add('d-none');
                     if (errorList) errorList.innerHTML = '';
 
-                    const requiredFields = getAllRequiredFields();
-                    let invalidItems = [];
-
-                    for (const field of requiredFields) {
-                        if (field.disabled || field.type === 'hidden') continue;
-                        if (!isFieldValid(field)) {
-                            const tab = field.closest('.tab-pane');
-                            const labelEl = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
-                            const fieldName = labelEl ? labelEl.textContent.replace(/[*:]/g, '').trim() : (field.getAttribute('placeholder') || field.name || field.id || 'Required field');
-                            invalidItems.push({ field: field, tab: tab, fieldName: fieldName });
-                        }
-                    }
+                    // Scoped to the server's publish rules and aware of other tabs, so a
+                    // blank Street Address on Property Details is caught here — before the
+                    // round trip — instead of coming back as an opaque rejection.
+                    let invalidItems = sellerGetInvalidItems();
 
                     if (invalidItems.length > 0) {
                         e.preventDefault();

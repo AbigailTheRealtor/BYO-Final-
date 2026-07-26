@@ -577,6 +577,36 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/Offers/OfferAvailableActionsService.php',
             'app/Notifications/Offers/OfferCancelledNotification.php',
             'routes/web.php',
+            // Spatial UI Integration — Phase 0 (address validation & UX).
+            // Server-side street-address shape validation on all four Seller/
+            // Landlord surfaces (create + edit), ZIP → City/County/State autofill
+            // from the owned us_zip_codes gazetteer, and honest degradation of the
+            // search-area map when the maps credential is rejected.
+            // See docs/spatial-ui-integration-audit-2026-07-25.md §8 Phase 0.
+            'app/Rules/ValidStreetAddress.php',
+            'app/Services/Location/AddressShapeValidator.php',
+            'app/Services/Location/ZipCodeLookupService.php',
+            'app/Http/Livewire/Concerns/ValidatesPropertyAddress.php',
+            'app/Http/Livewire/HireSellerAgent/SellerAgentAuction.php',
+            'app/Http/Livewire/HireSellerAgent/SellerAgentAuctionEdit.php',
+            'resources/views/components/address-assist-notice.blade.php',
+            'resources/views/components/byo-address-autocomplete.blade.php',
+            'resources/views/components/google-maps-auth-telemetry.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/property-preferences.blade.php',
+            'resources/views/partials/location-dna/map-input.blade.php',
+            // Create Offer Listing — cross-tab guided correction on publish failure.
+            // Phase 0 added the first publish-required field that does not live on the
+            // submit tab (`address`, on Property Details). Both wizards' client gates
+            // treated anything on an inactive tab as satisfied, so the failure surfaced
+            // only as an opaque server rejection. These files report the failing field
+            // back to the browser and scope guided correction to the fields the publish
+            // validators actually require.
+            'app/Http/Livewire/OfferListing/Concerns/GuidesPublishValidation.php',
+            'app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php',
+            'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListing.php',
+            'resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php',
+            'resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php',
+            'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/property-preferences.blade.php',
         ];
 
         $unexpected = array_values(array_filter(
