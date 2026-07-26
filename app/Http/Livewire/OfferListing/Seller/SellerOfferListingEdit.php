@@ -25,6 +25,7 @@ class SellerOfferListingEdit extends Component
     use ResolvesOwnedAuction;
     use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
     use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
+    use \App\Http\Livewire\Concerns\ValidatesPropertyAddress; // Phase 0: address rules + ZIP autofill
 
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
@@ -1344,6 +1345,15 @@ class SellerOfferListingEdit extends Component
 
     public function updatedAddress($value)
     {
+        // Phase 0 — a class method wins over the trait's, so the ZIP-in-street-
+        // field recovery is invoked explicitly here.
+        $this->addressAssistNotice = '';
+        if ($this->recoverZipTypedIntoStreetField((string) $value)) {
+            $this->addressSuggestions = [];
+
+            return;
+        }
+
         if (strlen($value) > 1) {
             $this->addressSuggestions = $this->getPlaceSuggestions($value, 'address');
         } else {

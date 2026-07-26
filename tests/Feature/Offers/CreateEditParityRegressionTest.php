@@ -22,6 +22,7 @@ use GuzzleHttp\ClientInterface;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use ReflectionClass;
 use Tests\Support\AnswersGooglePlacesWithRequestDenied;
@@ -68,6 +69,21 @@ class CreateEditParityRegressionTest extends TestCase
         // The autocomplete methods have no try/catch — pre-existing, preserved — so a
         // throwing client would surface as a test error rather than an empty list.
         $this->app->instance(ClientInterface::class, AnswersGooglePlacesWithRequestDenied::make());
+
+        // The photo-upload tests below drive `->set('newPropertyPhotos', [...])`,
+        // which fires updatedNewPropertyPhotos() -> processPendingPhotoUploads()
+        // -> ListingStorageWriter::storePublic($photo, 'auction/images', ...).
+        // That is a REAL write to the `public` disk: every run of this file
+        // deposited two stray files into storage/app/public/auction/images and
+        // left them there, alongside genuine user media.
+        //
+        // Fake the disk the writer resolves (listing_storage.public_disk,
+        // default `public`) so those writes land in an isolated per-test
+        // filesystem instead. This changes nothing about production upload
+        // behavior — the component and the writer seam are untouched; only the
+        // disk the test binds them to differs. Matches the setUp() convention
+        // already used across tests/Feature/Storage.
+        Storage::fake('public');
     }
 
     // ─── Shared helpers ───────────────────────────────────────────────────────
@@ -129,13 +145,16 @@ class CreateEditParityRegressionTest extends TestCase
             ['seller_agent_auction_id' => $auction->id, 'meta_key' => 'email',         'meta_value' => 'agent@example.com'],
         ]);
 
-        if ($address) {
-            SellerAgentAuctionMeta::create([
-                'seller_agent_auction_id' => $auction->id,
-                'meta_key'                => 'address',
-                'meta_value'              => $address,
-            ]);
-        }
+        // Phase 0 (Spatial UI Integration): the street address is now validated
+        // server-side on the edit-update path too, so — exactly as BYO-H1 did for
+        // the other required publish fields above — a published fixture carries a
+        // real address rather than a blank one. Callers that pass an explicit
+        // address still get theirs.
+        SellerAgentAuctionMeta::create([
+            'seller_agent_auction_id' => $auction->id,
+            'meta_key'                => 'address',
+            'meta_value'              => $address !== '' ? $address : '100 2nd Ave N, St. Petersburg',
+        ]);
 
         $offerAuction = OfferAuction::create(['user_id' => $user->id]);
         SellerAgentAuctionMeta::create([
@@ -365,6 +384,9 @@ class CreateEditParityRegressionTest extends TestCase
             ->test(SellerOfferListing::class)
             ->set('listing_title', 'Business Listing')
             ->set('property_type', 'Business')
+            // Phase 0 (Spatial UI Integration): the street address is now
+            // validated server-side, so a publish fixture must supply a real one.
+            ->set('address', '100 2nd Ave N, St. Petersburg')
             ->set('first_name', 'Alice')
             ->set('last_name', 'Agent')
             ->set('phone_number', '5551234567')

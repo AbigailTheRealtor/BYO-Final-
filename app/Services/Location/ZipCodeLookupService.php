@@ -59,7 +59,14 @@ class ZipCodeLookupService
             "us_zip:{$zip}",
             self::CACHE_TTL,
             function () use ($zip) {
-                $row = DB::table(self::TABLE)->where('zip_code', $zip)->first();
+                // This runs on the address field's keystroke path. A missing or
+                // unreadable gazetteer must degrade to "unknown ZIP", never throw
+                // — a 500 here would break the whole wizard round trip.
+                try {
+                    $row = DB::table(self::TABLE)->where('zip_code', $zip)->first();
+                } catch (\Throwable $e) {
+                    return null;
+                }
 
                 if ($row === null) {
                     return null;
@@ -87,6 +94,25 @@ class ZipCodeLookupService
     public function isKnownZip(?string $zip): bool
     {
         return $this->find($zip) !== null;
+    }
+
+    /**
+     * True when the gazetteer is present and populated.
+     *
+     * Callers use this to tell "these five digits are not a US ZIP" apart from
+     * "we cannot currently tell". The difference matters for the message shown to
+     * a user who typed a ZIP into the street field: with no gazetteer we must not
+     * assert the digits are a street number, because we do not know that.
+     */
+    public function isAvailable(): bool
+    {
+        return Cache::remember('us_zip:available', self::CACHE_TTL, function () {
+            try {
+                return DB::table(self::TABLE)->limit(1)->exists();
+            } catch (\Throwable $e) {
+                return false;
+            }
+        });
     }
 
     /**

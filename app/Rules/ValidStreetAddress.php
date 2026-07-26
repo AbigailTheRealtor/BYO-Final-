@@ -92,6 +92,12 @@ class ValidStreetAddress implements Rule
     /**
      * ZIP-shaped input splits two ways: a real US ZIP gets the "we know what you
      * meant" message; five digits that are not a ZIP are a street number.
+     *
+     * That split requires the gazetteer. When it is missing or unpopulated we
+     * cannot tell the two apart — and the honest answer is the ZIP message, not
+     * the street-number one. The input *is* ZIP-shaped; asserting it is a street
+     * number would be a claim we have no evidence for, and it sends a user who
+     * typed `33708` off to add a street name to their ZIP code.
      */
     private function resolveMessage(string $reason, string $value): string
     {
@@ -101,7 +107,7 @@ class ValidStreetAddress implements Rule
 
         $zips = $this->zips ?? app(ZipCodeLookupService::class);
 
-        if ($zips->isKnownZip($value)) {
+        if (! $zips->isAvailable() || $zips->isKnownZip($value)) {
             return $this->shape->messageFor(AddressShapeValidator::ZIP_SHAPED);
         }
 

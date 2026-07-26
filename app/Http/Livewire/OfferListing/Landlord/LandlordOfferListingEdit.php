@@ -23,6 +23,7 @@ class LandlordOfferListingEdit extends Component
     use WithFileUploads;
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
+    use \App\Http\Livewire\Concerns\ValidatesPropertyAddress; // Phase 0: address rules + ZIP autofill
     use HasCanonicalPetFee;        // #2 Part B: canonical pet fee (create + edit)
 
     protected $listeners = [
@@ -1226,6 +1227,15 @@ class LandlordOfferListingEdit extends Component
     }
     public function updatedAddress($value)
     {
+        // Phase 0 — a class method wins over the trait's, so the ZIP-in-street-
+        // field recovery is invoked explicitly here.
+        $this->addressAssistNotice = '';
+        if ($this->recoverZipTypedIntoStreetField((string) $value)) {
+            $this->addressSuggestions = [];
+
+            return;
+        }
+
         if (strlen($value) > 1) {
             $this->addressSuggestions = $this->getPlaceSuggestions($value, 'address');
         } else {

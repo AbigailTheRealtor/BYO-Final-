@@ -17,6 +17,7 @@ class SellerAgentAuction extends Component
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+    use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: address rules + ZIP autofill
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -2929,7 +2930,12 @@ class SellerAgentAuction extends Component
      */
     protected function getConditionalRules()
     {
-        $rules = [
+        // Phase 0 (Spatial UI Integration) — `address` was previously
+        // `required|string`, which accepted `43434`. Rule pair defined once in
+        // ValidStreetAddress::rules().
+        $rules = \App\Rules\ValidStreetAddress::rules();
+
+        $rules += [
             'listing_title'  => 'required|string|max:255',
             'property_type'  => 'required|string',
             'state'          => 'required|string',

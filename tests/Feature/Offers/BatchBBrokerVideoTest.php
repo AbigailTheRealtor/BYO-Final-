@@ -45,6 +45,9 @@ class BatchBBrokerVideoTest extends TestCase
     {
         $component->set('listing_title', 'Batch B Landlord Listing')
             ->set('property_type', 'Residential Property')
+            // Phase 0 (Spatial UI Integration): the street address is now
+            // validated server-side, so a publish fixture must supply a real one.
+            ->set('address', '100 2nd Ave N, St. Petersburg')
             ->set('first_name', 'Test')
             ->set('last_name', 'Agent')
             ->set('phone_number', '5551234567')
@@ -71,6 +74,9 @@ class BatchBBrokerVideoTest extends TestCase
             ['landlord_agent_auction_id' => $auction->id, 'meta_key' => 'email',               'meta_value' => 'agent@example.com'],
             ['landlord_agent_auction_id' => $auction->id, 'meta_key' => 'property_type',        'meta_value' => 'Residential Property'],
             ['landlord_agent_auction_id' => $auction->id, 'meta_key' => 'desired_lease_length', 'meta_value' => json_encode(['12 Months'])],
+            // Phase 0 (Spatial UI Integration): a published listing carries a real
+            // street address — it is validated on the edit-update path too.
+            ['landlord_agent_auction_id' => $auction->id, 'meta_key' => 'address',              'meta_value' => '100 2nd Ave N, St. Petersburg'],
         ]);
 
         $offerAuction = OfferAuction::create(['user_id' => $user->id]);
@@ -219,6 +225,9 @@ class BatchBBrokerVideoTest extends TestCase
             ->test(SellerOfferListing::class)
             ->set('listing_title', 'Business Opportunity Listing')
             ->set('property_type', 'Business')
+            // Phase 0 (Spatial UI Integration): the street address is now
+            // validated server-side, so a publish fixture must supply a real one.
+            ->set('address', '100 2nd Ave N, St. Petersburg')
             ->set('first_name', 'Alice')
             ->set('last_name', 'Agent')
             ->set('phone_number', '5551234567')

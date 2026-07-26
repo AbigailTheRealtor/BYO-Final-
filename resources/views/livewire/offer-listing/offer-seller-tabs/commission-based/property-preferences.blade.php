@@ -383,10 +383,16 @@
     </span>
     <div class="input-cover">
         <input type="text" id="seller-offer-street-address" wire:model="address"
-            class="form-control has-icon" data-icon="fa-solid fa-map-pin"
-            placeholder="Enter street address (e.g., 123 Main Street)" required
+            class="form-control has-icon @error('address') is-invalid @enderror" data-icon="fa-solid fa-map-pin"
+            placeholder="Enter street address (e.g., 100 2nd Ave N)" required
             autocomplete="off">
     </div>
+    @error('address')
+        <div class="error-message text-danger small mt-1">{{ $message }}</div>
+    @enderror
+    {{-- Buyer and Tenant render this same partial but do not use
+         ValidatesPropertyAddress, so the prop is not guaranteed to exist. --}}
+    <x-address-assist-notice :notice="$addressAssistNotice ?? ''" />
 </div>
 
 <!-- Unit / Apt / Suite -->

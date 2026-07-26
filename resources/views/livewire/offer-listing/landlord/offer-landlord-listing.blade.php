@@ -3086,6 +3086,14 @@
                 return false;
             }
 
+            // Fields the SERVER actually requires, derived from LandlordPublishValidation
+            // via GuidesPublishValidation::publishRequiredFieldNames(). The DOM marks ~25
+            // fields `required`; the publish rules require a handful. Guided correction is
+            // scoped to this list so the wizard never blocks on a field the server accepts
+            // empty. Conditional rules are already resolved server-side, so `auction_time`
+            // appears here only for a Bidding Period listing.
+            var LANDLORD_SERVER_REQUIRED = @json($this->publishRequiredFieldNames());
+
             // Collects all currently-missing required Landlord fields across every tab.
             function landlordGetInvalidItems() {
                 var items = [];
@@ -3094,7 +3102,18 @@
                 // DOM-based required fields (respects conditional visibility)
                 var reqFields = getAllRequiredFields();
                 reqFields.forEach(function(field) {
-                    if (!isElementVisible(field)) return;
+                    if (field.disabled || field.type === 'hidden') return;
+
+                    // Only publish-blocking fields take part in guided correction.
+                    if (LANDLORD_SERVER_REQUIRED.indexOf(resolveLandlordFieldKey(field)) === -1) return;
+
+                    // A field switched off by its own conditional markup is genuinely not
+                    // required. A field that is merely sitting on an inactive tab IS still
+                    // required — telling those two apart is the entire purpose of this
+                    // helper, and is why isElementVisible() must not be used here: it
+                    // reports false for both, which is what hid cross-tab failures.
+                    if (isLandlordFieldHiddenWithinTab(field)) return;
+
                     // Select2-initialised multi-selects: checked via Livewire property below.
                     // Also skip by class name in case Select2 has not yet re-initialised after a Livewire render.
                     if (field.tagName === 'SELECT' && field.multiple &&
@@ -3126,6 +3145,7 @@
                 // Livewire property fallback: desired_lease_length (Select2 multi-select,
                 // class="lease_term_options"; wire:ignore parent means DOM value is unreliable)
                 try {
+                    if (LANDLORD_SERVER_REQUIRED.indexOf('desired_lease_length') === -1) return items;
                     var _wireIdEl = document.querySelector('[wire\\:id]');
                     var _comp2 = _wireIdEl ? (window.livewire
                         ? window.livewire.find(_wireIdEl.getAttribute('wire:id'))
@@ -3183,6 +3203,53 @@
                     }
                 }, 350);
             }
+
+            // Locate the DOM input bound to a publish-rule field name.
+            function findLandlordFieldElement(name) {
+                return document.querySelector('[wire\\:model="' + name + '"]')
+                    || document.querySelector('[wire\\:model\\.defer="' + name + '"]')
+                    || document.querySelector('[wire\\:model\\.lazy="' + name + '"]')
+                    || document.getElementById(name);
+            }
+
+            // The server is authoritative. When publish validation rejects — including a
+            // legacy draft whose stored address predates the Phase 0 rule — walk the user
+            // to the tab owning the first failing field and show the server's own message,
+            // rather than stranding them on the submit tab with a generic banner.
+            window.addEventListener('publish-validation-failed', function (e) {
+                var detail   = e.detail || {};
+                var fields   = detail.fields || [];
+                var messages = detail.messages || {};
+                if (!fields.length) return;
+
+                _landlordCorrectionMode = false; // server verdict supersedes the client pass
+
+                var banner    = document.getElementById('submit-error-banner');
+                var errorList = document.getElementById('submit-error-list');
+                if (banner && errorList) {
+                    errorList.innerHTML = '';
+                    fields.forEach(function (name) {
+                        var li = document.createElement('li');
+                        li.textContent = messages[name] || (LANDLORD_FIELD_LABELS[name] || name);
+                        errorList.appendChild(li);
+                    });
+                    var strong = banner.querySelector('strong');
+                    if (strong) strong.textContent = 'Please correct the following before submitting.';
+                    banner.classList.remove('d-none');
+                }
+
+                var el = findLandlordFieldElement(fields[0]);
+                if (el) {
+                    landlordNavigateToItem({
+                        field:     el,
+                        tab:       el.closest('.tab-pane'),
+                        fieldName: LANDLORD_FIELD_LABELS[fields[0]] || fields[0],
+                        key:       fields[0]
+                    });
+                } else if (banner) {
+                    banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
 
             // Called after each Livewire round-trip while in correction mode.
             // Re-checks missing fields; navigates to the next one or exits when all are done.

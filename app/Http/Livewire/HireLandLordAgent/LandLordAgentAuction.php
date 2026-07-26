@@ -17,6 +17,7 @@ class LandLordAgentAuction extends Component
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+    use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: address rules + ZIP autofill
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -2788,7 +2789,12 @@ class LandLordAgentAuction extends Component
 
     public function store()
     {
-        $storeRules = [
+        // Phase 0 (Spatial UI Integration) — the property street address is
+        // validated server-side for the first time. Defined once in
+        // ValidStreetAddress::rules().
+        $storeRules = \App\Rules\ValidStreetAddress::rules();
+
+        $storeRules += [
             'first_name'           => 'required|string',
             'last_name'            => 'required|string',
             'phone_number'         => 'required|string',

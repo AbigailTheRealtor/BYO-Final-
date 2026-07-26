@@ -23,12 +23,17 @@ trait LandlordPublishValidation
      */
     protected function getConditionalRules(): array
     {
-        $rules = [
+        // Phase 0 (Spatial UI Integration) — the street address is validated
+        // server-side for the first time. It was previously absent from these
+        // rules entirely, so `43434` published as a whole property address.
+        // Rule pair defined once in ValidStreetAddress::rules().
+        $rules = \App\Rules\ValidStreetAddress::rules();
+
+        $rules += [
             'first_name'           => 'required|string',
             'last_name'            => 'required|string',
             'phone_number'         => 'required|string',
             'email'                => 'required|email',
-            'unit_address'         => 'nullable|string|max:100',
             'desired_lease_length' => 'required|array|min:1',
             'roof_type'                => 'nullable|array',
             'roof_type.*'              => 'string|in:Built-Up,Cement,Concrete,Membrane,Metal,Roof Over,Shake,Shingle,Slate,Tile,Other',
