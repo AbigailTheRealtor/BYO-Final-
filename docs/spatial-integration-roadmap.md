@@ -220,7 +220,7 @@ The criteria below are reproduced **exactly as approved before implementation**.
 
 `Florida Beta – Spatial Phase 1 Complete`
 
-**Not yet cut.** To be created as an annotated tag against this documentation commit once reviewed (owner decision, 2026-07-26). See the tag-debt note under *Milestone convention*.
+**Not yet cut.** To be created as an annotated tag against the final Phase 1 documentation commit; see the tag itself for its exact target (owner decision, 2026-07-26). See the tag-debt note under *Milestone convention*.
 
 ### Commit references
 
