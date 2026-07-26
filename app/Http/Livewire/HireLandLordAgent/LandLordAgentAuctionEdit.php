@@ -17,6 +17,7 @@ class LandLordAgentAuctionEdit extends Component
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+    use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -2506,7 +2507,10 @@ class LandLordAgentAuctionEdit extends Component
 
     public function update()
     {
-        $this->validate([
+        // Phase 0 (Spatial UI Integration) — edit-publish validated only the
+        // nullable leasing fields, so a published listing could be re-saved with
+        // `43434` in the street-address field. Same canonical rule as create.
+        $this->validate(array_merge(\App\Rules\ValidStreetAddress::rules(), [
             // Landlord Leasing Terms — nullable rules
             'lease_available_date'                => 'nullable|date',
             'security_deposit_required'           => 'nullable|numeric',
@@ -2532,7 +2536,7 @@ class LandLordAgentAuctionEdit extends Component
             'commercial_parking_terms'            => 'nullable|string',
             'personal_guarantee_requirement'      => 'nullable|string|in:Required,Not Required,Negotiable',
             'commercial_approval_conditions'      => 'nullable|string',
-        ]);
+        ]), ['address.required' => 'Enter the property street address.']);
 
         try {
             $this->isDraft = 0;

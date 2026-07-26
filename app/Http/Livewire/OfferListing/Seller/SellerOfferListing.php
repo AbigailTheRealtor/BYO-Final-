@@ -18,6 +18,7 @@ use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 use App\Http\Livewire\Concerns\ValidatesMediaUploads;
+use App\Http\Livewire\Concerns\ValidatesPropertyAddress;
 use App\Http\Livewire\OfferListing\Concerns\SellerPublishValidation;
 
 class SellerOfferListing extends Component
@@ -26,6 +27,7 @@ class SellerOfferListing extends Component
     use ResolvesOwnedAuction;
     use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
     use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
+    use ValidatesPropertyAddress; // Phase 0: ZIP autofill + ZIP-in-street recovery
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;

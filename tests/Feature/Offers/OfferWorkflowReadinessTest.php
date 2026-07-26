@@ -577,6 +577,13 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/Offers/OfferAvailableActionsService.php',
             'app/Notifications/Offers/OfferCancelledNotification.php',
             'routes/web.php',
+            // Phase 0 (Spatial UI Integration) — street-address shape validation
+            // across all Seller/Landlord surfaces. The other six components this
+            // phase touches are already allow-listed above; these are the ones it
+            // reaches that no previous task did.
+            'app/Http/Livewire/Concerns/ValidatesPropertyAddress.php',
+            'app/Http/Livewire/HireSellerAgent/SellerAgentAuction.php',
+            'app/Http/Livewire/HireSellerAgent/SellerAgentAuctionEdit.php',
         ];
 
         $unexpected = array_values(array_filter(

@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\OfferListing\Concerns;
 
+use App\Rules\ValidStreetAddress;
 use App\Services\Pets\PetFeeNormalizer;
 
 /**
@@ -28,7 +29,6 @@ trait LandlordPublishValidation
             'last_name'            => 'required|string',
             'phone_number'         => 'required|string',
             'email'                => 'required|email',
-            'unit_address'         => 'nullable|string|max:100',
             'desired_lease_length' => 'required|array|min:1',
             'roof_type'                => 'nullable|array',
             'roof_type.*'              => 'string|in:Built-Up,Cement,Concrete,Membrane,Metal,Roof Over,Shake,Shingle,Slate,Tile,Other',
@@ -40,6 +40,17 @@ trait LandlordPublishValidation
             'other_exterior_construction' => 'nullable|string|max:255',
             'other_foundation'         => 'nullable|string|max:255',
         ];
+
+        // Phase 0 (Spatial UI Integration) — the property street address is now
+        // validated for SHAPE, not merely for presence. Publishing previously
+        // accepted `43434`, `33708`, `Main` and `.` because nothing here checked
+        // the field at all. The rules live in ValidStreetAddress::rules() so this
+        // trait, its Seller twin, and the four Hire components all enforce one
+        // definition rather than four copies that can drift.
+        //
+        // This also supplies `unit_address` (nullable, max:100) — the rule pair
+        // travels together, so the line it replaces here is not lost.
+        $rules = array_merge($rules, ValidStreetAddress::rules());
 
         // A1.4/A1.5: a Bidding Period listing must specify a Bidding Period Length
         // (auction_time) so the listing timer has an end — parity with Seller.
@@ -113,6 +124,11 @@ trait LandlordPublishValidation
             'phone_number.required'         => 'Phone Number is required.',
             'email.required'                => 'Email Address is required.',
             'email.email'                   => 'Please enter a valid email address.',
+            // Phase 0 — the shape failures carry their own actionable messages from
+            // ValidStreetAddress; only the framework-level rules need one here.
+            'address.required'              => 'Enter the property street address.',
+            'address.max'                   => 'That street address is too long. Enter just the street address — the city, state and ZIP have their own fields.',
+            'unit_address.max'              => 'Unit / Apt is limited to 100 characters.',
             'desired_lease_length.required' => 'Desired Lease Term is required.',
             'desired_lease_length.min'      => 'Please select at least one Desired Lease Term.',
             'auction_time.required'         => 'Bidding Period Length is required for Bidding Period listings.',

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\Concerns\ValidatesPropertyAddress;
 use App\Http\Livewire\OfferListing\Concerns\LandlordPublishValidation;
 use App\Http\Livewire\OfferListing\Concerns\HasCanonicalPetFee;
 
@@ -23,6 +24,7 @@ class LandlordOfferListingEdit extends Component
     use WithFileUploads;
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
+    use ValidatesPropertyAddress;  // Phase 0: ZIP autofill + ZIP-in-street recovery
     use HasCanonicalPetFee;        // #2 Part B: canonical pet fee (create + edit)
 
     protected $listeners = [

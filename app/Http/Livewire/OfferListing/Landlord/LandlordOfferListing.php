@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\Concerns\ValidatesPropertyAddress;
 use App\Http\Livewire\OfferListing\Concerns\LandlordPublishValidation;
 use App\Http\Livewire\OfferListing\Concerns\HasCanonicalPetFee;
 
@@ -24,6 +25,7 @@ class LandlordOfferListing extends Component
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
+    use ValidatesPropertyAddress;  // Phase 0: ZIP autofill + ZIP-in-street recovery
     use HasCanonicalPetFee;        // #2 Part B: canonical pet fee (create + edit)
 
     // TODO: set to false before production launch
