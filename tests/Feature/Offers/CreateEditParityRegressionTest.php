@@ -22,6 +22,7 @@ use GuzzleHttp\ClientInterface;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use ReflectionClass;
 use Tests\Support\AnswersGooglePlacesWithRequestDenied;
@@ -68,6 +69,11 @@ class CreateEditParityRegressionTest extends TestCase
         // The autocomplete methods have no try/catch — pre-existing, preserved — so a
         // throwing client would surface as a test error rather than an empty list.
         $this->app->instance(ClientInterface::class, AnswersGooglePlacesWithRequestDenied::make());
+
+        // The photo/document upload cases drive real UploadedFile instances through the
+        // Livewire components, which store them on the 'public' disk. Fake that disk so
+        // nothing lands in storage/app/public and every test starts from an empty one.
+        Storage::fake('public');
     }
 
     // ─── Shared helpers ───────────────────────────────────────────────────────
