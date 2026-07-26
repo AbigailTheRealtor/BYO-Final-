@@ -639,6 +639,25 @@ class OfferWorkflowReadinessTest extends TestCase
             //   before that existed (now covering Landlord as well as Seller,
             //   with --role and --dry-run).
             'app/Console/Commands/BackfillLinkedOfferAuction.php',
+            // Create Offer Listing — submit-button publish gate.
+            // All four Seller/Landlord views disabled #save-button whenever ANY DOM
+            // [required] field was empty, and `#save-button.disabled` set
+            // `pointer-events: none`, so the click was swallowed before wire:submit
+            // could fire — Submit did nothing and no Livewire request was sent. The
+            // legacy gates are removed; completeness is decided on click against
+            // publishRequiredFieldNames(), and the two edit components gain the same
+            // guided-correction contract create already had.
+            //
+            // GuidesPublishValidation is the gate's required-field source. It is the
+            // ONLY file taken from 50ad98ee2 — that commit's address-validation work
+            // (ValidStreetAddress, AddressShapeValidator, ZipCodeLookupService,
+            // ValidatesPropertyAddress and the publish-rule edits) is deliberately
+            // NOT on this branch, so the gate scopes to main's current publish rules.
+            // See tests/Feature/Offers/PublishSubmitGateTest.php.
+            'app/Http/Livewire/OfferListing/Concerns/GuidesPublishValidation.php',
+            'resources/views/livewire/offer-listing/landlord/offer-landlord-listing-edit.blade.php',
+            'resources/views/partials/offer-listing/publish-submit-gate.blade.php',
+            'tests/Feature/Offers/PublishSubmitGateTest.php',
         ];
 
         $unexpected = array_values(array_filter(

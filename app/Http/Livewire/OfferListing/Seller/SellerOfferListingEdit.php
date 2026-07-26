@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 use App\Http\Livewire\Concerns\ValidatesMediaUploads;
+use App\Http\Livewire\OfferListing\Concerns\GuidesPublishValidation;
 use App\Http\Livewire\OfferListing\Concerns\SellerPublishValidation;
 
 class SellerOfferListingEdit extends Component
@@ -26,6 +27,7 @@ class SellerOfferListingEdit extends Component
     use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
     use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
+    use GuidesPublishValidation; // publish gate + guided correction (parity with create)
 
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
@@ -4048,7 +4050,18 @@ class SellerOfferListingEdit extends Component
         // path (drafts stay lenient via saveDraft / saveDraftOnly). Previously this
         // validated only unit_address, so required fields could be blanked and
         // re-published. Rules are shared via SellerPublishValidation (single source).
-        $this->validate($this->getConditionalRules(), $this->getValidationMessages());
+        //
+        // The server stays authoritative — the exception is re-thrown untouched so
+        // Livewire still renders field-level errors. guidePublishValidationFailure()
+        // only adds the browser event that walks the user to the failing tab, which
+        // the edit view previously lacked entirely (create had it since 50ad98ee2).
+        try {
+            $this->validate($this->getConditionalRules(), $this->getValidationMessages());
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->guidePublishValidationFailure($e);
+
+            throw $e;
+        }
 
         try {
             $auction = SellerAgentAuctionModel::find($this->auctionId);

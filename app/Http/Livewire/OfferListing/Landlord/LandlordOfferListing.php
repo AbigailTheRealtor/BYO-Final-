@@ -25,6 +25,7 @@ class LandlordOfferListing extends Component
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
+    use \App\Http\Livewire\OfferListing\Concerns\GuidesPublishValidation; // publish gate required-field contract (parity with edit)
     use HasCanonicalPetFee;        // #2 Part B: canonical pet fee (create + edit)
 
     // TODO: set to false before production launch

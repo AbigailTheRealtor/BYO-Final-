@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\OfferListing\Concerns\GuidesPublishValidation;
 use App\Http\Livewire\OfferListing\Concerns\LandlordPublishValidation;
 use App\Http\Livewire\OfferListing\Concerns\HasCanonicalPetFee;
 
@@ -24,6 +25,7 @@ class LandlordOfferListingEdit extends Component
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
+    use GuidesPublishValidation;   // publish gate + guided correction (parity with create)
     use HasCanonicalPetFee;        // #2 Part B: canonical pet fee (create + edit)
 
     protected $listeners = [
@@ -3932,6 +3934,12 @@ class LandlordOfferListingEdit extends Component
             ]);
             $errorMessages = collect($e->errors())->flatten()->take(3)->implode(' | ');
             session()->flash('error', 'Missing/invalid: ' . $errorMessages);
+
+            // Replaces the terse banner as the primary signal: walk the user to the tab
+            // owning the first failing field. The flash above is kept as a fallback for
+            // when JavaScript is unavailable. Server rules are untouched.
+            $this->guidePublishValidationFailure($e);
+
             throw $e; // re-throw so Livewire renders the field-level errors too
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());
