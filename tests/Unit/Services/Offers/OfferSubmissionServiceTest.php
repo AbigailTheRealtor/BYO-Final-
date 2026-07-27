@@ -4,6 +4,7 @@ namespace Tests\Unit\Services\Offers;
 
 use App\Models\Offer;
 use App\Models\OfferEventLog;
+use App\Services\Offers\BiddingWindowService;
 use App\Services\Offers\OfferEventLogService;
 use App\Services\Offers\OfferStateMachineService;
 use App\Services\Offers\OfferSubmissionService;
@@ -33,6 +34,7 @@ class OfferSubmissionServiceTest extends TestCase
 {
     private MockInterface $stateMachine;
     private MockInterface $eventLogger;
+    private MockInterface $biddingWindow;
     private OfferSubmissionService $service;
 
     protected function setUp(): void
@@ -42,9 +44,16 @@ class OfferSubmissionServiceTest extends TestCase
         $this->stateMachine = Mockery::mock(OfferStateMachineService::class);
         $this->eventLogger  = Mockery::mock(OfferEventLogService::class);
 
+        // These cases cover the state-machine path, so the bidding window is held
+        // open throughout. The closed-window branch is covered end-to-end in
+        // tests/Feature/Offers/BiddingPeriodEnforcementTest.php.
+        $this->biddingWindow = Mockery::mock(BiddingWindowService::class);
+        $this->biddingWindow->shouldReceive('isClosedForOfferAuction')->andReturn(false)->byDefault();
+
         $this->service = new OfferSubmissionService(
             $this->stateMachine,
             $this->eventLogger,
+            $this->biddingWindow,
         );
     }
 

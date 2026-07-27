@@ -105,15 +105,58 @@ class LandlordSubmitApplicationTest extends TestCase
         $this->assertEquals($first->id, $second->id, 'ensureLinkedOfferAuction must return the same record on repeated calls.');
     }
 
-    public function test_listing_view_stores_linked_offer_auction_id_meta(): void
+    /**
+     * The public listing page used to create the OfferAuction link as a side
+     * effect of an unauthenticated GET. That write was removed — public views
+     * are read-only. The link is now established at publish time, or by
+     * `php artisan offer:backfill-linked-auction` for listings that went live
+     * before publish-time linking existed.
+     */
+    public function test_listing_view_does_not_create_records(): void
     {
+        $before = OfferAuction::count();
+
         $this->actingAs($this->tenant)
             ->get(route('offer.listing.landlord.view', $this->listing->id))
             ->assertStatus(200);
 
         $this->listing->load('meta');
+
+        $this->assertSame($before, OfferAuction::count(), 'A public GET must not create an OfferAuction.');
+        $this->assertFalse(
+            (bool) $this->listing->info('linked_offer_auction_id'),
+            'A public GET must not write linked_offer_auction_id.',
+        );
+    }
+
+    public function test_backfill_command_links_an_unlinked_landlord_listing(): void
+    {
+        $this->assertFalse((bool) $this->listing->info('linked_offer_auction_id'));
+
+        $this->artisan('offer:backfill-linked-auction', ['--role' => 'landlord'])->assertExitCode(0);
+
+        $this->listing->load('meta');
         $linkedId = $this->listing->info('linked_offer_auction_id');
-        $this->assertNotEmpty($linkedId, 'linked_offer_auction_id meta should be written after first view.');
+
+        $this->assertNotEmpty($linkedId, 'Backfill must establish the link the public view no longer creates.');
+
+        $offerAuction = OfferAuction::find((int) $linkedId);
+        $this->assertNotNull($offerAuction);
+        $this->assertSame('rental', $offerAuction->info('offer_type'));
+        $this->assertSame($this->listing->id, (int) $offerAuction->info('linked_landlord_auction_id'));
+    }
+
+    public function test_backfill_dry_run_writes_nothing(): void
+    {
+        $before = OfferAuction::count();
+
+        $this->artisan('offer:backfill-linked-auction', ['--role' => 'landlord', '--dry-run' => true])
+            ->assertExitCode(0);
+
+        $this->listing->load('meta');
+
+        $this->assertSame($before, OfferAuction::count());
+        $this->assertFalse((bool) $this->listing->info('linked_offer_auction_id'));
     }
 
     // ── store: creates draft with offer_type=rental ───────────────────────────
