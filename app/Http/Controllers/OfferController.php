@@ -76,6 +76,29 @@ class OfferController extends Controller
             return response()->json(['message' => $msg], 422);
         }
 
+        // TIMED LISTINGS FAIL CLOSED.
+        //
+        // A Bidding Period listing missing either canonical timestamp has no
+        // deadline, and a bid taken against no deadline cannot be adjudicated —
+        // there is no defensible answer to "was this bid in time?". Refuse before
+        // any row is written: no Offer is created, no timestamp is stamped, and
+        // no deadline is derived from expiration_date, created_at, auction_time
+        // or the time of this request. The listing gains a real window only when
+        // its owner republishes or an approved initialization workflow runs.
+        //
+        // resolveOfferAuctionId() above may have adopted or created the auction
+        // RELATIONSHIP, which is safe and leaves both timers NULL. Establishing a
+        // link is not the same as opening a bidding window.
+        if (app(BiddingWindowService::class)->isUninitializedForOfferAuction($targetAuction)) {
+            $msg = BiddingWindowService::UNINITIALIZED_MESSAGE;
+
+            if (!$request->expectsJson()) {
+                return redirect()->back()->with('error', $msg);
+            }
+
+            return response()->json(['message' => $msg], 422);
+        }
+
         $offer = Offer::create([
             'user_id'          => Auth::id(),
             'offer_auction_id' => $validated['offer_auction_id'],
@@ -1818,33 +1841,38 @@ class OfferController extends Controller
         ));
     }
 
+    /**
+     * Resolve the canonical OfferAuction for a Buyer/Tenant criteria listing.
+     *
+     * SUBMISSION NEVER STARTS A CLOCK (Stage 1).
+     *
+     * Publication is the only place a bidding window is stamped. This path runs
+     * when a bidder submits, and it deliberately does NOT call markActivated():
+     * anchoring a window to the first bid would start the contest when the first
+     * bidder happened to arrive rather than when the listing went live, which is
+     * the same wrong-lifecycle-event defect Stage 0 removed elsewhere.
+     *
+     * Creation is delegated to ListingOfferAuctionLinker so publication and this
+     * path share ONE implementation keyed on offer_auctions.listing_id, which
+     * carries a UNIQUE index. A competing second auction for the same listing is
+     * therefore impossible regardless of which path runs first.
+     *
+     * LEGACY / UNINITIALIZED: a listing published before Stage 1 has no auction.
+     * The linker creates the row here so the offer can attach and the listing's
+     * existing offers keep resolving — but with both bidding timestamps NULL. The
+     * window reads as UNINITIALIZED: no countdown renders, no deadline is
+     * fabricated from expiration_date or created_at, and no bidder is blocked.
+     * Such a listing gains a real window only when it is next published.
+     */
     private function resolveOfferAuctionId(string $listingType, int $sourceId): int
     {
-        if ($listingType === 'buyer_criteria') {
-            $source = BuyerAgentAuction::findOrFail($sourceId);
-            $bridge = OfferAuction::firstOrCreate(
-                ['listing_id' => "buyer_criteria:{$sourceId}"],
-                [
-                    'user_id'     => $source->user_id,
-                    'title'       => $source->title,
-                    'is_draft'    => false,
-                    'is_approved' => true,
-                ]
-            );
-            return $bridge->id;
-        }
+        [$source, $role] = $listingType === 'buyer_criteria'
+            ? [BuyerAgentAuction::findOrFail($sourceId), 'buyer']
+            : [TenantAgentAuction::findOrFail($sourceId), 'tenant'];
 
-        $source = TenantAgentAuction::findOrFail($sourceId);
-        $bridge = OfferAuction::firstOrCreate(
-            ['listing_id' => "tenant_criteria:{$sourceId}"],
-            [
-                'user_id'     => $source->user_id,
-                'title'       => $source->title,
-                'is_draft'    => false,
-                'is_approved' => true,
-            ]
-        );
-        return $bridge->id;
+        return app(\App\Services\Offers\ListingOfferAuctionLinker::class)
+            ->ensureFor($source, $role)
+            ->id;
     }
 
     /**

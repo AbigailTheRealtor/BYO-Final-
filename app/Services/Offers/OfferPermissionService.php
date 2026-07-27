@@ -65,6 +65,13 @@ class OfferPermissionService
             return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot submit: the bidding period for this listing has closed.'];
         }
 
+        // Timed listings fail closed: no canonical window means no deadline to
+        // submit against, so the UI hides Submit rather than offering an action
+        // the server-side backstop would refuse.
+        if (app(BiddingWindowService::class)->isUninitializedForOfferAuction($offer->offerAuction)) {
+            return ['allowed' => false, 'action' => $action, 'reason' => BiddingWindowService::UNINITIALIZED_MESSAGE];
+        }
+
         return ['allowed' => true, 'action' => $action, 'reason' => ''];
     }
 

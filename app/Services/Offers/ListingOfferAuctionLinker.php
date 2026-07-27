@@ -2,10 +2,12 @@
 
 namespace App\Services\Offers;
 
+use App\Models\BuyerAgentAuction;
 use App\Models\LandlordAgentAuction;
 use App\Models\OfferAuction;
 use App\Models\SellerAgentAuction;
 use App\Models\SellerAgentAuctionMeta;
+use App\Models\TenantAgentAuction;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -47,9 +49,34 @@ class ListingOfferAuctionLinker
     }
 
     /**
+     * Criteria roles address their OfferAuction by a deterministic listing_id
+     * key rather than by meta alone.
+     *
+     * offer_auctions.listing_id carries a UNIQUE index, so "buyer_criteria:{id}"
+     * can only ever name one row. That is what makes a second auction for the
+     * same listing impossible no matter which path runs first — publication or a
+     * legacy first-offer submission.
+     */
+    private const CRITERIA_KEY_PREFIX = [
+        'buyer'  => 'buyer_criteria:',
+        'tenant' => 'tenant_criteria:',
+    ];
+
+    /**
+     * The canonical listing_id key for a criteria listing, or null for the roles
+     * that key their auctions by meta instead.
+     */
+    public static function criteriaKey(string $role, int $listingId): ?string
+    {
+        $prefix = self::CRITERIA_KEY_PREFIX[$role] ?? null;
+
+        return $prefix ? $prefix . $listingId : null;
+    }
+
+    /**
      * Return the linked OfferAuction, creating one on first call.
      *
-     * @param  string  $role  'seller' or 'landlord'.
+     * @param  string  $role  'seller', 'landlord', 'buyer' or 'tenant'.
      */
     public function ensureFor(Model $listing, string $role): OfferAuction
     {
@@ -59,9 +86,42 @@ class ListingOfferAuctionLinker
             return $existing;
         }
 
+        if (isset(self::CRITERIA_KEY_PREFIX[$role])) {
+            return $this->ensureForCriteria($listing, $role);
+        }
+
         $offerAuction = $role === 'landlord'
             ? $this->createForLandlord($listing)
             : $this->createForSeller($listing);
+
+        $listing->saveMeta('linked_offer_auction_id', $offerAuction->id);
+
+        return $offerAuction;
+    }
+
+    /**
+     * Buyer / Tenant criteria listings.
+     *
+     * firstOrCreate on the unique listing_id key reproduces exactly the row
+     * OfferController::resolveOfferAuctionId() has always produced, so an auction
+     * created earlier by a first-offer submission is ADOPTED rather than
+     * duplicated, and every offer already attached to it keeps resolving.
+     *
+     * The linked_offer_auction_id meta is written too, so these listings answer
+     * resolve() the same way Seller and Landlord do and the shared search-card
+     * window map needs no role-specific branch.
+     */
+    private function ensureForCriteria(Model $listing, string $role): OfferAuction
+    {
+        $offerAuction = OfferAuction::firstOrCreate(
+            ['listing_id' => self::criteriaKey($role, (int) $listing->id)],
+            [
+                'user_id'     => $listing->user_id,
+                'title'       => $listing->title,
+                'is_draft'    => false,
+                'is_approved' => true,
+            ]
+        );
 
         $listing->saveMeta('linked_offer_auction_id', $offerAuction->id);
 
@@ -104,6 +164,25 @@ class ListingOfferAuctionLinker
 
             if ($seller) {
                 return [$seller, 'seller'];
+            }
+        }
+
+        // Criteria roles are addressed by the listing_id key, not by meta. The
+        // server-side bidding guards reach the listing through here, so without
+        // this branch a Buyer/Tenant window could never be enforced.
+        $listingId = (string) ($offerAuction->listing_id ?? '');
+
+        foreach (self::CRITERIA_KEY_PREFIX as $role => $prefix) {
+            if (! str_starts_with($listingId, $prefix)) {
+                continue;
+            }
+
+            $sourceId = (int) substr($listingId, strlen($prefix));
+            $model    = $role === 'buyer' ? BuyerAgentAuction::class : TenantAgentAuction::class;
+            $listing  = $model::with('meta')->find($sourceId);
+
+            if ($listing) {
+                return [$listing, $role];
             }
         }
 

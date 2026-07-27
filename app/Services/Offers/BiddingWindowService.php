@@ -154,6 +154,37 @@ class BiddingWindowService
         return $this->forOfferAuction($offerAuction)->isClosed();
     }
 
+    /**
+     * The single user-facing explanation for an uninitialized timed listing.
+     *
+     * Kept here so the draft-creation guard, the submit backstop and the UI gate
+     * cannot drift into telling a bidder three different things.
+     */
+    public const UNINITIALIZED_MESSAGE = "This listing's bidding period has not been initialized. "
+        . 'The listing owner must republish or initialize the bidding window before offers can be submitted.';
+
+    /**
+     * Is this a Bidding Period listing whose canonical window was never stamped?
+     *
+     * TIMED LISTINGS FAIL CLOSED. A Bidding Period listing missing either
+     * canonical timestamp does not have a deadline, and a bid accepted against
+     * no deadline cannot be adjudicated fairly — there is no defensible answer
+     * to "was this bid in time?". Such a listing therefore refuses new offers
+     * outright rather than accepting them into an undefined window.
+     *
+     * This is deliberately NOT the same as isClosed(). A closed window has a
+     * real deadline that has passed; an uninitialized one has no deadline at
+     * all. isClosed() stays false here so nothing infers a deadline that was
+     * never set, and the two conditions carry separate messages.
+     *
+     * Traditional listings are unaffected: they are not Bidding Period, so
+     * BiddingWindow::isUninitialized() is false for them by construction.
+     */
+    public function isUninitializedForOfferAuction(?OfferAuction $offerAuction): bool
+    {
+        return $this->forOfferAuction($offerAuction)->isUninitialized();
+    }
+
     public function isBiddingPeriod(?string $auctionType): bool
     {
         return in_array(strtolower(trim((string) $auctionType)), self::BIDDING_TYPES, true);

@@ -515,24 +515,20 @@
         }
     @endphp
     @php
-        // Bidding Period countdown — DELIBERATELY DISABLED for Tenant criteria listings.
-        //
-        // The canonical bidding deadline is offer_auctions.bidding_ends_at, stored
-        // once at activation. Tenant criteria listings have no listing<->OfferAuction
-        // linkage (ListingOfferAuctionLinker::ensureFor covers seller and landlord
-        // only), so no canonical window can be resolved for them.
-        //
-        // Owner-Approved direction (2026-07-27): where a role cannot resolve a
-        // canonical deadline, REMOVE the countdown rather than display an incorrect
-        // or synthetic one. This view previously derived the deadline from
-        // expiration_date (a LISTING expiry) and fell back to created_at (when the
-        // DRAFT was saved) — both are banned outright by Invariants 1, 2, 9 and 10.
-        //
-        // Restoring a countdown here requires tenant-role OfferAuction linkage plus
-        // publish-time stamping, not a change in this file.
-        $hasBPTimer            = false;
-        $timerRemainingSeconds = 0;
-        $_timerEnd             = null;
+        // Bidding Period countdown — canonical window from BiddingWindowService.
+        // RESTORED in Stage 1: Tenant listings now create their OfferAuction and stamp
+        // bidding_starts_at / bidding_ends_at at PUBLICATION, so a canonical deadline
+        // exists to read. The value is READ from offer_auctions.bidding_ends_at.
+        // Listings published before Stage 1 report an uninitialized window and render
+        // no countdown. No arithmetic here; expiration_date is never consulted
+        // (Invariants 4, 9, 10).
+        $bw                    = $biddingWindow ?? \App\Services\Offers\BiddingWindow::notBidding();
+        $hasBPTimer            = $bw->isBiddingPeriod && $bw->hasDeadline();
+        $timerRemainingSeconds = $bw->remainingSeconds();
+        $bpEndsAtDisplay       = $bw->endsAtForDisplay();
+        $bpTimezone            = $bw->displayTimezoneAbbreviation();
+        $bpClosed              = $bw->isClosed();
+        $_timerEnd             = $bpEndsAtDisplay;
     @endphp
     <div class="tcl-hero mb-4">
         <div class="row g-0" style="min-height:280px;">
@@ -1635,11 +1631,14 @@
                 </div>
                 @endif
 
-                {{-- "Bidding Ends" sidebar REMOVED for Tenant criteria listings.
-                     It labelled the LISTING expiration date as the bidding close
-                     date, which is the exact conflation Invariants 1, 2 and 10
-                     forbid. Tenant listings have no canonical bidding_ends_at, so
-                     there is no correct value to show and none is invented. --}}
+                @if($hasBPTimer && $bpEndsAtDisplay)
+                <div class="mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
+                    <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;">
+                        <span><i class="fa-regular fa-clock me-1"></i>Bidding Ends</span>
+                        <span style="font-weight:700;color:#475569;">{{ $bpEndsAtDisplay->format('M j, Y g:i A') }} {{ $bpTimezone }}</span>
+                    </div>
+                </div>
+                @endif
 
                 {{-- Activity section hidden until live data is available --}}
                 @if(false)

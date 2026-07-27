@@ -75,6 +75,32 @@ class OfferSubmissionService
             ];
         }
 
+        // Timed listings fail closed. A Bidding Period listing with no canonical
+        // window has no deadline to measure this submission against, so the bid
+        // is refused rather than landed into an undefined window. Nothing is
+        // stamped here — submission never initializes a bidding period.
+        if ($this->biddingWindow->isUninitializedForOfferAuction($offer->offerAuction)) {
+            $eventLog = $this->eventLogger->log(
+                offer: $offer,
+                actorId: $actorId,
+                actorRole: $actorRole,
+                eventType: 'forbidden_transition_attempt',
+                fromStatus: $fromStatus,
+                toStatus: 'submitted',
+                metadata: $metadata + ['blocked_by' => 'bidding_period_uninitialized'],
+                ipAddress: $ipAddress,
+            );
+
+            return [
+                'allowed'     => false,
+                'offer'       => $offer,
+                'from_status' => $fromStatus,
+                'to_status'   => 'submitted',
+                'reason'      => BiddingWindowService::UNINITIALIZED_MESSAGE,
+                'event_log'   => $eventLog,
+            ];
+        }
+
         $validation = $this->stateMachine->validateTransition($fromStatus, 'submitted');
 
         if (! $validation['allowed']) {

@@ -23,7 +23,44 @@ use Illuminate\Support\Facades\Log;
 trait StampsBiddingActivation
 {
     /**
-     * @param  string  $role  'seller' or 'landlord'.
+     * Role for a listing model, or null when the model is not a listing type
+     * that can carry a bidding window.
+     *
+     * The Tenant components build their auction from a dynamic $auctionClass
+     * chosen by user_type, so they cannot pass a literal role. Inferring from the
+     * model is also safer than trusting a component property that a form post
+     * could influence.
+     */
+    protected function inferListingRole(Model $listing): ?string
+    {
+        return match (true) {
+            $listing instanceof \App\Models\SellerAgentAuction   => 'seller',
+            $listing instanceof \App\Models\LandlordAgentAuction => 'landlord',
+            $listing instanceof \App\Models\BuyerAgentAuction    => 'buyer',
+            $listing instanceof \App\Models\TenantAgentAuction   => 'tenant',
+            default                                              => null,
+        };
+    }
+
+    /**
+     * Publish-time activation for callers that cannot name their own role.
+     *
+     * No-ops on an unrecognised model rather than guessing — a wrong role would
+     * key the auction under the wrong criteria prefix.
+     */
+    protected function stampBiddingActivationAuto(Model $listing): void
+    {
+        $role = $this->inferListingRole($listing);
+
+        if ($role === null) {
+            return;
+        }
+
+        $this->stampBiddingActivation($listing, $role);
+    }
+
+    /**
+     * @param  string  $role  'seller', 'landlord', 'buyer' or 'tenant'.
      */
     protected function stampBiddingActivation(Model $listing, string $role): void
     {

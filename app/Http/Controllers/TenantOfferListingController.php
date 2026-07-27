@@ -129,7 +129,10 @@ class TenantOfferListingController extends Controller
             $locationIntelligenceSummary = ['summary_lines' => []];
         }
 
+        $biddingWindow = $this->biddingWindowFor($auction);
+
         return view('offer-listing.tenant.view', [
+            'biddingWindow'              => $biddingWindow,
             'auction'                    => $auction,
             'meta'                       => $meta,
             'ownerId'                    => $auction->user_id,
@@ -251,17 +254,23 @@ class TenantOfferListingController extends Controller
         $sort = $request->sort ?? 'newest';
         if ($sort === 'most_viewed') {
             $auctions->orderByRaw('(SELECT COUNT(*) FROM tenant_agent_auction_bids WHERE tenant_agent_auction_bids.tenant_agent_auction_id = tenant_agent_auctions.id) DESC');
-        } elseif ($sort === 'ending_soon') {
-            // NO canonical bidding deadline exists for Tenant criteria listings —
-            // they carry no listing<->OfferAuction link, so there is nothing to
-            // order by. The previous implementation ordered by
-            // created_at + auction_time and fell back to expiration_date; both are
-            // banned outright (Invariants 4, 9, 10).
+                } elseif ($sort === 'ending_soon') {
+            // Ordering reads the SAME canonical timestamp as every countdown and
+            // every enforcement check: the stored offer_auctions.bidding_ends_at,
+            // reached through the listing's linked_offer_auction_id meta.
             //
-            // Owner-Approved direction (2026-07-27): rather than rank by a
-            // synthetic deadline, fall back to newest-first. Restoring a true
-            // "ending soon" sort requires Tenant-role OfferAuction linkage.
-            $auctions->orderBy('created_at', 'DESC');
+            // No arithmetic, no auction_time, no created_at, no expiration_date.
+            // Listings with no canonical window sort last rather than being given
+            // a synthetic deadline (Invariants 3, 4, 5, 6, 9, 10).
+            $endsAt = "(SELECT oa.bidding_ends_at FROM offer_auctions oa
+                        WHERE oa.id = (SELECT m.meta_value FROM tenant_agent_auction_metas m
+                                       WHERE m.tenant_agent_auction_id = tenant_agent_auctions.id
+                                         AND m.meta_key = 'linked_offer_auction_id'
+                                       LIMIT 1))";
+
+            $auctions->orderByRaw("({$endsAt}) IS NULL ASC")
+                     ->orderByRaw("({$endsAt}) ASC")
+                     ->orderBy('tenant_agent_auctions.created_at', 'DESC');
         } else {
             $auctions->orderBy('created_at', 'DESC');
         }
@@ -269,6 +278,37 @@ class TenantOfferListingController extends Controller
         $page_data['count'] = (clone $auctions)->count();
         $page_data['pAuctions'] = $auctions->paginate(12);
 
+        $page_data['biddingWindows'] = $this->resolveBiddingWindows($page_data['pAuctions']);
+
         return view('offer-listing.tenant.search', $page_data);
     }
+
+    /**
+     * The canonical bidding window for this listing, read from the stored
+     * offer_auctions.bidding_ends_at. Never computed here.
+     */
+    private function biddingWindowFor($auction): \App\Services\Offers\BiddingWindow
+    {
+        $linker       = app(\App\Services\Offers\ListingOfferAuctionLinker::class);
+        $offerAuction = $linker->resolve($auction);
+
+        return app(\App\Services\Offers\BiddingWindowService::class)->for($auction, $offerAuction);
+    }
+
+    /**
+     * Canonical bidding windows for a page of listings, keyed by listing id.
+     *
+     * @return array<int, \App\Services\Offers\BiddingWindow>
+     */
+    private function resolveBiddingWindows($listings): array
+    {
+        $windows = [];
+
+        foreach ($listings as $listing) {
+            $windows[$listing->id] = $this->biddingWindowFor($listing);
+        }
+
+        return $windows;
+    }
+
 }

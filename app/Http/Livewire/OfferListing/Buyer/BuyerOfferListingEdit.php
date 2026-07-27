@@ -16,6 +16,7 @@ use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
 
 class BuyerOfferListingEdit extends Component
 {
+    use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use WithFileUploads;
     use ResolvesOwnedAuction;
     use HasImportantPlaces;
@@ -2902,6 +2903,12 @@ class BuyerOfferListingEdit extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            // Listing is now Active — create/resolve the canonical OfferAuction and
+            // start the bidding clock, once, in this same publish path. Bidding must
+            // begin at PUBLICATION, never at first offer submission (Stage 1).
+            // Deliberately NOT reachable from any saveDraft() path.
+            $this->stampBiddingActivationAuto($auction);
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('buyer', $this->listingId);
 

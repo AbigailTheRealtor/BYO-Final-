@@ -24,6 +24,7 @@ use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
 
 class TenantOfferListingEdit extends Component
 {
+    use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use WithFileUploads;
     use ResolvesOwnedAuction;
     use HasImportantPlaces;
@@ -3243,6 +3244,19 @@ class TenantOfferListingEdit extends Component
             // LOCKED: auction_time (timer settings) cannot be changed after listing creation
             // Re-save from the value loaded in loadAuctionData() (populated from DB), not from form input.
             $auction->saveMeta('auction_time', $this->auction_time);
+
+            // Listing is now Active — create/resolve the canonical OfferAuction and
+            // start the bidding clock, once. Bidding must begin at PUBLICATION,
+            // never at first offer submission (Stage 1).
+            //
+            // This component shares one update() between draft and publish saves,
+            // so the draft case is excluded explicitly: a draft save must never
+            // start the clock. markActivated() is idempotent regardless, so a later
+            // real publish still stamps exactly once.
+            if (! $this->_isDraftSave) {
+                $this->stampBiddingActivationAuto($auction);
+            }
+
             $auction->saveMeta('agent_bid_visibility', $this->agent_bid_visibility);
             $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
             $auction->saveMeta('number_of_unit', $this->number_of_unit);
