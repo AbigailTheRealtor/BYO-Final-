@@ -46,6 +46,7 @@ Each subsystem below maps to a phase of the blueprint. The named doc is the **ow
 | Location Intelligence | Phase 8 | `docs/canonical-field-mapping-spec.md` (contract) + `docs/location-provider-capability-map-proposal.md`, `docs/PHASE_8_PROVIDER_AGNOSTIC_LOCATION_INTELLIGENCE_RECOMMENDATION.md` |
 | Ask AI | Phase 12 | `resources/docs/ASK_AI_ROADMAP_AND_GUARDRAILS.md` (plus the `docs/ask-ai/` and `docs/ask-ai-*` audit clusters) |
 | Matching (Match Check / Matching V2) | Phase 13 | `docs/matching-v2-validation-runbook.md` + `docs/match-check-phase4-*` / `docs/matching-v2-*` scope docs |
+| Listing storage / object-storage migration (HI-05A) | *outside the numbered blueprint phases* | `docs/listing-storage-migration-runbook.md` — operator runbook for `listing-storage:migrate` and `storage:s3-preflight` |
 | Transaction Engine · Marketplace · Operations | *out of scope of the blueprint* | *not yet documented — future separate roadmaps* |
 
 ## Tier 4 — Supporting technical references
