@@ -216,4 +216,250 @@ class ListingObjectMigratorConcurrencyTest extends TestCase
         // The orphan really is still there — which is why it must not be silent.
         $this->assertSame('HELLO', $inner->get('auction/images/a.jpg'));
     }
+
+    // ---------------------------------------------------------------------
+    // Staged forced overwrite (--force-conflicts)
+    //
+    // A forced overwrite is the only path that reaches the upload with an object
+    // already on the destination. Every failure before the final swap must leave
+    // that object exactly as it was.
+    // ---------------------------------------------------------------------
+
+    /** Options for a forced overwrite. */
+    private function force(): array
+    {
+        return ['force_conflicts' => true];
+    }
+
+    /**
+     * Install a destination decorator with per-test hooks, and return the real
+     * faked disk so assertions bypass the decorator.
+     *
+     * @param  array<string, mixed>  $hooks  onWrite, throwOnWrite, corruptTo, failMove, record
+     */
+    private function decorateDest(string $disk, array $hooks)
+    {
+        $inner = Storage::disk($disk);
+
+        Storage::set($disk, new class($inner, $hooks)
+        {
+            public function __construct(private $inner, private array $hooks)
+            {
+            }
+
+            public function writeStream($path, $resource, array $options = [])
+            {
+                if (isset($this->hooks['record'])) {
+                    ($this->hooks['record'])($path);
+                }
+                if (isset($this->hooks['onWrite'])) {
+                    ($this->hooks['onWrite'])();
+                }
+                if (! empty($this->hooks['throwOnWrite'])) {
+                    throw new \RuntimeException('adapter refused the staged write');
+                }
+                if (isset($this->hooks['corruptTo'])) {
+                    // Land bytes that are not what the source holds.
+                    return $this->inner->put($path, $this->hooks['corruptTo']);
+                }
+
+                return $this->inner->writeStream($path, $resource, $options);
+            }
+
+            public function move($from, $to)
+            {
+                if (! empty($this->hooks['failMove'])) {
+                    return false;
+                }
+
+                return $this->inner->move($from, $to);
+            }
+
+            public function __call($method, $args)
+            {
+                return $this->inner->{$method}(...$args);
+            }
+        });
+
+        return $inner;
+    }
+
+    /** @return array<int, string> staged objects currently on the disk */
+    private function stagedResidue($disk): array
+    {
+        return $disk->allFiles(ListingObjectMigrator::STAGING_PREFIX);
+    }
+
+    /** The happy path still replaces the old object. */
+    public function test_forced_overwrite_without_a_race_replaces_the_destination(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'NEWBYTES');
+        Storage::disk('s3_public')->put('auction/images/a.jpg', 'OLD');
+
+        $r = $this->migrator()->process(false, 'auction/images/a.jpg', $this->force());
+
+        $this->assertSame(ListingObjectMigrator::MIGRATED, $r['status']);
+        $this->assertSame('NEWBYTES', Storage::disk('s3_public')->get('auction/images/a.jpg'));
+        $this->assertTrue($r['staging']['used']);
+        $this->assertSame('ok', $r['staging']['swap']);
+    }
+
+    /** No staged object survives a success. */
+    public function test_no_staging_residue_remains_after_a_successful_forced_overwrite(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'NEWBYTES');
+        Storage::disk('s3_public')->put('auction/images/a.jpg', 'OLD');
+
+        $this->migrator()->process(false, 'auction/images/a.jpg', $this->force());
+
+        $this->assertEmpty($this->stagedResidue(Storage::disk('s3_public')));
+    }
+
+    /** A source deleted mid-staging must not cost the destination its object. */
+    public function test_source_deleted_during_staged_upload_leaves_the_destination_untouched(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'NEWBYTES');
+        Storage::disk('s3_public')->put('auction/images/a.jpg', 'OLD');
+
+        $dest = $this->decorateDest('s3_public', [
+            'onWrite' => fn () => Storage::disk('public')->delete('auction/images/a.jpg'),
+        ]);
+
+        $r = $this->migrator()->process(false, 'auction/images/a.jpg', $this->force());
+
+        $this->assertSame(ListingObjectMigrator::SOURCE_VANISHED, $r['status']);
+        $this->assertSame('OLD', $dest->get('auction/images/a.jpg')); // preserved
+        $this->assertEmpty($this->stagedResidue($dest));
+    }
+
+    /** Same for a source replaced mid-staging. */
+    public function test_source_replaced_during_staged_upload_leaves_the_destination_untouched(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'NEWBYTES');
+        Storage::disk('s3_public')->put('auction/images/a.jpg', 'OLD');
+
+        $dest = $this->decorateDest('s3_public', [
+            'onWrite' => fn () => Storage::disk('public')->put('auction/images/a.jpg', 'OTHERBYT'),
+        ]);
+
+        $r = $this->migrator()->process(false, 'auction/images/a.jpg', $this->force());
+
+        $this->assertSame(ListingObjectMigrator::SOURCE_CHANGED, $r['status']);
+        $this->assertSame('OLD', $dest->get('auction/images/a.jpg')); // preserved
+        $this->assertEmpty($this->stagedResidue($dest));
+    }
+
+    /** Bytes that fail verification are never promoted over the original. */
+    public function test_staged_verification_failure_leaves_the_destination_untouched(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'NEWBYTES');
+        Storage::disk('s3_public')->put('auction/images/a.jpg', 'OLD');
+
+        $dest = $this->decorateDest('s3_public', ['corruptTo' => 'TRUNC']);
+
+        $r = $this->migrator()->process(false, 'auction/images/a.jpg', $this->force());
+
+        $this->assertSame(ListingObjectMigrator::ERROR, $r['status']);
+        $this->assertContains($r['error'], [
+            ListingObjectMigrator::E_PARTIAL_UPLOAD,
+            ListingObjectMigrator::E_CHECKSUM_MISMATCH,
+        ]);
+        $this->assertSame('OLD', $dest->get('auction/images/a.jpg')); // preserved
+        $this->assertEmpty($this->stagedResidue($dest));
+    }
+
+    /** A staged write that throws must not have cost the original either. */
+    public function test_staged_write_failure_leaves_the_destination_untouched(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'NEWBYTES');
+        Storage::disk('s3_public')->put('auction/images/a.jpg', 'OLD');
+
+        $dest = $this->decorateDest('s3_public', ['throwOnWrite' => true]);
+
+        $r = $this->migrator()->process(false, 'auction/images/a.jpg', $this->force());
+
+        $this->assertSame(ListingObjectMigrator::ERROR, $r['status']);
+        $this->assertSame('OLD', $dest->get('auction/images/a.jpg')); // preserved
+        $this->assertEmpty($this->stagedResidue($dest));
+    }
+
+    /**
+     * The swap is delete-then-move and is NOT atomic. If the move does not take,
+     * the original is already gone — reads fall back to local, which is correct —
+     * but this run migrated nothing and must not say otherwise.
+     */
+    public function test_final_move_failure_is_reported_as_an_error_not_migrated(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'NEWBYTES');
+        Storage::disk('s3_public')->put('auction/images/a.jpg', 'OLD');
+
+        $dest = $this->decorateDest('s3_public', ['failMove' => true]);
+
+        $r = $this->migrator()->process(false, 'auction/images/a.jpg', $this->force());
+
+        $this->assertSame(ListingObjectMigrator::ERROR, $r['status']);
+        $this->assertNotSame(ListingObjectMigrator::MIGRATED, $r['status']);
+        $this->assertSame('move_failed', $r['staging']['swap']);
+        // No stale object is served in place of the real one, and no residue.
+        $dest->assertMissing('auction/images/a.jpg');
+        $this->assertEmpty($this->stagedResidue($dest));
+    }
+
+    /** Staged keys live beneath the one authoritative prefix, never a listing key. */
+    public function test_staged_keys_are_generated_beneath_the_authoritative_prefix(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'NEWBYTES');
+        Storage::disk('s3_public')->put('auction/images/a.jpg', 'OLD');
+
+        $written = [];
+        $this->decorateDest('s3_public', ['record' => function ($path) use (&$written) {
+            $written[] = $path;
+        }]);
+
+        $this->migrator()->process(false, 'auction/images/a.jpg', $this->force());
+
+        $this->assertCount(1, $written);
+        $this->assertStringStartsWith(ListingObjectMigrator::STAGING_PREFIX.'/', $written[0]);
+        $this->assertNotSame('auction/images/a.jpg', $written[0]);
+    }
+
+    /** Each attempt gets its own staged key, so concurrent runs cannot collide. */
+    public function test_staged_keys_are_unique_per_attempt(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'NEWBYTES');
+        Storage::disk('s3_public')->put('auction/images/a.jpg', 'OLD');
+
+        $written = [];
+        $this->decorateDest('s3_public', ['record' => function ($path) use (&$written) {
+            $written[] = $path;
+        }]);
+
+        $this->migrator()->process(false, 'auction/images/a.jpg', $this->force());
+
+        // The first overwrite left the destination identical to the source, which
+        // the second call would short-circuit as skipped_identical before writing.
+        // Make it differ again so a second forced overwrite genuinely happens.
+        Storage::disk('s3_public')->put('auction/images/a.jpg', 'OLDAGAIN');
+        $this->migrator()->process(false, 'auction/images/a.jpg', $this->force());
+
+        $this->assertCount(2, $written);
+        $this->assertNotSame($written[0], $written[1]);
+    }
+
+    /** Regression: the destination-missing path must not stage at all. */
+    public function test_destination_missing_path_does_not_stage(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'HELLO');
+
+        $written = [];
+        $this->decorateDest('s3_public', ['record' => function ($path) use (&$written) {
+            $written[] = $path;
+        }]);
+
+        $r = $this->migrator()->process(false, 'auction/images/a.jpg', []);
+
+        $this->assertSame(ListingObjectMigrator::MIGRATED, $r['status']);
+        $this->assertFalse($r['staging']['used']);
+        $this->assertSame(['auction/images/a.jpg'], $written); // written straight to the final key
+    }
 }

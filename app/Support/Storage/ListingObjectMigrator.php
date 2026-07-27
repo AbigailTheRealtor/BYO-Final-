@@ -52,6 +52,18 @@ class ListingObjectMigrator
 
     private const CHUNK = 1048576; // 1 MiB
 
+    /**
+     * R2-E1 — the single authoritative home for staged forced-overwrite objects.
+     *
+     * The one place this literal is defined; everything else (key generation,
+     * cleanup, tests) derives from it. Staged keys live on the DESTINATION only,
+     * and enumeration reads the local SOURCE, so they are never candidates for
+     * migration and need no exclusion entry. The prefix is deliberately outside
+     * any listing namespace, so a staged key can never collide with, shadow, or
+     * be served in place of a real listing object.
+     */
+    public const STAGING_PREFIX = '_migration-staging';
+
     public function __construct(private ListingStorageDisks $disks)
     {
     }
@@ -213,60 +225,125 @@ class ListingObjectMigrator
 
             // ---- streamed upload ----
             $record['attempts'] = 1;
-            // League v1 writeStream() refuses an existing key; on a forced
-            // overwrite remove the stale object first (we only reach here when
-            // the destination is missing, or under --force-conflicts).
-            if ($destExists) {
-                $dest->delete($key);
-            }
-            $stream = $src->readStream($key);
-            if ($stream === false || $stream === null) {
-                throw new RuntimeException('Could not open source stream.');
-            }
-            try {
-                $dest->writeStream($key, $stream);
-            } finally {
-                if (is_resource($stream)) {
-                    fclose($stream);
-                }
-            }
 
-            // ---- R2-E1: revalidate the source before trusting the copy ----
-            // A full population runs against a LIVE app with dual-write on, so the
-            // decisions made above (exists + size + hash) can be stale by the time
-            // the upload lands. Checked BEFORE the destination verification, which
-            // compares against that same stale hash and would otherwise report a
-            // raced copy as migrated (or as a false checksum-mismatch alarm).
-            $raced = $this->sourceRacedDuringCopy($src, $key, $localSha);
-            if ($raced !== null) {
-                if (! $this->rollback($dest, $key)) {
-                    // The whole point is to leave no orphan; if the rollback did
-                    // not take, fail loudly rather than silently diverge.
+            // R2-E1 — a forced overwrite is the only path that reaches here with an
+            // object already on the destination, and that object is the one thing a
+            // failure here could destroy. Writing it directly (League v1 refuses an
+            // existing key, so the old object had to be deleted FIRST) meant any
+            // failure after that delete — a race, a bad upload, a thrown adapter —
+            // left the key empty with the original already gone.
+            //
+            // So a forced overwrite stages: the new bytes go to a throwaway key,
+            // and the original is not touched until those bytes are proven good and
+            // unraced. The common destination-missing path is unchanged — it writes
+            // straight to the final key, because there is nothing there to preserve.
+            $staged = ($destExists && $force) ? $this->stagedKeyFor($key) : null;
+            $writeKey = $staged ?? $key;
+            $record['staging'] = ['used' => $staged !== null, 'swap' => null];
+
+            try {
+                $stream = $src->readStream($key);
+                if ($stream === false || $stream === null) {
+                    throw new RuntimeException('Could not open source stream.');
+                }
+                try {
+                    $dest->writeStream($writeKey, $stream);
+                } finally {
+                    if (is_resource($stream)) {
+                        fclose($stream);
+                    }
+                }
+
+                // ---- R2-E1: revalidate the source before trusting the copy ----
+                // A full population runs against a LIVE app with dual-write on, so
+                // the decisions made above (exists + size + hash) can be stale by the
+                // time the upload lands. Checked BEFORE the destination verification,
+                // which compares against that same stale hash and would otherwise
+                // report a raced copy as migrated (or as a false checksum alarm).
+                $raced = $this->sourceRacedDuringCopy($src, $key, $localSha);
+                if ($raced !== null) {
+                    // Discard only what this run wrote. When staged, that is the
+                    // throwaway key and the original destination object is untouched.
+                    if (! $this->rollback($dest, $writeKey)) {
+                        // The whole point is to leave no orphan; if the rollback did
+                        // not take, fail loudly rather than silently diverge.
+                        $record['status'] = self::ERROR;
+                        $record['error'] = self::E_UNKNOWN;
+
+                        return $record;
+                    }
+
+                    $record['status'] = $raced;
+
+                    return $record;
+                }
+
+                // ---- verify what we actually wrote ----
+                $ok = $this->verifyAgainstDest($dest, $writeKey, $size, $localSha, $record);
+                if (! $ok) {
+                    $error = ($record['dest_verification']['size_match'] === false)
+                        ? self::E_PARTIAL_UPLOAD
+                        : self::E_CHECKSUM_MISMATCH;
+                    // Bad bytes are never promoted, and never left behind either.
+                    $this->rollback($dest, $writeKey);
+                    $record['status'] = self::ERROR;
+                    $record['error'] = $error;
+
+                    return $record;
+                }
+
+                if ($staged === null) {
+                    $record['status'] = self::MIGRATED;
+
+                    return $record;
+                }
+
+                // ---- final swap: NOT atomic ----
+                // League v1 has no overwriting copy/rename, so the original must be
+                // removed before the staged object can take its key. That leaves a
+                // brief window in which neither is at the final key. It is two
+                // metadata operations on already-uploaded bytes rather than the whole
+                // upload, and the local source stays authoritative throughout, so a
+                // rerun always converges — but it is a window, not an atomic swap.
+                $dest->delete($key);
+                if (! $this->promote($dest, $staged, $key)) {
+                    // The original is already gone and the staged object did not take
+                    // its place. Reads fall back to local (correct bytes, no stale
+                    // object), and a rerun re-copies — but this run did not migrate
+                    // anything and must not claim it did.
+                    $record['staging']['swap'] = 'move_failed';
                     $record['status'] = self::ERROR;
                     $record['error'] = self::E_UNKNOWN;
 
                     return $record;
                 }
+                $record['staging']['swap'] = 'ok';
 
-                $record['status'] = $raced;
+                // ---- verify the object that actually landed at the final key ----
+                // The staged bytes verified before the move; this confirms the move
+                // itself did not truncate or mangle them.
+                $ok = $this->verifyAgainstDest($dest, $key, $size, $localSha, $record);
+                if (! $ok) {
+                    $record['status'] = self::ERROR;
+                    $record['error'] = ($record['dest_verification']['size_match'] === false)
+                        ? self::E_PARTIAL_UPLOAD
+                        : self::E_CHECKSUM_MISMATCH;
+
+                    return $record;
+                }
+
+                $record['status'] = self::MIGRATED;
 
                 return $record;
+            } finally {
+                // Staged residue must never outlive the attempt, on any recoverable
+                // exit path. After a successful promote the key is already gone, so
+                // this is a no-op there. Where the swap failed the staged bytes are
+                // discarded too: the local source is untouched and authoritative, so
+                // a rerun re-copies, and an orphan under the staging prefix would
+                // otherwise accumulate silently on every failure.
+                $this->discardStaged($dest, $staged);
             }
-
-            // ---- verify the upload ----
-            $ok = $this->verifyAgainstDest($dest, $key, $size, $localSha, $record);
-            if (! $ok) {
-                $record['status'] = self::ERROR;
-                $record['error'] = ($record['dest_verification']['size_match'] === false)
-                    ? self::E_PARTIAL_UPLOAD
-                    : self::E_CHECKSUM_MISMATCH;
-
-                return $record;
-            }
-
-            $record['status'] = self::MIGRATED;
-
-            return $record;
         } catch (Throwable $e) {
             $record['status'] = self::ERROR;
             $record['error'] = $this->classify($e);
@@ -334,6 +411,58 @@ class ListingObjectMigrator
             return ! $dest->exists($key);
         } catch (Throwable $e) {
             return false;
+        }
+    }
+
+    /**
+     * R2-E1 — a throwaway destination key for one staged forced-overwrite attempt.
+     *
+     * Unique per attempt: a random suffix, so a retry, a concurrent run, or two
+     * keys hashing alike can never share a staged object. The sha1 of the source
+     * key is carried only so a stray object can be correlated back to its key
+     * during an investigation — it is not a lookup path, and it deliberately does
+     * not embed the original key, which would reproduce listing structure (and,
+     * for private scope, filenames) under the staging prefix.
+     *
+     * The result is flat, ASCII, fixed-length and extension-suffixed, which keeps
+     * it safe across local, S3 and other adapters regardless of the characters in
+     * the source key.
+     */
+    private function stagedKeyFor(string $key): string
+    {
+        return self::STAGING_PREFIX.'/'.sha1($key).'-'.bin2hex(random_bytes(16)).'.tmp';
+    }
+
+    /**
+     * Move a verified staged object onto its final key. Returns false when the
+     * object is not there afterwards, whatever the adapter reported.
+     */
+    private function promote($dest, string $stagedKey, string $key): bool
+    {
+        try {
+            $dest->move($stagedKey, $key);
+        } catch (Throwable $e) {
+            return false;
+        }
+
+        return $dest->exists($key);
+    }
+
+    /** Best-effort removal of a staged object; never throws, never fails a run. */
+    private function discardStaged($dest, ?string $stagedKey): void
+    {
+        if ($stagedKey === null) {
+            return;
+        }
+
+        try {
+            if ($dest->exists($stagedKey)) {
+                $dest->delete($stagedKey);
+            }
+        } catch (Throwable $e) {
+            // Swallowed on purpose: residue under the staging prefix is never
+            // served and never migrated, so it must not turn an otherwise good
+            // result into a failure.
         }
     }
 
