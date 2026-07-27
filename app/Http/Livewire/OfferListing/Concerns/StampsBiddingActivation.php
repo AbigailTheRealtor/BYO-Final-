@@ -38,9 +38,12 @@ trait StampsBiddingActivation
             // Traditional listing still needs one for its offer/application form.
             $offerAuction = app(ListingOfferAuctionLinker::class)->ensureFor($listing, $role);
 
-            // Only a Bidding Period listing has a clock to start.
+            // Only a Bidding Period listing has a clock to start. auction_time is
+            // read HERE and nowhere else in the runtime — markActivated() stores
+            // both ends of the window, after which the duration is never
+            // consulted again (Owner-Approved Decision A).
             if ($windows->isBiddingPeriod($this->auction_type ?? null)) {
-                $windows->markActivated($offerAuction);
+                $windows->markActivated($offerAuction, $this->auction_time ?? null);
             }
         } catch (\Throwable $e) {
             Log::warning('[BIDDING ACTIVATION] Could not link or stamp listing', [

@@ -44,7 +44,8 @@ class PublicOfferFeedPrivacyTest extends TestCase
 
         $offerAuction = OfferAuction::factory()->create([
             'user_id'            => $owner->id,
-            'bidding_started_at' => CarbonImmutable::now()->subDay(),
+            'bidding_starts_at' => CarbonImmutable::now()->subDay(),
+            'bidding_ends_at'   => CarbonImmutable::now()->addDays(6),
         ]);
         $listing->saveMeta('linked_offer_auction_id', $offerAuction->id);
 
@@ -63,7 +64,8 @@ class PublicOfferFeedPrivacyTest extends TestCase
 
         $offerAuction = OfferAuction::factory()->create([
             'user_id'            => $owner->id,
-            'bidding_started_at' => CarbonImmutable::now()->subDay(),
+            'bidding_starts_at' => CarbonImmutable::now()->subDay(),
+            'bidding_ends_at'   => CarbonImmutable::now()->addDays(6),
         ]);
         $listing->saveMeta('linked_offer_auction_id', $offerAuction->id);
         $offerAuction->saveMeta('linked_landlord_auction_id', $listing->id);

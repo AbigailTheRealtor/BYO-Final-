@@ -23,7 +23,7 @@ class LandlordOfferListingEdit extends Component
     use WithFileUploads;
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
-    use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // canonical bidding_started_at
+    use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use HasCanonicalPetFee;        // #2 Part B: canonical pet fee (create + edit)
 
     protected $listeners = [

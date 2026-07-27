@@ -65,7 +65,8 @@ class BiddingTermsFreezeTest extends TestCase
 
         $offerAuction = OfferAuction::factory()->create([
             'user_id'            => $owner->id,
-            'bidding_started_at' => CarbonImmutable::now()->subDay(),
+            'bidding_starts_at' => CarbonImmutable::now()->subDay(),
+            'bidding_ends_at'   => CarbonImmutable::now()->addDays(6),
         ]);
         $listing->saveMeta('linked_offer_auction_id', $offerAuction->id);
 
@@ -245,7 +246,8 @@ class BiddingTermsFreezeTest extends TestCase
 
         $offerAuction = OfferAuction::factory()->create([
             'user_id'            => $owner->id,
-            'bidding_started_at' => CarbonImmutable::now()->subDay(),
+            'bidding_starts_at' => CarbonImmutable::now()->subDay(),
+            'bidding_ends_at'   => CarbonImmutable::now()->addDays(6),
         ]);
         $listing->saveMeta('linked_offer_auction_id', $offerAuction->id);
         $listing = $listing->fresh('meta');
@@ -284,7 +286,7 @@ class BiddingTermsFreezeTest extends TestCase
         $offerAuction = app(ListingOfferAuctionLinker::class)->resolve($listing->fresh('meta'));
         $this->assertNotNull($offerAuction, 'Publishing must link an OfferAuction to stamp.');
 
-        $first = $offerAuction->fresh()->bidding_started_at;
+        $first = $offerAuction->fresh()->bidding_starts_at;
         $this->assertNotNull($first);
 
         // Re-publish / re-save.
@@ -292,7 +294,7 @@ class BiddingTermsFreezeTest extends TestCase
 
         $this->assertSame(
             $first->toDateTimeString(),
-            $offerAuction->fresh()->bidding_started_at->toDateTimeString(),
+            $offerAuction->fresh()->bidding_starts_at->toDateTimeString(),
         );
     }
 
@@ -310,7 +312,7 @@ class BiddingTermsFreezeTest extends TestCase
 
         $offerAuction = app(ListingOfferAuctionLinker::class)->resolve($listing->fresh('meta'));
 
-        $this->assertNull($offerAuction?->bidding_started_at);
+        $this->assertNull($offerAuction?->bidding_starts_at);
     }
 
     public function test_landlord_activation_creates_a_correctly_shaped_offer_auction(): void
@@ -329,7 +331,7 @@ class BiddingTermsFreezeTest extends TestCase
         $offerAuction = app(ListingOfferAuctionLinker::class)->resolve($listing->fresh('meta'));
 
         $this->assertNotNull($offerAuction);
-        $this->assertNotNull($offerAuction->bidding_started_at);
+        $this->assertNotNull($offerAuction->bidding_starts_at);
         // Landlord rows must keep the metas the offer detail page relies on.
         $this->assertSame('rental', $offerAuction->info('offer_type'));
         $this->assertSame((string) $listing->id, (string) $offerAuction->info('linked_landlord_auction_id'));

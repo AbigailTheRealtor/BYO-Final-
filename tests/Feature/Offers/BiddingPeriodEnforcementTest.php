@@ -48,9 +48,14 @@ class BiddingPeriodEnforcementTest extends TestCase
         $listing->saveMeta('auction_type', 'Bidding Period');
         $listing->saveMeta('auction_time', $length);
 
+        // Canonical window: both ends stored at activation. The deadline is
+        // data, never recomputed from $length at read time.
+        $startsAt     = CarbonImmutable::now()->subDays($daysAgo);
         $offerAuction = OfferAuction::factory()->create([
-            'user_id'            => $owner->id,
-            'bidding_started_at' => CarbonImmutable::now()->subDays($daysAgo),
+            'user_id'           => $owner->id,
+            'bidding_starts_at' => $startsAt,
+            'bidding_ends_at'   => app(\App\Services\Offers\BiddingWindowService::class)
+                ->addDuration($startsAt, $length),
         ]);
         $listing->saveMeta('linked_offer_auction_id', $offerAuction->id);
 
@@ -114,7 +119,8 @@ class BiddingPeriodEnforcementTest extends TestCase
 
         $offerAuction = OfferAuction::factory()->create([
             'user_id'            => $owner->id,
-            'bidding_started_at' => CarbonImmutable::now()->subYears(2),
+            'bidding_starts_at' => CarbonImmutable::now()->subYears(2),
+            'bidding_ends_at'   => CarbonImmutable::now()->subYears(2)->addDays(7),
         ]);
         $listing->saveMeta('linked_offer_auction_id', $offerAuction->id);
 
@@ -193,7 +199,7 @@ class BiddingPeriodEnforcementTest extends TestCase
         app(OfferWorkflowFacade::class)->submit($offer, $buyer->id, 'buyer');
 
         // Window then closes.
-        $offerAuction->update(['bidding_started_at' => CarbonImmutable::now()->subDays(30)]);
+        $offerAuction->update(['bidding_starts_at' => CarbonImmutable::now()->subDays(30), 'bidding_ends_at' => CarbonImmutable::now()->subDays(23)]);
 
         $result = app(OfferWorkflowFacade::class)->accept($offer->fresh(), $owner->id, 'seller');
 
@@ -208,7 +214,7 @@ class BiddingPeriodEnforcementTest extends TestCase
         $offer = $this->draftOffer($offerAuction, $buyer);
 
         app(OfferWorkflowFacade::class)->submit($offer, $buyer->id, 'buyer');
-        $offerAuction->update(['bidding_started_at' => CarbonImmutable::now()->subDays(30)]);
+        $offerAuction->update(['bidding_starts_at' => CarbonImmutable::now()->subDays(30), 'bidding_ends_at' => CarbonImmutable::now()->subDays(23)]);
 
         $result = app(OfferWorkflowFacade::class)->reject($offer->fresh(), $owner->id, 'seller');
 
@@ -223,7 +229,7 @@ class BiddingPeriodEnforcementTest extends TestCase
         $offer = $this->draftOffer($offerAuction, $buyer);
 
         app(OfferWorkflowFacade::class)->submit($offer, $buyer->id, 'buyer');
-        $offerAuction->update(['bidding_started_at' => CarbonImmutable::now()->subDays(30)]);
+        $offerAuction->update(['bidding_starts_at' => CarbonImmutable::now()->subDays(30), 'bidding_ends_at' => CarbonImmutable::now()->subDays(23)]);
 
         $actions = app(\App\Services\Offers\OfferAvailableActionsService::class)
             ->forOffer($offer->fresh(), $owner->id, 'seller');

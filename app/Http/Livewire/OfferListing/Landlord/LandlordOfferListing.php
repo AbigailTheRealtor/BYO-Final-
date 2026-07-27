@@ -24,7 +24,7 @@ class LandlordOfferListing extends Component
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
-    use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // canonical bidding_started_at
+    use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use HasCanonicalPetFee;        // #2 Part B: canonical pet fee (create + edit)
 
     // TODO: set to false before production launch

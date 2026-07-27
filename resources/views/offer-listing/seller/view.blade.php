@@ -1083,7 +1083,15 @@
         $hubReserve      = $fmtMoney($str('reserve_price'));
         $hubBuyNow       = $fmtMoney($str('buy_now_price'));
         $hubAsking       = $fmtMoney($str('desired_sale_price')) ?: $fmtMoney($str('purchase_price')) ?: $heroPrice;
-        $hubBidEnd       = $fmtDate($str('bidding_end_date') ?: $str('offer_deadline'));
+        // Bidding close date for the Quick Actions hub — the SAME canonical window
+        // the countdown and the server-side guard read. This previously read
+        // bidding_end_date / offer_deadline, two meta keys that are written
+        // NOWHERE in the codebase, so the line could never render (a fifth,
+        // dead deadline derivation — deviation D-10).
+        $_hubWindow      = $biddingWindow ?? \App\Services\Offers\BiddingWindow::notBidding();
+        $hubBidEnd       = $_hubWindow->isCanonical()
+            ? $_hubWindow->endsAtForDisplay()->format('M j, Y') . ' ' . $_hubWindow->displayTimezoneAbbreviation()
+            : null;
         $hubReservePublic = in_array(strtolower((string)($str('reserve_price_public') ?: '')), ['yes','1','true']);
         $hubLastUpdated  = $auction->updated_at ? \Carbon\Carbon::parse($auction->updated_at)->format('M j, Y') : null;
     @endphp
@@ -1472,9 +1480,10 @@
 
     @php
         // Bidding Period countdown — canonical window from BiddingWindowService.
-        // The deadline is bidding_started_at + auction_time; listings activated
-        // before that stamp existed fall back to legacy behaviour inside the
-        // service. No deadline arithmetic happens in this view.
+        // The deadline is READ from offer_auctions.bidding_ends_at. Listings
+        // that were never stamped report an uninitialized window and render no
+        // countdown. No deadline arithmetic happens in this view, and
+        // expiration_date is never consulted (Invariants 4, 9, 10).
         $bw = $biddingWindow ?? \App\Services\Offers\BiddingWindow::notBidding();
 
         $hasBPTimer            = $bw->isBiddingPeriod && $bw->hasDeadline();
@@ -1499,7 +1508,7 @@
                     {!! $row('Auction Time', $str('auction_time')) !!}
                 </div>
             </div>
-            {{-- Bidding Period countdown timer (source: bidding_started_at + auction_time) --}}
+            {{-- Bidding Period countdown timer (source: stored offer_auctions.bidding_ends_at) --}}
             @if($hasBPTimer)
             <div class="mt-3 pt-3" style="border-top:1px solid #e2e8f0;">
                 <div class="d-flex align-items-center gap-2 flex-wrap">

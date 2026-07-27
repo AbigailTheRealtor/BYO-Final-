@@ -210,45 +210,16 @@
                             $countyDisplay .= ' County';
                         }
 
-                        // Bidding Period countdown — calculated exclusively from created_at + auction_time
+                        // Bidding Period countdown — DELIBERATELY DISABLED for Tenant criteria listings.
+                        //
+                        // The canonical deadline is the stored offer_auctions.bidding_ends_at.
+                        // Tenant criteria listings have no listing<->OfferAuction linkage, so no
+                        // canonical window exists for them. Owner-Approved direction
+                        // (2026-07-27): remove the countdown rather than synthesize one.
+                        // Previously derived from created_at + auction_time — banned by
+                        // Invariants 4, 9 and 10.
                         $remainingSeconds = 0;
                         $pretty = null;
-                        if (in_array(strtolower(trim($auction->get->auction_type ?? '')), ['bidding period', 'auction (timer)'])) {
-                            $_aTime = trim((string)($auction->get->auction_time ?? ''));
-                            if ($_aTime === '') {
-                                $_aTime = trim((string)($auction->get->auction_length ?? ''));
-                            }
-                            $_end = null;
-                            if ($_aTime !== '') {
-                                $_parts = explode(' ', $_aTime);
-                                $_val   = (int)($_parts[0] ?? 0);
-                                $_unit  = strtolower($_parts[1] ?? 'days');
-                                if ($_val > 0) {
-                                    $_start = \Carbon\Carbon::parse($auction->created_at);
-                                    $_end = match(true) {
-                                        in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
-                                        in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
-                                        in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
-                                        default                               => $_start->addDays($_val),
-                                    };
-                                }
-                            }
-                            if (!empty($_end)) {
-                                $remainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_end, false);
-                                $pretty = function (int $sec) {
-                                    if ($sec <= 0) { return 'Expired'; }
-                                    if ($sec < 60) { return $sec . 's Remaining'; }
-                                    $d = intdiv($sec, 86400); $sec %= 86400;
-                                    $h = intdiv($sec, 3600);  $sec %= 3600;
-                                    $i = intdiv($sec, 60);
-                                    $p = [];
-                                    if ($d) $p[] = $d . 'd';
-                                    if ($h) $p[] = $h . 'h';
-                                    if ($i) $p[] = $i . 'm';
-                                    return implode(' ', $p) . ' Remaining';
-                                };
-                            }
-                        }
 
                         $listingTitle = @$auction->get->listing_title ?: (@$auction->title ?: null);
                     @endphp

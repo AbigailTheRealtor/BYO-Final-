@@ -495,43 +495,24 @@
         }
     @endphp
     @php
-        // Bidding Period countdown — uses expiration_date when available; falls back to created_at + auction_time for legacy records
-        $hasBPTimer = false;
+        // Bidding Period countdown — DELIBERATELY DISABLED for Buyer criteria listings.
+        //
+        // The canonical bidding deadline is offer_auctions.bidding_ends_at, stored
+        // once at activation. Buyer criteria listings have no listing<->OfferAuction
+        // linkage (ListingOfferAuctionLinker::ensureFor covers seller and landlord
+        // only), so no canonical window can be resolved for them.
+        //
+        // Owner-Approved direction (2026-07-27): where a role cannot resolve a
+        // canonical deadline, REMOVE the countdown rather than display an incorrect
+        // or synthetic one. This view previously derived the deadline from
+        // expiration_date (a LISTING expiry) and fell back to created_at (when the
+        // DRAFT was saved) — both are banned outright by Invariants 1, 2, 9 and 10.
+        //
+        // Restoring a countdown here requires buyer-role OfferAuction linkage plus
+        // publish-time stamping, not a change in this file.
+        $hasBPTimer            = false;
         $timerRemainingSeconds = 0;
-        $_auctionType = trim($str('auction_type'));
-        if ($_auctionType === '') {
-            $_auctionType = trim((string)($auction->auction_type ?? ''));
-        }
-        if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
-            $_timerEnd = null;
-            $_expDateStr = trim($str('expiration_date'));
-            if ($_expDateStr !== '') {
-                $_timerEnd = \Carbon\Carbon::parse($_expDateStr);
-            } else {
-                $_aTime = trim($str('auction_time'));
-                if ($_aTime === '') {
-                    $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
-                }
-                if ($_aTime !== '') {
-                    $_parts = explode(' ', $_aTime);
-                    $_val   = (int)($_parts[0] ?? 0);
-                    $_unit  = strtolower($_parts[1] ?? 'days');
-                    if ($_val > 0) {
-                        $_start = \Carbon\Carbon::parse($auction->created_at);
-                        $_timerEnd = match(true) {
-                            in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
-                            in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
-                            in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
-                            default                               => $_start->addDays($_val),
-                        };
-                    }
-                }
-            }
-            if (!empty($_timerEnd)) {
-                $timerRemainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_timerEnd, false);
-                $hasBPTimer = true;
-            }
-        }
+        $_timerEnd             = null;
     @endphp
     <div class="bol-hero mb-4">
         <div class="row g-0" style="min-height:280px;">
@@ -1559,25 +1540,11 @@
                 </div>
                 @endif
 
-                @if($hasBPTimer)
-                @php
-                    $_bolSidebarEndDate = null;
-                    $_bolExpDateStr = $str('expiration_date');
-                    if ($_bolExpDateStr) {
-                        $_bolSidebarEndDate = $fmtDate($_bolExpDateStr);
-                    } elseif (!empty($_timerEnd) && $_timerEnd instanceof \Carbon\Carbon) {
-                        $_bolSidebarEndDate = $_timerEnd->format('M j, Y');
-                    }
-                @endphp
-                @if($_bolSidebarEndDate)
-                <div class="mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
-                    <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;">
-                        <span><i class="fa-regular fa-clock me-1"></i>Bidding Ends</span>
-                        <span style="font-weight:700;color:#475569;">{{ $_bolSidebarEndDate }}</span>
-                    </div>
-                </div>
-                @endif
-                @endif
+                {{-- "Bidding Ends" sidebar REMOVED for Buyer criteria listings.
+                     It labelled the LISTING expiration date as the bidding close
+                     date, which is the exact conflation Invariants 1, 2 and 10
+                     forbid. Buyer listings have no canonical bidding_ends_at, so
+                     there is no correct value to show and none is invented. --}}
 
                 <a href="{{ route('offer.listing.buyer.searchListing') }}"
                    class="bol-action-btn bol-action-outline" style="justify-content:center;text-align:center;">

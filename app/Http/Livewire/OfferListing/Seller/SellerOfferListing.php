@@ -26,7 +26,7 @@ class SellerOfferListing extends Component
     use ResolvesOwnedAuction;
     use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
     use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
-    use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // canonical bidding_started_at
+    use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;

@@ -332,33 +332,25 @@ class LandlordOfferListingController extends Controller
         if ($sort === 'most_viewed') {
             $auctions->orderByRaw('(SELECT COUNT(*) FROM landlord_agent_auction_bids WHERE landlord_agent_auction_bids.landlord_agent_auction_id = landlord_agent_auctions.id) DESC');
         } elseif ($sort === 'ending_soon') {
-            $auctions->orderByRaw("
-                CASE
-                    WHEN NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM landlord_agent_auction_metas
-                             WHERE landlord_agent_auction_id = landlord_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '') IS NOT NULL
-                        AND NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM landlord_agent_auction_metas
-                             WHERE landlord_agent_auction_id = landlord_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int > 0
-                        AND (landlord_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM landlord_agent_auction_metas
-                             WHERE landlord_agent_auction_id = landlord_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int) > NOW()
-                    THEN EXTRACT(EPOCH FROM (landlord_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM landlord_agent_auction_metas
-                             WHERE landlord_agent_auction_id = landlord_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int))
-                    WHEN COALESCE((SELECT meta_value FROM landlord_agent_auction_metas
-                        WHERE landlord_agent_auction_id = landlord_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1), '') <> ''
-                        AND (SELECT meta_value FROM landlord_agent_auction_metas
-                            WHERE landlord_agent_auction_id = landlord_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1)::date >= CURRENT_DATE
-                    THEN EXTRACT(EPOCH FROM (SELECT meta_value FROM landlord_agent_auction_metas
-                        WHERE landlord_agent_auction_id = landlord_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1)::date::timestamp)
-                    ELSE 9999999999
-                END ASC, landlord_agent_auctions.created_at DESC
-            ");
+            // Ordering reads the SAME canonical timestamp as every countdown and
+            // every enforcement check: the stored offer_auctions.bidding_ends_at,
+            // reached through the listing's linked_offer_auction_id meta.
+            //
+            // No arithmetic, no auction_time, no created_at, no expiration_date.
+            // Listings with no canonical window sort last rather than being given
+            // a synthetic deadline (Invariants 3, 4, 5, 6, 9, 10).
+            //
+            // "(expr) IS NULL" ahead of the value keeps NULLs last portably across
+            // Postgres and the SQLite used by the test suite.
+            $endsAt = "(SELECT oa.bidding_ends_at FROM offer_auctions oa
+                        WHERE oa.id = (SELECT m.meta_value FROM landlord_agent_auction_metas m
+                                       WHERE m.landlord_agent_auction_id = landlord_agent_auctions.id
+                                         AND m.meta_key = 'linked_offer_auction_id'
+                                       LIMIT 1))";
+
+            $auctions->orderByRaw("({$endsAt}) IS NULL ASC")
+                     ->orderByRaw("({$endsAt}) ASC")
+                     ->orderBy('landlord_agent_auctions.created_at', 'DESC');
         } else {
             $auctions->orderBy('created_at', 'DESC');
         }
@@ -366,6 +358,36 @@ class LandlordOfferListingController extends Controller
         $page_data['count'] = (clone $auctions)->count();
         $page_data['pAuctions'] = $auctions->paginate(12);
 
+        $page_data['biddingWindows'] = $this->resolveBiddingWindows($page_data['pAuctions']);
+
         return view('offer-listing.landlord.search', $page_data);
     }
+
+    /**
+     * Canonical bidding windows for a page of listings, keyed by listing id.
+     *
+     * The card view renders countdowns from this map and performs no deadline
+     * arithmetic of its own. Every window comes from the stored
+     * offer_auctions.bidding_ends_at via BiddingWindowService, so a card, the
+     * detail page, the server-side guard and the ending_soon sort all read the
+     * one same timestamp (Invariants 3, 5, 6).
+     *
+     * @param  iterable  $listings
+     * @return array<int, \App\Services\Offers\BiddingWindow>
+     */
+    private function resolveBiddingWindows($listings): array
+    {
+        $service = app(BiddingWindowService::class);
+        $windows = [];
+
+        foreach ($listings as $listing) {
+            $linkedId = $listing->info('linked_offer_auction_id');
+            $offerAuction = $linkedId ? \App\Models\OfferAuction::find((int) $linkedId) : null;
+
+            $windows[$listing->id] = $service->for($listing, $offerAuction);
+        }
+
+        return $windows;
+    }
+
 }

@@ -607,6 +607,30 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/Offers/OfferSubmissionService.php',
             'app/Services/Offers/PublicOfferFeedService.php',
             'database/migrations/2026_07_27_000001_add_bidding_started_at_to_offer_auctions_table.php',
+            //   Stage 0 amendment (Owner-Approved Decision A, 2026-07-27): the
+            //   single-stamp architecture above was REJECTED. The deadline must be
+            //   STORED, not recomputed, so bidding_started_at is renamed to
+            //   bidding_starts_at and joined by a stored bidding_ends_at, written
+            //   together at activation. Every legacy fallback — expiration_date and
+            //   created_at alike — is deleted outright rather than deprecated: a
+            //   listing with no stored window is UNINITIALIZED, renders no countdown
+            //   and blocks no bidder. See TIMED_OFFER_RUNTIME_INVESTIGATION.md
+            //   (deviation D-13) and CanonicalBiddingWindowTest.
+            'database/migrations/2026_07_27_000002_replace_bidding_started_at_with_canonical_window.php',
+            //   Stage 0 repository sweep: the canonical window is now the ONLY
+            //   deadline source on every offer-listing surface, for all four roles.
+            //   Seller/Landlord search cards and the ending_soon ordering read the
+            //   stored bidding_ends_at through linked_offer_auction_id. Buyer and
+            //   Tenant criteria listings have no OfferAuction linkage, so their
+            //   countdowns, "Bidding Ends" sidebars and deadline-based ordering are
+            //   REMOVED rather than synthesized — per owner direction, a role that
+            //   cannot resolve a canonical deadline shows none at all.
+            'app/Http/Controllers/BuyerOfferListingController.php',
+            'app/Http/Controllers/TenantOfferListingController.php',
+            'resources/views/offer-listing/buyer/search.blade.php',
+            'resources/views/offer-listing/landlord/search.blade.php',
+            'resources/views/offer-listing/seller/search.blade.php',
+            'resources/views/offer-listing/tenant/search.blade.php',
             'resources/views/offer-listing/partials/_competing-bids.blade.php',
             //   Post-audit correction: the Landlord public view no longer creates
             //   the listing<->OfferAuction link as a side effect of an

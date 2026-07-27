@@ -198,28 +198,18 @@
                             $countyDisplay .= ' County';
                         }
 
-                        // Bidding Period countdown — calculated exclusively from created_at + auction_time
+                        // Bidding Period countdown — canonical window only.
+                        // $biddingWindows is keyed by listing id and built by the
+                        // controller from the stored offer_auctions.bidding_ends_at.
+                        // A listing with no canonical window shows NO badge; this view
+                        // performs no deadline arithmetic and never reads
+                        // expiration_date, created_at or auction_time (Invariants 4, 9, 10).
                         $remainingSeconds = 0;
                         $pretty = null;
-                        if (strtolower(trim($auction->get->auction_type ?? '')) === 'bidding period') {
-                            $_aTime = trim((string)($auction->get->auction_time ?? ''));
-                            $_end = null;
-                            if ($_aTime !== '') {
-                                $_parts = explode(' ', $_aTime);
-                                $_val   = (int)($_parts[0] ?? 0);
-                                $_unit  = strtolower($_parts[1] ?? 'days');
-                                if ($_val > 0) {
-                                    $_start = \Carbon\Carbon::parse($auction->created_at);
-                                    $_end = match(true) {
-                                        in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
-                                        in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
-                                        in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
-                                        default                               => $_start->addDays($_val),
-                                    };
-                                }
-                            }
-                            if (!empty($_end)) {
-                                $remainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_end, false);
+                        $_bw = ($biddingWindows ?? [])[$auction->id] ?? null;
+                        if ($_bw !== null && $_bw->isCanonical()) {
+                            $remainingSeconds = $_bw->remainingSeconds();
+                            {
                                 $pretty = function (int $sec) {
                                     if ($sec <= 0) { return 'Expired'; }
                                     if ($sec < 60) { return $sec . 's Remaining'; }

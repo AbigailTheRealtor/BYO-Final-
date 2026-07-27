@@ -458,9 +458,10 @@
     {{-- ===== HERO ===== --}}
     @php
         // Bidding Period countdown — canonical window from BiddingWindowService.
-        // The deadline is bidding_started_at + auction_time; listings activated
-        // before that stamp existed fall back to legacy behaviour inside the
-        // service. No deadline arithmetic happens in this view.
+        // The deadline is READ from offer_auctions.bidding_ends_at. Listings
+        // that were never stamped report an uninitialized window and render no
+        // countdown. No deadline arithmetic happens in this view, and
+        // expiration_date is never consulted (Invariants 4, 9, 10).
         $bw = $biddingWindow ?? \App\Services\Offers\BiddingWindow::notBidding();
 
         $hasBPTimer            = $bw->isBiddingPeriod && $bw->hasDeadline();
@@ -1081,7 +1082,7 @@
                     {!! $row('Available Date', $fmtDate($str('available_date') ?: $str('lease_available_date'))) !!}
                 </div>
             </div>
-            {{-- Bidding Period countdown timer (source: bidding_started_at + auction_time) --}}
+            {{-- Bidding Period countdown timer (source: stored offer_auctions.bidding_ends_at) --}}
             @if($hasBPTimer)
             <div class="mt-3 pt-3" style="border-top:1px solid #e2e8f0;">
                 <div class="d-flex align-items-center gap-2 flex-wrap">

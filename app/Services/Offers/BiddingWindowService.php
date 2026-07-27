@@ -5,41 +5,41 @@ namespace App\Services\Offers;
 use App\Models\OfferAuction;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The single source of truth for when a Bidding Period listing opens and closes.
  *
  * ---------------------------------------------------------------------------
- * CANONICAL RULE
+ * CANONICAL RULE (Owner-Approved Decision A, 2026-07-27)
  * ---------------------------------------------------------------------------
- * Bidding starts when the listing first becomes Active/published, and that
- * moment is stamped once onto offer_auctions.bidding_started_at:
+ * When a listing first becomes Active, BOTH ends of its bidding window are
+ * computed once and STORED, in a single transaction:
  *
- *     deadline = bidding_started_at + auction_time
+ *     offer_auctions.bidding_starts_at = server time at activation
+ *     offer_auctions.bidding_ends_at   = bidding_starts_at + auction_time
  *
- * bidding_started_at is written exactly once, by markActivated(), at the
- * publish transition. It is never recalculated, never overwritten, and never
- * restarted — editing a listing, re-saving it, or re-publishing it does not
- * move the deadline.
+ * After that moment auction_time is never consulted again. Every countdown,
+ * every enforcement check, every API and every presenter reads
+ * bidding_ends_at directly. The deadline is data, not a calculation.
  *
  * ---------------------------------------------------------------------------
- * LEGACY FALLBACK — TEMPORARY
+ * WHAT THIS SERVICE WILL NEVER DO
  * ---------------------------------------------------------------------------
- * Listings that went Active before this column existed have bidding_started_at
- * = NULL (the migration deliberately did not backfill; see that file for why).
- * For those rows only, we fall back to the behaviour that shipped previously:
+ *   - Recompute a deadline from auction_time after activation.
+ *   - Read, reference, substitute or fall back to expiration_date. The listing
+ *     expiration date is a SEPARATE business concept and is permanently
+ *     independent of the bidding period (Invariants 1, 2, 10).
+ *   - Fall back to created_at, which is when the DRAFT was first saved.
+ *   - Invent a window for a listing that was never stamped (Decision B).
  *
- *     1. expiration_date, when set; otherwise
- *     2. listing created_at + auction_time
+ * A Bidding Period listing with no stored window is UNINITIALIZED: it renders
+ * no countdown and blocks no bidder. That is the honest representation of
+ * "we do not know", and it is deliberately visible rather than papered over.
  *
- * Both are known to be wrong in ways this work exists to fix — expiration_date
- * is a listing expiry, not a bidding deadline, and created_at is when the
- * DRAFT was first saved, which can predate activation by days. The fallback is
- * here only so pre-existing active listings keep rendering a timer instead of
- * abruptly losing one. It is not a supported path for new listings and should
- * be deleted once no active Bidding Period listing has a NULL stamp.
- *
- * BiddingWindow::$isLegacyFallback flags every window that took this path.
+ * auction_time remains what it always was — creation-time wizard input. It is
+ * read at exactly one moment in the lifecycle, by markActivated(), and never
+ * again.
  */
 class BiddingWindowService
 {
@@ -57,27 +57,49 @@ class BiddingWindowService
     private const BIDDING_TYPES = ['bidding period', 'auction (timer)'];
 
     /**
-     * Stamp the canonical bidding start onto the listing's linked OfferAuction.
+     * Stamp the canonical bidding window onto the listing's linked OfferAuction.
      *
-     * Idempotent by construction: a non-null bidding_started_at is left exactly
-     * as it is. Callers may invoke this on every publish without risk of
-     * restarting a live window.
+     * Both timestamps are written together or not at all. A start without an end
+     * is not a valid window — it would force a reader to derive the missing half,
+     * which is the defect this architecture exists to remove.
      *
+     * Idempotent by construction: an OfferAuction that already carries a
+     * bidding_starts_at is left exactly as it is. Callers may invoke this on
+     * every publish without risk of restarting a live window.
+     *
+     * @param  string|null  $auctionTime  The approved duration chosen in the
+     *                                    creation wizard, e.g. "5 Days". Read
+     *                                    here and never again.
      * @return bool True only when this call performed the one-time stamp.
      */
-    public function markActivated(?OfferAuction $offerAuction, ?CarbonImmutable $now = null): bool
-    {
+    public function markActivated(
+        ?OfferAuction $offerAuction,
+        ?string $auctionTime,
+        ?CarbonImmutable $now = null,
+    ): bool {
         if ($offerAuction === null) {
             return false;
         }
 
         // Never overwrite. Never restart.
-        if ($offerAuction->bidding_started_at !== null) {
+        if ($offerAuction->bidding_starts_at !== null) {
             return false;
         }
 
-        $offerAuction->bidding_started_at = $now ?? CarbonImmutable::now();
-        $offerAuction->save();
+        $startsAt = $now ?? CarbonImmutable::now();
+        $endsAt   = $this->addDuration($startsAt, $auctionTime);
+
+        // No usable duration means no computable end. Refuse the whole stamp
+        // rather than write a half window that a reader would have to complete.
+        if ($endsAt === null) {
+            return false;
+        }
+
+        DB::transaction(function () use ($offerAuction, $startsAt, $endsAt) {
+            $offerAuction->bidding_starts_at = $startsAt;
+            $offerAuction->bidding_ends_at   = $endsAt;
+            $offerAuction->save();
+        });
 
         return true;
     }
@@ -85,44 +107,18 @@ class BiddingWindowService
     /**
      * Resolve the bidding window for a listing.
      *
+     * Reads stored timestamps only. No arithmetic, no fallbacks.
+     *
      * @param  Model              $listing        SellerAgentAuction or LandlordAgentAuction.
      * @param  OfferAuction|null  $offerAuction   The listing's linked OfferAuction, when one exists.
      */
     public function for(Model $listing, ?OfferAuction $offerAuction = null): BiddingWindow
     {
-        $auctionType = $this->readListingValue($listing, 'auction_type');
-
-        if (! $this->isBiddingPeriod($auctionType)) {
+        if (! $this->isBiddingPeriod($this->readListingValue($listing, 'auction_type'))) {
             return BiddingWindow::notBidding();
         }
 
-        $auctionTime = $this->readListingValue($listing, 'auction_time');
-        $startedAt   = $offerAuction?->bidding_started_at
-            ? CarbonImmutable::parse($offerAuction->bidding_started_at)
-            : null;
-
-        // --- Canonical path -------------------------------------------------
-        if ($startedAt !== null) {
-            $endsAt = $this->addDuration($startedAt, $auctionTime);
-
-            return new BiddingWindow(
-                isBiddingPeriod: true,
-                startedAt: $startedAt,
-                endsAt: $endsAt,
-                isLegacyFallback: false,
-            );
-        }
-
-        // --- Legacy fallback (temporary; see class docblock) -----------------
-        [$endsAt, $reason] = $this->legacyDeadline($listing, $auctionTime);
-
-        return new BiddingWindow(
-            isBiddingPeriod: true,
-            startedAt: null,
-            endsAt: $endsAt,
-            isLegacyFallback: true,
-            legacyFallbackReason: $reason,
-        );
+        return $this->fromStoredWindow($offerAuction);
     }
 
     /**
@@ -150,8 +146,8 @@ class BiddingWindowService
      * Has bidding closed on the listing behind this OfferAuction?
      *
      * Returns false for anything that is not a Bidding Period listing, and for
-     * Bidding Period listings whose deadline cannot be resolved — bidders are
-     * never locked out because of missing data on our side.
+     * Bidding Period listings with no canonical window — bidders are never
+     * locked out because of missing data on our side.
      */
     public function isClosedForOfferAuction(?OfferAuction $offerAuction): bool
     {
@@ -164,43 +160,34 @@ class BiddingWindowService
     }
 
     /**
-     * Legacy deadline for rows with no canonical stamp.
+     * Build the window from stored columns alone.
      *
-     * @return array{0: ?CarbonImmutable, 1: string}
+     * Both timestamps must be present. A row carrying only a start is reported
+     * as uninitialized rather than completed by arithmetic.
      */
-    private function legacyDeadline(Model $listing, ?string $auctionTime): array
+    private function fromStoredWindow(?OfferAuction $offerAuction): BiddingWindow
     {
-        $expiration = trim((string) $this->readListingValue($listing, 'expiration_date'));
+        $startsAt = $offerAuction?->bidding_starts_at;
+        $endsAt   = $offerAuction?->bidding_ends_at;
 
-        if ($expiration !== '') {
-            try {
-                return [
-                    CarbonImmutable::parse($expiration),
-                    'legacy: expiration_date (no bidding_started_at stamp)',
-                ];
-            } catch (\Throwable) {
-                // Unparseable expiration_date — fall through to created_at.
-            }
+        if ($startsAt === null || $endsAt === null) {
+            return BiddingWindow::uninitialized();
         }
 
-        if ($listing->created_at === null) {
-            return [null, 'legacy: no expiration_date and no created_at'];
-        }
-
-        $endsAt = $this->addDuration(CarbonImmutable::parse($listing->created_at), $auctionTime);
-
-        return [
-            $endsAt,
-            'legacy: created_at + auction_time (no bidding_started_at stamp)',
-        ];
+        return new BiddingWindow(
+            isBiddingPeriod: true,
+            startsAt: CarbonImmutable::parse($startsAt),
+            endsAt: CarbonImmutable::parse($endsAt),
+        );
     }
 
     /**
      * Add a listing's auction_time to an instant.
      *
-     * auction_time is a free-form label chosen from a select — "14 Days",
-     * "2 Weeks", "48 Hours", and bare numbers like "14" all occur in the data.
-     * A bare number means days, matching how the legacy views read it.
+     * PUBLISH-TIME ONLY. This is called from markActivated() and from nowhere
+     * else in the runtime. auction_time is a free-form label chosen from a
+     * select — "14 Days", "2 Weeks", "48 Hours", and bare numbers like "14" all
+     * occur in the data. A bare number means days.
      */
     public function addDuration(CarbonImmutable $start, ?string $auctionTime): ?CarbonImmutable
     {
@@ -257,8 +244,12 @@ class BiddingWindowService
      * Read a listing value from EAV meta, falling back to a native column.
      *
      * Seller and Landlord listings disagree about where these live —
-     * seller_agent_auctions has native columns, landlord_agent_auctions is
-     * EAV — so both are checked. info() returns false when a key is absent.
+     * seller_agent_auctions has native columns while landlord_agent_auctions is
+     * EAV-by-design — so both are checked. info() returns false when a key is
+     * absent.
+     *
+     * Only ever called for auction_type and auction_time. expiration_date is
+     * never read by this service (Invariant 10).
      */
     private function readListingValue(Model $listing, string $key): ?string
     {
