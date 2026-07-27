@@ -24,6 +24,7 @@ class LandlordOfferListing extends Component
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
+    use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // canonical bidding_started_at
     use \App\Http\Livewire\Concerns\ValidatesPropertyAddress; // Phase 0: address rules + ZIP autofill
     use \App\Http\Livewire\OfferListing\Concerns\GuidesPublishValidation; // cross-tab publish correction
     use HasCanonicalPetFee;        // #2 Part B: canonical pet fee (create + edit)
@@ -4110,6 +4111,9 @@ class LandlordOfferListing extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            // Listing is now Active — start the bidding clock (once, never restarted).
+            $this->stampBiddingActivation($auction, 'landlord');
 
             if ($this->address) {
                 try {
