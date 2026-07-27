@@ -577,6 +577,44 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/Offers/OfferAvailableActionsService.php',
             'app/Notifications/Offers/OfferCancelledNotification.php',
             'routes/web.php',
+            // Bidding Period UI — canonical bidding window + anonymous bid feed.
+            //   The bidding deadline was computed in the Blade views from
+            //   expiration_date (a LISTING expiry) or created_at (when the DRAFT was
+            //   first saved), so the countdown, the server, and the bidders disagreed
+            //   about when bidding closed. A new native, nullable
+            //   offer_auctions.bidding_started_at is stamped exactly once at publish
+            //   and is now the only anchor: deadline = bidding_started_at +
+            //   auction_time. The migration performs NO backfill — pre-existing rows
+            //   stay NULL and take a documented, temporary legacy fallback inside
+            //   BiddingWindowService.
+            //   BiddingWindow/BiddingWindowService own every deadline decision (timer,
+            //   submit guard, draft-creation guard, freeze); PublicOfferFeedService
+            //   owns who may see bids and which fields they may see (strict per-role
+            //   allow-lists — guests are never served bid data, hidden or otherwise).
+            //   ListingOfferAuctionLinker gives publishing and the backfill command one
+            //   listing↔OfferAuction creation path so they cannot produce differently-
+            //   shaped rows; the Landlord public GET no longer creates anything, and the
+            //   Seller components keep their own existing linking implementation.
+            //   OfferController.php, OfferPermissionService.php, the four Seller/
+            //   Landlord create+edit components, LandlordOfferListingController.php and
+            //   the two public view blades are already allow-listed above.
+            'app/Http/Controllers/SellerOfferListingController.php',
+            'app/Http/Livewire/OfferListing/Concerns/StampsBiddingActivation.php',
+            'app/Models/OfferAuction.php',
+            'app/Services/Offers/BiddingWindow.php',
+            'app/Services/Offers/BiddingWindowService.php',
+            'app/Services/Offers/ListingOfferAuctionLinker.php',
+            'app/Services/Offers/OfferSubmissionService.php',
+            'app/Services/Offers/PublicOfferFeedService.php',
+            'database/migrations/2026_07_27_000001_add_bidding_started_at_to_offer_auctions_table.php',
+            'resources/views/offer-listing/partials/_competing-bids.blade.php',
+            //   Post-audit correction: the Landlord public view no longer creates
+            //   the listing<->OfferAuction link as a side effect of an
+            //   unauthenticated GET. Publishing now establishes the link for every
+            //   listing type, and this command backfills listings that went live
+            //   before that existed (now covering Landlord as well as Seller,
+            //   with --role and --dry-run).
+            'app/Console/Commands/BackfillLinkedOfferAuction.php',
         ];
 
         $unexpected = array_values(array_filter(

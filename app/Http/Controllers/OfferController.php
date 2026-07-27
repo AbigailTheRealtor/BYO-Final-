@@ -12,6 +12,7 @@ use App\Notifications\Offers\OfferCounteredNotification;
 use App\Notifications\Offers\OfferRejectedNotification;
 use App\Notifications\Offers\OfferSubmittedNotification;
 use App\Notifications\Offers\OfferWithdrawnNotification;
+use App\Services\Offers\BiddingWindowService;
 use App\Services\Offers\OfferAvailableActionsService;
 use App\Services\Offers\OfferNegotiationChainService;
 use App\Services\Offers\OfferPermissionService;
@@ -58,6 +59,21 @@ class OfferController extends Controller
                 'listing_snapshot' => 'nullable|array',
                 'expires_at'       => 'nullable|date',
             ]);
+        }
+
+        // Once a Bidding Period has closed there is nothing a new bid can become,
+        // so refuse at draft creation rather than letting a bidder fill out a full
+        // offer that can never be submitted.
+        $targetAuction = \App\Models\OfferAuction::with('metas')->find($validated['offer_auction_id']);
+
+        if (app(BiddingWindowService::class)->isClosedForOfferAuction($targetAuction)) {
+            $msg = 'The bidding period for this listing has closed. New offers are no longer being accepted.';
+
+            if (!$request->expectsJson()) {
+                return redirect()->back()->with('error', $msg);
+            }
+
+            return response()->json(['message' => $msg], 422);
         }
 
         $offer = Offer::create([

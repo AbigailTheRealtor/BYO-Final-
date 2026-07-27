@@ -10,6 +10,7 @@ class OfferSubmissionService
     public function __construct(
         private readonly OfferStateMachineService $stateMachine,
         private readonly OfferEventLogService $eventLogger,
+        private readonly BiddingWindowService $biddingWindow,
     ) {}
 
     /**
@@ -46,6 +47,33 @@ class OfferSubmissionService
         ?string $ipAddress = null,
     ): array {
         $fromStatus = $offer->status;
+
+        // Hard server-side close. This is the backstop behind the UI gate in
+        // OfferPermissionService::canSubmit() — a bidder who keeps a stale form
+        // open, replays a request, or posts directly still cannot land a bid
+        // after the deadline. Owner-side accept/counter/reject run through their
+        // own services and are intentionally unaffected.
+        if ($this->biddingWindow->isClosedForOfferAuction($offer->offerAuction)) {
+            $eventLog = $this->eventLogger->log(
+                offer: $offer,
+                actorId: $actorId,
+                actorRole: $actorRole,
+                eventType: 'forbidden_transition_attempt',
+                fromStatus: $fromStatus,
+                toStatus: 'submitted',
+                metadata: $metadata + ['blocked_by' => 'bidding_period_closed'],
+                ipAddress: $ipAddress,
+            );
+
+            return [
+                'allowed'     => false,
+                'offer'       => $offer,
+                'from_status' => $fromStatus,
+                'to_status'   => 'submitted',
+                'reason'      => 'The bidding period for this listing has closed.',
+                'event_log'   => $eventLog,
+            ];
+        }
 
         $validation = $this->stateMachine->validateTransition($fromStatus, 'submitted');
 

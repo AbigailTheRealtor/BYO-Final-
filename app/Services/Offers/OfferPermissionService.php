@@ -57,6 +57,14 @@ class OfferPermissionService
             return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot submit: only the offer creator may submit a draft.'];
         }
 
+        // Bidding Period listings stop accepting new bids at the deadline. This
+        // gates the bidder only — the owner's review actions (accept / counter /
+        // reject) deliberately stay available after the window closes so they can
+        // work through the bids that did arrive in time.
+        if (app(BiddingWindowService::class)->isClosedForOfferAuction($offer->offerAuction)) {
+            return ['allowed' => false, 'action' => $action, 'reason' => 'Cannot submit: the bidding period for this listing has closed.'];
+        }
+
         return ['allowed' => true, 'action' => $action, 'reason' => ''];
     }
 

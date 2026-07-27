@@ -9,6 +9,8 @@ use App\Models\PropertyLocationPoi;
 use App\Models\SellerAgentAuction;
 use App\Models\SellerListingInquiry;
 use App\Services\AskAi\AskAiContextBuilderService;
+use App\Services\Offers\BiddingWindowService;
+use App\Services\Offers\PublicOfferFeedService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -132,7 +134,15 @@ class SellerOfferListingController extends Controller
             'auth_id' => auth()->id(),
         ];
 
-        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction', 'calcData', 'askAiChipContext', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois') + $page_data);
+        $biddingWindow = app(BiddingWindowService::class)->for($auction, $offerAuction);
+
+        // Guests never reach build(): no bid data is queried, serialized, or sent
+        // to the browser for them. They get the login callout and nothing else.
+        $feed           = app(PublicOfferFeedService::class);
+        $canViewBidFeed = $feed->canView(auth()->user(), $auction, 'seller');
+        $bidFeed        = $canViewBidFeed ? $feed->build($offerAuction, 'seller') : [];
+
+        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction', 'calcData', 'askAiChipContext', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois', 'biddingWindow', 'canViewBidFeed', 'bidFeed') + $page_data);
     }
 
     /**

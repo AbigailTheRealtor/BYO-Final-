@@ -8,6 +8,9 @@ use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
 use App\Models\SellerListingInquiry;
 use App\Services\AskAi\AskAiContextBuilderService;
+use App\Services\Offers\BiddingWindowService;
+use App\Services\Offers\ListingOfferAuctionLinker;
+use App\Services\Offers\PublicOfferFeedService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -54,33 +57,24 @@ class LandlordOfferListingController extends Controller
     }
 
     /**
-     * Return the OfferAuction linked to this landlord listing, creating one on
-     * first access when none exists.  The OfferAuction is the record that
-     * offer_auction_id in offer submission forms must reference.
+     * Return the OfferAuction linked to this landlord listing, creating one when
+     * none exists.  The OfferAuction is the record that offer_auction_id in offer
+     * submission forms must reference.
      *
      * A back-reference meta (linked_landlord_auction_id) is stored on the
      * OfferAuction so that the offer show page can pre-fill the tenant
      * application form with the landlord's asking terms.
+     *
+     * WRITES — do not call from view() or any other GET handler. Publishing
+     * (StampsBiddingActivation) and the backfill command are the supported
+     * callers; the public page resolves read-only.
      */
     public function ensureLinkedOfferAuction(LandlordAgentAuction $auction): OfferAuction
     {
-        $existing = $this->resolveOfferAuction($auction);
-        if ($existing) {
-            return $existing;
-        }
-
-        $offerAuction = OfferAuction::create([
-            'user_id'     => $auction->user_id,
-            'title'       => $auction->title ?: ($auction->info('listing_title') ?: 'Rental Property'),
-            'is_draft'    => false,
-            'is_approved' => true,
-        ]);
-        $offerAuction->saveMeta('offer_type', 'rental');
-        $offerAuction->saveMeta('linked_landlord_auction_id', $auction->id);
-
-        $auction->saveMeta('linked_offer_auction_id', $offerAuction->id);
-
-        return $offerAuction;
+        // Delegated to ListingOfferAuctionLinker so this page and the publish-time
+        // bidding activation stamp cannot create differently-shaped rows. The
+        // payload written there is identical to what this method wrote before.
+        return app(ListingOfferAuctionLinker::class)->ensureFor($auction, 'landlord');
     }
 
     private function resolveOfferListing(int|string $id): LandlordAgentAuction
@@ -177,9 +171,22 @@ class LandlordOfferListingController extends Controller
                 ->get()
             : collect();
 
-        $offerAuction = $this->ensureLinkedOfferAuction($auction);
+        // READ-ONLY. This is an unauthenticated public GET and must never write.
+        // The link is established at publish time (StampsBiddingActivation) and,
+        // for listings that went live before that existed, by
+        // `php artisan offer:backfill-linked-auction`. A null here degrades the
+        // application form rather than mutating state on a page view.
+        $offerAuction = $this->resolveOfferAuction($auction);
 
-        return view('offer-listing.landlord.view', compact('auction', 'meta', 'askAiChipContext', 'offerAuction', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois') + $page_data);
+        $biddingWindow = app(BiddingWindowService::class)->for($auction, $offerAuction);
+
+        // Guests never reach build(): no bid data is queried, serialized, or sent
+        // to the browser for them. They get the login callout and nothing else.
+        $feed           = app(PublicOfferFeedService::class);
+        $canViewBidFeed = $feed->canView(auth()->user(), $auction, 'landlord');
+        $bidFeed        = $canViewBidFeed ? $feed->build($offerAuction, 'landlord') : [];
+
+        return view('offer-listing.landlord.view', compact('auction', 'meta', 'askAiChipContext', 'offerAuction', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois', 'biddingWindow', 'canViewBidFeed', 'bidFeed') + $page_data);
     }
 
     public function submitQuestion(Request $request, $auction)
