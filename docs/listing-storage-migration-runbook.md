@@ -112,6 +112,8 @@ Write mode **fails closed**: without `--confirm` the command refuses and exits 1
 
 `--force-conflicts` has no effect without a write run; passing it to a read-only run prints a warning and is otherwise ignored.
 
+`--strict` is orthogonal to all three modes: it changes only the exit code, never what is written or reported. See *Exit codes*.
+
 ## Bounded output in read-only modes
 
 A full population enumerates far more objects than a terminal or CI log can absorb, and a read-only run has nowhere to persist the overflow. So in **both** read-only modes the per-object record list is capped at the first **20** records (`MigrateListingStorage::MAX_PRINTED_RECORDS`).
@@ -231,19 +233,52 @@ Override the path with `--manifest`. The path is relative to the private disk.
 
 ## Statuses, conflicts, and failure handling
 
-| Status | Meaning | Fails the run? |
+| Status | Meaning | Fails by default? |
 |---|---|---|
 | `migrated` | Copied and verified | no |
 | `skipped_identical` | Destination already byte-identical | no |
 | `would_migrate` | Dry-run: would be copied | no |
 | `missing_on_dest` | Verify-only: not yet on the destination | **no** |
+| `source_vanished` | The local source was deleted during the copy window; the copy was rolled back | **no** — see *Live traffic* |
+| `source_changed` | The local source was replaced during the copy window; the copy was rolled back | **no** — see *Live traffic* |
 | `needs_review` | Destination has the same size but a different hash | **no** — see the warning below |
 | `conflict` | Destination differs and was not overwritten | **yes** |
 | `error` | Processing failed | **yes** |
 
 Error classes on a record are redacted and never carry bucket, endpoint, or credential detail: `NONE`, `SOURCE_MISSING`, `NETWORK_TIMEOUT`, `AUTHZ_DENIED`, `PARTIAL_UPLOAD`, `CHECKSUM_MISMATCH`, `UNKNOWN`.
 
-> **Warning — exit status alone is not sufficient.** Only `error` and `conflict` produce a failing exit code. A `needs_review` object — same byte size, different SHA-256, which is exactly the shape of a silently corrupted or divergent copy — leaves the run at **exit 0**. `missing_on_dest` likewise exits 0. **Always read the complete summary table; never gate a deployment on exit status alone.**
+> **Warning — exit status alone is not sufficient by default.** Without `--strict`, only `error` and `conflict` produce a failing exit code. A `needs_review` object — same byte size, different SHA-256, which is exactly the shape of a silently corrupted or divergent copy — leaves the run at **exit 0**, as do `missing_on_dest`, `source_vanished` and `source_changed`. **Read the complete summary table, or run with `--strict` if something automated is gating on the exit code.**
+
+### Exit codes
+
+`--strict` exists because the two audiences want opposite things. An operator at a terminal wants a raced object *reported*, not a failed run — the race is transient and a rerun converges. Automation gating on `$?` needs it to fail. `--strict` only ever **adds** statuses to the failure set; nothing that fails by default passes under it.
+
+| Outcome | Default | `--strict` |
+|---|---|---|
+| `migrated` / `skipped_identical` / `would_migrate` | 0 | 0 |
+| `missing_on_dest` (verify-only, mid-population) | 0 | **0** |
+| `source_vanished` | 0 + warning | **1** + warning |
+| `source_changed` | 0 + warning | **1** + warning |
+| `needs_review` | 0 | **1** |
+| `conflict` | 1 | 1 |
+| `error` | 1 | 1 |
+| Write mode without `--confirm` | 1 | 1 |
+
+`missing_on_dest` stays non-failing in both modes on purpose: mid-population it is the expected state of every object not yet copied, so failing on it would make `--verify-only` useless until the final object landed.
+
+The raced-object warning is printed in **both** modes — `--strict` changes the exit code, not what the operator is told.
+
+```bash
+# Operator-friendly default: races are reported, the run still succeeds.
+php artisan listing-storage:migrate --scope=all --confirm
+
+# Automation: any raced or needs-review object fails the run.
+php artisan listing-storage:migrate --scope=all --confirm --strict
+
+# Assert a completed population in CI (missing_on_dest still exits 0 —
+# use this after the population, not during it).
+php artisan listing-storage:migrate --scope=all --verify-only --strict
+```
 
 **Handling a conflict.** A conflict means the destination holds different bytes under a key you were about to write. The command leaves it untouched. Investigate before doing anything else: identify which copy is authoritative. Only then, and only against a narrow scope, may you overwrite:
 
@@ -274,6 +309,8 @@ The practical consequences:
 - A full-population `--dry-run` hashes every local object and issues one destination request per object.
 - A full-population `--verify-only` additionally **re-downloads every object already migrated**, incurring real egress cost and time.
 - A write run uploads, then re-downloads each object to verify it.
+- A write run also **re-reads every local object a second time** after the upload, to revalidate it against live traffic (see *Live traffic*). That roughly doubles local read I/O per migrated object. It costs no additional object-storage traffic, and it is what makes a live-traffic population safe.
+- A forced overwrite of an existing destination object additionally performs a server-side move during the final swap.
 
 Size your maintenance window against total bytes, not object count, and expect verification passes to cost roughly a full read of everything already in the bucket.
 
@@ -327,15 +364,43 @@ This command will never delete a local object. Neither should you, on the streng
 
 ## Live traffic and the recommended operating posture
 
-**Recommended: run the initial full population during a maintenance window, or with writes otherwise quiesced.** This is the safest posture with the code as it stands, and it is what we recommend.
+**Recommended: run the initial full population during a maintenance window, or with writes otherwise quiesced.** Fewer moving parts is still the safest posture, and it is what we recommend.
 
-Running while writes are still occurring is **permitted, not forbidden** — but you are accepting a specific, known risk, and you should do so deliberately:
+Running while writes continue is **supported**. The migrator decides everything about an object *before* the copy — exists, size, SHA-256 — and the upload lands some time later. In that window a live request can delete or replace the same object. Both cases are now detected and handled:
 
-- The deferred `ListingObjectMigrator` mid-copy race work is **not implemented**. A live request that deletes or replaces an object *while its copy is in flight* is not currently detected or rolled back.
-- Consequently a live-traffic population **may require reruns to converge**, and a rerun is the mechanism by which it converges.
-- This risk is **accepted operationally**. It is not resolved by the delete-ordering interlock, not resolved by the read-only/bounded-output work, and not resolved by this runbook.
+1. **Upload.** The bytes are streamed to the destination.
+2. **Revalidate the source.** The local source is re-read *after* the upload and *before* the destination is verified. That order matters: verifying first would compare against the pre-copy hash, which the race made stale, and a raced copy would verify as a success.
+3. **Detect.** Source gone → `source_vanished`. Source present but different bytes → `source_changed`. The check is content-based, so a replacement of the same byte length is caught.
+4. **Roll back.** The object this run just wrote is removed and confirmed gone. Leaving it would resurrect a deleted object, or leave stale bytes that object-first reads would serve as current. If the rollback itself does not take, the record is `error` rather than the benign raced status — a clean report with an orphan behind it is the exact divergence this prevents.
+5. **Record.** The status lands in the manifest and the run warns how many objects were raced.
+6. **Rerun to converge.** Raced objects are not in the resume done-set, so `--confirm --resume` reprocesses them against fresh state.
 
-If you do run against live traffic, plan for at least one additional `--confirm --resume` pass followed by a `--verify-only` pass, and treat any `conflict` or `needs_review` as requiring individual investigation rather than a blanket `--force-conflicts`.
+A live-traffic population therefore **may need more than one pass**, and a rerun is the mechanism by which it finishes. That is expected, not a fault. Plan for at least one additional `--confirm --resume` pass followed by a `--verify-only` pass, and treat any `conflict` or `needs_review` as requiring individual investigation rather than a blanket `--force-conflicts`.
+
+Use `--strict` if something automated must notice that a pass did not fully converge.
+
+### Staged forced overwrite (`--force-conflicts`)
+
+A forced overwrite is the only path that reaches the upload with an object already on the destination, and that object is the one thing a failure could destroy. It is therefore **staged**:
+
+- Staging applies **only** when the destination object already exists *and* `--force-conflicts` is active. The normal destination-missing path — every object in a fresh population — is unchanged and writes straight to its final key.
+- The new bytes are uploaded to a staging key and verified there (size + SHA-256), and the source is revalidated for a race, **before** the existing destination object is touched.
+- **Any failure before the final swap leaves the original destination object exactly as it was** — a race, a failed verification, or a throwing adapter all discard the staged object only.
+- Once the staged object is proven good, the original key is deleted and the staged object is moved onto it. The result is verified again at the final key.
+
+**The final swap is delete-plus-move and is not atomic.** There is no overwriting copy or rename available, so the original must be removed before the staged object can take its key, leaving a brief window in which neither holds the final key. It is two metadata operations on already-uploaded bytes rather than the whole upload.
+
+If the move fails, the run reports **`error`** and never `migrated`. The final key is left absent, reads fall back to local (correct bytes, nothing stale served), and a rerun re-copies.
+
+### The staging prefix
+
+```
+_migration-staging
+```
+
+Staged objects are **internal migration objects, not listing keys**. Nothing reads or serves them, and they are never migration candidates — enumeration reads the local source, and these live only on the destination. They are removed automatically on every handled outcome, success or failure.
+
+A hard process crash between staging and cleanup can leave residue under that prefix. It is inert, but it accumulates: **sweep `_migration-staging` manually after any run that died without exiting cleanly.** No command in this application does it for you.
 
 ## Known limitations
 
@@ -345,13 +410,20 @@ If you do run against live traffic, plan for at least one additional `--confirm 
 
 This is a documented limitation, not a fixed defect. No code change accompanies this runbook.
 
-**`needs_review` does not fail the run.** Covered above; repeated here because it is the most likely way a problem goes unnoticed. Read the full summary.
+**Unbounded in-memory record accumulation.** Every processed object's record is held in memory for the duration of a run, in all modes. At full-population scale this grows with object count. Not yet addressed; narrow a very large run with `--prefix`, `--scope` or `--limit` if memory becomes a concern.
+
+**`needs_review` does not fail the run by default.** Covered above; repeated here because it is the most likely way a problem goes unnoticed. Read the full summary, or use `--strict`.
 
 **Read-only modes are expensive.** Covered under *Cost and duration*. `--dry-run` and `--verify-only` hash local objects, check destination objects, and download destination content to verify — they are not free previews.
 
-**No automated rollback or cleanup.** Covered under *Interruption, containment, and rollback*. There is no command that removes objects from a secondary.
+**No automated rollback or cleanup.** Covered under *Interruption, containment, and rollback*. There is no command that removes objects from a secondary, including staging residue.
 
-**Mid-copy race under live traffic.** Covered under *Live traffic*. Deferred, not implemented.
+**The staged swap is not atomic, and its behavior is adapter-dependent.** Three things worth knowing before a forced overwrite at scale:
+
+- The final swap is delete-plus-move. A crash precisely between the two leaves the destination key **absent**. Local storage remains authoritative, so reads fall back correctly and a rerun converges — but the key is temporarily missing on the secondary.
+- **Move semantics differ by adapter.** On local disks a move is a rename. On real S3 it is a copy followed by a delete, with different failure and consistency characteristics, and single-operation copy size limits apply to very large objects. The staged flow degrades safely either way — a failed move is reported as `error`, never as a success — but the S3 path is not exercised by the automated tests.
+- **The automated tests use fake/local adapters**, not a real bucket. Behavior against production object storage should be confirmed on a narrow `--prefix` before a broad forced overwrite.
+- A hard crash may leave residue under `_migration-staging` requiring manual cleanup.
 
 ## Related files
 
