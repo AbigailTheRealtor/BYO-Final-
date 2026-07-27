@@ -265,6 +265,49 @@ class MigrateListingStorageTest extends TestCase
         $this->assertSame('DATA', Storage::disk('s3_public')->get('a.jpg'));
     }
 
+    /**
+     * R2-E1: a full population runs against a LIVE app with dual-write enabled.
+     * An object deleted by a live request while its copy is in flight must not be
+     * resurrected on the secondary — and, being a benign race rather than a
+     * failure, must not fail the run either. The operator is told to rerun.
+     */
+    public function test_live_delete_during_the_run_leaves_no_orphan_and_does_not_fail(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'HELLO');
+
+        // Decorate the destination so the live delete lands exactly mid-copy.
+        $dest = Storage::disk('s3_public');
+        Storage::set('s3_public', new class($dest)
+        {
+            public function __construct(private $inner)
+            {
+            }
+
+            public function writeStream($path, $resource, array $options = [])
+            {
+                Storage::disk('public')->delete('auction/images/a.jpg');
+
+                return $this->inner->writeStream($path, $resource, $options);
+            }
+
+            public function __call($method, $args)
+            {
+                return $this->inner->{$method}(...$args);
+            }
+        });
+
+        $this->artisan('listing-storage:migrate', ['--scope' => 'public', '--confirm' => true])
+            ->expectsOutput('1 object(s) changed or were deleted by live traffic mid-copy and were rolled back. Rerun to converge.')
+            ->assertExitCode(0);
+
+        $dest->assertMissing('auction/images/a.jpg');
+        $this->assertEmpty($dest->allFiles());
+
+        $manifests = Storage::disk('private')->allFiles('_migration-manifests');
+        $this->assertNotEmpty($manifests);
+        $this->assertStringContainsString('source_vanished', Storage::disk('private')->get($manifests[0]));
+    }
+
     public function test_limit_caps_processing(): void
     {
         Storage::disk('public')->put('a/1.jpg', 'X');
@@ -275,5 +318,142 @@ class MigrateListingStorageTest extends TestCase
             ->assertExitCode(0);
 
         $this->assertCount(1, Storage::disk('s3_public')->allFiles());
+    }
+
+    // ---------------------------------------------------------------------
+    // --strict
+    //
+    // Default: a raced or needs-review object is reported and the run exits 0 —
+    // a race is transient and a rerun converges, which is what an operator at a
+    // terminal wants. --strict gives automation an exit code to gate on. It only
+    // ever ADDS to the failure set; error and conflict fail in both modes.
+    // ---------------------------------------------------------------------
+
+    /** Make a live mutation land exactly mid-copy on the public secondary. */
+    private function raceDuringCopy(callable $mutation): void
+    {
+        $inner = Storage::disk('s3_public');
+
+        Storage::set('s3_public', new class($inner, $mutation)
+        {
+            public function __construct(private $inner, private $mutation)
+            {
+            }
+
+            public function writeStream($path, $resource, array $options = [])
+            {
+                ($this->mutation)();
+
+                return $this->inner->writeStream($path, $resource, $options);
+            }
+
+            public function __call($method, $args)
+            {
+                return $this->inner->{$method}(...$args);
+            }
+        });
+    }
+
+    /** Local and destination differ in content but NOT in length => needs_review. */
+    private function seedNeedsReview(): void
+    {
+        Storage::disk('public')->put('a.jpg', 'ABC');
+        Storage::disk('s3_public')->put('a.jpg', 'XYZ'); // same size, different hash
+    }
+
+    public function test_default_mode_source_vanished_exits_zero_and_warns(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'HELLO');
+        $this->raceDuringCopy(fn () => Storage::disk('public')->delete('auction/images/a.jpg'));
+
+        $this->artisan('listing-storage:migrate', ['--scope' => 'public', '--confirm' => true])
+            ->expectsOutput('1 object(s) changed or were deleted by live traffic mid-copy and were rolled back. Rerun to converge.')
+            ->assertExitCode(0);
+    }
+
+    public function test_default_mode_source_changed_exits_zero_and_warns(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'HELLO');
+        $this->raceDuringCopy(fn () => Storage::disk('public')->put('auction/images/a.jpg', 'WORLD'));
+
+        $this->artisan('listing-storage:migrate', ['--scope' => 'public', '--confirm' => true])
+            ->expectsOutput('1 object(s) changed or were deleted by live traffic mid-copy and were rolled back. Rerun to converge.')
+            ->assertExitCode(0);
+    }
+
+    public function test_default_mode_needs_review_exits_zero(): void
+    {
+        $this->seedNeedsReview();
+
+        $this->artisan('listing-storage:migrate', ['--scope' => 'public', '--confirm' => true])
+            ->assertExitCode(0);
+
+        $this->assertSame('XYZ', Storage::disk('s3_public')->get('a.jpg')); // not overwritten
+    }
+
+    public function test_strict_mode_source_vanished_fails(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'HELLO');
+        $this->raceDuringCopy(fn () => Storage::disk('public')->delete('auction/images/a.jpg'));
+
+        // The warning is still emitted — --strict changes the exit code, not what
+        // the operator is told.
+        $this->artisan('listing-storage:migrate', ['--scope' => 'public', '--confirm' => true, '--strict' => true])
+            ->expectsOutput('1 object(s) changed or were deleted by live traffic mid-copy and were rolled back. Rerun to converge.')
+            ->assertExitCode(1);
+    }
+
+    public function test_strict_mode_source_changed_fails(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'HELLO');
+        $this->raceDuringCopy(fn () => Storage::disk('public')->put('auction/images/a.jpg', 'WORLD'));
+
+        $this->artisan('listing-storage:migrate', ['--scope' => 'public', '--confirm' => true, '--strict' => true])
+            ->assertExitCode(1);
+    }
+
+    public function test_strict_mode_needs_review_fails(): void
+    {
+        $this->seedNeedsReview();
+
+        $this->artisan('listing-storage:migrate', ['--scope' => 'public', '--confirm' => true, '--strict' => true])
+            ->assertExitCode(1);
+
+        $this->assertSame('XYZ', Storage::disk('s3_public')->get('a.jpg')); // still not overwritten
+    }
+
+    /** --strict must not weaken anything: error/conflict fail in both modes. */
+    public function test_conflict_fails_in_both_modes(): void
+    {
+        Storage::disk('public')->put('a.jpg', 'ABC');
+        Storage::disk('s3_public')->put('a.jpg', 'DIFFERENT-LENGTH');
+
+        $this->artisan('listing-storage:migrate', ['--scope' => 'public', '--confirm' => true])
+            ->assertExitCode(1);
+
+        $this->artisan('listing-storage:migrate', ['--scope' => 'public', '--confirm' => true, '--strict' => true])
+            ->assertExitCode(1);
+
+        $this->assertSame('DIFFERENT-LENGTH', Storage::disk('s3_public')->get('a.jpg'));
+    }
+
+    /** A clean run is unaffected by --strict. */
+    public function test_strict_mode_does_not_fail_a_clean_run(): void
+    {
+        Storage::disk('public')->put('auction/images/a.jpg', 'HELLO');
+
+        $this->artisan('listing-storage:migrate', ['--scope' => 'public', '--confirm' => true, '--strict' => true])
+            ->assertExitCode(0);
+
+        $this->assertSame('HELLO', Storage::disk('s3_public')->get('auction/images/a.jpg'));
+    }
+
+    /** missing_on_dest stays a non-failure in both modes (scope (b), not (c)). */
+    public function test_strict_mode_does_not_fail_verify_only_on_missing_on_dest(): void
+    {
+        Storage::disk('public')->put('a.jpg', 'DATA'); // never migrated
+
+        $this->artisan('listing-storage:migrate', ['--scope' => 'public', '--verify-only' => true, '--strict' => true])
+            ->assertExitCode(0);
     }
 }
