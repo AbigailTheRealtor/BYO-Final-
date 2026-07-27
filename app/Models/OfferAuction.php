@@ -17,12 +17,14 @@ class OfferAuction extends Model
         'is_draft',
         'is_approved',
         'is_sold',
+        'bidding_started_at',
     ];
 
     protected $casts = [
-        'is_approved' => 'boolean',
-        'is_draft'    => 'boolean',
-        'is_sold'     => 'boolean',
+        'is_approved'        => 'boolean',
+        'is_draft'           => 'boolean',
+        'is_sold'            => 'boolean',
+        'bidding_started_at' => 'datetime',
     ];
 
     protected $attributes = [

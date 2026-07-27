@@ -23,6 +23,7 @@ class LandlordOfferListingEdit extends Component
     use WithFileUploads;
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
+    use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // canonical bidding_started_at
     use HasCanonicalPetFee;        // #2 Part B: canonical pet fee (create + edit)
 
     protected $listeners = [
@@ -3142,12 +3143,15 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('workflow_type', 'offer_listing');
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
-        $auction->saveMeta('auction_type', $this->auction_type);
+        // FROZEN once the listing is live and has a submitted offer — a live
+        // bidding deadline must not move under the bidders who committed to it.
+        [$_auctionType, $_auctionTime] = $this->resolveAuctionTermsForSave($auction, 'landlord');
+        $auction->saveMeta('auction_type', $_auctionType);
         $auction->saveMeta('working_with_agent', $this->working_with_agent);
         $auction->saveMeta('listing_date', $this->listing_date);
         $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);
         $auction->saveMeta('expiration_date', $this->expiration_date);
-        $auction->saveMeta('auction_time', $this->auction_time);
+        $auction->saveMeta('auction_time', $_auctionTime);
 
         // Location Information
         $auction->saveMeta('counties', json_encode($this->counties));
@@ -3884,6 +3888,9 @@ class LandlordOfferListingEdit extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            // Listing is now Active — start the bidding clock (once, never restarted).
+            $this->stampBiddingActivation($auction, 'landlord');
 
             if ($dnaShouldFire) {
                 try {

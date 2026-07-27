@@ -457,43 +457,16 @@
 
     {{-- ===== HERO ===== --}}
     @php
-        // Bidding Period countdown — uses expiration_date when available; falls back to created_at + auction_time for legacy records
-        $hasBPTimer = false;
-        $timerRemainingSeconds = 0;
-        $_auctionType = trim($str('auction_type'));
-        if ($_auctionType === '') {
-            $_auctionType = trim((string)($auction->auction_type ?? ''));
-        }
-        if (in_array(strtolower($_auctionType), ['bidding period', 'auction (timer)'])) {
-            $_timerEnd = null;
-            $_expDateStr = trim($str('expiration_date'));
-            if ($_expDateStr !== '') {
-                $_timerEnd = \Carbon\Carbon::parse($_expDateStr);
-            } else {
-                $_aTime = trim($str('auction_time'));
-                if ($_aTime === '') {
-                    $_aTime = trim((string)($auction->auction_time ?? $auction->auction_length ?? ''));
-                }
-                if ($_aTime !== '') {
-                    $_parts = explode(' ', $_aTime);
-                    $_val   = (int)($_parts[0] ?? 0);
-                    $_unit  = strtolower($_parts[1] ?? 'days');
-                    if ($_val > 0) {
-                        $_start = \Carbon\Carbon::parse($auction->created_at);
-                        $_timerEnd = match(true) {
-                            in_array($_unit, ['hour','hours'])     => $_start->addHours($_val),
-                            in_array($_unit, ['week','weeks'])     => $_start->addWeeks($_val),
-                            in_array($_unit, ['minute','minutes']) => $_start->addMinutes($_val),
-                            default                               => $_start->addDays($_val),
-                        };
-                    }
-                }
-            }
-            if (!empty($_timerEnd)) {
-                $timerRemainingSeconds = (int)\Carbon\Carbon::now()->diffInSeconds($_timerEnd, false);
-                $hasBPTimer = true;
-            }
-        }
+        // Bidding Period countdown — canonical window from BiddingWindowService.
+        // The deadline is bidding_started_at + auction_time; listings activated
+        // before that stamp existed fall back to legacy behaviour inside the
+        // service. No deadline arithmetic happens in this view.
+        $bw = $biddingWindow ?? \App\Services\Offers\BiddingWindow::notBidding();
+
+        $hasBPTimer            = $bw->isBiddingPeriod && $bw->hasDeadline();
+        $timerRemainingSeconds = $bw->remainingSeconds();
+        $bpEndsAtDisplay       = $bw->endsAtForDisplay();
+        $bpClosed              = $bw->isClosed();
     @endphp
     <div class="lol-hero mb-4">
         <div class="row g-0" style="min-height:280px;">
@@ -551,8 +524,8 @@
                     @if($hasBPTimer)
                     <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
                         <span class="text-muted fw-semibold" style="font-size:.8rem;"><i class="fa-regular fa-clock me-1"></i>Bidding Period:</span>
-                        @if($timerRemainingSeconds <= 0)
-                            <span class="badge bg-secondary" style="font-size:.8rem;">Expired</span>
+                        @if($bpClosed)
+                            <span class="badge bg-secondary" style="font-size:.8rem;">Bidding Closed</span>
                         @else
                             <span class="badge bg-info text-dark lol-bp-timer"
                                   data-seconds="{{ $timerRemainingSeconds }}"
@@ -1108,15 +1081,15 @@
                     {!! $row('Available Date', $fmtDate($str('available_date') ?: $str('lease_available_date'))) !!}
                 </div>
             </div>
-            {{-- Bidding Period countdown timer (source: created_at + auction_time) --}}
+            {{-- Bidding Period countdown timer (source: bidding_started_at + auction_time) --}}
             @if($hasBPTimer)
             <div class="mt-3 pt-3" style="border-top:1px solid #e2e8f0;">
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="text-muted fw-semibold" style="font-size:.85rem;">
                         <i class="fa-regular fa-clock me-1"></i>Bidding Period Time Remaining:
                     </span>
-                    @if($timerRemainingSeconds <= 0)
-                        <span class="badge bg-secondary" style="font-size:.85rem;">Expired</span>
+                    @if($bpClosed)
+                        <span class="badge bg-secondary" style="font-size:.85rem;">Bidding Closed</span>
                     @else
                         <span class="badge bg-info text-dark lol-bp-timer"
                               data-seconds="{{ $timerRemainingSeconds }}"
@@ -1137,11 +1110,23 @@
                             @endphp
                         </span>
                     @endif
+                    @if($bpEndsAtDisplay)
+                        <span class="text-muted" style="font-size:.8rem;">
+                            (closes {{ $bpEndsAtDisplay->format('M j, Y g:i A') }} ET)
+                        </span>
+                    @endif
                 </div>
             </div>
             @endif
         </div>
     </div>
+
+    @include('offer-listing.partials._competing-bids', [
+        'role'           => 'landlord',
+        'canViewBidFeed' => $canViewBidFeed ?? false,
+        'bidFeed'        => $bidFeed ?? [],
+        'biddingWindow'  => $bw,
+    ])
 
     {{-- ================================================================
          PROPERTY DETAILS
@@ -1982,13 +1967,9 @@
 
             @if($hasBPTimer)
             @php
-                $_lolSidebarEndDate = null;
-                $_lolExpDateStr = $str('expiration_date');
-                if ($_lolExpDateStr) {
-                    $_lolSidebarEndDate = $fmtDate($_lolExpDateStr);
-                } elseif (!empty($_timerEnd) && $_timerEnd instanceof \Carbon\Carbon) {
-                    $_lolSidebarEndDate = $_timerEnd->format('M j, Y');
-                }
+                // Canonical close date only — expiration_date is a listing
+                // expiry, not the bidding deadline, and must not appear here.
+                $_lolSidebarEndDate = $bpEndsAtDisplay?->format('M j, Y');
             @endphp
             @if($_lolSidebarEndDate)
             <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
