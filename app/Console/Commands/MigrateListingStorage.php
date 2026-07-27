@@ -21,14 +21,24 @@ use Illuminate\Support\Facades\Storage;
  */
 class MigrateListingStorage extends Command
 {
+    /**
+     * R2-E1 — how many per-object records a non-writing run prints.
+     *
+     * A full population enumerates far more objects than a terminal (or a CI log)
+     * can absorb, and a read-only run has nowhere to persist the overflow. Past
+     * this many records the listing is truncated and the run says how many of how
+     * many it showed; the summary counts remain complete regardless.
+     */
+    public const MAX_PRINTED_RECORDS = 20;
+
     protected $signature = 'listing-storage:migrate
         {--scope=all : public | private | all}
         {--prefix= : Restrict to a relative-key prefix (e.g. auction/images)}
         {--dry-run : Plan only — enumerate and decide, but never write or persist a manifest}
-        {--verify-only : Verify destination against local (size + SHA-256); never write}
+        {--verify-only : Verify destination against local (size + SHA-256); never write anything, anywhere}
         {--confirm : Required to actually write objects (ignored by --dry-run/--verify-only)}
         {--resume : Skip keys already migrated/identical in the resumed manifest}
-        {--manifest= : Manifest path on the private disk (default _migration-manifests/migrate-<ts>.json)}
+        {--manifest= : Manifest path on the private disk; read by --resume, written only by a --confirm run (default _migration-manifests/migrate-<ts>.json)}
         {--limit= : Cap the number of objects processed this run}
         {--force-conflicts : Overwrite a differing destination (requires --confirm)}
         {--include-manifests : Also migrate _backfill-manifests (excluded by default)}';
@@ -125,6 +135,16 @@ class MigrateListingStorage extends Command
             }
         }
 
+        // R2-E1 — a run that was told not to write must not write. --dry-run has
+        // decided nothing yet, and --verify-only is an audit: persisting its
+        // manifest would mutate the private disk to record that we only looked.
+        // Both therefore report to stdout instead, and neither may reach persist().
+        $readOnly = $dryRun || $verifyOnly;
+
+        $total = count($records);
+        $shown = $readOnly ? array_slice($records, 0, self::MAX_PRINTED_RECORDS) : $records;
+        $omitted = $total - count($shown);
+
         $manifest = [
             'generated_at' => now()->toIso8601String(),
             'options' => [
@@ -134,14 +154,32 @@ class MigrateListingStorage extends Command
                 'verify_only' => $verifyOnly,
                 'force_conflicts' => (bool) $this->option('force-conflicts'),
             ],
+            // Counts always cover every processed object; only the record LIST
+            // below is bounded.
             'summary' => $summary,
-            'records' => $records,
+            'records' => $shown,
         ];
+        if ($omitted > 0) {
+            $manifest['records_truncated'] = [
+                'shown' => count($shown),
+                'omitted' => $omitted,
+                'total' => $total,
+            ];
+        }
 
-        $json = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
-        if ($dryRun) {
-            $this->line($json); // dry-run persists nothing
+        if ($readOnly) {
+            $this->line(json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            if ($omitted > 0) {
+                // Say it out loud: a silently clipped list reads as the whole plan.
+                $this->warn(sprintf(
+                    'Showing first %d of %d records (%d not shown). The summary below counts all %d.',
+                    count($shown),
+                    $total,
+                    $omitted,
+                    $total
+                ));
+                $this->warn('Narrow the run with --prefix/--scope/--limit to see the rest.');
+            }
         } else {
             $path = $this->persist($records);
             $this->info('Manifest written to private disk: '.$path);
@@ -156,7 +194,9 @@ class MigrateListingStorage extends Command
         $rows === [] ? $this->line('No candidate objects found.') : $this->table(['status', 'count'], $rows);
 
         if ($failed) {
-            $this->error('One or more objects had errors or conflicts. Inspect the manifest.');
+            $this->error($readOnly
+                ? 'One or more objects had errors or conflicts. Inspect the records above.'
+                : 'One or more objects had errors or conflicts. Inspect the manifest.');
 
             return self::FAILURE;
         }

@@ -110,8 +110,17 @@ class ListingStorageWriterPublicTest extends TestCase
         Storage::disk('s3_public')->assertMissing($path);
     }
 
-    /** (6) a secondary-delete failure never fails the request; primary is removed. */
-    public function test_secondary_delete_failure_is_soft(): void
+    /**
+     * (6) a secondary-delete failure never fails the request — but as of the
+     * R2-E1 ordering interlock it no longer removes the primary either.
+     *
+     * Previously the primary was deleted first and a secondary failure was merely
+     * logged, which left the secondary holding an object the primary no longer
+     * had — served as current under object-first reads, with no local fallback
+     * and nothing that would ever remove it. Retaining both copies is consistent
+     * and a retry converges. See ListingStorageWriterInterlockTest.
+     */
+    public function test_secondary_delete_failure_retains_the_primary(): void
     {
         Log::spy();
         $path = $this->writer()->storePublic($this->photo(), self::IMAGES, 'e.jpg');
@@ -120,9 +129,9 @@ class ListingStorageWriterPublicTest extends TestCase
             'listing_storage.public_secondary_disk' => 'undefined_secondary_disk',
         ]);
 
-        $this->writer()->deletePublic($path);
+        $this->writer()->deletePublic($path); // still no exception
 
-        Storage::disk('public')->assertMissing($path); // primary delete still happened
+        Storage::disk('public')->assertExists($path); // primary held back
         Log::shouldHaveReceived('warning')->once();
     }
 

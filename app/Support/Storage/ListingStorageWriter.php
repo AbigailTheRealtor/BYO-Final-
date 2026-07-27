@@ -27,6 +27,18 @@ use Throwable;
  *   - PRIMARY write/delete failures propagate (hard fail) exactly as before.
  *   - SECONDARY (object-storage) write/delete failures NEVER fail the user
  *     request — they are logged and swallowed.
+ *   - R2-E1 ORDERING INTERLOCK — the two directions are deliberately asymmetric,
+ *     because only one of the two divergent states is safe:
+ *       WRITE  primary → secondary. A secondary MISSING an object is harmless:
+ *              the read path falls back to local and serves correct bytes, so a
+ *              failed mirror stays soft and the primary is kept.
+ *       DELETE secondary → primary. A secondary RETAINING an object the primary
+ *              no longer has is NOT harmless: object-first reads serve it as
+ *              current, there is no local copy left to fall back to, and no
+ *              later delete will ever reach it. So the secondary must be
+ *              confirmed clear first; if it cannot be, the primary is retained
+ *              and the delete simply has not happened yet on either disk.
+ *              Consistent and recoverable — a retry converges.
  *   - A private file is only ever mirrored to the PRIVATE secondary disk, never a
  *     public one; and never to a secondary that advertises a public URL.
  *   - A public file is only ever mirrored to the PUBLIC secondary disk. If the
@@ -144,40 +156,74 @@ class ListingStorageWriter
     }
 
     /**
-     * Core delete with parity: primary then optional secondary.
+     * Core delete with parity, under the R2-E1 ordering interlock: the SECONDARY
+     * is cleared first, and the primary is removed only once the object is
+     * confirmed gone from it.
      */
     private function delete(string $path, bool $private): void
     {
         $primaryName = $private ? $this->disks->privateDiskName() : $this->disks->publicDiskName();
 
-        // Primary delete — authoritative, same semantics as before.
-        Storage::disk($primaryName)->delete($path);
-
-        if (! $this->dualWriteEnabled()) {
+        // Interlock: hold the primary back rather than leave the secondary
+        // holding an object the primary no longer has.
+        if ($this->dualWriteEnabled() && ! $this->secondaryCleared($path, $private)) {
             return;
         }
 
+        // Primary delete — authoritative, same semantics as before.
+        Storage::disk($primaryName)->delete($path);
+    }
+
+    /**
+     * Remove the object from the secondary and report whether the primary may now
+     * be deleted.
+     *
+     * True means "the secondary does not hold this object" — either it was
+     * removed, it was never there (the common case while a population is still in
+     * flight), or the configured secondary is not a legitimate target at all.
+     * False means the object may still be on the secondary, so the primary is
+     * retained: both disks keeping it is consistent and a retry converges,
+     * whereas a secondary-only copy is served as current under object-first reads
+     * with no local fallback and nothing left to remove it.
+     */
+    private function secondaryCleared(string $path, bool $private): bool
+    {
         $secondaryName = $this->secondaryName($private);
 
         // Isolation guard: a public delete must never reach a private disk, or a
-        // misconfigured selector would delete private documents.
+        // misconfigured selector would delete private documents. The mirror is
+        // refused for the same reason, so there is no secondary copy to keep in
+        // step and a config error must not block the user's delete.
         if (! $private && ! $this->publicSecondaryAllowed($secondaryName)) {
             Log::warning('listing-storage dual-delete skipped: public secondary points at a private disk', [
                 'disk' => $secondaryName,
             ]);
 
-            return;
+            return true;
         }
 
         try {
-            Storage::disk($secondaryName)->delete($path);
+            $secondary = Storage::disk($secondaryName);
+            $secondary->delete($path);
+
+            // Confirm rather than trust the return value: League v1 reports an
+            // already-absent key as a falsey delete, so absence — the desired end
+            // state — must not read as failure, nor a surviving object as success.
+            if (! $secondary->exists($path)) {
+                return true;
+            }
         } catch (Throwable $e) {
-            // Soft fail: never break the user action on a secondary miss.
-            Log::warning('listing-storage dual-delete secondary failed', [
-                'path' => $path,
-                'disk' => $secondaryName,
-            ]);
+            // Unreachable/undefined secondary: fall through to the retain path.
         }
+
+        // Soft fail: never break the user action on a secondary miss. The delete
+        // simply has not happened yet, on either disk.
+        Log::warning('listing-storage dual-delete secondary not cleared; primary retained', [
+            'path' => $path,
+            'disk' => $secondaryName,
+        ]);
+
+        return false;
     }
 
     /**
