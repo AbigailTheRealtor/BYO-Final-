@@ -19,6 +19,12 @@ use Throwable;
  *
  * Private objects are only ever routed to the PRIVATE secondary, never a public
  * disk, and never to a secondary that advertises a public URL.
+ *
+ * R2-E1 (full population readiness) adds live-traffic safety: a population runs
+ * with dual-write enabled, so each per-object copy races the writer. Every
+ * completed copy revalidates its source before being trusted, and a copy that
+ * raced a live delete or replace is rolled back rather than left on the
+ * secondary. See sourceRacedDuringCopy().
  */
 class ListingObjectMigrator
 {
@@ -30,6 +36,10 @@ class ListingObjectMigrator
     public const ERROR = 'error';
     public const WOULD_MIGRATE = 'would_migrate';
     public const MISSING_ON_DEST = 'missing_on_dest'; // verify-only
+    // R2-E1: live traffic mutated the source while the copy was in flight; the
+    // destination write was rolled back. Benign and transient — a rerun converges.
+    public const SOURCE_VANISHED = 'source_vanished';
+    public const SOURCE_CHANGED = 'source_changed';
 
     // Error enum (redacted; never carries secrets/bucket/endpoint).
     public const E_NONE = 'NONE';
@@ -221,6 +231,28 @@ class ListingObjectMigrator
                 }
             }
 
+            // ---- R2-E1: revalidate the source before trusting the copy ----
+            // A full population runs against a LIVE app with dual-write on, so the
+            // decisions made above (exists + size + hash) can be stale by the time
+            // the upload lands. Checked BEFORE the destination verification, which
+            // compares against that same stale hash and would otherwise report a
+            // raced copy as migrated (or as a false checksum-mismatch alarm).
+            $raced = $this->sourceRacedDuringCopy($src, $key, $localSha);
+            if ($raced !== null) {
+                if (! $this->rollback($dest, $key)) {
+                    // The whole point is to leave no orphan; if the rollback did
+                    // not take, fail loudly rather than silently diverge.
+                    $record['status'] = self::ERROR;
+                    $record['error'] = self::E_UNKNOWN;
+
+                    return $record;
+                }
+
+                $record['status'] = $raced;
+
+                return $record;
+            }
+
             // ---- verify the upload ----
             $ok = $this->verifyAgainstDest($dest, $key, $size, $localSha, $record);
             if (! $ok) {
@@ -240,6 +272,68 @@ class ListingObjectMigrator
             $record['error'] = $this->classify($e);
 
             return $record;
+        }
+    }
+
+    /**
+     * R2-E1 — did live traffic mutate the source while the copy was in flight?
+     *
+     * Two interleavings matter, both of which reach the secondary BEFORE our copy
+     * does (ListingStorageWriter mirrors/dual-deletes inline with the request):
+     *
+     *   - deleted mid-copy  → the dual-delete already ran against the secondary,
+     *     so our copy would resurrect an object that nothing will ever delete
+     *     again (for private scope, a deleted disclosure served by object-first
+     *     reads).
+     *   - replaced mid-copy → dual-write already mirrored the NEW bytes and our
+     *     copy of the OLD bytes would silently overwrite them.
+     *
+     * Costs one extra streamed read of the LOCAL source per object; no additional
+     * object-storage traffic. Content-based on purpose — a replacement of equal
+     * byte length is exactly the case a size/mtime check would miss.
+     *
+     * @return string|null  SOURCE_VANISHED, SOURCE_CHANGED, or null when unraced.
+     */
+    private function sourceRacedDuringCopy($src, string $key, string $localSha): ?string
+    {
+        if (! $src->exists($key)) {
+            return self::SOURCE_VANISHED;
+        }
+
+        try {
+            $currentSha = $this->streamSha256($src, $key);
+        } catch (Throwable $e) {
+            // Unreadable immediately after existing: the delete landed between the
+            // two calls. Treated as vanished — the rollback below is the safe
+            // response either way, and a rerun re-decides on fresh state.
+            return self::SOURCE_VANISHED;
+        }
+
+        return hash_equals($localSha, $currentSha) ? null : self::SOURCE_CHANGED;
+    }
+
+    /**
+     * Remove the object this run just wrote.
+     *
+     * A missing key on the secondary is safe: the R2-D.1 read path falls back to
+     * the local copy, whereas a stale or resurrected object would be served as if
+     * it were current. Returns false only if the object is still there afterwards.
+     *
+     * This restores the secondary exactly when the destination was EMPTY before
+     * the copy — the normal case. Under --force-conflicts the destination held a
+     * differing object that process() removed before writing, so rolling back
+     * leaves the key absent rather than restoring that object. Absent is still the
+     * safe state (reads fall back to local), but it is not "as it was"; preserving
+     * the prior object across a forced overwrite is handled separately.
+     */
+    private function rollback($dest, string $key): bool
+    {
+        try {
+            $dest->delete($key);
+
+            return ! $dest->exists($key);
+        } catch (Throwable $e) {
+            return false;
         }
     }
 
