@@ -41,6 +41,7 @@ class MigrateListingStorage extends Command
         {--manifest= : Manifest path on the private disk; read by --resume, written only by a --confirm run (default _migration-manifests/migrate-<ts>.json)}
         {--limit= : Cap the number of objects processed this run}
         {--force-conflicts : Overwrite a differing destination (requires --confirm)}
+        {--strict : Also fail (exit 1) on objects raced by live traffic or needing review; default reports them and exits 0}
         {--include-manifests : Also migrate _backfill-manifests (excluded by default)}';
 
     protected $description = 'HI-05A R2-C: copy existing local listing storage to object-storage secondaries (non-destructive, resumable, idempotent).';
@@ -125,12 +126,31 @@ class MigrateListingStorage extends Command
      */
     private function emit(array $records, bool $dryRun, bool $verifyOnly): int
     {
+        // A human watching a terminal wants a raced object reported, not a failed
+        // run — a race is transient and a rerun converges. Automation wants the
+        // opposite: an exit code it can gate on. --strict serves the second without
+        // changing the first. It only ever ADDS statuses to the failure set; error
+        // and conflict fail in both modes.
+        $strict = (bool) $this->option('strict');
+        $failStatuses = [ListingObjectMigrator::ERROR, ListingObjectMigrator::CONFLICT];
+        if ($strict) {
+            $failStatuses = array_merge($failStatuses, [
+                // Transient: the population is simply not finished yet.
+                ListingObjectMigrator::SOURCE_VANISHED,
+                ListingObjectMigrator::SOURCE_CHANGED,
+                // Not transient: same byte length, different hash. Exactly the
+                // shape of a silently divergent copy, and exit 0 by default is a
+                // trap for anything that gates on status alone.
+                ListingObjectMigrator::NEEDS_REVIEW,
+            ]);
+        }
+
         $summary = [];
         $failed = false;
         foreach ($records as $r) {
             $s = $r['status'] ?? 'unknown';
             $summary[$s] = ($summary[$s] ?? 0) + 1;
-            if (in_array($s, [ListingObjectMigrator::ERROR, ListingObjectMigrator::CONFLICT], true)) {
+            if (in_array($s, $failStatuses, true)) {
                 $failed = true;
             }
         }
@@ -193,10 +213,22 @@ class MigrateListingStorage extends Command
         }
         $rows === [] ? $this->line('No candidate objects found.') : $this->table(['status', 'count'], $rows);
 
+        // R2-E1: objects the migrator rolled back because live traffic mutated
+        // them mid-copy. Not a failure — the secondary is correct (local still
+        // serves them) — but the population is incomplete until a rerun.
+        $raced = ($summary[ListingObjectMigrator::SOURCE_VANISHED] ?? 0)
+            + ($summary[ListingObjectMigrator::SOURCE_CHANGED] ?? 0);
+        if ($raced > 0) {
+            $this->warn("{$raced} object(s) changed or were deleted by live traffic mid-copy and were rolled back. Rerun to converge.");
+        }
+
         if ($failed) {
-            $this->error($readOnly
-                ? 'One or more objects had errors or conflicts. Inspect the records above.'
-                : 'One or more objects had errors or conflicts. Inspect the manifest.');
+            // Name what actually failed: under --strict the run can fail on a
+            // raced or needs-review object and nothing resembling an error.
+            $what = $strict
+                ? 'One or more objects had errors, conflicts, or were raced/need review (--strict).'
+                : 'One or more objects had errors or conflicts.';
+            $this->error($what.($readOnly ? ' Inspect the records above.' : ' Inspect the manifest.'));
 
             return self::FAILURE;
         }
