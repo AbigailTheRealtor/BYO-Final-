@@ -1,0 +1,88 @@
+/*
+ | Styles for the MapLibre PMTiles proof page only.
+ |
+ | Scoped entirely under .maplibre-proof and shipped in the proof bundle, so
+ | nothing here reaches app.css or any production surface. No Tailwind directives
+ | and no global element selectors — this file must stay inert for the rest of
+ | the application.
+ */
+
+.maplibre-proof {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0 auto;
+    max-width: 1100px;
+    padding: 1.5rem 1rem;
+}
+
+.maplibre-proof__heading {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem;
+}
+
+.maplibre-proof__note {
+    color: #4b5563;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    margin: 0 0 1rem;
+}
+
+.maplibre-proof__frame {
+    position: relative;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.maplibre-proof__map {
+    height: 560px;
+    width: 100%;
+    background: #f3f0e9;
+}
+
+/* Loading and error panels share the same overlay box. Both are driven by the
+   `hidden` attribute from JS, never by a class toggle, so the server-rendered
+   markup is the single source of truth for the initial state. */
+.maplibre-proof__overlay {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    z-index: 2;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    padding: 0.625rem 0.875rem;
+}
+
+.maplibre-proof__overlay[hidden] {
+    display: none;
+}
+
+.maplibre-proof__overlay--status {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+}
+
+.maplibre-proof__overlay--error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+.maplibre-proof__error-title {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.125rem;
+}
+
+.maplibre-proof__unconfigured {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    color: #92400e;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    padding: 0.875rem 1rem;
+}

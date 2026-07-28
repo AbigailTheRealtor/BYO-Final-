@@ -1364,3 +1364,30 @@ Route::post('/_telemetry/maps-auth-failure', \App\Http\Controllers\Telemetry\Map
     ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
     ->middleware('throttle:20,1')
     ->name('telemetry.maps-auth-failure');
+
+// ===========================================================================
+// Phase 2A — MapLibre + PMTiles proof-of-render (INTERNAL DIAGNOSTIC).
+// Proves the self-hosted Florida basemap archive renders in a browser. Reads no
+// listing, opens no database connection, and is wired into no consumer flow.
+//
+// Double-gated, matching the dev-login route above:
+//   1. never registered in the production environment, AND
+//   2. explicitly opted in via SPATIAL_MAPLIBRE_PROOF_ENABLED (default: false).
+//
+// Gate 2 is enforced inside the closure rather than around the route so that the
+// flag is evaluated per request. Registration-time gating alone would be
+// untestable — routes are bound once at boot, long before a test can set config.
+// The 404 (not 403) keeps the page's existence unadvertised when disabled.
+// ===========================================================================
+if (! app()->environment('production')) {
+    Route::get('/internal/spatial/maplibre-proof', function () {
+        abort_unless(config('spatial_basemap.proof_enabled'), 404);
+
+        return view('spatial.maplibre-proof', [
+            'pmtilesUrl'  => config('spatial_basemap.pmtiles_url'),
+            'attribution' => config('spatial_basemap.attribution'),
+            'initialView' => config('spatial_basemap.initial_view'),
+            'maxZoom'     => config('spatial_basemap.max_zoom'),
+        ]);
+    })->name('internal.spatial.maplibre-proof');
+}
