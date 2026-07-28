@@ -17,6 +17,7 @@ class SellerAgentAuctionEdit extends Component
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+    use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: address rules + ZIP autofill
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -874,6 +875,15 @@ class SellerAgentAuctionEdit extends Component
     }
     public function updatedAddress($value)
     {
+        // Phase 0 — a class method wins over the trait's, so the ZIP-in-street-
+        // field recovery is invoked explicitly here.
+        $this->addressAssistNotice = '';
+        if ($this->recoverZipTypedIntoStreetField((string) $value)) {
+            $this->addressSuggestions = [];
+
+            return;
+        }
+
         if (strlen($value) > 1) {
             $this->addressSuggestions = $this->getPlaceSuggestions($value, 'address');
         } else {
@@ -2018,7 +2028,10 @@ class SellerAgentAuctionEdit extends Component
     public function update()
     {
         try {
-            $this->validate([
+            // Phase 0 (Spatial UI Integration) — this edit path validated no
+            // address at all, so a published listing could be re-saved with a
+            // street number in place of an address.
+            $this->validate(\App\Rules\ValidStreetAddress::rules() + [
                 'initial_deposit_timeframe'          => 'nullable|in:,Within 1 Day,Within 3 Days,Within 5 Days,Within 7 Days,Within 10 Days,Within 14 Days,At Closing,Other',
                 'additional_deposit_timeframe'       => 'nullable|in:,Within 1 Day,Within 3 Days,Within 5 Days,Within 7 Days,Within 10 Days,Within 14 Days,At Closing,Other',
                 'appraisal_contingency_preference'   => 'nullable|in:,Required,Preferred Waived,Negotiable,Not Applicable',

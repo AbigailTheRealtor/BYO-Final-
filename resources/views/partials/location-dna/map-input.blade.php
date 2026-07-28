@@ -242,7 +242,7 @@
   {{-- ── Map panel ── --}}
   <div style="position:relative;">
     <div id="{{ $mapPanelId }}" wire:ignore></div>
-    <div id="{{ $mapPanelId }}-placeholder"
+    <div id="{{ $mapPanelId }}-placeholder" data-byo-maps-loading
       style="position:absolute;top:0;left:0;right:0;bottom:0;
         display:flex;align-items:center;justify-content:center;background:#f8fafc;
         border-radius:6px;border:1px solid #ced4da;color:#64748b;font-size:.9rem;
@@ -252,6 +252,24 @@
       @else
         <span><i class="fa-solid fa-map me-2"></i>Add a city or ZIP above, or use the draw tools to mark preferred areas.</span>
       @endif
+    </div>
+
+    {{-- Phase 0 (Spatial UI Integration) — honest degradation.
+         When the map provider rejects our credential the panel above otherwise
+         sits on "Loading map…" forever, which is a lie: nothing is loading. This
+         notice replaces it and tells the user what still works. Revealed by
+         gm_authFailure in <x-google-maps-auth-telemetry>. --}}
+    <div data-byo-maps-unavailable
+      style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;
+        align-items:center;justify-content:center;background:#fffbeb;
+        border-radius:6px;border:2px solid #f59e0b;color:#92400e;font-size:.88rem;
+        text-align:center;padding:1rem;z-index:2;">
+      <span>
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+        The map is unavailable in this environment. Your saved cities, ZIP codes and
+        counties above still work and are still used for matching — only the map view
+        and the draw tools are affected.
+      </span>
     </div>
   </div>
 

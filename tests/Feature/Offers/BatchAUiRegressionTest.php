@@ -63,6 +63,9 @@ class BatchAUiRegressionTest extends TestCase
             ['seller_agent_auction_id' => $auction->id, 'meta_key' => 'last_name',     'meta_value' => 'Agent'],
             ['seller_agent_auction_id' => $auction->id, 'meta_key' => 'phone_number',  'meta_value' => '5551234567'],
             ['seller_agent_auction_id' => $auction->id, 'meta_key' => 'email',         'meta_value' => 'agent@example.com'],
+            // Phase 0 (Spatial UI Integration): a published listing carries a real
+            // street address — it is validated on the edit-update path too.
+            ['seller_agent_auction_id' => $auction->id, 'meta_key' => 'address',       'meta_value' => '100 2nd Ave N, St. Petersburg'],
         ]);
 
         $offerAuction = OfferAuction::create(['user_id' => $user->id]);

@@ -17,6 +17,7 @@ class LandLordAgentAuctionEdit extends Component
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+    use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: address rules + ZIP autofill
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -1030,6 +1031,15 @@ class LandLordAgentAuctionEdit extends Component
     }
     public function updatedAddress($value)
     {
+        // Phase 0 — a class method wins over the trait's, so the ZIP-in-street-
+        // field recovery is invoked explicitly here.
+        $this->addressAssistNotice = '';
+        if ($this->recoverZipTypedIntoStreetField((string) $value)) {
+            $this->addressSuggestions = [];
+
+            return;
+        }
+
         if (strlen($value) > 1) {
             $this->addressSuggestions = $this->getPlaceSuggestions($value, 'address');
         } else {
@@ -2506,7 +2516,10 @@ class LandLordAgentAuctionEdit extends Component
 
     public function update()
     {
-        $this->validate([
+        // Phase 0 (Spatial UI Integration) — this edit path validated no address
+        // at all, so a published listing could be re-saved with a street number
+        // in place of an address.
+        $this->validate(\App\Rules\ValidStreetAddress::rules() + [
             // Landlord Leasing Terms — nullable rules
             'lease_available_date'                => 'nullable|date',
             'security_deposit_required'           => 'nullable|numeric',

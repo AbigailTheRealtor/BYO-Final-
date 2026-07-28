@@ -47,10 +47,16 @@
     </span>
     <div class="input-cover">
         <input type="text" id="{{ $streetId }}" wire:model="{{ $streetModel }}"
-            class="form-control has-icon" data-icon="fa-solid fa-map-pin"
-            placeholder="Enter street address (e.g., 123 Main Street)"
+            class="form-control has-icon @error($streetModel) is-invalid @enderror" data-icon="fa-solid fa-map-pin"
+            placeholder="Enter street address (e.g., 100 2nd Ave N)"
             autocomplete="off" @if($streetRequired) required @endif>
     </div>
+    {{-- Phase 0: server-side shape validation now backs this field, so its
+         message needs somewhere to land. --}}
+    @error($streetModel)
+        <div class="error-message text-danger small mt-1">{{ $message }}</div>
+    @enderror
+    <x-address-assist-notice :notice="$addressAssistNotice ?? ''" />
 </div>
 
 @if($showUnit)
