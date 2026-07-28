@@ -342,15 +342,11 @@ class LandlordOfferListingController extends Controller
             //
             // "(expr) IS NULL" ahead of the value keeps NULLs last portably across
             // Postgres and the SQLite used by the test suite.
-            $endsAt = "(SELECT oa.bidding_ends_at FROM offer_auctions oa
-                        WHERE oa.id = (SELECT m.meta_value FROM landlord_agent_auction_metas m
-                                       WHERE m.landlord_agent_auction_id = landlord_agent_auctions.id
-                                         AND m.meta_key = 'linked_offer_auction_id'
-                                       LIMIT 1))";
-
-            $auctions->orderByRaw("({$endsAt}) IS NULL ASC")
-                     ->orderByRaw("({$endsAt}) ASC")
-                     ->orderBy('landlord_agent_auctions.created_at', 'DESC');
+            //
+            // The subquery lives in BiddingWindowService so all four roles share
+            // one definition — including the bigint/text cast PostgreSQL requires
+            // to compare offer_auctions.id against the EAV meta_value.
+            app(BiddingWindowService::class)->applyEndingSoonOrder($auctions, 'landlord');
         } else {
             $auctions->orderBy('created_at', 'DESC');
         }

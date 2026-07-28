@@ -191,6 +191,71 @@ class BiddingWindowService
     }
 
     /**
+     * Listing table, meta table and foreign key per role.
+     *
+     * Held here rather than accepted as caller arguments so no caller can splice
+     * its own identifiers into the raw SQL below.
+     */
+    private const SORT_TABLES = [
+        'seller'   => ['seller_agent_auctions',   'seller_agent_auction_metas',   'seller_agent_auction_id'],
+        'landlord' => ['landlord_agent_auctions', 'landlord_agent_auction_metas', 'landlord_agent_auction_id'],
+        'buyer'    => ['buyer_agent_auctions',    'buyer_agent_auction_metas',    'buyer_agent_auction_id'],
+        'tenant'   => ['tenant_agent_auctions',   'tenant_agent_auction_metas',   'tenant_agent_auction_id'],
+    ];
+
+    /**
+     * Correlated subquery yielding a listing's canonical deadline, or NULL.
+     *
+     * WHY THE CAST — load-bearing, not style.
+     *   offer_auctions.id is bigint; linked_offer_auction_id is an EAV meta_value
+     *   and therefore text. PostgreSQL has no implicit text/bigint comparison and
+     *   rejects the join outright with SQLSTATE 42883. SQLite is dynamically
+     *   typed and compares them happily, so an uncast version passes the entire
+     *   test suite and then 500s in production. That is exactly how this shipped.
+     *
+     *   The cast goes on oa.id (bigint -> text), NEVER on meta_value (text ->
+     *   bigint). EAV columns hold free-form, user-reachable strings; one
+     *   malformed or empty meta_value would abort the whole query with a cast
+     *   error under PostgreSQL. Widening the well-formed side cannot fail.
+     *
+     * Reads the STORED bidding_ends_at and nothing else — no expiration_date, no
+     * created_at, no auction_time arithmetic, no first-offer inference.
+     */
+    public function endsAtSubquery(string $role): string
+    {
+        [$listingTable, $metaTable, $foreignKey] = self::SORT_TABLES[$role]
+            ?? throw new \InvalidArgumentException("Unknown listing role [{$role}].");
+
+        return "(SELECT oa.bidding_ends_at FROM offer_auctions oa
+                 WHERE CAST(oa.id AS TEXT) = (SELECT m.meta_value FROM {$metaTable} m
+                                              WHERE m.{$foreignKey} = {$listingTable}.id
+                                                AND m.meta_key = 'linked_offer_auction_id'
+                                              LIMIT 1))";
+    }
+
+    /**
+     * Order a listing query by soonest canonical deadline.
+     *
+     * Listings with no stored window sort last rather than being handed a
+     * synthetic deadline (Invariants 3, 4, 5, 6, 9, 10). "(expr) IS NULL" ahead
+     * of the value keeps NULLs last portably across PostgreSQL and the SQLite
+     * used by the test suite.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     */
+    public function applyEndingSoonOrder($query, string $role)
+    {
+        [$listingTable] = self::SORT_TABLES[$role]
+            ?? throw new \InvalidArgumentException("Unknown listing role [{$role}].");
+
+        $endsAt = $this->endsAtSubquery($role);
+
+        return $query->orderByRaw("({$endsAt}) IS NULL ASC")
+                     ->orderByRaw("({$endsAt}) ASC")
+                     ->orderBy("{$listingTable}.created_at", 'DESC');
+    }
+
+    /**
      * Build the window from stored columns alone.
      *
      * Both timestamps must be present. A row carrying only a start is reported

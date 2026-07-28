@@ -9,6 +9,7 @@ use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
 use App\Services\LocationDna\LocationIntelligenceComposer;
 use App\Services\LocationDna\SchoolDistrictLookupService;
+use App\Services\Offers\BiddingWindowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -262,15 +263,10 @@ class TenantOfferListingController extends Controller
             // No arithmetic, no auction_time, no created_at, no expiration_date.
             // Listings with no canonical window sort last rather than being given
             // a synthetic deadline (Invariants 3, 4, 5, 6, 9, 10).
-            $endsAt = "(SELECT oa.bidding_ends_at FROM offer_auctions oa
-                        WHERE oa.id = (SELECT m.meta_value FROM tenant_agent_auction_metas m
-                                       WHERE m.tenant_agent_auction_id = tenant_agent_auctions.id
-                                         AND m.meta_key = 'linked_offer_auction_id'
-                                       LIMIT 1))";
-
-            $auctions->orderByRaw("({$endsAt}) IS NULL ASC")
-                     ->orderByRaw("({$endsAt}) ASC")
-                     ->orderBy('tenant_agent_auctions.created_at', 'DESC');
+            // The subquery lives in BiddingWindowService so all four roles share
+            // one definition — including the bigint/text cast PostgreSQL requires
+            // to compare offer_auctions.id against the EAV meta_value.
+            app(BiddingWindowService::class)->applyEndingSoonOrder($auctions, 'tenant');
         } else {
             $auctions->orderBy('created_at', 'DESC');
         }
