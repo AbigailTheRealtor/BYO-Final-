@@ -266,9 +266,11 @@ Neither variable is set in `.env`. It is additionally **`DemandToListings`-only*
 
 ---
 
-## 7. STOP — two decisions required before implementation
+## 7. STOP — decisions required before implementation
 
-The map architecture is settled (**MapLibre GL**, per the migration inventory). Two things underneath it are not.
+> **Update 2026-07-28 — §7.2 is resolved.** The basemap tile source was decided in favour of self-hosted Protomaps PMTiles on Cloudflare R2, and the archive is uploaded and integrity-verified. **§7.1 (geocoding source) remains open and unanswered.** The text below is preserved as the original audit record; see the inline resolution note in §7.2.
+
+The map architecture is settled (**MapLibre GL**, per the migration inventory). Two things underneath it were not — one has since been settled.
 
 ### 7.1 🔴 There is no working no-Google geocoding source
 
@@ -285,7 +287,15 @@ The instruction was to use the existing spatial architecture rather than introdu
 
 **My recommendation: B now, A next.** Census Geocoder unblocks every flow within days at zero cost and zero licence risk, and `us_zip_codes` (34,741 rows, already loaded) covers the city/county/state/ZIP autofill without any call at all. Option A then upgrades resolution quality behind the same seam, with no UI change. **Option D is a genuine trap** — it would fix today's symptom and then have to be torn out before MapLibre ships, because running Google geocoding under a non-Google basemap is a licence violation, not a style preference.
 
-### 7.2 🔴 No basemap tile source is chosen or configured
+### 7.2 ✅ **RESOLVED 2026-07-28** — basemap tile source chosen and configured
+
+> **Resolution.** The recommendation below was accepted: **self-hosted Protomaps `.pmtiles` for Florida on Cloudflare R2**. The archive (`basemaps/florida/20260726/florida-z15.pmtiles`, 1.07 GiB, zoom 0–15) is uploaded and verified byte-for-byte, with ranged reads and credential-free public readability confirmed. No vendor and no API key were introduced.
+>
+> **What this does not unblock.** Two infrastructure prerequisites remain before a browser can render tiles: **CORS is not configured** on the bucket (pending final production origin approval), and **no map library is installed** — `package.json` still has no `maplibre-gl` and no PMTiles client, exactly as this section observed. Full record: [`spatial/basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md).
+>
+> The original analysis is preserved below.
+
+#### Original audit finding (2026-07-25)
 
 MapLibre GL is a renderer; it does not include tiles. Nothing in `config/`, `package.json` (which has **no map library at all** — no `maplibre-gl`, no `leaflet`), or `.env` names a tile provider. Required decision:
 
@@ -297,7 +307,7 @@ MapLibre GL is a renderer; it does not include tiles. Nothing in `config/`, `pac
 
 **My recommendation: self-hosted Protomaps for the Florida pilot.** A single `.pmtiles` file for FL is a few GB, served from the object storage the R2 work has already stood up, with no vendor, no key, and no usage policy to breach. A hosted vendor free tier is the acceptable fallback if you want it running this week.
 
-**Note:** these two decisions are independent of each other and of the audit. Everything in §8 Phase 0–1 can proceed while you decide.
+**Note:** these two decisions are independent of each other and of the audit. Everything in §8 Phase 0–1 can proceed while you decide. *(2026-07-28: §7.2 resolved; §7.1 still open.)*
 
 ---
 
@@ -332,8 +342,9 @@ Stop `43434` from being accepted, today, with no provider at all.
 - **Retire browser-direct Nominatim** (GMP-A1) and the TIGERweb browser call
 - Tests: Pinellas County, St. Petersburg, 33708 return correct geometry from our DB
 
-### Phase 4 — MapLibre renderer *(**needs decision 7.2**, ~1–1.5 weeks)*
-- Add `maplibre-gl` to the Laravel Mix build (note: this repo uses **Laravel Mix**, not Vite, despite `vite.config.js` existing)
+### Phase 4 — MapLibre renderer *(~~needs decision 7.2~~ **decision 7.2 resolved 2026-07-28**; now needs CORS origins, ~1–1.5 weeks)*
+- Tile source is live: self-hosted Protomaps PMTiles on R2. **CORS must be configured before any browser fetch will succeed.**
+- Add `maplibre-gl` **and a PMTiles client** to the Laravel Mix build (note: this repo uses **Laravel Mix**, not Vite, despite `vite.config.js` existing)
 - Rewrite `map-input.blade.php`'s renderer — **one file fixes all eight flows plus four legacy criteria pages**
 - Rewrite `location-dna-map.blade.php` for the six read-only public views
 - Feature-flagged and reversible per the inventory's §3 requirement

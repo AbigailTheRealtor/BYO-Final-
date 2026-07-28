@@ -13,7 +13,7 @@
 |---|---|---|---|---|
 | **0** | Address Validation & User Experience | ✅ **Complete** | — | `Florida Beta – Spatial Phase 0 Complete` *(tag not yet cut)* |
 | **1** | Shared Components | ✅ **Complete** | — | `Florida Beta – Spatial Phase 1 Complete` *(tag not yet cut)* |
-| **2** | Spatial UI Repair | ⏳ Not started | **Decision D2** (tile source) | `Florida Beta – Spatial Phase 2 Complete` |
+| **2** | Spatial UI Repair | ⏳ Not started | CORS origins · no map library installed | `Florida Beta – Spatial Phase 2 Complete` |
 | **3** | Spatial Database Connection | ⏳ Not started | Phase 2 | `Florida Beta – Spatial Phase 3 Complete` |
 | **4A** | Text-Based Spatial Matching | ⏳ Not started | Phase 3 | `Florida Beta – Spatial Phase 4A Complete` |
 | **4B** | Geometry-Based Spatial Matching | ⏳ Not started | Phase 4A · **Decision D1** (geocoder) | `Florida Beta – Spatial Phase 4B Complete` |
@@ -29,7 +29,7 @@ Every phase ends with a **named, annotated Git tag** and explicit acceptance cri
 
 ## Open decisions — these gate the phases above
 
-Both were raised in the audit (§7) and **remain unanswered**. Neither blocked Phase 0 or Phase 1 — both phases shipped ahead of them by design. Phase 2 onward cannot.
+Both were raised in the audit (§7). **D2 was resolved on 2026-07-28** and its infrastructure is built and verified; **D1 remains unanswered**. Neither blocked Phase 0 or Phase 1 — both phases shipped ahead of them by design.
 
 ### D1 · Approved no-Google geocoding source
 
@@ -39,11 +39,26 @@ The `addresses` table in the spatial database holds **0 rows** and no address im
 >
 > **This is why Phase 4 is split into 4A and 4B** (owner decision, 2026-07-25). Phase 4A ships text-based matching on Phase 3 alone. Phase 4B does not begin until D1 is implemented. The split exists so that "matching is connected" is never claimed on the strength of the half that does not need coordinates.
 
-### D2 · Basemap tile source
+### D2 · Basemap tile source — ✅ **RESOLVED 2026-07-28**
 
-MapLibre is a renderer and ships no tiles; the project currently has no map library installed at all. Options in audit §7.2. Recommendation: **self-hosted Protomaps `.pmtiles` for Florida**, served from the object storage the R2 work already stood up — no vendor, no key, no usage policy to breach. A hosted vendor free tier is the acceptable fallback if speed matters more.
+**Decision: self-hosted Protomaps `.pmtiles` for Florida, served from Cloudflare R2.** No vendor, no API key, no usage policy to breach; aligns with SIA-D25. The hosted-vendor fallback named in audit §7.2 was not taken.
 
-> 🚫 **No temporary renderer.** Phase 2 stays blocked until D2 is decided (owner decision, 2026-07-25). Standing up a stop-gap map to appear to make progress would mean writing a renderer twice, and — because Google Maps Content may not be displayed over a non-Google basemap — risks doing it in a way that has to be torn out for licence reasons rather than technical ones. Phase 2 waits.
+The infrastructure for this decision is **built and verified** — see [Basemap infrastructure](#basemap-infrastructure--delivered-2026-07-28) under Phase 2 for the full integrity record.
+
+| Field | Value |
+|---|---|
+| Architecture | Self-hosted Protomaps PMTiles on Cloudflare R2 |
+| Object key | `basemaps/florida/20260726/florida-z15.pmtiles` |
+| Bucket | `byo-basemap` (dedicated; separate from listing-media) |
+| Public delivery | `r2.dev` managed URL — **development and verification only** |
+| Custom domain | Not configured; deferred (owner decision, 2026-07-28) |
+
+> 🚫 **The "no temporary renderer" hold still stands.** D2 being resolved unblocks the *tile source* question only. Phase 2 does not begin until the renderer work is authorised separately, and the licence-ordering constraint is unchanged: Google Maps Content may not be displayed over a non-Google basemap, so Google **data** must leave the address path (D1) before or alongside the renderer swap.
+
+**Phase 2 is no longer blocked by D2.** It is now blocked by two other things, neither of them a decision about tiles:
+
+1. **CORS is not configured** on the basemap bucket — no browser can fetch the archive cross-origin today. Pending final production origin approval; see Phase 2 dependencies.
+2. **No map library is installed** — `package.json` still contains no `maplibre-gl` and no PMTiles client.
 
 ---
 
@@ -254,8 +269,30 @@ Replace the dead Google renderer in the Buyer/Tenant Search Areas component with
 
 ### Dependencies
 
-- **D2 — basemap tile source. Hard blocker; nothing renders without it.**
+- ~~**D2 — basemap tile source.**~~ ✅ **Resolved 2026-07-28.** Self-hosted Protomaps PMTiles on Cloudflare R2; archive uploaded and integrity-verified. See below.
+- 🔴 **CORS configuration on the basemap bucket — hard blocker; no browser can fetch tiles cross-origin without it.** Pending final production origin approval. The exact policy to apply is recorded in [`basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md#5-cors-configuration-to-apply). Applying it needs an admin-scoped R2 credential — the current object-scoped token cannot read or write bucket CORS.
+- 🔴 **No map library installed.** `maplibre-gl` and a PMTiles client must be added to the Laravel Mix build.
 - Licence ordering constraint: Google Maps Content may not be displayed over a non-Google basemap. Google **data** must leave the address path (D1) before or alongside the renderer swap.
+
+### Basemap infrastructure — delivered 2026-07-28
+
+The tile source D2 selected is **built, uploaded and verified**. This is infrastructure only: no renderer code, no map library, no Blade changes, no branch.
+
+| Field | Value |
+|---|---|
+| Object key | `basemaps/florida/20260726/florida-z15.pmtiles` |
+| Size | `1,119,503,390` bytes (1.07 GiB) |
+| BLAKE3 | `96864f80abbe43f97cbc833a6a022855b4933d2dcbeefc07397449e14dff299d` |
+| SHA-256 | `856d18124d12d8f6753e8e607226e59aac7e1c502e967a99ec3371b9459138af` |
+| ETag | `"2ca93f5944a7f0354e4722e222232b7e-17"` (multipart, 17 × 64 MiB) |
+| Coverage | Florida bbox, zoom 0–15, PMTiles spec 3, vector (`mvt`) |
+| Upstream | Protomaps build `20260726` · OSM data `2026-07-26T04:00:00Z` |
+
+Integrity was confirmed end to end: the local archive was re-hashed against its provenance record, and byte-for-byte parity was then re-established **twice independently** after upload — once via authenticated `GetObject`, once via a full credential-free download over the public URL. Ranged reads (HTTP 206), `Accept-Ranges: bytes`, ETag consistency and HEAD all verified. The R2 token was confirmed scoped to the basemap bucket alone.
+
+Full verification record, R2 configuration, and the CORS policy awaiting origins: [`docs/spatial/basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md).
+
+**Known operational caveat:** the `r2.dev` public URL returns `403 / error code: 1010` to clients without a browser-like user-agent. Browser rendering is unaffected; **server-side consumers, CI smoke tests and uptime probes are**. This is independent of CORS and will not be fixed by applying the CORS policy.
 
 ### Success criteria
 
@@ -463,6 +500,7 @@ Note: `git checkout`, `git switch`, `git restore`, `git reset` and `git clean` a
 ## Related documents
 
 - [`spatial-ui-integration-audit-2026-07-25.md`](./spatial-ui-integration-audit-2026-07-25.md) — the audit this roadmap executes
+- [`spatial/basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md) — D2 decision record, basemap upload + integrity verification, R2 configuration, and the CORS policy awaiting approved origins
 - [`technical-debt-test-suite.md`](./technical-debt-test-suite.md) — pre-existing test-suite debt found while verifying Phase 0
 - [`architecture/MASTER-SPATIAL-INTELLIGENCE-ARCHITECTURE.md`](./architecture/MASTER-SPATIAL-INTELLIGENCE-ARCHITECTURE.md) — governing architecture
 - [`architecture/GOOGLE-MAPS-PLATFORM-MIGRATION-INVENTORY.md`](./architecture/GOOGLE-MAPS-PLATFORM-MIGRATION-INVENTORY.md) — the Google-to-zero checklist
