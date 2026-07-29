@@ -78,6 +78,33 @@ class SearchAreasWidgetContractTest extends TestCase
         return file_get_contents(base_path($relative));
     }
 
+    /**
+     * The widget source with comments stripped.
+     *
+     * Needed because the widget now *documents* renderer-independence — naming
+     * Google and MapLibre in prose — so a raw-text search for "maplibre" matches
+     * a comment rather than a wiring change. Asserting on prose would report a
+     * renderer integration that does not exist.
+     *
+     * Same technique, and the same reasoning, as
+     * MaplibreProofAssetTest::proofCode(): assert on code, not on the comment
+     * that describes the code.
+     *
+     * Strips Blade comments, JS block comments, and whole-line `//` comments.
+     * Trailing `//` is left alone so a `pmtiles://` URL could not be truncated
+     * into a false pass.
+     */
+    private function mapInputCode(): string
+    {
+        $withoutBlade  = preg_replace('/\{\{--.*?--\}\}/s', '', $this->mapInput());
+        $withoutBlocks = preg_replace('#/\*.*?\*/#s', '', $withoutBlade);
+
+        return implode("\n", array_filter(
+            explode("\n", $withoutBlocks),
+            fn ($line) => ! str_starts_with(ltrim($line), '//')
+        ));
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // The widget's own contract
     // ─────────────────────────────────────────────────────────────────────────
@@ -423,12 +450,16 @@ class SearchAreasWidgetContractTest extends TestCase
      * Phase 2A must not have leaked into a consumer surface, and 2B must not
      * have wired it in. Asserted from the widget's side so the isolation is
      * checked where a breach would actually land.
+     *
+     * Asserted against CODE, not raw text: since G0 the widget documents its
+     * renderer-independence and names MapLibre in a comment. Matching prose here
+     * would report an integration that does not exist. See mapInputCode().
      */
     public function test_maplibre_proof_is_not_wired_into_the_widget(): void
     {
-        $source = $this->mapInput();
+        $code = strtolower($this->mapInputCode());
 
-        $this->assertStringNotContainsString('maplibre', strtolower($source));
-        $this->assertStringNotContainsString('pmtiles', strtolower($source));
+        $this->assertStringNotContainsString('maplibre', $code);
+        $this->assertStringNotContainsString('pmtiles', $code);
     }
 }

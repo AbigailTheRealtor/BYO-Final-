@@ -409,6 +409,26 @@
   /* ── Map objects ─────────────────────────────────────────────────────────── */
   var ldnaMap            = null;
   var ldnaMapInitialized = false;
+
+  /* ── G0 · geometry editor hydration flag (renderer-independent) ─────────────
+     TRUE once the geometry editor's working set (ldnaOverlays) has been hydrated
+     from canonical state — and therefore may be used as the serialization source.
+
+     Deliberately NOT named for any renderer or for "restore": the serializer must
+     not care whether geometry arrived from Google, MapLibre, server hydration,
+     cache, or a future provider. It cares only whether the editor's working set
+     is authoritative yet.
+
+     Deliberately NOT called "canonical state ready": the canonical state IS ready
+     at page load — ldnaState is seeded server-side above. What is not ready is
+     this working set. Conflating the two is precisely the bug this guard fixes.
+
+     Deliberately NOT ldnaMapInitialized: that flag is set on ENTRY to
+     ldnaInitMap(), ~70 lines before hydration completes, leaving a window in
+     which overlays are empty while the renderer claims to be ready.
+  ------------------------------------------------------------------------------ */
+  var ldnaGeometryHydrated = false;
+
   /* ldnaOverlays: [{type, overlay, label, data?}] — null = deleted */
   var ldnaOverlays       = [];
   var ldnaObservers      = [];
@@ -445,26 +465,45 @@
     var stateEl = document.getElementById('ldna-state-input');
     if (stateEl) ldnaState.state = stateEl.value.trim();
 
-    ldnaState.polygons        = [];
-    ldnaState.radius_searches = [];
+    /* ── G0 · TEMPORARY SAFETY LIMITATION ─────────────────────────────────────
+       Rebuild geometry ONLY when the geometry editor has been hydrated. If it
+       never was (dead credential, tile failure, hidden container, provider
+       error), ldnaOverlays is empty and rebuilding would emit polygons:[] and
+       radius_searches:[] — destroying saved geometry because some UNRELATED
+       dimension changed. An unhydrated editor is NOT a user intent to clear.
 
-    ldnaOverlays.forEach(function (item) {
-      if (!item) return; /* deleted */
-      if (item.type === 'polygon') {
-        var path = [];
-        item.overlay.getPath().forEach(function (ll) {
-          path.push({ lat: ll.lat(), lng: ll.lng() });
-        });
-        ldnaState.polygons.push({ label: item.label, path: path });
-      } else if (item.type === 'circle' || item.type === 'radius_search') {
-        var c  = item.overlay.getCenter();
-        var rm = parseFloat((item.overlay.getRadius() / 1609.34).toFixed(2));
-        var entry = { lat: c.lat(), lng: c.lng(), radius_miles: rm };
-        if (item.data && item.data.address) { entry.address = item.data.address; }
-        else                                { entry.label   = item.label; }
-        ldnaState.radius_searches.push(entry);
-      }
-    });
+       When unhydrated we leave ldnaState.polygons / .radius_searches exactly as
+       the server seeded them, so authoritative state survives untouched.
+
+       CONSEQUENCE, ACCEPTED AS AN INTERIM TRADE-OFF (owner decision 2026-07-29):
+       while the editor is unavailable, geometry cannot be intentionally cleared
+       either — from the client alone the two are indistinguishable. G1 replaces
+       this with explicit dimension-level clear operations and removes the
+       limitation. THIS GUARD IS NOT THE PERMANENT DESIGN.
+       See docs/spatial/phase-2b-geometry-contract.md §9.
+    ------------------------------------------------------------------------- */
+    if (ldnaGeometryHydrated) {
+      ldnaState.polygons        = [];
+      ldnaState.radius_searches = [];
+
+      ldnaOverlays.forEach(function (item) {
+        if (!item) return; /* deleted */
+        if (item.type === 'polygon') {
+          var path = [];
+          item.overlay.getPath().forEach(function (ll) {
+            path.push({ lat: ll.lat(), lng: ll.lng() });
+          });
+          ldnaState.polygons.push({ label: item.label, path: path });
+        } else if (item.type === 'circle' || item.type === 'radius_search') {
+          var c  = item.overlay.getCenter();
+          var rm = parseFloat((item.overlay.getRadius() / 1609.34).toFixed(2));
+          var entry = { lat: c.lat(), lng: c.lng(), radius_miles: rm };
+          if (item.data && item.data.address) { entry.address = item.data.address; }
+          else                                { entry.label   = item.label; }
+          ldnaState.radius_searches.push(entry);
+        }
+      });
+    }
 
     var field = document.getElementById('ldna-json-field');
     if (field) field.value = JSON.stringify(ldnaState);
@@ -1464,6 +1503,21 @@
       google.maps.event.addListener(gmCircle, 'center_changed', ldnaSerialize);
       ldnaAddOverlayListItem(idx, label, 'fa-circle-dot text-secondary');
     });
+
+    /* ── G0 · geometry editor is now hydrated ──────────────────────────────────
+       Set ONLY here: after BOTH hydration loops above (polygons, radius_searches)
+       have populated ldnaOverlays from canonical state. From this point the
+       working set is authoritative and ldnaSerialize() may rebuild from it —
+       which is also what makes an explicit clear (ldnaClearAllOverlays / single
+       delete) persist correctly.
+
+       Must NOT move earlier. Setting it on entry to ldnaInitMap() — as
+       ldnaMapInitialized is — would reopen the race this guard closes.
+
+       Records with no saved geometry still reach here: the loops iterate empty
+       arrays and complete, so drawing a first shape serializes normally.
+    ------------------------------------------------------------------------- */
+    ldnaGeometryHydrated = true;
 
     /* ── 9C: render saved place pins/circles + wire their address autocompletes ── */
     if (typeof ldnaIpRenderAllOverlays === 'function') ldnaIpRenderAllOverlays();

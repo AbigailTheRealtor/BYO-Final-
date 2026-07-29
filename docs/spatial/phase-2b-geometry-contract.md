@@ -251,7 +251,47 @@ One Buyer Offer record and one Hire Tenant record through add / remove / clear �
 
 ---
 
-## 9. What Phase 2C must preserve
+## 9. G0 — geometry-preservation guard (⚠️ temporary limitation)
+
+**Implemented 2026-07-29 · `resources/views/partials/location-dna/map-input.blade.php` · authorisation gate G0**
+
+### The defect
+
+`ldnaSerialize()` rebuilt `polygons` and `radius_searches` from `ldnaOverlays` — the geometry editor's working set — on **every** call. When the editor never hydrated (dead Google credential, tile failure, hidden container, provider error) that set is empty, so editing **any unrelated dimension** — a city, a ZIP, the notes field — serialized `polygons: []` and `radius_searches: []`, and the next save **destroyed the saved geometry**.
+
+An unhydrated editor is not a user intent to clear. Page load alone was safe, because `ldnaSerialize()` runs only from interaction handlers; the trigger was editing a non-geometry dimension while the renderer was down.
+
+### The guard
+
+A renderer-independent flag, `ldnaGeometryHydrated`, defaults to `false` and is set **once, after both hydration loops complete**. The geometry rebuild is gated on it; when unhydrated, the server-seeded values are left untouched.
+
+**Naming is deliberate.** Not `ldnaGeometryRestored` — the serializer must not care whether geometry came from Google, MapLibre, server hydration, cache, or a future provider. Not `ldnaCanonicalStateReady` — the canonical state *is* ready at page load (`ldnaState` is seeded server-side); it is the *editor's working set* that is not, and conflating the two is the bug itself. Not `ldnaMapInitialized` — that flag is set on **entry** to `ldnaInitMap()`, ~70 lines before hydration finishes, leaving a race window in which overlays are empty while the renderer reports itself ready.
+
+### ⚠️ Temporary limitation — accepted interim trade-off
+
+> **While the geometry editor is unavailable, geometry cannot be intentionally cleared either.** From the client alone, "the user deleted every shape" and "the editor never loaded" are indistinguishable.
+
+This is the correct trade — silently destroying geometry is far worse than temporarily being unable to delete it — but it **is** a real behaviour change, accepted by the owner on 2026-07-29 as an interim measure.
+
+**This guard is not the permanent design.** G1 introduces explicit dimension-level clear operations (`{dimension, op: 'clear'}`) and server-authoritative patch merging, which distinguish the two cases properly and remove this limitation. G0 must not be treated as the final answer, and the limitation must not be allowed to become undocumented folklore.
+
+Explicit clearing continues to work normally whenever the editor **is** hydrated: `ldnaClearAllOverlays()` and single-delete run only from the overlay-list UI, which exists only after hydration.
+
+### Coverage
+
+Protects all **8** `map-input` include sites — Buyer/Tenant Create Offer, Buyer/Tenant Hire Agent, and the four legacy criteria pages — across both transports (Livewire bridge ×4, plain form POST ×4), because the guard sits in the one shared serializer.
+
+**No impact on the four subject-property workflows** (Seller/Landlord Create Offer, Seller/Landlord Hire Agent): none includes `map-input`. The read-only `components/location-dna-map.blade.php` is a separate file, untouched, and never serializes.
+
+### ⚠️ Verification status
+
+Tests: `tests/Unit/Spatial/SearchAreasGeometryGuardTest.php` — **11 structural assertions**, including positional ones that pin the race fix (verified non-vacuous: moving the flag to the racy position fails 2 tests).
+
+**The guard is JavaScript and is NOT behaviourally verified.** This project has no JS test runner and browser automation is unauthorised. A green run proves the guard is present and correctly positioned; it does **not** prove the wipe is prevented at runtime. That proof requires the browser gate (§8), and until then G0 must not be described as behaviourally verified.
+
+---
+
+## 10. What Phase 2C must preserve
 
 1. **Byte-identical geometry** — full float precision on `polygons[].path[]` and `radius_searches[]`
 2. **Radius in miles**, not metres — the `1609.34` conversion
