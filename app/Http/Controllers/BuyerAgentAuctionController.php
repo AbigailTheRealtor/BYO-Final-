@@ -452,7 +452,7 @@ class BuyerAgentAuctionController extends Controller
         $page_data['id'] = $id;
         $data = $auction;
         $counterTerms = CounterTerm::where('buyer_auction_id', $id)->first();
-        return view('buyerAgentAuctionDetail', compact('counties', 'auction', 'data', 'counterTerms'));
+        return view('hire_buyer_agent.view', compact('counties', 'auction', 'data', 'counterTerms'));
     }
 
     public function buyerAgentAuctionsAdmin(Request $request)

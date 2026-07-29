@@ -337,7 +337,7 @@ class OfferWorkflowReadinessTest extends TestCase
             //        Create-Offer listing-details (Buyer/Tenant stay Traditional-only).
             'resources/views/hire_seller_agent/view.blade.php',
             'resources/views/hire_landlord_agent/view.blade.php',
-            'resources/views/buyerAgentAuctionDetail.blade.php',
+            'resources/views/hire_buyer_agent/view.blade.php',
             'resources/views/hire_tenant_agent/view.blade.php',
             'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/listing-details.blade.php',
             'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/listing-details.blade.php',
@@ -394,7 +394,7 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php',
             'app/Http/Livewire/OfferListing/Seller/SellerOfferListingEdit.php',
             'app/Http/Livewire/TenantAgentAuction.php',
-            'resources/views/buyerAgentAuctionDetail.blade.php',
+            'resources/views/hire_buyer_agent/view.blade.php',
             'resources/views/hire_seller_agent/view.blade.php',
             'resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/purchasing-terms.blade.php',
             'resources/views/livewire/hire-seller-agent/seller-agent-auction-tabs/commission-based/property-preferences.blade.php',
@@ -658,6 +658,17 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/livewire/offer-listing/landlord/offer-landlord-listing-edit.blade.php',
             'resources/views/partials/offer-listing/publish-submit-gate.blade.php',
             'tests/Feature/Offers/PublishSubmitGateTest.php',
+            // Hire Agent Listing Framework — Milestone 1 (structural only).
+            //   The Buyer Hire detail view was the sole naming outlier: three of four
+            //   roles live at resources/views/hire_<role>_agent/view.blade.php, while
+            //   Buyer sat at the view root as buyerAgentAuctionDetail.blade.php. It was
+            //   relocated with `git mv` to resources/views/hire_buyer_agent/view.blade.php
+            //   (contents untouched, 0 insertions / 0 deletions), so this controller's
+            //   view() call changed from 'buyerAgentAuctionDetail' to 'hire_buyer_agent.view'.
+            //   The relocated view's own allow-list entries are updated in place above.
+            //   No behaviour, markup, copy, routing or data change.
+            //   See docs/investigations/hire-agent-listing-framework-implementation-plan.md.
+            'app/Http/Controllers/BuyerAgentAuctionController.php',
         ];
 
         $unexpected = array_values(array_filter(
