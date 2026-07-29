@@ -12,8 +12,11 @@
 | Phase | Title | Status | Blocked by | Milestone on completion |
 |---|---|---|---|---|
 | **0** | Address Validation & User Experience | ✅ **Complete** | — | `Florida Beta – Spatial Phase 0 Complete` *(tag not yet cut)* |
-| **1** | Shared Components | ✅ **Complete** | — | `Florida Beta – Spatial Phase 1 Complete` *(tag not yet cut)* |
-| **2** | Spatial UI Repair | ⏳ Not started | CORS origins · no map library installed | `Florida Beta – Spatial Phase 2 Complete` |
+| **1** | Shared Components | ✅ **Complete** | — | ✅ `Florida-Beta-Spatial-Phase-1-Complete` *(annotated, cut)* |
+| **2** | Spatial UI Repair | 🟡 **In progress — 2A complete** | Renderer authorisation (owner) · production CORS origins · **D1** licence ordering | `Florida Beta – Spatial Phase 2 Complete` |
+| ↳ **2A** | Basemap infrastructure & proof-of-render | ✅ **Complete** · 2026-07-28 | — | *(no tag; sub-milestone)* |
+| ↳ **2B** | Geometry contract characterisation | ⏳ Next | — | *(no tag; sub-milestone)* |
+| ↳ **2C** | Renderer integration | ⛔ Blocked | Renderer authorisation · **D1** licence ordering | Carries all nine Phase 2 criteria |
 | **3** | Spatial Database Connection | ⏳ Not started | Phase 2 | `Florida Beta – Spatial Phase 3 Complete` |
 | **4A** | Text-Based Spatial Matching | ⏳ Not started | Phase 3 | `Florida Beta – Spatial Phase 4A Complete` |
 | **4B** | Geometry-Based Spatial Matching | ⏳ Not started | Phase 4A · **Decision D1** (geocoder) | `Florida Beta – Spatial Phase 4B Complete` |
@@ -23,7 +26,11 @@
 
 Every phase ends with a **named, annotated Git tag** and explicit acceptance criteria that were demonstrated before the tag was created. A phase is not "done" because its code merged — it is done when its acceptance criteria have been shown to hold and the milestone tag exists. Tags are the checkpoints this project is tracked by.
 
-> ⚠️ **Tag debt, recorded honestly (2026-07-26).** Neither the Phase 0 nor the Phase 1 tag exists yet — `git tag -l` carries no `Florida Beta – …` tag at all. Phases 0 and 1 are marked ✅ here on the strength of their demonstrated acceptance criteria, so by the letter of the convention above they are not yet closed. The Phase 1 tag is to be cut against this documentation commit once it has been reviewed; the Phase 0 tag waits until its intended target commit is explicitly confirmed by the owner (owner decision, 2026-07-26). Recorded rather than quietly satisfied, because a convention that gets waived silently the first time it is inconvenient is not a convention.
+> ⚠️ **Tag debt — partly cleared (updated 2026-07-29).** The **Phase 1 tag now exists**: `Florida-Beta-Spatial-Phase-1-Complete`, an annotated tag naming its three implementation commits. Phase 1 is therefore closed by the letter of the convention, not merely by its criteria.
+>
+> **The Phase 0 tag still does not exist.** Phase 0 remains marked ✅ on the strength of its demonstrated acceptance criteria alone, so by this convention it is not yet closed. It waits until its intended target commit is explicitly confirmed by the owner (owner decision, 2026-07-26). Recorded rather than quietly satisfied, because a convention that gets waived silently the first time it is inconvenient is not a convention.
+>
+> Note the tag's punctuation differs from the milestone names written throughout this document: the tag is hyphenated (`Florida-Beta-Spatial-Phase-1-Complete`), whereas the milestone column reads `Florida Beta – Spatial Phase 1 Complete`. The tag is the artefact that exists; recorded as-is rather than silently reconciled.
 
 ---
 
@@ -53,12 +60,17 @@ The infrastructure for this decision is **built and verified** — see [Basemap 
 | Public delivery | `r2.dev` managed URL — **development and verification only** |
 | Custom domain | Not configured; deferred (owner decision, 2026-07-28) |
 
-> 🚫 **The "no temporary renderer" hold still stands.** D2 being resolved unblocks the *tile source* question only. Phase 2 does not begin until the renderer work is authorised separately, and the licence-ordering constraint is unchanged: Google Maps Content may not be displayed over a non-Google basemap, so Google **data** must leave the address path (D1) before or alongside the renderer swap.
+> 🚫 **The "no temporary renderer" hold still stands.** D2 being resolved unblocks the *tile source* question only. **Phase 2C does not begin until the renderer work is authorised separately**, and the licence-ordering constraint is unchanged: Google Maps Content may not be displayed over a non-Google basemap, so Google **data** must leave the address path (D1) before or alongside the renderer swap. The Phase 2A proof-of-render **did not lift this hold** and was built inside it: an isolated internal diagnostic, flag-gated off by default, wired into no consumer flow.
 
-**Phase 2 is no longer blocked by D2.** It is now blocked by two other things, neither of them a decision about tiles:
+**Phase 2 is no longer blocked by D2.** The two blockers named here previously — CORS and the missing map library — were both addressed by Phase 2A on 2026-07-28. Their current state:
 
-1. **CORS is not configured** on the basemap bucket — no browser can fetch the archive cross-origin today. Pending final production origin approval; see Phase 2 dependencies.
-2. **No map library is installed** — `package.json` still contains no `maplibre-gl` and no PMTiles client.
+1. 🟡 **CORS — configured and verified for the development proof origin only.** Preflight and ranged `206` reads both return the expected `Access-Control-Allow-*` headers, with no wildcard in use. **Production and any additional origins remain unconfigured**, and each needs its own explicit entry. Adding them requires an admin-scoped R2 credential; the current object-scoped token can neither read nor write bucket CORS.
+2. 🟢 **Map library installed** — `maplibre-gl@^6.0.0` and `pmtiles@^4.4.1` are pinned in `package-lock.json` and built through Laravel Mix.
+
+What now blocks Phase 2 is neither of those, and neither is a decision about tiles:
+
+- ⛔ **Renderer authorisation** — an owner decision, ungiven. See the hold above.
+- ⛔ **D1 licence ordering** — `map-input.blade.php` carries 49 Google references. Swapping the renderer beneath them displays Google Maps Content over a non-Google basemap.
 
 ---
 
@@ -254,15 +266,30 @@ The criteria below are reproduced **exactly as approved before implementation**.
 
 ---
 
-## Phase 2 — Spatial UI Repair ⏳
+## Phase 2 — Spatial UI Repair 🟡
 
 ### Objective
 
 Replace the dead Google renderer in the Buyer/Tenant Search Areas component with the approved MapLibre stack, restoring map display, polygons, circles, radius search, and shape save/edit/delete/restore.
 
+### Subdivision into 2A / 2B / 2C (owner decision, 2026-07-29)
+
+Phase 2 is divided into three sub-phases, mirroring the 4A/4B precedent and adopted for the same reason: **to stop a partial win being recorded as the whole.**
+
+| Sub-phase | Scope | Status | Carries the nine success criteria? |
+|---|---|---|---|
+| **2A** | Basemap infrastructure & proof-of-render | ✅ Complete · 2026-07-28 | **No** |
+| **2B** | Geometry contract characterisation | ⏳ Next | **No** |
+| **2C** | Renderer integration | ⛔ Blocked | **Yes — all nine, all unchecked** |
+
+The subdivision was introduced because 2A shipped work that satisfies **zero** of the nine Phase 2 success criteria while genuinely completing real infrastructure. Without the split, the only available records were "Phase 2 in progress" with 0/9 criteria met (uninformative) or "not started" (false). The nine criteria are **integration** criteria and therefore belong to 2C alone; attaching any of them to 2A would assert consumer integration that does not exist.
+
+The code and configuration delivered on 2026-07-28 already name themselves "Phase 2A" (`config/spatial_basemap.php`, `routes/web.php`, `resources/js/spatial/maplibre-proof.js`). This section makes the roadmap agree with them.
+
 ### Files affected
 
-- `resources/views/partials/location-dna/map-input.blade.php` — **1,586 lines; the single highest-leverage file in the project.** It is included by all four Buyer/Tenant flows plus four legacy criteria pages, so one renderer rewrite fixes **twelve pages**.
+- `resources/views/partials/location-dna/map-input.blade.php` — **1,641 lines; the single highest-leverage file in the project.** It is included by all four Buyer/Tenant flows plus four legacy criteria pages, so one renderer rewrite fixes **twelve pages**.
+  - *Correction (2026-07-29):* this document previously recorded 1,586 lines. The file measures **1,641**. The earlier figure is not reconstructible from history at this HEAD and is treated as a stale estimate rather than evidence of a change.
 - `resources/views/components/location-dna-map.blade.php` — 810 lines; the read-only map on six public view pages
 - `package.json` / `webpack.mix.js` — add `maplibre-gl` (note: this project builds with **Laravel Mix**, not Vite, despite `vite.config.js` existing)
 - `app/Http/Livewire/Concerns/HasSearchAreas.php` — unchanged if the geometry contract holds; that is the test
@@ -274,9 +301,51 @@ Replace the dead Google renderer in the Buyer/Tenant Search Areas component with
 - 🟢 **Map library installed and exercised.** `maplibre-gl` and a PMTiles client are pinned in `package-lock.json` and built through Laravel Mix. MapLibre's worker assets are published beside the proof bundle and committed, because the bundler cannot resolve the worker URL itself. An internal, flag-gated proof route renders the Florida basemap; it is a diagnostic only — not wired into listing, search, matching, database or any Seller/Buyer/Landlord/Tenant flow.
 - Licence ordering constraint: Google Maps Content may not be displayed over a non-Google basemap. Google **data** must leave the address path (D1) before or alongside the renderer swap.
 
+---
+
+## Phase 2A — Basemap infrastructure & proof-of-render ✅
+
+**Status:** ✅ Complete · 2026-07-28 · branch `phase-2-spatial/ui-repair-maplibre-basemap`
+
+### What 2A is, and what it is not
+
+2A proves that the self-hosted Florida PMTiles archive renders in a browser through MapLibre. It is an **isolated internal diagnostic**, double-gated (never registered in production **and** off by default behind `SPATIAL_MAPLIBRE_PROOF_ENABLED`), which reads no listing, opens no database connection, and is wired into no Seller, Buyer, Landlord or Tenant flow.
+
+> **A successful proof-of-render says the archive and the library work. It says nothing about integration.** 2A satisfies **none** of the nine Phase 2 success criteria, which live under 2C. In particular, criterion #1 *"Map renders"* refers to the Buyer/Tenant Search Areas widget rendering in a consumer flow — not to a standalone diagnostic page. 2A moved Phase 2 from *blocked* to *unblocked and de-risked*; it did not advance the criteria.
+
+### Delivered
+
+| Item | Detail |
+|---|---|
+| Map library | `maplibre-gl@^6.0.0` + `pmtiles@^4.4.1`, pinned in `package-lock.json`, built via Laravel Mix |
+| Worker assets | Published beside the proof bundle and committed — the bundler cannot resolve MapLibre's worker URL itself; without them the map initialises but silently never requests a tile |
+| Config | `config/spatial_basemap.php` — archive URL composed from env, attribution, initial view, max zoom. Holds **no credential**; the archive is fetched credential-free over its public URL |
+| Route | `/internal/spatial/maplibre-proof`, non-production only, `abort_unless` on the flag, 404 (not 403) so the page's existence stays unadvertised when disabled |
+| Tests | `MaplibreProofRouteTest` · `MaplibreProofAssetTest` |
+
+### 2A success criteria — all met
+
+- [x] PMTiles archive renders in a browser through MapLibre
+- [x] No fallback renderer and no second tile provider — a failed archive shows an explicit error and renders nothing, so a broken basemap cannot masquerade as a working one
+- [x] Only network egress is the archive itself — no glyph or sprite host, no Google, no Nominatim, no geocoder
+- [x] Feature-flagged, default off, and never registered in production
+- [x] No consumer flow, listing read, or database connection touched
+
+### 2A commit references
+
+| # | Hash | Message |
+|---|---|---|
+| 1 | `b12d06233` | `feat(spatial): add feature-flagged MapLibre PMTiles proof` |
+| 2 | `a78486b60` | `fix(spatial): restore MapLibre proof rendering with explicit worker URL` |
+| 3 | `d13e87426` | `docs(spatial): document PMTiles proof environment recovery` |
+| 4 | `d66a482a6` | `docs(spatial): reconcile basemap deployment status` |
+| 5 | `0c7266a0e` | `docs(spatial): reconcile proof-render status across docs` |
+
 ### Basemap infrastructure — delivered 2026-07-28
 
-The tile source D2 selected is **built, uploaded and verified**. This is infrastructure only: no renderer code, no map library, no Blade changes, no branch.
+The tile source D2 selected is **built, uploaded and verified**.
+
+> *Superseded note (corrected 2026-07-29):* this paragraph previously read "This is infrastructure only: no renderer code, no map library, no Blade changes, no branch." **All four clauses are now false** — 2A added the map library, a proof bundle, a proof Blade view, and the branch named above. The sentence described the state on 2026-07-28 **before** the proof work landed and is corrected here rather than deleted, so the sequence stays legible.
 
 | Field | Value |
 |---|---|
@@ -294,7 +363,83 @@ Full verification record, R2 configuration, and the CORS policy — verified for
 
 **Known operational caveat:** the `r2.dev` public URL returns `403 / error code: 1010` to clients without a browser-like user-agent. Browser rendering is unaffected; **server-side consumers, CI smoke tests and uptime probes are**. This is independent of CORS and will not be fixed by applying the CORS policy.
 
-### Success criteria
+---
+
+## Phase 2B — Geometry contract characterisation ⏳
+
+**Status:** ⏳ Next · authorised 2026-07-29 · **characterisation only**
+
+### Objective
+
+Capture the **existing** Search Areas geometry contract as an executable baseline, before any renderer work touches the 1,641-line widget that nine Blade files across all four roles depend on.
+
+### Why this is the correct next step
+
+Phase 2C criterion #7 — *"geometry round-trips byte-identically"* — is the guard against silent data loss across twelve pages, and today **it is unfalsifiable**: no recorded baseline exists to compare a new renderer against. Writing that baseline is the one part of Phase 2 that is pure characterisation. It renders nothing, displays no Google content over any basemap, needs no owner decision, and its value survives whatever the renderer decision turns out to be. It converts the riskiest criterion from "demonstrate at the end" into "regression-detected from the start".
+
+### Hard constraints
+
+2B modifies **zero production files** — nothing under `app/`, nothing under `resources/`, no routes, config, migrations, seeders, frontend dependencies or build files. No renderer replacement, no behaviour change, no schema change, and **no normalisation of divergent legacy behaviour**. Divergence between roles or between the offer tabs and the legacy `buyer_criteria` / `tenant_criteria` pages is **recorded as a finding, never corrected** — correcting it would be a behaviour change wearing a characterisation label.
+
+### The contract under characterisation
+
+The `location_dna_preferences` blob's nine keys — `cities` · `zip_codes` · `neighborhoods` · `counties` · `state` · `polygons` · `radius_searches` · `flexible_location` · `location_notes` — through `loadSearchAreas()` → `hydrateDiscreteLocationFromBlob()` → `saveSearchAreas()` in `HasSearchAreas`, plus the discrete `state` / `counties` / `cities` meta mirrors that Ask AI, matching, filtering and public display read.
+
+### ⚠️ Coverage limitation — stated up front
+
+**This project has no JavaScript test runner.** The blob is serialised *by the widget's JavaScript*. PHP tests characterise persist/load faithfully; the JS side is asserted **structurally only** — the same technique and the same limitation as Phase 1's payload-guard assertions.
+
+> **Structural PHP assertions are not browser or runtime JavaScript coverage and must never be reported as such.** A green 2B suite proves the PHP contract holds and that the JS *source* references the expected keys. It does not prove the widget serialises correctly at runtime. Closing that gap needs a JS runner and is out of 2B scope.
+
+### Files added — no existing file modified
+
+| File | Covers |
+|---|---|
+| `tests/Unit/Spatial/SearchAreasGeometryContractTest.php` | All nine blob keys round-tripping; byte-identical JSON; the non-empty guards that must never wipe an existing discrete value; legacy `cities` meta merge |
+| `tests/Feature/Spatial/SearchAreasPersistenceCharacterisationTest.php` | The same contract through real EAV meta on Buyer/Tenant hosts; mirrors landing in the correct keys |
+| `tests/Unit/Spatial/SearchAreasWidgetContractTest.php` | Structural assertions over `map-input.blade.php` and `search-areas-bridge.blade.php`: keys read/written, the `wire:model.defer` bridge binding, the include sites |
+| `docs/spatial/phase-2b-geometry-contract.md` | The written contract and an explicit "what this does not cover" section |
+
+### 2B success criteria
+
+- [ ] All nine blob keys characterised through load → hydrate → save
+- [ ] Byte-identical JSON round-trip asserted
+- [ ] Discrete `state` / `counties` / `cities` mirror derivation characterised
+- [ ] Non-empty guards characterised — an empty blob value never wipes an existing discrete value
+- [ ] Every include site enumerated and its host component's contract recorded
+- [ ] Role and legacy-flow divergence recorded as findings, **not** normalised
+- [ ] JS coverage limitation documented and not overstated
+- [ ] Zero production files modified — verifiable from `git diff --stat`
+- [ ] `tests/Feature/Offers` compared against the known 55-failure baseline at the same HEAD
+
+### 2B commit references
+
+_To be filled in._
+
+---
+
+## Phase 2C — Renderer integration ⛔
+
+**Status:** ⛔ **Blocked — not authorised.** Two owner decisions gate this sub-phase.
+
+### Blocking decisions
+
+1. ⛔ **Renderer authorisation.** The "no temporary renderer" hold stands. Phase 2A's proof-of-render did **not** lift it — see [`basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md) §7 item 3.
+2. ⛔ **D1 licence ordering.** `map-input.blade.php` carries **49** Google references. Swapping the renderer beneath them displays Google Maps Content over a non-Google basemap — a licence breach, not merely technical debt. Google data must leave the address path before or alongside the renderer swap.
+
+Also required before any consumer-facing surface, and not tracked as blockers above: production CORS origins (needs an admin-scoped R2 credential), production cache headers, the custom domain that would replace the managed `r2.dev` URL, archive-refresh and observability, and rollout/kill-switch handling.
+
+### Standing constraint — countdown timer independence
+
+**The countdown timer must never be coupled to, derived from, or dependent on an expiration date.** It must remain an independent component with its own lifecycle and logic. No direct or indirect dependency may be introduced between timer behaviour and expiration-date calculations during renderer integration.
+
+Verified on 2026-07-29: **no such coupling exists in the Phase 2 target area.** `countdown` and `expir*` each appear **zero** times in `map-input.blade.php`, `search-areas-bridge.blade.php`, `location-dna-map.blade.php` and `HasSearchAreas.php`. The countdown timer in this codebase is a view-layer toast/notification progress option (`countdown: true`) and is not driven by `expires_at`, `bidding_end` or `ExpireOffersCommand`.
+
+> This constraint is **recorded, not enforced**. Characterisation can record that the coupling is absent today; it cannot prevent it appearing later. A guard test that enforces the independence is an **optional, separately scoped task** — deliberately excluded from 2B (owner decision, 2026-07-29).
+
+### Success criteria — the nine Phase 2 integration criteria
+
+These are the original Phase 2 criteria, preserved verbatim and **all unchecked**. They belong to 2C alone. Neither 2A nor 2B advances any of them.
 
 - [ ] Map renders
 - [ ] City / ZIP / county selection with boundary display
@@ -306,7 +451,7 @@ Full verification record, R2 configuration, and the CORS policy — verified for
 - [ ] Feature-flagged and reversible
 - [ ] Every feature demonstrated before Phase 3 begins
 
-### Commit references
+### 2C commit references
 
 _To be filled in._
 
@@ -501,6 +646,7 @@ Note: `git checkout`, `git switch`, `git restore`, `git reset` and `git clean` a
 
 - [`spatial-ui-integration-audit-2026-07-25.md`](./spatial-ui-integration-audit-2026-07-25.md) — the audit this roadmap executes
 - [`spatial/basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md) — D2 decision record, basemap upload + integrity verification, R2 configuration, the CORS policy (verified for the development proof origin, awaiting production origins), and proof-route environment recovery
+- [`spatial/phase-2b-geometry-contract.md`](./spatial/phase-2b-geometry-contract.md) — the Search Areas geometry contract as characterised in Phase 2B, and an explicit statement of what it does not cover
 - [`technical-debt-test-suite.md`](./technical-debt-test-suite.md) — pre-existing test-suite debt found while verifying Phase 0
 - [`architecture/MASTER-SPATIAL-INTELLIGENCE-ARCHITECTURE.md`](./architecture/MASTER-SPATIAL-INTELLIGENCE-ARCHITECTURE.md) — governing architecture
 - [`architecture/GOOGLE-MAPS-PLATFORM-MIGRATION-INVENTORY.md`](./architecture/GOOGLE-MAPS-PLATFORM-MIGRATION-INVENTORY.md) — the Google-to-zero checklist
