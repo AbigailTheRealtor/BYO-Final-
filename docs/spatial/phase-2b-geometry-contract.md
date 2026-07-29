@@ -135,19 +135,34 @@ On the next save that `false` is persisted unchanged. It stores as `"0"`, and `j
 
 This is the same 5→1 shape Phase 1 resolved for `fillFromGooglePlaces()`, still open for Search Areas.
 
-### FINDING 2B-3 · The two Tenant Offer components never write the `cities` mirror — highest consequence
+### FINDING 2B-3 · ✅ **RESOLVED 2026-07-29** — Tenant Offer components now write the `cities` mirror
 
-`saveMeta('cities', …)` is present in the trait and both **Buyer** Offer components, and **absent from both Tenant Offer components**.
+**The defect as found:** `saveMeta('cities', …)` was present in the trait and both Buyer Offer components, and **absent from both Tenant Offer components**. The discrete `cities` meta therefore went stale relative to the blob for every Tenant offer listing — a live data-correctness defect, since `cities` is read by Ask AI, the match engine, filtering and public display.
 
 | Component | writes `cities` mirror |
 |---|---|
-| `HasSearchAreas` (4 Hire components) | ✅ |
-| `BuyerOfferListing` / `BuyerOfferListingEdit` | ✅ |
-| `TenantOfferListing` / `TenantOfferListingEdit` | ❌ |
+| `HasSearchAreas` (4 Hire components) | ✅ (unchanged) |
+| `BuyerOfferListing` / `BuyerOfferListingEdit` | ✅ (unchanged) |
+| `TenantOfferListing` / `TenantOfferListingEdit` | ✅ **added 2026-07-29** |
 
-For a Tenant offer listing the discrete `cities` meta therefore **goes stale relative to the blob**. A tenant can change their cities in the Search Areas widget and the value read by Ask AI, the match engine, filtering and public display will not follow.
+**Why the fix is four methods, not two.** A dev-database audit found **31 of 46** tenant records (67%) holding real city data in the mirror with **no blob at all** — adding only the mirror write would have persisted `[]` and destroyed that data on first save. The fix therefore pairs each mirror write with a **legacy-cities merge on the hydration path**, so a legacy record recovers its cities into the blob before the mirror is ever derived from it.
 
-**This is a live data-correctness defect, not cosmetic.** It is recorded rather than fixed because fixing it is a behaviour change. **Recommended as its own scoped task.**
+| # | Method | Change |
+|---|---|---|
+| 1 | `TenantOfferListingEdit::loadAuctionData()` | legacy-cities merge |
+| 2 | `TenantOfferListingEdit::update()` | mirror write |
+| 3 | `TenantOfferListing::loadDraft()` | legacy-cities merge |
+| 4 | `TenantOfferListing::saveAllMetadata()` | mirror write |
+
+`loadDraft()` was included because it is a second hydration path feeding the same save path; fixing only the edit flow would have left drafts destructive.
+
+#### The hydration invariant
+
+> **`location_dna_preferences.cities` is the single source of truth whenever that key EXISTS.** The legacy `cities` mirror may be consulted **only** when the blob carries no `cities` key at all, and may never overwrite an existing blob value — **including an intentionally empty array**.
+
+This is enforced with `array_key_exists()`, **not** `empty()`. The distinction between *key missing* and *key present but empty* is the core behavioural contract: an intentionally cleared blob stores `"cities": []`, and `empty()` collapses that into the same state as a missing key, which would let the legacy mirror **resurrect cities the user had just deleted**.
+
+> ⚠️ **Deliberate divergence from the Hire flow.** `HasSearchAreas::loadSearchAreas()` uses `empty()` and therefore **cannot honour this invariant**. The trait was left unchanged — altering it would change all four Hire flows, which is outside this scope. The divergence is intentional, pinned by a test, and means the trait carries the same latent resurrection defect. **Aligning the trait is separately scoped future work.**
 
 ### FINDING 2B-4 · The Livewire bridge is duplicated three ways
 
@@ -196,19 +211,53 @@ The countdown timer in this codebase is a view-layer toast/notification progress
 |---|---:|---|
 | `tests/Unit/Spatial/SearchAreasGeometryContractTest.php` | 16 | Pure PHP, no DB |
 | `tests/Feature/Spatial/SearchAreasPersistenceCharacterisationTest.php` | 9 | Real EAV storage |
-| `tests/Unit/Spatial/SearchAreasWidgetContractTest.php` | 14 | Structural source assertions |
+| `tests/Unit/Spatial/SearchAreasWidgetContractTest.php` | 15 | Structural source assertions |
+| `tests/Feature/Spatial/TenantOfferCitiesMirrorTest.php` | 15 | FINDING 2B-3 fix — behavioural |
 
-**39 tests total.** Vehicle for the persistence suite is `TenantAgentAuction` — a real host of the trait and the only one with a factory. The trait is exercised through a thin host object rather than the full Livewire component, because those components carry hundreds of unrelated required props and booting one would characterise its validation rather than the geometry contract.
+**55 tests total.** Vehicle for the persistence and mirror suites is `TenantAgentAuction` — a real host of the trait and the only one with a factory. The characterisation suites exercise the trait through a thin host object, because the full Livewire components carry hundreds of unrelated required props and booting one would characterise its validation rather than the geometry contract. `TenantOfferCitiesMirrorTest` instead calls the **real** `loadAuctionData()`, `loadDraft()` and `saveAllMetadata()` against real records, because the invariant it protects lives in those exact methods.
+
+**Non-vacuity verified.** The invariant tests were confirmed to fail when the implementation is reverted: swapping `array_key_exists()` back to `empty()` fails 2 tests; removing the mirror write fails 4. A test that cannot fail proves nothing, so this was measured rather than assumed.
 
 ---
 
-## 8. What Phase 2C must preserve
+## 8. Manual browser verification — required, not optional
+
+The Search Areas blob is produced by `window.ldnaSerialize` and carried by a JavaScript bridge. §4 explains why no test here can execute either. **These steps must be run by hand before the FINDING 2B-3 fix is trusted in production.**
+
+Use a legacy record — mirror populated, no blob. `scripts/audit-2b3-cities-mirror.php` identifies candidates.
+
+### Edit flow
+
+| # | Action | Expected |
+|---|---|---|
+| 1 | Open a legacy record in Tenant Offer edit | City tags render, populated from the legacy mirror |
+| 2 | Reload without saving | Same cities — load is non-destructive |
+| 3 | **Save with no changes** | Blob gains `cities`; mirror unchanged. **Critical** — proves the bridge synced the server-rendered blob with no user interaction |
+| 4 | Reload after step 3 | Cities still present, now sourced from the blob |
+| 5 | Add a city → save → reload | Both blob and mirror contain the addition |
+| 6 | Remove one city → save → reload | Removal persists in both; the others survive |
+| 7 | **Clear all cities → save → reload** | Both `[]`. **Cities must NOT reappear** — proves the load-time merge cannot resurrect an intentional clear |
+| 8 | Save again after step 7 | Still `[]` — no oscillation |
+
+### Draft flow
+
+Repeat steps 1, 3, 5 and 7 through `saveDraft()` / `saveDraftOnly()`, then confirm the versioned clone carries the same mirror as its source.
+
+### Regression spot-checks
+
+One Buyer Offer record and one Hire Tenant record through add / remove / clear — behaviour must be **visibly unchanged**.
+
+> **Steps 3 and 7 are the two that can fail.** Step 3 is the untestable bridge assumption; step 7 is the merge/clear interaction. If either misbehaves, the fix is wrong as designed and must not ship.
+
+---
+
+## 9. What Phase 2C must preserve
 
 1. **Byte-identical geometry** — full float precision on `polygons[].path[]` and `radius_searches[]`
 2. **Radius in miles**, not metres — the `1609.34` conversion
 3. **The `address` XOR `label`** convention on radius entries
 4. **Both transports** — Livewire bridge and plain form POST
 5. **`syncInput` injection**, never `serverMemo` mutation
-6. **All three discrete mirrors** — including fixing or preserving FINDING 2B-3 deliberately, not by accident
+6. **All three discrete mirrors**, and the §5 hydration invariant — key *existence*, not emptiness
 7. **Countdown-timer independence** (§6)
 8. **A manual save-and-restore demonstration**, because the JS gap in §4 means the automated suite cannot close criterion #7 alone

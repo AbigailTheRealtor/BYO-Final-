@@ -3322,6 +3322,42 @@ class TenantOfferListing extends Component
             $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
             $this->location_dna_preferences_json = $ldnaRaw ?? '';
 
+            // ── FINDING 2B-3 · legacy `cities` → blob, HYDRATION ONLY ───────────
+            //
+            // INVARIANT: `location_dna_preferences.cities` is the SINGLE SOURCE OF
+            // TRUTH whenever that key EXISTS. The legacy discrete `cities` mirror
+            // may be consulted ONLY when the blob carries no `cities` key at all,
+            // and may never overwrite an existing blob value — including an empty
+            // array.
+            //
+            // array_key_exists(), NOT empty(). An intentionally cleared blob stores
+            // `"cities": []`, and empty() cannot tell that apart from a missing key.
+            // Using empty() here would let the legacy mirror resurrect cities the
+            // user had just deleted. "Missing" and "present but empty" are different
+            // states, and this line is what keeps them different.
+            //
+            // NOTE: deliberately DIVERGES from HasSearchAreas::loadSearchAreas(),
+            // which uses empty() and cannot honour the invariant. Divergence is
+            // intentional and approved; the trait is not changed here.
+            //
+            // LOAD-TIME ONLY. Never re-applied on save, so a clear performed in the
+            // widget persists instead of being silently restored on the next save.
+            if (! array_key_exists('cities', $this->existingLocationDna)) {
+                $legacyCitiesRaw = $auction->info('cities');
+                if ($legacyCitiesRaw) {
+                    $legacyCities = is_string($legacyCitiesRaw)
+                        ? (json_decode($legacyCitiesRaw, true) ?? [])
+                        : (array) $legacyCitiesRaw;
+                    $legacyCities = array_values(array_filter(
+                        $legacyCities,
+                        fn($c) => is_string($c) && trim($c) !== ''
+                    ));
+                    if (!empty($legacyCities)) {
+                        $this->existingLocationDna['cities'] = $legacyCities;
+                    }
+                }
+            }
+
             // 9B-2 prefill: seed the Search Areas blob's Preferred State / counties from
             // the discrete meta when the blob lacks them, so the partial pre-populates
             // (in-memory only; the JS bridge carries the merged blob back on save).
@@ -4342,6 +4378,12 @@ class TenantOfferListing extends Component
         $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
         $auction->saveMeta('state', $this->state);
         $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
+        // FINDING 2B-3 · keep the discrete `cities` meta in sync with the blob. Read
+        // by Ask AI, the match engine, filtering and public display. Derived from the
+        // blob, which is authoritative — see the hydration invariant in loadDraft().
+        // An empty blob array intentionally mirrors as `[]`.
+        $ldnaDecoded = json_decode($this->location_dna_preferences_json, true);
+        $auction->saveMeta('cities', json_encode($ldnaDecoded['cities'] ?? []));
 
         // 9C Important Places — additive, separate meta key; commute fields untouched.
         $this->saveImportantPlaces($auction);

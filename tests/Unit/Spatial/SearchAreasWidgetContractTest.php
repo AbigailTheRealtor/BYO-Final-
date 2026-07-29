@@ -279,37 +279,67 @@ class SearchAreasWidgetContractTest extends TestCase
     }
 
     /**
-     * FINDING 2B-3 · the two Tenant Offer components never write the `cities` mirror.
+     * FINDING 2B-3 · ✅ RESOLVED 2026-07-29 — all five implementations now write
+     * the `cities` mirror.
      *
-     * `saveMeta('cities', …)` is present in the trait and in both Buyer Offer
-     * components, and absent from both Tenant Offer components. For a Tenant
-     * offer listing the discrete `cities` meta therefore goes stale relative to
-     * the blob — and `cities` is read by Ask AI, the match engine, filtering and
-     * public display.
+     * This assertion was inverted when the defect was fixed. It previously
+     * recorded that both Tenant Offer components OMITTED `saveMeta('cities', …)`,
+     * leaving the discrete meta stale relative to the blob for every Tenant offer
+     * listing — a live data-correctness defect, since `cities` is read by Ask AI,
+     * the match engine, filtering and public display.
      *
-     * This is the highest-consequence finding in 2B, and it is a PRE-EXISTING
-     * defect, not something 2B introduced. It is recorded rather than fixed
-     * because fixing it is a behaviour change; it is a candidate for its own
-     * scoped task.
+     * It now asserts the opposite, so a regression that removes either write
+     * fails here rather than silently reopening the defect.
+     *
+     * @see \Tests\Feature\Spatial\TenantOfferCitiesMirrorTest for the behavioural proof
      */
-    public function test_finding_2b3_tenant_offer_components_omit_the_cities_mirror(): void
+    public function test_finding_2b3_all_implementations_write_the_cities_mirror(): void
     {
         $writes = "saveMeta('cities'";
 
-        $this->assertStringContainsString($writes, $this->source('app/Http/Livewire/Concerns/HasSearchAreas.php'));
-        $this->assertStringContainsString($writes, $this->source('app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php'));
-        $this->assertStringContainsString($writes, $this->source('app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php'));
+        foreach ([
+            'app/Http/Livewire/Concerns/HasSearchAreas.php',
+            'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
+            'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
+            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
+            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
+        ] as $file) {
+            $this->assertStringContainsString(
+                $writes,
+                $this->source($file),
+                "{$file} no longer writes the cities mirror — FINDING 2B-3 has regressed."
+            );
+        }
+    }
 
-        $this->assertStringNotContainsString(
-            $writes,
-            $this->source('app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php'),
-            'FINDING 2B-3 appears to be resolved — update docs/spatial/phase-2b-geometry-contract.md.'
-        );
-        $this->assertStringNotContainsString(
-            $writes,
-            $this->source('app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php'),
-            'FINDING 2B-3 appears to be resolved — update docs/spatial/phase-2b-geometry-contract.md.'
-        );
+    /**
+     * The hydration invariant, pinned at the source level.
+     *
+     * `location_dna_preferences.cities` is the single source of truth whenever
+     * the key EXISTS; the legacy mirror may be consulted ONLY when the key is
+     * absent entirely. `array_key_exists()` expresses that; `empty()` cannot,
+     * because it collapses "missing" and "present but empty" into one state —
+     * which would let the legacy mirror resurrect an intentional clear.
+     *
+     * Both Tenant Offer components therefore use `array_key_exists`, and this
+     * test fails if either reverts to `empty()`.
+     *
+     * The trait keeps `empty()` and is deliberately NOT aligned; see
+     * SearchAreasWidgetContractTest::test_finding_2b2_* and the divergence note
+     * in docs/spatial/phase-2b-geometry-contract.md.
+     */
+    public function test_tenant_offer_hydration_uses_key_existence_not_emptiness(): void
+    {
+        foreach ([
+            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
+            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
+        ] as $file) {
+            $this->assertStringContainsString(
+                "array_key_exists('cities', \$this->existingLocationDna)",
+                $this->source($file),
+                "{$file} must gate the legacy-cities merge on key EXISTENCE, not emptiness."
+            );
+        }
     }
 
     /**
