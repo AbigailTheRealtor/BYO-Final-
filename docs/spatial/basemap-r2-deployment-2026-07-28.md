@@ -220,3 +220,56 @@ Recorded so the roadmap is not read as "tiles are live, therefore the map can be
 4. ⚪ **Licence ordering (D1)** — Google Maps Content may not be displayed over a non-Google basemap, so Google data must leave the address path before or alongside the renderer swap. **D1 remains an open decision.**
 
 Items 1 and 2 are infrastructure. Items 3 and 4 are owner decisions.
+
+---
+
+## 8. Restoring the local proof after a container or worktree restart
+
+The proof route depends on configuration that does **not** survive a Replit container restart,
+because it lives outside the repository. As in §3, no values are recorded here — only variable names.
+
+### Why the page can report an unconfigured archive while the secrets plainly exist
+
+`BASEMAP_R2_PUBLIC_URL` and `BASEMAP_PMTILES_OBJECT_PATH` are held as **Replit Secrets**. They are
+therefore present in the container's process environment and resolve correctly from the CLI, which is
+what makes this misleading: `artisan tinker` and `artisan config:show` report the archive URL as
+configured while the served page disagrees.
+
+The cause is that **`php artisan serve` may strip non-whitelisted variables from the
+request-handling worker it spawns whenever a `.env` file is present** — it does this so that `.env`
+edits hot-reload. The worker then sees neither variable, `config('spatial_basemap.pmtiles_url')`
+composes to `null`, and the page renders "No PMTiles archive configured".
+
+A CLI check is therefore **not** evidence that the route is configured. Verify over HTTP.
+
+### Recovery
+
+1. Copy these two values from the Replit Secrets into the worktree `.env`:
+
+| Variable | Why it belongs in `.env` |
+|---|---|
+| `BASEMAP_R2_PUBLIC_URL` | Public managed URL; reaches the browser by design (§3) |
+| `BASEMAP_PMTILES_OBJECT_PATH` | Object key; reaches the browser by design (§3) |
+
+2. Preserve `SPATIAL_MAPLIBRE_PROOF_ENABLED=true`, or the route aborts 404 by design
+   (`config/spatial_basemap.php`).
+
+3. **Never** copy the credential set into `.env`: `BASEMAP_R2_ACCESS_KEY_ID`,
+   `BASEMAP_R2_SECRET_ACCESS_KEY`, `BASEMAP_R2_ENDPOINT`, `BASEMAP_R2_BUCKET`. These are server-side
+   S3 credentials; `config/spatial_basemap.php` deliberately does not read them, and the archive is
+   fetched credential-free over the public URL — see §3, Credential scope.
+
+4. Laravel watches `.env` and should restart its serve worker automatically. If it does not, restart
+   **only** the Phase 2 artisan server; leave any process serving the main workspace checkout alone.
+
+### Expected successful state
+
+Load `/internal/spatial/maplibre-proof` and confirm all three:
+
+- the Florida basemap renders;
+- the loading message disappears — MapLibre's `load` event fired;
+- PMTiles range requests return **206 Partial Content**, and more than one of them.
+
+That last point is the sharp one. Exactly one 206 means only the archive header was read and no tile
+ever followed — a different fault with a near-identical appearance, and not a configuration problem.
+See the worker-URL note in `webpack.mix.js`.
