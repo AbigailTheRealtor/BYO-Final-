@@ -40,6 +40,28 @@ class MaplibreProofAssetTest extends TestCase
         ));
     }
 
+    /**
+     * The Mix config with comments removed.
+     *
+     * Same reasoning as proofCode(): the build config documents the webpack
+     * defect it works around and names `maplibre-gl` in that prose, so matching
+     * the raw text would let a deleted alias keep passing on the strength of the
+     * comment that describes it.
+     */
+    private function mixConfigCode(): string
+    {
+        $withoutBlocks = preg_replace(
+            '#/\*.*?\*/#s',
+            '',
+            file_get_contents(base_path('webpack.mix.js'))
+        );
+
+        return implode("\n", array_filter(
+            explode("\n", $withoutBlocks),
+            fn ($line) => ! str_starts_with(ltrim($line), '//')
+        ));
+    }
+
     /** @test */
     public function the_frontend_manifest_declares_maplibre_and_pmtiles(): void
     {
@@ -71,6 +93,84 @@ class MaplibreProofAssetTest extends TestCase
             "mix.js('resources/js/spatial/maplibre-proof.js', 'public/js/spatial')",
             $mixConfig
         );
+    }
+
+    /** @test */
+    public function the_build_aliases_maplibre_to_its_unminified_distribution(): void
+    {
+        $code = $this->mixConfigCode();
+
+        // webpack 5.74.0 miscompiles the named class-expression shadowing used in
+        // MapLibre 6.0.0's minified ESM distribution, so `maplibre-gl` must
+        // resolve to the unminified build instead. Asserted on the alias
+        // declaration itself — never on a generated identifier, which changes
+        // every time the bundler renumbers its scopes.
+        $this->assertMatchesRegularExpression(
+            '/resolve\s*:\s*\{.*?alias\s*:\s*\{.*?[\'"]maplibre-gl\$?[\'"]\s*:/s',
+            $code,
+            'webpack.mix.js must alias bare `maplibre-gl` inside resolve.alias.'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '#[\'"]node_modules/maplibre-gl/dist/maplibre-gl-dev\.mjs[\'"]#',
+            $code,
+            'The maplibre-gl alias must target the unminified dev distribution.'
+        );
+
+        // A path that no longer exists would fail deep inside the build with an
+        // opaque resolver error, so check it here — but only where dependencies
+        // are installed, so an install-less checkout still runs the rest.
+        if (is_dir(base_path('node_modules/maplibre-gl'))) {
+            $this->assertFileExists(
+                base_path('node_modules/maplibre-gl/dist/maplibre-gl-dev.mjs')
+            );
+        }
+    }
+
+    /** @test */
+    public function the_build_publishes_and_references_the_maplibre_worker(): void
+    {
+        $mix = $this->mixConfigCode();
+        $js = $this->proofCode();
+
+        // MapLibre derives its worker URL from import.meta.url, which webpack
+        // resolves at build time to a file:// path. That fails MapLibre's own
+        // ^https?: guard, so `new Worker('')` loads the HTML page instead of a
+        // script and dies on an error event nothing listens for — the map paints
+        // its background layer and never requests a single tile, silently. The
+        // build must publish the worker and the entry must point setWorkerUrl at
+        // it. Asserted on the published path, not on any bundled identifier.
+        $this->assertMatchesRegularExpression(
+            '#mix\.copy\(.*maplibre-gl-worker\.mjs.*public/js/spatial#s',
+            $mix,
+            'webpack.mix.js must publish maplibre-gl-worker.mjs beside the bundle.'
+        );
+
+        // The worker imports the shared chunk by relative path, so it is only
+        // usable if that sits next to it.
+        $this->assertStringContainsString(
+            'maplibre-gl-shared.mjs',
+            $mix,
+            'The worker imports maplibre-gl-shared.mjs — it must be published too.'
+        );
+
+        $this->assertStringContainsString(
+            'setWorkerUrl(',
+            $js,
+            'The entry point must configure MapLibre\'s worker URL explicitly.'
+        );
+        $this->assertMatchesRegularExpression(
+            '#[\'"]/js/spatial/maplibre-gl-worker\.mjs[\'"]#',
+            $js,
+            'setWorkerUrl must point at the published worker asset.'
+        );
+
+        // Where a build exists, the referenced assets must really be published —
+        // a path the build never emits is a 404 and a dead worker.
+        if (file_exists(public_path('js/spatial/maplibre-proof.js'))) {
+            $this->assertFileExists(public_path('js/spatial/maplibre-gl-worker.mjs'));
+            $this->assertFileExists(public_path('js/spatial/maplibre-gl-shared.mjs'));
+        }
     }
 
     /** @test */

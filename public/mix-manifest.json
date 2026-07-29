@@ -1,5 +1,7 @@
 {
     "/js/app.js": "/js/app.js?id=119c6a621979b1fde2e0089342495c6f",
-    "/js/spatial/maplibre-proof.js": "/js/spatial/maplibre-proof.js?id=52641e358b81627b2458aef622b1f3c3",
-    "/css/app.css": "/css/app.css?id=ac5a2516b2f348ba4147ff67f2c36c20"
+    "/js/spatial/maplibre-proof.js": "/js/spatial/maplibre-proof.js?id=4da403ddd5394def4fb1bd00b3e236b8",
+    "/css/app.css": "/css/app.css?id=ac5a2516b2f348ba4147ff67f2c36c20",
+    "/js/spatial/maplibre-gl-worker.mjs": "/js/spatial/maplibre-gl-worker.mjs?id=0f4f62aba0fbf87d0305142bc915de85",
+    "/js/spatial/maplibre-gl-shared.mjs": "/js/spatial/maplibre-gl-shared.mjs?id=743134f867ab6e01b73b1dd74dae4c8c"
 }

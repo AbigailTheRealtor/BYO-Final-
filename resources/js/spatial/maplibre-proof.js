@@ -33,7 +33,7 @@
 // `import maplibregl from 'maplibre-gl'` silently yields undefined and every
 // `maplibregl.X` below would throw at runtime. The production build reports this
 // as a warning rather than an error, so it exits 0 with a broken bundle.
-import { Map as MaplibreMap, NavigationControl, ScaleControl, addProtocol } from 'maplibre-gl';
+import { Map as MaplibreMap, NavigationControl, ScaleControl, addProtocol, setWorkerUrl } from 'maplibre-gl';
 import { Protocol } from 'pmtiles';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './maplibre-proof.css';
@@ -50,10 +50,27 @@ import './maplibre-proof.css';
  * exactly this version's AddProtocolAction contract. It is safe to pass
  * detached — the underlying implementation is arrow-bound to the instance.
  */
+/**
+ * Where the bundled build must load MapLibre's worker from.
+ *
+ * MapLibre derives this from `import.meta.url`, which webpack resolves at build
+ * time to a `file://` path. That fails MapLibre's own `^https?:` guard, leaving
+ * the worker URL empty — `new Worker('')` then resolves to the HTML page, which
+ * is not JavaScript, so the worker dies on an error event nobody listens for.
+ * The map paints its background layer and silently never requests a tile.
+ *
+ * webpack.mix.js copies this asset (and the shared chunk it imports) beside the
+ * bundle. Neither file is processed by webpack, so the class-expression defect
+ * the resolve.alias works around cannot apply to them.
+ */
+const WORKER_URL = '/js/spatial/maplibre-gl-worker.mjs';
+
 export function registerPmtilesProtocol() {
     if (registerPmtilesProtocol.registered) {
         return registerPmtilesProtocol.protocol;
     }
+
+    setWorkerUrl(WORKER_URL);
 
     const protocol = new Protocol();
     addProtocol('pmtiles', protocol.tile);
