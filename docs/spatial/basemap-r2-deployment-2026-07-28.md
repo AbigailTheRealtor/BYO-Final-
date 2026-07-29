@@ -212,14 +212,34 @@ Closing this requires an operator to read the BLAKE3 from the Protomaps builds U
 
 ## 7. What remains before Phase 2 renderer work
 
-Recorded so the roadmap is not read as "tiles are live, therefore the map can be built":
+Recorded so the roadmap is not read as "the proof renders, therefore the renderer is built". The
+proof page is an isolated internal diagnostic behind a disabled-by-default flag: it reads no listing,
+opens no database connection, and is wired into no Seller, Buyer, Landlord or Tenant flow. A
+successful proof-of-render says the archive and the library work. It says nothing about integration.
 
-1. 🔴 **CORS configuration** — §5, pending approved production origins.
-2. 🔴 **No map library installed** — `package.json` contains no `maplibre-gl` and no PMTiles client.
-3. ⚪ **Renderer authorisation** — Phase 2 implementation has not been authorised; the "no temporary renderer" hold in the roadmap still stands.
+1. 🟡 **CORS configuration** — **verified for the development proof origin only.** For that one
+   origin the preflight returns the `Access-Control-Allow-*` headers and ranged reads return `206`
+   with `Access-Control-Allow-Origin`; no wildcard origin is in use. **Production and any additional
+   origins remain unconfigured** and each needs its own explicit entry under the §5 rules — an origin
+   that works today grants nothing to a different scheme, host or port.
+2. 🟢 **Map dependencies installed and exercised** — `maplibre-gl` and the PMTiles client are pinned
+   in `package-lock.json` and used by the proof bundle. MapLibre's worker assets are published beside
+   that bundle and committed, because the bundler cannot resolve the worker URL for itself; without
+   them the map initialises but silently never requests a tile. The proof route renders the Florida
+   basemap end to end.
+3. ⚪ **Renderer authorisation** — Phase 2 implementation has not been authorised; the "no temporary renderer" hold in the roadmap still stands. The proof-of-render does not lift it.
 4. ⚪ **Licence ordering (D1)** — Google Maps Content may not be displayed over a non-Google basemap, so Google data must leave the address path before or alongside the renderer swap. **D1 remains an open decision.**
 
-Items 1 and 2 are infrastructure. Items 3 and 4 are owner decisions.
+Item 1 is infrastructure, now partly satisfied. Item 2 is complete. Items 3 and 4 are owner decisions
+and are unchanged.
+
+Not tracked above, because a proof page never needed them, but required before any consumer-facing
+surface: production cache headers (§6.3), the custom domain that would replace the managed public URL
+(§3), archive-refresh and observability for a live renderer, and rollout/kill-switch handling.
+
+> **§5 and §6.1 predate this verification** and still describe CORS as entirely unconfigured. That
+> was accurate when written — an object-scoped token could neither read nor set the bucket policy.
+> Those sections need their own reconciliation pass; §7 above is the current status.
 
 ---
 
