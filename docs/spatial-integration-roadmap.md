@@ -270,8 +270,8 @@ Replace the dead Google renderer in the Buyer/Tenant Search Areas component with
 ### Dependencies
 
 - ~~**D2 — basemap tile source.**~~ ✅ **Resolved 2026-07-28.** Self-hosted Protomaps PMTiles on Cloudflare R2; archive uploaded and integrity-verified. See below.
-- 🔴 **CORS configuration on the basemap bucket — hard blocker; no browser can fetch tiles cross-origin without it.** Pending final production origin approval. The exact policy to apply is recorded in [`basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md#5-cors-configuration-to-apply). Applying it needs an admin-scoped R2 credential — the current object-scoped token cannot read or write bucket CORS.
-- 🔴 **No map library installed.** `maplibre-gl` and a PMTiles client must be added to the Laravel Mix build.
+- 🟡 **CORS configuration on the basemap bucket — previously a hard blocker; now verified for the development proof origin.** For that origin the preflight and ranged `206` reads both return the expected `Access-Control-Allow-*` headers, with no wildcard in use. **Production and any additional origins remain unconfigured** and each needs its own explicit entry; the policy template is recorded in [`basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md#5-cors-configuration-to-apply). Adding origins needs an admin-scoped R2 credential — the current object-scoped token cannot read or write bucket CORS.
+- 🟢 **Map library installed and exercised.** `maplibre-gl` and a PMTiles client are pinned in `package-lock.json` and built through Laravel Mix. MapLibre's worker assets are published beside the proof bundle and committed, because the bundler cannot resolve the worker URL itself. An internal, flag-gated proof route renders the Florida basemap; it is a diagnostic only — not wired into listing, search, matching, database or any Seller/Buyer/Landlord/Tenant flow.
 - Licence ordering constraint: Google Maps Content may not be displayed over a non-Google basemap. Google **data** must leave the address path (D1) before or alongside the renderer swap.
 
 ### Basemap infrastructure — delivered 2026-07-28
@@ -290,7 +290,7 @@ The tile source D2 selected is **built, uploaded and verified**. This is infrast
 
 Integrity was confirmed end to end: the local archive was re-hashed against its provenance record, and byte-for-byte parity was then re-established **twice independently** after upload — once via authenticated `GetObject`, once via a full credential-free download over the public URL. Ranged reads (HTTP 206), `Accept-Ranges: bytes`, ETag consistency and HEAD all verified. The R2 token was confirmed scoped to the basemap bucket alone.
 
-Full verification record, R2 configuration, and the CORS policy awaiting origins: [`docs/spatial/basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md).
+Full verification record, R2 configuration, and the CORS policy — verified for the development proof origin, awaiting production origins: [`docs/spatial/basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md).
 
 **Known operational caveat:** the `r2.dev` public URL returns `403 / error code: 1010` to clients without a browser-like user-agent. Browser rendering is unaffected; **server-side consumers, CI smoke tests and uptime probes are**. This is independent of CORS and will not be fixed by applying the CORS policy.
 
@@ -500,7 +500,7 @@ Note: `git checkout`, `git switch`, `git restore`, `git reset` and `git clean` a
 ## Related documents
 
 - [`spatial-ui-integration-audit-2026-07-25.md`](./spatial-ui-integration-audit-2026-07-25.md) — the audit this roadmap executes
-- [`spatial/basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md) — D2 decision record, basemap upload + integrity verification, R2 configuration, and the CORS policy awaiting approved origins
+- [`spatial/basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md) — D2 decision record, basemap upload + integrity verification, R2 configuration, the CORS policy (verified for the development proof origin, awaiting production origins), and proof-route environment recovery
 - [`technical-debt-test-suite.md`](./technical-debt-test-suite.md) — pre-existing test-suite debt found while verifying Phase 0
 - [`architecture/MASTER-SPATIAL-INTELLIGENCE-ARCHITECTURE.md`](./architecture/MASTER-SPATIAL-INTELLIGENCE-ARCHITECTURE.md) — governing architecture
 - [`architecture/GOOGLE-MAPS-PLATFORM-MIGRATION-INVENTORY.md`](./architecture/GOOGLE-MAPS-PLATFORM-MIGRATION-INVENTORY.md) — the Google-to-zero checklist

@@ -291,7 +291,9 @@ The instruction was to use the existing spatial architecture rather than introdu
 
 > **Resolution.** The recommendation below was accepted: **self-hosted Protomaps `.pmtiles` for Florida on Cloudflare R2**. The archive (`basemaps/florida/20260726/florida-z15.pmtiles`, 1.07 GiB, zoom 0–15) is uploaded and verified byte-for-byte, with ranged reads and credential-free public readability confirmed. No vendor and no API key were introduced.
 >
-> **What this does not unblock.** Two infrastructure prerequisites remain before a browser can render tiles: **CORS is not configured** on the bucket (pending final production origin approval), and **no map library is installed** — `package.json` still has no `maplibre-gl` and no PMTiles client, exactly as this section observed. Full record: [`spatial/basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md).
+> **Both prerequisites since cleared for development.** When this resolution was first written, two infrastructure items remained before any browser could render tiles: CORS was unconfigured on the bucket, and `package.json` had no `maplibre-gl` and no PMTiles client, exactly as this section observed. Both have since been addressed — the client libraries are pinned and in use with MapLibre's worker assets published alongside them, and CORS is configured and verified for the development proof origin, where an internal flag-gated proof route renders the Florida basemap.
+>
+> **What that still does not unblock.** The proof route is an isolated diagnostic behind a disabled-by-default flag — it reads no listing, opens no database connection, and is wired into no search, matching, or Seller/Buyer/Landlord/Tenant flow. **Production and any additional origins remain unconfigured**, and renderer authorisation and licence ordering (D1) are unchanged owner decisions. Full record: [`spatial/basemap-r2-deployment-2026-07-28.md`](./spatial/basemap-r2-deployment-2026-07-28.md).
 >
 > The original analysis is preserved below.
 

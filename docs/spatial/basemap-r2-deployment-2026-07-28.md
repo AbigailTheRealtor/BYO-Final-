@@ -118,11 +118,16 @@ the BLAKE3 and SHA-256 in §2.
 
 ## 5. CORS configuration to apply
 
-🔴 **Not configured. This is the remaining blocker for browser rendering.**
+🟡 **Previously blocked; now verified for the development proof origin.** For that one origin the
+`OPTIONS` preflight returns the `Access-Control-Allow-*` headers and ranged reads return `206` with
+`Access-Control-Allow-Origin`; no wildcard origin is in use. The internal proof route renders the
+basemap in a browser through it. **Production and any additional origins remain unconfigured** and
+each still requires its own explicit entry under the rules below.
 
-Empirically probed: `OPTIONS` preflight returns 403 for every origin tested, and successful `206`
-responses carrying an `Origin` header return **no** `Access-Control-Allow-Origin`. A browser-based
-PMTiles reader is blocked by the same-origin policy today.
+*Recorded as a hard blocker when this document was written (2026-07-28), and accurate then:* the
+preflight returned 403 for every origin tested, and successful `206` responses carrying an `Origin`
+header returned **no** `Access-Control-Allow-Origin`, so a browser-based PMTiles reader was blocked
+by the same-origin policy. The policy below remains the template to apply for each further origin.
 
 Applying this requires an **admin-scoped R2 credential** — the current object-scoped token cannot
 read or write bucket CORS. Apply from the Cloudflare dashboard (R2 → bucket → Settings → CORS
@@ -146,7 +151,7 @@ S3-API equivalent (`PutBucketCors`) wraps the same rule in `{"CORSRules": [ ... 
 
 | Setting | Value | Rationale |
 |---|---|---|
-| `AllowedOrigins` | **Pending approval** | Not yet finalised. No wildcard. |
+| `AllowedOrigins` | Development proof origin present; production **pending approval** | Production list not yet finalised. No wildcard. |
 | `AllowedMethods` | `GET`, `HEAD` | Reads only — no `PUT`/`POST`/`DELETE` |
 | `AllowedHeaders` | `Range`, `If-Match` | `Range` for tile fetches; `If-Match` for PMTiles consistency checks |
 | `ExposeHeaders` | `ETag`, `Content-Length` | PMTiles clients read `ETag` to detect archive changes mid-session |
@@ -154,10 +159,11 @@ S3-API equivalent (`PutBucketCors`) wraps the same rule in `{"CORSRules": [ ... 
 
 ### Rules for populating `AllowedOrigins`
 
-**No origins have been inferred** from repository configuration, preview URLs, or development
-environments, and **no wildcard (`*`) origin is present** — wildcards require explicit owner
-approval. When the approved list is supplied, each entry must be scheme + host + explicit
-non-default port only, with no trailing slash, no path, and no wildcard:
+Beyond the development proof origin now present on the bucket, **no origins have been inferred** from
+repository configuration, preview URLs, or development environments, and **no wildcard (`*`) origin
+is present** — wildcards require explicit owner approval. When the approved production list is
+supplied, each entry must be scheme + host + explicit non-default port only, with no trailing slash,
+no path, and no wildcard:
 
 - `https://example.com` and `https://www.example.com` are **distinct origins**; list both if both serve maps.
 - `http://` and `https://` are distinct. List `http://` only for an explicitly approved local dev origin.
@@ -174,18 +180,23 @@ redundant but harmless.
 
 ### Verification required after applying
 
-Cloudflare applies bucket CORS to `r2.dev` URLs, but this could not be confirmed empirically for
-this bucket because the token cannot set the policy. Once applied, re-run the preflight: an
-`OPTIONS` request carrying `Origin` and `Access-Control-Request-Method: GET` must return the
-`Access-Control-Allow-*` headers, and a `206` response carrying `Origin` must return
-`Access-Control-Allow-Origin`. Both return nothing today.
+Cloudflare does apply bucket CORS to the managed public URL — originally unconfirmable here because
+the object-scoped token cannot set the policy, since demonstrated empirically on the development
+proof origin. Re-run this check for **each** origin added, because a passing result is per-origin and
+carries to no other: an `OPTIONS` request carrying `Origin` and `Access-Control-Request-Method: GET`
+must return the `Access-Control-Allow-*` headers, and a `206` response carrying `Origin` must return
+`Access-Control-Allow-Origin`. Both hold for the development proof origin; neither has been
+exercised for any production origin.
 
 ---
 
 ## 6. Open risks
 
-### 6.1 CORS unconfigured — blocker
-See §5. Blocked on the approved origin list, then an admin-scoped credential.
+### 6.1 CORS — cleared for the development proof origin, open for production
+Previously a hard blocker for all browser rendering. The development proof origin is now configured
+and verified (§5), and the internal proof route renders the basemap through it. **Production and any
+additional origins remain unconfigured**; adding each still needs the approved origin list and an
+admin-scoped R2 credential, since the object-scoped token can neither read nor write bucket CORS.
 
 ### 6.2 Cloudflare error 1010 on non-browser clients — operational risk, not a blocker
 The `r2.dev` URL returns `403 / error code: 1010` to clients without a browser-like user-agent.
@@ -236,10 +247,6 @@ and are unchanged.
 Not tracked above, because a proof page never needed them, but required before any consumer-facing
 surface: production cache headers (§6.3), the custom domain that would replace the managed public URL
 (§3), archive-refresh and observability for a live renderer, and rollout/kill-switch handling.
-
-> **§5 and §6.1 predate this verification** and still describe CORS as entirely unconfigured. That
-> was accurate when written — an object-scoped token could neither read nor set the bucket policy.
-> Those sections need their own reconciliation pass; §7 above is the current status.
 
 ---
 
