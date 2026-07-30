@@ -21,6 +21,7 @@ use App\Models\WaterViewType;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
 use App\Services\LocationDna\LocationDnaChipPresenter;
+use App\Services\LocationDna\PublicGeometryProjection;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -375,6 +376,13 @@ class BuyerCriteriaAuctionController extends Controller
         } catch (\Throwable $e) {
             $page_data['locationIntelligenceSummary'] = ['summary_lines' => []];
         }
+
+        // G0.1 — public viewer route: withhold exact user-authored geometry and
+        // free-text notes from the browser (D4/D5). Applied AFTER the enrichment
+        // calls above, which legitimately require full geometry server-side.
+        $page_data['locationDnaPreferences'] = app(PublicGeometryProjection::class)
+            ->project($page_data['locationDnaPreferences']);
+
         return view('buyer_criteria.view', $page_data);
     }
 

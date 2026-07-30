@@ -606,6 +606,18 @@ class OfferWorkflowReadinessTest extends TestCase
             // ValidStreetAddress references it in a comment.
             'app/Http/Livewire/Concerns/HandlesGooglePlacesAddress.php',
             'app/Rules/ValidStreetAddress.php',
+            // Location DNA Engine G0.1 public-geometry containment
+            // (docs/architecture/LOCATION-DNA-ENGINE-V1.2-G0.1-PLAN.md): a single pure
+            // projection applied at the four public view handoffs, plus the two public
+            // emission surfaces it feeds. Owner editing (map-input.blade.php) is
+            // deliberately untouched.
+            'app/Services/LocationDna/PublicGeometryProjection.php',
+            'app/Http/Controllers/BuyerCriteriaAuctionController.php',
+            'app/Http/Controllers/BuyerOfferListingController.php',
+            'app/Http/Controllers/TenantCriteriaAuctionController.php',
+            'app/Http/Controllers/TenantOfferListingController.php',
+            'resources/views/components/location-dna-map.blade.php',
+            'resources/views/tenant_criteria/view.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

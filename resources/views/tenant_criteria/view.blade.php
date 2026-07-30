@@ -943,6 +943,12 @@
                             @php
                               $dnaPrefRaw = $auction->info('location_dna_preferences');
                               $dnaPrefs   = $dnaPrefRaw ? json_decode($dnaPrefRaw, true) : null;
+                              /* G0.1 — this panel decodes the blob independently of the
+                                 controller, so the public-surface projection must be applied
+                                 here too (D4/D5). Withholds radius-centre addresses and
+                                 free-text notes. See LOCATION-DNA-ENGINE-V1.2-G0.1-PLAN.md. */
+                              $dnaPrefs   = app(\App\Services\LocationDna\PublicGeometryProjection::class)
+                                              ->project($dnaPrefs);
                             @endphp
                             <div class="mt-2 mb-3 p-2 border rounded bg-light" style="font-size:0.82rem;">
                               <div class="fw-semibold mb-1 text-muted" style="font-size:0.8rem;">
@@ -985,6 +991,17 @@
                                 @if(!empty($dnaPrefs['flexible_location']) && $dnaPrefs['flexible_location'])
                                   <div class="mt-1">
                                     <span class="badge bg-success fw-normal">Flexible on location</span>
+                                  </div>
+                                @endif
+                                {{-- G0.1 — presence-only indicators for withheld detail (D4/D5). --}}
+                                @if(!empty($dnaPrefs[\App\Services\LocationDna\PublicGeometryProjection::WITHHELD_GEOMETRY]))
+                                  <div class="mt-1 text-muted" style="font-size:0.78rem;">
+                                    <i class="fa-solid fa-draw-polygon me-1"></i>Search area preferences provided
+                                  </div>
+                                @endif
+                                @if(!empty($dnaPrefs[\App\Services\LocationDna\PublicGeometryProjection::WITHHELD_NOTES]))
+                                  <div class="mt-1 text-muted" style="font-size:0.78rem;">
+                                    <i class="fa-solid fa-note-sticky me-1"></i>Additional location preferences provided
                                   </div>
                                 @endif
                               @else

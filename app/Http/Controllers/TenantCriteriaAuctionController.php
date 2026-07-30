@@ -12,6 +12,7 @@ use App\Models\TenantCriteriaAuctionBid;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
 use App\Services\LocationDna\LocationDnaChipPresenter;
+use App\Services\LocationDna\PublicGeometryProjection;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 
 class TenantCriteriaAuctionController extends Controller
@@ -645,6 +646,13 @@ class TenantCriteriaAuctionController extends Controller
         } catch (\Throwable $e) {
             $page_data['locationIntelligenceSummary'] = ['summary_lines' => []];
         }
+
+        // G0.1 — public viewer route: withhold exact user-authored geometry and
+        // free-text notes from the browser (D4/D5). Applied AFTER the enrichment
+        // calls above, which legitimately require full geometry server-side.
+        $page_data['locationDnaPreferences'] = app(PublicGeometryProjection::class)
+            ->project($page_data['locationDnaPreferences']);
+
         return view('tenant_criteria.view', $page_data);
     }
 

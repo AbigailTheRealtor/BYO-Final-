@@ -1,14 +1,16 @@
 # G0.1 — Public Geometry Containment · Implementation Plan
 
 **Gate:** G0.1 (v1.2 §17) · **Type:** safety correction only
-**Status:** **PLAN ONLY — NOT IMPLEMENTED. NOT AUTHORISED FOR IMPLEMENTATION.**
+**Status:** **IMPLEMENTED AND VERIFIED ON `fix/public-geometry-containment`.** Implementation was
+subsequently authorised. **Not yet merged or deployed.**
 **Governed by:** [`LOCATION-DNA-ENGINE-V1.2.md`](./LOCATION-DNA-ENGINE-V1.2.md) · adopted per
 [Adoption Record](./LOCATION-DNA-ENGINE-V1.2-ADOPTION-RECORD.md)
 **Audit baseline:** `387a971d8` — every finding below re-verified at this commit
 **Principle enforced:** **L14** — user-drawn geometry is sensitive; exact vertices are never exposed publicly
 
-> No code has been written. No file outside `docs/architecture/` has been touched. This document is the
-> deliverable of the planning step only.
+> Originally the deliverable of the planning step only. Implementation was subsequently authorised and
+> carried out on `fix/public-geometry-containment` per the file plan in §5; the sections below are
+> retained as the governing plan of record.
 
 ---
 
@@ -361,8 +363,8 @@ does not produce the expected failure blocks the gate.**
 
 | # | Item | Impact | Disposition |
 |---|---|---|---|
-| **D4** | T2 authorised-participant rule is **ambiguous** — no single existing rule; criteria controllers have no participant concept | Conservative default withholds geometry from agents/participants who see it today | **owner decision.** Default: withhold. Flagged, not silent |
-| **D5** | `location_notes` is unbounded free text, publicly rendered (component line 328; `tenant_criteria/view:981`). Not geometry, but may contain precise location detail | Potential residual disclosure after G0.1 | **owner decision.** Not silently included (scope creep) nor silently ignored (negligent). Recommend review; trivial to add to the projection if the owner wants it |
+| **D4** | T2 authorised-participant rule is **ambiguous** — no single existing rule; criteria controllers have no participant concept | Conservative default withholds geometry from agents/participants who see it today | **DECIDED — withhold.** Public viewer routes never receive exact user-authored search geometry, regardless of authentication state. Authentication alone does not authorise geometry. Owners or private participants receive geometry only through dedicated private/edit surfaces |
+| **D5** | `location_notes` is unbounded free text, publicly rendered (component line 328; `tenant_criteria/view:981`). Not geometry, but may contain precise location detail | Potential residual disclosure after G0.1 | **DECIDED — withhold.** Included in the projection alongside geometry; withheld wholesale, never truncated, summarised or heuristically sanitised |
 | **U1** | AI endpoints (`ask-ai/ask`, `agent-ai/*`, `ai-knowledge/{token}`) not audited to conclusion | Unknown whether any assembles location DNA into a response reachable without authentication | **Recommend a bounded follow-up audit before G0.1 is closed.** Not blocking the plan; would be blocking if it proved to expose geometry |
 | **U2** | Optional component guard (file 7) could, if written wrongly, strip geometry from T1 or break the two subject-property views | Regression on a working surface | Guard must **assert only, never redact**. T-4 covers it. May be omitted entirely |
 | **U3** | Radius-centre `address` removal may leave an empty label where a page previously showed text | Cosmetic | Presence-only wording (§2 rule 7) covers it. Not a data risk |
@@ -417,9 +419,10 @@ Implementation stops immediately and reports, without completing, if any of thes
 
 ## 10. Authorisation status
 
-**G0.1 is planned and not implemented.** Implementation requires explicit owner authorisation.
+**G0.1 was authorised and is implemented on `fix/public-geometry-containment`.** D4 and D5 are both
+decided as **withhold** (§7). Not yet merged or deployed.
 
-Recommended sequence at authorisation:
+Sequence followed at authorisation:
 
 1. Decide **D4** (T2 participants) and **D5** (`location_notes`).
 2. Approve the containment boundary (§4.2) and the file plan (§5).

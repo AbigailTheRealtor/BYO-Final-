@@ -211,6 +211,31 @@
 </style>
 @endpush
 
+{{-- ─── G0.1: presence-only indicators for withheld public detail ─────────────
+     Rendered when the caller handed this component a public-view projection
+     (App\Services\LocationDna\PublicGeometryProjection) that withheld exact
+     user-authored geometry or free-text notes. Additive display only — this
+     block never removes anything, and it is inert for callers that pass
+     unprojected preferences or none at all.
+     Decisions D4/D5 · see LOCATION-DNA-ENGINE-V1.2-G0.1-PLAN.md
+─────────────────────────────────────────────────────────────────────────────── --}}
+@if(!empty($prefs[\App\Services\LocationDna\PublicGeometryProjection::WITHHELD_GEOMETRY])
+    || !empty($prefs[\App\Services\LocationDna\PublicGeometryProjection::WITHHELD_NOTES]))
+  <div class="ldna-withheld-box mb-3 p-2 rounded"
+       style="background:#f8fafc;border:1px solid #e2e8f0;color:#475569;font-size:.82rem;">
+    @if(!empty($prefs[\App\Services\LocationDna\PublicGeometryProjection::WITHHELD_GEOMETRY]))
+      <div>
+        <i class="fa-solid fa-draw-polygon me-1 text-muted"></i>Search area preferences provided
+      </div>
+    @endif
+    @if(!empty($prefs[\App\Services\LocationDna\PublicGeometryProjection::WITHHELD_NOTES]))
+      <div>
+        <i class="fa-solid fa-note-sticky me-1 text-muted"></i>Additional location preferences provided
+      </div>
+    @endif
+  </div>
+@endif
+
 @if($propertyPin)
   {{-- ─── Property Pin Map (Seller / Landlord offer-listing pages) ─────────────────
        Renders a single Google Maps marker for the exact property location.
