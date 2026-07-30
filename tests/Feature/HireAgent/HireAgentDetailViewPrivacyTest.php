@@ -470,39 +470,70 @@ class HireAgentDetailViewPrivacyTest extends TestCase
     }
 
     /**
-     * The stopping point, asserted. This checkpoint deliberately deletes no legacy component:
-     * the competing-bids controller, service, routes and dedicated view all remain, merely
-     * unreferenced by the four Hire detail views. Their removal is a separately reviewed
-     * checkpoint, and this test is what makes "stopped before deletion" checkable rather than
-     * a claim in a commit message.
+     * The inverse of what this test asserted at the first checkpoint.
+     *
+     * At the first checkpoint the four Hire detail views stopped calling the legacy
+     * competing-bids stack, but the stack itself was deliberately left standing, and this test
+     * asserted its survival so that "stopped before deletion" was checkable rather than a claim
+     * in a commit message. The second checkpoint is that deletion, so the assertion inverts:
+     * the components must now be gone.
+     *
+     * Structural absence only. The reachability half — that the retired URLs 404 for every
+     * viewer rather than redirecting — lives in HireAgentCompetingBidsRetirementTest.
+     *
+     * Absence is asserted on FILES, not via class_exists(). class_exists() is the wrong probe
+     * for a deleted class: Composer's optimized classmap still maps the old FQCN to its path
+     * until `composer dump-autoload` is re-run, so the call tries to include a file that is no
+     * longer there and raises an ErrorException instead of cleanly returning false. That would
+     * fail this test for a build-artifact reason rather than a code reason, and — worse — it
+     * would keep failing after someone "fixed" the deletion. The file is the fact; the classmap
+     * is a cache of it.
      */
-    public function test_legacy_competing_bid_components_are_preserved_for_the_deletion_checkpoint(): void
+    public function test_legacy_competing_bid_components_are_retired(): void
     {
-        $this->assertTrue(
-            class_exists(\App\Services\CompetingBidsService::class),
-            'CompetingBidsService must survive this checkpoint.'
+        $this->assertFileDoesNotExist(
+            app_path('Services/CompetingBidsService.php'),
+            'CompetingBidsService must be deleted by this checkpoint.'
         );
-        $this->assertTrue(
-            class_exists(\App\Http\Controllers\CompetingBidsController::class),
-            'CompetingBidsController must survive this checkpoint.'
+        $this->assertFileDoesNotExist(
+            app_path('Http/Controllers/CompetingBidsController.php'),
+            'CompetingBidsController must be deleted by this checkpoint.'
         );
-        $this->assertTrue(
-            class_exists(\App\Models\BiddingPeriodAgentMapping::class),
-            'BiddingPeriodAgentMapping must survive this checkpoint.'
+        $this->assertFileDoesNotExist(
+            app_path('Models/BiddingPeriodAgentMapping.php'),
+            'BiddingPeriodAgentMapping must be deleted by this checkpoint.'
         );
-        $this->assertFileExists(
+        $this->assertFileDoesNotExist(
             resource_path('views/tenant_agent/competing_bids.blade.php'),
-            'The dedicated competing-bids view must survive this checkpoint.'
+            'The dedicated competing-bids view must be deleted by this checkpoint.'
         );
 
         $routes = collect(app('router')->getRoutes()->getRoutes())
             ->map(fn ($r) => $r->getActionName())
             ->filter(fn ($a) => str_contains($a, 'CompetingBidsController'));
 
-        $this->assertGreaterThanOrEqual(
-            2,
-            $routes->count(),
-            'Both competing-bids routes must survive this checkpoint.'
+        $this->assertCount(
+            0,
+            $routes,
+            'No route may still point at CompetingBidsController.'
+        );
+    }
+
+    /**
+     * The table outlives the model. Dropping `bidding_period_agent_mappings` is a schema change
+     * and was explicitly out of scope for this checkpoint, so the migration stays and the table
+     * is still built. Only the Eloquent model and its single caller are gone.
+     */
+    public function test_bidding_period_agent_mapping_table_is_retained(): void
+    {
+        $this->assertTrue(
+            \Illuminate\Support\Facades\Schema::hasTable('bidding_period_agent_mappings'),
+            'The mapping table must NOT be dropped by this checkpoint — only the model was deleted.'
+        );
+
+        $this->assertFileExists(
+            database_path('migrations/2026_01_07_053518_create_bidding_period_agent_mappings_table.php'),
+            'The mapping table migration must be retained.'
         );
     }
 }

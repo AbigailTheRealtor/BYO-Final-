@@ -2827,9 +2827,9 @@
               • $lastBidderNumber / $canSeeBidSummary / $otherBidsExist — the variables that
                 existed only to drive the above.
 
-            CompetingBidsService itself is untouched and still registered; only this view's
-            call into it is gone. Its deletion belongs to the separately reviewed deletion
-            checkpoint, not here.
+            The second checkpoint completed that removal: CompetingBidsService, its controller,
+            its two routes, its dedicated view and BiddingPeriodAgentMapping are all deleted.
+            The retired URLs 404. Only the mapping TABLE remains, by design.
 
             The owner-only empty state is retained below, gated on the server-side decision
             rather than on a Blade-local guess, because a bid count is itself a disclosure.

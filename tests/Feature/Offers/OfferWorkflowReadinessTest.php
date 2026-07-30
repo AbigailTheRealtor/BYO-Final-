@@ -684,15 +684,39 @@ class OfferWorkflowReadinessTest extends TestCase
             //   the per-card COMPETITOR SUMMARY branch. The owner-only empty state is kept.
             //   BuyerAgentAuctionController.php and the four hire_*_agent/view.blade.php files
             //   are already allow-listed above.
-            //   Deliberately NOT touched, pending the separate deletion checkpoint:
-            //   CompetingBidsController, CompetingBidsService, the two competing-bids routes,
-            //   tenant_agent/competing_bids.blade.php, BiddingPeriodAgentMapping and its table,
-            //   and Create Offer's offer-listing/partials/_competing-bids.blade.php.
+            //   Deliberately NOT touched at that checkpoint, pending the separate deletion
+            //   checkpoint: CompetingBidsController, CompetingBidsService, the two
+            //   competing-bids routes, tenant_agent/competing_bids.blade.php,
+            //   BiddingPeriodAgentMapping and its table, and Create Offer's
+            //   offer-listing/partials/_competing-bids.blade.php.
             //   See docs/investigations/hire-agent-listing-framework-implementation-plan.md §2.
             'app/Services/HireAgent/HireAgentProposalAccess.php',
             'app/Http/Controllers/SellerAgentAuctionController.php',
             'app/Http/Controllers/LandlordAgentAuctionController.php',
             'app/Http/Controllers/TenantAgentAuctionController.php',
+            // Hire Agent Listing Framework — Milestone 2, second checkpoint
+            // (retirement of the legacy competing-bids surfaces).
+            //   That deletion checkpoint is this one. The four files below are DELETED, not
+            //   modified. Proposal privacy is now decided solely by HireAgentProposalAccess, so
+            //   the legacy stack had no remaining caller: a full dependency inventory found the
+            //   controller reachable only from its own two routes, the service only from that
+            //   controller, the dedicated view only from that controller, and the model only
+            //   from that service. Every other hit was documentation or the first checkpoint's
+            //   own survival assertions.
+            //   The two routes are removed from the already-allow-listed routes/web.php and the
+            //   URLs are left to 404 rather than redirected — a redirect to another proposal
+            //   surface would itself be a disclosure. See HireAgentCompetingBidsRetirementTest.
+            //   NOT removed, deliberately: the bidding_period_agent_mappings TABLE and its
+            //   migration (schema changes are out of scope for this checkpoint — only the
+            //   Eloquent model is gone), the four *BidMatchScoreHelper classes and their
+            //   `broker_comp_*` / `services_*` aliases (a stale comment in
+            //   TenantBidMatchScoreHelper still names CompetingBidsService, but the helpers are
+            //   protected and the aliases have many live consumers across the Hire and Buyer
+            //   Criteria views), and Create Offer's competing-bids feature in full.
+            'app/Http/Controllers/CompetingBidsController.php',
+            'app/Services/CompetingBidsService.php',
+            'app/Models/BiddingPeriodAgentMapping.php',
+            'resources/views/tenant_agent/competing_bids.blade.php',
         ];
 
         $unexpected = array_values(array_filter(
