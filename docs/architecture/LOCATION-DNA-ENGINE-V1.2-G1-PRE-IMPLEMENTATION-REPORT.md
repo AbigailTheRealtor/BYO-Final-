@@ -7,12 +7,14 @@
 **Branch:** `architecture/location-dna-g1-domain-core`
 **Base:** `73f32fe62` — `phase-2-spatial/ui-repair-maplibre-basemap` after the G0.1 fast-forward
 **Audit baseline:** every measured claim below re-verified at `73f32fe62`
-**Amended:** `cf53249ac` — findings §0 F-G1-3 … F-G1-6, §5.2, §6.2, §12 and §14 updated with what the
-G1a characterisation suites **proved** rather than predicted. See §17 for the amendment record.
+**Amended:** `cf53249ac`, then `958867234` — findings §0 F-G1-1 and F-G1-3 … F-G1-7, §5.1, §5.2, §6.2,
+§6.2.1, §12, §14, §15 and §16 updated with what the G1a characterisation suites **proved** rather than
+predicted. See §17 for the amendment record.
 
 > This document decides nothing. It states what G1 requires, what the codebase actually contains, and
 > which owner decisions block implementation. §17 G1 names four owner decisions and a characterisation
-> prerequisite; the decisions remain open, and the prerequisite is **partially** discharged — see §6.2.
+> prerequisite. **The decisions all remain open. The characterisation prerequisite is DISCHARGED —
+> G1a is complete** (§6.2.1).
 
 ---
 
@@ -27,7 +29,7 @@ Each carries the name of the test that proves it. Where a first prediction turne
 correction is kept rather than quietly replaced — F-G1-6 is the example, and the corrected version
 relocates the risk it describes.
 
-### F-G1-1 · The "four byte-identical inline copies" claim is false, and the direction of consolidation is inverted
+### F-G1-1 · **PROVEN** — the "four byte-identical inline copies" claim is false, and the direction of consolidation is inverted
 
 v1.2 §4.2 records five mirror-contract implementations — `HasSearchAreas` plus "4 byte-identical inline
 copies" — and names the trait's four `empty()` sites as "the concrete defect that makes consolidation a
@@ -59,6 +61,22 @@ comments. `G1aTraitPresenceSemanticsCharacterisationTest` (commit `cf53249ac`) e
 behaviourally through real EAV storage and confirms it: with a blob carrying `"cities": []` and a
 populated legacy mirror, the trait returns the mirror's cities. The resurrection is real, not a
 code-reading inference.
+
+**The Buyer Offer copies are now proven too — and they are DEFECTIVE, not divergent.** This finding
+originally listed their correctness as *"to be characterised"*. `G1aBuyerOfferInlineCharacterisationTest`
+(commit `958867234`) executes both directly:
+
+- **`BuyerOfferListing`** (create flow, via `loadDraft()`) **resurrects** a present-but-cleared `cities`
+  list from a stale legacy mirror — `test_create_flow_cleared_cities_are_resurrected_from_the_mirror`.
+- **`BuyerOfferListingEdit`** (edit flow, via `loadAuctionData()`) does the same —
+  `test_edit_flow_cleared_cities_are_resurrected_from_the_mirror`.
+
+Both match the trait's semantics exactly, including all five presence-guard defects, and both also
+resurrect a cleared `state` and a cleared `counties` from the discrete meta on load. They are **not**
+divergent-and-correct like `TenantOfferListing` and `TenantOfferListingEdit`.
+
+So the corrected inventory is **three defective implementations and two correct** — see §5.1. G1f's
+canonical writer must serve all three defective ones while preserving the two correct clear behaviours.
 
 ### F-G1-2 · The consumer count is now 43, not 42
 
@@ -313,18 +331,35 @@ writer emits it. `commute` needs no code at all — and adding a placeholder for
 
 ## 5. Mirror consolidation — inventory and affected workflows
 
-### 5.1 The 5 → 1 inventory, as it actually exists at `73f32fe62`
+### 5.1 The 5 → 1 inventory — **resolved by execution**, not inference
 
-| # | Implementation | File | Mechanism for `cities` | Correct per §5.2? |
+Every row below was executed by a G1a test. The "to be characterised" entries are closed.
+
+**Three implementations carry DEFECTIVE semantics** — an intentionally cleared `cities` list is
+resurrected from a stale legacy mirror:
+
+| # | Implementation | File | Mechanism for `cities` | Proven by |
 |---|---|---|---|---|
-| 1 | `HasSearchAreas` trait (132 lines) | `app/Http/Livewire/Concerns/HasSearchAreas.php` | `empty()` | **No** |
-| 2 | Inline copy | `app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php` | inline, no trait | to be characterised |
-| 3 | Inline copy | `app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php` | inline, no trait | to be characterised |
-| 4 | Divergent inline | `app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php:3339` | `array_key_exists()` | **Yes — already correct** |
-| 5 | Divergent inline | `app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php:2494` | `array_key_exists()` | **Yes — already correct** |
+| 1 | `HasSearchAreas` trait (132 lines) | `app/Http/Livewire/Concerns/HasSearchAreas.php` | `empty()` | `test_site48_cleared_cities_are_resurrected_from_the_legacy_mirror` |
+| 2 | Inline copy | `app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php` | `empty()`, inline, no trait | `test_create_flow_cleared_cities_are_resurrected_from_the_mirror` |
+| 3 | Inline copy | `app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php` | `empty()`, inline, no trait | `test_edit_flow_cleared_cities_are_resurrected_from_the_mirror` |
+
+**Two implementations carry CORRECT divergent semantics** — the clear is honoured:
+
+| # | Implementation | File | Mechanism for `cities` | Proven by |
+|---|---|---|---|---|
+| 4 | Divergent inline | `app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php:3339` | `array_key_exists()` | `test_cleared_cities_outcome_across_all_eight_workflows` |
+| 5 | Divergent inline | `app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php:2494` | `array_key_exists()` | `test_cleared_cities_outcome_across_all_eight_workflows` |
+
+**Consequence for G1f.** The canonical writer must **replace or serve all three defective
+implementations** — the trait *and* both Buyer Offer inline copies — while **preserving the two correct
+clear behaviours** in the Tenant Offer pair. Consolidating onto the most *common* implementation would be
+consolidating onto the defect, since three of five are defective and four of eight workflows reach the
+defect through the trait alone.
 
 The trait's surface is three methods: `loadSearchAreas($auction)`, `hydrateDiscreteLocationFromBlob()`,
-`saveSearchAreas($auction)`.
+`saveSearchAreas($auction)`. The two Buyer Offer copies inline the equivalent logic directly in their
+load methods and in their own `hydrateDiscreteLocationFromBlob()` / `saveAllMetadata()`.
 
 ### 5.2 The `HasSearchAreas` presence-guard sites — FIVE, confirmed at this commit
 
@@ -391,21 +426,24 @@ characterisation may not be migrated."*
 | `tests/Feature/Offers/HireSearchAreasParityTest.php` | 9 | `BuyerAgentAuction`, `BuyerAgentAuctionEdit`, `TenantAgentAuction`, `TenantAgentAuctionEdit` |
 | `tests/Feature/Offers/SearchAreasStateCountyRoundTripTest.php` | 4 | `BuyerAgentAuction`, `BuyerOfferListingEdit` |
 | `tests/Unit/Spatial/SearchAreasGeometryContractTest.php` | 16 | `BuyerAgentAuction`, `TenantAgentAuction` |
-| `tests/Unit/Spatial/SearchAreasGeometryGuardTest.php` | — | structural guard |
-| `tests/Unit/Spatial/SearchAreasWidgetContractTest.php` | — | widget contract |
+| `tests/Unit/Spatial/SearchAreasGeometryGuardTest.php` | 11 | structural guard |
+| `tests/Unit/Spatial/SearchAreasWidgetContractTest.php` | 15 | widget contract |
 
 **All eight components have some coverage.** That is better than §16.3's phrasing assumes, and it means
-no workflow is categorically blocked. But coverage is uneven per dimension.
+no workflow is categorically blocked. But coverage was uneven per dimension — which is what G1a closed.
 
 ### 6.2 The gap list — status after G1a
 
-G1a added three suites in commit `cf53249ac`, 28 tests, all green:
+G1a delivered **five suites, 47 tests, all green**, across two commits:
 
-| Suite | Tests |
-|---|---|
-| `tests/Feature/Spatial/G1aTraitPresenceSemanticsCharacterisationTest.php` | 12 |
-| `tests/Feature/Spatial/G1aRecordInterpretationCharacterisationTest.php` | 10 |
-| `tests/Feature/Spatial/G1aCrossDimensionPreservationCharacterisationTest.php` | 6 |
+| Suite | Tests | Commit |
+|---|---|---|
+| `tests/Feature/Spatial/G1aTraitPresenceSemanticsCharacterisationTest.php` | 12 | `cf53249ac` |
+| `tests/Feature/Spatial/G1aRecordInterpretationCharacterisationTest.php` | 10 | `cf53249ac` |
+| `tests/Feature/Spatial/G1aCrossDimensionPreservationCharacterisationTest.php` | 6 | `cf53249ac` |
+| `tests/Feature/Spatial/G1aBuyerOfferInlineCharacterisationTest.php` | 12 | `958867234` |
+| `tests/Feature/Spatial/G1aWorkflowPersistenceMatrixCharacterisationTest.php` | 7 | `958867234` |
+| **Cumulative** | **47** | |
 
 **Closed by G1a:**
 
@@ -424,18 +462,49 @@ G1a added three suites in commit `cf53249ac`, 28 tests, all green:
 | No revision-token tests | **G1c** — the token does not exist yet, so there is nothing to characterise |
 | No capability-resolver tests | **G1d** — same reason |
 
-**Still open, and genuinely G1a residue — G1f is NOT unblocked for these workflows:**
+**Closed by the second G1a increment (`958867234`, 19 tests):**
 
-| Residue | Why it matters |
+| Former residue | How it was closed |
 |---|---|
-| **The two Buyer Offer inline copies are not behaviourally characterised.** G1a exercised the trait through a thin host; `BuyerOfferListing.php` and `BuyerOfferListingEdit.php` carry their own inline implementations that no G1a test executes. | §16.3: "a workflow with no characterisation may not be migrated." These two are the copies whose correctness F-G1-1 lists as *"to be characterised"* — still unknown. |
-| **Per-component persistence characterisation remains 1-of-8.** `SearchAreasPersistenceCharacterisationTest` still covers only `TenantAgentAuction`. G1a broadened *dimension* coverage, not *component* coverage. | The parity evidence L11 requires is per workflow. |
-| **No factory exists for the Buyer/Hire models.** `HireSearchAreasParityTest` works around this with `forceFill()` and `Livewire::test()`; a G1a follow-up would need the same vehicle rather than the thin host. | Practical blocker on closing the two residues above. |
+| The two Buyer Offer inline copies were not behaviourally characterised | Both are now executed directly through their real entry points — `BuyerOfferListing::loadDraft()`, `BuyerOfferListingEdit::loadAuctionData()`, and each component's own `saveAllMetadata()` via reflection — against real `BuyerAgentAuction` rows and real meta. 12 tests. **F-G1-1 resolved.** |
+| Per-component persistence characterisation stood at 1-of-8 | Now **8-of-8** on the load side and **6-of-8** behaviourally on the save side, through the eight real components. Byte-identity, a 1,200-vertex polygon and unicode are asserted through every invocable save path, extending `SearchAreasPersistenceCharacterisationTest`'s storage property from one component to six. |
+| No factory exists for the Buyer/Hire models | Resolved in practice: `BuyerAgentAuction` rows are built with `forceFill()` plus `BuyerAgentAuctionMeta::insert()` — the vehicle `HireSearchAreasParityTest` established. No factory was added, and none is needed. |
 
-**Assessment.** The characterisation prerequisite is discharged for the **trait** and for the **storage
-substrate**, which is what G1c and the §5.4 fixtures needed. It is **not** discharged for the two Buyer
-Offer inline copies. G1f may proceed workflow-by-workflow only for workflows whose implementation is
-characterised; the Buyer Offer pair needs a further G1a increment first.
+### 6.2.1 G1a is COMPLETE — the characterisation prerequisite is discharged
+
+**Status: complete under the established test boundary.** Precisely:
+
+- **All eight workflows have direct load-side behavioural characterisation.** Each is hydrated through
+  its own real entry point, against a real record, with `actingAs()` satisfying the `Auth::id()` scoping
+  that every entry point applies — so no assertion passes vacuously.
+- **Six workflows have behavioural save-side characterisation**, through their real protected
+  `saveAllMetadata()`: Hire Buyer create and edit, Hire Tenant create, Buyer Offer create and edit,
+  Tenant Offer create.
+- **Two workflows have structural save-side characterisation by deliberate test boundary** —
+  **`TenantAgentAuctionEdit`** and **`TenantOfferListingEdit`**. Both carry their blob write inside
+  `update()`.
+
+**The two structural assertions are NOT unresolved residue.** They are a deliberate boundary, and the
+architecture does not require otherwise:
+
+- Direct behavioural testing of `update()` for those two components would require constructing a full
+  valid Livewire payload and executing validation, file handling and a redirect. That is **broader
+  workflow testing**, not characterisation of the mirror contract.
+- **§17 G1's own test list is `§16.2, §16.3, §16.5, plus persistence round trips`.** It does not include
+  §16.4, which is where end-to-end lifecycle coverage (`create → draft → resume → edit → clear → review →
+  publish → display`) lives. No section of §16 requires `update()` execution or a full Livewire payload
+  anywhere.
+- The boundary matches the one already established and documented by
+  `TenantOfferCitiesMirrorTest::test_edit_flow_update_contains_the_mirror_write()`, which asserts the
+  same write structurally for the same reason and records it as a known weaker assertion.
+- Both components' **load** sides are characterised behaviourally, so only the write half rests on a
+  structural assertion, and the identical write is proven behaviourally on the six invocable paths.
+
+If full `update()`-flow coverage is later wanted, it belongs to §16.4 lifecycle testing — a distinct
+scope with its own decision, not a G1a gap.
+
+**Still deferred, and correctly outside G1a:** the consumer-tolerance suite (G1b), revision-token tests
+(G1c), and capability-resolver tests (G1d). None blocks G1f.
 
 ### 6.3 Pre-existing test failure, unrelated to G1
 
@@ -586,7 +655,7 @@ own stop condition and **no page behaviour changed**:
 
 | Sub-gate | Scope | Depends on | Stop condition |
 |---|---|---|---|
-| **G1a · Characterisation completion** — **PARTIALLY COMPLETE (`cf53249ac`)** | Close every gap in §6.2. Tests only, no production change. Delivered: five-site presence semantics, S1–S5 fixtures, mounted/unmounted cross-dimension preservation, save-with-no-changes. **Residue: the two Buyer Offer inline copies and 7-of-8 per-component persistence — see §6.2.** | — | All eight workflows characterised; suite green; zero production files touched. **Not yet met** — residue outstanding |
+| **G1a · Characterisation completion** — **COMPLETE (`cf53249ac`, `958867234`)** | Tests only, no production change. Delivered: five-site presence semantics, S1–S5 fixtures, mounted/unmounted cross-dimension preservation, save-with-no-changes, both Buyer Offer inline copies executed directly, and the eight-workflow persistence matrix. Five suites, 47 tests. | — | **Met.** All eight workflows characterised on the load side, six behaviourally on the save side, two structurally by deliberate boundary (§6.2.1); suites green; zero production files touched |
 | **G1b · Consumer-tolerance audit** | Read-only audit of the 43 consumers for omitted-key tolerance (R11). Findings + failing tests for real defects. | G1a | Every consumer classified tolerant / defective, with evidence |
 | **G1c · Domain core, additive only** | Canonical state object, serializer with omission, hydrator with interpretation modes, revision token, envelope + two operations, result/error shapes. Nothing wired to any workflow. | owner decisions D-G1-1…4 | Core exists with §16.2 coverage; **no existing code path calls it** |
 | **G1d · Capability resolver + config** | Resolver with open context map, config profiles for the eight workflows, deny-by-default, server-side rejection. Not yet enforced on live writes. | G1c | 8 workflows × every dimension tested; resolver inert in production |
@@ -684,8 +753,8 @@ Carried from §17 G1 and extended for the decomposition:
 
 1. Report with diffs and tests, **no page behaviour changed**, before anything else.
 2. Any sub-gate that would change observable page behaviour stops and reports instead.
-3. A workflow without complete G1a characterisation is **not** migrated in G1f. Per §6.2 this currently
-   excludes `BuyerOfferListing` and `BuyerOfferListingEdit`.
+3. A workflow without complete G1a characterisation is **not** migrated in G1f. Per §6.2.1 all eight
+   workflows now qualify — no workflow is blocked on characterisation.
 4. Consolidation that would regress the two already-correct Tenant Offer divergences stops (F-G1-1), and
    likewise anything that would regress line 130's correct clear-mirroring (F-G1-4).
 5. Any requirement to touch client JS, a renderer, a provider or a public API means the work has left
@@ -707,11 +776,11 @@ Remaining sequence:
 1. Decide D-G1-1 … D-G1-4 (the four §17 owner decisions), plus D-G1-5 and D-G1-6 raised here.
 2. Correct v1.2 §4.2 (the byte-identical claim **and** the count of four guard sites → five) and
    §4.3 F-C1 (42 → 43).
-3. ~~Authorise **G1a only**~~ — done, partially, in `cf53249ac`. Either authorise the **G1a residue**
-   (Buyer Offer inline copies; per-component persistence) or accept that G1f cannot migrate those two
-   workflows.
+3. ~~Authorise **G1a only**~~ — **COMPLETE** in `cf53249ac` and `958867234`. Five suites, 47 tests. No
+   characterisation residue remains; see §6.2.1 for the deliberate structural boundary on the two
+   `update()`-based edit flows.
 4. **G1b is the natural next step**: read-only, needs none of the six decisions, and its findings inform
-   D-G1-1's tolerance requirements.
+   D-G1-1's tolerance requirements. **G1b is not started.**
 
 ### 16.1 A tripwire that WILL fire in G1f
 
@@ -730,7 +799,9 @@ G1f owes the four Hire workflows. Recorded here so nobody treats a red run as a 
 | Amendment | Commit | Change |
 |---|---|---|
 | Original report | `eef66f570` | As authored, before any characterisation existed |
-| **G1a findings** | *this commit* | §0 gains F-G1-3 … F-G1-7. F-G1-1 marked proven rather than inferred. §5.2 four sites → **five**, plus the mirror-write surface. §6.2 rewritten as closed / deferred / **residue**, with the pre-existing `ILIKE` failure recorded in new §6.3. §12 G1a marked partially complete and G1f's scope widened. D-G1-5 extended to the five-site count and the non-mechanical surface. §15 stop conditions 3 and 4 tightened. §16 rewritten; §16.1 tripwire added |
+| **G1a findings** | `08ccdc52c` | §0 gains F-G1-3 … F-G1-7. F-G1-1 marked proven rather than inferred. §5.2 four sites → **five**, plus the mirror-write surface. §6.2 rewritten as closed / deferred / **residue**, with the pre-existing `ILIKE` failure recorded in new §6.3. §12 G1a marked partially complete and G1f's scope widened. D-G1-5 extended to the five-site count and the non-mechanical surface. §15 stop conditions 3 and 4 tightened. §16 rewritten; §16.1 tripwire added |
+| **G1a completion** | *this commit* | **G1a marked COMPLETE.** §5.1 inventory resolved by execution into **three defective** and **two correct** implementations, each row naming its proving test. F-G1-1's *"to be characterised"* closed — both Buyer Offer copies proven **defective**, matching the trait. §6.2 suite table extended to five suites / 47 tests. New **§6.2.1** states the completion precisely (8-of-8 load-side behavioural, 6-of-8 save-side behavioural, 2 structural by deliberate boundary) and documents why the two `update()`-based edit flows are **not** residue, citing §17 G1's own test list. §12's G1a row flipped to COMPLETE with its stop condition met. §15 stop condition 3 no longer excludes any workflow. §16 step 3 updated |
 
-**Nothing in this amendment changes a decision, authorises a gate, or touches production code.** Every
-addition is a statement of measured behaviour with a named test behind it.
+**Nothing in either amendment changes a decision, authorises a gate, or touches production code.** Every
+addition is a statement of measured behaviour with a named test behind it. D-G1-1 through D-G1-6 remain
+open, and G1b remains unstarted.
