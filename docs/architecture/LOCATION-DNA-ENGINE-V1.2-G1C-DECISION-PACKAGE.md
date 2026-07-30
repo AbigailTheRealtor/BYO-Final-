@@ -2,13 +2,14 @@
 
 **Gate:** G1c (per §12 of the [G1 Pre-Implementation Report](./LOCATION-DNA-ENGINE-V1.2-G1-PRE-IMPLEMENTATION-REPORT.md))
 **Type:** design and decision package — **owner-approved**
-**Status:** **ALL SEVEN DECISIONS APPROVED. G1c INERT CONTRACT CORE: IMPLEMENTED. G1c WORKFLOW INTEGRATION AND PERSISTENCE: NOT STARTED. G1d–G1g: NOT STARTED.**
+**Status:** **ALL SEVEN DECISIONS APPROVED. G1c INERT CONTRACT CORE: IMPLEMENTED. G1d INERT CAPABILITY RESOLVER: IMPLEMENTED. WORKFLOW INTEGRATION AND PERSISTENCE: NOT STARTED. G1e–G1g: NOT STARTED.**
 **Governed by:** [`LOCATION-DNA-ENGINE-V1.2.md`](./LOCATION-DNA-ENGINE-V1.2.md) · lineage
 [v1.0](./LOCATION-DNA-ENGINE-V1.md) → [v1.1](./LOCATION-DNA-ENGINE-V1.1.md) → v1.2, adopted per the
 [Adoption Record](./LOCATION-DNA-ENGINE-V1.2-ADOPTION-RECORD.md)
 **Prepared at:** `a0df14fb7d2b63c506886afbf59a822ad9a2ecd6`
 **Approved at (base commit):** `18cd954bcdc43b4796f69689f28bc2df47c45f22` · **Approval date:** 2026-07-30
-**Implemented at (inert core):** `ddbf3b2bb3db9581f2c8125faf9ac9515fe9f38e` · **Implementation date:** 2026-07-30
+**Implemented — G1c inert contract core:** `ddbf3b2bb3db9581f2c8125faf9ac9515fe9f38e` (2026-07-30)
+**Implemented — G1d inert capability resolver:** `933228c2c12a4dd2d0dbde1147446c082c46cc6f` (2026-07-30)
 — see the [Implementation record](#implementation-record).
 
 > **The seven decisions below are APPROVED.** See the [Owner approval record](#owner-approval-record) for the
@@ -22,13 +23,19 @@
 > | Scope | Status |
 > |---|---|
 > | G1c **inert contract core** | **IMPLEMENTED** — `ddbf3b2bb` |
-> | G1c **workflow integration and persistence** | **NOT STARTED** |
-> | G1d, G1e, G1f, G1g | **NOT STARTED** |
+> | G1d **inert capability resolver** | **IMPLEMENTED** — `933228c2c` |
+> | **Workflow integration** | **NOT STARTED** |
+> | **Persistence** | **NOT STARTED** |
+> | G1e **provenance** | **NOT STARTED** |
+> | G1f **writer consolidation** | **NOT STARTED** |
+> | G1g **adapter contract** | **NOT STARTED** |
 >
-> The approval increment changed no production code, test or configuration. The implementation increment
-> added the contract core as a **deliberately inert** domain layer — wired into no workflow, no persistence
-> and no public surface — plus its unit tests, its inertness guards, and the exact readiness-allowlist
-> entries recording those production additions.
+> The approval increment changed no production code, test or configuration. Two implementation increments
+> have since added **deliberately inert** domain layers — the contract core (`ddbf3b2bb`) and the capability
+> resolver (`933228c2c`) — each wired into no workflow, no persistence and no public surface, each with its
+> own unit tests, inertness guards, and exact readiness-allowlist entries recording its production additions.
+>
+> **Neither G1c nor G1d is complete.** Each has an implemented inert layer and an unstarted integration half.
 >
 > The original alternatives, trade-offs and consequences for every decision are **preserved unchanged** below
 > — approval records which option was chosen, not a rewrite of the analysis that produced it.
@@ -584,7 +591,7 @@ and, under the `preferred_neighborhoods` name, at `offers/show.blade.php:392` an
 
 Option 4-B (converge `cities` only) is **not** adopted.
 
-**Implementation status.** **Inert clear semantics: IMPLEMENTED** (`ddbf3b2bb`) — a cleared dimension is present-at-canonical-empty and authoritative throughout the core pipeline. **Workflow convergence: NOT STARTED.** The parity baseline moves from 6/2 to 8/0 only when G1f is separately
+**Implementation status.** **Inert clear semantics: IMPLEMENTED** (`ddbf3b2bb`) — a cleared dimension is present-at-canonical-empty and authoritative throughout the core pipeline. **Per-dimension clear AUTHORISATION: IMPLEMENTED inert** (`933228c2c`) — the G1d resolver expresses which dimensions may be set and which cleared, per context, using the G1c `Dimension` vocabulary; and repair is denied for a canonical record, which is how a mirror is prevented from resurrecting a present-but-cleared dimension. **Workflow convergence: NOT STARTED.** The parity baseline moves from 6/2 to 8/0 only when G1f is separately
 authorized.
 
 ---
@@ -695,7 +702,7 @@ consolidation: **the two correct workflows' tests must not change.**
 - **Legacy compatibility belongs exclusively to `LegacyMirrorAdapter`.**
 - **Public projection remains a separate exposure-boundary concern** (`PublicGeometryProjection`, unchanged).
 
-**Implementation status: NOT STARTED.** Deliberately: `LocationDnaPersistenceService` and the trait shim were both excluded from the G1c increment, and `LegacyMirrorAdapter` was not created. The core's component boundaries express the approved layer ownership, but nothing writes, delegates or replaces an inline writer yet. The shim's removal remains a G1f exit criterion.
+**Implementation status.** **Capability layer: IMPLEMENTED inert** (`933228c2c`) — `LocationDnaCapabilityResolver` now expresses the approved layer ownership as authorisation facts, including that persistence, legacy repair and snapshot access are each a distinct capability rather than a consequence of ownership. **Canonical writer: NOT STARTED.** Deliberately: `LocationDnaPersistenceService` and the trait shim were both excluded from the G1c increment, and `LegacyMirrorAdapter` was not created. The core's component boundaries express the approved layer ownership, but nothing writes, delegates or replaces an inline writer yet. The shim's removal remains a G1f exit criterion.
 
 ---
 
@@ -797,7 +804,7 @@ the settled "no migration required for v1".
 - **Rollback consists of stopping canonical-writer adoption while retaining mirror compatibility** — **not**
   restoring resurrection behaviour.
 
-**Implementation status: NOT STARTED.** `LegacyMirrorAdapter` was not created; the hydrator deliberately has no mirror concept at all, so no fallback, repair or precedence behaviour exists yet. No bulk backfill was performed and none is authorized. — Snapshot retention and future readers
+**Implementation status.** **Mirror CAPABILITY: IMPLEMENTED inert** (`933228c2c`) — the resolver distinguishes consulting a mirror from repairing one, grants consultation only for a legacy-only record, and denies repair outright for a canonical record. **Mirror BEHAVIOUR: NOT STARTED.** `LegacyMirrorAdapter` was not created; the hydrator deliberately has no mirror concept at all, so no fallback, repair or precedence behaviour exists yet. No bulk backfill was performed and none is authorized. — Snapshot retention and future readers
 
 ### Exact question
 
@@ -880,7 +887,7 @@ absence of a reader is not a safety property.
 - **If a production reader becomes necessary before then: stop and obtain an explicit D-G1-7 amendment
   before implementing it.**
 
-**Implementation status: NOT STARTED.** The snapshot was not read, written, deleted or re-projected by the G1c increment, and no new reader was added — the existing structural guard still holds. **The final disposition among 7-A / 7-B / 7-C remains due before G1g is declared complete.**
+**Implementation status.** **Snapshot DENIAL: IMPLEMENTED inert** (`933228c2c`) — both the retained-snapshot and the future-snapshot-reader contexts resolve to a fully denied capability set, and a test asserts **exhaustively** across every surface × viewer × purpose combination that no context grants snapshot access. **No reader: unchanged.** The snapshot was not read, written, deleted or re-projected by either increment, and the existing structural reader guard still holds. **The final disposition among 7-A / 7-B / 7-C remains due before G1g is declared complete**, and no reader may be added without a separate approved amendment.
 
 **Illustrative only. Not production code. Not authorised for implementation.**
 
@@ -897,7 +904,7 @@ absence of a reader is not a safety property.
 | `LocationDnaPersistenceService` | the only writer of the canonical meta key; applies a validated envelope batch atomically inside one transaction | write when the schema version is unknown |
 | `LegacyMirrorAdapter` | derives discrete `cities`/`counties`/`state` on write; supplies inherited fallback on read; isolated for single-file removal | be consulted when the blob key is present |
 | `PublicGeometryProjection` | **exists and is unchanged** — public redaction seam from G0.1 | be routed around |
-| `LocationDnaCapabilityResolver` | *(G1d, not G1c)* deny-by-default resolution over an open context map | — |
+| `LocationDnaCapabilityResolver` | *(G1d — **IMPLEMENTED inert**, `933228c2c`)* deny-by-default resolution over an explicit context. Shipped with `LocationDnaCapability`, `LocationDnaCapabilitySet`, `LocationDnaAccessContext`, `LocationDnaSurface`, `LocationDnaViewerRelationship`, `LocationDnaPurpose` and `LocationDnaCapabilityException` | be referenced by any workflow, controller, model, route or view |
 
 ### Illustrative interfaces
 
@@ -949,7 +956,7 @@ interface LocationDnaPersistenceServiceInterface
 | Increment | Authorized production surfaces | Required tests | Stop conditions | Rollback boundary | Unchanged |
 |---|---|---|---|---|---|
 | **G1c** contract core | new domain namespace only; **nothing wired** to any existing path | §16.2 domain-state; S1–S5 as compatibility; revision-token; serializer omission | core complete but **no existing code path calls it**; any need to touch a component → stop | delete the new namespace | all 8 workflows; all 44 consumer IDs; the mirrors |
-| **G1d** capability resolver | new resolver + `config/` profiles; **inert in production** | 8 workflows × every dimension; deny-by-default incl. unknown context and typo | resolver inert; no live write gated yet | remove config + resolver | every write path |
+| **G1d** capability resolver — **IMPLEMENTED inert (`933228c2c`)** | new resolver namespace, **inert in production**. Delivered WITHOUT `config/` profiles: the resolver encodes the approved rules in code, and no configuration file was added | 8 workflows × every dimension; deny-by-default incl. unknown context and typo | resolver inert; no live write gated yet | remove config + resolver | every write path |
 | **G1e** provenance | provenance recorder within the core | §16.5 incl. the negative test that polygons carry **no** provider metadata | enrichment call order unchanged (G1b §7.E) | remove recorder | enrichment behaviour |
 | **G1f** writer consolidation | `HasSearchAreas` + the 4 non-trait components, **one workflow per commit** | per-workflow parity vs its G1a characterisation | the two correct Tenant Offer workflows' tests **must not change**; line 130's clear-mirroring not regressed; any uncharacterised workflow → stop | revert per-workflow commit | the public projection seam; the mirrors (until D-G1-6 sunset) |
 | **G1g** adapter contract | Livewire adapter, form-POST adapter, `NullAdapter` | one shared contract suite; identical envelopes → identical results | JS bridge unproven until **G2** — the suite stops at the PHP boundary and says so | remove adapters | the domain core |
@@ -1052,8 +1059,9 @@ Recorded at approval, then updated when the inert core landed.
 | G1b consumer audit | **COMPLETE** (`7fbe33679`, reconciled `a0df14fb7`) |
 | G1b blocking unknowns | **RESOLVED** (`f2ea4355d`) |
 | **G1c inert contract core** | **IMPLEMENTED** (`ddbf3b2bb`) |
-| **G1c workflow integration and persistence** | **NOT STARTED** |
-| **G1d** capability resolver | **NOT STARTED** |
+| **G1d inert capability resolver** | **IMPLEMENTED** (`933228c2c`) |
+| **Workflow integration** (G1c/G1d consumers) | **NOT STARTED** |
+| **Persistence** (`LocationDnaPersistenceService`) | **NOT STARTED** |
 | **G1e** provenance | **NOT STARTED** |
 | **G1f** writer consolidation | **NOT STARTED** |
 | **G1g** adapter contract | **NOT STARTED** |
@@ -1070,6 +1078,8 @@ cache-invalidation wave).
 ---
 
 ## Implementation record
+
+### G1c — inert contract core
 
 **Implementation commit:** `ddbf3b2bb3db9581f2c8125faf9ac9515fe9f38e`
 **Commit subject:** `feat(location-dna): add inert G1c contract core`
@@ -1105,10 +1115,11 @@ Location DNA and matches the increment's own name.
 `UnsupportedSchemaVersionException`) · focused unit tests · inertness guards · the exact
 readiness-allowlist entries.
 
-**Not implemented, deliberately:** `LocationDnaPersistenceService` · `LegacyMirrorAdapter` ·
-`LocationDnaCapabilityResolver` · workflow integration · trait delegation · inline-writer replacement ·
-mirror repair · provenance integration · database persistence · migrations · Bridge cache-key changes ·
-public projection changes · snapshot readers · **G1d** · **G1e** · **G1f** · **G1g**.
+**Not implemented by this increment, deliberately:** `LocationDnaPersistenceService` · `LegacyMirrorAdapter` ·
+`LocationDnaCapabilityResolver` *(since delivered by G1d — see below)* · workflow integration · trait
+delegation · inline-writer replacement · mirror repair · provenance integration · database persistence ·
+migrations · Bridge cache-key changes · public projection changes · snapshot readers · **G1e** · **G1f** ·
+**G1g**.
 
 The inertness guard asserts the absence of the first three by class name, so their accidental appearance
 fails the suite.
@@ -1144,7 +1155,7 @@ fails the suite.
   a batch atomically, or compares revision tokens inside a transaction.
 - **D-G1-7's snapshot disposition remains due before G1g is declared complete**, and **no new snapshot
   reader is authorized**. The existing structural reader guard remains required.
-- **G1d–G1g remain not started.**
+- **G1e–G1g remain not started.** G1d's inert resolver is implemented; its wiring is not.
 
 ### What did not change
 
@@ -1152,3 +1163,89 @@ All seven architecture decisions remain **APPROVED**; none was reopened, altered
 `UNDECIDED` by this implementation. No production file outside the new namespace changed. No test other
 than the readiness allowlist changed. No configuration, migration, route, view, model, controller,
 Livewire component or trait changed.
+
+### G1d — inert capability resolver
+
+**Implementation commit:** `933228c2c12a4dd2d0dbde1147446c082c46cc6f`
+**Commit subject:** `feat(location-dna): add inert G1d capability resolver`
+**Implementation date:** 2026-07-30
+**Namespace:** `App\Services\LocationDna\Capability` → `app/Services/LocationDna/Capability/`
+
+Sibling to the G1c `Contract` namespace, under the same `app/Services/<Area>/` convention.
+
+| | |
+|---|---|
+| Production files added | **8** |
+| Test files added | **5** |
+| Tests added, all passing | **70** |
+| Existing files modified | **2** — both authorised (below) |
+| External dependencies | exactly two: `Contract\Dimension` and `RuntimeException`, asserted by a dependency-allowlist test |
+| Production references to the new namespace | **zero** |
+
+**Implemented (all inert):** `LocationDnaCapability` (9-case closed vocabulary) · `LocationDnaSurface` ·
+`LocationDnaViewerRelationship` · `LocationDnaPurpose` · `LocationDnaAccessContext` ·
+`LocationDnaCapabilitySet` · `LocationDnaCapabilityResolver` · `LocationDnaCapabilityException`.
+
+**Not implemented, deliberately:** workflow integration · any wiring to real users or application roles ·
+`LocationDnaPersistenceService` · `LegacyMirrorAdapter` · provenance · snapshot readers · policies ·
+middleware · gates · service providers · capability configuration files · permission tables ·
+**G1e** · **G1f** · **G1g**.
+
+**Delivered without `config/` profiles.** The migration plan anticipated "new resolver + `config/`
+profiles". The resolver encodes the approved rules in code and **no configuration file was added**, so
+nothing in `config/` changed. Whether capability declaration should later move to configuration (§7's
+"declared in configuration") is left open for the wiring increment.
+
+#### Semantics realised in code
+
+- **Default deny by construction.** Every resolution starts from a fully denied set; an unknown surface,
+  viewer or purpose, or any incomplete context, resolves to nothing granted. Unrecognised names parse to
+  `Unknown` rather than throwing, so they flow into the deny path.
+- **No implication between capabilities.** Reading does not imply editing; administrative labels do not
+  imply geometry; geometry does not imply `location_notes`; consulting a mirror does not imply repairing it.
+- **Authentication alone grants nothing.** An authenticated non-owner resolves to a byte-identical grant
+  list to an anonymous viewer — D4 expressed as code.
+- **Public and authenticated non-owner surfaces** receive administrative labels plus a
+  `RequirePublicProjection` obligation, and are denied canonical read, geometry, notes, snapshot and
+  mutation.
+- **Owner-private edit** receives canonical read, geometry, notes and edit, with eight explicitly
+  enumerated settable/clearable dimensions and **no** projection obligation. **Owner-private preview** is
+  the same reads with no `EditDocument` and zero mutable dimensions.
+- **Counterparty accepted-bid** is administrative-labels-only, matching the behaviour G1b proved.
+- **Internal matching, Ask AI and Bridge** receive a purpose-specific canonical read and no outward
+  exposure capability whatsoever.
+- **Dimension mutation requires both** `EditDocument` **and** an explicit per-dimension grant. There is no
+  wildcard; `subject_property` is read-only because §17 G8 owns it; unknown dimensions are unnameable
+  because grants use the G1c `Dimension` enum rather than strings.
+- **Snapshot access is denied in every context**, proven exhaustively.
+- **The resolver cannot see a document**, asserted by reflection — so the presence of geometry can never
+  influence a grant.
+
+#### The two authorised existing-file changes
+
+| File | Change |
+|---|---|
+| `tests/Feature/Offers/OfferWorkflowReadinessTest.php` | **+9/−0** — the 8 exact production paths plus the comment `G1d inert Location DNA capability resolver`. No wildcard, no matching-logic change. |
+| `tests/Unit/Services/LocationDna/Contract/G1cContractCoreInertnessGuardTest.php` | **+53/−9** — narrow, separately authorised refinement. Its first assertion moved from "nothing outside `Contract/` references the contract" to "nothing outside the **approved Location DNA domain namespaces** references it", via an explicit two-entry `DOMAIN_DIRS` list (`Contract/`, `Capability/`). |
+
+**Why that refinement was a correction, not a weakening.** The original assertion encoded a stronger claim
+than the architecture requires. G1d's approved design mandates reuse of the G1c `Dimension` vocabulary
+rather than duplicating dimension names as unvalidated strings, so the capability layer necessarily depends
+on the contract — and a sibling *domain* layer consuming the contract is not production wiring.
+`DOMAIN_DIRS` is deliberately **not** a wildcard under `app/Services/LocationDna/`: provenance, persistence
+and a legacy mirror adapter are not pre-exempted, and each must be added under its own authorisation. The
+guard's other four assertions, including the eight-workflow check, were untouched, and everything else still
+fails it — controllers, Livewire components, models, routes, Blade views, traits and existing services.
+
+**One further correction, inside the new increment only.** A docblock in `LocationDnaCapability` originally
+named the retained-snapshot database column literally, which tripped the G1b column-reference guard — a
+guard that intentionally performs no comment stripping. The docblock was reworded to reference the snapshot
+indirectly; **no G1b assertion was changed**, and the capability case, its backing value and every denial
+behaviour are identical.
+
+#### What did not change
+
+All seven decisions remain **APPROVED**. No existing production file changed. No configuration, migration,
+route, view, model, controller, Livewire component or trait changed. `PublicGeometryProjection` and
+`CriteriaHashService` were neither referenced nor modified, so Bridge cache-key behaviour is unchanged and
+the D-G1-3 deferral stands. No persistence service, mirror adapter or snapshot reader exists.
