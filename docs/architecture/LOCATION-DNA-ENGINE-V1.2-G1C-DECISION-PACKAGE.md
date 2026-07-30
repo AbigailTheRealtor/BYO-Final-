@@ -2,20 +2,33 @@
 
 **Gate:** G1c (per §12 of the [G1 Pre-Implementation Report](./LOCATION-DNA-ENGINE-V1.2-G1-PRE-IMPLEMENTATION-REPORT.md))
 **Type:** design and decision package — **owner-approved**
-**Status:** **ALL SEVEN DECISIONS APPROVED. IMPLEMENTATION NOT STARTED AND NOT AUTHORIZED BY THIS APPROVAL.**
+**Status:** **ALL SEVEN DECISIONS APPROVED. G1c INERT CONTRACT CORE: IMPLEMENTED. G1c WORKFLOW INTEGRATION AND PERSISTENCE: NOT STARTED. G1d–G1g: NOT STARTED.**
 **Governed by:** [`LOCATION-DNA-ENGINE-V1.2.md`](./LOCATION-DNA-ENGINE-V1.2.md) · lineage
 [v1.0](./LOCATION-DNA-ENGINE-V1.md) → [v1.1](./LOCATION-DNA-ENGINE-V1.1.md) → v1.2, adopted per the
 [Adoption Record](./LOCATION-DNA-ENGINE-V1.2-ADOPTION-RECORD.md)
 **Prepared at:** `a0df14fb7d2b63c506886afbf59a822ad9a2ecd6`
 **Approved at (base commit):** `18cd954bcdc43b4796f69689f28bc2df47c45f22` · **Approval date:** 2026-07-30
+**Implemented at (inert core):** `ddbf3b2bb3db9581f2c8125faf9ac9515fe9f38e` · **Implementation date:** 2026-07-30
+— see the [Implementation record](#implementation-record).
 
 > **The seven decisions below are APPROVED.** See the [Owner approval record](#owner-approval-record) for the
 > exact approved options and the two carried conditions.
 >
-> **Approval of a decision is not authorization to implement it.** G1c implementation is **NOT STARTED**, and
-> G1d–G1g are **NOT STARTED**. No production code, test or configuration was changed by the approval
-> increment. Each increment still requires its own separate authorization, and the stop conditions in the
-> migration plan remain binding.
+> **Approval of a decision is not authorization to implement it.** Each increment still requires its own
+> separate authorization, and the stop conditions in the migration plan remain binding.
+>
+> **Implementation status, precisely:**
+>
+> | Scope | Status |
+> |---|---|
+> | G1c **inert contract core** | **IMPLEMENTED** — `ddbf3b2bb` |
+> | G1c **workflow integration and persistence** | **NOT STARTED** |
+> | G1d, G1e, G1f, G1g | **NOT STARTED** |
+>
+> The approval increment changed no production code, test or configuration. The implementation increment
+> added the contract core as a **deliberately inert** domain layer — wired into no workflow, no persistence
+> and no public surface — plus its unit tests, its inertness guards, and the exact readiness-allowlist
+> entries recording those production additions.
 >
 > The original alternatives, trade-offs and consequences for every decision are **preserved unchanged** below
 > — approval records which option was chosen, not a rewrite of the analysis that produced it.
@@ -184,7 +197,7 @@ recommendations:
 - **Administrative labels and geometry may remain in the same private canonical document**, subject to
   projection at exposure boundaries. Option 1-C's split is therefore **not** adopted.
 
-**Implementation status: NOT STARTED.** **No schema change is introduced by this approval commit.**
+**Implementation status.** **Inert contract core: IMPLEMENTED** (`ddbf3b2bb`) — the canonical document, hydrator, normalizer and serializer express this contract as a framework-free domain layer. **Workflow integration and persistence: NOT STARTED.** No schema change was introduced by the approval commit and none by the implementation commit.
 
 ---
 
@@ -303,11 +316,7 @@ distinguishable only by inspecting values.
 - **Legacy migration is an internal provenance/hydration concern**, not a user mutation operation.
 - **Only an explicit `clear` command may withdraw an existing dimension.**
 
-**Implementation status: NOT STARTED.**
-
----
-
-## D-G1-3 — Concurrency and hash semantics
+**Implementation status.** **Inert contract core: IMPLEMENTED** (`ddbf3b2bb`) — `DimensionOperation`, `DimensionCommand` and the pure `DimensionCommandApplier` realise exactly `set` and `clear`, with preserve expressed as the absence of a command. **Adapter and transport integration: NOT STARTED** (G1g); no workflow constructs a command yet. — Concurrency and hash semantics
 
 ### Exact question
 
@@ -450,11 +459,7 @@ clear insensitivities documented under Option 3-A **persist for MLS refetching**
 authorized — an accepted, recorded consequence. The 21 tests in
 `G1bCriteriaHashCharacterisationTest` therefore remain valid and unchanged for now.
 
-**Implementation status: NOT STARTED.**
-
----
-
-## D-G1-4 — Withdrawals and clear behaviour
+**Implementation status.** **Inert revision token: IMPLEMENTED** (`ddbf3b2bb`) as `LocationDnaRevisionToken`, format `ldna-r1:<sha256>`, per-document and per-dimension. **Concurrency enforcement: NOT STARTED** — comparing tokens inside the applying transaction requires the persistence service, which is not created. **The Bridge cache-key deferral stands unchanged**: `CriteriaHashService` was not touched, so a polygon reshape and a deliberate geometry clear still do not invalidate the Bridge cache. — Withdrawals and clear behaviour
 
 ### Exact question
 
@@ -579,7 +584,7 @@ and, under the `preferred_neighborhoods` name, at `offers/show.blade.php:392` an
 
 Option 4-B (converge `cities` only) is **not** adopted.
 
-**Implementation status: NOT STARTED.** The parity baseline moves from 6/2 to 8/0 only when G1f is separately
+**Implementation status.** **Inert clear semantics: IMPLEMENTED** (`ddbf3b2bb`) — a cleared dimension is present-at-canonical-empty and authoritative throughout the core pipeline. **Workflow convergence: NOT STARTED.** The parity baseline moves from 6/2 to 8/0 only when G1f is separately
 authorized.
 
 ---
@@ -690,7 +695,7 @@ consolidation: **the two correct workflows' tests must not change.**
 - **Legacy compatibility belongs exclusively to `LegacyMirrorAdapter`.**
 - **Public projection remains a separate exposure-boundary concern** (`PublicGeometryProjection`, unchanged).
 
-**Implementation status: NOT STARTED.** The shim's removal remains a G1f exit criterion.
+**Implementation status: NOT STARTED.** Deliberately: `LocationDnaPersistenceService` and the trait shim were both excluded from the G1c increment, and `LegacyMirrorAdapter` was not created. The core's component boundaries express the approved layer ownership, but nothing writes, delegates or replaces an inline writer yet. The shim's removal remains a G1f exit criterion.
 
 ---
 
@@ -792,11 +797,7 @@ the settled "no migration required for v1".
 - **Rollback consists of stopping canonical-writer adoption while retaining mirror compatibility** — **not**
   restoring resurrection behaviour.
 
-**Implementation status: NOT STARTED.**
-
----
-
-## D-G1-7 — Snapshot retention and future readers
+**Implementation status: NOT STARTED.** `LegacyMirrorAdapter` was not created; the hydrator deliberately has no mirror concept at all, so no fallback, repair or precedence behaviour exists yet. No bulk backfill was performed and none is authorized. — Snapshot retention and future readers
 
 ### Exact question
 
@@ -879,11 +880,7 @@ absence of a reader is not a safety property.
 - **If a production reader becomes necessary before then: stop and obtain an explicit D-G1-7 amendment
   before implementing it.**
 
-**Implementation status: NOT STARTED.**
-
----
-
-## Proposed domain design
+**Implementation status: NOT STARTED.** The snapshot was not read, written, deleted or re-projected by the G1c increment, and no new reader was added — the existing structural guard still holds. **The final disposition among 7-A / 7-B / 7-C remains due before G1g is declared complete.**
 
 **Illustrative only. Not production code. Not authorised for implementation.**
 
@@ -1045,15 +1042,21 @@ reconciled as: the token is **insensitive** to a lazy upgrade that changes no va
 version change that alters interpretation. Recorded here so the divergence from §5.6's wording is explicit
 rather than discovered during implementation.
 
-### Implementation status at approval
+### Implementation status
+
+Recorded at approval, then updated when the inert core landed.
 
 | Gate | Status |
 |---|---|
 | G1a characterisation | **COMPLETE** (`cf53249ac`, `958867234`) |
 | G1b consumer audit | **COMPLETE** (`7fbe33679`, reconciled `a0df14fb7`) |
 | G1b blocking unknowns | **RESOLVED** (`f2ea4355d`) |
-| **G1c implementation** | **NOT STARTED — not authorized by this approval** |
-| **G1d–G1g** | **NOT STARTED — not authorized by this approval** |
+| **G1c inert contract core** | **IMPLEMENTED** (`ddbf3b2bb`) |
+| **G1c workflow integration and persistence** | **NOT STARTED** |
+| **G1d** capability resolver | **NOT STARTED** |
+| **G1e** provenance | **NOT STARTED** |
+| **G1f** writer consolidation | **NOT STARTED** |
+| **G1g** adapter contract | **NOT STARTED** |
 
 Each increment requires its own separate authorization. The stop conditions in the migration plan above
 remain binding, including: the two correct Tenant Offer workflows' tests must not change; line 130's
@@ -1063,3 +1066,89 @@ The three that most change observable behaviour, and therefore warrant the close
 (a user's clear will start taking effect on `counties` and `state` in all eight workflows), **D-G1-2** (an
 unmounted editor will stop writing at all), and **D-G1-3** if 3-B is chosen (a one-time Bridge
 cache-invalidation wave).
+
+---
+
+## Implementation record
+
+**Implementation commit:** `ddbf3b2bb3db9581f2c8125faf9ac9515fe9f38e`
+**Commit subject:** `feat(location-dna): add inert G1c contract core`
+**Approval commit:** `b919f9e93d3efcbb6b1cb86ef7220e7a7d5a038b`
+**Implementation date:** 2026-07-30
+**Namespace:** `App\Services\LocationDna\Contract` → `app/Services/LocationDna/Contract/`
+
+`app/Domain/` does not exist in this repository; the established convention is
+`app/Services/<Area>/` with purpose-named sub-namespaces (`App\Services\Stellar\Matching\DTO`,
+`App\Services\Dna\Relevance`), and `app/Services/LocationDna/` is the Location DNA home that already
+contains `PublicGeometryProjection`. A `Contract` sub-namespace keeps the contract core with the rest of
+Location DNA and matches the increment's own name.
+
+### Scope, exactly
+
+| | |
+|---|---|
+| Production files added | **17** |
+| Test files added | **8** |
+| Tests added, all passing | **128** |
+| Existing files modified | **1** — `tests/Feature/Offers/OfferWorkflowReadinessTest.php` |
+| Readiness-guard entries added | **17 exact literal paths**, plus one identifying comment |
+| Wildcard / prefix / glob / matching-logic change | **none** — scan roots, matching algorithm, failure message and assertion behaviour all unchanged |
+| Existing production files changed | **none** |
+| Production references to the new namespace | **zero** |
+| Revision-token format | `ldna-r1:<sha256>` |
+
+**Implemented (all inert):** immutable `LocationDnaDocument` · `Dimension` and `DimensionKind` ·
+`DimensionOperation` · `DimensionCommand` · `DimensionCommandApplier` · `LocationDnaHydrator` ·
+`HydrationOutcome` and `HydrationResult` · `InterpretationMode` · `LocationDnaNormalizer` ·
+`LocationDnaSerializer` · `LocationDnaRevisionToken` · explicit contract exceptions and violations
+(`ContractViolation`, `LocationDnaContractException`, `MalformedDocumentException`,
+`UnsupportedSchemaVersionException`) · focused unit tests · inertness guards · the exact
+readiness-allowlist entries.
+
+**Not implemented, deliberately:** `LocationDnaPersistenceService` · `LegacyMirrorAdapter` ·
+`LocationDnaCapabilityResolver` · workflow integration · trait delegation · inline-writer replacement ·
+mirror repair · provenance integration · database persistence · migrations · Bridge cache-key changes ·
+public projection changes · snapshot readers · **G1d** · **G1e** · **G1f** · **G1g**.
+
+The inertness guard asserts the absence of the first three by class name, so their accidental appearance
+fails the suite.
+
+### Semantics now realised in code
+
+- **Three dimension presence states** — `absent`, `cleared`, `authored` — decided by `array_key_exists`,
+  never `empty()`.
+- **Exactly two mutation operations**, `set` and `clear`. **Preserve is represented by no command.**
+  `set(null)`, `set('')`, `set([])`, a value-carrying `clear`, and every unsupported operation name are
+  rejected at construction.
+- **Hydration does not convert malformed input into an empty valid document.** Bad JSON, a decoded scalar,
+  a JSON list, a bad `schema_version` and a malformed known dimension each yield a distinct outcome, with
+  the raw input quarantined.
+- **An unsupported higher `schema_version` remains read-only and is not rewritten.**
+- **Polygon vertex order affects the revision token** — reordering vertices changes it.
+- **Polygon and radius-search collection ordering does not** affect the token.
+- **A canonical clear affects the token**; an absent dimension and a cleared dimension are distinct.
+- **An interpretation-neutral lazy upgrade does not** affect the token.
+- **Private serialization retains geometry and `location_notes` in full**, and **the serializer performs no
+  public projection** — `PublicGeometryProjection` remains the separate, unchanged exposure boundary.
+- **No component mutates its input**, asserted for the hydrator, the normalizer, the applier and the token.
+
+### Deferred items — restated, still open
+
+- **`CriteriaHashService` and the Bridge cache-key behaviour remain unchanged.** The service was not
+  touched, imported or subclassed by the contract core.
+- **The polygon vertex-order correction in the Bridge cache key remains separately deferred** to its own
+  authorized compatibility increment, per D-G1-3's carried condition.
+- **Deliberate geometry clearing still does not invalidate the Bridge cache**, and neither does a polygon
+  reshape. Accepted and recorded, not fixed.
+- **`LocationDnaPersistenceService` remains unimplemented**, so nothing yet writes canonical state, applies
+  a batch atomically, or compares revision tokens inside a transaction.
+- **D-G1-7's snapshot disposition remains due before G1g is declared complete**, and **no new snapshot
+  reader is authorized**. The existing structural reader guard remains required.
+- **G1d–G1g remain not started.**
+
+### What did not change
+
+All seven architecture decisions remain **APPROVED**; none was reopened, altered or returned to
+`UNDECIDED` by this implementation. No production file outside the new namespace changed. No test other
+than the readiness allowlist changed. No configuration, migration, route, view, model, controller,
+Livewire component or trait changed.
