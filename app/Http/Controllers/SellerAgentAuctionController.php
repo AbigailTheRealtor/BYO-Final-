@@ -321,7 +321,6 @@ class SellerAgentAuctionController extends Controller
 
     public function updateSellerAgentHireAuction(Request $request)
     {
-        // dd($request->post());
         $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
         // $allowedVideos = ['mp4', 'mov', 'wmv', 'avi', 'mkv', 'mpeg-2'];
         // $allowedAudios = ['mp3', 'wav', 'voc', 'ogg', 'oga', 'cda', 'ogv'];
@@ -1239,11 +1238,9 @@ class SellerAgentAuctionController extends Controller
         }
         $auctions_c = $auctions;
 
-        // dd($auctions->toSql());
 
         $page_data['count'] = $auctions_c->count();
 
-        // dd($page_data['count']);
         $page_data['pAuctions'] = $auctions->paginate(12);
         return view('hire_seller_agent.search', $page_data);
     }

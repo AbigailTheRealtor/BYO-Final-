@@ -28,7 +28,6 @@ class TenantAgentAuctionController extends Controller
 
         // if ($request != null) {
 
-        // dd($request->all());
         $request->validate([
             // 'auction_type' => ['required'],
         ], [
@@ -177,7 +176,6 @@ class TenantAgentAuctionController extends Controller
 
     public function update($id, Request $request)
     {
-        // dd($request->all());
         try {
             DB::beginTransaction();
             $auction = TenantAgentAuction::findOrFail($id);

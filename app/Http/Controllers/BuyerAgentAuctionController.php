@@ -36,12 +36,10 @@ class BuyerAgentAuctionController extends Controller
 
     public function storeAuction(Request $request)
     {
-        // dd($request->all());
         try {
             DB::beginTransaction();
             $auction = new BuyerAgentAuction();
             $auction->user_id = Auth::user()->id;
-            // dd(Auth::user()->id);
             $auction->title = $request->title_of_listing;
             $auction->save();
             $auction->saveMeta('working_with_agent', $request->working_with_agent);
@@ -291,7 +289,6 @@ class BuyerAgentAuctionController extends Controller
             $auctions = $liveAuctions->get();
         }
 
-        // dd($auctions[0]['id']);
 
         // $counter = CounterTerm::where(['buyer_auction_id' => $auctions[0]['id']]);
 
@@ -302,7 +299,6 @@ class BuyerAgentAuctionController extends Controller
         $page_data['auctions'] = $auctions;
         // $page_data['counter'] = $counter;
 
-        // dd($page_data);
 
         return view('hire-buyer-agent-auctions', $page_data);
     }
@@ -494,8 +490,6 @@ class BuyerAgentAuctionController extends Controller
     public function buyerAgents()
     {
         $page_data['mySellerAgents'] = 'My Agents';
-        // dd($page_data);
-        // dd('ok');
         return view('buyerAgents', $page_data);
     }
 
@@ -583,7 +577,6 @@ class BuyerAgentAuctionController extends Controller
 
         $auctions_c = $auctions;
         $count = $auctions_c->count();
-        // dd($page_data['count']);
         $pAuctions = $auctions->paginate(15);
         $buyers = BuyerAgentAuction::where('is_approved', 1)->where('is_archived', 0)->get();
         return view('search-buyer-agent-auctions', compact('count', 'pAuctions', 'buyers'));
@@ -593,10 +586,8 @@ class BuyerAgentAuctionController extends Controller
     {
 
         $country_id = $request->input('country_name');
-        // dd($country_id);
         $country = Country::all();
         $country_get = collect($country)->where('name', $country_id)->first();
-        // dd($country_get->states->first()->name);
 
         foreach ($country_get->states as $state) {
             $statesArray[] = [
@@ -610,9 +601,7 @@ class BuyerAgentAuctionController extends Controller
             'message' => '200',
             'states_Array' => $statesArray,
         ]);
-        // dd($statesArray);
 
-        // dd('ok');
     }
     public function dynamic_option_city(Request $request)
     {
@@ -621,14 +610,12 @@ class BuyerAgentAuctionController extends Controller
         $state_id = $request->input('state_name');
         $states = State::all();
         $states_get = collect($states)->where('name', $state_id)->first();
-        // dd($states_get->cities->first()->name);
         foreach ($states_get->cities as $city) {
             $cityArray[] = [
                 'name' => $city->name,
 
             ];
         }
-        // dd($cityArray);
         $html1 = (string)view('partial_view.option_dynamic_city', compact('cityArray'));
         $html2 = (string)view('partial_view.option_dynamic_city2', compact('cityArray'));
 
@@ -638,9 +625,7 @@ class BuyerAgentAuctionController extends Controller
             'html2' => $html2,
             'cityArray' => $cityArray,
         ]);
-        // dd($statesArray);
 
-        // dd('ok');
     }
     public function counterTerms(Request $request, $id)
     {
