@@ -32,8 +32,8 @@ use Tests\TestCase;
  * Tenant Offer copies. Confirmed by reading the source and, below, by executing it:
  *
  *   BuyerOfferListing.php:1940      `if (empty($ldna['cities'] ?? [])) {`
- *   BuyerOfferListing.php:1960      `if (empty($this->existingLocationDna['state'] ?? '')`
- *   BuyerOfferListing.php:1963      `if (empty($this->existingLocationDna['counties'] ?? [])`
+ *   BuyerOfferListing.php:1961      `if (empty($this->existingLocationDna['state'] ?? '')`
+ *   BuyerOfferListing.php:1964      `if (empty($this->existingLocationDna['counties'] ?? [])`
  *   BuyerOfferListing.php:2434      `if (trim((string) ($ldna['state'] ?? '')) !== '')`
  *   BuyerOfferListing.php:2437      `if (!empty($ldna['counties'] ?? []))`
  *
