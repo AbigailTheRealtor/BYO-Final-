@@ -1218,6 +1218,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
     </div>
 </div>
+{{-- Milestone 5A.2-T (1 of 2): .leftCol was never closed before .rightCol opened, so the entire
+     sidebar rendered INSIDE the eight-column main region instead of beside it. This closer ends
+     .leftCol so .rightCol becomes its sibling in the .row, matching Seller, Landlord and Buyer.
+     Paired with the removal of one now-excess closer further down — see (2 of 2). --}}
+</div>
 <div class="col-sm-12 col-md-4 col-lg-4 rightCol">
     <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
     @if(@$auction->listing_id)
@@ -4430,7 +4435,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
             </div>
         </div>
-</div>
+{{-- Milestone 5A.2-T (2 of 2): a </div> here closed .rightCol before the share block. With
+     .leftCol now closed at its proper place (see 1 of 2), that closer became excess and pushed
+     the "Share this link via" card and its button out to become direct children of the .row.
+     Removing it keeps .rightCol open through the share block, so the existing closer at the end
+     of the section ends .rightCol instead of .leftCol. Net effect across both edits: one closer
+     added, one removed — the sidebar and its share controls sit together inside the grid column,
+     exactly as they do on Seller. --}}
 <button class="btn w-100 mt-0">
     <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
 </button>

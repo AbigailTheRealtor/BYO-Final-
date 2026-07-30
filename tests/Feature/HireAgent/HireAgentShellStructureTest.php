@@ -51,24 +51,23 @@ class HireAgentShellStructureTest extends TestCase
      * These are NOT all the same, which is the single most important structural fact about these
      * four pages and the reason a shell is not a drop-in:
      *
-     *   seller   1  — container > row > rightCol       (the intended Bootstrap grid)
-     *   buyer    1  — container > row > rightCol       (repaired in Milestone 5A.2-B)
-     *   landlord 1  — container > row > rightCol       (the intended Bootstrap grid)
-     *   tenant   2  — container > row > leftCol > rightCol  (STILL BROKEN — 5A.2-T)
+     * All four now measure 1 — container > row > rightCol — but they did not always:
+     *
+     *   seller   1  — was always correct
+     *   landlord 1  — was always correct
+     *   buyer    1  — repaired in 5A.2-B; its sidebar sat OUTSIDE the row entirely
+     *   tenant   1  — repaired in 5A.2-T; its sidebar was nested INSIDE the main column
      *
      * Bootstrap's col-* classes rely on the negative margins and gutters a .row supplies, so a
-     * sidebar outside the row is laid out differently from one inside it. Buyer's was outside the
-     * row entirely until 5A.2-B; Tenant's is still nested inside the MAIN column, which is why it
-     * measures 2 rather than 1 and why its repair is a separate checkpoint.
-     *
-     * Encoding these means a change here has to be made deliberately, with someone looking at the
-     * result, instead of being discovered in production.
+     * sidebar outside the row, or nested inside the other column, is laid out differently from a
+     * correct one. Keeping these as recorded values means any future change — including the
+     * shared shell — has to update them deliberately, with someone looking at the result.
      */
     private const RIGHTCOL_DEPTH_BELOW_CONTAINER = [
         'seller'   => 1,
         'buyer'    => 1,
         'landlord' => 1,
-        'tenant'   => 2,
+        'tenant'   => 1,
     ];
 
     /**
@@ -360,6 +359,88 @@ class HireAgentShellStructureTest extends TestCase
     }
 
     // ── Separators ───────────────────────────────────────────────────────────
+
+    /**
+     * The two columns are siblings of one another under one grid row.
+     *
+     * Depth alone does not prove this — two elements can each sit one level below the container
+     * and still have different parents. Comparing the parent nodes directly is what rules out the
+     * shapes Buyer and Tenant were actually in.
+     *
+     * @dataProvider roles
+     */
+    public function test_main_and_sidebar_are_siblings_under_one_grid_row(string $role): void
+    {
+        $x = $this->renderOwnerView($role);
+
+        $left  = $this->firstWithClass($x, 'leftCol');
+        $right = $this->firstWithClass($x, 'rightCol');
+
+        $this->assertNotNull($left);
+        $this->assertNotNull($right);
+
+        $this->assertSame(
+            $left->parentNode,
+            $right->parentNode,
+            "{$role}: the main and sidebar columns must share one parent."
+        );
+
+        $parentClass = ' ' . trim($left->parentNode->getAttribute('class')) . ' ';
+        $this->assertStringContainsString(
+            ' row ',
+            $parentClass,
+            "{$role}: that shared parent must be the Bootstrap .row — col-* classes depend on it."
+        );
+
+        // Tenant's sidebar was a DESCENDANT of the main column, which sibling checks alone miss
+        // if the tree is deep enough.
+        $this->assertSame(
+            0,
+            $this->nodes($x, $this->classQuery('leftCol') . '//*[contains(concat(" ", normalize-space(@class), " "), " rightCol ")]'),
+            "{$role}: the sidebar must not be nested inside the main column."
+        );
+
+        // Exactly one grid row directly under the listing container.
+        $this->assertSame(
+            1,
+            $this->nodes($x, $this->classQuery('listingDescription') . '/div[contains(concat(" ", normalize-space(@class), " "), " row ")]'),
+            "{$role}: exactly one primary grid row under the listing container."
+        );
+    }
+
+    /**
+     * The sidebar's own content stayed in the sidebar.
+     *
+     * Both grid repairs moved closers, and a closer in the wrong place ejects content into the
+     * row. Asserting that the proposal-review card and the share controls are still DESCENDANTS
+     * of the sidebar is what distinguishes "the columns are siblings now" from "the columns are
+     * siblings and everything that belongs in them is still there".
+     *
+     * @dataProvider roles
+     */
+    public function test_sidebar_retains_its_action_and_proposal_content(string $role): void
+    {
+        $x = $this->renderOwnerView($role);
+
+        $sidebar = $this->classQuery('rightCol');
+
+        $this->assertGreaterThan(
+            0,
+            $this->nodes($x, $sidebar . '//*[contains(concat(" ", normalize-space(@class), " "), " higestBider ")]'),
+            "{$role}: the proposal-review card must remain inside the sidebar."
+        );
+
+        // Nothing without a column class may become a direct child of the row — that is the state
+        // Buyer's review card and Tenant's share block were each briefly left in.
+        foreach ($x->query($this->classQuery('listingDescription') . '/div[contains(concat(" ", normalize-space(@class), " "), " row ")]/*') as $child) {
+            $cls = ' ' . trim($child->getAttribute('class')) . ' ';
+            $this->assertTrue(
+                str_contains($cls, ' leftCol ') || str_contains($cls, ' rightCol '),
+                "{$role}: only the two grid columns may be direct children of the row; found class=\""
+                . trim($child->getAttribute('class')) . '".'
+            );
+        }
+    }
 
     /**
      * @dataProvider roles
