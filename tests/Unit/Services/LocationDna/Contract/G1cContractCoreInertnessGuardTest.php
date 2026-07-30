@@ -17,16 +17,46 @@ use RecursiveIteratorIterator;
  * SCOPE OF THE SEARCH, AND WHY IT IS NARROW
  * -----------------------------------------
  * Only real production references count. The scan looks for the namespace token in `app/`,
- * `routes/`, `config/`, `database/` and `resources/views/`, then EXCLUDES the contract
- * namespace's own directory (its classes may reference one another) and strips comment lines
- * before matching, so a harmless mention in a docblock or a `//` note does not fail the build.
- * Tests may reference the classes freely and are not scanned.
+ * `routes/`, `config/`, `database/` and `resources/views/`, then EXCLUDES the approved Location
+ * DNA domain namespaces (below) and strips comment lines before matching, so a harmless mention
+ * in a docblock or a `//` note does not fail the build. Tests may reference the classes freely
+ * and are not scanned.
+ *
+ * THE EXEMPTION LIST, AND WHY IT IS EXPLICIT RATHER THAN A WILDCARD
+ * ----------------------------------------------------------------
+ * As first written, this guard asserted that nothing outside `Contract/` referenced the contract.
+ * That encoded a stronger claim than the architecture requires, and G1d exposed the difference:
+ * the approved G1d design mandates reuse of the G1c {@see Dimension} vocabulary rather than
+ * duplicating dimension names as unvalidated strings, so the capability layer necessarily depends
+ * on the contract. A sibling DOMAIN layer consuming the contract is not production wiring.
+ *
+ * The invariant this guard actually protects is therefore:
+ *
+ *   nothing outside the approved Location DNA domain namespaces references the contract.
+ *
+ * `self::DOMAIN_DIRS` is an explicit two-entry list, **not** a wildcard under
+ * `app/Services/LocationDna/`. Future domain namespaces — provenance, persistence, a legacy
+ * mirror adapter — are deliberately NOT pre-exempted: each must be added here under its own
+ * authorisation when it is introduced, so its arrival is a visible decision rather than a silent
+ * pass. Everything else still fails: controllers, Livewire components, models, routes, Blade
+ * views, traits, existing services and the eight workflows.
  */
 class G1cContractCoreInertnessGuardTest extends TestCase
 {
     private const NAMESPACE_TOKEN = 'App\\Services\\LocationDna\\Contract';
 
     private const CONTRACT_DIR = 'app/Services/LocationDna/Contract';
+
+    /**
+     * The approved Location DNA domain namespaces that may depend on the contract.
+     *
+     * Explicit, and deliberately not a wildcard under `app/Services/LocationDna/`. Adding an entry
+     * is an authorisation decision; omitting one means that namespace fails this guard.
+     */
+    private const DOMAIN_DIRS = [
+        'app/Services/LocationDna/Contract',    // G1c — the contract core itself
+        'app/Services/LocationDna/Capability',  // G1d — reuses the G1c Dimension vocabulary
+    ];
 
     /** Class basenames that would appear in a `use` statement or a fully-qualified reference. */
     private const CONTRACT_CLASSES = [
@@ -64,8 +94,8 @@ class G1cContractCoreInertnessGuardTest extends TestCase
 
                 $relative = str_replace($this->projectRoot().'/', '', $file->getPathname());
 
-                // The contract namespace may reference itself.
-                if (str_starts_with($relative, self::CONTRACT_DIR)) {
+                // An approved sibling domain namespace may depend on the contract.
+                if ($this->isApprovedDomainNamespace($relative)) {
                     continue;
                 }
 
@@ -78,6 +108,18 @@ class G1cContractCoreInertnessGuardTest extends TestCase
         sort($files);
 
         return $files;
+    }
+
+    /** True when the path belongs to an approved Location DNA domain namespace. */
+    private function isApprovedDomainNamespace(string $relative): bool
+    {
+        foreach (self::DOMAIN_DIRS as $dir) {
+            if (str_starts_with($relative, $dir)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Strip line comments and docblock lines so a prose mention cannot fail the guard. */
@@ -100,7 +142,7 @@ class G1cContractCoreInertnessGuardTest extends TestCase
         return implode("\n", $out);
     }
 
-    public function test_no_production_file_outside_the_contract_namespace_references_it(): void
+    public function test_no_production_file_outside_the_approved_domain_namespaces_references_it(): void
     {
         $offenders = [];
 
@@ -115,8 +157,10 @@ class G1cContractCoreInertnessGuardTest extends TestCase
         $this->assertSame(
             [],
             $offenders,
-            'The G1c contract core must remain inert. Production references found in: '
-            .implode(', ', $offenders).'. Wiring is G1f work and requires separate authorization.',
+            'The G1c contract core must remain inert outside the approved Location DNA domain '
+            .'namespaces. Production references found in: '.implode(', ', $offenders)
+            .'. Wiring is G1f work and requires separate authorization; a new domain namespace '
+            .'must be added to self::DOMAIN_DIRS under its own authorisation.',
         );
     }
 

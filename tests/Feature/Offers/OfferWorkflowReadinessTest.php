@@ -640,6 +640,15 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/LocationDna/Contract/LocationDnaSerializer.php',
             'app/Services/LocationDna/Contract/MalformedDocumentException.php',
             'app/Services/LocationDna/Contract/UnsupportedSchemaVersionException.php',
+            // G1d inert Location DNA capability resolver
+            'app/Services/LocationDna/Capability/LocationDnaAccessContext.php',
+            'app/Services/LocationDna/Capability/LocationDnaCapability.php',
+            'app/Services/LocationDna/Capability/LocationDnaCapabilityException.php',
+            'app/Services/LocationDna/Capability/LocationDnaCapabilityResolver.php',
+            'app/Services/LocationDna/Capability/LocationDnaCapabilitySet.php',
+            'app/Services/LocationDna/Capability/LocationDnaPurpose.php',
+            'app/Services/LocationDna/Capability/LocationDnaSurface.php',
+            'app/Services/LocationDna/Capability/LocationDnaViewerRelationship.php',
         ];
 
         $unexpected = array_values(array_filter(
