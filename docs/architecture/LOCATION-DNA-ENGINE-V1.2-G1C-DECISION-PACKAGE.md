@@ -1,16 +1,24 @@
 # G1c — Architecture Decision Package
 
 **Gate:** G1c (per §12 of the [G1 Pre-Implementation Report](./LOCATION-DNA-ENGINE-V1.2-G1-PRE-IMPLEMENTATION-REPORT.md))
-**Type:** design and decision package for owner approval
-**Status:** **DOCUMENTATION ONLY. NO IMPLEMENTATION. ALL DECISIONS UNDECIDED.**
+**Type:** design and decision package — **owner-approved**
+**Status:** **ALL SEVEN DECISIONS APPROVED. IMPLEMENTATION NOT STARTED AND NOT AUTHORIZED BY THIS APPROVAL.**
 **Governed by:** [`LOCATION-DNA-ENGINE-V1.2.md`](./LOCATION-DNA-ENGINE-V1.2.md) · lineage
 [v1.0](./LOCATION-DNA-ENGINE-V1.md) → [v1.1](./LOCATION-DNA-ENGINE-V1.1.md) → v1.2, adopted per the
 [Adoption Record](./LOCATION-DNA-ENGINE-V1.2-ADOPTION-RECORD.md)
 **Prepared at:** `a0df14fb7d2b63c506886afbf59a822ad9a2ecd6`
+**Approved at (base commit):** `18cd954bcdc43b4796f69689f28bc2df47c45f22` · **Approval date:** 2026-07-30
 
-> **Nothing in this document is decided.** Every recommendation is a proposal awaiting owner approval.
-> No production code, test or configuration is changed by this increment, and G1c implementation has not
-> begun.
+> **The seven decisions below are APPROVED.** See the [Owner approval record](#owner-approval-record) for the
+> exact approved options and the two carried conditions.
+>
+> **Approval of a decision is not authorization to implement it.** G1c implementation is **NOT STARTED**, and
+> G1d–G1g are **NOT STARTED**. No production code, test or configuration was changed by the approval
+> increment. Each increment still requires its own separate authorization, and the stop conditions in the
+> migration plan remain binding.
+>
+> The original alternatives, trade-offs and consequences for every decision are **preserved unchanged** below
+> — approval records which option was chosen, not a rewrite of the analysis that produced it.
 
 ---
 
@@ -23,7 +31,7 @@ Four distinct kinds of statement appear throughout, always labelled:
 | **OBSERVED** | Current runtime or static behaviour, with a test or line citation | Fact. Not a preference. |
 | **REQUIREMENT** | Already binding under an approved governing document (v1.2 §3 locked decisions, §5–§18, or the L-principles) | Uses **must**. Not open for decision here. |
 | **RECOMMENDATION** | This package's proposal | Uses *should* / *proposed*. Never **must**. |
-| **OWNER DECISION** | Yours. Marked `UNDECIDED` until you say otherwise. | — |
+| **OWNER DECISION** | The owner's call. **All seven are now `APPROVED`** (2026-07-30) — see each decision's approval block and the [Owner approval record](#owner-approval-record). | Binding as a contract term. Does **not** authorize implementation. |
 
 **Evidence base.** Seven characterisation suites, **77 tests**, all passing:
 
@@ -40,6 +48,10 @@ Four distinct kinds of statement appear throughout, always labelled:
 **Tests are evidence of what the system does today, not of what it should do.** Several recommendations
 below deliberately propose changing behaviour a test currently pins; each such case is called out with the
 test that will need to change and why that is intended rather than a regression.
+
+**Where an approved clarification and the original recommendation differ, the approved clarification
+governs.** The recommendations are preserved as authored so the reasoning remains auditable; the
+**Approved clarifications** block under each decision is the binding text.
 
 **Locked constraints that bound every option below** (v1.2 §3, not re-argued): server ownership of canonical
 semantics (3); capable-but-non-authoritative client (4); presence-versus-absence as *the* semantic mechanism
@@ -152,8 +164,27 @@ unknown future keys are **retained on read and never emitted by a v1.2 writer** 
 | Field | Value |
 |---|---|
 | Recommended | **Option 1-B** |
-| Owner status | **UNDECIDED** |
-| Approval | ☐ 1-A ☐ **1-B** ☐ 1-C ☐ Other (specify) |
+| Owner status | **APPROVED** |
+| Approved option | **1-B** — adopt the v1.2 §5 canonical contract and close the identified gaps |
+| Approval | ☐ 1-A ☑ **1-B** ☐ 1-C ☐ Other |
+
+**Approved clarifications (owner, 2026-07-30).** These are now binding contract terms for G1c, not
+recommendations:
+
+- **Absent** means *not supplied*. In a patch context absent means **preserve** — it is not an instruction.
+- **`null`** is **not a valid authored dimension value**.
+- **Empty string** is normalized according to the dimension contract and **may not silently stand in for
+  clear**.
+- **Empty array** is the canonical **cleared** value for collection dimensions.
+- **Present-but-cleared** is **authoritative**.
+- **Malformed values** are **rejected or quarantined**, never silently merged.
+- **Unknown future keys** are preserved only through **version-aware hydration** and are **not interpreted by
+  an older writer**.
+- **`schema_version`** has defined read/write semantics.
+- **Administrative labels and geometry may remain in the same private canonical document**, subject to
+  projection at exposure boundaries. Option 1-C's split is therefore **not** adopted.
+
+**Implementation status: NOT STARTED.** **No schema change is introduced by this approval commit.**
 
 ---
 
@@ -257,8 +288,22 @@ distinguishable only by inspecting values.
 | Field | Value |
 |---|---|
 | Recommended | **Option 2-A** |
-| Owner status | **UNDECIDED** |
-| Approval | ☐ **2-A** ☐ 2-B ☐ 2-C ☐ Other (specify) |
+| Owner status | **APPROVED** |
+| Approved option | **2-A** — server-built command object with exactly two mutation operations |
+| Approval | ☑ **2-A** ☐ 2-B ☐ 2-C ☐ Other |
+
+**Approved clarifications (owner, 2026-07-30).** Exactly two mutation operations exist — **`set`** and
+**`clear`** — and:
+
+- An **unmounted field performs no operation**.
+- An **omitted field performs no operation**.
+- **Absence is not clear.**
+- **`preserve` is represented by the absence of a command**, not by a third mutation operation. Option 2-B is
+  therefore **not** adopted.
+- **Legacy migration is an internal provenance/hydration concern**, not a user mutation operation.
+- **Only an explicit `clear` command may withdraw an existing dimension.**
+
+**Implementation status: NOT STARTED.**
 
 ---
 
@@ -376,8 +421,36 @@ main reason to prefer 3-B if refetch correctness matters more than avoiding a on
 | Field | Value |
 |---|---|
 | Recommended | **Option 3-C** (+ 3-B vertex fix as scheduled follow-up) |
-| Owner status | **UNDECIDED** |
-| Approval | ☐ 3-A ☐ 3-B ☐ **3-C** ☐ 3-C now + 3-B later ☐ Other (specify) |
+| Owner status | **APPROVED** |
+| Approved option | **3-C** — separate the Location DNA revision token from the existing Bridge cache key |
+| Approval | ☐ 3-A ☐ 3-B ☑ **3-C** ☐ Other |
+
+**Approved clarifications (owner, 2026-07-30).** The Location DNA **revision token** contract is:
+
+- **Polygon vertex order is semantically meaningful.**
+- **Polygon vertex reordering must change the Location DNA revision token.**
+- **Polygon collection order is not** semantically meaningful, unless later evidence proves otherwise.
+- **Radius-search collection order is not** semantically meaningful, unless later evidence proves otherwise.
+- **Explicit clearing must change** the revision token.
+- **Omission / no-operation must not change** the revision token.
+- **`schema_version` must affect the revision token when it changes interpretation.** (Note: this refines
+  §5.6's "independent of `schema_version`" — the token is insensitive to a lazy upgrade that changes no
+  values, and sensitive to a version change that alters interpretation.)
+- **Unknown keys must be handled through the version-aware canonical document.**
+- **`location_notes` must affect the private document revision token.**
+- **Administrative-label changes must affect the document revision token.**
+- **Malformed geometry may not be treated as a valid canonical hash input** — consistent with D-G1-1's
+  reject-or-quarantine rule.
+
+**Carried condition — Bridge cache-key deferral.** **`CriteriaHashService` and the Bridge cache key are not
+changed during G1c contract-core implementation.** Correction of the Bridge cache key's polygon
+vertex-order behaviour is **deferred to a separately authorized compatibility increment**, to be taken only
+**after** the domain revision-token contract is implemented and characterized. Consequently the reshape and
+clear insensitivities documented under Option 3-A **persist for MLS refetching** until that increment is
+authorized — an accepted, recorded consequence. The 21 tests in
+`G1bCriteriaHashCharacterisationTest` therefore remain valid and unchanged for now.
+
+**Implementation status: NOT STARTED.**
 
 ---
 
@@ -484,8 +557,30 @@ and, under the `preferred_neighborhoods` name, at `offers/show.blade.php:392` an
 | Field | Value |
 |---|---|
 | Recommended | **Option 4-A**, §18 withdrawals confirmed as written |
-| Owner status | **UNDECIDED** |
-| Approval | ☐ **4-A** ☐ 4-B ☐ Other (specify) · §18 withdrawals: ☐ confirmed ☐ revisit |
+| Owner status | **APPROVED** |
+| Approved option | **4-A** — converge all eight workflows on the canonical clear behaviour |
+| Approval | ☑ **4-A** ☐ 4-B ☐ Other · §18 withdrawals: ☑ **confirmed** ☐ revisit |
+
+**Approved clarifications (owner, 2026-07-30).** The existing **§18 withdrawal semantics are confirmed**
+(`commute` withdrawn entirely; `neighborhoods` withdrawn from the contract but read-tolerant;
+`'overrides' => []` removed). The authoritative clear behaviour is:
+
+- **Clearing `cities`** removes cities and updates or clears the derived mirror.
+- **Clearing `counties`** removes counties and updates or clears the derived mirror.
+- **Clearing `state`** removes state and updates or clears the derived mirror.
+- **Clearing `polygons`** removes polygons.
+- **Clearing `radius_searches`** removes radius searches.
+- **Clearing every dimension** produces a **valid canonical cleared document**.
+- **An unmounted editor makes no change.**
+- **Stale legacy mirrors may not resurrect an explicitly cleared canonical value.**
+- **The currently correct `HasSearchAreas.php:130` mirror-clearing behaviour is protected.**
+- **The two correct Tenant Offer behaviours are the convergence baseline.**
+- **The current defective trait and Buyer Offer resurrection behaviour is not preserved.**
+
+Option 4-B (converge `cities` only) is **not** adopted.
+
+**Implementation status: NOT STARTED.** The parity baseline moves from 6/2 to 8/0 only when G1f is separately
+authorized.
 
 ---
 
@@ -578,8 +673,24 @@ consolidation: **the two correct workflows' tests must not change.**
 | Field | Value |
 |---|---|
 | Recommended | **Option 5-C** |
-| Owner status | **UNDECIDED** |
-| Approval | ☐ 5-A ☐ 5-B ☐ **5-C** ☐ Other (specify) |
+| Owner status | **APPROVED** |
+| Approved option | **5-C** — domain service now; trait retained temporarily as a thin, deprecated compatibility shim |
+| Approval | ☐ 5-A ☐ 5-B ☑ **5-C** ☐ Other |
+
+**Approved clarifications (owner, 2026-07-30).** Ownership is fixed as follows:
+
+- **`LocationDnaPersistenceService` becomes the sole canonical writer.**
+- **Inline Buyer Offer writers are removed** during controlled G1f convergence.
+- **Tenant Offer implementations are routed through the canonical writer without losing their correct clear
+  semantics.**
+- **The trait may delegate only** — it may **not** independently normalize or merge.
+- **Normalization belongs to the domain normalizer.**
+- **Hydration belongs to the hydrator.**
+- **Persistence orchestration belongs to the persistence service.**
+- **Legacy compatibility belongs exclusively to `LegacyMirrorAdapter`.**
+- **Public projection remains a separate exposure-boundary concern** (`PublicGeometryProjection`, unchanged).
+
+**Implementation status: NOT STARTED.** The shim's removal remains a G1f exit criterion.
 
 ---
 
@@ -662,8 +773,26 @@ the settled "no migration required for v1".
 | Field | Value |
 |---|---|
 | Recommended | **Option 6-C** |
-| Owner status | **UNDECIDED** |
-| Approval | ☐ 6-A ☐ 6-B ☐ **6-C** ☐ Other (specify) |
+| Owner status | **APPROVED** |
+| Approved option | **6-C** — derived-writable mirrors during transition, lazy repair, evidence-gated sunset |
+| Approval | ☐ 6-A ☐ 6-B ☑ **6-C** ☐ Other |
+
+**Approved clarifications (owner, 2026-07-30).**
+
+- **The canonical document is authoritative when valid and present.**
+- **Mirrors are derived outputs**, not independent authored truth.
+- **Mirrors may be used as fallback only for a legacy-only record.**
+- **Mirrors may not override present-but-cleared canonical values.**
+- **Divergence is repaired lazily**, when a safely interpreted record is written.
+- **No bulk backfill is authorized.**
+- **Lazy repair must preserve provenance** and **may not convert inherited values into authored values**
+  (§5.4 rule 5).
+- **Observability is required before mirror removal.**
+- **Mirror sunset requires separate approval**, after evidence shows no required readers remain.
+- **Rollback consists of stopping canonical-writer adoption while retaining mirror compatibility** — **not**
+  restoring resurrection behaviour.
+
+**Implementation status: NOT STARTED.**
 
 ---
 
@@ -731,8 +860,26 @@ absence of a reader is not a safety property.
 | Field | Value |
 |---|---|
 | Recommended | **Option 7-E**, resolving to 7-B or 7-C |
-| Owner status | **UNDECIDED** |
-| Approval | ☐ 7-A ☐ 7-B ☐ 7-C ☐ 7-D ☐ **7-E** ☐ Other (specify) |
+| Owner status | **APPROVED** |
+| Approved option | **7-E** — retain the snapshot temporarily under an explicit sunset and reader guard |
+| Approval | ☐ 7-A ☐ 7-B ☐ 7-C ☐ 7-D ☑ **7-E** ☐ Other |
+
+**Approved clarifications (owner, 2026-07-30).**
+
+- **The existing unprojected snapshot is private sensitive data.**
+- **No new production reader may be added without separate architecture approval.**
+- **Any future reader must define authorization and projection requirements first.**
+- **The existing structural guard against new readers remains required** —
+  `test_retention_column_has_no_production_read_sites` in
+  `tests/Feature/Spatial/G1bAcceptedBidDocumentCharacterisationTest.php`.
+- **Existing snapshot rows are not deleted or rewritten during G1c.**
+- **The final disposition is not chosen yet** — permanent full retention (7-A), projected-only (7-B) and
+  separated sensitive retention (7-C) all remain open.
+- **Reassess and select the final disposition before G1g is declared complete.**
+- **If a production reader becomes necessary before then: stop and obtain an explicit D-G1-7 amendment
+  before implementing it.**
+
+**Implementation status: NOT STARTED.**
 
 ---
 
@@ -827,17 +974,90 @@ breakage:
 
 ## Decision summary
 
-| Decision | Recommended option | Owner status |
+| Decision | Approved option | Owner status |
 |---|---|---|
-| **D-G1-1** Canonical contract | **1-B** — adopt v1.2 §5 and close the null / empty-string / malformed gaps | **UNDECIDED** |
-| **D-G1-2** Operation vocabulary | **2-A** — exactly `set` + `clear`, carried in a server-built command object | **UNDECIDED** |
-| **D-G1-3** Concurrency & hash | **3-C** — separate revision token from the Bridge cache key; 3-B vertex fix as follow-up | **UNDECIDED** |
-| **D-G1-4** Clear behaviour | **4-A** — converge all 8 workflows; §18 withdrawals confirmed | **UNDECIDED** |
-| **D-G1-5** Canonical writer | **5-C** — domain service now, trait as a thin deprecated shim, removal an exit criterion | **UNDECIDED** |
-| **D-G1-6** Legacy mirrors | **6-C** — derived-writable now, lazy repair, evidence-gated sunset | **UNDECIDED** |
-| **D-G1-7** Snapshot retention | **7-E** — sunset + existing reader guard, resolving to 7-B or 7-C | **UNDECIDED** |
+| **D-G1-1** Canonical contract | **1-B** — adopt v1.2 §5 and close the null / empty-string / malformed gaps | **APPROVED** |
+| **D-G1-2** Operation vocabulary | **2-A** — exactly `set` + `clear`, carried in a server-built command object | **APPROVED** |
+| **D-G1-3** Concurrency & hash | **3-C** — separate revision token from the Bridge cache key; Bridge vertex-order fix **deferred** to a separately authorized increment | **APPROVED** |
+| **D-G1-4** Clear behaviour | **4-A** — converge all 8 workflows; §18 withdrawals **confirmed** | **APPROVED** |
+| **D-G1-5** Canonical writer | **5-C** — domain service now, trait as a thin deprecated shim, removal an exit criterion | **APPROVED** |
+| **D-G1-6** Legacy mirrors | **6-C** — derived-writable now, lazy repair, evidence-gated sunset | **APPROVED** |
+| **D-G1-7** Snapshot retention | **7-E** — sunset + existing reader guard; final disposition **still open** | **APPROVED** |
 
-**All seven remain UNDECIDED. No approval is assumed. No implementation has begun.**
+**All seven are APPROVED. No implementation has begun, and approval does not authorize it.**
+
+The three that most change observable behaviour, and therefore warrant the closest attention during
+implementation, remain **D-G1-4** (a user's clear will start taking effect on `counties` and `state` in all
+eight workflows), **D-G1-2** (an unmounted editor will stop writing at all), and — **only once the deferred
+Bridge increment is authorized** — the cache-invalidation wave discussed under D-G1-3.
+
+---
+
+## Owner approval record
+
+**Approval base commit:** `18cd954bcdc43b4796f69689f28bc2df47c45f22`
+**Approval date:** 2026-07-30
+**Approved by:** owner
+**Recorded by:** this increment (documentation only)
+
+### Exact approved options
+
+| Decision | Approved option | Summary of what was approved |
+|---|---|---|
+| D-G1-1 | **1-B** | Adopt the v1.2 §5 canonical contract and close the identified gaps. Absent = not supplied / preserve in a patch context; `null` is not a valid authored value; empty string normalized per dimension contract and never a stand-in for clear; empty array is the canonical cleared value for collections; present-but-cleared is authoritative; malformed values rejected or quarantined; unknown future keys preserved only via version-aware hydration and never interpreted by an older writer; `schema_version` has defined read/write semantics; labels and geometry may share one private canonical document subject to projection at exposure boundaries. **No schema change in the approval commit.** |
+| D-G1-2 | **2-A** | Server-built command object, exactly `set` and `clear`. Unmounted field = no operation; omitted field = no operation; absence is not clear; `preserve` is the absence of a command, not a third operation; legacy migration is an internal provenance/hydration concern; only an explicit `clear` may withdraw a dimension. |
+| D-G1-3 | **3-C** | Separate the Location DNA revision token from the Bridge cache key. Polygon **vertex** order is meaningful and reordering **must** change the token; polygon and radius **collection** order are not meaningful absent later evidence; explicit clearing **must** change the token; omission/no-op **must not**; `schema_version` affects the token when it changes interpretation; unknown keys handled via the version-aware document; `location_notes` and administrative labels affect the document token; malformed geometry is not a valid canonical hash input. |
+| D-G1-4 | **4-A** | Converge all eight workflows on the canonical clear behaviour; §18 withdrawal semantics **confirmed**. Clearing any of `cities` / `counties` / `state` updates or clears the derived mirror; clearing `polygons` / `radius_searches` removes them; clearing everything yields a valid canonical cleared document; an unmounted editor makes no change; stale mirrors may not resurrect a cleared canonical value; `HasSearchAreas.php:130` clear-mirroring is protected; the two correct Tenant Offer behaviours are the convergence baseline; defective trait and Buyer Offer resurrection is **not** preserved. |
+| D-G1-5 | **5-C** | Domain service now; trait retained temporarily as a thin deprecated shim that may delegate only. `LocationDnaPersistenceService` is the sole canonical writer; inline Buyer Offer writers removed during controlled G1f convergence; Tenant Offer routed through the canonical writer without losing correct clear semantics; normalization → normalizer, hydration → hydrator, orchestration → persistence service, legacy compatibility → `LegacyMirrorAdapter` exclusively; public projection stays a separate exposure-boundary concern. |
+| D-G1-6 | **6-C** | Derived-writable mirrors during transition, lazy repair, evidence-gated sunset. Canonical document authoritative when valid and present; mirrors are derived outputs; fallback only for legacy-only records; mirrors may not override present-but-cleared values; lazy repair preserves provenance and never converts inherited → authored; **no bulk backfill authorized**; observability required before removal; sunset requires separate approval; rollback = stop canonical-writer adoption while retaining mirror compatibility, **not** restoring resurrection. |
+| D-G1-7 | **7-E** | Retain the snapshot temporarily under an explicit sunset and reader guard. |
+
+### Carried condition 1 — D-G1-3 Bridge hash deferral
+
+**`CriteriaHashService` and the Bridge cache key are not changed during G1c contract-core implementation.**
+Correction of the Bridge cache key's polygon vertex-order behaviour is **deferred to a separately authorized
+compatibility increment**, to be taken only after the domain revision-token contract is implemented and
+characterized.
+
+Accepted consequence, recorded rather than glossed: until that increment is authorized, a polygon reshape and
+a deliberate geometry clear **continue not to invalidate the Bridge cache**, so an MLS refetch will not be
+triggered by either. The 21 tests in `G1bCriteriaHashCharacterisationTest` remain valid and unchanged.
+
+### Carried condition 2 — D-G1-7 reader guard and G1g reassessment
+
+- The existing unprojected snapshot is **private sensitive data**.
+- **No new production reader may be added without separate architecture approval**, and any future reader
+  must define its authorization and projection requirements first.
+- The structural guard **remains required**:
+  `test_retention_column_has_no_production_read_sites` in
+  `tests/Feature/Spatial/G1bAcceptedBidDocumentCharacterisationTest.php`.
+- **Existing snapshot rows are not deleted or rewritten during G1c.**
+- The final disposition among 7-A / 7-B / 7-C is **not chosen yet** and **must be reassessed and selected
+  before G1g is declared complete**.
+- If a production reader becomes necessary sooner: **stop and obtain an explicit D-G1-7 amendment** before
+  implementing it.
+
+### One recorded refinement of a governing document
+
+D-G1-3's approved clarification that **`schema_version` must affect the revision token when it changes
+interpretation** refines v1.2 §5.6, which states the token is "independent of `schema_version`". The two are
+reconciled as: the token is **insensitive** to a lazy upgrade that changes no values, and **sensitive** to a
+version change that alters interpretation. Recorded here so the divergence from §5.6's wording is explicit
+rather than discovered during implementation.
+
+### Implementation status at approval
+
+| Gate | Status |
+|---|---|
+| G1a characterisation | **COMPLETE** (`cf53249ac`, `958867234`) |
+| G1b consumer audit | **COMPLETE** (`7fbe33679`, reconciled `a0df14fb7`) |
+| G1b blocking unknowns | **RESOLVED** (`f2ea4355d`) |
+| **G1c implementation** | **NOT STARTED — not authorized by this approval** |
+| **G1d–G1g** | **NOT STARTED — not authorized by this approval** |
+
+Each increment requires its own separate authorization. The stop conditions in the migration plan above
+remain binding, including: the two correct Tenant Offer workflows' tests must not change; line 130's
+clear-mirroring must not regress; and no workflow lacking characterisation may be migrated.
 
 The three that most change observable behaviour, and therefore warrant the closest reading, are **D-G1-4**
 (a user's clear will start taking effect on `counties` and `state` in all eight workflows), **D-G1-2** (an
