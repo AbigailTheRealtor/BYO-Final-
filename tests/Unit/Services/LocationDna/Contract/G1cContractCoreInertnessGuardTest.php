@@ -56,6 +56,7 @@ class G1cContractCoreInertnessGuardTest extends TestCase
     private const DOMAIN_DIRS = [
         'app/Services/LocationDna/Contract',    // G1c — the contract core itself
         'app/Services/LocationDna/Capability',  // G1d — reuses the G1c Dimension vocabulary
+        'app/Services/LocationDna/Provenance',  // G1e — reuses the G1c Dimension vocabulary
     ];
 
     /** Class basenames that would appear in a `use` statement or a fully-qualified reference. */

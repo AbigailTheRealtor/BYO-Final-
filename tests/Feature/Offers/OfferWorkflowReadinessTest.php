@@ -649,6 +649,14 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/LocationDna/Capability/LocationDnaPurpose.php',
             'app/Services/LocationDna/Capability/LocationDnaSurface.php',
             'app/Services/LocationDna/Capability/LocationDnaViewerRelationship.php',
+            // G1e inert Location DNA provenance model
+            'app/Services/LocationDna/Provenance/DimensionProvenance.php',
+            'app/Services/LocationDna/Provenance/LocationDnaProvenanceException.php',
+            'app/Services/LocationDna/Provenance/LocationDnaProvenanceKind.php',
+            'app/Services/LocationDna/Provenance/LocationDnaProvenanceMap.php',
+            'app/Services/LocationDna/Provenance/ProvenanceActor.php',
+            'app/Services/LocationDna/Provenance/ProvenanceAuthority.php',
+            'app/Services/LocationDna/Provenance/ProvenanceTransition.php',
         ];
 
         $unexpected = array_values(array_filter(
