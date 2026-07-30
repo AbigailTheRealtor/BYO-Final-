@@ -165,7 +165,7 @@ class ExpiredOfferFeedRetentionTest extends TestCase
 
         $this->assertSame('Expired', $row['status']);
 
-        foreach (['Active', 'In Negotiation', 'Accepted'] as $liveLabel) {
+        foreach (['Submitted', 'Countered', 'Accepted'] as $liveLabel) {
             $this->assertNotSame(
                 $liveLabel,
                 $row['status'],
@@ -228,7 +228,7 @@ class ExpiredOfferFeedRetentionTest extends TestCase
 
         $statuses = array_column($rows, 'status');
         sort($statuses);
-        $this->assertSame(['Active', 'Expired'], $statuses);
+        $this->assertSame(['Expired', 'Submitted'], $statuses);
 
         unset($live, $lapsed);
     }
@@ -291,10 +291,16 @@ class ExpiredOfferFeedRetentionTest extends TestCase
     }
 
     // =====================================================================
-    // B5 — the status expansion is limited to 'expired'.
+    // B5 — only drafts are excluded.
+    //
+    //      SUPERSEDED 2026-07-29: this test previously asserted that withdrawn
+    //      and rejected bids stay hidden. The permanent submitted-bid history
+    //      rule replaced that — once validly submitted, a bid never disappears.
+    //      Full coverage lives in SubmittedBidHistoryTest; retained here so the
+    //      supersession is visible where the old rule was written.
     // =====================================================================
 
-    public function test_b5_withdrawn_and_rejected_offers_remain_excluded(): void
+    public function test_b5_finalized_offers_remain_visible_alongside_the_expired_one(): void
     {
         $owner = User::factory()->create(['user_type' => 'seller']);
         [, $offerAuction] = $this->openListing($owner);
@@ -306,12 +312,15 @@ class ExpiredOfferFeedRetentionTest extends TestCase
         $rows = $this->feed->build($offerAuction, 'seller');
 
         $this->assertCount(
-            1,
+            3,
             $rows,
-            'Only the expired offer may be added. A withdrawn bid was retracted by its author and '
-            . 'a rejected one refused by the owner; neither is a standing competitive term.'
+            'A validly submitted bid stays in bidding history whatever its terminal status.'
         );
-        $this->assertSame('Expired', $rows[0]['status']);
+        $this->assertSame(
+            ['Withdrawn', 'Rejected', 'Expired'],
+            array_column($rows, 'status'),
+            'Each finalized bid reports its own accurate status, in bidder order.'
+        );
     }
 
     public function test_b5_draft_offers_remain_invisible(): void
@@ -395,8 +404,8 @@ class ExpiredOfferFeedRetentionTest extends TestCase
 
         $byNumber = array_column($after, 'status', 'bidder_number');
         $this->assertSame('Expired', $byNumber[2]);
-        $this->assertSame('Active',  $byNumber[1]);
-        $this->assertSame('Active',  $byNumber[3]);
+        $this->assertSame('Submitted', $byNumber[1]);
+        $this->assertSame('Submitted', $byNumber[3]);
 
         unset($first, $third);
     }
@@ -417,7 +426,7 @@ class ExpiredOfferFeedRetentionTest extends TestCase
         $rows = $this->feed->build($offerAuction, 'seller');
 
         $this->assertSame([1, 2], array_column($rows, 'bidder_number'));
-        $this->assertSame(['Expired', 'Active'], array_column($rows, 'status'));
+        $this->assertSame(['Expired', 'Submitted'], array_column($rows, 'status'));
     }
 
     // =====================================================================

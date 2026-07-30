@@ -1506,3 +1506,159 @@ The confirmed self-computing surfaces are listed verbatim in `CanonicalBiddingWi
 | Date | Change |
 |---|---|
 | 2026-07-29 | **Regression B repaired.** `expired` added to the owner feed's displayable statuses with an `Expired` label and badge; `withdrawn`/`rejected` still excluded. Action rules, `expires_at`, the expiry command and the entire bidding-window architecture unchanged. 16 tests added (13 retention/B1–B7, 3 Invariant-10 guard expansion). 0 newly failing tests across `tests/Feature/Offers` and `tests/Unit`. Regression A untouched and still open. |
+
+---
+
+# Follow-Up — Permanent Submitted-Bid History & Display Formatting — 2026-07-29
+
+**Status: IMPLEMENTED.** Second commit, on top of `844a4f7d5`, which is unchanged. Additive section; all prior content preserved.
+
+## FU1. Ratified rule — permanent submitted-bid history
+
+> Once a bid has been validly submitted, a later status change must not make it disappear from bidding history.
+
+**Supersedes** the narrower rule in *Regression B Repair* §RB1, which admitted only `expired` and explicitly kept `withdrawn`/`rejected` out. That reasoning ("not a standing competitive term") conflated *visibility* with *ranking* — a bid can be historical without being a live competitor.
+
+| Status | Visible | Label | Actionable |
+|---|---|---|---|
+| `submitted` | Yes | Submitted | Yes |
+| `countered` | Yes | Countered | Yes |
+| `accepted` | Yes | Accepted | Cancel only |
+| `expired` | Yes | Expired | No |
+| `rejected` | Yes | Rejected | No |
+| `withdrawn` | Yes | Withdrawn | No |
+| `draft` | **No** | — | n/a |
+
+`submitted` now reads **"Submitted"** rather than "Active", and `countered` **"Countered"** rather than "In Negotiation". With finalized bids sharing the table, the column must state what happened to each bid; "Active" invited a ranking inference the feed does not compute.
+
+Finalized rows render at `opacity:.65` with a neutral `bg-secondary` badge — visible but plainly inactive.
+
+## FU2. Actionability — verified, not changed
+
+**No state-machine or permission change was made.** `expired`, `rejected`, `withdrawn` and `accepted` were already in `OfferStateMachineService::FINAL_STATUSES`, and `OfferPermissionService` already short-circuits every capability on a final status. The follow-up characterizes that with tests instead of restating it in new code.
+
+Verified for all three finalized statuses: `can_submit`, `can_counter`, `can_accept`, `can_reject`, `can_withdraw`, `can_cancel`, `can_expire` are **all false**; `can_view_timeline` stays **true** so history is readable. Live `submitted`/`countered` bids retain accept/reject/counter. No status is ever written back to `submitted`.
+
+## FU3. Bidder numbering
+
+`assignBidderNumbers()` previously merged `PUBLIC_STATUSES` with `['rejected','withdrawn','expired']`. Now that `PUBLIC_STATUSES` covers every non-draft status those two sets are identical, so the merge was replaced by a direct reference. **Behaviour is unchanged** — numbering and visibility are now the same set *by construction*, so a bid can never be shown without a number, nor renumber the bidders around it.
+
+Asserted: bidder 1 expires, 2 is rejected, 3 withdraws → still `[1, 2, 3]`.
+
+## FU4. Privacy
+
+Unchanged. The allow-lists (`SELLER_ALLOWED_TERMS`, `LANDLORD_ALLOWED_TERMS`) were **not touched**, so retention cannot widen disclosure. Asserted against a rejected bid carrying private notes, custom terms, proof-of-funds, financing documents, contact email/phone, possession notes and contribution details: none appear in the row, no `user_id`, no `offer_id`, no bidder name — only the anonymous `bidder_number`. Owner/agent/admin permissions on the fuller offer detail page are untouched.
+
+## FU5. Storage conventions and formatting
+
+Verified against `resources/views/offers/_offer_terms_form.blade.php` and `_offer_terms_display.blade.php` before any change.
+
+| Field(s) | Stored as | Rendered |
+|---|---|---|
+| `offer_price`, `monthly_rent`, `security_deposit`, `move_in_funds` | plain numeric dollars (`nullable\|numeric\|min:0`) | `$5,000` / `$5,250.50` |
+| `earnest_deposit` + `earnest_deposit_unit` | value + literal `'$'` or `'%'`; **when `%` the value is a WHOLE percentage** (form placeholder: *"e.g., 1.5"*) | `$5,000` or `1.5%` |
+| `down_payment_value` + `down_payment_unit` | same convention (placeholder *"e.g., 20"* for 20%) | `$90,000` or `20%` |
+| `*_contingency_days` | whole day count | `7 days` / `1 day` |
+| `lease_term_months` | whole month count | `12 months` / `1 month` |
+| `financing_type`, `maintenance_responsibility`, `last_month_rent_offered`, `*_contingency` flags, dates | free text / Yes-No / date | passed through untouched |
+
+**A `%` value is never multiplied by 100, and a whole percentage is never shown as a ratio.** Where the unit meta is absent we format as dollars, matching `_offer_terms_display.blade.php:23`.
+
+Missing or empty renders as an em dash — **never `$0`**. A genuinely stored `0` still renders `$0`.
+
+The `*_unit` keys stay in the privacy allow-list but no longer get their own table column; they fold into the value they qualify, replacing a meaningless "Earnest Deposit Unit: $" cell.
+
+All numeric formatting delegates to the project's existing centralized helper, `ListingDisplayHelper` (`fmtMoneyWhole`, `fmtPercent`, `fmtNumber`). Nothing reimplements `number_format`. The new `OfferTermPresenter` exists so the rules live in one testable place shared by the Seller and Landlord feeds rather than being duplicated in Blade.
+
+## FU6. Canonical route and feed — verified live
+
+```
+browser route   GET /offer-listing/seller/view/{id}
+route name      offer.listing.seller.view              routes/web.php:1155
+controller      SellerOfferListingController@view      :88
+service         PublicOfferFeedService::canView()      :140
+                PublicOfferFeedService::build()        :141
+presenter       OfferTermPresenter                     (term cells)
+view            offer-listing/seller/view.blade.php    :143
+component       offer-listing/partials/_competing-bids.blade.php   (included :1551)
+```
+
+Landlord is identical (`LandlordOfferListingController:185`, `landlord/view.blade.php:1125`). Both share the one partial, so the change lands once. Asserted at runtime by `test_canonical_route_uses_the_expected_controller_and_feed` and by a real HTTP GET rendering three bids including finalized ones. **No legacy feed and no other presenter is involved.** The duplicate `/offer/listing/view/{id}` surface was not touched.
+
+## FU7. Highest-bid behaviour found
+
+**None exists.** A search for `highest`, `current_bid`, `high_bid`, `max('offer_price')` across `app/Services/Offers/`, both listing controllers and all of `resources/views/offer-listing/` returns nothing. The feed lists bids in stable bidder order and computes no ranking whatsoever.
+
+Because there is no ranking to preserve or break, **no ranking logic was written**. The row-level `LIVE_STATUS_LABELS` constant records which statuses are live so a future ranking feature has a single definition to build on. Deferred — see FU10.
+
+## FU8. Starting-bid behaviour found
+
+`starting_price` is an **EAV meta** on `seller_agent_auctions` (no native column, no migration). It already renders on the seller detail view at `:1898` ("Starting Price / Opening Bid") and in the Quick-Actions hub at `:1082`, both through the view's local `$fmtMoney` closure. It is **not** part of the competing-bids feed and is **not** in the privacy allow-list. No validation beyond the generic listing form. **Unchanged by this commit.**
+
+## FU9. Reserve behaviour found
+
+`reserve_price` is likewise an **EAV meta** on `seller_agent_auctions`. Public exposure is gated by a separate `reserve_price_public` meta (`seller/view.blade.php:1095`), so the hub shows the reserve only when the owner opted in; the detail row at `:1899` shows it to the owner. There is **no reserve-met calculation anywhere**.
+
+Native `reserve_price` **columns** exist on `auctions` and `property_auctions` — those belong to the legacy auction product, not offer listings. **Unchanged by this commit.**
+
+## FU10. Deferred — Bidding Rules scope
+
+Explicitly **not** built here, per instruction:
+
+- any current/highest-bid calculation, or separate "Highest Active" vs "Highest Historical" figures;
+- reserve-met logic or a new reserve field;
+- new starting-bid validation or visibility rules;
+- ranking that treats finalized bids differently from live ones;
+- schema changes, migrations, or new auction business rules.
+
+**Unresolved ranking decision, recorded as follow-up scope:** if a "current high bid" is ever added, the recommended rule is that `submitted` and `countered` count as active, `accepted` displays as Accepted, and `expired`/`rejected`/`withdrawn` remain visible as history but never as the current high bid. Nothing in this commit presumes that outcome.
+
+## FU11. Timer independence — unchanged
+
+No timer code path was touched. Re-verified:
+
+- `bidding_ends_at` remains the sole countdown source; `expires_at` governs only an individual offer.
+- Cycling one bid through all six statuses leaves `bidding_ends_at` byte-identical and the window open.
+- A fixture `expiration_date` of `2027-03-31` has no effect on the countdown.
+- All 26 `CanonicalBiddingWindowTest` guards still pass, including the Invariant-10 repository sweep, the duplicate-surface lock and the legacy inventory.
+
+## FU12. Files changed
+
+| File | Change |
+|---|---|
+| `app/Services/Offers/PublicOfferFeedService.php` | `PUBLIC_STATUSES` += `rejected`, `withdrawn`; six accurate labels; `LIVE_STATUS_LABELS`; `assignBidderNumbers()` simplified to the same set |
+| `app/Presenters/OfferTermPresenter.php` | **new** — shared term formatter; documents storage conventions; delegates to `ListingDisplayHelper` |
+| `resources/views/offer-listing/partials/_competing-bids.blade.php` | badges for all six statuses; finalized rows dimmed; cells render through the presenter; unit companions folded |
+| `tests/Feature/Offers/SubmittedBidHistoryTest.php` | **new** — 21 tests |
+| `tests/Feature/Offers/ExpiredOfferFeedRetentionTest.php` | B5 rewritten for the superseding rule; labels updated |
+| `tests/Feature/Offers/PublicOfferFeedPrivacyTest.php` | withdrawn-numbering and label assertions updated; page test now asserts `$987,654` |
+| `tests/Feature/Offers/OfferWorkflowReadinessTest.php` | new presenter registered in the task allowlist |
+
+No migration, no state-machine change, no permission change, no schema change.
+
+## FU13. Validation
+
+| Command | Result |
+|---|---|
+| `php artisan test tests/Feature/Offers/SubmittedBidHistoryTest.php` | **21 passed** |
+| `php artisan test tests/Feature/Offers/ExpiredOfferFeedRetentionTest.php` | **13 passed** |
+| `php artisan test tests/Feature/Offers/PublicOfferFeedPrivacyTest.php` | **25 passed** |
+| `php artisan test tests/Feature/Offers/CanonicalBiddingWindowTest.php` | **26 passed** |
+| `php artisan test tests/Feature/Offers/BiddingPeriodEnforcementTest.php` | **10 passed** |
+| `php artisan test tests/Feature/Offers/SellerOfferViewReadOnlyTest.php` | **2 passed** |
+| `php artisan test tests/Feature/Offers` | **55 failed / 849 passed** |
+| `php artisan test tests/Unit` | **224 failed / 5961 passed** |
+| `git diff --check` | clean |
+| `php -l` (6 changed PHP files) | no syntax errors |
+
+**Newly failing: none.** `comm` diff of failing-test names against the post-`844a4f7d5` state (55) and the pristine baseline is empty in both directions for both suites. Test count rose 828 → 849 (+21).
+
+Pre-existing failures are unchanged and unrelated: 12 `QueryException`s from SQLite lacking `ILIKE`, plus HTML/message assertions on offer *detail* pages. No skipped tests in the changed suites; `EndingSoonPostgresCastTest`'s two PostgreSQL cases skip as designed with no pgsql connection.
+
+One transient: `test_no_production_files_were_modified` failed until `app/Presenters/OfferTermPresenter.php` was registered in its allowlist, the established convention for every prior task in that file.
+
+## FU14. Change log entry
+
+| Date | Change |
+|---|---|
+| 2026-07-29 | **Permanent submitted-bid history.** Feed admits every non-draft status (`rejected`/`withdrawn` join `expired`); six accurate labels; finalized rows dimmed and non-actionable. New `OfferTermPresenter` formats currency, whole-percentage units, day/month counts via the existing `ListingDisplayHelper`; missing values render as an em dash, never `$0`; persisted values untouched. Numbering, privacy allow-lists, permissions, state machine and the entire bidding-window architecture unchanged. 21 tests added; 0 newly failing. Highest-bid, starting-bid and reserve behaviour documented and deferred to Bidding Rules. Regression A still open. |

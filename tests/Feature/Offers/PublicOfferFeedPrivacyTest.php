@@ -245,7 +245,10 @@ class PublicOfferFeedPrivacyTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Bidder #1');
-        $response->assertSee('987654');
+        // Rendered through OfferTermPresenter since 2026-07-29 — the stored value
+        // is still '987654' (asserted by the feed tests); the page shows currency.
+        $response->assertSee('$987,654');
+        $response->assertDontSee('>987654<', false);
     }
 
     // ------------------------------------------------------- sanitized feed
@@ -455,7 +458,7 @@ class PublicOfferFeedPrivacyTest extends TestCase
 
         $row = $this->feed->build($offerAuction, 'seller')[0];
 
-        $this->assertSame('Active', $row['status']);
+        $this->assertSame('Submitted', $row['status']);
         $this->assertNotSame('submitted', $row['status']);
     }
 
@@ -544,10 +547,14 @@ class PublicOfferFeedPrivacyTest extends TestCase
 
         $rows = $this->feed->build($offerAuction, 'seller');
 
-        // The withdrawn bid is not listed, but it keeps its slot so the surviving
-        // bidder's number does not shift under them.
-        $this->assertCount(1, $rows);
-        $this->assertSame(2, $rows[0]['bidder_number']);
+        // Since the permanent submitted-bid history rule (2026-07-29) the
+        // withdrawn bid stays listed as history, and it keeps slot #1 so the
+        // surviving bidder's number does not shift under them.
+        $this->assertCount(2, $rows);
+        $this->assertSame([1, 2], array_column($rows, 'bidder_number'));
+        $this->assertSame(['Withdrawn', 'Submitted'], array_column($rows, 'status'));
+
+        unset($withdrawn, $survivor);
     }
 
     public function test_feed_is_empty_for_a_listing_with_no_offer_auction(): void

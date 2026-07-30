@@ -632,6 +632,14 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/offer-listing/seller/search.blade.php',
             'resources/views/offer-listing/tenant/search.blade.php',
             'resources/views/offer-listing/partials/_competing-bids.blade.php',
+            // Permanent submitted-bid history (2026-07-29): a validly submitted bid
+            // never disappears from bidding history, so the feed admits every
+            // non-draft status. Visibility is not actionability — finalized bids
+            // stay in FINAL_STATUSES and remain non-actionable. OfferTermPresenter
+            // is the single shared formatter for the feed's term cells; it
+            // delegates all number formatting to ListingDisplayHelper and owns the
+            // documented $/% unit-pairing conventions.
+            'app/Presenters/OfferTermPresenter.php',
             //   Post-audit correction: the Landlord public view no longer creates
             //   the listing<->OfferAuction link as a side effect of an
             //   unauthenticated GET. Publishing now establishes the link for every

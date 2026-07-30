@@ -89,35 +89,72 @@ class PublicOfferFeedService
      * an unsubmitted offer is not a competing bid and its existence is private
      * to its author.
      *
-     * 'expired' IS included, deliberately. An offer's expires_at is the bidder's
-     * "respond by" deadline addressed to the listing owner; it is NOT the
-     * listing's bidding window. Letting it delete the bid from the competitive
-     * record merges the two clocks that Requirement 7 keeps separate, and
-     * because expires_at is mandatory on every submit while
-     * `offers:expire-pending` sweeps every minute, every bid on the platform
-     * would eventually erase itself from this feed while its listing's bidding
-     * window was still open. A lapsed response deadline changes an offer's
-     * status and available actions; it does not unmake the bid. See the
-     * Regression Reopening section of TIMED_OFFER_RUNTIME_INVESTIGATION.md.
+     * PERMANENT SUBMITTED-BID HISTORY (ratified 2026-07-29).
      *
-     * 'withdrawn' and 'rejected' stay excluded and must not be added here by
-     * analogy: a withdrawn bid was retracted by its author and a rejected one
-     * was refused by the owner, so neither is a standing competitive term.
-     * 'expired' is the only status meaning "a real bid whose response window
-     * simply lapsed".
+     * Once a bid has been validly submitted, a later status change must not make
+     * it disappear from bidding history. Every terminal status therefore remains
+     * visible and is simply presented as finalized:
+     *
+     *   submitted / countered   still live, still actionable
+     *   accepted                finalized, won
+     *   expired                 the bidder's own respond-by deadline lapsed
+     *   rejected                the owner refused it
+     *   withdrawn               the bidder retracted it
+     *
+     * Visibility is NOT actionability. Every status above except submitted and
+     * countered sits in OfferStateMachineService::FINAL_STATUSES, so
+     * OfferPermissionService already denies accept/counter/reject/withdraw/
+     * cancel/expire on all of them. Showing a bid does not resurrect it.
+     *
+     * Only 'draft' is excluded: an unsubmitted offer was never a bid, and its
+     * existence is private to its author.
+     *
+     * On 'expired' specifically — an offer's expires_at is the bidder's
+     * "respond by" deadline addressed to the listing owner; it is NOT the
+     * listing's bidding window. Letting it delete the bid merges the two clocks
+     * that Requirement 7 keeps separate, and because expires_at is mandatory on
+     * every submit while `offers:expire-pending` sweeps every minute, every bid
+     * on the platform would otherwise erase itself from this feed while its
+     * listing's bidding window was still open.
+     *
+     * Supersedes the narrower 2026-07-29 rule that admitted only 'expired'. See
+     * the Regression B Repair and Follow-Up sections of
+     * TIMED_OFFER_RUNTIME_INVESTIGATION.md.
      */
-    private const PUBLIC_STATUSES = ['submitted', 'countered', 'accepted', 'expired'];
+    private const PUBLIC_STATUSES = [
+        'submitted',
+        'countered',
+        'accepted',
+        'expired',
+        'rejected',
+        'withdrawn',
+    ];
 
     /**
      * Internal status -> sanitized public label. Anything unmapped reports as
      * 'Closed' rather than leaking an internal state name.
+     *
+     * 'submitted' reads as "Submitted" rather than "Active": with finalized bids
+     * now sharing the table, the column states what happened to each bid, and
+     * "Active" invited the reader to infer a ranking the feed does not compute.
      */
     private const PUBLIC_STATUS_LABELS = [
-        'submitted' => 'Active',
-        'countered' => 'In Negotiation',
+        'submitted' => 'Submitted',
+        'countered' => 'Countered',
         'accepted'  => 'Accepted',
         'expired'   => 'Expired',
+        'rejected'  => 'Rejected',
+        'withdrawn' => 'Withdrawn',
     ];
+
+    /**
+     * Statuses that still represent a live negotiation.
+     *
+     * Exposed so a caller can distinguish live from finalized without
+     * re-deriving the rule from labels. The feed itself performs no ranking —
+     * see the deferred Bidding Rules scope.
+     */
+    public const LIVE_STATUS_LABELS = ['Submitted', 'Countered'];
 
     /**
      * User types eligible to participate as a bidder, per listing role.
@@ -255,9 +292,13 @@ class PublicOfferFeedService
      */
     private function assignBidderNumbers(OfferAuction $offerAuction): array
     {
+        // Every root that was ever validly submitted gets a permanent slot.
+        // Now that PUBLIC_STATUSES covers every non-draft status, numbering and
+        // visibility are the same set by construction, so a bid can never be
+        // shown without a number or renumber the bidders around it.
         $roots = Offer::where('offer_auction_id', $offerAuction->id)
             ->whereNull('parent_offer_id')
-            ->whereIn('status', array_merge(self::PUBLIC_STATUSES, ['rejected', 'withdrawn', 'expired']))
+            ->whereIn('status', self::PUBLIC_STATUSES)
             ->get(['id', 'submitted_at'])
             ->sort(function ($a, $b) {
                 $aTime = $a->submitted_at?->getTimestamp();
