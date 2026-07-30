@@ -6,6 +6,8 @@
 **Governed by:** [`LOCATION-DNA-ENGINE-V1.2.md`](./LOCATION-DNA-ENGINE-V1.2.md)
 **Audited at:** `8d50d268ffa3a8856d57a4486c42f04d1b04efda`
 **Decisions:** D-G1-1 … D-G1-6 remain **open**. Nothing here resolves or assumes any of them.
+**Reconciled:** `f2ea4355d` — U-G1B-2 and U-G1B-4 resolved by characterisation after this audit was authored;
+see the reconciliation note in §1. Counts and classifications updated accordingly. Findings unchanged in kind.
 
 > Every count, path, symbol, line number and route relationship below was recomputed from the tree at
 > the audited commit. No figure is carried over from prior prose without rechecking.
@@ -26,7 +28,7 @@ defensive, verified idiom (`is_array($raw) ? $raw : json_decode(...)` → `is_ar
 `!empty($key)` read) that tolerates absent, null, empty and malformed input without error. What none of
 them can do is distinguish **present-but-cleared from never-authored**, because they all decide with
 `empty()`. So the §5.2 violation G1a proved in the editing surfaces is **replicated across the entire
-read side**: 28 of 44 consumer IDs are classified CONDITIONALLY TOLERANT for exactly this reason.
+read side**: 29 of 44 consumer IDs are classified CONDITIONALLY TOLERANT for exactly this reason.
 
 **Three structural facts stand out:**
 
@@ -47,9 +49,28 @@ read side**: 28 of 44 consumer IDs are classified CONDITIONALLY TOLERANT for exa
    the owner editor is correctly excluded. Exactly five view files name geometry keys and every one is
    accounted for. **No live bypass was found.**
 
-Nine findings are recorded, F-G1B-1 … F-G1B-9. Two consumers are classified UNRESOLVED (C-29, C-40), and
-four open questions are declared (U-G1B-1 … U-G1B-4), each named with the smallest characterisation test
-that would settle it. **None was written — that is not G1b.**
+Nine findings are recorded, F-G1B-1 … F-G1B-9. One consumer remains classified UNRESOLVED (**C-40**, the JS
+bridge, blocked on G2), and two of the four declared unknowns are now **RESOLVED** — see the reconciliation
+note immediately below.
+
+> ### Reconciliation — post-audit characterisation (`f2ea4355d`)
+>
+> This audit was authored before **U-G1B-2** and **U-G1B-4** were settled. Both were subsequently resolved
+> by a tests-only increment (`f2ea4355d`, 30 tests), and this document has been reconciled to match:
+>
+> | Unknown | Status | Result |
+> |---|---|---|
+> | **U-G1B-2** — does `CriteriaHashService::hash()` canonicalise nested geometry? | **RESOLVED** | **Recursively canonicalizes nested associative structures.** `ksort` at every recursion level. Omission and canonical-empty already hash identically, so **G1c's omission capability cannot cause spurious cache churn** — the risk this unknown was raised for does not exist. |
+> | **U-G1B-4** — does the accepted-bid document render geometry to a non-owner? | **RESOLVED** | **Administrative-label-only output proven.** No polygon coordinates, radius centre, address or `location_notes` reach the rendered document. The retention column carries the full unprojected blob but has **zero read sites**. |
+> | U-G1B-1 — JS bridge tolerance | still open | Blocked on **G2**; no JS test runner exists |
+> | U-G1B-3 — renderer vs malformed geometry | still open | One feature test would close it; blocks no gate but a renderer gate |
+>
+> Two behaviours were proven that the audit had not anticipated, both recorded as observed fact and
+> **not** repaired: the hash **erases polygon vertex order** (list values are sorted unconditionally, so two
+> distinct polygons sharing a vertex set hash identically), and because omission ≡ clearing, **a user
+> clearing all geometry does not invalidate a cached Bridge result**.
+>
+> Neither resolution changes any owner decision. D-G1-1 … D-G1-6 remain open.
 
 ---
 
@@ -208,10 +229,10 @@ Across the **44 consumer IDs** (C-01 … C-44):
 | Classification | Count | IDs | Meaning in this audit |
 |---|---|---|---|
 | **TOLERANT** | 6 | C-10, C-11, C-12, C-13, C-14, C-16 | Every relevant case supported by direct code evidence **or** an existing passing test |
-| **CONDITIONALLY TOLERANT** | 28 | C-04, C-05, C-15, C-17, C-18, C-19 … C-28, C-30 … C-38, C-41, C-42, C-43, C-44 | Survives absent/null/empty/malformed, but **cannot distinguish present-but-cleared from never-authored** |
+| **CONDITIONALLY TOLERANT** | 29 | C-04, C-05, C-15, C-17, C-18, C-19 … C-28, **C-29**, C-30 … C-38, C-41, C-42, C-43, C-44 | Survives absent/null/empty/malformed, but **cannot distinguish present-but-cleared from never-authored** |
 | **INTOLERANT** | 7 | C-01, C-02, C-03 (primary) · C-06, C-07, C-08, C-09 (inherited from C-01) | Loses or corrupts user intent on at least one input class |
 | **NOT APPLICABLE** | 1 | C-39 | Owner editor; geometry is intended and v1.2 forbids changing it |
-| **UNRESOLVED** | 2 | C-29, C-40 | Static inspection insufficient — §11 names the settling test |
+| **UNRESOLVED** | 1 | C-40 | Static inspection insufficient — §11 names the settling test. **C-29 was UNRESOLVED at audit time and is now CONDITIONALLY TOLERANT, proven by `f2ea4355d`.** |
 | **Total** | **44** | | |
 
 Only **3** of the 7 INTOLERANT rows are distinct defects; C-06 … C-09 inherit C-01's trait behaviour and are
@@ -219,9 +240,9 @@ counted as rows, not as separate defects.
 
 **Separately, all 44 are INTOLERANT of a higher `schema_version`** in the §5.5 sense, because no consumer
 implements refuse-to-interpret. That is a property of the system, not of individual consumers, so it is
-recorded once as F-G1B-2 rather than collapsing all 44 rows to INTOLERANT. The 2 UNRESOLVED rows are
-consumers; the **4** declared unknowns in §11 (U-G1B-1 … U-G1B-4) are questions, and the two counts are not
-the same thing.
+recorded once as F-G1B-2 rather than collapsing all 44 rows to INTOLERANT. The **1** remaining UNRESOLVED row
+is a consumer; the declared unknowns in §11 are questions, and the two counts are not the same thing. Two of
+those four unknowns are now RESOLVED (§1).
 
 ---
 
@@ -323,11 +344,11 @@ recorded as F-G1B-5.
 | C-26 | `LocationMatchAuctionExtractor.php:101,103` | server-only | `metaValue(...)` then `!empty($dnaRaw)` | **CONDITIONALLY TOLERANT** |
 | C-27 | `Jobs/ComputeCompatibilityScore.php:398,405-407` | server-only, **outside any request cycle** | `is_array($raw) ? $raw : (json_decode($raw, true) ?? [])` | **CONDITIONALLY TOLERANT** |
 | C-28 | `Stellar/StellarBuyerResultsController.php:125-126` | authenticated | `!empty($criteriaData['radius_searches'])` | **CONDITIONALLY TOLERANT** |
-| C-29 | `Bridge/CriteriaHashService.php:34-35` | server-only → **outbound MLS** | hashes `$payload->radiusSearches` / `->polygons` | **UNRESOLVED** |
+| C-29 | `Bridge/CriteriaHashService.php:34-35` | server-only → **outbound MLS** | hashes `$payload->radiusSearches` / `->polygons`; recursively ksorts every level, drops nulls and empties, value-sorts lists | **CONDITIONALLY TOLERANT** — proven by `G1bCriteriaHashCharacterisationTest` (`f2ea4355d`) |
 | C-30 | `Stellar/Matching/DTO/BuyerCriteriaPayload.php:92-93` | server-only | `$data['radius_searches'] ?? []` | **CONDITIONALLY TOLERANT** |
 
 C-27 is notable: it reads canonical state **outside any request cycle**, so no hydrator or projection is in
-scope even in principle. C-29 is UNRESOLVED and material: §5.3 requires change-detection hashes to be
+scope even in principle. C-29 was UNRESOLVED at audit time and is now settled: §5.3 requires change-detection hashes to be
 computed over the **canonicalised** form, never raw bytes, or omission presents as a spurious change. Whether
 `CriteriaHashService` canonicalises before hashing could not be settled from the two matched lines —
 F-G1B-6.
@@ -485,7 +506,9 @@ records that there is no existing consumer to migrate — only consumers to rout
 
 ### F-G1B-3 · The `empty()` blindness is system-wide, not confined to the editing surfaces
 
-**Observed fact.** 28 of 44 consumer IDs decide presence with `empty()` / `!empty()` on the dimension key.
+**Observed fact.** 29 of 44 consumer IDs decide presence with `empty()` / `!empty()` on the dimension key —
+including C-29, whose empty-array drop at `CriteriaHashService.php:82` is what makes omission and clearing
+hash identically (F-G1B-6).
 Representative verified sites: `LocationDnaChipPresenter.php:57,66,70`, `LocationPreferenceAnalyzer.php:68,74`,
 `CriteriaListingResolver.php:311`, `AcceptedBidSummaryService.php:738`, `StellarBuyerResultsController.php:125`.
 `PublicGeometryProjection` is the **only** consumer using `array_key_exists()`.
@@ -526,7 +549,7 @@ correct per v1.2, and worth stating explicitly so a later change does not "tidy"
 **Recommended later action.** Decide at G1c whether the domain core hands enrichment a guaranteed array. No
 signature change during G1b.
 
-### F-G1B-6 · Whether the Bridge criteria hash canonicalises before hashing is UNRESOLVED
+### F-G1B-6 · Whether the Bridge criteria hash canonicalises before hashing — **RESOLVED (`f2ea4355d`)**
 
 **Observed fact.** `CriteriaHashService.php:34-35` includes `radius_searches` and `polygons` in the hashed
 payload. §5.3 requires such hashes to be computed over the **canonicalised** form, never raw bytes, or
@@ -534,13 +557,33 @@ omission presents as a spurious change. §4.3 F-C3 records that `CriteriaHashSer
 canonicalise (recursive `ksort`, null-drop, order-independent list sorting) — but that claim was not
 re-verified line-by-line in this audit.
 
-**Inferred risk.** If canonicalisation does not cover the nested geometry arrays, G1c's omission capability
-would cause spurious cache-key churn and unnecessary outbound MLS refetches.
+**Resolved by characterisation (`f2ea4355d`).** It **does** canonicalise, recursively:
+`normaliseArray()` ksorts at every recursion level (`:98`), so nested `{lat,lng}` key ordering inside a
+polygon `path` is irrelevant. §4.3 F-C3's claim is confirmed line-by-line and extended to the nested
+geometry arrays this finding questioned.
 
-**Recommended later action.** Re-verify `CriteriaHashService::hash()` against nested `polygons` /
-`radius_searches` before G1c ships omission. Smallest test named in §11.
+**The inferred risk does not exist.** Omission and canonical-empty already hash identically — nulls are
+dropped (`:76`) and empty arrays are dropped (`:82`), and the DTO defaults a missing key to `[]`
+(`BuyerCriteriaPayload.php:92-93`), so all three routes converge before hashing. **G1c's omission capability
+therefore cannot cause spurious cache-key churn or unnecessary MLS refetches.**
 
-### F-G1B-7 · Accepted-bid summaries are a second unprojected durable geometry path
+**Two behaviours proven that this finding did not anticipate**, both observed fact, neither repaired:
+
+1. **Polygon vertex order is erased.** Lists are value-sorted unconditionally (`:83-87`), including a
+   polygon's `path`. Two geometrically distinct polygons sharing a vertex set hash identically.
+2. **Clearing does not invalidate a cache entry.** Because omission ≡ clearing, a user who deliberately
+   clears all geometry produces the same hash as one who never authored any.
+
+Also established: `location_notes`, and the canonical `cities` / `counties` / `state` names, are
+**structurally unable to reach this hash** — the service reads a fixed 35-key whitelist off DTO properties,
+and the DTO uses `preferred_cities` / `preferred_counties` and has no `state`. A vocabulary mismatch between
+the canonical contract and this consumer, recorded for G1c.
+
+**Recommended later action.** None required for the original question. Whether vertex-order insensitivity
+and clear-insensitivity are acceptable for cache invalidation is a **new** question for G1c's contract
+review, not a defect to fix here.
+
+### F-G1B-7 · Accepted-bid summaries retain unprojected geometry but render labels only — **factual half RESOLVED (`f2ea4355d`)**
 
 **Observed fact.** C-36 (`AcceptedBidSummaryService.php:733`) and C-37
 (`BuyerAcceptedBidSummaryService.php:468`) read the canonical blob and render location detail into durable
@@ -551,8 +594,32 @@ already tracks `location_intelligence_snapshot` retention; this is the *renderin
 yet tracked. Whether that is acceptable is a policy question, not a defect: parties to an accepted bid may
 legitimately need the geometry.
 
-**Recommended later action.** An explicit owner decision on whether accepted-bid documents are inside or
-outside the D4 boundary. Currently undecided and **not decided here**.
+**Resolved by characterisation (`f2ea4355d`) — the factual half.** The rendered document contains
+**administrative labels only**. `buildTargetAreas():747` is the sole producer of location content for the
+template (`{{target_areas}}`, the only location placeholder, at `:1111`), and it reads
+`acceptable_cities` / `acceptable_counties` / `acceptable_zip_codes` / `state` — legacy discrete meta, not
+the blob. Executed with sentinels, it emits the labels and **none** of the polygon coordinates, radius
+centre, radius-centre address or `location_notes`. Passing only the canonical blob with no legacy keys
+yields an **empty string**. The real public `getRenderedHtml()` — the method
+`AcceptedBidSummaryController::view():33` calls — was exercised and shows the same. The buyer-side variant
+renders **no location content at all**.
+
+**The retention half stands, and is now proven with a live value.**
+`extractLocationIntelligenceData():730` writes the whole decoded blob — geometry and notes, no projection
+marker — to `AcceptedBidSummary.location_intelligence_snapshot`. That column has **zero production read
+sites**: only the three writers and the model's `$fillable` / `$casts` mention it, and no view references it.
+So the geometry is retained at rest but cannot reach a document by any current path.
+
+**Recipients confirmed:** owner (`tenant_user_id`) **and counterparty / non-owner** (`agent_user_id`), both
+authenticated participants, nobody else — `canAccessSummary():335-338`, exercised directly.
+
+**Declared limitation.** DomPDF was not invoked and no HTTP request was made; `downloadPdf` renders the same
+`summary_html`. The suite proves what the renderer produces, not what a PDF viewer displays.
+
+**Recommended later action.** The exposure question is answered: there is none in the rendered document
+today. The **policy** question — whether the retained snapshot is acceptable, and whether a future reader of
+that column would be permitted — remains an explicit owner decision. Currently undecided and **not decided
+here**. The structural assertion in the characterisation suite fails if a reader is ever added.
 
 ### F-G1B-8 · `LocationDnaChipPresenter`'s docblock describes a radius shape the contract does not use
 
@@ -574,10 +641,19 @@ change.
 `BuyerOfferListingEdit::getPlaceSuggestions()` (the `->get()` at `:980`). `ILIKE` is PostgreSQL syntax; the
 suite runs on SQLite. Reproduced identically in the G0.1 control worktree with no G1a file present.
 
-**Inferred risk.** None to the contract. It reduces the evidence base slightly: one of the 18 contract tests
-is not fully green.
+**A second instance, discovered while running the hash service's caller suite (`f2ea4355d`).**
+`LazyBridgeImportServiceTest` fails 2 of 22 with
+`SQLSTATE[HY000]: no such function: pg_try_advisory_lock` — `advisory lock released after successful import`
+and `advisory lock released after api failure`. `pg_try_advisory_lock` is a PostgreSQL function absent in
+SQLite: the same environment class as the `ILIKE` failure. Reproduced identically in the G0.1 control
+worktree with no G1a/G1b file present — same two test names, same error, same counts.
 
-**Recommended later action.** Production fix, outside G1a/G1b scope.
+**Inferred risk.** None to the contract. Both failures are PostgreSQL-only SQL running against the SQLite
+test connection. Together they reduce the evidence base slightly: two suites adjacent to the contract are
+not fully green, for reasons unrelated to Location DNA.
+
+**Recommended later action.** Production or test-harness fix, outside G1a/G1b scope. Recorded so neither is
+later attributed to consolidation.
 
 ---
 
@@ -606,9 +682,9 @@ settle it. **None was written — that is not G1b.**
 | # | Unknown | Consumer | Smallest test that would settle it |
 |---|---|---|---|
 | U-G1B-1 | Does the JS bridge preserve, drop or empty each input class on the wire? | C-40 `search-areas-bridge.blade.php` | Requires a JS test runner, which the project lacks — this is a **G2** dependency, not a PHP test. Until G2 the bridge's tolerance is unproven in both directions. |
-| U-G1B-2 | Does `CriteriaHashService::hash()` canonicalise nested `polygons` / `radius_searches`, so an omitted key does not change the hash? | C-29 | One unit test: hash two payloads whose geometry differs only in key order and in an omitted-vs-empty dimension; assert the canonicalised hashes match where meaning matches. |
+| ~~U-G1B-2~~ **RESOLVED** (`f2ea4355d`) | Does `CriteriaHashService::hash()` canonicalise nested `polygons` / `radius_searches`, so an omitted key does not change the hash? | C-29 | **Answered: recursively canonicalizes nested associative structures.** `G1bCriteriaHashCharacterisationTest` (21 tests) proves ksort at every level, null/empty dropping, numeric-string normalisation, structural exclusion of unknown keys and `schema_version`, and no input mutation. Omission ≡ canonical-empty, so omission cannot cause spurious churn. |
 | U-G1B-3 | Do the renderers survive a structurally valid but semantically malformed entry (`polygons: [{"label":"x"}]`, no `path`)? | C-15, C-17, C-39 | One feature test rendering the shared viewer with a path-less polygon and a centre-less radius entry; assert no exception and no partial-geometry emission. |
-| U-G1B-4 | Does an accepted-bid PDF render exact geometry to a non-owner party today? | C-36, C-37 | One integration test generating a summary for a record with polygons and asserting on the rendered HTML/PDF text. Settles F-G1B-7's factual half; the policy half stays an owner decision. |
+| ~~U-G1B-4~~ **RESOLVED** (`f2ea4355d`) | Does an accepted-bid PDF render exact geometry to a non-owner party today? | C-36, C-37 | **Answered: administrative-label-only output proven.** `G1bAcceptedBidDocumentCharacterisationTest` (9 tests) exercises `buildTargetAreas()`, the real template, the public `getRenderedHtml()` and the snapshot extractor with sentinels. No geometry or notes render; the retention column holds the full unprojected blob and has zero read sites. DomPDF was not invoked — declared limitation. **The policy half remains an owner decision.** |
 
 ---
 
@@ -620,7 +696,9 @@ Stated as consequences of the audit, not as decisions.
   incumbent validator to preserve (F-G1B-4) — both are greenfield. Conversely it must serve **41**
   consumers, of which 30 want a "is there anything to show" answer rather than raw presence (F-G1B-3), so a
   presence API that only exposes `array_key_exists` semantics would force 30 call-site rewrites. The
-  omission capability interacts with F-G1B-6: settle the hash question before shipping omission.
+  omission capability interacted with F-G1B-6, now **resolved**: the hash already treats omission and
+  canonical-empty as equivalent, so **shipping omission is no longer gated on that question**. G1c is
+  blocked by owner decisions D-G1-1 … D-G1-4, not by unresolved runtime behaviour.
 - **G1d (capability resolver).** C-27 reads canonical state **outside any request cycle**, so it has no
   workflow context to pass. The resolver's context map must tolerate a caller with no context and
   deny-by-default without breaking a queued job that legitimately reads.
@@ -667,13 +745,14 @@ evidence."*
 | Every true consumer classified | **Met** — 44 of 44 IDs carry a file, an access pattern, evidence and a classification (§7) |
 | Classification backed by code evidence or an existing test | **Met** — TOLERANT was awarded only 4 times, each backed by a named passing suite |
 | Public-surface review complete | **Met** — all five geometry-naming views resolved; no live projection bypass found (§8) |
-| Unknowns declared rather than guessed | **Met** — 2 UNRESOLVED consumers (C-29, C-40) and 4 declared unknowns, each with the smallest settling test named (§11) |
+| Unknowns declared rather than guessed | **Met** — declared, not guessed; 2 of the 4 have since been resolved by `f2ea4355d`, leaving 1 UNRESOLVED consumer (C-40) |
 | Read-only; no production, test or config change | **Met** |
 | Findings separate fact from inferred risk from recommendation | **Met** — all nine findings use that structure |
 
-**Residue carried forward, not hidden:** the four UNRESOLVED items. U-G1B-1 is blocked on G2 (no JS test
-runner) and cannot be closed by any PHP increment. U-G1B-2, U-G1B-3 and U-G1B-4 are each closable by a
-single small test, and none of the three blocks G1c from starting — they block *shipping* omission
-(U-G1B-2) and any renderer gate (U-G1B-3, U-G1B-4).
+**Residue carried forward, not hidden — updated after reconciliation.** Of the four declared unknowns,
+**U-G1B-2 and U-G1B-4 are RESOLVED** (`f2ea4355d`). **U-G1B-1** is blocked on G2 (no JS test runner) and
+cannot be closed by any PHP increment. **U-G1B-3** is closable by a single feature test and blocks only a
+renderer gate. **Nothing outstanding blocks G1c**, which is now gated solely on owner decisions
+D-G1-1 … D-G1-4.
 
 **G1c is not started. G1d–G1g are not started. No fix from this audit has been implemented.**
