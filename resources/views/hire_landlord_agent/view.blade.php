@@ -53,57 +53,15 @@
 @endphp
 
 @push('styles')
-<!-- //Listing Description css  -->
-<link rel="stylesheet" href="{{ asset('assets/css/listingDescription.css') }}" />
-<!-- Toastr CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
+{{-- Hire Agent Listing Detail Framework (Milestone 4): the thirty rules that were
+     byte-identical across all four detail views now live in one place. --}}
+@include('hire_agent.framework.styles')
 
+{{-- Residual Landlord-only rules. These LOOK shared but are not: they differ
+     between roles in colour, !important or comment text, so moving them into the shared
+     partial would have changed what this page renders. Left in place deliberately. --}}
 <style>
-    /* Chrome, Safari, Edge, Opera */
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-
-    /* Firefox */
-    input[type=number] {
-        -moz-appearance: textfield;
-    }
-
-    .fa-dollar-sign,
-    .fa-percent {
-        padding: 0 20px;
-        background: #facd34;
-        color: #fff;
-        border: 0;
-        font-weight: 700 !important;
-        line-height: 39px !important;
-        margin-right: -5px;
-        z-index: 1;
-        border-radius: 3px 0 0 3px;
-    }
-
-    .form-control,
-    .form-select {
-        border-radius: 0.25rem;
-        box-shadow: inset 0 1px 2px 0 rgb(66 71 112 / 12%);
-        border-radius: 0.25rem;
-        background-color: #fafafb;
-        margin-bottom: 15px;
-    }
-
-    /* Section Title Hierarchy - Larger, bold, spaced, more prominent */
-    .card-header h4,
-    .section-title {
-        font-size: 1.5rem !important;
-        font-weight: 700 !important;
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: #0f1a24;
-    }
-
-    /* SECTION HEADER BAR — shorter + true vertical centering */
+/* SECTION HEADER BAR — shorter + true vertical centering */
     .card-header.section-header {
         display: flex !important;
         align-items: center !important;
@@ -112,8 +70,7 @@
         min-height: 0 !important;
         margin-top: 1.25rem;
     }
-
-    /* SECTION TITLE TEXT — remove default heading spacing */
+/* SECTION TITLE TEXT — remove default heading spacing */
     .section-header .section-title {
         margin: 0 !important;
         padding: 0 !important;
@@ -123,117 +80,7 @@
         font-weight: 700 !important;
         color: #0f1a24;
     }
-
-    /* Services section - extra breathing room before header */
-    .services-section-header {
-        margin-top: 0.75rem !important;
-    }
-
-    hr {
-        margin-top: 1.25rem;
-        margin-bottom: 0.5rem;
-    }
-
-    /* Field row styling - improved line-height for scan-readability */
-    .col-md-12.col-12.pt-2.fw-bold {
-        line-height: 1.6;
-        padding-top: 0.6rem !important;
-        padding-bottom: 0.2rem;
-    }
-
-    .field-row {
-        padding: 0.5rem 0;
-        font-size: 0.95rem;
-        line-height: 1.6;
-    }
-
-    .field-label {
-        font-weight: 600;
-        color: #34465c;
-    }
-
-    .field-value {
-        font-weight: normal;
-        color: #34465c;
-    }
-
-    /* Broker Compensation subsection headers - breathing room */
-    h5.mt-3.mb-2 {
-        padding-top: 0.75rem;
-        margin-top: 1rem !important;
-    }
-
-    /* Fix blank space under section headers - reduce gap to first content */
-    .card-body {
-        padding-top: 12px !important;
-    }
-
-    .card-body > :first-child {
-        margin-top: 0 !important;
-    }
-
-    /* Broker Compensation section text - match other section text color */
-    .broker-compensation-section,
-    .broker-compensation-section p,
-    .broker-compensation-section .col-md-12,
-    .broker-compensation-section .fw-bold {
-        color: #34465c !important;
-    }
-
-    ul {
-        --icon-size: 1em;
-        --gutter: .5em;
-        padding: 0 0 0 calc(var(--icon-size) + 2em);
-    }
-
-    ul li {
-        padding-left: var(--gutter);
-        color: #34465c;
-    }
-
-    ul:not(.services) li::marker {
-        content: "\f101";
-        /* FontAwesome Unicode */
-        font-family: FontAwesome;
-        font-size: var(--icon-size);
-        /* color: #006e9f; */
-        color: #11b7cf;
-    }
-
-    /* Services section - Tighter spacing and indentation */
-    ul.services {
-        list-style: none !important;
-        padding-left: 1.2em;
-        margin-top: 0.35rem;
-        margin-bottom: 0.5rem;
-    }
-
-    ul.services li {
-        padding: 0.15rem 0;
-        color: #34465c;
-        position: relative;
-        padding-left: 0;
-        list-style: none !important;
-        line-height: 1.4;
-    }
-
-    ul.services li::marker {
-        content: none !important;
-    }
-
-    ul.services li::before {
-        content: "•";
-        position: absolute;
-        left: -0.9em;
-        color: #34465c;
-        font-size: 1.1em;
-    }
-
-    .removeBold {
-        font-weight: normal;
-    }
-
-    /* Base button style */
+/* Base button style */
     .btn-custom {
         width: 100% !important;
         color: white !important;
@@ -246,72 +93,31 @@
         text-align: center;
         display: inline-block;
     }
-
-    .biding-btn {
-        width: 31.5%;
-    }
-
-    /* Accept (green) - always solid green background */
+/* Accept (green) - always solid green background */
     .btn-accept {
         background-color: #28a745 !important;
         color: #ffffff !important;
     }
-
-    .btn-accept:hover {
+.btn-accept:hover {
         background-color: #218838 !important;
     }
-
-    /* Reject (red) - always solid red background */
+/* Reject (red) - always solid red background */
     .btn-reject {
         background-color: #dc3545 !important;
         color: #ffffff !important;
     }
-
-    .btn-reject:hover {
+.btn-reject:hover {
         background-color: #c82333 !important;
     }
-
-    /* Counter (blue) - always solid blue background */
+/* Counter (blue) - always solid blue background */
     .btn-counter {
         background-color: #0d6efd !important;
         color: #ffffff !important;
     }
-
-    .btn-counter:hover {
+.btn-counter:hover {
         background-color: #0b5ed7 !important;
     }
-
-    .view-btn {
-        padding: 6px !important;
-    }
-
-    .services-offered {
-        padding: 23px !important;
-    }
-
-    @media screen and (max-width: 800px) {
-        .accordion-body-padding {
-            padding: 7px !important;
-        }
-
-        .alert-font {
-            font-size: 10px;
-        }
-
-        .counter-font {
-            font-size: 15px;
-        }
-    }
-
-    /* Bid card accordion chevron rotation (custom JS toggle) */
-    .bid-accordion-header .bid-chevron {
-        transition: transform 0.3s ease;
-    }
-    .bid-accordion-header:hover {
-        background-color: #f8f9fa !important;
-    }
-
-    /* Bid action buttons - matched sizing for Edit bid */
+/* Bid action buttons - matched sizing for Edit bid */
     .bid-action-btn {
         min-width: 140px;
         height: 38px;
@@ -324,9 +130,6 @@
         border: none !important;
         box-shadow: none;
     }
-    .bid-action-btn:hover {
-        opacity: 0.9;
-    }
 </style>
 @endpush
 
@@ -335,22 +138,14 @@
 @php
 $auth_id = auth()->user() ? auth()->user()->id : 0;
 @endphp
-@if (session('success'))
-<div class="container mt-3">
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+{{-- Hire Agent framework: the identical success/error blocks all four views carried. --}}
+    <x-hire-agent.flash />
+    {{-- Hire Agent Listing Detail Framework (Milestone 4): shared hero. Role-specific
+         values come from HireAgentHeroData; no countdown, no competing-proposal data. --}}
+    <div class="container">
+        <x-hire-agent.hero role="landlord" :auction="$auction" />
     </div>
-</div>
-@endif
-@if (session('error'))
-<div class="container mt-3">
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-</div>
-@endif
+
 
 <div class="container listingDescription">
     <div class="row">

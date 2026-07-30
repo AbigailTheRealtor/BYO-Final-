@@ -798,6 +798,37 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Http/Controllers/Controller.php',
             'app/Http/Livewire/Tenant/TenantAgentAuctionBid.php',
             'app/Models/TenantAgentAuction.php',
+            // Hire Agent Listing Framework — Milestone 4
+            // (shared listing-detail framework).
+            //   Six NEW Hire Agent-owned files, plus the four detail views that adopt them. No
+            //   Create Offer path is touched, and the framework cannot reach Create Offer: it
+            //   declares its own .hla- CSS namespace, references no offer-listing view, and is
+            //   asserted disjoint from Create Offer's .sol- namespace by
+            //   HireAgentDetailFrameworkTest.
+            //
+            //   styles.blade.php — the thirty CSS rules that were BYTE-IDENTICAL in all four
+            //     detail views, chosen by rule-level intersection so relocating them cannot
+            //     change what renders, plus the new .hla-hero rules and mobile stacking. Rules
+            //     that merely looked shared (Buyer's yellow .btn-counter, !important and comment
+            //     differences) stay in each view's residual block, on purpose.
+            //   hero.blade.php — the shared hero. There was none before; the title sat at the top
+            //     of the right column. Renders no countdown, no remaining time and no competing-
+            //     proposal data by construction.
+            //   info-card / field / flash — the card shell, the 340-times-repeated label/value
+            //     row, and the identical session-flash block, extracted verbatim.
+            //   HireAgentHeroData — the hero's role-specific data contract. Pure, reads only
+            //     already-loaded $auction->get meta, adds no query, computes no figure, and
+            //     suppresses the retired "Bidding Period" listing-type label so a legacy row
+            //     cannot reintroduce that vocabulary through new markup.
+            //
+            //   No controller, route, model, migration or schema change was needed: the views
+            //   already had every value the hero shows.
+            'resources/views/hire_agent/framework/styles.blade.php',
+            'resources/views/components/hire-agent/hero.blade.php',
+            'resources/views/components/hire-agent/info-card.blade.php',
+            'resources/views/components/hire-agent/field.blade.php',
+            'resources/views/components/hire-agent/flash.blade.php',
+            'app/Support/HireAgent/HireAgentHeroData.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
