@@ -55,7 +55,6 @@
 @push('styles')
 {{-- Hire Agent Listing Detail Framework (Milestone 4): the thirty rules that were
      byte-identical across all four detail views now live in one place. --}}
-@include('hire_agent.framework.styles')
 
 {{-- Residual Landlord-only rules. These LOOK shared but are not: they differ
      between roles in colour, !important or comment text, so moving them into the shared
@@ -138,18 +137,10 @@
 @php
 $auth_id = auth()->user() ? auth()->user()->id : 0;
 @endphp
-{{-- Hire Agent framework: the identical success/error blocks all four views carried. --}}
-    <x-hire-agent.flash />
-    {{-- Hire Agent Listing Detail Framework (Milestone 4): shared hero. Role-specific
-         values come from HireAgentHeroData; no countdown, no competing-proposal data. --}}
-    <div class="container">
-        <x-hire-agent.hero role="landlord" :auction="$auction" />
-    </div>
-
-
-<div class="container listingDescription">
-    <div class="row">
-        <div class="col-sm-12 col-md-8 col-lg-8 leftCol">
+    {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
+         wrappers now come from the shared shell. Only role-specific content lives here. --}}
+    <x-hire-agent.detail-shell role="landlord" :auction="$auction">
+        <x-slot name="main">
             <div class="card description">
                 <div class="card-header">
                     <h4 style="margin-left: 15px; margin-top: 10px;">Listing Details: </h4>
@@ -1961,8 +1952,11 @@ $auser = $auctionUser::find(@$auction->user_id);
 
     </div>
 </div>
-</div>
-<div class="col-sm-12 col-md-4 col-lg-4 rightCol">
+        </x-slot>
+
+        {{-- Sidebar body untouched by 5A.3; the shell supplies only the column wrapper.
+             Extracting it is Milestone 5B. --}}
+        <x-slot name="sidebar">
     <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
     @if(@$auction->listing_id)
     <div class="mb-2">
@@ -3582,9 +3576,8 @@ $auser = $auctionUser::find(@$auction->user_id);
         </div>
     </div>
 </div>
-</div>
-</div>
-</div>
+        </x-slot>
+    </x-hire-agent.detail-shell>
 {{-- Milestone 5A: an accidental trailing <hr> stood here, as the last node on the page with
      nothing after it to separate. Removed. Buyer has a superficially similar trailing <hr>
      which is NOT accidental — it divides the listing from the "Recommended For You" section

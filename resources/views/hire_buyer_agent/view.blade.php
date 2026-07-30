@@ -34,7 +34,6 @@
 @push('styles')
 {{-- Hire Agent Listing Detail Framework (Milestone 4): the thirty rules that were
      byte-identical across all four detail views now live in one place. --}}
-@include('hire_agent.framework.styles')
 
 {{-- Residual Buyer-only rules. These LOOK shared but are not: they differ
      between roles in colour, !important or comment text, so moving them into the shared
@@ -137,20 +136,10 @@
     @php
         $auth_id = auth()->user() ? auth()->user()->id : 0;
     @endphp
-    {{-- Hire Agent framework: the identical success/error blocks all four views carried. --}}
-    <x-hire-agent.flash />
-    <!-- Gallery Start Here  -->
-    {{-- Hire Agent Listing Detail Framework (Milestone 4): shared hero. Role-specific
-         values come from HireAgentHeroData; no countdown, no competing-proposal data. --}}
-    <div class="container">
-        <x-hire-agent.hero role="buyer" :auction="$auction" />
-    </div>
-
-
-
-        <div class="container listingDescription">
-        <div class="row">
-            <div class="col-sm-12 col-md-8 col-lg-8 leftCol">
+    {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
+         wrappers now come from the shared shell. Only role-specific content lives here. --}}
+    <x-hire-agent.detail-shell role="buyer" :auction="$auction">
+        <x-slot name="main">
                 <div class="card description">
                     <div class="card-header section-header">
                         <h4 class="section-title">Listing Details:</h4>
@@ -1973,9 +1962,11 @@
                     </div>
                 </div>
                 @endif
-            </div>
+        </x-slot>
 
-            <div class="col-sm-12 col-md-4 col-lg-4 rightCol">
+        {{-- Sidebar body untouched by 5A.3; the shell supplies only the column wrapper.
+             Extracting it is Milestone 5B. --}}
+        <x-slot name="sidebar">
                 <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
                 @if(@$auction->listing_id)
                 <div class="mb-2">
@@ -3785,8 +3776,11 @@
                         </div>
                     </div>
                 </div>
-            </div>{{-- end rightCol sidebar --}}
-        </div>{{-- end main row --}}
+        </x-slot>
+
+        {{-- Buyer alone renders content inside the container but after the grid: the share
+             block 749ace982 established below the two columns. It stays exactly there. --}}
+        <x-slot name="afterGrid">
         <button class="btn w-100 mt-0">
             <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
         </button>
@@ -3954,7 +3948,8 @@
                 </div>
             </div>
         </div>
-    </div>
+        </x-slot>
+    </x-hire-agent.detail-shell>
 @endsection
 
 @push('scripts')

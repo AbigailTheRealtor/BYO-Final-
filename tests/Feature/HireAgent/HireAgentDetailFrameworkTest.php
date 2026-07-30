@@ -141,30 +141,43 @@ class HireAgentDetailFrameworkTest extends TestCase
     // ── 1. all four adopt the framework ──────────────────────────────────────
 
     /**
-     * Source-level: each view must pull the shared stylesheet and the shared flash component
-     * rather than carrying its own copy. Asserted on source because "the CSS is shared" is a
-     * structural fact that no rendered-HTML probe can distinguish from a lucky duplicate.
+     * Source-level: each view must obtain the shared stylesheet, flash block and hero from the
+     * framework rather than carrying its own copy. Asserted on source because "this is shared"
+     * is a structural fact no rendered-HTML probe can distinguish from a lucky duplicate.
+     *
+     * Each piece may arrive one of two ways, and both are legitimate. Milestone 4 had every view
+     * pull them directly. Milestone 5A.3 introduced the detail shell, which supplies all three,
+     * so a converted view names the shell instead and must NOT also include them — that would
+     * render the stylesheet twice and the hero twice. The assertion is therefore "exactly one of
+     * the two routes", not "contains the direct include".
      */
     public function test_all_four_views_include_the_shared_framework(): void
     {
         foreach (self::VIEWS as $role => $rel) {
             $src = file_get_contents(base_path($rel));
 
-            $this->assertStringContainsString(
-                "@include('hire_agent.framework.styles')",
-                $src,
-                "The {$role} detail view must use the shared framework stylesheet."
-            );
-            $this->assertStringContainsString(
-                '<x-hire-agent.flash />',
-                $src,
-                "The {$role} detail view must use the shared flash component."
-            );
-            $this->assertStringContainsString(
-                '<x-hire-agent.hero',
-                $src,
-                "The {$role} detail view must render the shared hero."
-            );
+            $usesShell = str_contains($src, '<x-hire-agent.detail-shell');
+
+            foreach ([
+                'framework stylesheet' => "@include('hire_agent.framework.styles')",
+                'flash component'      => '<x-hire-agent.flash />',
+                'hero'                 => '<x-hire-agent.hero',
+            ] as $label => $needle) {
+                if ($usesShell) {
+                    $this->assertStringNotContainsString(
+                        $needle,
+                        $src,
+                        "The {$role} view uses the detail shell, which already supplies the {$label}; "
+                        . 'pulling it in directly as well would render it twice.'
+                    );
+                } else {
+                    $this->assertStringContainsString(
+                        $needle,
+                        $src,
+                        "The {$role} detail view must use the shared {$label}."
+                    );
+                }
+            }
         }
     }
 

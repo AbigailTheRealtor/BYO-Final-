@@ -829,6 +829,20 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/components/hire-agent/field.blade.php',
             'resources/views/components/hire-agent/flash.blade.php',
             'app/Support/HireAgent/HireAgentHeroData.php',
+            // Hire Agent Listing Framework — Milestone 5A.3 (shared detail shell).
+            //   The shell the four detail views had each been carrying inline: framework styles,
+            //   flash, hero, listing container, the Bootstrap row and both column wrappers. All
+            //   four views now name it instead, so each loses its own copy of those seven
+            //   wrappers — that is the whole of the change to them.
+            //   It owns page structure only: no authorization, no user id, no route resolution,
+            //   no role branching. $role reaches the hero for label selection and a test marker;
+            //   $auction reaches the hero for its display fields. The sidebar BODY stays with
+            //   each role view — extracting that is Milestone 5B.
+            //   Buyer additionally uses the afterGrid slot to keep its share block below the
+            //   grid, the position 749ace982 established.
+            //   This entry was missing when the component was committed on its own in 5c355846b;
+            //   the guard caught it here, which is what it is for.
+            'resources/views/components/hire-agent/detail-shell.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
