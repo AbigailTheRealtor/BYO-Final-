@@ -3585,7 +3585,10 @@ $auser = $auctionUser::find(@$auction->user_id);
 </div>
 </div>
 </div>
-<hr>
+{{-- Milestone 5A: an accidental trailing <hr> stood here, as the last node on the page with
+     nothing after it to separate. Removed. Buyer has a superficially similar trailing <hr>
+     which is NOT accidental — it divides the listing from the "Recommended For You" section
+     that follows it — and is deliberately kept. --}}
 @endsection
 
 @push('scripts')
