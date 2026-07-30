@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\LandlordAgentAuction;
 use App\Models\LandlordAgentAuctionBid;
 use App\Models\LandlordAgentAuctionMeta;
+use App\Services\HireAgent\HireAgentProposalAccess;
 use Illuminate\Support\Facades\Auth;
 
 class LandlordAgentAuctionController extends Controller
@@ -538,11 +539,21 @@ class LandlordAgentAuctionController extends Controller
         }
         // Auto-transition Bidding Period listing to Pending when timer ends
         $this->autoTransitionBpToPending($auction);
+        // Milestone 2 — competing-agent proposal privacy. See the equivalent comment in
+        // SellerAgentAuctionController::viewDetail(). Restriction happens BEFORE $page_data
+        // ['bids'] is derived below, so that collection inherits the narrowing rather than
+        // re-widening it.
+        $proposalAccess = app(HireAgentProposalAccess::class);
+        $proposalAccess->restrictLoadedProposals(auth()->id(), $auction);
+
         $page_data['title'] = $auction->title;
         $page_data['counties'] = County::all();
         $page_data['id'] = $id;
         $page_data['auth_id'] = auth()->id();
         $page_data['bids'] = $auction->bids->whereNull('counter_id');
+        // Gates the owner-only empty state — a bid count is itself a disclosure.
+        $page_data['canReviewAllProposals'] = $proposalAccess->canReviewAllProposals(auth()->id(), $auction);
+
         return view('hire_landlord_agent.view', $page_data);
     }
 

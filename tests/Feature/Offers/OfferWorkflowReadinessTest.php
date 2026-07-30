@@ -669,6 +669,30 @@ class OfferWorkflowReadinessTest extends TestCase
             //   No behaviour, markup, copy, routing or data change.
             //   See docs/investigations/hire-agent-listing-framework-implementation-plan.md.
             'app/Http/Controllers/BuyerAgentAuctionController.php',
+            // Hire Agent Listing Framework — Milestone 2, first checkpoint
+            // (competing-agent proposal privacy).
+            //   New central access service: the authoritative decision on who may see which
+            //   Hire Agent proposal. Owner reviews all; a submitting agent sees only their own;
+            //   competing-proposal access defaults to deny; no administrator path is added.
+            //   The four Hire controllers narrow the loaded bid relation through it BEFORE the
+            //   view runs, so no competing data is returned and then hidden in Blade — which is
+            //   what the four detail views previously did.
+            //   The four detail views lose the competing-proposal surfaces: the "Agent N was the
+            //   last bidder" line (also mislabelled — it named the minimum brokerage bid), the
+            //   "submit your bid to view competing bids" prompt, the Bidding Period competing-bid
+            //   banner and inline CompetingBidsService block, the Buyer limited-bid modal, and
+            //   the per-card COMPETITOR SUMMARY branch. The owner-only empty state is kept.
+            //   BuyerAgentAuctionController.php and the four hire_*_agent/view.blade.php files
+            //   are already allow-listed above.
+            //   Deliberately NOT touched, pending the separate deletion checkpoint:
+            //   CompetingBidsController, CompetingBidsService, the two competing-bids routes,
+            //   tenant_agent/competing_bids.blade.php, BiddingPeriodAgentMapping and its table,
+            //   and Create Offer's offer-listing/partials/_competing-bids.blade.php.
+            //   See docs/investigations/hire-agent-listing-framework-implementation-plan.md §2.
+            'app/Services/HireAgent/HireAgentProposalAccess.php',
+            'app/Http/Controllers/SellerAgentAuctionController.php',
+            'app/Http/Controllers/LandlordAgentAuctionController.php',
+            'app/Http/Controllers/TenantAgentAuctionController.php',
         ];
 
         $unexpected = array_values(array_filter(

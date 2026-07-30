@@ -6,6 +6,7 @@ use App\Models\County;
 use App\Models\Financing;
 use App\Models\TenantAgentAuction;
 use App\Models\TenantAgentAuctionBidMeta;
+use App\Services\HireAgent\HireAgentProposalAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -294,16 +295,25 @@ class TenantAgentAuctionController extends Controller
         // Auto-transition Bidding Period listing to Pending when timer ends
         $this->autoTransitionBpToPending($auction);
 
+        // Milestone 2 — competing-agent proposal privacy. See the equivalent comment in
+        // SellerAgentAuctionController::viewDetail(). The authorized subset is decided here,
+        // server-side; the view renders only what survived.
+        $proposalAccess = app(HireAgentProposalAccess::class);
+        $proposalAccess->restrictLoadedProposals(auth()->id(), $auction);
+
         $page_data['title'] = $auction->address ?? 'Listing Details';
         $page_data['counties'] = County::all();
         $page_data['id'] = $id;
-        
-        // Get the last bidder (most recent bid) for display
-        $page_data['lowest_bidder'] = $auction->bids->sortByDesc('created_at')->first();
-        
+
+        // `lowest_bidder` was removed here: it fed the "Agent N was the last bidder" line,
+        // which disclosed a competitor AND mislabelled them (it was the minimum brokerage
+        // bid, not the most recent). The view shadowed this value anyway, so nothing read it.
+
         // Set auth_id safely for view permission checks
         $page_data['auth_id'] = auth()->id();
-        
+        // Gates the owner-only empty state — a bid count is itself a disclosure.
+        $page_data['canReviewAllProposals'] = $proposalAccess->canReviewAllProposals(auth()->id(), $auction);
+
         return view('hire_tenant_agent.view', $page_data);
     }
 

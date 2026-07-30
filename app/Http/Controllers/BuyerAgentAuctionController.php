@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
 use App\Models\CounterTerm;
+use App\Services\HireAgent\HireAgentProposalAccess;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -447,12 +448,21 @@ class BuyerAgentAuctionController extends Controller
         // Auto-transition Bidding Period listing to Pending when timer ends
         $this->autoTransitionBpToPending($auction);
 
+        // Milestone 2 — competing-agent proposal privacy. See the equivalent comment in
+        // SellerAgentAuctionController::viewDetail(). The authorized subset is decided here,
+        // server-side; the view renders only what survived.
+        $proposalAccess = app(HireAgentProposalAccess::class);
+        $proposalAccess->restrictLoadedProposals(auth()->id(), $auction);
+
         $page_data['title'] = $auction->address;
         $counties = County::all();
         $page_data['id'] = $id;
         $data = $auction;
         $counterTerms = CounterTerm::where('buyer_auction_id', $id)->first();
-        return view('hire_buyer_agent.view', compact('counties', 'auction', 'data', 'counterTerms'));
+        // Gates the owner-only empty state — a bid count is itself a disclosure.
+        $canReviewAllProposals = $proposalAccess->canReviewAllProposals(auth()->id(), $auction);
+
+        return view('hire_buyer_agent.view', compact('counties', 'auction', 'data', 'counterTerms', 'canReviewAllProposals'));
     }
 
     public function buyerAgentAuctionsAdmin(Request $request)

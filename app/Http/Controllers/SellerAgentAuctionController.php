@@ -25,6 +25,7 @@ use App\Models\SellerAgentAuctionMeta;
 use App\Models\AgentDefaultProfile;
 use App\Models\AcceptedBidSummary;
 use App\Services\AcceptedBidSummaryService;
+use App\Services\HireAgent\HireAgentProposalAccess;
 use App\Services\SellerAcceptedBidSummaryService;
 use App\Notifications\BidAcceptedNotification;
 use App\Notifications\BidRejectedNotification;
@@ -481,11 +482,24 @@ class SellerAgentAuctionController extends Controller
         // Auto-transition Bidding Period listing to Pending when timer ends
         $this->autoTransitionBpToPending($auction);
 
-        $page_data['title']         = $auction->address ?? 'Listing Details';
-        $page_data['counties']      = County::all();
-        $page_data['id']            = $id;
-        $page_data['auth_id']       = auth()->id();
-        $page_data['lowest_bidder'] = $auction->bids->sortByDesc('created_at')->first();
+        // Milestone 2 — competing-agent proposal privacy. Narrow the loaded bid relation to
+        // the proposals this viewer is authorized to see BEFORE the view runs, so the view
+        // cannot disclose a competitor's proposal through any markup path. Owner keeps the
+        // full set (review / compare / counter / accept / reject); an agent keeps their own
+        // bid only; everyone else gets nothing.
+        $proposalAccess = app(HireAgentProposalAccess::class);
+        $proposalAccess->restrictLoadedProposals(auth()->id(), $auction);
+
+        $page_data['title']    = $auction->address ?? 'Listing Details';
+        $page_data['counties'] = County::all();
+        $page_data['id']       = $id;
+        $page_data['auth_id']  = auth()->id();
+        // Gates the owner-only empty state. A bid count is itself a disclosure, so "No agents
+        // have submitted a bid yet." is owner-only rather than public.
+        $page_data['canReviewAllProposals'] = $proposalAccess->canReviewAllProposals(auth()->id(), $auction);
+        // `lowest_bidder` was removed here: it fed the "Agent N was the last bidder" line,
+        // which disclosed a competitor AND mislabelled them (it was the minimum brokerage
+        // bid, not the most recent). The views shadowed this value anyway, so nothing read it.
 
         return view('hire_seller_agent.view', compact('auction', 'data') + $page_data);
     }

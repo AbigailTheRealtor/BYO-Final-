@@ -2679,10 +2679,14 @@
 
     {{-- 💰 Bid Info --}}
     @php
-    $lowest_bid_price = @$auction->bids->min('brokerage') ?? @$auction->get->concession;
-    $lowest_bid_price =
-    $lowest_bid_price < @$auction->get->concession ? $lowest_bid_price : @$auction->get->concession;
-        $lowest_bidder = @$auction->bids->where('brokerage', $lowest_bid_price)->first();
+        // Milestone 2 — competing-agent proposal privacy.
+        // $lowest_bid_price / $lowest_bidder were removed. They existed only to render
+        // "Agent N was the last bidder", which disclosed a competing agent and was mislabelled
+        // besides: it resolved the MINIMUM brokerage bid while calling that agent the LAST
+        // bidder. Not restored in any form.
+        // $auction->bids is already narrowed to this viewer's authorized proposals by
+        // HireAgentProposalAccess in SellerAgentAuctionController::viewDetail(), so $my_bid
+        // still resolves for the viewer's own bid and can never resolve a competitor's.
         $my_bid = @$auction->bids->where('user_id', $auth_id)->first();
         @endphp
 
@@ -2806,110 +2810,32 @@
                     $agentNumberMap[$orderedBid->user_id] = count($agentNumberMap) + 1;
                 }
             }
-            $lastBidderNumber = null;
-            if ($lowest_bidder) {
-                $lastBidderNumber = $agentNumberMap[$lowest_bidder->user_id] ?? null;
-            }
             $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
             $isAgentViewer  = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
-            // Traditional: agents cannot see other agents' bid info
-            $canSeeBidSummary = $isListingOwner || !$isAgentViewer || $isBiddingPeriodListing || $isTraditionalListing;
-            $otherBidsExist   = $auction->bids->where('user_id', '!=', $auth_id)->count() > 0;
         @endphp
 
-        {{-- Last Bidder Info (hidden for Bidding Period to avoid timing hints to agents) --}}
-        @if ($canSeeBidSummary && !($isBiddingPeriodListing && $isAgentViewer && !$isListingOwner))
-            @if ($lowest_bidder && $lastBidderNumber)
-            <p class="mb-3"><b>Agent {{ $lastBidderNumber }}</b> was the last bidder.</p>
-            @else
-            <p class="mb-3">No agents have submitted a bid yet.</p>
-            @endif
-        @endif
+        {{--
+            Milestone 2 — competing-agent proposal privacy. Removed from this position:
 
-        {{-- Agent Visibility Info Messages (Bidding Period only) --}}
-        @if ($isAgentViewer && !$isListingOwner)
-            @if ($isBiddingPeriodListing && !$isExpired && !$userHasBid)
-            <div class="alert alert-warning small mb-3 py-2">
-                <i class="fa-solid fa-circle-info me-1"></i> <strong>Bidding Period:</strong> Submit your bid to view competing bids (Offered Services and Terms Match summaries only). Agent identities and compensation details remain confidential.
-            </div>
-            @elseif ($isBiddingPeriodListing && !$isExpired && $userHasBid && $otherBidsExist)
-            <div class="alert alert-info small mb-3 py-2">
-                <i class="fa-solid fa-eye me-1"></i> <strong>Bidding Period:</strong> Competing bids are visible below (Offered Services and Terms Match summaries only). Agent identities and compensation details remain confidential.
-            </div>
-            {{-- Competing Bids Display for Bidding Period --}}
-            @php
-                $competingBidsService = app(\App\Services\CompetingBidsService::class);
-                $competingBids = $competingBidsService->getCompetingBids($auction->id, $auth_id);
-            @endphp
-            @if(count($competingBids) > 0)
-            <div class="mb-4">
-                <h6 class="fw-bold mb-3" style="color: #049399;"><i class="fa-solid fa-users me-2"></i>Competing Bids ({{ count($competingBids) }})</h6>
-                @foreach($competingBids as $compBid)
-                <div class="card mb-3" style="border-radius: 10px; border: 1px solid #e0e0e0;">
-                    <div class="card-header d-flex justify-content-between align-items-center" style="background: #f8f9fa; border-bottom: 1px solid #e0e0e0; border-radius: 10px 10px 0 0; padding: 12px 16px;">
-                        <span class="fw-bold" style="font-family: 'Lufga', sans-serif;">{{ $compBid['anonymous_label'] }}</span>
-                        @php
-                            $cOverallScore = $compBid['match_score']['overall_percent'];
-                            $cScoreColor   = $cOverallScore >= 80 ? '#28a745' : ($cOverallScore >= 50 ? '#ffc107' : '#dc3545');
-                        @endphp
-                        <span class="badge" style="background: {{ $cScoreColor }}; color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem;">
-                            {{ $cOverallScore }}% Match
-                        </span>
-                    </div>
-                    <div class="card-body" style="padding: 16px;">
-                        @php
-                            $cSvcTotal   = $compBid['match_score']['services_baseline_total'] ?? $compBid['match_score']['services_total'] ?? 0;
-                            $cSvcMatched = $compBid['match_score']['services_matched_count'] ?? $compBid['match_score']['services_matched'] ?? 0;
-                            $cSvcExtra   = $compBid['match_score']['services_extra_count'] ?? 0;
-                            $cSvcMissing = $compBid['match_score']['services_missing_count'] ?? 0;
-                            $cTrmTotal   = $compBid['match_score']['broker_comp_total'] ?? 0;
-                            $cTrmMatched = $compBid['match_score']['broker_comp_matched'] ?? 0;
-                            $cTrmChanged = $compBid['match_score']['terms_changed_count'] ?? 0;
-                            $cTrmAdded   = $compBid['match_score']['terms_added_count'] ?? 0;
-                            $cTrmMissing = max(0, $cTrmTotal - $cTrmMatched - $cTrmChanged);
-                        @endphp
-                        <div class="row">
-                            {{-- Offered Services Row --}}
-                            <div class="col-12 mb-2">
-                                <span class="fw-semibold small" style="color: #049399;">Offered Services:</span>
-                                <span class="small ms-1">
-                                    @if($cSvcTotal > 0)
-                                        <span style="color: #28a745; font-weight: 600;">{{ $cSvcMatched }}/{{ $cSvcTotal }} matched</span>
-                                        @if($cSvcExtra > 0) <span class="text-muted">&bull; {{ $cSvcExtra }} extra</span>@endif
-                                        @if($cSvcMissing > 0) <span style="color: #dc3545;">&bull; {{ $cSvcMissing }} missing</span>@endif
-                                    @else
-                                        <span class="text-muted">No services requested</span>
-                                    @endif
-                                </span>
-                                @if($cSvcExtra > 0)
-                                <div class="mt-1" style="font-size: 0.75rem; color: #6c757d; font-style: italic; margin-left: 0.25rem;">&#11088; Extra Value Added &mdash; does not affect match score</div>
-                                @endif
-                            </div>
-                            {{-- Terms Match Row --}}
-                            <div class="col-12 mb-2">
-                                <span class="fw-semibold small" style="color: #049399;">Terms Match:</span>
-                                <span class="small ms-1">
-                                    @if($cTrmTotal > 0)
-                                        <span style="color: #28a745; font-weight: 600;">{{ $cTrmMatched }}/{{ $cTrmTotal }} matched</span>
-                                        @if($cTrmChanged > 0) <span style="color: #dc3545;">&bull; {{ $cTrmChanged }} changed</span>@endif
-                                        @if($cTrmAdded > 0) <span class="text-muted">&bull; {{ $cTrmAdded }} added</span>@endif
-                                        @if($cTrmMissing > 0) <span style="color: #dc3545;">&bull; {{ $cTrmMissing }} missing</span>@endif
-                                    @else
-                                        <span class="text-muted">No terms provided</span>
-                                    @endif
-                                </span>
-                                <div class="mt-1" style="font-size: 0.75rem; color: #6c757d; font-style: italic; margin-left: 0.25rem;">&mdash; affects match score</div>
-                            </div>
-                        </div>
-                        <div class="text-end mt-2">
-                            <small class="text-muted fst-italic">Compared to Your Bid &mdash; Agent identities and compensation details remain confidential.</small>
-                        </div>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-            @endif
-            @endif
+              • "Agent N was the last bidder."  — competing identity + activity + order, and
+                mislabelled (it named the minimum brokerage bid). Not restored in any form.
+              • The "Submit your bid to view competing bids" prompt — transparent-bidding
+                framing, and an existence disclosure even before any bid was shown.
+              • The "Competing bids are visible below" banner and the whole inline
+                CompetingBidsService block that followed it — competing counts, anonymous
+                labels, match summaries and per-bid score breakdowns.
+              • $lastBidderNumber / $canSeeBidSummary / $otherBidsExist — the variables that
+                existed only to drive the above.
+
+            CompetingBidsService itself is untouched and still registered; only this view's
+            call into it is gone. Its deletion belongs to the separately reviewed deletion
+            checkpoint, not here.
+
+            The owner-only empty state is retained below, gated on the server-side decision
+            rather than on a Blade-local guess, because a bid count is itself a disclosure.
+        --}}
+        @if (($canReviewAllProposals ?? false) && $auction->bids->isEmpty())
+            <p class="mb-3">No agents have submitted a bid yet.</p>
         @endif
 
         <div class="card higestBider" id="bids-section">
@@ -2943,15 +2869,17 @@
                             $isBidOwner          = (data_get($bid, 'user_id') == $auth_id);
                             $bidAccepted         = data_get($bid, 'accepted');
                             $canEditWithdraw     = $isBidOwner && !$isExpired && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected';
-                            $isOtherAgentsBid    = !$isListingOwner && !$isBidOwner;
+                            $isAgent = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
 
-                            // Seller Bid Visibility Logic (matches Tenant pattern):
-                            // - Traditional: Agents see all bid cards but can only open View Full Bid on their own bid
-                            // - Bidding Period: Agents can see anonymized bids ONLY if they submitted a bid first
-                            // - Listing Owner: Always sees all bids
-                            $isAgent    = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
-                            $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid) || ($isTraditionalListing && $isAgent);
-                            if (!$canViewBid && $isAgent) { continue; }
+                            // Milestone 2 — competing-agent proposal privacy.
+                            // $auction->bids was narrowed by HireAgentProposalAccess in the
+                            // controller, so this loop can only ever iterate the owner's full
+                            // set or a single agent's own bid. The guard below is deliberate
+                            // defence-in-depth with the opposite default to the one it
+                            // replaced: skip anything that is not the owner's to review or the
+                            // viewer's own, rather than admitting competitors under Traditional
+                            // or post-bid Bidding Period conditions.
+                            if (! $isListingOwner && ! $isBidOwner) { continue; }
 
                             // Build Seller purchase fee display for card body summary
                             $sellerCommStructure        = data_get($bid, 'get.commission_structure', 'Not specified');
@@ -3150,7 +3078,10 @@
 
                                 <!-- B2) Match Score Summary (Compact Display on Bid Card) -->
                                 @php
-                                    $showMatchScoreOnCard = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgentViewer && $userHasBid);
+                                    // Milestone 2: the third disjunct — Bidding Period + any
+                                    // agent who had bid — showed a competitor's match score.
+                                    // Owner review and the bidder's own score only.
+                                    $showMatchScoreOnCard = $isListingOwner || $isBidOwner;
                                 @endphp
                                 @if ($showMatchScoreOnCard && $hasAnyBaseline)
                                 <div class="match-score-summary mb-3 p-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.88rem;">
@@ -3302,65 +3233,17 @@
                                 </div>
                                 @endif
 
-                                @else
-                                {{-- ===== COMPETITOR SUMMARY (other agent viewing another agent's bid) ===== --}}
-                                <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
-                                <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
-                                    <span style="font-weight: 600;">Offered Services:</span>
-                                    <span style="color: #28a745; font-weight: 600;">{{ $servicesTotal > 0 ? $servicesMatched.'/'.$servicesTotal : 'No services requested' }}</span>{{ $servicesTotal > 0 ? ' matched' : '' }}
-                                </p>
-                                <div class="mt-1" style="font-size: 0.78rem; color: #6c757d; font-style: italic;">&mdash; affects match score</div>
-                                @if ($hasAnyBaseline && $brokerTotal > 0)
-                                <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
-                                    <span style="font-weight: 600;">Terms Match:</span>
-                                    <span style="color: #28a745; font-weight: 600;">{{ $brokerMatched }}/{{ $brokerTotal }} matched</span>
-                                </p>
-                                <div class="mt-1" style="font-size: 0.78rem; color: #6c757d; font-style: italic;">&mdash; affects match score</div>
                                 @endif
-                                <hr style="margin: 15px 0; border-color: #e0e0e0;">
-                                @if ($hasAnyBaseline)
-                                <div class="match-score-summary mb-3 p-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.88rem;">
-                                    <div class="mb-2">
-                                        <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
-                                        </span>
-                                    </div>
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-6">
-                                            <div class="p-2 rounded" style="background: #fff; border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
-                                                    <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $totalScore }}%</span>
-                                                </div>
-                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
-                                                    <div class="col-6" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Services {{ $originalScore['services_match_percent'] }}%</div>
-                                                    <div class="col-6" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        @if($showDualScore && $originalScore && $latestCounterScore)
-                                        @php $lcColorSell = $getScoreColor($latestCounterScore['overall_percent']); @endphp
-                                        <div class="col-6">
-                                            <div class="p-2 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe; border-top: 3px solid {{ $lcColorSell }};">
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <span class="small fw-semibold" style="color: #1a3a5c;">Counter Match</span>
-                                                    <span class="badge" style="background: {{ $lcColorSell }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $latestCounterScore['overall_percent'] }}%</span>
-                                                </div>
-                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
-                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['services_match_percent']) }};">Services {{ $latestCounterScore['services_match_percent'] }}%</div>
-                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['terms_match_percent']) }};">Terms {{ $latestCounterScore['terms_match_percent'] }}%</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        @endif
-                                    </div>
-                                    <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
-                                        <i class="fa-solid fa-circle-info me-1"></i>Added services or terms do not increase either score.
-                                    </div>
-                                </div>
-                                @endif
-                                @endif
-                                {{-- End 3-branch card body --}}
+                                {{--
+                                    Milestone 2 — the COMPETITOR SUMMARY @else branch was removed
+                                    here. It rendered a competing agent's Offered Services and
+                                    Terms Match counts plus a full Original/Counter match-score
+                                    breakdown to any other agent viewing that bid. With the bid
+                                    set now narrowed server-side the branch was already
+                                    unreachable, but an unreachable competitor-disclosure branch
+                                    is exactly the fragility this milestone exists to remove: the
+                                    next person to widen the loop would silently re-enable it.
+                                --}}
 
                             </div>
                             </div> {{-- End collapse div --}}
