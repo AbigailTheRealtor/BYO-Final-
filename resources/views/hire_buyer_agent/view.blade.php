@@ -1932,7 +1932,13 @@
 
                         </div>
                     </div>
-                </div>
+                {{-- Milestone 5A.2-B: a third </div> closed .leftCol here, before the review card
+                     below. That made "card review" a direct child of the .row despite having no
+                     col-* class, and left the row's own closer to land before .rightCol — so the
+                     sidebar rendered outside the grid row entirely. Dropping this closer keeps
+                     .leftCol open through the review card; the existing closer further down then
+                     ends .leftCol, and .rightCol becomes its sibling inside the row, matching
+                     Seller and Landlord. --}}
                 @inject('auctionUser', 'App\Models\User')
                 @php
                     $auser = $auctionUser::find(@$auction->user_id);

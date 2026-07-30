@@ -52,22 +52,21 @@ class HireAgentShellStructureTest extends TestCase
      * four pages and the reason a shell is not a drop-in:
      *
      *   seller   1  — container > row > rightCol       (the intended Bootstrap grid)
-     *   buyer    0  — container > rightCol             (no .row wrapper at all)
+     *   buyer    1  — container > row > rightCol       (repaired in Milestone 5A.2-B)
      *   landlord 1  — container > row > rightCol       (the intended Bootstrap grid)
-     *   tenant   2  — container > row > ? > rightCol   (one extra wrapper level)
+     *   tenant   2  — container > row > leftCol > rightCol  (STILL BROKEN — 5A.2-T)
      *
-     * Bootstrap's col-* classes rely on the negative margins and gutters a .row supplies, so
-     * Buyer's sidebar is currently laid out differently from Seller's and Landlord's, and
-     * Tenant's sits a level deeper. Imposing one grid — which is what a shared shell does — would
-     * therefore CHANGE rendered layout for Buyer and Tenant rather than merely relocating markup.
+     * Bootstrap's col-* classes rely on the negative margins and gutters a .row supplies, so a
+     * sidebar outside the row is laid out differently from one inside it. Buyer's was outside the
+     * row entirely until 5A.2-B; Tenant's is still nested inside the MAIN column, which is why it
+     * measures 2 rather than 1 and why its repair is a separate checkpoint.
      *
-     * Encoding the current values means a future shell change has to update this constant
-     * deliberately, with someone looking at the result, instead of discovering the shift in
-     * production.
+     * Encoding these means a change here has to be made deliberately, with someone looking at the
+     * result, instead of being discovered in production.
      */
     private const RIGHTCOL_DEPTH_BELOW_CONTAINER = [
         'seller'   => 1,
-        'buyer'    => 0,
+        'buyer'    => 1,
         'landlord' => 1,
         'tenant'   => 2,
     ];
