@@ -7,16 +7,25 @@
 **Branch:** `architecture/location-dna-g1-domain-core`
 **Base:** `73f32fe62` — `phase-2-spatial/ui-repair-maplibre-basemap` after the G0.1 fast-forward
 **Audit baseline:** every measured claim below re-verified at `73f32fe62`
+**Amended:** `cf53249ac` — findings §0 F-G1-3 … F-G1-6, §5.2, §6.2, §12 and §14 updated with what the
+G1a characterisation suites **proved** rather than predicted. See §17 for the amendment record.
 
 > This document decides nothing. It states what G1 requires, what the codebase actually contains, and
 > which owner decisions block implementation. §17 G1 names four owner decisions and a characterisation
-> prerequisite; both are open.
+> prerequisite; the decisions remain open, and the prerequisite is **partially** discharged — see §6.2.
 
 ---
 
-## 0. Two findings that change G1's shape
+## 0. Findings that change G1's shape
 
-Before the section-by-section material, two things the governing document does not currently say.
+Seven things the governing document does not currently say. **F-G1-1** and **F-G1-2** were established by
+audit when this report was authored. **F-G1-3** through **F-G1-7** were proven behaviourally by the G1a
+characterisation suites (`cf53249ac`) and are recorded here because they change the consolidation surface,
+not merely the description of it.
+
+Each carries the name of the test that proves it. Where a first prediction turned out to be wrong, the
+correction is kept rather than quietly replaced — F-G1-6 is the example, and the corrected version
+relocates the risk it describes.
 
 ### F-G1-1 · The "four byte-identical inline copies" claim is false, and the direction of consolidation is inverted
 
@@ -39,10 +48,17 @@ documented as load-time-only so a clear performed in the widget is not restored 
 trait is the *least* correct of the five for `cities`. Consolidating onto it would reintroduce the
 mirror-resurrection bug in the two Tenant Offer workflows, which is a data-loss regression in live
 workflows. The consolidation target must be the divergent behaviour, promoted into the single
-implementation, with the trait's four `empty()` sites converted as §16.3 requires.
+implementation, with the trait's `empty()` sites converted as §16.3 requires — **five sites, not four;
+see F-G1-3.**
 
 This should be corrected in v1.2 §4.2 before implementation, so the plan of record does not describe
 the copies as interchangeable.
+
+**Now proven, not inferred.** When this finding was first written it rested on reading the divergence
+comments. `G1aTraitPresenceSemanticsCharacterisationTest` (commit `cf53249ac`) exercises the trait
+behaviourally through real EAV storage and confirms it: with a blob carrying `"cities": []` and a
+populated legacy mirror, the trait returns the mirror's cities. The resurrection is real, not a
+code-reading inference.
 
 ### F-G1-2 · The consumer count is now 43, not 42
 
@@ -51,6 +67,103 @@ the copies as interchangeable.
 The audit obligation in §5.3 and §16.3 is therefore 43 consumers, and the new one is a *read-only
 projection* whose tolerance requirement is different in kind from the rest — it must tolerate omitted
 keys **and** must never be fed back into canonical state (its own governance block forbids it).
+
+### F-G1-3 · There are FIVE `empty()`-class sites in the trait, not four
+
+§4.2 names four: lines 48, 71, 77, 103. A fifth produces the identical defect and is not named.
+
+**Line 100**, in `hydrateDiscreteLocationFromBlob()`, guards the `state` write-back with
+`trim((string) ($ldna['state'] ?? '')) !== ''` rather than `empty()`. Because the guard is spelled
+differently it escaped §4.2's list, but its effect is exactly line 103's: a cleared `state` never
+refreshes the discrete prop, so `saveSearchAreas()` writes the **previous** value into the `state` meta
+key. Proven by `test_site100_clearing_state_writes_a_stale_discrete_mirror`.
+
+**Consequence.** A consolidation that converts the four named sites and stops leaves the defect
+half-fixed for `state`. **G1f must convert five sites.** v1.2 §4.2's count needs correcting.
+
+### F-G1-4 · One save records a cleared dimension three different ways — so consolidation is not mechanical
+
+This is the most consequential thing G1a proved, and it was not visible from reading §4.2.
+
+Clearing `cities`, `counties` and `state` together in a single `saveSearchAreas()` call produces three
+different outcomes in the persisted mirrors:
+
+| Dimension | Mirror write | Honours the clear? | Why |
+|---|---|---|---|
+| `cities` | line 130, direct `$ldnaDecoded['cities'] ?? []` | **Yes** — mirrors as `[]` | no non-empty guard on the path |
+| `counties` | line 123, from `$this->counties` via line 103 | **No** — keeps the previous value | guarded hydration skips empty blob values |
+| `state` | line 126, from `$this->state` via line 100 | **No** — keeps the previous value | same, via the `trim(…) !== ''` spelling |
+
+Proven by `test_one_save_records_cleared_dimensions_three_different_ways`.
+
+**Consequence for the consolidation surface.** The three dimensions **do not share a code path today**,
+so G1f cannot be a mechanical `empty()` → `array_key_exists()` substitution across five call sites. The
+work is to route all three dimensions through one presence-honouring writer, and the mirror-write lines
+(123, 126, 130) are part of the consolidation surface — not just the five read guards. §12's G1f row and
+D-G1-5 are amended accordingly.
+
+A related trap, proven by `test_full_clear_cycle_survives_only_because_the_cities_mirror_is_also_cleared`:
+the site-48 resurrection is **latent, not constant**. Line 130 clears the `cities` mirror in the same
+save, so a full clear cycle survives and the load-side defect stays masked. It bites only when the mirror
+is stale. A consolidation that "fixed" site 48 while regressing line 130 would convert a latent defect
+into a constant one, and that cycle test is what would catch it.
+
+### F-G1-5 · `schema_version` is inert — S1 and S2 are indistinguishable, and an unknown version is not refused
+
+§5.4's interpretation mode does not exist in any form on this path. Proven by two tests:
+
+- A record stamped `schema_version: 2` loads **identically** to one with no stamp
+  (`test_s2_schema_version_is_ignored_and_behaves_identically_to_s1`). The stamp round-trips intact, so
+  the lazy upgrade §5.5 describes has a clean starting point — but nothing interprets it.
+- A record stamped `99` is read **and rewritten** without refusal
+  (`test_s2_unknown_future_schema_version_is_read_and_written_without_refusal`). §5.5 requires refuse-to-
+  interpret, fail-loudly, read-only. This is precisely the "guessing risks recording a clear that was
+  never intended" hazard L5 names.
+
+Both are asserted rather than described, so they fail the moment G1c makes the hydrator honour the field
+— which is when G1c needs to be told its new path is live.
+
+### F-G1-6 · A corrupt blob diverges from its mirrors rather than destroying data
+
+§5.4 S3 requires a corrupt blob to surface an error. It does not: `json_decode` returns null, `?? []`
+absorbs it, and the load completes as though nothing was authored.
+
+**The first draft of this report predicted that one save then destroys the corrupt bytes. That prediction
+was wrong and the test failed.** `loadSearchAreas()` assigns the **raw** string to
+`location_dna_preferences_json` (line 65), not the decoded array, and `saveSearchAreas()` persists that
+raw string verbatim — so the corrupt bytes survive a load/save round trip intact and stay forensically
+recoverable.
+
+What degrades instead is the derived state: the decode yielded `[]`, so the `cities` mirror is rewritten
+to `[]` in the same save while the blob still holds data. **Blob and mirror silently disagree.** That is
+a divergence, not a deletion, and it relocates the S3 risk from data loss to consumer inconsistency —
+every consumer of the discrete key sees an empty record while the authoritative bytes say otherwise.
+Recorded because the corrected finding changes what G1c's error path must protect.
+
+Two smaller shape facts fall out of the same fixtures. On a record with no blob,
+`location_dna_preferences_json` holds boolean `false`, not `''` — `??` catches only null, and a consumer
+type-hinting `string` breaks on it. And present-but-empty **is** faithfully distinguishable in storage
+(`test_s4_present_but_empty_survives_storage_as_a_distinct_state`): the substrate is sound, and the
+§5.2 violation lives entirely in the readers, not the column. G1c does not need a storage change.
+
+### F-G1-7 · The server has no defence against an unmounted editor, and a no-op save can destroy a legacy mirror
+
+Two proven behaviours that together form the strongest available argument for G1's server-authoritative
+patch merging:
+
+- **An unmounted editor destroys all saved geometry.** When the bridge delivers an empty string the
+  server writes it straight over the authoritative blob — every polygon, radius search, city, county and
+  note gone in one save, mirror emptied alongside
+  (`test_unmounted_editor_empty_payload_destroys_all_saved_geometry`). There is no parseability check, no
+  comparison against stored state, and no way to tell "the user cleared everything" from "the editor
+  never loaded" — the two cases L5 says must never be conflated
+  (`test_unmounted_editor_and_deliberate_clear_are_indistinguishable_to_consumers`). **The G0 guard is
+  the only defence and it is entirely client-side JavaScript.**
+- **A no-op save on a legacy record destroys the `cities` mirror.** Loading a mirror-only record and
+  saving with no user edit rewrites the discrete keys from a blob that never contained them: the prefill
+  held the recovered values, the persisted payload never did, and `cities` is written as `[]`
+  (`test_no_op_save_on_a_legacy_record_destroys_the_cities_mirror`). §16.6's "save-with-no-changes must
+  change nothing" holds for the blob and **fails for the mirrors**.
 
 ---
 
@@ -213,22 +326,33 @@ writer emits it. `commute` needs no code at all — and adding a placeholder for
 The trait's surface is three methods: `loadSearchAreas($auction)`, `hydrateDiscreteLocationFromBlob()`,
 `saveSearchAreas($auction)`.
 
-### 5.2 The four `HasSearchAreas` `empty()` sites — confirmed at this commit
+### 5.2 The `HasSearchAreas` presence-guard sites — FIVE, confirmed at this commit
 
-The document's measured line numbers (48, 71, 77, 103) are **exact**. Each reads blob state and must
-become presence semantics:
+The document's measured line numbers (48, 71, 77, 103) are **exact**, but the list is incomplete: line
+100 is a fifth site of the same defect class, spelled differently (F-G1-3). Each reads blob state and
+must become presence semantics:
 
-| Line | Code | Required conversion |
+| Line | Method | Code | Required conversion | Characterised by |
+|---|---|---|---|---|
+| 48 | `loadSearchAreas` | `if (empty($ldna['cities'] ?? [])) {` | `! array_key_exists('cities', $ldna)` | `test_site48_*` |
+| 71 | `loadSearchAreas` | `&& empty($this->existingLocationDna['state'] ?? '')` | `! array_key_exists('state', …)` | `test_site71_*` |
+| 77 | `loadSearchAreas` | `&& empty($this->existingLocationDna['counties'] ?? [])` | `! array_key_exists('counties', …)` | `test_site77_*` |
+| **100** | `hydrateDiscreteLocationFromBlob` | `trim((string) ($ldna['state'] ?? '')) !== ''` | presence check on `state` | `test_site100_*` |
+| 103 | `hydrateDiscreteLocationFromBlob` | `&& !empty($ldna['counties'] ?? [])` | `array_key_exists('counties', $ldna)` | `test_site103_*` |
+
+**The consolidation surface is wider than these five guards.** Per F-G1-4, the three mirror-write lines
+must change with them, because they are where the divergent outcomes are actually produced:
+
+| Line | Writes | Current behaviour on a clear |
 |---|---|---|
-| 48 | `if (empty($ldna['cities'] ?? [])) {` | `! array_key_exists('cities', $ldna)` |
-| 71 | `&& empty($this->existingLocationDna['state'] ?? '')` | `! array_key_exists('state', …)` |
-| 77 | `&& empty($this->existingLocationDna['counties'] ?? [])` | `! array_key_exists('counties', …)` |
-| 103 | `if (property_exists($this, 'counties') && !empty($ldna['counties'] ?? [])) {` | `array_key_exists('counties', $ldna)` |
+| 123 | `counties` meta from `$this->counties` | stale value persists |
+| 126 | `state` meta from `$this->state` | stale value persists |
+| 130 | `cities` meta from the decoded blob | correctly `[]` — **must not regress** |
 
 **Do not convert lines 58, 72 and 78.** They are `!empty()` guards on *legacy mirror input and local
-component state*, not on blob presence — converting them would change unrelated behaviour. §16.3
-requires **a test per site** proving cleared values are no longer resurrected; that is four tests, not
-seven.
+component state*, not on blob presence — converting them would change unrelated behaviour. No G1a test
+asserts anything about them, and G1f must leave them alone. §16.3 requires **a test per site** proving
+cleared values are no longer resurrected; that is **five** tests, not four and not eight.
 
 ### 5.3 Workflows affected
 
@@ -273,18 +397,54 @@ characterisation may not be migrated."*
 **All eight components have some coverage.** That is better than §16.3's phrasing assumes, and it means
 no workflow is categorically blocked. But coverage is uneven per dimension.
 
-### 6.2 Missing characterisation — the concrete gap list
+### 6.2 The gap list — status after G1a
 
-| Gap | Why it blocks consolidation |
+G1a added three suites in commit `cf53249ac`, 28 tests, all green:
+
+| Suite | Tests |
 |---|---|
-| **No suite covers all four `empty()` sites** | §16.3 requires a test per site proving cleared values are not resurrected. `cities` is covered by `TenantOfferCitiesMirrorTest`; **`state` (line 71) and `counties` (lines 77, 103) have no equivalent clear-then-reload characterisation.** |
-| **`SearchAreasPersistenceCharacterisationTest` covers one component of eight** | Persistence characterisation is the parity evidence L11 requires; seven components lack it. |
-| **No S1–S5 fixture set** | §16.3 requires fixtures for all five interpretation situations, plus pre-blob records, mirror-only records, corrupt blob (must surface an error), and `info()` returning `false` (finding 2B-1). None exist as a named suite. |
-| **No cross-dimension preservation test with the editor unmounted** | §16.2 requires "changing `cities` alters nothing else, with the editor mounted **and unmounted**". The unmounted case is exactly the G0 hazard; the G0 guard is JavaScript and structurally tested only. |
-| **No save-with-no-changes test** | §16.6 requires "save-with-no-changes must change nothing" and token stability across a no-op save. |
-| **No consumer-tolerance suite** | 43 consumers, none asserted to tolerate omitted keys. |
-| **No revision-token tests** | Determinism, order-independence, per-dimension scoping, insensitivity to lazy upgrade — none exist because the token does not exist yet. |
-| **No capability-resolver tests** | 8 workflows × every dimension, server refusal of out-of-profile writes — none exist. |
+| `tests/Feature/Spatial/G1aTraitPresenceSemanticsCharacterisationTest.php` | 12 |
+| `tests/Feature/Spatial/G1aRecordInterpretationCharacterisationTest.php` | 10 |
+| `tests/Feature/Spatial/G1aCrossDimensionPreservationCharacterisationTest.php` | 6 |
+
+**Closed by G1a:**
+
+| Gap | How |
+|---|---|
+| No suite covers the `empty()` sites | All **five** sites now have behavioural coverage through real EAV storage, one test per site plus a control per site. Previously pinned only structurally, by a grep for `empty(`. |
+| No S1–S5 fixture set | All five situations now have fixtures, including corrupt blob, absent blob, unknown future `schema_version`, and the inherited-vs-authored pair. |
+| No cross-dimension preservation test with the editor unmounted | Both cases covered — mounted preserves every other dimension byte-identically; unmounted destroys everything, and the indistinguishability from a deliberate clear is asserted separately. |
+| No save-with-no-changes test | Covered, and it **split**: byte-stable for the blob, destructive for the mirrors on a legacy record (F-G1-7). |
+
+**Still open, and correctly out of G1a's scope:**
+
+| Gap | Belongs to |
+|---|---|
+| No consumer-tolerance suite — 43 consumers, none asserted to tolerate omitted keys | **G1b** |
+| No revision-token tests | **G1c** — the token does not exist yet, so there is nothing to characterise |
+| No capability-resolver tests | **G1d** — same reason |
+
+**Still open, and genuinely G1a residue — G1f is NOT unblocked for these workflows:**
+
+| Residue | Why it matters |
+|---|---|
+| **The two Buyer Offer inline copies are not behaviourally characterised.** G1a exercised the trait through a thin host; `BuyerOfferListing.php` and `BuyerOfferListingEdit.php` carry their own inline implementations that no G1a test executes. | §16.3: "a workflow with no characterisation may not be migrated." These two are the copies whose correctness F-G1-1 lists as *"to be characterised"* — still unknown. |
+| **Per-component persistence characterisation remains 1-of-8.** `SearchAreasPersistenceCharacterisationTest` still covers only `TenantAgentAuction`. G1a broadened *dimension* coverage, not *component* coverage. | The parity evidence L11 requires is per workflow. |
+| **No factory exists for the Buyer/Hire models.** `HireSearchAreasParityTest` works around this with `forceFill()` and `Livewire::test()`; a G1a follow-up would need the same vehicle rather than the thin host. | Practical blocker on closing the two residues above. |
+
+**Assessment.** The characterisation prerequisite is discharged for the **trait** and for the **storage
+substrate**, which is what G1c and the §5.4 fixtures needed. It is **not** discharged for the two Buyer
+Offer inline copies. G1f may proceed workflow-by-workflow only for workflows whose implementation is
+characterised; the Buyer Offer pair needs a further G1a increment first.
+
+### 6.3 Pre-existing test failure, unrelated to G1
+
+`tests/Feature/Offers/SearchAreasStateCountyRoundTripTest.php` fails 1 of 4:
+`SQLSTATE[HY000]: near "ILIKE": syntax error`, raised from
+`BuyerOfferListingEdit::getPlaceSuggestions()` at line 980. `ILIKE` is PostgreSQL syntax and the suite
+runs on SQLite. Reproduced identically in the G0.1 worktree with no G1a file present, so it predates all
+G1 work. Fixing it means changing production code and is outside G1a; recorded here so a future reader
+does not attribute it to consolidation.
 
 ---
 
@@ -426,12 +586,12 @@ own stop condition and **no page behaviour changed**:
 
 | Sub-gate | Scope | Depends on | Stop condition |
 |---|---|---|---|
-| **G1a · Characterisation completion** | Close every gap in §6.2 of this report. Tests only, no production change. Includes S1–S5 fixtures, the `state`/`counties` clear-then-reload characterisation, unmounted-editor cross-dimension preservation, save-with-no-changes. | — | All eight workflows characterised; suite green; zero production files touched |
+| **G1a · Characterisation completion** — **PARTIALLY COMPLETE (`cf53249ac`)** | Close every gap in §6.2. Tests only, no production change. Delivered: five-site presence semantics, S1–S5 fixtures, mounted/unmounted cross-dimension preservation, save-with-no-changes. **Residue: the two Buyer Offer inline copies and 7-of-8 per-component persistence — see §6.2.** | — | All eight workflows characterised; suite green; zero production files touched. **Not yet met** — residue outstanding |
 | **G1b · Consumer-tolerance audit** | Read-only audit of the 43 consumers for omitted-key tolerance (R11). Findings + failing tests for real defects. | G1a | Every consumer classified tolerant / defective, with evidence |
 | **G1c · Domain core, additive only** | Canonical state object, serializer with omission, hydrator with interpretation modes, revision token, envelope + two operations, result/error shapes. Nothing wired to any workflow. | owner decisions D-G1-1…4 | Core exists with §16.2 coverage; **no existing code path calls it** |
 | **G1d · Capability resolver + config** | Resolver with open context map, config profiles for the eight workflows, deny-by-default, server-side rejection. Not yet enforced on live writes. | G1c | 8 workflows × every dimension tested; resolver inert in production |
 | **G1e · Provenance rules** | Provenance recording per §10.1, including the forbidden-on-polygons negative test and unlabelled-coordinates-are-Google default. | G1c | §16.5 provenance coverage green |
-| **G1f · Mirror consolidation, one workflow at a time** | Consolidate 5 → 1 onto the **divergent (correct)** behaviour — see F-G1-1 — converting the trait's four `empty()` sites with a test per site. One workflow per commit, parity-gated against its G1a characterisation. | G1a, G1c | Per workflow: characterisation identical before and after; **no page behaviour changed** |
+| **G1f · Mirror consolidation, one workflow at a time** | Consolidate 5 → 1 onto the **divergent (correct)** behaviour — see F-G1-1 — converting the **five** presence guards (48, 71, 77, 100, 103) *and* routing the three mirror writes (123, 126, 130) through one presence-honouring writer, per F-G1-3 and F-G1-4. One workflow per commit, parity-gated against its G1a characterisation. | G1a **incl. residue**, G1c | Per workflow: characterisation identical before and after; **no page behaviour changed**; line 130's correct clear-mirroring not regressed |
 | **G1g · Adapter contract** | Livewire adapter + form POST adapter + `NullAdapter` behind one shared contract suite. | G1c, G1d | Identical envelopes ⇒ identical results across all adapters |
 
 Sequencing rationale: **G1a strictly first** (the §17 prerequisite, and the only thing that makes G1f
@@ -509,7 +669,7 @@ different regions of the same very large files, not competing mirror logic.
 | **D-G1-2** | Approve the operation vocabulary | §6.2 | Exactly `set` and `clear`; rejection of `replace`/`append`/`remove`/`reorder`/`merge`; whole-dimension submission for arrays; `set` with empty value **rejected** rather than normalised; batch-atomic multi-dimension saves | G1c |
 | **D-G1-3** | Approve the concurrency mechanism | §6.4 | Per-dimension optimistic concurrency on the revision token; append-only audit; **losing autosave discarded, never retried**; partial application of a stale draft with the user shown what failed; import-never-overwrites-authored precedence | G1c |
 | **D-G1-4** | Confirm the §18 withdrawals | §18 | `commute` withdrawn entirely (no placeholder); `neighborhoods` withdrawn from the contract but **read-tolerant** for legacy data; `'overrides' => []` removed | G1c |
-| **D-G1-5** | *(new — arising from F-G1-1)* Approve the consolidation direction | §4.2 | Consolidate **onto the divergent `array_key_exists()` behaviour**, not onto the trait, and correct §4.2's "4 byte-identical inline copies" claim | G1f |
+| **D-G1-5** | *(new — arising from F-G1-1, now evidenced by F-G1-3 / F-G1-4)* Approve the consolidation direction **and surface** | §4.2 | Consolidate **onto the divergent `array_key_exists()` behaviour**, not onto the trait. Correct §4.2's "4 byte-identical inline copies" claim **and its count of four guard sites — there are five (line 100)**. Accept that the surface includes the three mirror-write lines (123, 126, 130), because the three dimensions do not share a code path today, so the change is not a mechanical substitution | G1f |
 | **D-G1-6** | *(new — arising from §13)* Decide branch sequencing | — | Whether `ux/hire-agent-create-offer-parity` lands before G1f, or G1f proceeds and that branch rebases | G1f |
 
 **Not owner decisions, but prerequisites:** G1a characterisation completion (§17 G1 prerequisite, §16.3
@@ -524,8 +684,10 @@ Carried from §17 G1 and extended for the decomposition:
 
 1. Report with diffs and tests, **no page behaviour changed**, before anything else.
 2. Any sub-gate that would change observable page behaviour stops and reports instead.
-3. A workflow without complete G1a characterisation is **not** migrated in G1f.
-4. Consolidation that would regress the two already-correct Tenant Offer divergences stops (F-G1-1).
+3. A workflow without complete G1a characterisation is **not** migrated in G1f. Per §6.2 this currently
+   excludes `BuyerOfferListing` and `BuyerOfferListingEdit`.
+4. Consolidation that would regress the two already-correct Tenant Offer divergences stops (F-G1-1), and
+   likewise anything that would regress line 130's correct clear-mirroring (F-G1-4).
 5. Any requirement to touch client JS, a renderer, a provider or a public API means the work has left
    G1 scope.
 6. Any need to alter G0.1's public-view projection seam stops and reports — G0.1 is committed and its
@@ -536,10 +698,39 @@ Carried from §17 G1 and extended for the decomposition:
 
 ## 16. Authorisation status
 
-**G1 is planned and not implemented. No production code is authorised.** Decisions D-G1-1 through
-D-G1-6 are open. Recommended sequence at authorisation:
+**No G1 production code is implemented and none is authorised.** Decisions D-G1-1 through D-G1-6 remain
+open; none has been resolved or assumed by G1a. What exists on this branch is one documentation commit
+and one tests-only commit.
+
+Remaining sequence:
 
 1. Decide D-G1-1 … D-G1-4 (the four §17 owner decisions), plus D-G1-5 and D-G1-6 raised here.
-2. Correct v1.2 §4.2 (the byte-identical claim) and §4.3 F-C1 (42 → 43).
-3. Authorise **G1a only** — characterisation completion, tests only.
-4. Re-report after G1a before authorising G1b or G1c.
+2. Correct v1.2 §4.2 (the byte-identical claim **and** the count of four guard sites → five) and
+   §4.3 F-C1 (42 → 43).
+3. ~~Authorise **G1a only**~~ — done, partially, in `cf53249ac`. Either authorise the **G1a residue**
+   (Buyer Offer inline copies; per-component persistence) or accept that G1f cannot migrate those two
+   workflows.
+4. **G1b is the natural next step**: read-only, needs none of the six decisions, and its findings inform
+   D-G1-1's tolerance requirements.
+
+### 16.1 A tripwire that WILL fire in G1f
+
+`TenantOfferCitiesMirrorTest::test_hire_trait_semantics_are_unchanged()` asserts that
+`HasSearchAreas.php` **contains** `empty(` and **does not contain** `array_key_exists`. It was written
+deliberately, to force the Hire flows to be re-verified if anyone "aligned" the trait silently.
+
+G1f converting the five guard sites **will** fail it. That is the test doing its job, not a regression.
+Updating it is part of G1f's own scope, and the re-verification it demands is exactly the parity check
+G1f owes the four Hire workflows. Recorded here so nobody treats a red run as a reason to stop.
+
+---
+
+## 17. Amendment record
+
+| Amendment | Commit | Change |
+|---|---|---|
+| Original report | `eef66f570` | As authored, before any characterisation existed |
+| **G1a findings** | *this commit* | §0 gains F-G1-3 … F-G1-7. F-G1-1 marked proven rather than inferred. §5.2 four sites → **five**, plus the mirror-write surface. §6.2 rewritten as closed / deferred / **residue**, with the pre-existing `ILIKE` failure recorded in new §6.3. §12 G1a marked partially complete and G1f's scope widened. D-G1-5 extended to the five-site count and the non-mechanical surface. §15 stop conditions 3 and 4 tightened. §16 rewritten; §16.1 tripwire added |
+
+**Nothing in this amendment changes a decision, authorises a gate, or touches production code.** Every
+addition is a statement of measured behaviour with a named test behind it.
