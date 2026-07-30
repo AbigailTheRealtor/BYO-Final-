@@ -1394,7 +1394,24 @@ An offer must not disappear from the listing owner's offers feed merely because 
 
 ## RB2. Root cause (confirmed)
 
-Composition of two individually-defensible behaviours:
+> ### ⚠️ PARTIALLY SUPERSEDED — 2026-07-30
+>
+> The defect described below is **real, latent, and correctly fixed** by commit
+> `844a4f7d5`. But it was **not** the cause of the specific bid the owner
+> reported missing.
+>
+> Read-only inspection of the live `heliumdb` on 2026-07-30 found **zero offers
+> in `expired` status and zero `offer_expired` rows in `offer_event_logs`** — one
+> offer has a lapsed `expires_at` and is still `submitted`, so the
+> `offers:expire-pending` sweeper has never run in that environment. Nothing has
+> ever been expired, so nothing can have been hidden by expiry.
+>
+> The actual cause of the reported disappearance is recorded in the browser-audit
+> section: the deployed application is 18 commits behind and contains no
+> `PublicOfferFeedService` and no `_competing-bids.blade.php` at all, so the
+> entire Competing Bids section is absent from the running site.
+>
+> Keep the fix; discard the attribution.
 
 1. `OfferController::submit()` makes `expires_at` **mandatory** on every submit (`:165-167` sale, `:181-183` rental — *"response requested by date"*).
 2. `Kernel::schedule()` runs `offers:expire-pending` **every minute**; it flips `submitted`/`countered` → `expired` once `expires_at` passes.
@@ -1662,3 +1679,156 @@ One transient: `test_no_production_files_were_modified` failed until `app/Presen
 | Date | Change |
 |---|---|
 | 2026-07-29 | **Permanent submitted-bid history.** Feed admits every non-draft status (`rejected`/`withdrawn` join `expired`); six accurate labels; finalized rows dimmed and non-actionable. New `OfferTermPresenter` formats currency, whole-percentage units, day/month counts via the existing `ListingDisplayHelper`; missing values render as an em dash, never `$0`; persisted values untouched. Numbering, privacy allow-lists, permissions, state machine and the entire bidding-window architecture unchanged. 21 tests added; 0 newly failing. Highest-bid, starting-bid and reserve behaviour documented and deferred to Bidding Rules. Regression A still open. |
+
+---
+
+# Unified Publish Submission Gating — 2026-07-30
+
+**Status: IMPLEMENTED.** Third commit on `regression/timed-offer-runtime`, on top of `6ea16684d5`. Additive; all prior content preserved, with the one superseded conclusion marked in place at §RB2 and below.
+
+## UG1. Symptom reproduced
+
+Seller Create Offer Listing, all fields empty. Click Submit:
+
+| t | banner | list items |
+|---|---|---|
+| 50 ms | visible | 2 |
+| 300 ms | **hidden (`d-none`)** | 0 |
+| 800 ms → 2600 ms | hidden | 0 |
+
+The user clicks Submit and, a quarter of a second later, sees nothing at all. Landlord did not exhibit it.
+
+## UG2. ⚠️ Superseded first diagnosis, and the evidence that killed it
+
+The browser audit concluded: *the shared gate renders the banner, a Livewire `message.processed` morph restores the hidden server-rendered markup, so make the shared partial re-apply its own banner.*
+
+**That was wrong**, and a fix built on it was implemented and measured to have no effect. Three rounds of browser evidence:
+
+1. Hook confirmed registered (`__offerPublishGate.hooked === true`) and `message.processed` confirmed firing — banner still ended hidden.
+2. Every code path by which the new code could hide the banner was removed — still hidden.
+3. A self-limiting `MutationObserver` was added — still hidden, and DOM transitions stayed at 3, proving the observer never fired, i.e. `gateActive.source` was null.
+
+The decisive test: after the wipe, manually removing `d-none` **left the banner visible**. Nothing was actively re-hiding it. The gate had simply never recorded that banner — because the gate never rendered it.
+
+**The six-versus-two discrepancy.** On an empty Seller create page all six `GATE_REQUIRED` fields are empty:
+
+```
+listing_title, property_type, first_name, last_name, phone_number, email
+```
+
+The shared gate must therefore report **six**. The banner showed **two**. The banner belonged to something else.
+
+## UG3. Actual root cause
+
+Two competing client-side submit gates on Seller create.
+
+| | Shared gate | Legacy Seller handler |
+|---|---|---|
+| Where | `partials/offer-listing/publish-submit-gate.blade.php` | `livewire/offer-listing/seller/offer-seller-listing.blade.php` |
+| Contract | server's `publishRequiredFieldNames()` (6 fields) | every DOM `[required]` across 11 tabs (2 reported) |
+| Phase | `document` submit, capture | `document` submit, capture |
+| Owns the banner? | thought it did | **actually did** |
+
+The legacy handler cleared `#submit-error-banner`, rewrote it from its own narrower result, then emitted `setActiveTab`. The resulting Livewire re-render morphed the banner back to its hidden server-rendered shell. The shared gate held no record of a banner it had not rendered, so nothing restored it.
+
+This is the same "legacy DOM gate swallows Submit" pattern `255a9d4e4` set out to eliminate; a remnant survived in Seller create.
+
+## UG4. Repair
+
+**Removed from `offer-seller-listing.blade.php`** — the entire competing gate:
+
+- the second `document.addEventListener('submit', …, true)` handler (~72 lines): banner clear/rewrite, `[required]` scan, `preventDefault` + `stopImmediatePropagation`, tab navigation, `setActiveTab` emit, scroll/focus;
+- `getAllRequiredFields()` — the eleven-tab `[required]` collector;
+- `isFieldValid()` — its per-field validator.
+
+Both helpers were closure-scoped with no other caller, so they were deleted rather than left dead, so the competing scan cannot be revived by accident. A comment marks the spot and says why nothing may be registered there again.
+
+**Deliberately preserved** — everything that is not publish gating: `updateSaveButton()` (already a no-op that keeps the button enabled, still called by `window.updateSaveButton` after a draft loads), `setupGlobalListeners()`, `syncAllSelect2BeforeSave()` (still used by Save Draft and by the shared gate's success path), `isElementVisible()`, and `checkFormValidity()` inside `initializeWizardHandlers()` — the one surviving `[required]` sweep, which drives per-tab **wizard navigation**, not publish gating.
+
+**Added to the shared gate** — banner persistence, now justified because the gate genuinely owns the banner:
+
+- `gateActive` remembers `{source, keys, lines, heading}`; `gateRemember()` / `gateForget()`;
+- `gateRenderBanner()` split out as a pure DOM write, `gateShowBanner()` renders *and* remembers;
+- `gateHideBanner()` calls `gateForget()`, so a successful pass stays clear;
+- `gateReapply()` re-asserts on Livewire `message.processed`. It narrows the list as fields are filled — via `gateKeyStillMissing()`, which inspects only the named field and is pessimistic, returning "still missing" whenever it cannot positively see a value — and **never hides**. Hiding belongs solely to `gateHideBanner()`, at the start of a fresh submit;
+- `source: 'server'` payloads from `publish-validation-failed` are re-applied verbatim, since they may name fields outside `GATE_REQUIRED`;
+- registration is idempotent via a window-scoped `__offerPublishGate` flag with a per-instance reapplier list, so repeated Livewire initialisation and multiple gate instances cannot double-register.
+
+**No `MutationObserver`.** One was prototyped while the wrong diagnosis was in play and **deliberately removed**: once the competing handler was gone, the Livewire 2 `message.processed` hook alone held the banner, as verified in the browser. An observer is only warranted if the lifecycle hook demonstrably fails.
+
+## UG5. Roles affected
+
+| Role | Includes shared gate | Own submit listener | Action |
+|---|---|---|---|
+| Seller create | yes | **removed** | repaired |
+| Seller edit | yes | none | unchanged |
+| Landlord create | yes | 1 (guided correction) | **left intact** |
+| Landlord edit | yes | none | unchanged |
+| Buyer create | no | 1 | untouched |
+| Tenant create | no | 1 | untouched |
+
+**Landlord's handler is deliberately retained.** It is not merely redundant banner restoration: `landlordGetInvalidItems()` drives role-specific guided-correction behaviour the shared gate does not implement, and Landlord is verified working in the browser. Removing it is a separate change needing its own verification, so it is recorded as follow-up rather than bundled here. `UnifiedPublishGateTest` pins the count at exactly one so the asymmetry stays visible.
+
+Buyer and Tenant do not include the shared partial, so this repair cannot reach them; a test asserts that.
+
+## UG6. Browser verification
+
+Real Chromium, disposable SQLite database, isolated fixtures.
+
+| Assertion | Seller | Landlord |
+|---|---|---|
+| Banners on page | 1 | 1 |
+| Gate instances / hook registered | 1 / true | 1 / true |
+| Field list | **6** — Listing Title, Property Type, First Name, Last Name, Phone Number, Email Address | 3 — Listing Title, Expiration Date, Desired Lease Term |
+| Banner at 400 ms | visible | visible |
+| Banner after full Livewire cycle (~3 s) | **visible, 6 items** | visible, 3 items |
+| Duplicate list items | none | none |
+| **Publish requests sent** | **none** | **none** |
+| Console errors | none | none |
+| After 2 further `setActiveTab` renders | visible, 6 items, `reappliers === 1` | visible, 3 items, `reappliers === 1` |
+
+The Seller list now matches `publishRequiredFieldNames()` exactly — six, not two — which is the direct proof that the shared gate, and only the shared gate, is deciding.
+
+## UG7. Tests added
+
+`tests/Feature/Offers/UnifiedPublishGateTest.php` — 16 tests: Seller registers no submit listener; the legacy scanner symbols are gone; the one surviving `[required]` sweep belongs to wizard navigation; all four gated views include the shared partial; Landlord retains exactly one documented handler; Buyer/Tenant untouched; the gate re-applies on `message.processed`; registration is idempotent; `gateReapply()` never hides; `gateHideBanner()` forgets; no `MutationObserver`; server validation still surfaces; the gate never auto-submits or disables the button.
+
+## UG8. Validation
+
+| Command | Result |
+|---|---|
+| `php artisan test tests/Feature/Offers/UnifiedPublishGateTest.php` | **16 passed** |
+| `…/PublishSubmitGateTest.php` | **23 passed** |
+| `…/SellerOfferEntryTest.php` | 5 passed |
+| `…/LandlordOfferEntryTest.php` | 7 passed / 3 failed *(pre-existing)* |
+| `…/BuyerOfferEntryTest.php` | 3 passed |
+| `…/TenantOfferEntryTest.php` | 4 passed |
+| `…/SubmittedBidHistoryTest.php` | 21 passed |
+| `…/ExpiredOfferFeedRetentionTest.php` | 13 passed |
+| `…/PublicOfferFeedPrivacyTest.php` | 25 passed |
+| `…/CanonicalBiddingWindowTest.php` | 26 passed |
+| `php artisan test tests/Feature/Offers` | **55 failed / 865 passed** |
+| `php artisan test tests/Unit` | **224 failed / 5961 passed** |
+| `git diff --check` | clean |
+| `php -l`, `php artisan view:cache`, `node --check` on the extracted gate JS | all clean |
+
+**Newly failing: none.** `comm` against the post-`6ea16684d5` failing set is empty in both directions for both suites. Test count 849 → 865 (+16). The three `LandlordOfferEntryTest` failures and the 224 unit failures are unchanged pre-existing failures (SQLite lacking `ILIKE`, offer-detail HTML assertions). No skipped tests in the changed suites.
+
+## UG9. Guarantees
+
+- **Validation was not bypassed.** The gate is advisory and blocks *more* visibly than before; the server re-validates in `update()` and stays authoritative. `publish-validation-failed` still renders server errors, now re-applied verbatim across morphs. No publish request is sent while the client gate blocks — measured, not assumed.
+- **No auto-submit, no duplicate submit.** The gate never calls `.submit()`; double submission is still prevented natively by `wire:loading.attr`.
+- **Untouched:** `bidding_ends_at`, `expires_at`, `BiddingWindowService`, the offer state machine, `OfferPermissionService`, `PublicOfferFeedService`, `OfferTermPresenter`, every migration, and all bid-history behaviour. No database write, no schema change, no deployment action. All 26 canonical-bidding-window guards and all 34 bid-history tests still pass.
+
+## UG10. Follow-up
+
+1. **Landlord gate unification** — remove its role handler once its guided-correction behaviour is either migrated into the shared gate or proven redundant. Currently pinned by test.
+2. **Buyer/Tenant** — neither uses the shared gate; both still run their own legacy submit handlers and carry the same latent divergence.
+3. **Deployment remains the dominant issue** — the running app is 18 commits behind and has none of this.
+4. **~874 legacy `offer_auctions`** carry no canonical window; deploying switches them from a wrong countdown to no countdown and closed bidding.
+
+## UG11. Change log
+
+| Date | Change |
+|---|---|
+| 2026-07-30 | **Unified publish submission gating.** Removed the competing legacy submit handler and its `getAllRequiredFields()` / `isFieldValid()` scanners from Seller create; the shared publish gate is now the single client-side authority there. Added banner persistence to the shared gate via the Livewire 2 `message.processed` hook with idempotent registration — no `MutationObserver` needed. Browser-verified: Seller banner now shows the gate's own six fields and survives the full Livewire cycle with no publish request sent. Landlord handler retained and pinned by test. 16 tests added; 0 newly failing. Earlier shared-gate-only diagnosis marked superseded above. |

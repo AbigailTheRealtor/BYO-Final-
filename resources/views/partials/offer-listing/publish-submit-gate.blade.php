@@ -192,7 +192,143 @@
             }, 350);
         }
 
-        function gateShowBanner(lines, heading) {
+        // ------------------------------------------------------------------
+        // Banner survival across Livewire DOM morphs.
+        //
+        // The banner markup lives INSIDE the Livewire component root, so every
+        // re-render morphs it back to the server-rendered `d-none` shell with an
+        // empty <ul>. The gate triggers that itself: gateNavigateTo() emits
+        // `setActiveTab`, so showing the banner and then walking the user to the
+        // failing tab wipes the message a few hundred ms later. The Seller views
+        // had no compensating hook, so Submit looked like it did nothing.
+        //
+        // We therefore remember what is on the banner and re-apply it after each
+        // Livewire message. Remembering, not re-validating: re-running the whole
+        // gate on every render would surface fields the user has not attempted.
+        //
+        //   source 'client'  our own missing-field list. On re-apply we drop keys
+        //                    the user has since filled, so the banner self-clears
+        //                    as they fix things and never goes stale.
+        //   source 'server'  a publish-validation-failed payload. Re-applied
+        //                    verbatim: those messages are the server's and may
+        //                    name fields outside GATE_REQUIRED.
+        // ------------------------------------------------------------------
+        var gateActive = { source: null, keys: [], lines: [], heading: '' };
+
+        function gateRemember(source, lines, heading, keys) {
+            gateActive = {
+                source:  source,
+                keys:    keys || [],
+                lines:   lines || [],
+                heading: heading || ''
+            };
+        }
+
+        function gateForget() {
+            gateActive = { source: null, keys: [], lines: [], heading: '' };
+        }
+
+        /**
+         * Is this one remembered key STILL empty?
+         *
+         * Deliberately narrow, and deliberately pessimistic. It inspects only the
+         * named field rather than re-running the whole form scan, because during a
+         * morph that scan is unreliable — mid-render the panes can momentarily
+         * report nothing missing, and an earlier version of this repair used that
+         * to hide the banner, which reproduced the very bug it was fixing.
+         *
+         * Returns true (still missing) whenever we cannot positively see a value.
+         * A key is dropped only on affirmative evidence that the user filled it.
+         */
+        function gateKeyStillMissing(key) {
+            var field = document.querySelector(
+                '[wire\\:model="' + key + '"], [wire\\:model\\.defer="' + key + '"], ' +
+                '[wire\\:model\\.lazy="' + key + '"], #' + key
+            );
+
+            if (field && !field.disabled && field.type !== 'hidden') {
+                return gateIsEmpty(field);
+            }
+
+            var comp = gateLivewireComponent();
+            if (comp) {
+                var value;
+                try { value = comp.get(key); } catch (e) { return true; }
+                if (value === undefined) return true;
+                return Array.isArray(value)
+                    ? value.length === 0
+                    : (value === null || value.toString().trim() === '');
+            }
+
+            return true;
+        }
+
+        /**
+         * Re-assert the banner after a Livewire render.
+         *
+         * Content only — no scroll, no tab change, no emit — so this can never loop
+         * or steal focus, and it never hides the banner. Hiding is reserved for
+         * gateHideBanner(), which only ever runs at the start of a fresh submit.
+         * That asymmetry is the whole fix: a DOM morph can no longer erase a
+         * validation message the user has not yet acted on.
+         */
+        function gateReapply() {
+            if (!gateActive.source) return;
+
+            var banner = document.getElementById('submit-error-banner');
+            var list   = document.getElementById('submit-error-list');
+            if (!banner || !list) return;
+
+            if (gateActive.source === 'client') {
+                // Narrow the list as the user fixes things, but never to nothing.
+                var keptKeys  = [];
+                var keptLines = [];
+
+                gateActive.keys.forEach(function (key, i) {
+                    if (gateKeyStillMissing(key)) {
+                        keptKeys.push(key);
+                        keptLines.push(gateActive.lines[i]);
+                    }
+                });
+
+                if (keptKeys.length > 0) {
+                    gateActive.keys  = keptKeys;
+                    gateActive.lines = keptLines;
+                }
+                // If everything now reads as filled we still leave the banner up.
+                // The next submit is authoritative: it clears the banner first and
+                // either passes through or reports a fresh list.
+            }
+
+            gateRenderBanner(gateActive.lines, gateActive.heading);
+        }
+
+        // One shared Livewire hook for however many gate instances a page mounts.
+        // Registration is idempotent: the flag lives on window, so a re-executed
+        // script or a second instance adds its callback without ever hooking twice.
+        window.__offerPublishGate = window.__offerPublishGate || { reappliers: [], hooked: false };
+        window.__offerPublishGate.reappliers.push(gateReapply);
+
+        function gateRegisterLivewireHook() {
+            var reg = window.__offerPublishGate;
+            if (reg.hooked) return;
+            if (!window.Livewire || typeof window.Livewire.hook !== 'function') return;
+
+            reg.hooked = true;
+            // Livewire 2 fires message.processed after the DOM has been morphed.
+            window.Livewire.hook('message.processed', function () {
+                reg.reappliers.forEach(function (fn) {
+                    try { fn(); } catch (e) { /* one gate must not break another */ }
+                });
+            });
+        }
+
+        gateRegisterLivewireHook();
+        document.addEventListener('livewire:load', gateRegisterLivewireHook);
+
+        // Paint the banner. Pure DOM write — no state bookkeeping, so gateReapply
+        // can reuse it without re-remembering what it just read.
+        function gateRenderBanner(lines, heading) {
             var banner = document.getElementById('submit-error-banner');
             var list   = document.getElementById('submit-error-list');
             if (!banner || !list) return null;
@@ -211,11 +347,26 @@
             return banner;
         }
 
+        /**
+         * Show the banner AND remember it, so a later Livewire morph cannot erase it.
+         *
+         * @param {string}   source  'client' (our gate) or 'server' (publish-validation-failed)
+         * @param {string[]} keys    field keys behind the lines; 'client' only
+         */
+        function gateShowBanner(lines, heading, source, keys) {
+            var banner = gateRenderBanner(lines, heading);
+            if (banner) gateRemember(source || 'client', lines, heading, keys);
+            return banner;
+        }
+
         function gateHideBanner() {
             var banner = document.getElementById('submit-error-banner');
             var list   = document.getElementById('submit-error-list');
             if (banner) banner.classList.add('d-none');
             if (list) list.innerHTML = '';
+            // Stop re-applying a message we have just retracted, so a successful
+            // validation pass stays clear through every subsequent render.
+            gateForget();
         }
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -243,7 +394,9 @@
 
                 var banner = gateShowBanner(
                     missing.map(function (m) { return m.label; }),
-                    'Please complete the required fields before submitting.'
+                    'Please complete the required fields before submitting.',
+                    'client',
+                    missing.map(function (m) { return m.key; })
                 );
                 gateNavigateTo(missing[0]);
                 setTimeout(function () {
@@ -263,11 +416,16 @@
             var messages = detail.messages || {};
             if (!fields.length) return;
 
+            // Re-applied verbatim after a morph: these are the server's own
+            // messages and may name fields outside GATE_REQUIRED, so the
+            // client-side recompute must not second-guess them.
             var banner = gateShowBanner(
                 fields.map(function (name) {
                     return messages[name] || GATE_LABELS[name] || name;
                 }),
-                'Please correct the following before submitting.'
+                'Please correct the following before submitting.',
+                'server',
+                fields
             );
 
             var el = document.querySelector('[wire\\:model="' + fields[0] + '"], [wire\\:model\\.defer="' + fields[0] + '"], #' + fields[0]);

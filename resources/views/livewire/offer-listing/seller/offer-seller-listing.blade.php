@@ -2741,46 +2741,13 @@
             const saveButton = document.getElementById('save-button');
             const formContainer = document.getElementById('wizard-form-container');
 
-            // Get all required fields from active tabs
-            function getAllRequiredFields() {
-                const requiredFields = [];
-
-                const tabSelector = [
-                    '#listing-details',
-                    '#property-details',
-                    '#financial-details',
-                    '#sale-terms',
-                    '#additional-details',
-                    '#broker-compensation-agency-agreement-terms',
-                    '#tax-legal-hoa-disclosures',
-                    '#documents-disclosures',
-                    '#photos-tours-documents',
-                    '#ai-questions',
-                    '#seller-information',
-                ];
-
-                tabSelector.forEach(selector => {
-                    const tab = document.querySelector(selector);
-                    if (!tab) return;
-                    const fields = tab.querySelectorAll('[required]');
-                    fields.forEach(field => requiredFields.push(field));
-                });
-
-                return requiredFields;
-            }
-
-            function isFieldValid(field) {
-                if (!isElementVisible(field)) return true;
-                if (field.type === 'checkbox') return field.checked;
-                if (field.type === 'radio') return !!document.querySelector(`input[name="${field.name}"]:checked`);
-                if (field.type === 'file') {
-                    return field.files && field.files.length > 0;
-                }
-                if (field.type === 'select-one' || field.type === 'select-multiple') {
-                    return field.value !== '' && field.value !== null;
-                }
-                return field.value?.toString().trim() !== '';
-            }
+            // getAllRequiredFields() / isFieldValid() REMOVED along with the
+            // duplicate submit handler they served. They scanned every DOM
+            // [required] input across all eleven tabs — a far wider set than the
+            // server's publish contract — and were the source of the competing
+            // missing-field list. Publish completeness is now decided solely by
+            // the shared gate against publishRequiredFieldNames(). Deleted rather
+            // than left dead so the competing scan cannot be revived by accident.
 
             // LEGACY COMPLETENESS GATE REMOVED — this was the submit-button defect.
             //
@@ -2791,9 +2758,10 @@
             // swallowed the click outright: no submit event, no Livewire request, no
             // error — Submit simply did nothing.
             //
-            // Completeness is now decided on click by the form-submit handler below,
-            // scoped to SELLER_SERVER_REQUIRED — the server's own publish rules via
-            // GuidesPublishValidation::publishRequiredFieldNames(). That handler is the
+            // Completeness is now decided on submit by the SHARED publish gate
+            // (partials/offer-listing/publish-submit-gate.blade.php), scoped to the
+            // server's own publish rules via
+            // GuidesPublishValidation::publishRequiredFieldNames(). That gate is the
             // single source of truth for whether a publish may proceed; the server
             // remains authoritative and re-checks everything.
             //
@@ -2840,79 +2808,25 @@
                 });
             }
 
-            // Form submit listener: block submission and show banner when required fields are missing
-            const createForm = document.getElementById('create-auction-form');
-            if (createForm) {
-                document.addEventListener('submit', function(e) {
-                    if (!e.target || e.target.id !== 'create-auction-form') return;
-                    const banner = document.getElementById('submit-error-banner');
-                    const errorList = document.getElementById('submit-error-list');
-                    if (banner) banner.classList.add('d-none');
-                    if (errorList) errorList.innerHTML = '';
-
-                    const requiredFields = getAllRequiredFields();
-                    let invalidItems = [];
-
-                    for (const field of requiredFields) {
-                        if (field.disabled || field.type === 'hidden') continue;
-                        if (!isFieldValid(field)) {
-                            const tab = field.closest('.tab-pane');
-                            const labelEl = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
-                            const fieldName = labelEl ? labelEl.textContent.replace(/[*:]/g, '').trim() : (field.getAttribute('placeholder') || field.name || field.id || 'Required field');
-                            invalidItems.push({ field: field, tab: tab, fieldName: fieldName });
-                        }
-                    }
-
-                    if (invalidItems.length > 0) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-
-                        if (banner && errorList) {
-                            const seen = new Set();
-                            invalidItems.forEach(function(item) {
-                                if (!seen.has(item.fieldName)) {
-                                    seen.add(item.fieldName);
-                                    const li = document.createElement('li');
-                                    li.textContent = item.fieldName;
-                                    errorList.appendChild(li);
-                                }
-                            });
-                            banner.querySelector('strong').textContent = 'Please complete the required fields before submitting.';
-                            banner.classList.remove('d-none');
-                        }
-
-                        const firstItem = invalidItems[0];
-                        if (firstItem.tab) {
-                            const tabId = firstItem.tab.id;
-                            const tabTrigger = document.querySelector('[data-bs-target="#' + tabId + '"], [href="#' + tabId + '"]');
-                            if (tabTrigger) {
-                                bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
-                                const allTabPanes = [...document.querySelectorAll('.tab-pane')];
-                                const tabIndex = allTabPanes.indexOf(firstItem.tab);
-                                if (tabIndex >= 0 && typeof Livewire !== 'undefined') {
-                                    Livewire.emit('setActiveTab', tabIndex);
-                                }
-                            }
-                        }
-
-                        setTimeout(function() {
-                            if (firstItem.field && firstItem.field.classList) {
-                                firstItem.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                if (typeof firstItem.field.focus === 'function' && firstItem.field.tagName !== 'DIV') {
-                                    firstItem.field.focus();
-                                }
-                                firstItem.field.classList.add('is-invalid');
-                            }
-                            if (banner) banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 300);
-
-                        return false;
-                    }
-
-                    syncAllSelect2BeforeSave();
-                    if (banner) banner.classList.add('d-none');
-                }, true);
-            }
+            // NO SUBMIT LISTENER HERE — deliberately.
+            //
+            // This view previously registered a SECOND capture-phase submit
+            // handler that ran its own completeness check over every DOM
+            // [required] input, then cleared and rewrote #submit-error-banner.
+            // It competed with the shared publish gate
+            // (partials/offer-listing/publish-submit-gate.blade.php), which is
+            // the single client-side authority and validates against the
+            // server's own publishRequiredFieldNames() contract.
+            //
+            // The two disagreed — the shared gate saw six missing fields while
+            // this scan reported two — so the banner the user saw belonged to
+            // this handler, not the gate. When Livewire re-rendered, the gate
+            // had no record of that banner and could not restore it, so the
+            // message vanished and Submit appeared to do nothing.
+            //
+            // Publish gating, banner rendering, tab navigation and
+            // syncAllSelect2BeforeSave() on the success path are all handled by
+            // the shared gate. Do not reintroduce a submit listener here.
         });
     </script>
     <script>
