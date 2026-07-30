@@ -2,7 +2,7 @@
 
 **Gate:** G1c (per §12 of the [G1 Pre-Implementation Report](./LOCATION-DNA-ENGINE-V1.2-G1-PRE-IMPLEMENTATION-REPORT.md))
 **Type:** design and decision package — **owner-approved**
-**Status:** **ALL SEVEN DECISIONS APPROVED. G1c INERT CONTRACT CORE: IMPLEMENTED. G1d INERT CAPABILITY RESOLVER: IMPLEMENTED. WORKFLOW INTEGRATION AND PERSISTENCE: NOT STARTED. G1e–G1g: NOT STARTED.**
+**Status:** **ALL SEVEN DECISIONS APPROVED. THREE INERT DOMAIN LAYERS IMPLEMENTED — G1c CONTRACT CORE, G1d CAPABILITY RESOLVER, G1e PROVENANCE MODEL. WORKFLOW INTEGRATION AND PERSISTENCE: NOT STARTED. G1f–G1g: NOT STARTED. G1 IS NOT COMPLETE.**
 **Governed by:** [`LOCATION-DNA-ENGINE-V1.2.md`](./LOCATION-DNA-ENGINE-V1.2.md) · lineage
 [v1.0](./LOCATION-DNA-ENGINE-V1.md) → [v1.1](./LOCATION-DNA-ENGINE-V1.1.md) → v1.2, adopted per the
 [Adoption Record](./LOCATION-DNA-ENGINE-V1.2-ADOPTION-RECORD.md)
@@ -10,6 +10,7 @@
 **Approved at (base commit):** `18cd954bcdc43b4796f69689f28bc2df47c45f22` · **Approval date:** 2026-07-30
 **Implemented — G1c inert contract core:** `ddbf3b2bb3db9581f2c8125faf9ac9515fe9f38e` (2026-07-30)
 **Implemented — G1d inert capability resolver:** `933228c2c12a4dd2d0dbde1147446c082c46cc6f` (2026-07-30)
+**Implemented — G1e inert provenance model:** `00b7a025d15f3331b3265f358968d6476578f604` (2026-07-30)
 — see the [Implementation record](#implementation-record).
 
 > **The seven decisions below are APPROVED.** See the [Owner approval record](#owner-approval-record) for the
@@ -26,16 +27,20 @@
 > | G1d **inert capability resolver** | **IMPLEMENTED** — `933228c2c` |
 > | **Workflow integration** | **NOT STARTED** |
 > | **Persistence** | **NOT STARTED** |
-> | G1e **provenance** | **NOT STARTED** |
+> | G1e **inert provenance model** | **IMPLEMENTED** — `00b7a025d` |
+> | **Provenance integration / persistence** | **NOT STARTED** |
 > | G1f **writer consolidation** | **NOT STARTED** |
 > | G1g **adapter contract** | **NOT STARTED** |
 >
-> The approval increment changed no production code, test or configuration. Two implementation increments
-> have since added **deliberately inert** domain layers — the contract core (`ddbf3b2bb`) and the capability
-> resolver (`933228c2c`) — each wired into no workflow, no persistence and no public surface, each with its
-> own unit tests, inertness guards, and exact readiness-allowlist entries recording its production additions.
+> The approval increment changed no production code, test or configuration. Three implementation increments
+> have since added **deliberately inert** domain layers — the contract core (`ddbf3b2bb`), the capability
+> resolver (`933228c2c`) and the provenance model (`00b7a025d`) — each wired into no workflow, no persistence
+> and no public surface, each with its own unit tests, inertness guards, and exact readiness-allowlist entries
+> recording its production additions.
 >
-> **Neither G1c nor G1d is complete.** Each has an implemented inert layer and an unstarted integration half.
+> **None of G1c, G1d or G1e is complete, and G1 as a whole is not complete.** Each has an implemented inert
+> layer and an unstarted integration half. Where this document records a gate as IMPLEMENTED it means the
+> inert domain layer only — never its workflow integration or its persistence.
 >
 > The original alternatives, trade-offs and consequences for every decision are **preserved unchanged** below
 > — approval records which option was chosen, not a rewrite of the analysis that produced it.
@@ -466,7 +471,7 @@ clear insensitivities documented under Option 3-A **persist for MLS refetching**
 authorized — an accepted, recorded consequence. The 21 tests in
 `G1bCriteriaHashCharacterisationTest` therefore remain valid and unchanged for now.
 
-**Implementation status.** **Inert revision token: IMPLEMENTED** (`ddbf3b2bb`) as `LocationDnaRevisionToken`, format `ldna-r1:<sha256>`, per-document and per-dimension. **Concurrency enforcement: NOT STARTED** — comparing tokens inside the applying transaction requires the persistence service, which is not created. **The Bridge cache-key deferral stands unchanged**: `CriteriaHashService` was not touched, so a polygon reshape and a deliberate geometry clear still do not invalidate the Bridge cache. — Withdrawals and clear behaviour
+**Implementation status.** **Inert revision token: IMPLEMENTED** (`ddbf3b2bb`) as `LocationDnaRevisionToken`, format `ldna-r1:<sha256>`, per-document and per-dimension. **Concurrency enforcement: NOT STARTED** — comparing tokens inside the applying transaction requires the persistence service, which is not created. **The Bridge cache-key deferral stands unchanged**: `CriteriaHashService` was not touched, so a polygon reshape and a deliberate geometry clear still do not invalidate the Bridge cache. **Provenance separation: PROVEN** (`00b7a025d`) — G1e's provenance model does **not** feed the token. Principle 9 holds: the token represents interpreted Location DNA values, not provenance metadata, and `LocationDnaRevisionToken` was not modified. A test constructs two wildly different provenance maps over the same document and asserts the token is identical. — Withdrawals and clear behaviour
 
 ### Exact question
 
@@ -591,7 +596,7 @@ and, under the `preferred_neighborhoods` name, at `offers/show.blade.php:392` an
 
 Option 4-B (converge `cities` only) is **not** adopted.
 
-**Implementation status.** **Inert clear semantics: IMPLEMENTED** (`ddbf3b2bb`) — a cleared dimension is present-at-canonical-empty and authoritative throughout the core pipeline. **Per-dimension clear AUTHORISATION: IMPLEMENTED inert** (`933228c2c`) — the G1d resolver expresses which dimensions may be set and which cleared, per context, using the G1c `Dimension` vocabulary; and repair is denied for a canonical record, which is how a mirror is prevented from resurrecting a present-but-cleared dimension. **Workflow convergence: NOT STARTED.** The parity baseline moves from 6/2 to 8/0 only when G1f is separately
+**Implementation status.** **Inert clear semantics: IMPLEMENTED** (`ddbf3b2bb`) — a cleared dimension is present-at-canonical-empty and authoritative throughout the core pipeline. **Per-dimension clear PROVENANCE: IMPLEMENTED inert** (`00b7a025d`) — `OwnerCleared` is an authoritative provenance kind, explicitly distinct from absence, and it is the only kind that blocks fallback resurrection; a transition rule denies any automatic restoration of an owner-cleared dimension from a mirror, an inherited value, a derived value or the retained snapshot. **Per-dimension clear AUTHORISATION: IMPLEMENTED inert** (`933228c2c`) — the G1d resolver expresses which dimensions may be set and which cleared, per context, using the G1c `Dimension` vocabulary; and repair is denied for a canonical record, which is how a mirror is prevented from resurrecting a present-but-cleared dimension. **Workflow convergence: NOT STARTED.** The parity baseline moves from 6/2 to 8/0 only when G1f is separately
 authorized.
 
 ---
@@ -702,7 +707,7 @@ consolidation: **the two correct workflows' tests must not change.**
 - **Legacy compatibility belongs exclusively to `LegacyMirrorAdapter`.**
 - **Public projection remains a separate exposure-boundary concern** (`PublicGeometryProjection`, unchanged).
 
-**Implementation status.** **Capability layer: IMPLEMENTED inert** (`933228c2c`) — `LocationDnaCapabilityResolver` now expresses the approved layer ownership as authorisation facts, including that persistence, legacy repair and snapshot access are each a distinct capability rather than a consequence of ownership. **Canonical writer: NOT STARTED.** Deliberately: `LocationDnaPersistenceService` and the trait shim were both excluded from the G1c increment, and `LegacyMirrorAdapter` was not created. The core's component boundaries express the approved layer ownership, but nothing writes, delegates or replaces an inline writer yet. The shim's removal remains a G1f exit criterion.
+**Implementation status.** **Provenance layer: IMPLEMENTED inert** (`00b7a025d`) — `App\Services\LocationDna\Provenance` classifies value origin and standing without touching persistence, and is a third sibling domain namespace alongside the contract core and the capability resolver. **Capability layer: IMPLEMENTED inert** (`933228c2c`) — `LocationDnaCapabilityResolver` now expresses the approved layer ownership as authorisation facts, including that persistence, legacy repair and snapshot access are each a distinct capability rather than a consequence of ownership. **Canonical writer: NOT STARTED.** Deliberately: `LocationDnaPersistenceService` and the trait shim were both excluded from the G1c increment, and `LegacyMirrorAdapter` was not created. The core's component boundaries express the approved layer ownership, but nothing writes, delegates or replaces an inline writer yet. The shim's removal remains a G1f exit criterion.
 
 ---
 
@@ -804,7 +809,7 @@ the settled "no migration required for v1".
 - **Rollback consists of stopping canonical-writer adoption while retaining mirror compatibility** — **not**
   restoring resurrection behaviour.
 
-**Implementation status.** **Mirror CAPABILITY: IMPLEMENTED inert** (`933228c2c`) — the resolver distinguishes consulting a mirror from repairing one, grants consultation only for a legacy-only record, and denies repair outright for a canonical record. **Mirror BEHAVIOUR: NOT STARTED.** `LegacyMirrorAdapter` was not created; the hydrator deliberately has no mirror concept at all, so no fallback, repair or precedence behaviour exists yet. No bulk backfill was performed and none is authorized. — Snapshot retention and future readers
+**Implementation status.** **Mirror PROVENANCE: IMPLEMENTED inert** (`00b7a025d`) — `LegacyFallback` (read-through, non-authoritative) and `LegacyRepaired` (present in canonical storage, still not owner-authored) are distinct kinds, and migration repair has exactly one legal transition, `LegacyFallback -> LegacyRepaired`. D-G1-6's approved rule that lazy repair "must preserve provenance and may not convert inherited values into authored values" is therefore expressible and enforced at the model level — no repair runs. **Mirror CAPABILITY: IMPLEMENTED inert** (`933228c2c`) — the resolver distinguishes consulting a mirror from repairing one, grants consultation only for a legacy-only record, and denies repair outright for a canonical record. **Mirror BEHAVIOUR: NOT STARTED.** `LegacyMirrorAdapter` was not created; the hydrator deliberately has no mirror concept at all, so no fallback, repair or precedence behaviour exists yet. No bulk backfill was performed and none is authorized. — Snapshot retention and future readers
 
 ### Exact question
 
@@ -887,7 +892,7 @@ absence of a reader is not a safety property.
 - **If a production reader becomes necessary before then: stop and obtain an explicit D-G1-7 amendment
   before implementing it.**
 
-**Implementation status.** **Snapshot DENIAL: IMPLEMENTED inert** (`933228c2c`) — both the retained-snapshot and the future-snapshot-reader contexts resolve to a fully denied capability set, and a test asserts **exhaustively** across every surface × viewer × purpose combination that no context grants snapshot access. **No reader: unchanged.** The snapshot was not read, written, deleted or re-projected by either increment, and the existing structural reader guard still holds. **The final disposition among 7-A / 7-B / 7-C remains due before G1g is declared complete**, and no reader may be added without a separate approved amendment.
+**Implementation status.** **Snapshot PROVENANCE: IMPLEMENTED inert** (`00b7a025d`) — `SnapshotRetained` is representable as an ORIGIN and carries the authority `forbidden_as_restoration_source`; every automatic and migration transition out of it is denied, and it grants no snapshot-access capability. **Snapshot DENIAL: IMPLEMENTED inert** (`933228c2c`) — both the retained-snapshot and the future-snapshot-reader contexts resolve to a fully denied capability set, and a test asserts **exhaustively** across every surface × viewer × purpose combination that no context grants snapshot access. **No reader: unchanged.** The snapshot was not read, written, deleted or re-projected by either increment, and the existing structural reader guard still holds. **The final disposition among 7-A / 7-B / 7-C remains due before G1g is declared complete**, and no reader may be added without a separate approved amendment.
 
 **Illustrative only. Not production code. Not authorised for implementation.**
 
@@ -957,7 +962,7 @@ interface LocationDnaPersistenceServiceInterface
 |---|---|---|---|---|---|
 | **G1c** contract core | new domain namespace only; **nothing wired** to any existing path | §16.2 domain-state; S1–S5 as compatibility; revision-token; serializer omission | core complete but **no existing code path calls it**; any need to touch a component → stop | delete the new namespace | all 8 workflows; all 44 consumer IDs; the mirrors |
 | **G1d** capability resolver — **IMPLEMENTED inert (`933228c2c`)** | new resolver namespace, **inert in production**. Delivered WITHOUT `config/` profiles: the resolver encodes the approved rules in code, and no configuration file was added | 8 workflows × every dimension; deny-by-default incl. unknown context and typo | resolver inert; no live write gated yet | remove config + resolver | every write path |
-| **G1e** provenance | provenance recorder within the core | §16.5 incl. the negative test that polygons carry **no** provider metadata | enrichment call order unchanged (G1b §7.E) | remove recorder | enrichment behaviour |
+| **G1e** provenance — **IMPLEMENTED inert (`00b7a025d`)** | a provenance MODEL, not a recorder: kinds, authority, actors, a per-dimension map and transition rules. No recorder was built, because recording requires persistence, which is not started | §16.5 incl. the negative test that polygons carry **no** provider metadata | enrichment call order unchanged (G1b §7.E) | remove recorder | enrichment behaviour |
 | **G1f** writer consolidation | `HasSearchAreas` + the 4 non-trait components, **one workflow per commit** | per-workflow parity vs its G1a characterisation | the two correct Tenant Offer workflows' tests **must not change**; line 130's clear-mirroring not regressed; any uncharacterised workflow → stop | revert per-workflow commit | the public projection seam; the mirrors (until D-G1-6 sunset) |
 | **G1g** adapter contract | Livewire adapter, form-POST adapter, `NullAdapter` | one shared contract suite; identical envelopes → identical results | JS bridge unproven until **G2** — the suite stops at the PHP boundary and says so | remove adapters | the domain core |
 
@@ -1062,7 +1067,8 @@ Recorded at approval, then updated when the inert core landed.
 | **G1d inert capability resolver** | **IMPLEMENTED** (`933228c2c`) |
 | **Workflow integration** (G1c/G1d consumers) | **NOT STARTED** |
 | **Persistence** (`LocationDnaPersistenceService`) | **NOT STARTED** |
-| **G1e** provenance | **NOT STARTED** |
+| **G1e inert provenance model** | **IMPLEMENTED** (`00b7a025d`) |
+| **Provenance integration / persistence** | **NOT STARTED** |
 | **G1f** writer consolidation | **NOT STARTED** |
 | **G1g** adapter contract | **NOT STARTED** |
 
@@ -1118,8 +1124,8 @@ readiness-allowlist entries.
 **Not implemented by this increment, deliberately:** `LocationDnaPersistenceService` · `LegacyMirrorAdapter` ·
 `LocationDnaCapabilityResolver` *(since delivered by G1d — see below)* · workflow integration · trait
 delegation · inline-writer replacement · mirror repair · provenance integration · database persistence ·
-migrations · Bridge cache-key changes · public projection changes · snapshot readers · **G1e** · **G1f** ·
-**G1g**.
+migrations · Bridge cache-key changes · public projection changes · snapshot readers · **G1f** · **G1g**
+*(G1e's inert provenance model has since been delivered — see below)*.
 
 The inertness guard asserts the absence of the first three by class name, so their accidental appearance
 fails the suite.
@@ -1155,7 +1161,7 @@ fails the suite.
   a batch atomically, or compares revision tokens inside a transaction.
 - **D-G1-7's snapshot disposition remains due before G1g is declared complete**, and **no new snapshot
   reader is authorized**. The existing structural reader guard remains required.
-- **G1e–G1g remain not started.** G1d's inert resolver is implemented; its wiring is not.
+- **G1f–G1g remain not started.** The G1c, G1d and G1e inert layers are implemented; none is wired.
 
 ### What did not change
 
@@ -1189,7 +1195,7 @@ Sibling to the G1c `Contract` namespace, under the same `app/Services/<Area>/` c
 **Not implemented, deliberately:** workflow integration · any wiring to real users or application roles ·
 `LocationDnaPersistenceService` · `LegacyMirrorAdapter` · provenance · snapshot readers · policies ·
 middleware · gates · service providers · capability configuration files · permission tables ·
-**G1e** · **G1f** · **G1g**.
+**G1f** · **G1g** *(G1e's inert provenance model has since been delivered — see below)*.
 
 **Delivered without `config/` profiles.** The migration plan anticipated "new resolver + `config/`
 profiles". The resolver encodes the approved rules in code and **no configuration file was added**, so
@@ -1249,3 +1255,125 @@ All seven decisions remain **APPROVED**. No existing production file changed. No
 route, view, model, controller, Livewire component or trait changed. `PublicGeometryProjection` and
 `CriteriaHashService` were neither referenced nor modified, so Bridge cache-key behaviour is unchanged and
 the D-G1-3 deferral stands. No persistence service, mirror adapter or snapshot reader exists.
+
+### G1e — inert provenance model
+
+**Implementation commit:** `00b7a025d15f3331b3265f358968d6476578f604`
+**Commit subject:** `feat(location-dna): add inert G1e provenance model`
+**Implementation date:** 2026-07-30
+**Namespace:** `App\Services\LocationDna\Provenance` → `app/Services/LocationDna/Provenance/`
+
+Third sibling domain namespace, alongside `Contract` (G1c) and `Capability` (G1d).
+
+| | |
+|---|---|
+| Production files added | **7** |
+| Test suites added | **5** |
+| Tests added, all passing | **88** |
+| Existing files modified | **2** — both authorised (below) |
+| Imports permitted and observed | exactly two: `App\Services\LocationDna\Contract\Dimension` and native PHP types/exceptions (`RuntimeException`) |
+| Production references to the new namespace | **zero** |
+
+**The seven production types:** `LocationDnaProvenanceKind` · `ProvenanceAuthority` · `ProvenanceActor` ·
+`DimensionProvenance` · `LocationDnaProvenanceMap` · `ProvenanceTransition` ·
+`LocationDnaProvenanceException`.
+
+**No separate provenance resolver or classifier was added**, deliberately: authority is *derived* from the
+provenance kind rather than stored beside it, transition legality is owned by `ProvenanceTransition`, and a
+resolver would therefore carry no distinct responsibility — only an extra indirection to keep in sync.
+
+#### Vocabularies
+
+**Provenance kinds (9):** `owner_authored` · `owner_cleared` · `legacy_fallback` · `legacy_repaired` ·
+`inherited` · `derived` · `imported` · `snapshot_retained` · `unknown`
+
+**Authority classifications (4):** `authoritative` · `non_authoritative` ·
+`conditionally_authoritative` · `forbidden_as_restoration_source`
+
+**Actors (3):** `explicit_owner` · `automatic_system` · `migration_repair`
+
+**There is no force actor and no bypass actor.** A test asserts the actor vocabulary is exactly those three
+and that no case name contains `force`, `bypass`, `override` or `admin` — an escape hatch would become the
+path every future caller took.
+
+#### Per-kind semantics
+
+| Kind | Authority | Semantics |
+|---|---|---|
+| **OwnerAuthored** | authoritative | positive explicit owner intent; protected from automatic fallback, inherited or derived overwrite |
+| **OwnerCleared** | authoritative | explicitly distinct from absence; the **only** kind that blocks fallback resurrection |
+| **LegacyFallback** | non-authoritative | read-through fallback; not canonical authorship, and not canonical storage |
+| **LegacyRepaired** | non-authoritative | may exist in canonical storage; remains distinguishable from owner-authored data |
+| **Inherited** | non-authoritative | distinct from derived; must be explicitly re-authored to become owner-authored |
+| **Derived** | non-authoritative | computed; grants no exposure or edit capability |
+| **Imported** | conditionally authoritative | may have standing over absence (§8.2); does not override owner-authored or owner-cleared state |
+| **SnapshotRetained** | forbidden as restoration source | representable as an origin only; grants no snapshot-access capability |
+| **Unknown** | forbidden as restoration source | default-safe; never promoted automatically |
+
+#### Transition semantics
+
+The rules are **inert, total and deterministic**, evaluated across all **9 kinds × 9 target kinds × 3
+actors** — a test asserts every triple yields a stable boolean. **No transition writes to storage**; the
+model decides, it never performs.
+
+- An **explicit owner action** may author or clear, from any origin — and may establish *only* those two
+  owner-stated kinds.
+- **Migration repair** may convert eligible `LegacyFallback` to `LegacyRepaired`, and nothing else.
+- **Automatic fallback cannot restore owner-cleared state.**
+- **Derived cannot automatically overwrite owner-authored state.**
+- **Inherited cannot automatically overwrite owner-authored state**, nor can an import.
+- **Snapshot restoration is denied** for every non-owner actor.
+- **Unknown provenance is never automatically promoted.**
+- **No force or bypass transition exists.**
+
+#### Dimension and three-state behaviour
+
+- Provenance is tracked **per G1c `Dimension`**, reusing that enum — arbitrary string dimensions are
+  rejected, so an unknown dimension is unnameable rather than merely validated.
+- Each dimension carries **independent** provenance; changing one leaves the others untouched.
+- **Absent means no provenance entry at all** — absence is not an origin. The map is deliberately sparse,
+  which is how it stays compatible with the G1c three states without becoming the `dimension_meta`
+  structure settled decision 6 forbids.
+- **`OwnerCleared` is distinct from absent**: cleared has an entry, absent has none.
+- **`OwnerAuthored` is distinct from `LegacyRepaired`**: both may sit in canonical storage; only the first
+  is authoritative.
+- **Geometry provenance is independent from administrative-label provenance.**
+- **`location_notes` provenance can be represented but grants no exposure.**
+
+#### Separation boundaries
+
+G1e does **not**: grant any G1d capability · invoke `LocationDnaCapabilityResolver` · alter
+`LocationDnaRevisionToken` · alter `CriteriaHashService` · alter `PublicGeometryProjection` · alter G1c
+document serialization · wire any workflow · read or write persistence · repair mirrors · read retained
+snapshots · create a persistence service, mirror adapter or workflow adapter · add a provenance table or
+column · add an observer, listener, middleware, policy, gate, provider or config file.
+
+Asserted, not merely claimed: a test proves no provenance type exposes a capability-style method
+(`mayExpose`, `mayEdit`, `mayRead`, `grant`, `permit`, `authorize`…), that provenance code never invokes the
+capability layer, and that two entirely different provenance maps over the same document produce an
+identical revision token.
+
+#### The two authorised existing-file changes
+
+| File | Change |
+|---|---|
+| `tests/Unit/Services/LocationDna/Contract/G1cContractCoreInertnessGuardTest.php` | **+1/−0** — one exact `Provenance` directory added to `DOMAIN_DIRS`. No wildcard, no matching-logic change, no scan-root change, no assertion weakening, no pre-authorisation of any future namespace. |
+| `tests/Feature/Offers/OfferWorkflowReadinessTest.php` | **+8/−0** — the seven exact production paths plus one `G1e inert Location DNA provenance model` comment. No wildcard, no matching-logic change. |
+
+#### Validation
+
+**G1e 88 passing · G1d 70 passing · G1c 128 passing · readiness guard 10 passing.** All required G1a, G1b,
+G0.1 and SearchAreas regressions passed. `php -l` clean on all 14 changed/new PHP files; `git diff --check`
+clean.
+
+**Known pre-existing failures remain unchanged and are NOT G1e failures:**
+`SearchAreasStateCountyRoundTripTest` — 1 of 4, SQLite `ILIKE` behaviour;
+`LazyBridgeImportServiceTest` — 2 of 22, PostgreSQL advisory-lock behaviour. Both reproduce identically in
+the G0.1 control worktree with no G1 file present.
+
+#### What did not change
+
+All seven decisions remain **APPROVED**; none returned to `UNDECIDED`. The provenance architecture is
+implemented **only as an inert domain model** — workflow integration and persistence remain **NOT STARTED**,
+as do **G1f** and **G1g**. The **D-G1-7 snapshot disposition remains unresolved**, and **no snapshot reader
+is authorised**.
