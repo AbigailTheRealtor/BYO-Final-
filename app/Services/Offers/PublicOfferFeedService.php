@@ -88,8 +88,25 @@ class PublicOfferFeedService
      * Statuses that appear in the public feed at all. Drafts are invisible —
      * an unsubmitted offer is not a competing bid and its existence is private
      * to its author.
+     *
+     * 'expired' IS included, deliberately. An offer's expires_at is the bidder's
+     * "respond by" deadline addressed to the listing owner; it is NOT the
+     * listing's bidding window. Letting it delete the bid from the competitive
+     * record merges the two clocks that Requirement 7 keeps separate, and
+     * because expires_at is mandatory on every submit while
+     * `offers:expire-pending` sweeps every minute, every bid on the platform
+     * would eventually erase itself from this feed while its listing's bidding
+     * window was still open. A lapsed response deadline changes an offer's
+     * status and available actions; it does not unmake the bid. See the
+     * Regression Reopening section of TIMED_OFFER_RUNTIME_INVESTIGATION.md.
+     *
+     * 'withdrawn' and 'rejected' stay excluded and must not be added here by
+     * analogy: a withdrawn bid was retracted by its author and a rejected one
+     * was refused by the owner, so neither is a standing competitive term.
+     * 'expired' is the only status meaning "a real bid whose response window
+     * simply lapsed".
      */
-    private const PUBLIC_STATUSES = ['submitted', 'countered', 'accepted'];
+    private const PUBLIC_STATUSES = ['submitted', 'countered', 'accepted', 'expired'];
 
     /**
      * Internal status -> sanitized public label. Anything unmapped reports as
@@ -99,6 +116,7 @@ class PublicOfferFeedService
         'submitted' => 'Active',
         'countered' => 'In Negotiation',
         'accepted'  => 'Accepted',
+        'expired'   => 'Expired',
     ];
 
     /**

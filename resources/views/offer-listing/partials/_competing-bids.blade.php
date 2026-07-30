@@ -55,10 +55,14 @@
         }
     }
 
+    // 'Expired' means this bidder's own response deadline lapsed — the bid stays
+    // on the competitive record. It is NOT the listing's bidding window, which
+    // has its own badge in the card header above.
     $statusBadge = [
         'Active'         => 'bg-success',
         'In Negotiation' => 'bg-warning text-dark',
         'Accepted'       => 'bg-primary',
+        'Expired'        => 'bg-secondary',
         'Closed'         => 'bg-secondary',
     ];
 @endphp
