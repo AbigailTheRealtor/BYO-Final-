@@ -618,6 +618,28 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Http/Controllers/TenantOfferListingController.php',
             'resources/views/components/location-dna-map.blade.php',
             'resources/views/tenant_criteria/view.blade.php',
+            // G1c inert Location DNA contract core
+            // (docs/architecture/LOCATION-DNA-ENGINE-V1.2-G1C-DECISION-PACKAGE.md): the
+            // approved canonical contract as a framework-free domain layer. Deliberately
+            // INERT — wired into no workflow, no persistence and no public surface. Wiring
+            // is G1f work and requires its own authorisation.
+            'app/Services/LocationDna/Contract/ContractViolation.php',
+            'app/Services/LocationDna/Contract/Dimension.php',
+            'app/Services/LocationDna/Contract/DimensionCommand.php',
+            'app/Services/LocationDna/Contract/DimensionCommandApplier.php',
+            'app/Services/LocationDna/Contract/DimensionKind.php',
+            'app/Services/LocationDna/Contract/DimensionOperation.php',
+            'app/Services/LocationDna/Contract/HydrationOutcome.php',
+            'app/Services/LocationDna/Contract/HydrationResult.php',
+            'app/Services/LocationDna/Contract/InterpretationMode.php',
+            'app/Services/LocationDna/Contract/LocationDnaContractException.php',
+            'app/Services/LocationDna/Contract/LocationDnaDocument.php',
+            'app/Services/LocationDna/Contract/LocationDnaHydrator.php',
+            'app/Services/LocationDna/Contract/LocationDnaNormalizer.php',
+            'app/Services/LocationDna/Contract/LocationDnaRevisionToken.php',
+            'app/Services/LocationDna/Contract/LocationDnaSerializer.php',
+            'app/Services/LocationDna/Contract/MalformedDocumentException.php',
+            'app/Services/LocationDna/Contract/UnsupportedSchemaVersionException.php',
         ];
 
         $unexpected = array_values(array_filter(
