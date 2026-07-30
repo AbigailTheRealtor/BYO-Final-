@@ -11,13 +11,11 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
-    /**
-     * Previously auto-transitioned Bidding Period listings to Pending on timer expiry.
-     * Now neutralized: the Bidding Period timer is informational only and must not
-     * create a blocking status. Kept as a no-op to preserve call-site compatibility.
-     */
-    protected function autoTransitionBpToPending($auction): void
-    {
-        // No-op: timer expiry no longer auto-blocks bid actions or listing status.
-    }
+    // Milestone 3: autoTransitionBpToPending() was removed from this base controller.
+    //
+    // It once flipped a Bidding Period listing to Pending when its countdown elapsed — timer
+    // completion mutating listing status. An earlier change had already neutralised it to a no-op
+    // kept only for call-site compatibility; this checkpoint retires the Hire Agent timer, so the
+    // four Hire Agent detail controllers that called it no longer do, and the shell goes with
+    // them. Those four were its only callers.
 }

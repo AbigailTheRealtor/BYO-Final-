@@ -751,6 +751,53 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/CompetingBidsService.php',
             'app/Models/BiddingPeriodAgentMapping.php',
             'resources/views/tenant_agent/competing_bids.blade.php',
+            // Hire Agent Listing Framework — Milestone 3
+            // (retirement of the legacy listing countdown).
+            //   The Hire Agent bidding timer is removed. It was wired to the listing expiration
+            //   date in BOTH directions, which is what made it more than cosmetic: a Bidding
+            //   Period listing SYNTHESISED its expiry from created_at + auction_time and fed that
+            //   into $isExpired (so an elapsed countdown, not listing status, gated the Bid
+            //   button, and onTimerEnd faded the button out client-side), while submitting a bid
+            //   pushed expiration_date forward a day (so the owner's deadline moved with bidding
+            //   activity). expiration_date is now the sole expiry source and is owner input only.
+            //
+            //   The four hire_*_agent/view.blade.php files and the four detail controllers are
+            //   already allow-listed above. Newly touched, each for one reason:
+            //     search views      — the live "3d 04:12:07" countdown badge on result cards and
+            //                         the entire @push('scripts') block that drove it. Buyer has
+            //                         no search view, hence three not four.
+            //     bid_detail /      — $isBiddingPeriodListing was assigned and never read;
+            //     view-bid            removed with the bidding period.
+            //     bid_action_row    — dropped its $isTraditionalListing parameter, which existed
+            //                         only to spare Bidding Period listings the expiry notice.
+            //     Controller.php    — autoTransitionBpToPending() deleted from the base
+            //                         controller. It once flipped a listing to Pending when the
+            //                         countdown elapsed (timer completion mutating status); it
+            //                         was already a neutralised no-op and its only four callers
+            //                         were the Hire Agent detail controllers.
+            //     TenantAgentAuctionBid (Livewire + view)
+            //                       — the bid wizard's proposal guard read a non-existent
+            //                         end_date/end_time pair; it is now status-based
+            //                         (expiration_date / sold / Pending / Hired Agent). The
+            //                         "Public Bid Notice" bidding-period label is removed — it
+            //                         also stopped being true at Milestone 2.
+            //     TenantAgentAuction — isBiddingPeriodType() / isBiddingPeriodActive() deleted
+            //                         after losing their last callers. auction_ended and its use
+            //                         in getStatusAttribute() are KEPT: that flag is set by the
+            //                         owner ending the listing, not by a clock.
+            //   No schema, no migration, no Create Offer path is touched.
+            //   See HireAgentTimerRetirementTest and HireAgentTimerExpirationIsolationTest.
+            'resources/views/hire_seller_agent/search.blade.php',
+            'resources/views/hire_landlord_agent/search.blade.php',
+            'resources/views/hire_tenant_agent/search.blade.php',
+            'resources/views/hire_seller_agent/bid_detail.blade.php',
+            'resources/views/hire_buyer_agent/bid_detail.blade.php',
+            'resources/views/hire_landlord_agent/view-bid.blade.php',
+            'resources/views/hire_landlord_agent/partials/bid_action_row.blade.php',
+            'resources/views/livewire/tenant/tenant-agent-auction-bid.blade.php',
+            'app/Http/Controllers/Controller.php',
+            'app/Http/Livewire/Tenant/TenantAgentAuctionBid.php',
+            'app/Models/TenantAgentAuction.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

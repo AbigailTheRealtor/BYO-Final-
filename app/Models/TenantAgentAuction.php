@@ -43,15 +43,16 @@ class TenantAgentAuction extends Model
         return 'Active';
     }
 
-    public function isBiddingPeriodType(): bool
-    {
-        return in_array($this->auction_type, ['Auction (Timer)', 'Bidding Period']);
-    }
-
-    public function isBiddingPeriodActive(): bool
-    {
-        return $this->isBiddingPeriodType() && !$this->auction_ended && $this->is_approved && !$this->is_sold;
-    }
+    // Milestone 3: isBiddingPeriodType() and isBiddingPeriodActive() were removed here.
+    // They classified a listing by its retired auction_type ('Auction (Timer)' / 'Bidding
+    // Period') so that timer-era behaviour could branch on it. isBiddingPeriodActive() lost its
+    // last caller when CompetingBidsController was deleted at Milestone 2; isBiddingPeriodType()
+    // lost its last caller when the Tenant bid wizard's "Public Bid Notice" was retired here.
+    //
+    // The auction_ended column and getStatusAttribute()'s use of it are deliberately KEPT: that
+    // flag is set by the listing owner ending the listing explicitly, never by a clock, so it is
+    // listing status rather than countdown completion. The column itself is untouched — this
+    // checkpoint changes no schema.
 
     public function bidData()
     {

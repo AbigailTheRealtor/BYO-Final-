@@ -406,13 +406,9 @@
                                 </div>
                             @endif
 
-                            @if (strtolower(trim($auction->get->auction_type ?? '')) === 'bidding period' && @$auction->get->auction_time != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Bidding Period Length:
-                                    <span class="removeBold"> {{ @$auction->get->auction_time }}
-                                    </span>
-                                </div>
-                            @endif
+                            {{-- Milestone 3: the "Bidding Period Length: 14 Days" row was removed
+                                 here. It is a bidding-period label describing a timer that no
+                                 longer exists or governs anything. --}}
                             @if (@$auction->get->meeting_Preference != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Meeting Preference:
@@ -2208,28 +2204,15 @@
 
                         // ── Display-layer expiry override (badge only, no DB change) ──────────
                         if (!in_array($auction->status, ['Hired Agent', 'Pending', 'Draft'], true)) {
+                            // Milestone 3: this override used to synthesise an expiry from
+                            // created_at + auction_time for Bidding Period listings, so the badge
+                            // could read "Expired" purely because a countdown had elapsed. That
+                            // branch is retired; expiration_date is the only input, for every
+                            // listing type. Still display-only — the model is never mutated.
                             $_badgeNow  = \Carbon\Carbon::now();
-                            $_badgeType = strtolower(trim($auction->get->auction_type ?? ''));
-                            $_badgeExp  = null;
-                            if ($_badgeType === 'bidding period') {
-                                $_badgeStart = $auction->get->created_at ?? $auction->created_at ?? $_badgeNow;
-                                $_badgeTime  = trim($auction->get->auction_time ?? '');
-                                if (!empty($_badgeTime) && strtolower($_badgeTime) !== 'null') {
-                                    $_bp = explode(' ', $_badgeTime);
-                                    $_bv = (int)($_bp[0] ?? 0);
-                                    $_bu = strtolower($_bp[1] ?? 'days');
-                                    $_badgeExp = match(true) {
-                                        in_array($_bu, ['hour','hours'])     => \Carbon\Carbon::parse($_badgeStart)->addHours($_bv),
-                                        in_array($_bu, ['week','weeks'])     => \Carbon\Carbon::parse($_badgeStart)->addWeeks($_bv),
-                                        in_array($_bu, ['minute','minutes']) => \Carbon\Carbon::parse($_badgeStart)->addMinutes($_bv),
-                                        default                              => \Carbon\Carbon::parse($_badgeStart)->addDays($_bv),
-                                    };
-                                }
-                            } else {
-                                if (!empty($auction->get->expiration_date)) {
-                                    $_badgeExp = \Carbon\Carbon::parse($auction->get->expiration_date);
-                                }
-                            }
+                            $_badgeExp  = !empty($auction->get->expiration_date)
+                                ? \Carbon\Carbon::parse($auction->get->expiration_date)
+                                : null;
                             if ($_badgeExp && $_badgeNow->gte($_badgeExp)) {
                                 $_statusStyle        = $_statusStyles['Expired'];
                                 $_statusIcon         = $_statusIcons['Expired'];
@@ -2265,74 +2248,30 @@
 @inject('carbon', 'Carbon\Carbon')
 
     @php
-    // 🔹 Determine listing type: Traditional vs Bidding Period
-    $listingType = trim($auction->get->auction_type ?? '');
-    $isTraditionalListing = (strtolower($listingType) === 'traditional' || empty($listingType));
-    $isBiddingPeriodListing = in_array(strtolower($listingType), ['bidding period', 'auction (timer)']);
+        // Milestone 3 — legacy countdown retirement.
+        //
+        // This block used to compute TWO different expiries depending on auction_type. For a
+        // "Bidding Period" / "Auction (Timer)" listing it synthesised one from created_at +
+        // auction_time ("14 Days") and drove a live countdown from it; only a "Traditional"
+        // listing used expiration_date. The synthesised value then flowed into $isExpired, which
+        // gates the Bid button below — so an elapsed countdown, not the listing's own status,
+        // decided whether an agent could propose.
+        //
+        // The Hire Agent bidding timer is retired. expiration_date is now the SOLE expiry source
+        // for every listing, which is what it always was for Traditional listings. Note the
+        // direction: the timer is GONE, not re-pointed at expiration_date. Nothing derives a
+        // countdown from expiration_date, nothing derives expiration_date from elapsed time, and
+        // the two concepts are not synchronised. expiration_date answers one question only —
+        // is this listing still live — exactly as it does for a listing that never had a timer.
+        //
+        // Removed with the timer: $isBiddingPeriodListing, $isTraditionalListing, $start_time,
+        // $auction_time, $useAuctionTime, the duration switch, $isBiddingTimerActive,
+        // $canTakeAction (always true — a dead soft-deadline escape hatch) and $diff_d/H/I/S.
+        $expiration = !empty($auction->get->expiration_date)
+            ? $carbon::parse($auction->get->expiration_date)
+            : null;
 
-    // 🕒 Auction start time (when auction began)
-    $start_time = $auction->get->created_at ?? $auction->created_at ?? $carbon::now();
-
-    // 🔹 Get auction_time value
-    $auction_time = trim($auction->get->auction_time ?? '');
-    $useAuctionTime = !empty($auction_time) && strtolower($auction_time) !== 'null';
-
-    if ($useAuctionTime && $isBiddingPeriodListing) {
-    // 🔸 CASE 1: Use auction_time (e.g. "14 Days", "2 Weeks", "5 Hours") for Bidding Period
-    $auction_duration = $auction_time;
-    $duration_parts = explode(' ', trim($auction_duration)); // e.g. ['14', 'Days']
-    $duration_value = (int) ($duration_parts[0] ?? 0);
-    $duration_unit = strtolower($duration_parts[1] ?? 'days');
-
-    // 🧠 Convert unit into Carbon duration
-    switch ($duration_unit) {
-    case 'day':
-    case 'days':
-    $expiration = $carbon::parse($start_time)->addDays($duration_value);
-    break;
-    case 'hour':
-    case 'hours':
-    $expiration = $carbon::parse($start_time)->addHours($duration_value);
-    break;
-    case 'week':
-    case 'weeks':
-    $expiration = $carbon::parse($start_time)->addWeeks($duration_value);
-    break;
-    case 'minute':
-    case 'minutes':
-    $expiration = $carbon::parse($start_time)->addMinutes($duration_value);
-    break;
-    default:
-    $expiration = $carbon::parse($start_time)->addDays($duration_value);
-    break;
-    }
-    } elseif ($isTraditionalListing) {
-    // 🔸 CASE 2: Traditional listing - use expiration_date for listing lifecycle only (no timer)
-    $expiration = !empty($auction->get->expiration_date)
-    ? $carbon::parse($auction->get->expiration_date)
-    : null;
-    } else {
-    // 🔸 CASE 3: Fallback
-    $expiration = !empty($auction->get->expiration_date)
-    ? $carbon::parse($auction->get->expiration_date)
-    : null;
-    }
-
-    // 🧾 Determine if expired
-    $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
-
-    // 🔹 Timer is informational only — actions are never locked by the BP timer
-    $isBiddingTimerActive = $isBiddingPeriodListing && $expiration && !$isExpired;
-    $canTakeAction = true; // Soft deadline: timer never locks bid actions
-
-    // ⏱ Calculate remaining time if not expired (only for Bidding Period)
-    if ($isBiddingPeriodListing && $expiration && !$isExpired) {
-    $now = $carbon::now();
-    $diff_d = $now->diffInDays($expiration);
-    $diff_H = $now->diff($expiration)->format('%H');
-    $diff_I = $now->diff($expiration)->format('%I');
-    $diff_S = $now->diff($expiration)->format('%S');
-    }
+        $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
     @endphp
 
 
@@ -2356,35 +2295,13 @@
         </a>
 
 
-        {{-- ⏳ Countdown Timer - Only shown for Bidding Period listings --}}
-        @if ($isBiddingPeriodListing)
-            @if ($isBiddingTimerActive)
-            <div class="time d-flex justify-content-between text-center flex-wrap pb-2"
-                data-expiration="{{ $expiration->toIso8601String() }}">
-                <div>
-                    <h5><b class="timer-d">{{ $diff_d }}</b></h5>
-                    <h6 class="opacity-50">Days</h6>
-                </div>
-                <div>
-                    <h5><b class="timer-h">{{ $diff_H }}</b></h5>
-                    <h6 class="opacity-50">Hrs</h6>
-                </div>
-                <div>
-                    <h5><b class="timer-m">{{ $diff_I }}</b></h5>
-                    <h6 class="opacity-50">Mins</h6>
-                </div>
-                <div>
-                    <h5><b class="timer-s">{{ $diff_S }}</b></h5>
-                    <h6 class="opacity-50">Secs</h6>
-                </div>
-            </div>
-            @else
-            <div class="text-center mt-2 mb-0">
-                <span class="status-pill status-ended w-100 d-flex justify-content-center">Bidding Ended</span>
-            </div>
-            @endif
-        {{-- Traditional listings: No timer displayed --}}
-        @endif
+        {{--
+            Milestone 3: the Days / Hrs / Mins / Secs countdown block stood here, along with the
+            "Bidding Ended" pill it fell back to. Both are retired. The listing's state is already
+            carried by the status pill above (Active / Pending / Expired / Hired Agent) and by the
+            expiry notice below, neither of which counts down. No replacement urgency mechanism is
+            introduced — that is the point of the retirement, not an omission.
+        --}}
 
 
 
@@ -2436,14 +2353,13 @@
             <i class="fa-solid fa-pause-circle me-2"></i>Pending
         </div>
         @else
-        {{-- Expiry catch-all: distinguish BP (timer already showed "Bidding Ended") from Traditional --}}
-        @if ($isBiddingPeriodListing)
-        {{-- BP: "Bidding Ended" already rendered by the timer block above — no duplicate needed --}}
-        @else
+        {{-- Expiry catch-all. Milestone 3: this used to branch on listing type, suppressing the
+             notice for Bidding Period listings because the retired timer block had already
+             rendered "Bidding Ended". With the timer gone there is one expiry state and one
+             notice, driven by expiration_date. --}}
         <div class="alert alert-secondary text-center mb-2">
             <i class="fa-solid fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
         </div>
-        @endif
         @endif
 
         @if (@$auction->sold)
@@ -2631,9 +2547,14 @@
                                             }
                                             $cardGetScoreColor = fn($pct) => \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)$pct);
 
-                                            // Match score visibility: listing owner OR bid owner OR BP agent with a bid
-                                            $cardIsAgentViewer = $auth_id && auth()->user() && in_array(auth()->user()->user_type ?? '', ['agent']);
-                                            $cardShowMatchScoreOnCard = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $cardIsAgentViewer && $userHasBid);
+                                            // Match score visibility: listing owner OR bid owner.
+                                            // Milestone 3: the third disjunct was
+                                            // ($isBiddingPeriodListing && $cardIsAgentViewer && $userHasBid) — a
+                                            // Bidding Period carve-out letting any agent who had bid see a
+                                            // competitor's match score. It retires with the bidding period, which
+                                            // also finishes what Milestone 2 started: competing-proposal data is
+                                            // now owner-or-own-bid only, with no listing-type exception.
+                                            $cardShowMatchScoreOnCard = $isListingOwner || $isBidOwner;
                                             /**
                                              * ZERO-BASELINE / NO-DATA GUARD
                                              *
@@ -2951,9 +2872,12 @@
 
                                                                         {{-- ── Listing owner: action buttons when bid is undecided ── --}}
                                                                         @if ($mfStateB === '0' && $mfIsOwnerB && !$isSold)
-                                                                            @if ($isTraditionalListing && $isExpired)
+                                                                            {{-- Milestone 3: was ($isTraditionalListing && $isExpired). The
+                                                                                 listing-type qualifier is gone with the timer — expiry is
+                                                                                 expiry, whatever the old auction_type said. --}}
+                                                                            @if ($isExpired)
                                                                             <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
-                                                                                <i class="fa-solid fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
+                                                                                <i class="fa-solid fa-calendar-xmark me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
                                                                             </div>
                                                                             @else
                                                                             <div class="d-flex gap-3 justify-content-center align-items-center w-100" style="flex-wrap: nowrap;">
@@ -3968,31 +3892,17 @@
                                                                         @inject('carbon', 'Carbon\Carbon')
 
                                                     @php
-                                                    // Step 1: Get auction_time and check if it's not empty
-                                                    $auctionTime = data_get($auction->get, 'auction_time');
+                                                        // Milestone 3: this inner block recomputed $expiration from auction_time
+                                                        // (created_at + "10 Days"), SHADOWING the page-level value from inside the
+                                                        // bid loop — so counter actions were gated by their own synthesised timer
+                                                        // even after the page-level one was retired. expiration_date is the only
+                                                        // source now, matching the page-level rule exactly.
+                                                        $expirationDate = data_get($auction->get, 'expiration_date');
+                                                        $expiration = !empty($expirationDate)
+                                                            ? $carbon::parse($expirationDate)
+                                                            : null;
 
-                                                    // Step 2: Base date is $auction->created_at (not from get)
-                                                    $baseDate = $carbon::parse($auction->created_at);
-
-                                                    // Step 3: Calculate expiration based on conditions
-                                                    if (!empty($auctionTime) && $auctionTime !== "" && $auctionTime !== null) {
-                                                    // Extract number from auction_time (e.g., "10 Days" -> 10)
-                                                    preg_match('/\d+/', $auctionTime, $matches);
-                                                    $days = isset($matches[0]) ? (int)$matches[0] : 0;
-
-                                                    $expiration = $days > 0
-                                                    ? $baseDate->copy()->addDays($days)
-                                                    : null;
-                                                    } else {
-                                                    // Use expiration_date from get if auction_time is empty
-                                                    $expirationDate = data_get($auction->get, 'expiration_date');
-                                                    $expiration = !empty($expirationDate)
-                                                    ? $carbon::parse($expirationDate)
-                                                    : null;
-                                                    }
-
-                                                    // Step 4: Check if expired
-                                                    $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
+                                                        $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
                                                     @endphp
 
                                                     @if ($showCounterActions)
@@ -4248,62 +4158,15 @@
     </div>
 @endsection
 
-{{-- 🧠 Timer Script --}}
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/timer.jquery/0.9.0/timer.jquery.min.js"
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-@if ($expiration && !$isExpired)
-<script>
-    $(document).ready(function() {
-        const exp = $('.time').data('expiration');
-        const expTime = new Date(exp).getTime();
-        const now = new Date().getTime();
-        const diffSec = Math.floor((expTime - now) / 1000);
-        if (diffSec <= 0) return;
-
-        const durations = Math.floor(diffSec / 86400) + "d" +
-            Math.floor((diffSec % 86400) / 3600) + "h" +
-            Math.floor((diffSec % 3600) / 60) + "m" +
-            (diffSec % 60) + "s";
-
-        $('.timer-d').timer({
-            countdown: true,
-            duration: durations,
-            format: '%d',
-            callback: onTimerEnd
-        });
-        $('.timer-h').timer({
-            countdown: true,
-            duration: durations,
-            format: '%h',
-            callback: onTimerEnd
-        });
-        $('.timer-m').timer({
-            countdown: true,
-            duration: durations,
-            format: '%m',
-            callback: onTimerEnd
-        });
-        $('.timer-s').timer({
-            countdown: true,
-            duration: durations,
-            format: '%s',
-            callback: onTimerEnd
-        });
-
-        function onTimerEnd() {
-            $('.timer-d, .timer-h, .timer-m, .timer-s').timer('remove');
-            $('.time').html("<span class='status-pill status-ended w-100 d-flex justify-content-center'>Bidding Ended</span>");
-            $('.bid-btn').fadeOut(300, function() {
-                $(this).after(
-                    "<div class='text-center mt-2 mb-0'><span class='status-pill status-ended w-100 d-flex justify-content-center'>Bidding Ended</span></div>"
-                );
-            });
-        }
-    });
-</script>
-@endif
+{{--
+    Milestone 3: the timer.jquery CDN tag and the whole countdown initialiser were removed from
+    here. Beyond rendering the clock, its onTimerEnd callback replaced the countdown with a
+    "Bidding Ended" pill AND faded out the Bid button — a client-side, timer-derived proposal
+    restriction layered on top of the server-side one. Proposal availability is now decided
+    solely by listing status and expiration_date, server-side. No JavaScript countdown is
+    initialised on this page any more, and the library is no longer loaded at all.
+--}}
 <script>
 document.querySelectorAll('.bid-accordion-header').forEach(function(header) {
     header.addEventListener('click', function() {

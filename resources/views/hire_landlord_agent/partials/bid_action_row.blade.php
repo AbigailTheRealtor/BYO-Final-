@@ -7,8 +7,11 @@
         $isOwner              – bool: current user is the listing (auction) owner
         $state                – string: '0' | 'accepted' | 'rejected' | 'countered'
         $isSold               – bool: listing has been sold/closed
-        $isExpired            – bool: traditional listing has expired
-        $isTraditionalListing – bool: listing is traditional (not open-bid / auction)
+        $isExpired            – bool: listing has passed its expiration_date
+
+    Milestone 3 removed the $isTraditionalListing parameter. It existed only to spare
+    "Bidding Period" listings the expiry notice, because their expiry came from a countdown
+    rather than from expiration_date. With the countdown retired there is one kind of expiry.
         $latestOwnerCounter   – the latest counter model or null
         $ownerFirst           – string: auction owner first name
         $ownerLast            – string: auction owner last name
@@ -18,9 +21,9 @@
 
 {{-- ── Listing owner: action buttons when bid is undecided ── --}}
 @if ($state === '0' && $isOwner && !$isSold)
-    @if ($isTraditionalListing && $isExpired)
+    @if ($isExpired)
     <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
-        <i class="fa-solid fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
+        <i class="fa-solid fa-calendar-xmark me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
     </div>
     @else
     <div class="d-flex gap-3 justify-content-center align-items-center w-100" style="flex-wrap: nowrap;">

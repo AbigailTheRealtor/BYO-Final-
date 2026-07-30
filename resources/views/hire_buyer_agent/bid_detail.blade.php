@@ -41,7 +41,8 @@
   // ── Listing state ──
   $listingType            = trim($auction->get->auction_type ?? '');
   $isTraditionalListing   = (strtolower($listingType) === 'traditional');
-  $isBiddingPeriodListing = (strtolower($listingType) === 'bidding period');
+  // Milestone 3: $isBiddingPeriodListing was assigned here and never read. It is removed
+  // with the bidding period itself.
   $isSold = in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true);
   $carbon = \Carbon\Carbon::class;
   $expiration  = data_get($auction, 'get.ends_at') ?? null;

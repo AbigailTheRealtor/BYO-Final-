@@ -257,26 +257,12 @@
                             $landlordFeeCombined = @$auction->get->purchase_fee_type;
                         }
 
-                        $rawDays = strtolower(trim($auction->get->auction_type ?? '')) === 'bidding period'
-                            ? trim((string) ($auction->get->auction_time ?? ''))
-                            : '';
-                        $lengthDays = 0;
-                        $remainingSeconds = 0;
-                        $pretty = null;
-                        if ($rawDays !== '') {
-                            preg_match('/\d+/', $rawDays, $m);
-                            $lengthDays = isset($m[0]) ? (int) $m[0] : 0;
-                            $now = \Carbon\Carbon::now();
-                            $end = \Carbon\Carbon::parse($auction->created_at)->addDays($lengthDays);
-                            $remainingSeconds = $now->diffInSeconds($end, false);
-                            $pretty = function (int $sec) {
-                                if ($sec <= 0) { return 'Expired'; }
-                                $d = intdiv($sec, 86400); $sec %= 86400;
-                                $h = intdiv($sec, 3600); $sec %= 3600;
-                                $i = intdiv($sec, 60); $s = $sec % 60;
-                                return sprintf('%dd %02d:%02d:%02d', $d, $h, $i, $s);
-                            };
-                        }
+                        // Milestone 3: the search-card countdown was removed here. It parsed
+                        // auction_time ("14 Days") for Bidding Period listings, added it to
+                        // created_at, and rendered a live countdown badge that ticked down to
+                        // "Expired" client-side. $rawDays / $lengthDays / $remainingSeconds /
+                        // $pretty existed only to feed it. No countdown, and no replacement
+                        // urgency badge — the card carries the listing's status instead.
                     @endphp
                     <div class="col-sm-6 col-md-12 col-lg-4 mb-3">
                         <div class="card" style="overflow: hidden;">
@@ -338,18 +324,8 @@
                                     @endif
                                 </div>
 
-                                @if ($rawDays !== '')
-                                    <p class="m-0">
-                                        <b class="badge bg-info timer-{{ $auction->id }}"
-                                            @if ($lengthDays > 0 && $remainingSeconds > 0) data-seconds="{{ $remainingSeconds }}" @endif>
-                                            @if ($lengthDays <= 0)
-                                                No Time Limit
-                                            @else
-                                                {{ $pretty($remainingSeconds) }}
-                                            @endif
-                                        </b>
-                                    </p>
-                                @endif
+                                {{-- Milestone 3: the live countdown badge (ticking to "Expired")
+                                     was removed from this card. No replacement. --}}
 
                             </div>
 
@@ -393,52 +369,9 @@
         </div>
     @endsection
 
-    @push('scripts')
-        {{-- jQuery (required by timer.jquery). Skip if your app already loads it. --}}
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/timer.jquery/0.9.0/timer.jquery.min.js" crossorigin="anonymous"
-            referrerpolicy="no-referrer"></script>
-
-        <script>
-            (function() {
-                function formatCountdown(seconds) {
-                    if (seconds <= 0) return "Expired";
-
-                    var d = Math.floor(seconds / 86400);
-                    seconds %= 86400;
-                    var h = Math.floor(seconds / 3600);
-                    seconds %= 3600;
-                    var m = Math.floor(seconds / 60);
-                    var s = seconds % 60;
-
-                    let parts = [];
-                    if (d > 0) parts.push(d + (d === 1 ? " day" : " days"));
-                    if (h > 0) parts.push(h + (h === 1 ? " hour" : " hours"));
-                    if (m > 0) parts.push(m + (m === 1 ? " minute" : " minutes"));
-                    if (s > 0 && d === 0) parts.push(s + (s === 1 ? " second" : " seconds")); // show seconds only if <1d
-
-                    return parts.join(", ");
-                }
-
-                document.querySelectorAll('[class*="timer-"][data-seconds]').forEach(function(el) {
-                    var remaining = parseInt(el.getAttribute('data-seconds'), 10) || 0;
-
-                    function updateTimer() {
-                        if (remaining <= 0) {
-                            el.textContent = "Expired";
-                            el.classList.remove('bg-info');
-                            el.classList.add('bg-danger');
-                            return;
-                        }
-
-                        el.textContent = formatCountdown(remaining);
-                        remaining--;
-                        setTimeout(updateTimer, 1000);
-                    }
-
-                    updateTimer();
-                });
-            })();
-        </script>
-    @endpush
+    {{--
+        Milestone 3: this page's entire @push('scripts') block existed only to drive the retired
+        countdown badges — a jQuery tag, the timer.jquery CDN tag, and the initialiser that walked
+        every [class*="timer-"][data-seconds] element and ticked it down to "Expired". All of it
+        is gone with the badges; nothing else on this page used those libraries.
+    --}}

@@ -445,8 +445,10 @@ class BuyerAgentAuctionController extends Controller
             && (int) $auction->user_id !== (int) auth()->id()) {
             abort(404);
         }
-        // Auto-transition Bidding Period listing to Pending when timer ends
-        $this->autoTransitionBpToPending($auction);
+        // Milestone 3: the autoTransitionBpToPending($auction) call stood here. It was already
+        // a no-op — an earlier change neutralised it so an elapsed Bidding Period timer could
+        // not flip a listing to Pending — and the method is removed with the timer. Nothing
+        // now mutates listing status as a side effect of rendering a detail page.
 
         // Milestone 2 — competing-agent proposal privacy. See the equivalent comment in
         // SellerAgentAuctionController::viewDetail(). The authorized subset is decided here,
@@ -556,24 +558,15 @@ class BuyerAgentAuctionController extends Controller
         if ($sort === 'most_viewed') {
             $auctions->orderByRaw('(SELECT COUNT(*) FROM buyer_agent_auction_bids WHERE buyer_agent_auction_bids.buyer_agent_auction_id = buyer_agent_auctions.id) DESC');
         } elseif ($sort === 'ending_soon') {
+            // Milestone 3: "ending soon" no longer ranks by a synthesised timer.
+            //
+            // The removed first branch ordered by created_at + auction_time (the retired bidding
+            // window) whenever that meta existed, falling back to expiration_date only when it
+            // did not — so a listing's position in this sort was decided by a countdown. Ranking
+            // by the listing's own expiration_date is normal lifecycle behaviour and is kept:
+            // it orders by a stored DATE and never computes time remaining.
             $auctions->orderByRaw("
                 CASE
-                    WHEN NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM buyer_agent_auction_metas
-                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '') IS NOT NULL
-                        AND NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM buyer_agent_auction_metas
-                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int > 0
-                        AND (buyer_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM buyer_agent_auction_metas
-                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int) > NOW()
-                    THEN EXTRACT(EPOCH FROM (buyer_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM buyer_agent_auction_metas
-                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int))
                     WHEN COALESCE((SELECT meta_value FROM buyer_agent_auction_metas
                         WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1), '') <> ''
                         AND (SELECT meta_value FROM buyer_agent_auction_metas

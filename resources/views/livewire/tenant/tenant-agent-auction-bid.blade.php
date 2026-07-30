@@ -389,12 +389,14 @@
                         @endif
                     </div>
 
-                    @if($isBiddingPeriodListing)
-                    <div class="alert alert-info mt-4 mb-2" style="background: #e3f2fd; border: 1px solid #90caf9;">
-                        <i class="fa-solid fa-circle-info me-2"></i>
-                        <strong>Public Bid Notice:</strong> Once submitted, your Broker Compensation & Agency Agreement Terms, Offered Services, and Match Score may be visible to other participating agents in anonymized form during the bidding period.
-                    </div>
-                    @endif
+                    {{--
+                        Milestone 3: the "Public Bid Notice" was removed here. It told a submitting
+                        agent that their compensation terms, services and match score "may be
+                        visible to other participating agents in anonymized form during the bidding
+                        period" — a bidding-period label, and one that stopped being true at
+                        Milestone 2, when competing-proposal access was closed. Leaving it would
+                        have warned agents about a disclosure that can no longer happen.
+                    --}}
                     
                     <!-- Navigation Buttons -->
                     <div class="d-flex justify-content-between form-group mt-4">
