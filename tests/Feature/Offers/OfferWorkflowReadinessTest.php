@@ -274,17 +274,43 @@ class OfferWorkflowReadinessTest extends TestCase
 
     // ── Test 10: static production-file guard ────────────────────────────────
 
+    /**
+     * The change set is collected by Tests\Support\ProductionScopeGuard rather than by a bare
+     * `git diff` here.
+     *
+     * This test previously asked git one question — `git diff --name-only` — which compares the
+     * WORKING TREE to the INDEX and therefore sees only unstaged changes. It missed two whole
+     * categories, and both were hit for real:
+     *
+     *   - STAGED changes. The Milestone 2 retirement checkpoint deleted four production files with
+     *     `git rm`, which stages the deletion. Index and working tree agreed, so `git diff`
+     *     returned nothing and this guard evaluated none of them.
+     *   - COMMITTED changes. Once a checkpoint is committed the working tree is clean, so the
+     *     guard's answer decays to the empty set and it passes trivially — strongest before the
+     *     work landed, useless afterwards, which is backwards.
+     *
+     * The guard now unions committed / staged / unstaged / untracked, detects renames on both
+     * sides, and grades identically whether a checkpoint is uncommitted, half-staged or committed.
+     * Its own behaviour is proven in ProductionScopeGuardTest against a purpose-built repository,
+     * including the staged-delete case that was missed here.
+     *
+     * The committed range defaults to the merge base with `main` — "everything this branch changed"
+     * — and can be pointed at a specific checkpoint via PROD_SCOPE_GUARD_BASE_REF.
+     */
     public function test_no_production_files_were_modified(): void
     {
-        $prodDirs = ['app/', 'config/', 'routes/', 'database/', 'resources/'];
-        $dirArgs  = implode(' ', $prodDirs);
+        $guard   = new \Tests\Support\ProductionScopeGuard(base_path());
+        $baseRef = $guard->resolveBaseRef();
 
-        $tracked   = shell_exec("git --no-optional-locks diff --name-only -- {$dirArgs} 2>&1") ?? '';
-        $untracked = shell_exec("git --no-optional-locks ls-files --others --exclude-standard -- {$dirArgs} 2>&1") ?? '';
+        $this->assertNotNull(
+            $baseRef,
+            'The production-scope guard could not resolve a base ref, so committed changes would go '
+            . 'unexamined — the exact blind spot this guard was hardened to close. Set '
+            . \Tests\Support\ProductionScopeGuard::BASE_REF_ENV . ' to an explicit base commit.'
+        );
 
-        $changedLines   = array_filter(explode("\n", trim($tracked)));
-        $untrackedLines = array_filter(explode("\n", trim($untracked)));
-        $allChanged     = array_merge($changedLines, $untrackedLines);
+        $collected  = $guard->collect($baseRef);
+        $allChanged = $collected['paths'];
 
         // Files intentionally modified by the "offer detail page bugs" fix task:
         // direction-aware permission gating, notification recipient fix,
@@ -669,6 +695,14 @@ class OfferWorkflowReadinessTest extends TestCase
             //   No behaviour, markup, copy, routing or data change.
             //   See docs/investigations/hire-agent-listing-framework-implementation-plan.md.
             'app/Http/Controllers/BuyerAgentAuctionController.php',
+            //   The VACATED path of that `git mv`. It was never allow-listed before, because the
+            //   old `git diff --name-only` collection reported only a rename's destination — the
+            //   source silently disappeared from the guard's view. The hardened guard reports both
+            //   ends of a move (a rename is two production-path changes, and allow-listing only
+            //   the destination would let a protected file be moved out from under the guard), so
+            //   this entry is now required. It is a genuine pre-existing gap surfaced by the
+            //   hardening, not a new change: nothing edited this path in this checkpoint.
+            'resources/views/buyerAgentAuctionDetail.blade.php',
             // Hire Agent Listing Framework — Milestone 2, first checkpoint
             // (competing-agent proposal privacy).
             //   New central access service: the authoritative decision on who may see which
@@ -719,14 +753,14 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/tenant_agent/competing_bids.blade.php',
         ];
 
-        $unexpected = array_values(array_filter(
-            $allChanged,
-            fn ($f) => !in_array(trim($f), $taskAllowlist, true)
-        ));
+        $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
 
         $this->assertEmpty(
             $unexpected,
-            'Production files were modified or created outside the task allowlist: ' . implode(', ', $unexpected),
+            'Production files were modified or created outside the task allowlist: '
+            . implode(', ', $unexpected)
+            . "\n\nFull change set for {$baseRef}...HEAD (path [status/origin]):\n  "
+            . implode("\n  ", $guard->describe($collected['entries'], $allChanged)),
         );
     }
 }
