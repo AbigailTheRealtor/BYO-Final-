@@ -549,26 +549,52 @@ class HireAgentDetailFrameworkTest extends TestCase
         $this->assertStringContainsString('max-width: 100%', $styles, 'The hero must be constrained against horizontal overflow.');
     }
 
-    // ── 15. Create Offer untouched and uncoupled ─────────────────────────────
+    // ── 15. Create Offer untouched, and the products uncoupled FROM EACH OTHER ─
 
     /**
-     * The framework is Hire Agent's alone. Create Offer keeps its separately-audited hero, and
-     * nothing in either direction may reference the other — no shared file, no shared class name,
-     * no include across the boundary. A shared CSS prefix would be enough to couple them, so the
-     * namespaces are asserted disjoint too.
+     * Neither product depends on the other. Both may depend on a neutral shared library.
+     *
+     * WHAT CHANGED, AND WHY. This test used to assert that Hire Agent and Create Offer were
+     * disjoint in every respect — no shared file, no shared class name, no include across the
+     * boundary, and disjoint CSS namespaces on the grounds that "a shared CSS prefix would be
+     * enough to couple them". That was right for a Hire-Agent-only refactor: the two products had
+     * no reason to touch, so any contact was an accident worth failing on.
+     *
+     * The approved architecture is not "no sharing" but "no sharing BETWEEN PRODUCTS":
+     *
+     *     Hire Agent ──► VIHO ◄── Create Offer     permitted, and the point of the migration
+     *     Hire Agent ──✗──► Create Offer           forbidden
+     *     Create Offer ──✗──► Hire Agent           forbidden
+     *     VIHO ──✗──► either product               forbidden
+     *
+     * A blanket disjointness assertion cannot express that: it forbids the two permitted edges
+     * along with the forbidden ones, so the first shared component would fail it. The prohibition
+     * is therefore now DIRECTED rather than blanket, and it moved somewhere it can be stated
+     * properly — PresentationDependencyContractTest classifies every dependency of every file in
+     * both zones, across includes, extends, component tags, view() calls, PHP imports, asset
+     * references and CSS namespaces.
+     *
+     * This is not a relaxation. The old test read two Create Offer views for two substrings; the
+     * replacement reads both products entirely, in both directions. What remains here is the part
+     * that is specifically about THIS framework: that adopting it left Create Offer alone.
+     *
+     * @see \Tests\Feature\Viho\PresentationDependencyContractTest for the full directed contract
      */
-    public function test_create_offer_is_untouched_and_uncoupled(): void
+    public function test_create_offer_is_untouched_and_the_products_are_mutually_uncoupled(): void
     {
+        $scanner = new \Tests\Support\PresentationDependencyScanner(base_path());
+
+        // Create Offer keeps its own competing-bids surface. Hire Agent retired its own in
+        // Milestone 2 and may never reach this one — asserted as an edge, below.
         $partial = base_path('resources/views/offer-listing/partials/_competing-bids.blade.php');
         $this->assertFileExists($partial);
         $this->assertStringContainsString('PublicOfferFeedService', file_get_contents($partial));
 
         foreach (['seller', 'landlord'] as $role) {
-            $view = file_get_contents(base_path("resources/views/offer-listing/{$role}/view.blade.php"));
-
-            $this->assertStringContainsString("@include('offer-listing.partials._competing-bids'", $view);
-            $this->assertStringNotContainsString('hire_agent.framework', $view, 'Create Offer must not depend on the Hire Agent framework.');
-            $this->assertStringNotContainsString('x-hire-agent.', $view, 'Create Offer must not use Hire Agent components.');
+            $this->assertStringContainsString(
+                "@include('offer-listing.partials._competing-bids'",
+                file_get_contents(base_path("resources/views/offer-listing/{$role}/view.blade.php"))
+            );
         }
 
         // Only Create Offer's Seller view has the sol- hero; the others never had one. Asserting
@@ -579,20 +605,38 @@ class HireAgentDetailFrameworkTest extends TestCase
             "Create Offer's Seller view keeps its own separately-audited hero."
         );
 
-        // …and the Hire Agent framework must not reach into Create Offer.
+        // The directed contract, over every file in both zones rather than a hand-listed few.
+        foreach ([
+            \Tests\Support\PresentationDependencyScanner::ZONE_HIRE_AGENT,
+            \Tests\Support\PresentationDependencyScanner::ZONE_CREATE_OFFER,
+        ] as $zone) {
+            $files = $scanner->filesInZone($zone);
+            $this->assertNotEmpty($files, "Precondition: {$zone} must contain files to scan.");
+
+            foreach ($files as $file) {
+                $this->assertSame(
+                    [],
+                    $scanner->violationsIn($file, $scanner->read($file)),
+                    "{$file} must not depend on the other product."
+                );
+            }
+        }
+
+        // Hire Agent's framework files specifically: no competing-bids surface, in any form.
         foreach ([
             'resources/views/hire_agent/framework/styles.blade.php',
+            'resources/views/components/hire-agent/detail-shell.blade.php',
             'resources/views/components/hire-agent/hero.blade.php',
             'resources/views/components/hire-agent/info-card.blade.php',
             'resources/views/components/hire-agent/field.blade.php',
             'resources/views/components/hire-agent/flash.blade.php',
             'app/Support/HireAgent/HireAgentHeroData.php',
         ] as $rel) {
-            $src = file_get_contents(base_path($rel));
+            $src = \Tests\Support\PresentationDependencyScanner::stripComments(file_get_contents(base_path($rel)));
 
-            $this->assertStringNotContainsString('offer-listing', $src, "{$rel} must not reference Create Offer.");
             $this->assertStringNotContainsString('sol-hero', $src, "{$rel} must not reuse Create Offer's hero classes.");
             $this->assertStringNotContainsString('PublicOfferFeedService', $src);
+            $this->assertStringNotContainsString('_competing-bids', $src);
         }
     }
 
