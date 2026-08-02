@@ -581,12 +581,37 @@ class VihoPresentationPrimitivesTest extends TestCase
 
     // ── 8/9 + 19/20/21. Not yet consumed ─────────────────────────────────────
 
-    /** No Hire Agent file renders a VIHO component. */
-    public function test_hire_agent_does_not_consume_the_components_yet(): void
+    /**
+     * Only the Landlord pilot renders a VIHO component.
+     *
+     * AMENDED IN M3. Previously "no Hire Agent file consumes VIHO". Landlord is the approved
+     * pilot; the other three roles and the shared Hire Agent components are still expected to be
+     * clean, and that is where the assertion now points. The shared detail shell matters most —
+     * a VIHO tag there would migrate all four roles at once.
+     */
+    public function test_only_the_landlord_pilot_consumes_the_components(): void
     {
+        $landlordFiles = 0;
+
         foreach ($this->scanner->filesInZone(Scanner::ZONE_HIRE_AGENT) as $file) {
-            $this->assertStringNotContainsString('<x-viho.', $this->scanner->read($file), "{$file} — adoption is M3.");
+            $src = $this->scanner->read($file);
+
+            if (str_contains($file, 'hire_landlord_agent')) {
+                if (str_contains($src, '<x-viho.')) {
+                    $landlordFiles++;
+                }
+
+                continue;
+            }
+
+            $this->assertStringNotContainsString(
+                '<x-viho.',
+                $src,
+                "{$file} is outside the M3 pilot — Seller, Buyer and Tenant migrate only after review."
+            );
         }
+
+        $this->assertGreaterThan(0, $landlordFiles, 'The Landlord pilot must actually consume VIHO.');
     }
 
     /** No Create Offer file renders a VIHO component. */
@@ -597,8 +622,13 @@ class VihoPresentationPrimitivesTest extends TestCase
         }
     }
 
-    /** Nothing anywhere — layouts and shared partials included — renders one. */
-    public function test_nothing_in_the_application_consumes_the_components_yet(): void
+    /**
+     * The Landlord pilot is the only file in the application that renders one.
+     *
+     * AMENDED IN M3 from "nothing consumes them". Enumerating every Blade file is the point: a
+     * layout or shared partial adopting VIHO would migrate pages nobody put in the pilot.
+     */
+    public function test_only_the_landlord_pilot_consumes_the_components_application_wide(): void
     {
         $consumers = [];
 
@@ -621,6 +651,22 @@ class VihoPresentationPrimitivesTest extends TestCase
             }
         }
 
-        $this->assertSame([], $consumers, "M2 is additive and inert:\n" . implode("\n", $consumers));
+        $this->assertSame(
+            ['resources/views/hire_landlord_agent/view.blade.php'],
+            $consumers,
+            "Only the M3 Landlord pilot may render a VIHO component. Anything else here — a layout "
+            . "especially — would migrate pages that are not in the pilot:\n" . implode("\n", $consumers)
+        );
+    }
+
+    /** Create Offer is untouched by the pilot, stated on its own so a failure names it directly. */
+    public function test_create_offer_is_untouched_by_the_landlord_pilot(): void
+    {
+        foreach ($this->scanner->filesInZone(Scanner::ZONE_CREATE_OFFER) as $file) {
+            $src = $this->scanner->read($file);
+
+            $this->assertStringNotContainsString('<x-viho.', $src, "{$file} — Create Offer adoption is M8.");
+            $this->assertStringNotContainsString('viho.styles', $src, "{$file} — Create Offer adoption is M8.");
+        }
     }
 }

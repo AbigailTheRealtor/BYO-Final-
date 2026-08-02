@@ -340,23 +340,46 @@ class VihoDesignTokenFoundationTest extends TestCase
     // ── 4/5. Not yet consumed ────────────────────────────────────────────────
 
     /**
-     * Hire Agent does not include it yet. Adoption is M3.
+     * The Landlord pilot loads the stylesheet exactly once; no other role loads it at all.
      *
-     * The safety argument for M1 is that nothing reaches this file. Left unasserted, that argument
-     * would quietly expire the first time someone wired it up early.
+     * AMENDED IN M3. "Exactly once" is the load-bearing word. The obvious place to put the include
+     * was the shared detail shell — and that would have been wrong, because the shell renders for
+     * all four roles and would have enrolled Seller, Buyer and Tenant in a pilot they are not part
+     * of. Counting occurrences is what distinguishes the correct placement from the convenient one.
      */
-    public function test_hire_agent_does_not_include_the_stylesheet_yet(): void
+    public function test_only_the_landlord_pilot_includes_the_stylesheet(): void
     {
-        foreach (self::HIRE_AGENT_VIEWS as $view) {
+        $landlord = $this->scanner->read('resources/views/hire_landlord_agent/view.blade.php');
+
+        $this->assertSame(
+            1,
+            substr_count(Scanner::stripComments($landlord), "@include('viho.styles')"),
+            'The Landlord pilot must include the shared stylesheet exactly once.'
+        );
+
+        foreach ([
+            'resources/views/hire_seller_agent/view.blade.php',
+            'resources/views/hire_buyer_agent/view.blade.php',
+            'resources/views/hire_tenant_agent/view.blade.php',
+        ] as $view) {
             $this->assertStringNotContainsString(
                 'viho.styles',
                 $this->scanner->read($view),
-                "{$view} must not consume the shared foundation until M3."
+                "{$view} is not part of the M3 pilot."
             );
         }
 
+        // The shared shell in particular: putting the include there would silently migrate all four.
         foreach ($this->scanner->filesInZone(Scanner::ZONE_HIRE_AGENT) as $file) {
-            $this->assertStringNotContainsString('viho.styles', Scanner::stripComments($this->scanner->read($file)), $file);
+            if (str_contains($file, 'hire_landlord_agent')) {
+                continue;
+            }
+
+            $this->assertStringNotContainsString(
+                'viho.styles',
+                Scanner::stripComments($this->scanner->read($file)),
+                "{$file} must not pull the shared foundation in for every role."
+            );
         }
     }
 
@@ -372,8 +395,14 @@ class VihoDesignTokenFoundationTest extends TestCase
         }
     }
 
-    /** Nothing anywhere includes it — layouts and shared partials included. */
-    public function test_nothing_in_the_application_includes_the_stylesheet_yet(): void
+    /**
+     * The Landlord pilot is the ONLY file in the application that includes it.
+     *
+     * AMENDED IN M3 from "nothing includes it". Enumerating every Blade file rather than checking
+     * the known views is the point: a layout or a shared partial pulling this in would migrate
+     * every page at once, and neither is somewhere anyone would think to look.
+     */
+    public function test_only_the_landlord_pilot_includes_the_stylesheet_application_wide(): void
     {
         $referencing = [];
 
@@ -397,9 +426,11 @@ class VihoDesignTokenFoundationTest extends TestCase
         }
 
         $this->assertSame(
-            [],
+            ['resources/views/hire_landlord_agent/view.blade.php'],
             $referencing,
-            "M1 is additive and inert. These files already consume it:\n" . implode("\n", $referencing)
+            'The Landlord pilot must be the only consumer of the shared stylesheet. Anything else '
+            . "here — a layout especially — would migrate pages that are not in the pilot:\n"
+            . implode("\n", $referencing)
         );
     }
 

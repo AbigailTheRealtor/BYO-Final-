@@ -206,18 +206,41 @@ class PresentationDependencyContractTest extends TestCase
     // ── Current-state protection (contract items 10–14) ──────────────────────
 
     /**
-     * 10. Hire Agent's presentation is exactly as Milestone 5A left it.
+     * 10. Hire Agent's presentation is as Milestone 5A left it, except for the M3 Landlord pilot.
      *
-     * M0 is a test-only checkpoint. If any of these drift, something changed production code under
-     * cover of a contract rewrite — the specific failure this checkpoint is ordered first to avoid.
+     * AMENDED IN M3. This previously asserted that no Hire Agent view consumed VIHO at all. The
+     * Landlord view is now the approved pilot, so the assertion narrows to the three roles that
+     * have NOT migrated — which is the half that still carries information. Widening it to "any
+     * Hire Agent view may consume VIHO" would have retired the guard at the moment it started
+     * mattering: the pilot's whole purpose is that Seller, Buyer and Tenant stay untouched while
+     * Landlord is reviewed.
+     *
+     * All four still use the shared detail shell; the pilot changed presentation inside the main
+     * column, not the page skeleton.
      */
-    public function test_hire_agent_presentation_is_unchanged(): void
+    public function test_hire_agent_presentation_is_unchanged_outside_the_landlord_pilot(): void
     {
         foreach (self::HIRE_AGENT_VIEWS as $view) {
             $src = $this->scanner->read($view);
 
             $this->assertStringContainsString('<x-hire-agent.detail-shell', $src, $view);
-            $this->assertStringNotContainsString('x-viho.', $src, "{$view} must not consume VIHO yet — that is M3 onward.");
+
+            if (str_contains($view, 'hire_landlord_agent')) {
+                $this->assertStringContainsString(
+                    '<x-viho.',
+                    $src,
+                    'Landlord is the approved M3 pilot and is expected to consume VIHO.'
+                );
+
+                continue;
+            }
+
+            $this->assertStringNotContainsString(
+                'x-viho.',
+                $src,
+                "{$view} is not part of the M3 pilot — Seller, Buyer and Tenant migrate only after "
+                . 'the Landlord appearance is approved.'
+            );
         }
 
         foreach ([

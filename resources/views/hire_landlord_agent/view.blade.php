@@ -56,6 +56,20 @@
 {{-- Hire Agent Listing Detail Framework (Milestone 4): the thirty rules that were
      byte-identical across all four detail views now live in one place. --}}
 
+{{--
+    Milestone 3 pilot — the shared VIHO foundation.
+
+    Included HERE rather than in the shared detail shell, and that placement is the whole point:
+    the shell is rendered by all four roles, so putting it there would have enrolled Seller, Buyer
+    and Tenant in the pilot at the same time. Landlord is the only role migrating, so Landlord is
+    the only file that loads it. The other three keep rendering exactly as they do today.
+
+    It arrives AFTER the framework stylesheet above, which matters: where the two define the same
+    property for an element that carries both class families, VIHO wins. That is the intended
+    direction of the migration and the reason this page now looks like Create Offer.
+--}}
+@include('viho.styles')
+
 {{-- Residual Landlord-only rules. These LOOK shared but are not: they differ
      between roles in colour, !important or comment text, so moving them into the shared
      partial would have changed what this page renders. Left in place deliberately. --}}
@@ -141,11 +155,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="landlord" :auction="$auction">
         <x-slot name="main">
-            <div class="card description">
-                <div class="card-header">
-                    <h4 style="margin-left: 15px; margin-top: 10px;">Listing Details: </h4>
-                </div>
-                <div class="card-body">
+            {{--
+                M3 pilot. Was `div.card.description` wrapping a bare `card-header` + inline-styled
+                `h4` + `card-body`. The heading level stays h4: typography is migrating, the
+                document outline is not.
+
+                This is one card containing eight sub-sections, not eight sibling cards — the
+                rendered DOM has exactly two children under leftCol, this and the review card.
+                The sub-headings below therefore become x-viho.section-header rather than more
+                cards, which is what keeps the section order and nesting identical.
+            --}}
+            <x-viho.card title="Listing Details:" title-tag="h4">
                     <div class="row" style="flex-wrap: wrap;">
                         @if (@$auction->get->listing_title != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -199,9 +219,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                     </div>
                     <hr>
-                    <div class="card-header">
-                        <h4>Property Details: </h4>
-                    </div>
+                    {{-- M3 pilot: sub-section header inside the single Listing Details card. --}}
+                    <x-viho.section-header title="Property Details:" tag="h4" />
 
                     <div class="row" style="flex-wrap: wrap;">
 
@@ -664,9 +683,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         </div>
         <hr>
-        <div class="card-header">
-            <h4>Leasing Terms: </h4>
-        </div>
+        <x-viho.section-header title="Leasing Terms:" tag="h4" />
         @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->occupant_status))
         <div class="row" style="flex-wrap: wrap;">
             <div class="col-12 fw-bold pt-2">  Occupant Type:
@@ -1037,9 +1054,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endphp
 
         @if ($hasServices)
-        <div class="card-header section-header services-section-header">
-            <h4 class="section-title">Services: </h4>
-        </div>
+        <x-viho.section-header title="Services:" tag="h4" />
 
         @php
         // Landlord Residential service categories (exact match with listing creation form)
@@ -1277,9 +1292,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $additionalDetailsStr = is_string($additionalDetailsRaw) ? trim($additionalDetailsRaw) : null;
         @endphp
         @if (!empty($additionalDetailsStr) && $additionalDetailsStr !== 'null')
-        <div class="card-header section-header">
-            <h4 class="section-title">Additional Details: </h4>
-        </div>
+        <x-viho.section-header title="Additional Details:" tag="h4" />
 
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Additional Details: <span
@@ -1330,9 +1343,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         @if (!empty($repRows))
         <hr />
-        <div class="card-header section-header">
-            <h4 class="section-title">Representation Preferences &amp; Compatibility:</h4>
-        </div>
+        {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the rendered
+             text is unchanged. Passing &amp; here would double-escape it. --}}
+        <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
         @foreach ($repRows as $repRow)
         <div class="col-md-12 col-12 pt-2 fw-bold">
             {{ $repRow['label'] }}:
@@ -1356,9 +1369,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endphp
         @if ($hasLandlordBrokerCompData)
         <hr />
-        <div class="card-header section-header">
-            <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
-        </div>
+        <x-viho.section-header title="Broker Compensation & Agency Agreement Terms" tag="h4" />
 
         <div class="broker-compensation-section">
 
@@ -1805,18 +1816,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endphp
         @if ($referralPctDisplay !== '')
         <hr />
-        <div class="card-header section-header">
-            <h4 class="section-title">Referral & Cooperation Terms</h4>
-        </div>
+        <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Referral Fee:
             <span class="removeBold">{{ $referralPctDisplay }}</span>
         </div>
         @endif
         <hr />
-        <div class="card-header">
-            <h4>{{ ($auction->user && $auction->user->user_type === 'agent') ? "Agent's Info" : "Landlord's Info" }}</h4>
-        </div>
+        {{-- Resolved in PHP rather than inline: a bound attribute containing `&&` is not
+             parseable by Blade's attribute compiler. Same expression, same two outcomes. --}}
+        @php
+            $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
+                ? "Agent's Info"
+                : "Landlord's Info";
+        @endphp
+        <x-viho.section-header :title="$_ownerInfoHeading" tag="h4" />
         @if (!empty($auction->get->first_name))
         <div class="col-md-12 col-12 pt-2 fw-bold"> First
             Name:
@@ -1918,8 +1932,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
     </div>
-</div>
-</div>
+{{-- M3 pilot: the former card-body close is gone with its opening tag; the card itself closes here. --}}
+</x-viho.card>
 @inject('auctionUser', 'App\Models\User')
 @php
 $auser = $auctionUser::find(@$auction->user_id);
